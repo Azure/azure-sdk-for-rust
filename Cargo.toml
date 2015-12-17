@@ -1,0 +1,17 @@
+[package]
+name = "AzureSDKForRust"
+version = "0.0.1"
+authors = ["Francesco Cogno <francesco.cogno@outlook.com>"]
+
+[dependencies]
+chrono = "*"
+rust-crypto = "^0.2"
+rustc-serialize = "*"
+RustyXML = "*"
+
+[dependencies.hyper]
+version = "*"
+default-features = false
+
+[dependencies.url]
+git = "https://github.com/servo/rust-url"
