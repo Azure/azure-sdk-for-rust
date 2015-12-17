@@ -1,6 +1,6 @@
 # Microsoft Azure SDK for Rust
 
-[![Build Status](https://travis-ci.org/MindFlavor/ruazure.svg)](https://travis-ci.org/MindFlavor/ruazure) [![Coverage Status](https://coveralls.io/repos/MindFlavor/ruazure/badge.svg?branch=master&service=github)](https://coveralls.io/github/MindFlavor/ruazure?branch=master) [![experimental](http://badges.github.io/stability-badges/dist/experimental.svg)](http://github.com/badges/stability-badges)
+[![Build Status](https://travis-ci.org/MindFlavor/AzureSDKForRust.svg?branch=master)](https://travis-ci.org/MindFlavor/AzureSDKForRust) [![Coverage Status](https://coveralls.io/repos/MindFlavor/AzureSDKForRust/badge.svg?branch=master&service=github)](https://coveralls.io/github/MindFlavor/AzureSDKForRust?branch=master) [![experimental](http://badges.github.io/stability-badges/dist/experimental.svg)](http://github.com/badges/stability-badges)
 
 ## Introduction
 Microsoft Azure expose its technologies via REST API. These APIs are easily consumable from any language (good) but are weakly typed. With this library and its related (as soon as I figure out how to make it) crate you can exploit the power of Microsoft Azure from Rust in a idiomatic way.    
