@@ -2,9 +2,18 @@ use xml::Element;
 use xml::Xml::{ElementNode, CharacterNode};
 use azure::core::errors::TraversingError;
 use std::str::FromStr;
+use chrono;
+use chrono::{DateTime, UTC};
 
 #[inline]
-pub fn traverse_single<'a>(node: &'a Element,
+pub fn from_azure_time(s : &str) -> Result<chrono::DateTime<chrono::UTC>, chrono::ParseError> {
+    let dt = try!(chrono::DateTime::parse_from_rfc2822(s));
+    let dt_utc: chrono::DateTime<chrono::UTC> = dt.with_timezone(&chrono::UTC);
+    Ok(dt_utc)
+}
+
+#[inline]
+pub fn traverse_single_must<'a>(node: &'a Element,
                            path: &[&str])
                            -> Result<&'a Element, TraversingError> {
     let vec = try!(traverse(node, path, false));
@@ -15,13 +24,28 @@ pub fn traverse_single<'a>(node: &'a Element,
     Ok(vec[0])
 }
 
+pub fn traverse_single_optional<'a>(node: &'a Element,
+                           path: &[&str])
+                           -> Result<Option<&'a Element>, TraversingError> {
+    let vec = try!(traverse(node, path, true));
+    if vec.len() > 1 {
+        return Err(TraversingError::MultipleNode(path[path.len() - 1].to_owned()));
+    }
+
+    if vec.len() == 0 {
+        return Ok(None)
+    }
+
+    Ok(Some(vec[0]))
+}
+
 #[inline]
-pub fn traverse_single_optional<'a, T>(node: &'a Element,
+pub fn traverse_single_cast_optional<'a, T>(node: &'a Element,
                                        path: &[&str])
                                        -> Result<Option<T>, TraversingError>
     where T: FromStr
 {
-    let elem = match traverse_single(node, path) {
+    let elem = match traverse_single_must(node, path) {
         Ok(e) => e,
         Err(_) => return Ok(None),
     };
@@ -38,10 +62,10 @@ pub fn traverse_single_optional<'a, T>(node: &'a Element,
 }
 
 #[inline]
-pub fn traverse_single_must<'a, T>(node: &'a Element, path: &[&str]) -> Result<T, TraversingError>
+pub fn traverse_single_cast_must<'a, T>(node: &'a Element, path: &[&str]) -> Result<T, TraversingError>
     where T: FromStr
 {
-    match try!(traverse_single_optional::<T>(node, path)) {
+    match try!(traverse_single_cast_optional::<T>(node, path)) {
         Some(val) => Ok(val),
         None => Err(TraversingError::PathNotFound(path[path.len() - 1].to_owned())),
     }
@@ -119,9 +143,62 @@ pub fn inner_text(node: &Element) -> Result<&str, TraversingError> {
     Err(TraversingError::TextNotFound)
 }
 
+#[inline]
+pub fn traverse_inner_text_must<'a>(node: &'a Element, path: &[&str]) -> Result<String, TraversingError> {
+    Ok(try!(inner_text(try!(traverse_single_must(node, path)))).to_owned())
+}
+
+#[inline]
+pub fn traverse_inner_text_optional<'a>(node: &'a Element, path: &[&str]) -> Result<Option<String>, TraversingError> {
+    match try!(traverse_single_optional(node, path)) {
+        Some(e) =>
+            match inner_text(e) {
+                Ok(txt) => Ok(Some(txt.to_owned())),
+                Err(_) => Ok(None),
+            },
+        None => Ok(None),
+    }
+}
+
+#[inline]
+pub fn traverse_inner_date_optional<'a>(node: &'a Element, path: &[&str]) -> Result<Option<DateTime<UTC>>, TraversingError> {
+    match try!(traverse_single_optional(node, path)) {
+        Some(e) =>
+            match inner_text(e) {
+                Ok(txt) => Ok(Some(try!(from_azure_time(txt)))),
+                Err(_) => Ok(None),
+            },
+        None => Ok(None),
+    }
+}
+
+#[inline]
+pub fn traverse_inner_date_must<'a>(node: &'a Element, path: &[&str]) -> Result<DateTime<UTC>, TraversingError> {
+    let node = try!(traverse_single_must(node, path));
+    let itxt = try!(inner_text(node));
+    match from_azure_time(itxt) {
+        Err(e) => Err(TraversingError::DateTimeParseError(e)),
+        Ok(dt) => Ok(dt),
+    }
+}
+
+#[inline]
+pub fn traverse_inner_u64_optional<'a>(node: &'a Element, path: &[&str]) -> Result<Option<u64>, TraversingError> {
+    match try!(traverse_single_optional(node, path)) {
+        Some(e) =>
+            match inner_text(e) {
+                Ok(txt) => Ok(Some(try!(txt.parse::<u64>()))),
+                Err(_) => Ok(None),
+            },
+        None => Ok(None),
+    }
+}
+
 #[cfg(test)]
 mod test {
     use xml::Element;
+    use chrono;
+    use chrono::{Datelike, Timelike};
 
     const XML: &'static str = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
 <EnumerationResults \
@@ -139,6 +216,7 @@ mod test {
                                <LeaseStatus>unlocked</LeaseStatus>
         \
                                <LeaseState>available</LeaseState>
+                               <SomeNumber>256</SomeNumber>
       </Properties>
     \
                                </Container>
@@ -160,6 +238,22 @@ mod test {
   <NextMarker />
 </EnumerationResults>";
 
+    #[test]
+    fn test_traverse_inner_u64_optional_1() {
+        let elem: Element = XML.parse().unwrap();
+
+        let sub1 = super::traverse(&elem, &["Containers", "Container"], false).unwrap();
+
+        {
+            let num = super::traverse_inner_u64_optional(sub1[0], &["Properties", "SomeNumber"]).unwrap();
+            assert_eq!(Some(256u64), num);
+        }
+
+        {
+            let num2 = super::traverse_inner_u64_optional(sub1[1], &["Properties", "SomeNumber"]).unwrap();
+            assert_eq!(None, num2);
+        }
+    }
 
     #[test]
     fn test_first_1() {
@@ -217,16 +311,36 @@ mod test {
     }
 
     #[test]
-    fn test_traverse_signle() {
+    fn test_traverse_single_must_1() {
         let elem: Element = XML.parse().unwrap();
 
         let res = super::traverse(&elem, &["Containers", "Container"], false).unwrap();
-        let res_final = super::traverse_single(res[1], &["Properties", "LeaseStatus"]).unwrap();
+        let res_final = super::traverse_single_must(res[1], &["Properties", "LeaseStatus"]).unwrap();
 
         if let Ok(inner) = super::inner_text(res_final) {
             assert_eq!(inner, "locked");
         } else {
             panic!("should have found CharacterNode");
         }
+    }
+
+    #[test]
+    fn test_traverse_single_optional_1() {
+        let elem: Element = XML.parse().unwrap();
+
+        let res = super::traverse(&elem, &["Containers", "Container"], false).unwrap();
+        let res_final = super::traverse_single_optional(res[1], &["Properties", "Pinocchio"]).unwrap();
+
+        assert_eq!(res_final, None);
+    }
+
+    #[test]
+    fn test_from_azure_time() {
+        let t = super::from_azure_time("Sun, 27 Sep 2009 17:26:40 GMT").unwrap();
+
+        assert_eq!(t.day(), 27);
+        assert_eq!(t.month(), 9);
+        assert_eq!(t.hour(), 17);
+        assert_eq!(t.second(), 40);
     }
 }

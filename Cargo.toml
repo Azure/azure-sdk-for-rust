@@ -1,6 +1,6 @@
 [package]
-name = "AzureSDKForRust"
-version = "0.0.1"
+name = "azure_sdk_for_rust"
+version = "0.0.2"
 authors = ["Francesco Cogno <francesco.cogno@outlook.com>"]
 
 [dependencies]

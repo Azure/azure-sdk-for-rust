@@ -1,7 +1,13 @@
+use hyper::header::{Header, HeaderFormat};
+use hyper::client::response::Response;
+use hyper::error::Error;
+
 use azure::storage::container;
 use azure::storage::container::{Container, PublicAccess};
 
+
 use azure::core::errors;
+use azure::core::{HTTPMethod, perform_request};
 
 #[derive(Debug)]
 pub struct Client {
@@ -43,6 +49,14 @@ impl Client {
                             pa: container::PublicAccess)
                             -> Result<(), errors::AzureError> {
         container::create(self, container_name, pa)
+    }
+
+    pub fn perform_request<H: Header + HeaderFormat>(&self,
+                                                     uri: &str,
+                                                     method: HTTPMethod,
+                                                     additional_headers: &[H])
+                                                     -> Result<Response, Error> {
+        perform_request(uri, method, &self.key, additional_headers)
     }
 }
 

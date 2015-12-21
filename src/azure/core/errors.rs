@@ -3,6 +3,7 @@ use hyper::status::StatusCode;
 use chrono;
 // use std::io;
 use std::io::Read;
+use std::num;
 // use xml;
 
 #[derive(Debug)]
@@ -12,6 +13,7 @@ pub enum AzureError {
     XMLError(String),
     UnexpectedResult((StatusCode, StatusCode, String)),
     ResponseParsingError(TraversingError),
+    ParseIntError(num::ParseIntError),
 }
 
 #[derive(Debug)]
@@ -21,6 +23,8 @@ pub enum TraversingError {
     EnumerationNotMatched(String),
     DateTimeParseError(chrono::format::ParseError),
     TextNotFound,
+    ParseIntError(num::ParseIntError),
+    GenericParseError(String),
 }
 
 impl From<hyper::error::Error> for AzureError {
@@ -38,6 +42,24 @@ impl From<chrono::format::ParseError> for AzureError {
 impl From<TraversingError> for AzureError {
     fn from(te: TraversingError) -> AzureError {
         AzureError::ResponseParsingError(te)
+    }
+}
+
+impl From<num::ParseIntError> for AzureError {
+    fn from(pie: num::ParseIntError) -> AzureError {
+        AzureError::ParseIntError(pie)
+    }
+}
+
+impl From<chrono::format::ParseError> for TraversingError {
+    fn from(pe: chrono::format::ParseError) -> TraversingError {
+        TraversingError::DateTimeParseError(pe)
+    }
+}
+
+impl From<num::ParseIntError> for TraversingError {
+    fn from(pie: num::ParseIntError) -> TraversingError {
+        TraversingError::ParseIntError(pie)
     }
 }
 

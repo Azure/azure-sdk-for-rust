@@ -1,9 +1,13 @@
 use azure::core;
 use azure::core::errors;
 use azure::core::enumerations;
-use azure::core::parsing::{traverse, inner_text, traverse_single, traverse_single_optional,
-                           traverse_single_must};
+use azure::core::parsing::{traverse, inner_text, traverse_single_must, traverse_single_cast_optional,
+                           traverse_single_cast_must, from_azure_time};
+
+use azure::storage::{LeaseStatus, LeaseState, LeaseDuration};
 use azure::storage::client::Client;
+
+use azure::storage::blob;
 // use azure::core::parsing;
 // use hyper::error;
 use hyper::status::StatusCode;
@@ -19,24 +23,6 @@ use std::io::Read;
 use std::fmt;
 
 use xml::Element;
-
-create_enum!(LeaseStatus,
-                            (Locked,        "locked"),
-                            (Unlocked,      "unlocked")
-);
-
-create_enum!(LeaseState,
-                            (Available,     "available"),
-                            (Leased,        "leased"),
-                            (Expired,       "expired"),
-                            (Breaking,      "breaking"),
-                            (Broken,        "broken")
-);
-
-create_enum!(LeaseDuration,
-                            (Infinite,      "infinite"),
-                            (Fixed,         "fixed")
-);
 
 create_enum!(PublicAccess,
                             (None,          "none"),
@@ -67,6 +53,32 @@ pub fn new(name: &str) -> Container {
     }
 }
 
+pub fn parse(elem: &Element) -> Result<Container, core::errors::AzureError> {
+    let name = try!(traverse_single_must(elem, &["Name"]));
+    let last_modified = try!(traverse_single_must(elem, &["Properties", "Last-Modified"]));
+    let e_tag = try!(traverse_single_must(elem, &["Properties", "Etag"]));
+
+    let lease_state = try!(traverse_single_cast_must::<LeaseState>(elem, &["Properties", "LeaseState"]));
+
+    let lease_duration = try!(traverse_single_cast_optional::<LeaseDuration>(elem,
+                                                                        &["Properties",
+                                                                          "LeaseDuration"]));
+
+    let lease_status = try!(traverse_single_cast_must::<LeaseStatus>(elem,
+                                                                &["Properties", "LeaseStatus"]));
+
+    let dt_utc = try!(from_azure_time(try!(inner_text(last_modified))));
+
+    Ok(Container {
+        name: try!(inner_text(name)).to_owned(),
+        last_modified: dt_utc,
+        e_tag: try!(inner_text(e_tag)).to_owned(),
+        lease_status: lease_status,
+        lease_state: lease_state,
+        lease_duration: lease_duration,
+    })
+}
+
 impl Container {
     pub fn delete(&mut self, c: &Client) -> Result<(), core::errors::AzureError> {
         let uri = format!("{}://{}.blob.core.windows.net/{}?restype=container",
@@ -74,15 +86,85 @@ impl Container {
                           c.account(),
                           self.name);
 
-        let mut resp = try!(core::perform_request(&uri,
-                                                  core::HTTPMethod::Delete,
-                                                  c.key(),
-                                                  &core::NO_EXTRA_HEADERS));
+        let mut resp = try!(c.perform_request(&uri,
+                                              core::HTTPMethod::Delete,
+                                              &core::NO_EXTRA_HEADERS));
 
         try!(errors::check_status(&mut resp, StatusCode::Accepted));
         Ok(())
     }
+
+    pub fn list_blobs(&self,
+                      c: &Client,
+                      include_snapshots: bool,
+                      include_metadata: bool,
+                      include_uncommittedblobs: bool,
+                      include_copy: bool)
+                      -> Result<Vec<blob::Blob>, core::errors::AzureError> {
+
+        let mut include = String::new();
+        if include_snapshots {
+            include = include + "snapshots";
+        }
+        if include_metadata {
+            if include.len() > 0 {
+                include = include + ",";
+            }
+            include = include + "metadata";
+        }
+        if include_uncommittedblobs {
+            if include.len() > 0 {
+                include = include + ",";
+            }
+            include = include + "uncommittedblobs";
+        }
+        if include_copy {
+            if include.len() > 0 {
+                include = include + ",";
+            }
+            include = include + "copy";
+        }
+
+        let mut uri = format!("{}://{}.blob.core.windows.net/{}?restype=container&comp=list",
+                              c.auth_scheme(),
+                              c.account(),
+                              self.name);
+
+        if include.len() > 0 {
+            uri = format!("{}&include={}", uri, include);
+        }
+
+        let mut resp = try!(c.perform_request(&uri,
+                                              core::HTTPMethod::Get,
+                                              &core::NO_EXTRA_HEADERS));
+
+        try!(errors::check_status(&mut resp, StatusCode::Ok));
+
+        let mut resp_s = String::new();
+        match resp.read_to_string(&mut resp_s) {
+            Ok(_) => (),
+            Err(err) => return Err(errors::new_from_ioerror_string(err.to_string())),
+        };
+
+        println!("resp_s == {:?}\n\n", resp_s);
+
+        let sp = &resp_s;
+        let elem: Element = match sp.parse() {
+            Ok(res) => res,
+            Err(err) => return Err(errors::new_from_xmlerror_string(err.to_string())),
+        };
+
+        let mut v = Vec::new();
+        for node_blob in try!(traverse(&elem, &["Blobs", "Blob"], true)) {
+            // println!("{:?}", blob);
+            v.push(try!(blob::parse(node_blob)));
+        }
+
+        Ok(v)
+    }
 }
+
+
 
 pub fn create(c: &Client,
               container_name: &str,
@@ -100,10 +182,7 @@ pub fn create(c: &Client,
         extra_headers.push(XMSBlobPublicAccess(pa));
     }
 
-    let mut resp = try!(core::perform_request(&uri,
-                                              core::HTTPMethod::Put,
-                                              c.key(),
-                                              &extra_headers));
+    let mut resp = try!(c.perform_request(&uri, core::HTTPMethod::Put, &extra_headers));
 
     try!(errors::check_status(&mut resp, StatusCode::Created));
 
@@ -115,10 +194,7 @@ pub fn list(c: &Client) -> Result<Vec<Container>, core::errors::AzureError> {
                       c.auth_scheme(),
                       c.account());
 
-    let mut resp = try!(core::perform_request(&uri,
-                                              core::HTTPMethod::Get,
-                                              c.key(),
-                                              &core::NO_EXTRA_HEADERS));
+    let mut resp = try!(c.perform_request(&uri, core::HTTPMethod::Get, &core::NO_EXTRA_HEADERS));
 
     try!(errors::check_status(&mut resp, StatusCode::Ok));
 
@@ -144,36 +220,7 @@ pub fn list(c: &Client) -> Result<Vec<Container>, core::errors::AzureError> {
     // println!("containers == {:?}", containers);
 
     for container in try!(traverse(&elem, &["Containers", "Container"], true)) {
-        // println!("container == {:?}", container);
-
-        let name = try!(traverse_single(container, &["Name"]));
-        let last_modified = try!(traverse_single(container, &["Properties", "Last-Modified"]));
-        let e_tag = try!(traverse_single(container, &["Properties", "Etag"]));
-
-        let lease_state = try!(traverse_single_must::<LeaseState>(container,
-                                                                  &["Properties", "LeaseState"]));
-
-        let lease_duration = try!(traverse_single_optional::<LeaseDuration>(container,
-                                                                            &["Properties",
-                                                                              "LeaseDuration"]));
-
-        let lease_status = try!(traverse_single_must::<LeaseStatus>(container,
-                                                                    &["Properties",
-                                                                      "LeaseStatus"]));
-
-        let time_str = try!(inner_text(last_modified)).to_owned();
-
-        let dt = try!(chrono::DateTime::parse_from_rfc2822(&time_str));
-        let dt_utc: chrono::DateTime<chrono::UTC> = dt.with_timezone(&chrono::UTC);
-
-        v.push(Container {
-            name: try!(inner_text(name)).to_owned(),
-            last_modified: dt_utc,
-            e_tag: try!(inner_text(e_tag)).to_owned(),
-            lease_status: lease_status,
-            lease_state: lease_state,
-            lease_duration: lease_duration,
-        });
+        v.push(try!(parse(container)));
     }
 
     Ok(v)

@@ -49,20 +49,20 @@ mod test {
     create_enum!(ColorsMonochrome, (Black, "Black"), (White, "White"));
 
     #[test]
-    fn test_color_Parse_1() {
+    fn test_color_parse_1() {
         let color = "Black".parse::<Colors>().unwrap();
         assert_eq!(Colors::Black, color);
     }
 
     #[test]
-    fn test_color_Parse_2() {
+    fn test_color_parse_2() {
         let color = "White".parse::<ColorsMonochrome>().unwrap();
         assert_eq!(ColorsMonochrome::White, color);
     }
 
     #[test]
     #[should_panic(expected = "ElementNotFound(\"Red\")")]
-    fn test_color_Parse_Err_1() {
-        let color_mono = "Red".parse::<ColorsMonochrome>().unwrap();
+    fn test_color_parse_err_1() {
+        "Red".parse::<ColorsMonochrome>().unwrap();
     }
 }
