@@ -1,8 +1,9 @@
 use azure::core;
 use azure::core::errors;
 use azure::core::enumerations;
-use azure::core::parsing::{traverse, inner_text, traverse_single_must, traverse_single_cast_optional,
-                           traverse_single_cast_must, from_azure_time};
+use azure::core::parsing::{traverse, inner_text, traverse_single_must,
+                           traverse_single_cast_optional, traverse_single_cast_must,
+                           from_azure_time};
 
 use azure::storage::{LeaseStatus, LeaseState, LeaseDuration};
 use azure::storage::client::Client;
@@ -58,14 +59,16 @@ pub fn parse(elem: &Element) -> Result<Container, core::errors::AzureError> {
     let last_modified = try!(traverse_single_must(elem, &["Properties", "Last-Modified"]));
     let e_tag = try!(traverse_single_must(elem, &["Properties", "Etag"]));
 
-    let lease_state = try!(traverse_single_cast_must::<LeaseState>(elem, &["Properties", "LeaseState"]));
+    let lease_state = try!(traverse_single_cast_must::<LeaseState>(elem,
+                                                                   &["Properties", "LeaseState"]));
 
     let lease_duration = try!(traverse_single_cast_optional::<LeaseDuration>(elem,
-                                                                        &["Properties",
-                                                                          "LeaseDuration"]));
+                                                                             &["Properties",
+                                                                               "LeaseDuration"]));
 
     let lease_status = try!(traverse_single_cast_must::<LeaseStatus>(elem,
-                                                                &["Properties", "LeaseStatus"]));
+                                                                     &["Properties",
+                                                                       "LeaseStatus"]));
 
     let dt_utc = try!(from_azure_time(try!(inner_text(last_modified))));
 

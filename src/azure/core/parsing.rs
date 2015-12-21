@@ -6,7 +6,7 @@ use chrono;
 use chrono::{DateTime, UTC};
 
 #[inline]
-pub fn from_azure_time(s : &str) -> Result<chrono::DateTime<chrono::UTC>, chrono::ParseError> {
+pub fn from_azure_time(s: &str) -> Result<chrono::DateTime<chrono::UTC>, chrono::ParseError> {
     let dt = try!(chrono::DateTime::parse_from_rfc2822(s));
     let dt_utc: chrono::DateTime<chrono::UTC> = dt.with_timezone(&chrono::UTC);
     Ok(dt_utc)
@@ -14,8 +14,8 @@ pub fn from_azure_time(s : &str) -> Result<chrono::DateTime<chrono::UTC>, chrono
 
 #[inline]
 pub fn traverse_single_must<'a>(node: &'a Element,
-                           path: &[&str])
-                           -> Result<&'a Element, TraversingError> {
+                                path: &[&str])
+                                -> Result<&'a Element, TraversingError> {
     let vec = try!(traverse(node, path, false));
     if vec.len() > 1 {
         return Err(TraversingError::MultipleNode(path[path.len() - 1].to_owned()));
@@ -25,15 +25,15 @@ pub fn traverse_single_must<'a>(node: &'a Element,
 }
 
 pub fn traverse_single_optional<'a>(node: &'a Element,
-                           path: &[&str])
-                           -> Result<Option<&'a Element>, TraversingError> {
+                                    path: &[&str])
+                                    -> Result<Option<&'a Element>, TraversingError> {
     let vec = try!(traverse(node, path, true));
     if vec.len() > 1 {
         return Err(TraversingError::MultipleNode(path[path.len() - 1].to_owned()));
     }
 
     if vec.len() == 0 {
-        return Ok(None)
+        return Ok(None);
     }
 
     Ok(Some(vec[0]))
@@ -41,8 +41,8 @@ pub fn traverse_single_optional<'a>(node: &'a Element,
 
 #[inline]
 pub fn traverse_single_cast_optional<'a, T>(node: &'a Element,
-                                       path: &[&str])
-                                       -> Result<Option<T>, TraversingError>
+                                            path: &[&str])
+                                            -> Result<Option<T>, TraversingError>
     where T: FromStr
 {
     let elem = match traverse_single_must(node, path) {
@@ -62,7 +62,9 @@ pub fn traverse_single_cast_optional<'a, T>(node: &'a Element,
 }
 
 #[inline]
-pub fn traverse_single_cast_must<'a, T>(node: &'a Element, path: &[&str]) -> Result<T, TraversingError>
+pub fn traverse_single_cast_must<'a, T>(node: &'a Element,
+                                        path: &[&str])
+                                        -> Result<T, TraversingError>
     where T: FromStr
 {
     match try!(traverse_single_cast_optional::<T>(node, path)) {
@@ -144,36 +146,46 @@ pub fn inner_text(node: &Element) -> Result<&str, TraversingError> {
 }
 
 #[inline]
-pub fn traverse_inner_text_must<'a>(node: &'a Element, path: &[&str]) -> Result<String, TraversingError> {
+pub fn traverse_inner_text_must<'a>(node: &'a Element,
+                                    path: &[&str])
+                                    -> Result<String, TraversingError> {
     Ok(try!(inner_text(try!(traverse_single_must(node, path)))).to_owned())
 }
 
 #[inline]
-pub fn traverse_inner_text_optional<'a>(node: &'a Element, path: &[&str]) -> Result<Option<String>, TraversingError> {
+pub fn traverse_inner_text_optional<'a>(node: &'a Element,
+                                        path: &[&str])
+                                        -> Result<Option<String>, TraversingError> {
     match try!(traverse_single_optional(node, path)) {
-        Some(e) =>
+        Some(e) => {
             match inner_text(e) {
                 Ok(txt) => Ok(Some(txt.to_owned())),
                 Err(_) => Ok(None),
-            },
+            }
+        }
         None => Ok(None),
     }
 }
 
 #[inline]
-pub fn traverse_inner_date_optional<'a>(node: &'a Element, path: &[&str]) -> Result<Option<DateTime<UTC>>, TraversingError> {
+pub fn traverse_inner_date_optional<'a>(node: &'a Element,
+                                        path: &[&str])
+                                        -> Result<Option<DateTime<UTC>>, TraversingError> {
     match try!(traverse_single_optional(node, path)) {
-        Some(e) =>
+        Some(e) => {
             match inner_text(e) {
                 Ok(txt) => Ok(Some(try!(from_azure_time(txt)))),
                 Err(_) => Ok(None),
-            },
+            }
+        }
         None => Ok(None),
     }
 }
 
 #[inline]
-pub fn traverse_inner_date_must<'a>(node: &'a Element, path: &[&str]) -> Result<DateTime<UTC>, TraversingError> {
+pub fn traverse_inner_date_must<'a>(node: &'a Element,
+                                    path: &[&str])
+                                    -> Result<DateTime<UTC>, TraversingError> {
     let node = try!(traverse_single_must(node, path));
     let itxt = try!(inner_text(node));
     match from_azure_time(itxt) {
@@ -183,13 +195,16 @@ pub fn traverse_inner_date_must<'a>(node: &'a Element, path: &[&str]) -> Result<
 }
 
 #[inline]
-pub fn traverse_inner_u64_optional<'a>(node: &'a Element, path: &[&str]) -> Result<Option<u64>, TraversingError> {
+pub fn traverse_inner_u64_optional<'a>(node: &'a Element,
+                                       path: &[&str])
+                                       -> Result<Option<u64>, TraversingError> {
     match try!(traverse_single_optional(node, path)) {
-        Some(e) =>
+        Some(e) => {
             match inner_text(e) {
                 Ok(txt) => Ok(Some(try!(txt.parse::<u64>()))),
                 Err(_) => Ok(None),
-            },
+            }
+        }
         None => Ok(None),
     }
 }
@@ -216,17 +231,18 @@ mod test {
                                <LeaseStatus>unlocked</LeaseStatus>
         \
                                <LeaseState>available</LeaseState>
+                               \
                                <SomeNumber>256</SomeNumber>
       </Properties>
+    </Container>
     \
-                               </Container>
-    <Container>
+                               <Container>
       <Name>pluto</Name>
-      \
-                               <Properties>
-        <Last-Modified>Mon, 23Nov 2015 21:12:35 \
-                               GMT</Last-Modified>
-        <Etag>\"0xAA2F44ACF757699\"</Etag>
+      <Properties>
+        \
+                               <Last-Modified>Mon, 23Nov 2015 21:12:35 GMT</Last-Modified>
+        \
+                               <Etag>\"0xAA2F44ACF757699\"</Etag>
         \
                                <LeaseStatus>locked</LeaseStatus>
         \
@@ -245,12 +261,14 @@ mod test {
         let sub1 = super::traverse(&elem, &["Containers", "Container"], false).unwrap();
 
         {
-            let num = super::traverse_inner_u64_optional(sub1[0], &["Properties", "SomeNumber"]).unwrap();
+            let num = super::traverse_inner_u64_optional(sub1[0], &["Properties", "SomeNumber"])
+                          .unwrap();
             assert_eq!(Some(256u64), num);
         }
 
         {
-            let num2 = super::traverse_inner_u64_optional(sub1[1], &["Properties", "SomeNumber"]).unwrap();
+            let num2 = super::traverse_inner_u64_optional(sub1[1], &["Properties", "SomeNumber"])
+                           .unwrap();
             assert_eq!(None, num2);
         }
     }
@@ -315,7 +333,8 @@ mod test {
         let elem: Element = XML.parse().unwrap();
 
         let res = super::traverse(&elem, &["Containers", "Container"], false).unwrap();
-        let res_final = super::traverse_single_must(res[1], &["Properties", "LeaseStatus"]).unwrap();
+        let res_final = super::traverse_single_must(res[1], &["Properties", "LeaseStatus"])
+                            .unwrap();
 
         if let Ok(inner) = super::inner_text(res_final) {
             assert_eq!(inner, "locked");
@@ -329,7 +348,8 @@ mod test {
         let elem: Element = XML.parse().unwrap();
 
         let res = super::traverse(&elem, &["Containers", "Container"], false).unwrap();
-        let res_final = super::traverse_single_optional(res[1], &["Properties", "Pinocchio"]).unwrap();
+        let res_final = super::traverse_single_optional(res[1], &["Properties", "Pinocchio"])
+                            .unwrap();
 
         assert_eq!(res_final, None);
     }
