@@ -30,15 +30,20 @@ fn main() {
 
     let client = client::new(azure_storage_account, azure_storage_key, false);
 
-    client.create_container("balocco3", PublicAccess::Blob).unwrap();
-    // println!("{:?}", new);
+    // client.create_container("balocco3", PublicAccess::Blob).unwrap();
+    // // println!("{:?}", new);
     //
     let mut ret = client.list_containers().unwrap();
     println!("{:?}", ret);
 
-    let mut bal2 = ret.iter_mut().find(|x| x.name == "balocco2").unwrap();
-    bal2.delete(&client).unwrap();
-    println!("{:?} deleted!", bal2);
+    let mut vhds = ret.iter_mut().find(|x| x.name == "vhds").unwrap();
+
+    let blobs = vhds.list_blobs(&client, true, true, true, true).unwrap();
+
+    println!("len == {:?}", blobs.len());
+
+    // bal2.delete(&client).unwrap();
+    // println!("{:?} deleted!", bal2);
 
     // let ret = client.delete_container("balocco2").unwrap();
     // println!("{:?}", ret);

@@ -61,5 +61,11 @@ If you want to contribute please do! No formality required! :wink:
 |List containers|[https://msdn.microsoft.com/en-us/library/azure/dd179352.aspx]()|
 |Delete container|[https://msdn.microsoft.com/en-us/library/azure/dd179408.aspx]()|
 
+#### Storage blobs
+
+|Method | URL |
+| ----  | --- |
+|List blobs|[https://msdn.microsoft.com/en-us/library/azure/dd135734.aspx]()|
+
 ## License
 This project is published under [The MIT License (MIT)](LICENSE).
