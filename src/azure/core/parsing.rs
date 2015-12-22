@@ -65,40 +65,6 @@ pub fn traverse_single_optional<'a>(node: &'a Element,
 }
 
 #[inline]
-pub fn traverse_single_parse_optional<'a, T>(node: &'a Element,
-                                            path: &[&str])
-                                            -> Result<Option<T>, TraversingError>
-    where T: FromStr
-{
-    let elem = match traverse_single_must(node, path) {
-        Ok(e) => e,
-        Err(_) => return Ok(None),
-    };
-
-    let txt = match inner_text(elem) {
-        Ok(text) => text,
-        Err(_) => return Ok(None),
-    };
-
-    match txt.parse::<T>() {
-        Ok(elem) => Ok(Some(elem)),
-        Err(_) => Err(TraversingError::EnumerationNotMatched(txt.to_owned())),
-    }
-}
-
-#[inline]
-pub fn traverse_single_parse_must<'a, T>(node: &'a Element,
-                                        path: &[&str])
-                                        -> Result<T, TraversingError>
-    where T: FromStr
-{
-    match try!(traverse_single_parse_optional::<T>(node, path)) {
-        Some(val) => Ok(val),
-        None => Err(TraversingError::PathNotFound(path[path.len() - 1].to_owned())),
-    }
-}
-
-#[inline]
 pub fn traverse<'a>(node: &'a Element,
                     path: &[&str],
                     ignore_empty_leaf: bool)

@@ -3,9 +3,7 @@ use chrono::UTC;
 
 use azure::storage::{LeaseStatus, LeaseState, LeaseDuration};
 use azure::core;
-use azure::core::parsing::{traverse_single_parse_must,
-                           traverse_single_parse_optional,
-                           traverse_inner_must, traverse_inner_optional};
+use azure::core::parsing::{traverse_inner_must, traverse_inner_optional};
 
 use xml::Element;
 
@@ -81,19 +79,18 @@ pub fn parse(elem: &Element) -> Result<Blob, core::errors::AzureError> {
                                                                         "x-ms-blob-sequence-num\
                                                                          ber"]));
 
-    // let blob_type = try!(traverse_single_parse_must::<BlobType>(elem, &["Properties", "BlobType"]));
     let blob_type = try!(traverse_inner_must::<BlobType>(elem, &["Properties", "BlobType"]));
 
-    let lease_status = try!(traverse_single_parse_must::<LeaseStatus>(elem,
+    let lease_status = try!(traverse_inner_must::<LeaseStatus>(elem,
                                                                      &["Properties",
                                                                        "LeaseStatus"]));
-    let lease_state = try!(traverse_single_parse_must::<LeaseState>(elem,
+    let lease_state = try!(traverse_inner_must::<LeaseState>(elem,
                                                                    &["Properties", "LeaseState"]));
-    let lease_duration = try!(traverse_single_parse_optional::<LeaseDuration>(elem,
+    let lease_duration = try!(traverse_inner_optional::<LeaseDuration>(elem,
                                                                              &["Properties",
                                                                                "LeaseDuration"]));
     let copy_id = try!(traverse_inner_optional::<String>(elem, &["Properties", "CopyId"]));
-    let copy_status = try!(traverse_single_parse_optional::<CopyStatus>(elem,
+    let copy_status = try!(traverse_inner_optional::<CopyStatus>(elem,
                                                                        &["Properties",
                                                                          "CopyStatus"]));
     let copy_source = try!(traverse_inner_optional::<String>(elem, &["Properties", "CopySource"]));
