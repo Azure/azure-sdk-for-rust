@@ -3,9 +3,7 @@ use chrono::UTC;
 
 use azure::storage::{LeaseStatus, LeaseState, LeaseDuration};
 use azure::core;
-use azure::core::parsing::{traverse_single_must, traverse_single_optional, traverse,
-                           from_azure_time, inner_text,
-                           traverse_single_parse_must,
+use azure::core::parsing::{traverse_single_parse_must,
                            traverse_single_parse_optional,
                            traverse_inner_must, traverse_inner_optional};
 
@@ -13,7 +11,6 @@ use xml::Element;
 
 use std::str::FromStr;
 use azure::core::enumerations;
-use std::io::Read;
 use std::fmt;
 
 create_enum!(BlobType,
@@ -140,8 +137,6 @@ pub fn parse(elem: &Element) -> Result<Blob, core::errors::AzureError> {
         copy_completion: copy_completion,
         copy_status_description: copy_status_description,
     })
-
-    // panic!("dd");
 }
 
 impl Blob {}

@@ -200,7 +200,6 @@ pub fn traverse_inner_must<'a, T>(node: &'a Element,
 #[cfg(test)]
 mod test {
     use xml::Element;
-    use chrono;
     use chrono::{Datelike, Timelike};
 
     const XML: &'static str = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
