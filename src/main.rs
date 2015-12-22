@@ -42,7 +42,14 @@ fn main() {
 
     println!("len == {:?}", blobs.len());
 
-    blobs.iter().map(|x| println!("{:?}", x.name)).collect::<Vec<()>>();
+    blobs.iter()
+         .map(|x| {
+             println!("{}, {} KB ({:?})",
+                      x.name,
+                      (x.content_length / 1024),
+                      x.lease_state)
+         })
+         .collect::<Vec<()>>();
 
     // bal2.delete(&client).unwrap();
     // println!("{:?} deleted!", bal2);

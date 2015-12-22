@@ -3,7 +3,7 @@ use chrono::UTC;
 
 use azure::storage::{LeaseStatus, LeaseState, LeaseDuration};
 use azure::core;
-use azure::core::parsing::{traverse_inner_must, traverse_inner_optional};
+use azure::core::parsing::{cast_must, cast_optional};
 
 use xml::Element;
 
@@ -59,47 +59,38 @@ pub struct Blob {
 }
 
 pub fn parse(elem: &Element) -> Result<Blob, core::errors::AzureError> {
-    let name = try!(traverse_inner_must::<String>(elem, &["Name"]));
-    let snapshot_time = try!(traverse_inner_optional::<DateTime<UTC>>(elem, &["Snapshot"]));
-    let last_modified = try!(traverse_inner_must::<DateTime<UTC>>(elem, &["Properties", "Last-Modified"]));
-    let etag = try!(traverse_inner_must::<String>(elem, &["Properties", "Etag"]));
+    let name = try!(cast_must::<String>(elem, &["Name"]));
+    let snapshot_time = try!(cast_optional::<DateTime<UTC>>(elem, &["Snapshot"]));
+    let last_modified = try!(cast_must::<DateTime<UTC>>(elem, &["Properties", "Last-Modified"]));
+    let etag = try!(cast_must::<String>(elem, &["Properties", "Etag"]));
 
-    let content_length = try!(traverse_inner_must::<u64>(elem,
-                                                            &["Properties", "Content-Length"]));
+    let content_length = try!(cast_must::<u64>(elem, &["Properties", "Content-Length"]));
 
-    let content_type = try!(traverse_inner_must::<String>(elem, &["Properties", "Content-Type"]));
-    let content_encoding = try!(traverse_inner_optional::<String>(elem,
-                                                             &["Properties", "Content-Encoding"]));
-    let content_language = try!(traverse_inner_optional::<String>(elem,
-                                                             &["Properties", "Content-Language"]));
-    let content_md5 = try!(traverse_inner_optional::<String>(elem, &["Properties", "Content-MD5"]));
-    let cache_control = try!(traverse_inner_optional::<String>(elem, &["Properties", "Cache-Control"]));
-    let x_ms_blob_sequence_number = try!(traverse_inner_optional::<String>(elem,
-                                                                      &["Properties",
-                                                                        "x-ms-blob-sequence-num\
-                                                                         ber"]));
+    let content_type = try!(cast_must::<String>(elem, &["Properties", "Content-Type"]));
+    let content_encoding = try!(cast_optional::<String>(elem, &["Properties", "Content-Encoding"]));
+    let content_language = try!(cast_optional::<String>(elem, &["Properties", "Content-Language"]));
+    let content_md5 = try!(cast_optional::<String>(elem, &["Properties", "Content-MD5"]));
+    let cache_control = try!(cast_optional::<String>(elem, &["Properties", "Cache-Control"]));
+    let x_ms_blob_sequence_number = try!(cast_optional::<String>(elem,
+                                                                 &["Properties",
+                                                                   "x-ms-blob-sequence-number"]));
 
-    let blob_type = try!(traverse_inner_must::<BlobType>(elem, &["Properties", "BlobType"]));
+    let blob_type = try!(cast_must::<BlobType>(elem, &["Properties", "BlobType"]));
 
-    let lease_status = try!(traverse_inner_must::<LeaseStatus>(elem,
-                                                                     &["Properties",
-                                                                       "LeaseStatus"]));
-    let lease_state = try!(traverse_inner_must::<LeaseState>(elem,
-                                                                   &["Properties", "LeaseState"]));
-    let lease_duration = try!(traverse_inner_optional::<LeaseDuration>(elem,
-                                                                             &["Properties",
-                                                                               "LeaseDuration"]));
-    let copy_id = try!(traverse_inner_optional::<String>(elem, &["Properties", "CopyId"]));
-    let copy_status = try!(traverse_inner_optional::<CopyStatus>(elem,
-                                                                       &["Properties",
-                                                                         "CopyStatus"]));
-    let copy_source = try!(traverse_inner_optional::<String>(elem, &["Properties", "CopySource"]));
-    let copy_progress = try!(traverse_inner_optional::<String>(elem, &["Properties", "CopyProgress"]));
-    let copy_completion = try!(traverse_inner_optional::<DateTime<UTC>>(elem,
-                                                            &["Properties", "CopyCompletionTime"]));
-    let copy_status_description = try!(traverse_inner_optional::<String>(elem,
-                                                                    &["Properties",
-                                                                      "CopyStatusDescription"]));
+    let lease_status = try!(cast_must::<LeaseStatus>(elem, &["Properties", "LeaseStatus"]));
+    let lease_state = try!(cast_must::<LeaseState>(elem, &["Properties", "LeaseState"]));
+    let lease_duration = try!(cast_optional::<LeaseDuration>(elem,
+                                                             &["Properties", "LeaseDuration"]));
+    let copy_id = try!(cast_optional::<String>(elem, &["Properties", "CopyId"]));
+    let copy_status = try!(cast_optional::<CopyStatus>(elem, &["Properties", "CopyStatus"]));
+    let copy_source = try!(cast_optional::<String>(elem, &["Properties", "CopySource"]));
+    let copy_progress = try!(cast_optional::<String>(elem, &["Properties", "CopyProgress"]));
+    let copy_completion = try!(cast_optional::<DateTime<UTC>>(elem,
+                                                              &["Properties",
+                                                                "CopyCompletionTime"]));
+    let copy_status_description = try!(cast_optional::<String>(elem,
+                                                               &["Properties",
+                                                                 "CopyStatusDescription"]));
 
     let mut cp_bytes: Option<CopyProgress> = None;
     if let Some(txt) = copy_progress {

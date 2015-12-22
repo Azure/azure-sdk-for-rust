@@ -1,9 +1,7 @@
 use azure::core;
 use azure::core::errors;
 use azure::core::enumerations;
-use azure::core::parsing::{traverse, inner_text, traverse_single_must,
-                           from_azure_time,
-                           traverse_inner_must, traverse_inner_optional};
+use azure::core::parsing::{traverse, cast_must, cast_optional};
 
 use azure::storage::{LeaseStatus, LeaseState, LeaseDuration};
 use azure::storage::client::Client;
@@ -13,7 +11,8 @@ use azure::storage::blob;
 // use hyper::error;
 use hyper::status::StatusCode;
 use std::str::FromStr;
-use chrono;
+use chrono::datetime::DateTime;
+use chrono::UTC;
 
 use std::io::Read;
 // use hyper::Client;
@@ -39,7 +38,7 @@ header! { (XMSBlobPublicAccess, "x-ms-blob-public-access") => [PublicAccess] }
 #[derive(Debug)]
 pub struct Container {
     pub name: String,
-    pub last_modified: chrono::datetime::DateTime<chrono::UTC>,
+    pub last_modified: DateTime<UTC>,
     pub e_tag: String,
     pub lease_status: LeaseStatus,
     pub lease_state: LeaseState,
@@ -49,7 +48,7 @@ pub struct Container {
 pub fn new(name: &str) -> Container {
     Container {
         name: name.to_owned(),
-        last_modified: chrono::UTC::now(),
+        last_modified: UTC::now(),
         e_tag: "".to_owned(),
         lease_status: LeaseStatus::Unlocked,
         lease_state: LeaseState::Available,
@@ -58,27 +57,21 @@ pub fn new(name: &str) -> Container {
 }
 
 pub fn parse(elem: &Element) -> Result<Container, core::errors::AzureError> {
-    let name = try!(traverse_single_must(elem, &["Name"]));
-    let last_modified = try!(traverse_single_must(elem, &["Properties", "Last-Modified"]));
-    let e_tag = try!(traverse_single_must(elem, &["Properties", "Etag"]));
+    let name = try!(cast_must::<String>(elem, &["Name"]));
+    let last_modified = try!(cast_must::<DateTime<UTC>>(elem, &["Properties", "Last-Modified"]));
+    let e_tag = try!(cast_must::<String>(elem, &["Properties", "Etag"]));
 
-    let lease_state = try!(traverse_inner_must::<LeaseState>(elem,
-                                                                   &["Properties", "LeaseState"]));
+    let lease_state = try!(cast_must::<LeaseState>(elem, &["Properties", "LeaseState"]));
 
-    let lease_duration = try!(traverse_inner_optional::<LeaseDuration>(elem,
-                                                                             &["Properties",
-                                                                               "LeaseDuration"]));
+    let lease_duration = try!(cast_optional::<LeaseDuration>(elem,
+                                                             &["Properties", "LeaseDuration"]));
 
-    let lease_status = try!(traverse_inner_must::<LeaseStatus>(elem,
-                                                                     &["Properties",
-                                                                       "LeaseStatus"]));
-
-    let dt_utc = try!(from_azure_time(try!(inner_text(last_modified))));
+    let lease_status = try!(cast_must::<LeaseStatus>(elem, &["Properties", "LeaseStatus"]));
 
     Ok(Container {
-        name: try!(inner_text(name)).to_owned(),
-        last_modified: dt_utc,
-        e_tag: try!(inner_text(e_tag)).to_owned(),
+        name: name,
+        last_modified: last_modified,
+        e_tag: e_tag,
         lease_status: lease_status,
         lease_state: lease_state,
         lease_duration: lease_duration,

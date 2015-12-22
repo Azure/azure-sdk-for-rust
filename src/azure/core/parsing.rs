@@ -1,28 +1,27 @@
 use xml::Element;
 use xml::Xml::{ElementNode, CharacterNode};
 use azure::core::errors::TraversingError;
-use std::str::FromStr;
 use chrono;
 use chrono::{DateTime, UTC};
 
 pub trait FromStringOptional<T> {
-    fn from_str_optional(s : &str) -> Result<T, TraversingError>;
+    fn from_str_optional(s: &str) -> Result<T, TraversingError>;
 }
 
 impl FromStringOptional<u64> for u64 {
-    fn from_str_optional(s : &str) -> Result<u64, TraversingError> {
+    fn from_str_optional(s: &str) -> Result<u64, TraversingError> {
         Ok(try!(s.parse::<u64>()))
     }
 }
 
 impl FromStringOptional<String> for String {
-    fn from_str_optional(s : &str) -> Result<String, TraversingError> {
+    fn from_str_optional(s: &str) -> Result<String, TraversingError> {
         Ok(s.to_owned())
     }
 }
 
 impl FromStringOptional<chrono::DateTime<chrono::UTC>> for chrono::DateTime<chrono::UTC> {
-    fn from_str_optional(s : &str) -> Result<chrono::DateTime<chrono::UTC>, TraversingError> {
+    fn from_str_optional(s: &str) -> Result<chrono::DateTime<chrono::UTC>, TraversingError> {
         match from_azure_time(s) {
             Err(e) => Err(TraversingError::DateTimeParseError(e)),
             Ok(dt) => Ok(dt),
@@ -137,10 +136,9 @@ pub fn inner_text(node: &Element) -> Result<&str, TraversingError> {
 }
 
 #[inline]
-pub fn traverse_inner_optional<'a, T>(node: &'a Element,
-                                       path: &[&str])
-                                       -> Result<Option<T>, TraversingError>
-                                       where T : FromStringOptional<T> {
+pub fn cast_optional<'a, T>(node: &'a Element, path: &[&str]) -> Result<Option<T>, TraversingError>
+    where T: FromStringOptional<T>
+{
     match try!(traverse_single_optional(node, path)) {
         Some(e) => {
             match inner_text(e) {
@@ -153,10 +151,9 @@ pub fn traverse_inner_optional<'a, T>(node: &'a Element,
 }
 
 #[inline]
-pub fn traverse_inner_must<'a, T>(node: &'a Element,
-                                    path: &[&str])
-                                    -> Result<T, TraversingError>
-                                    where T : FromStringOptional<T> {
+pub fn cast_must<'a, T>(node: &'a Element, path: &[&str]) -> Result<T, TraversingError>
+    where T: FromStringOptional<T>
+{
     let node = try!(traverse_single_must(node, path));
     let itxt = try!(inner_text(node));
     Ok(try!(T::from_str_optional(itxt)))
@@ -206,24 +203,22 @@ mod test {
   <NextMarker />
 </EnumerationResults>";
 
-#[test]
-fn test_traverse_inner_optional_1() {
-    let elem: Element = XML.parse().unwrap();
+    #[test]
+    fn test_cast_optional_1() {
+        let elem: Element = XML.parse().unwrap();
 
-    let sub1 = super::traverse(&elem, &["Containers", "Container"], false).unwrap();
+        let sub1 = super::traverse(&elem, &["Containers", "Container"], false).unwrap();
 
-    {
-        let num = super::traverse_inner_optional::<u64>(sub1[0], &["Properties", "SomeNumber"])
-                      .unwrap();
-        assert_eq!(Some(256u64), num);
+        {
+            let num = super::cast_optional::<u64>(sub1[0], &["Properties", "SomeNumber"]).unwrap();
+            assert_eq!(Some(256u64), num);
+        }
+
+        {
+            let num2 = super::cast_optional::<u64>(sub1[1], &["Properties", "SomeNumber"]).unwrap();
+            assert_eq!(None, num2);
+        }
     }
-
-    {
-        let num2 = super::traverse_inner_optional::<u64>(sub1[1], &["Properties", "SomeNumber"])
-                       .unwrap();
-        assert_eq!(None, num2);
-    }
-}
 
     #[test]
     fn test_first_1() {

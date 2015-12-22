@@ -2,8 +2,8 @@ use std::ops::Index;
 
 #[derive(Debug)]
 pub struct IncompleteVector<T> {
-    next_marker : String,
-    vector : Vec<T>,
+    next_marker: String,
+    vector: Vec<T>,
 }
 
 impl<T> IncompleteVector<T> {
