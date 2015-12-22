@@ -5,6 +5,32 @@ use std::str::FromStr;
 use chrono;
 use chrono::{DateTime, UTC};
 
+pub trait FromStringOptional<T> {
+    fn from_str(s : &str) -> Result<T, TraversingError>;
+}
+
+impl FromStringOptional<u64> for u64 {
+    fn from_str(s : &str) -> Result<u64, TraversingError> {
+        Ok(try!(s.parse::<u64>()))
+    }
+}
+
+impl FromStringOptional<String> for String {
+    fn from_str(s : &str) -> Result<String, TraversingError> {
+        Ok(s.to_owned())
+    }
+}
+
+impl FromStringOptional<chrono::DateTime<chrono::UTC>> for chrono::DateTime<chrono::UTC> {
+    fn from_str(s : &str) -> Result<chrono::DateTime<chrono::UTC>, TraversingError> {
+        match from_azure_time(s) {
+            Err(e) => Err(TraversingError::DateTimeParseError(e)),
+            Ok(dt) => Ok(dt),
+        }
+    }
+}
+
+
 #[inline]
 pub fn from_azure_time(s: &str) -> Result<chrono::DateTime<chrono::UTC>, chrono::ParseError> {
     let dt = try!(chrono::DateTime::parse_from_rfc2822(s));
@@ -40,7 +66,7 @@ pub fn traverse_single_optional<'a>(node: &'a Element,
 }
 
 #[inline]
-pub fn traverse_single_cast_optional<'a, T>(node: &'a Element,
+pub fn traverse_single_parse_optional<'a, T>(node: &'a Element,
                                             path: &[&str])
                                             -> Result<Option<T>, TraversingError>
     where T: FromStr
@@ -62,12 +88,12 @@ pub fn traverse_single_cast_optional<'a, T>(node: &'a Element,
 }
 
 #[inline]
-pub fn traverse_single_cast_must<'a, T>(node: &'a Element,
+pub fn traverse_single_parse_must<'a, T>(node: &'a Element,
                                         path: &[&str])
                                         -> Result<T, TraversingError>
     where T: FromStr
 {
-    match try!(traverse_single_cast_optional::<T>(node, path)) {
+    match try!(traverse_single_parse_optional::<T>(node, path)) {
         Some(val) => Ok(val),
         None => Err(TraversingError::PathNotFound(path[path.len() - 1].to_owned())),
     }
@@ -146,20 +172,14 @@ pub fn inner_text(node: &Element) -> Result<&str, TraversingError> {
 }
 
 #[inline]
-pub fn traverse_inner_text_must<'a>(node: &'a Element,
-                                    path: &[&str])
-                                    -> Result<String, TraversingError> {
-    Ok(try!(inner_text(try!(traverse_single_must(node, path)))).to_owned())
-}
-
-#[inline]
-pub fn traverse_inner_text_optional<'a>(node: &'a Element,
-                                        path: &[&str])
-                                        -> Result<Option<String>, TraversingError> {
+pub fn traverse_inner_optional<'a, T>(node: &'a Element,
+                                       path: &[&str])
+                                       -> Result<Option<T>, TraversingError>
+                                       where T : FromStringOptional<T> {
     match try!(traverse_single_optional(node, path)) {
         Some(e) => {
             match inner_text(e) {
-                Ok(txt) => Ok(Some(txt.to_owned())),
+                Ok(txt) => Ok(Some(try!(T::from_str(txt)))),
                 Err(_) => Ok(None),
             }
         }
@@ -168,45 +188,13 @@ pub fn traverse_inner_text_optional<'a>(node: &'a Element,
 }
 
 #[inline]
-pub fn traverse_inner_date_optional<'a>(node: &'a Element,
-                                        path: &[&str])
-                                        -> Result<Option<DateTime<UTC>>, TraversingError> {
-    match try!(traverse_single_optional(node, path)) {
-        Some(e) => {
-            match inner_text(e) {
-                Ok(txt) => Ok(Some(try!(from_azure_time(txt)))),
-                Err(_) => Ok(None),
-            }
-        }
-        None => Ok(None),
-    }
-}
-
-#[inline]
-pub fn traverse_inner_date_must<'a>(node: &'a Element,
+pub fn traverse_inner_must<'a, T>(node: &'a Element,
                                     path: &[&str])
-                                    -> Result<DateTime<UTC>, TraversingError> {
+                                    -> Result<T, TraversingError>
+                                    where T : FromStringOptional<T> {
     let node = try!(traverse_single_must(node, path));
     let itxt = try!(inner_text(node));
-    match from_azure_time(itxt) {
-        Err(e) => Err(TraversingError::DateTimeParseError(e)),
-        Ok(dt) => Ok(dt),
-    }
-}
-
-#[inline]
-pub fn traverse_inner_u64_optional<'a>(node: &'a Element,
-                                       path: &[&str])
-                                       -> Result<Option<u64>, TraversingError> {
-    match try!(traverse_single_optional(node, path)) {
-        Some(e) => {
-            match inner_text(e) {
-                Ok(txt) => Ok(Some(try!(txt.parse::<u64>()))),
-                Err(_) => Ok(None),
-            }
-        }
-        None => Ok(None),
-    }
+    Ok(try!(T::from_str(itxt)))
 }
 
 #[cfg(test)]
@@ -254,24 +242,24 @@ mod test {
   <NextMarker />
 </EnumerationResults>";
 
-    #[test]
-    fn test_traverse_inner_u64_optional_1() {
-        let elem: Element = XML.parse().unwrap();
+#[test]
+fn test_traverse_inner_optional_1() {
+    let elem: Element = XML.parse().unwrap();
 
-        let sub1 = super::traverse(&elem, &["Containers", "Container"], false).unwrap();
+    let sub1 = super::traverse(&elem, &["Containers", "Container"], false).unwrap();
 
-        {
-            let num = super::traverse_inner_u64_optional(sub1[0], &["Properties", "SomeNumber"])
-                          .unwrap();
-            assert_eq!(Some(256u64), num);
-        }
-
-        {
-            let num2 = super::traverse_inner_u64_optional(sub1[1], &["Properties", "SomeNumber"])
-                           .unwrap();
-            assert_eq!(None, num2);
-        }
+    {
+        let num = super::traverse_inner_optional::<u64>(sub1[0], &["Properties", "SomeNumber"])
+                      .unwrap();
+        assert_eq!(Some(256u64), num);
     }
+
+    {
+        let num2 = super::traverse_inner_optional::<u64>(sub1[1], &["Properties", "SomeNumber"])
+                       .unwrap();
+        assert_eq!(None, num2);
+    }
+}
 
     #[test]
     fn test_first_1() {

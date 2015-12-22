@@ -4,10 +4,10 @@ use chrono::UTC;
 use azure::storage::{LeaseStatus, LeaseState, LeaseDuration};
 use azure::core;
 use azure::core::parsing::{traverse_single_must, traverse_single_optional, traverse,
-                           from_azure_time, inner_text, traverse_inner_text_must,
-                           traverse_inner_text_optional, traverse_inner_date_optional,
-                           traverse_inner_date_must, traverse_single_cast_must,
-                           traverse_single_cast_optional, traverse_inner_u64_optional};
+                           from_azure_time, inner_text,
+                           traverse_single_parse_must,
+                           traverse_single_parse_optional,
+                           traverse_inner_must, traverse_inner_optional};
 
 use xml::Element;
 
@@ -61,42 +61,43 @@ pub struct Blob {
 }
 
 pub fn parse(elem: &Element) -> Result<Blob, core::errors::AzureError> {
-    let name = try!(traverse_inner_text_must(elem, &["Name"]));
-    let snapshot_time = try!(traverse_inner_date_optional(elem, &["Snapshot"]));
-    let last_modified = try!(traverse_inner_date_must(elem, &["Properties", "Last-Modified"]));
-    let etag = try!(traverse_inner_text_must(elem, &["Properties", "Etag"]));
-    let content_length = try!(try!(traverse_inner_text_must(elem,
-                                                            &["Properties", "Content-Length"]))
-                                  .parse::<u64>());
-    let content_type = try!(traverse_inner_text_must(elem, &["Properties", "Content-Type"]));
-    let content_encoding = try!(traverse_inner_text_optional(elem,
+    let name = try!(traverse_inner_must::<String>(elem, &["Name"]));
+    let snapshot_time = try!(traverse_inner_optional::<DateTime<UTC>>(elem, &["Snapshot"]));
+    let last_modified = try!(traverse_inner_must::<DateTime<UTC>>(elem, &["Properties", "Last-Modified"]));
+    let etag = try!(traverse_inner_must::<String>(elem, &["Properties", "Etag"]));
+
+    let content_length = try!(traverse_inner_must::<u64>(elem,
+                                                            &["Properties", "Content-Length"]));
+
+    let content_type = try!(traverse_inner_must::<String>(elem, &["Properties", "Content-Type"]));
+    let content_encoding = try!(traverse_inner_optional::<String>(elem,
                                                              &["Properties", "Content-Encoding"]));
-    let content_language = try!(traverse_inner_text_optional(elem,
+    let content_language = try!(traverse_inner_optional::<String>(elem,
                                                              &["Properties", "Content-Language"]));
-    let content_md5 = try!(traverse_inner_text_optional(elem, &["Properties", "Content-MD5"]));
-    let cache_control = try!(traverse_inner_text_optional(elem, &["Properties", "Cache-Control"]));
-    let x_ms_blob_sequence_number = try!(traverse_inner_text_optional(elem,
+    let content_md5 = try!(traverse_inner_optional::<String>(elem, &["Properties", "Content-MD5"]));
+    let cache_control = try!(traverse_inner_optional::<String>(elem, &["Properties", "Cache-Control"]));
+    let x_ms_blob_sequence_number = try!(traverse_inner_optional::<String>(elem,
                                                                       &["Properties",
                                                                         "x-ms-blob-sequence-num\
                                                                          ber"]));
-    let blob_type = try!(traverse_single_cast_must::<BlobType>(elem, &["Properties", "BlobType"]));
-    let lease_status = try!(traverse_single_cast_must::<LeaseStatus>(elem,
+    let blob_type = try!(traverse_single_parse_must::<BlobType>(elem, &["Properties", "BlobType"]));
+    let lease_status = try!(traverse_single_parse_must::<LeaseStatus>(elem,
                                                                      &["Properties",
                                                                        "LeaseStatus"]));
-    let lease_state = try!(traverse_single_cast_must::<LeaseState>(elem,
+    let lease_state = try!(traverse_single_parse_must::<LeaseState>(elem,
                                                                    &["Properties", "LeaseState"]));
-    let lease_duration = try!(traverse_single_cast_optional::<LeaseDuration>(elem,
+    let lease_duration = try!(traverse_single_parse_optional::<LeaseDuration>(elem,
                                                                              &["Properties",
                                                                                "LeaseDuration"]));
-    let copy_id = try!(traverse_inner_text_optional(elem, &["Properties", "CopyId"]));
-    let copy_status = try!(traverse_single_cast_optional::<CopyStatus>(elem,
+    let copy_id = try!(traverse_inner_optional::<String>(elem, &["Properties", "CopyId"]));
+    let copy_status = try!(traverse_single_parse_optional::<CopyStatus>(elem,
                                                                        &["Properties",
                                                                          "CopyStatus"]));
-    let copy_source = try!(traverse_inner_text_optional(elem, &["Properties", "CopySource"]));
-    let copy_progress = try!(traverse_inner_text_optional(elem, &["Properties", "CopyProgress"]));
-    let copy_completion = try!(traverse_inner_date_optional(elem,
+    let copy_source = try!(traverse_inner_optional::<String>(elem, &["Properties", "CopySource"]));
+    let copy_progress = try!(traverse_inner_optional::<String>(elem, &["Properties", "CopyProgress"]));
+    let copy_completion = try!(traverse_inner_optional::<DateTime<UTC>>(elem,
                                                             &["Properties", "CopyCompletionTime"]));
-    let copy_status_description = try!(traverse_inner_text_optional(elem,
+    let copy_status_description = try!(traverse_inner_optional::<String>(elem,
                                                                     &["Properties",
                                                                       "CopyStatusDescription"]));
 
