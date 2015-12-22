@@ -8,6 +8,9 @@ use std::fmt;
 use std::str::FromStr;
 use azure::core::enumerations;
 
+use azure::core::errors::TraversingError;
+use azure::core::parsing::FromStringOptional;
+
 create_enum!(LeaseStatus,
                             (Locked,        "locked"),
                             (Unlocked,      "unlocked")

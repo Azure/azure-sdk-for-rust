@@ -5,6 +5,7 @@ use chrono;
 use std::io::Read;
 use std::num;
 // use xml;
+use azure::core::enumerations::ParsingError;
 
 #[derive(Debug)]
 pub enum AzureError {
@@ -25,6 +26,7 @@ pub enum TraversingError {
     TextNotFound,
     ParseIntError(num::ParseIntError),
     GenericParseError(String),
+    ParsingError(ParsingError),
 }
 
 impl From<hyper::error::Error> for AzureError {
