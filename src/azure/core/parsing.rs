@@ -6,30 +6,29 @@ use chrono;
 use chrono::{DateTime, UTC};
 
 pub trait FromStringOptional<T> {
-    fn from_str(s : &str) -> Result<T, TraversingError>;
+    fn from_str_optional(s : &str) -> Result<T, TraversingError>;
 }
 
 impl FromStringOptional<u64> for u64 {
-    fn from_str(s : &str) -> Result<u64, TraversingError> {
+    fn from_str_optional(s : &str) -> Result<u64, TraversingError> {
         Ok(try!(s.parse::<u64>()))
     }
 }
 
 impl FromStringOptional<String> for String {
-    fn from_str(s : &str) -> Result<String, TraversingError> {
+    fn from_str_optional(s : &str) -> Result<String, TraversingError> {
         Ok(s.to_owned())
     }
 }
 
 impl FromStringOptional<chrono::DateTime<chrono::UTC>> for chrono::DateTime<chrono::UTC> {
-    fn from_str(s : &str) -> Result<chrono::DateTime<chrono::UTC>, TraversingError> {
+    fn from_str_optional(s : &str) -> Result<chrono::DateTime<chrono::UTC>, TraversingError> {
         match from_azure_time(s) {
             Err(e) => Err(TraversingError::DateTimeParseError(e)),
             Ok(dt) => Ok(dt),
         }
     }
 }
-
 
 #[inline]
 pub fn from_azure_time(s: &str) -> Result<chrono::DateTime<chrono::UTC>, chrono::ParseError> {
@@ -179,7 +178,7 @@ pub fn traverse_inner_optional<'a, T>(node: &'a Element,
     match try!(traverse_single_optional(node, path)) {
         Some(e) => {
             match inner_text(e) {
-                Ok(txt) => Ok(Some(try!(T::from_str(txt)))),
+                Ok(txt) => Ok(Some(try!(T::from_str_optional(txt)))),
                 Err(_) => Ok(None),
             }
         }
@@ -194,7 +193,7 @@ pub fn traverse_inner_must<'a, T>(node: &'a Element,
                                     where T : FromStringOptional<T> {
     let node = try!(traverse_single_must(node, path));
     let itxt = try!(inner_text(node));
-    Ok(try!(T::from_str(itxt)))
+    Ok(try!(T::from_str_optional(itxt)))
 }
 
 #[cfg(test)]

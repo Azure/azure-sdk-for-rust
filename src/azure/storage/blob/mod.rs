@@ -13,6 +13,9 @@ use std::str::FromStr;
 use azure::core::enumerations;
 use std::fmt;
 
+use azure::core::errors::TraversingError;
+use azure::core::parsing::FromStringOptional;
+
 create_enum!(BlobType,
                             (BlockBlob,        "BlockBlob"),
                             (PageBlob,         "PageBlob"),
@@ -77,7 +80,10 @@ pub fn parse(elem: &Element) -> Result<Blob, core::errors::AzureError> {
                                                                       &["Properties",
                                                                         "x-ms-blob-sequence-num\
                                                                          ber"]));
-    let blob_type = try!(traverse_single_parse_must::<BlobType>(elem, &["Properties", "BlobType"]));
+
+    // let blob_type = try!(traverse_single_parse_must::<BlobType>(elem, &["Properties", "BlobType"]));
+    let blob_type = try!(traverse_inner_must::<BlobType>(elem, &["Properties", "BlobType"]));
+
     let lease_status = try!(traverse_single_parse_must::<LeaseStatus>(elem,
                                                                      &["Properties",
                                                                        "LeaseStatus"]));

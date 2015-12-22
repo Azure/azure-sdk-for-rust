@@ -14,6 +14,15 @@ macro_rules! create_enum {
             )*
         }
 
+        impl FromStringOptional<$en> for $en {
+            fn from_str_optional(s : &str) -> Result<$en, TraversingError> {
+                match s.parse::<$en>() {
+                    Err(e) => Err(TraversingError::ParsingError(e)),
+                    Ok(v) => Ok(v)
+                }
+            }
+        }
+
         impl FromStr for $en {
             type Err = enumerations::ParsingError;
 
@@ -44,6 +53,8 @@ mod test {
     use azure::core::enumerations;
     use std::str::FromStr;
     use std::fmt;
+    use azure::core::errors::TraversingError;
+    use azure::core::parsing::FromStringOptional;
 
     create_enum!(Colors, (Black, "Black"), (White, "White"), (Red, "Red"));
     create_enum!(ColorsMonochrome, (Black, "Black"), (White, "White"));

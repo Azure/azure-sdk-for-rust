@@ -25,6 +25,9 @@ use std::fmt;
 
 use xml::Element;
 
+use azure::core::errors::TraversingError;
+use azure::core::parsing::FromStringOptional;
+
 create_enum!(PublicAccess,
                             (None,          "none"),
                             (Container,     "container"),
