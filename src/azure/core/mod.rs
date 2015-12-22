@@ -23,6 +23,7 @@ pub mod errors;
 pub mod parsing;
 #[macro_use]
 pub mod enumerations;
+pub mod incompletevector;
 
 #[derive(Debug, Copy, Clone)]
 pub enum HTTPMethod {

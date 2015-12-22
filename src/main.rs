@@ -36,11 +36,20 @@ fn main() {
     let mut ret = client.list_containers().unwrap();
     println!("{:?}", ret);
 
-    let mut vhds = ret.iter_mut().find(|x| x.name == "vhds").unwrap();
+    let mut vhds = ret.iter_mut().find(|x| x.name == "canotto").unwrap();
 
     let blobs = vhds.list_blobs(&client, true, true, true, true).unwrap();
 
     println!("len == {:?}", blobs.len());
+
+    blobs.iter()
+         .map(|x| {
+             println!("{}, {} KB ({:?})",
+                      x.name,
+                      (x.content_length / 1024),
+                      x.lease_state)
+         })
+         .collect::<Vec<()>>();
 
     // bal2.delete(&client).unwrap();
     // println!("{:?} deleted!", bal2);
