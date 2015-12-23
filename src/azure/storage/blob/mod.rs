@@ -14,6 +14,8 @@ use std::fmt;
 use azure::core::errors::TraversingError;
 use azure::core::parsing::FromStringOptional;
 
+use azure::core::range::Range;
+
 create_enum!(BlobType,
                             (BlockBlob,        "BlockBlob"),
                             (PageBlob,         "PageBlob"),
@@ -26,12 +28,6 @@ create_enum!(CopyStatus,
                             (Aborted,          "aborted"),
                             (Failed,           "failed")
 );
-
-#[derive(Debug, Copy, Clone, PartialEq)]
-pub struct CopyProgress {
-    pub completed: u64,
-    pub total: u64,
-}
 
 #[derive(Debug)]
 pub struct Blob {
@@ -53,7 +49,7 @@ pub struct Blob {
     pub copy_id: Option<String>,
     pub copy_status: Option<CopyStatus>,
     pub copy_source: Option<String>,
-    pub copy_progress: Option<CopyProgress>,
+    pub copy_progress: Option<Range>,
     pub copy_completion: Option<DateTime<UTC>>,
     pub copy_status_description: Option<String>,
 }
@@ -92,20 +88,9 @@ pub fn parse(elem: &Element) -> Result<Blob, core::errors::AzureError> {
                                                                &["Properties",
                                                                  "CopyStatusDescription"]));
 
-    let mut cp_bytes: Option<CopyProgress> = None;
+    let mut cp_bytes: Option<Range> = None;
     if let Some(txt) = copy_progress {
-        let v = txt.split("/").collect::<Vec<&str>>();
-        if v.len() < 2 {
-            return Err(core::errors::AzureError::ResponseParsingError(core::errors::TraversingError::GenericParseError("not enough information in CopyProgress field".to_owned())));
-        }
-
-        let cp_bytes_completed = try!(v[0].parse::<u64>());
-        let cp_bytes_total = try!(v[1].parse::<u64>());
-
-        cp_bytes = Some(CopyProgress {
-            completed: cp_bytes_completed,
-            total: cp_bytes_total,
-        });
+        cp_bytes = Some(try!(txt.parse::<Range>()));
     }
 
     Ok(Blob {

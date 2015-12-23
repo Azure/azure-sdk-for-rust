@@ -6,6 +6,7 @@ use std::io::Read;
 use std::num;
 // use xml;
 use azure::core::enumerations::ParsingError;
+use azure::core::range::ParseError;
 
 #[derive(Debug)]
 pub enum AzureError {
@@ -15,6 +16,7 @@ pub enum AzureError {
     UnexpectedResult((StatusCode, StatusCode, String)),
     ResponseParsingError(TraversingError),
     ParseIntError(num::ParseIntError),
+    ParseError(ParseError),
 }
 
 #[derive(Debug)]
@@ -27,6 +29,12 @@ pub enum TraversingError {
     ParseIntError(num::ParseIntError),
     GenericParseError(String),
     ParsingError(ParsingError),
+}
+
+impl From<ParseError> for AzureError {
+    fn from(pe: ParseError) -> AzureError {
+        AzureError::ParseError(pe)
+    }
 }
 
 impl From<hyper::error::Error> for AzureError {

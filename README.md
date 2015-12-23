@@ -20,8 +20,8 @@ use azure::storage::client;
 use azure::storage::container::PublicAccess;
 
 fn main() {
-	let azure_storage_account = "azure_storage_account".to_owned();
-	let azure_storage_key= "azure_storage_key".to_owned();
+	let azure_storage_account = &"azure_storage_account";
+	let azure_storage_key= &"azure_storage_key";
 
 	// create the client struct. The third argument, if false, forces to use
 	// http instead of https. It's useful if you have trouble compiling

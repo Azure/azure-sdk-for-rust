@@ -6,19 +6,21 @@ use azure::core::parsing::{traverse, cast_must, cast_optional};
 use azure::storage::{LeaseStatus, LeaseState, LeaseDuration};
 use azure::storage::client::Client;
 
+use azure::core::{XMSRange, XMSLeaseId};
+
 use azure::storage::blob;
 // use azure::core::parsing;
 // use hyper::error;
+use hyper::header::Headers;
 use hyper::status::StatusCode;
 use std::str::FromStr;
 use chrono::datetime::DateTime;
 use chrono::UTC;
 
 use std::io::Read;
-// use hyper::Client;
-// use hyper::header::Headers;
-// use chrono;
-// use url;
+
+use azure::core::lease_id::LeaseId;
+use azure::core::range::Range;
 
 use std::fmt;
 
@@ -85,9 +87,7 @@ impl Container {
                           c.account(),
                           self.name);
 
-        let mut resp = try!(c.perform_request(&uri,
-                                              core::HTTPMethod::Delete,
-                                              &core::NO_EXTRA_HEADERS));
+        let mut resp = try!(c.perform_request(&uri, core::HTTPMethod::Delete, &Headers::new()));
 
         try!(errors::check_status(&mut resp, StatusCode::Accepted));
         Ok(())
@@ -133,9 +133,7 @@ impl Container {
             uri = format!("{}&include={}", uri, include);
         }
 
-        let mut resp = try!(c.perform_request(&uri,
-                                              core::HTTPMethod::Get,
-                                              &core::NO_EXTRA_HEADERS));
+        let mut resp = try!(c.perform_request(&uri, core::HTTPMethod::Get, &Headers::new()));
 
         try!(errors::check_status(&mut resp, StatusCode::Ok));
 
@@ -161,8 +159,39 @@ impl Container {
 
         Ok(v)
     }
-}
 
+    pub fn get_blob_content(&self,
+                            c: &Client,
+                            blob_name: &str,
+                            snapshot: Option<&DateTime<UTC>>,
+                            range: Option<&Range>,
+                            lease_id: Option<&LeaseId>,
+                            get_md5: bool)
+                            -> Result<(), core::errors::AzureError> {
+        let uri = format!("{}://{}.blob.core.windows.net/{}/{}",
+                          c.auth_scheme(),
+                          c.account(),
+                          self.name,
+                          blob_name);
+
+
+        println!("uri == {:?}", uri);
+
+        let mut headers = Headers::new();
+
+        if let Some(r) = range {
+            headers.set(XMSRange(r.clone()));
+        }
+
+        if let Some(l) = lease_id {
+            headers.set(XMSLeaseId(l.clone()));
+        }
+
+        let mut resp = try!(c.perform_request(&uri, core::HTTPMethod::Get, &headers));
+
+        Ok(())
+    }
+}
 
 
 pub fn create(c: &Client,
@@ -174,14 +203,13 @@ pub fn create(c: &Client,
                       c.account(),
                       container_name);
 
-    // println!("uri == {:?}", uri);
-    let mut extra_headers = Vec::new();
+    let mut headers = Headers::new();
 
     if pa != PublicAccess::None {
-        extra_headers.push(XMSBlobPublicAccess(pa));
+        headers.set(XMSBlobPublicAccess(pa));
     }
 
-    let mut resp = try!(c.perform_request(&uri, core::HTTPMethod::Put, &extra_headers));
+    let mut resp = try!(c.perform_request(&uri, core::HTTPMethod::Put, &headers));
 
     try!(errors::check_status(&mut resp, StatusCode::Created));
 
@@ -193,7 +221,7 @@ pub fn list(c: &Client) -> Result<Vec<Container>, core::errors::AzureError> {
                       c.auth_scheme(),
                       c.account());
 
-    let mut resp = try!(c.perform_request(&uri, core::HTTPMethod::Get, &core::NO_EXTRA_HEADERS));
+    let mut resp = try!(c.perform_request(&uri, core::HTTPMethod::Get, &Headers::new()));
 
     try!(errors::check_status(&mut resp, StatusCode::Ok));
 
