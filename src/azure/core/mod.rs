@@ -25,6 +25,7 @@ pub mod parsing;
 pub mod enumerations;
 pub mod incompletevector;
 pub mod range;
+pub mod lease_id;
 
 #[derive(Debug, Copy, Clone)]
 pub enum HTTPMethod {
@@ -33,8 +34,6 @@ pub enum HTTPMethod {
     Post,
     Delete,
 }
-
-pub const NO_EXTRA_HEADERS: [XMSVersion; 0] = [];
 
 const AZURE_VERSION: &'static str = "2015-04-05";
 
@@ -46,6 +45,7 @@ header! { (IfMatch, "If-Match") => [String] }
 header! { (IfNoneMatch, "If-None-Match") => [String] }
 header! { (Range, "Range") => [String] }
 header! { (XMSRange, "x-ms-range") => [range::Range] }
+header! { (XMSLeaseId, "x-ms-lease-id") => [lease_id::LeaseId] }
 
 pub fn generate_authorization(h: &Headers,
                               u: &url::Url,
@@ -261,24 +261,27 @@ fn lexy_sort(vec: &Vec<(String, String)>, query_param: &str) -> Vec<(String)> {
     v_values
 }
 
-pub fn perform_request<H: Header + HeaderFormat>
+pub fn perform_request
     (uri: &str,
      method: HTTPMethod,
      azure_key: &str,
-     additional_headers: &[H])
+     headers: &Headers)
      -> Result<hyper::client::response::Response, hyper::error::Error> {
     let client = Client::new();
 
     let dt = chrono::UTC::now();
     let time = format!("{}", dt.format("%a, %d %h %Y %T GMT"));
 
-    let mut h = Headers::new();
+    // let mut h = Headers::new();
 
     let u = url::Url::parse(uri).unwrap();
 
-    for header in additional_headers {
-        h.set(header.clone());
-    }
+    // for header in additional_headers.iter() {
+    //     println!("{:?}", header.value_string());
+    //     h.set();
+    // }
+
+    let mut h = headers.clone();
 
     h.set(XMSDate(time));
     h.set(XMSVersion(AZURE_VERSION.to_owned()));

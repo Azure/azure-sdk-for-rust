@@ -1,4 +1,4 @@
-use hyper::header::{Header, HeaderFormat};
+use hyper::header::{Header, Headers, HeaderFormat};
 use hyper::client::response::Response;
 use hyper::error::Error;
 
@@ -51,12 +51,12 @@ impl Client {
         container::create(self, container_name, pa)
     }
 
-    pub fn perform_request<H: Header + HeaderFormat>(&self,
+    pub fn perform_request(&self,
                                                      uri: &str,
                                                      method: HTTPMethod,
-                                                     additional_headers: &[H])
+                                                     headers: &Headers)
                                                      -> Result<Response, Error> {
-        perform_request(uri, method, &self.key, additional_headers)
+        perform_request(uri, method, &self.key, headers)
     }
 }
 

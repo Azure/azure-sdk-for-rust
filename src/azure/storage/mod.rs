@@ -1,4 +1,3 @@
-pub mod lease_id;
 pub mod client;
 #[macro_use]
 pub mod blob;
