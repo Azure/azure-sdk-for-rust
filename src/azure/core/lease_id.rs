@@ -11,7 +11,7 @@ pub struct LeaseId {
 impl FromStr for LeaseId {
     type Err = ParseError;
     fn from_str(s: &str) -> Result<LeaseId, ParseError> {
-        Ok(LeaseId{id : s.to_owned()})
+        Ok(LeaseId { id: s.to_owned() })
     }
 }
 

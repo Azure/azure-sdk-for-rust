@@ -261,12 +261,11 @@ fn lexy_sort(vec: &Vec<(String, String)>, query_param: &str) -> Vec<(String)> {
     v_values
 }
 
-pub fn perform_request
-    (uri: &str,
-     method: HTTPMethod,
-     azure_key: &str,
-     headers: &Headers)
-     -> Result<hyper::client::response::Response, hyper::error::Error> {
+pub fn perform_request(uri: &str,
+                       method: HTTPMethod,
+                       azure_key: &str,
+                       headers: &Headers)
+                       -> Result<hyper::client::response::Response, hyper::error::Error> {
     let client = Client::new();
 
     let dt = chrono::UTC::now();

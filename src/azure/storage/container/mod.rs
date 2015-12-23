@@ -87,9 +87,7 @@ impl Container {
                           c.account(),
                           self.name);
 
-        let mut resp = try!(c.perform_request(&uri,
-                                              core::HTTPMethod::Delete,
-                                              &Headers::new()));
+        let mut resp = try!(c.perform_request(&uri, core::HTTPMethod::Delete, &Headers::new()));
 
         try!(errors::check_status(&mut resp, StatusCode::Accepted));
         Ok(())
@@ -135,9 +133,7 @@ impl Container {
             uri = format!("{}&include={}", uri, include);
         }
 
-        let mut resp = try!(c.perform_request(&uri,
-                                              core::HTTPMethod::Get,
-                                              &Headers::new()));
+        let mut resp = try!(c.perform_request(&uri, core::HTTPMethod::Get, &Headers::new()));
 
         try!(errors::check_status(&mut resp, StatusCode::Ok));
 
@@ -171,7 +167,7 @@ impl Container {
                             range: Option<&Range>,
                             lease_id: Option<&LeaseId>,
                             get_md5: bool)
-                            -> Result<(),core::errors::AzureError> {
+                            -> Result<(), core::errors::AzureError> {
         let uri = format!("{}://{}.blob.core.windows.net/{}/{}",
                           c.auth_scheme(),
                           c.account(),

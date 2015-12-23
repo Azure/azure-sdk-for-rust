@@ -52,10 +52,10 @@ impl Client {
     }
 
     pub fn perform_request(&self,
-                                                     uri: &str,
-                                                     method: HTTPMethod,
-                                                     headers: &Headers)
-                                                     -> Result<Response, Error> {
+                           uri: &str,
+                           method: HTTPMethod,
+                           headers: &Headers)
+                           -> Result<Response, Error> {
         perform_request(uri, method, &self.key, headers)
     }
 }
