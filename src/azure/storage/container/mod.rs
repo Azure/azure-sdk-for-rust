@@ -15,10 +15,9 @@ use chrono::datetime::DateTime;
 use chrono::UTC;
 
 use std::io::Read;
-// use hyper::Client;
-// use hyper::header::Headers;
-// use chrono;
-// use url;
+
+use azure::storage::lease_id::LeaseId;
+use azure::core::range::Range;
 
 use std::fmt;
 
@@ -160,6 +159,24 @@ impl Container {
         }
 
         Ok(v)
+    }
+
+    pub fn get_blob_content(&self,
+                            c: &Client,
+                            blob_name: &str,
+                            snapshot: Option<&DateTime<UTC>>,
+                            range: Option<&Range>,
+                            lease_id: Option<&LeaseId>,
+                            get_md5: bool)
+                            -> () {
+        let uri = format!("{}://{}.blob.core.windows.net/{}/{}",
+                              c.auth_scheme(),
+                              c.account(),
+                              self.name,
+                              blob_name);
+
+
+
     }
 }
 

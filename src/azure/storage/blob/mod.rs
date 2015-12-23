@@ -14,6 +14,8 @@ use std::fmt;
 use azure::core::errors::TraversingError;
 use azure::core::parsing::FromStringOptional;
 
+use azure::storage::CopyProgress;
+
 create_enum!(BlobType,
                             (BlockBlob,        "BlockBlob"),
                             (PageBlob,         "PageBlob"),
@@ -26,12 +28,6 @@ create_enum!(CopyStatus,
                             (Aborted,          "aborted"),
                             (Failed,           "failed")
 );
-
-#[derive(Debug, Copy, Clone, PartialEq)]
-pub struct CopyProgress {
-    pub completed: u64,
-    pub total: u64,
-}
 
 #[derive(Debug)]
 pub struct Blob {
@@ -133,4 +129,6 @@ pub fn parse(elem: &Element) -> Result<Blob, core::errors::AzureError> {
     })
 }
 
-impl Blob {}
+impl Blob {
+
+}

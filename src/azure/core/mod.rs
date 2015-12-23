@@ -24,6 +24,7 @@ pub mod parsing;
 #[macro_use]
 pub mod enumerations;
 pub mod incompletevector;
+pub mod range;
 
 #[derive(Debug, Copy, Clone)]
 pub enum HTTPMethod {
@@ -44,6 +45,7 @@ header! { (ContentMD5, "Content-MD5") => [String] }
 header! { (IfMatch, "If-Match") => [String] }
 header! { (IfNoneMatch, "If-None-Match") => [String] }
 header! { (Range, "Range") => [String] }
+header! { (XMSRange, "x-ms-range") => [range::Range] }
 
 pub fn generate_authorization(h: &Headers,
                               u: &url::Url,
