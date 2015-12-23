@@ -11,7 +11,7 @@ extern crate xml;
 pub mod azure;
 
 use azure::storage::client;
-use azure::storage::container::PublicAccess;
+// use azure::storage::container::PublicAccess;
 
 fn main() {
     let azure_storage_account = match std::env::var("AZURE_STORAGE_ACCOUNT") {
@@ -36,7 +36,7 @@ fn main() {
     let mut ret = client.list_containers().unwrap();
     println!("{:?}", ret);
 
-    let mut vhds = ret.iter_mut().find(|x| x.name == "canotto").unwrap();
+    let vhds = ret.iter_mut().find(|x| x.name == "canotto").unwrap();
 
     let blobs = vhds.list_blobs(&client, true, true, true, true).unwrap();
 
