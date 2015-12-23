@@ -60,10 +60,10 @@ impl Client {
     }
 }
 
-pub fn new(account: String, key: String, use_https: bool) -> Client {
+pub fn new(account: &str, key: &str, use_https: bool) -> Client {
     Client {
-        account: account,
-        key: key,
+        account: account.to_owned(),
+        key: key.to_owned(),
         use_https: use_https,
     }
 }

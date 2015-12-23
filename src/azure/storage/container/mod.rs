@@ -170,10 +170,10 @@ impl Container {
                             get_md5: bool)
                             -> () {
         let uri = format!("{}://{}.blob.core.windows.net/{}/{}",
-                              c.auth_scheme(),
-                              c.account(),
-                              self.name,
-                              blob_name);
+                          c.auth_scheme(),
+                          c.account(),
+                          self.name,
+                          blob_name);
 
 
 

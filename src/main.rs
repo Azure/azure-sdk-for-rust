@@ -28,7 +28,7 @@ fn main() {
         }
     };
 
-    let client = client::new(azure_storage_account, azure_storage_key, false);
+    let client = client::new(&azure_storage_account, &azure_storage_key, false);
 
     // client.create_container("balocco3", PublicAccess::Blob).unwrap();
     // // println!("{:?}", new);

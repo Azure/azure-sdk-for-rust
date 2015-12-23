@@ -29,9 +29,3 @@ create_enum!(LeaseDuration,
                             (Infinite,      "infinite"),
                             (Fixed,         "fixed")
 );
-
-#[derive(Debug, Copy, Clone, PartialEq)]
-pub struct CopyProgress {
-    pub completed: u64,
-    pub total: u64,
-}
