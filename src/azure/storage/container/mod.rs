@@ -197,7 +197,7 @@ impl Container {
         // otherwise 200 (ok).
         if let Some(_) = range {
             try!(errors::check_status(&mut resp, StatusCode::PartialContent));
-        }   else {
+        } else {
             try!(errors::check_status(&mut resp, StatusCode::Ok));
         }
 
@@ -228,6 +228,8 @@ impl Container {
         let content_md5 = resp.headers.get::<ContentMD5>();
 
         // TODO: get the remaining headers (https://msdn.microsoft.com/en-us/library/azure/dd179440.aspx)
+
+
 
         Ok(())
     }

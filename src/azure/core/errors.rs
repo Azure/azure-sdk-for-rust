@@ -40,7 +40,7 @@ impl From<ParseError> for AzureError {
 }
 
 impl From<()> for AzureError {
-    fn from(_ : ()) -> AzureError {
+    fn from(_: ()) -> AzureError {
         AzureError::GenericError
     }
 }

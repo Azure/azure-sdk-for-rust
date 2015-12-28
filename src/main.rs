@@ -53,7 +53,7 @@ fn main() {
          })
          .collect::<Vec<()>>();
 
-    let cont = vhds.get_blob_content(&client, "car21.png", None,None,None,true).unwrap();
+    let cont = vhds.get_blob_content(&client, "car21.png", None, None, None, true).unwrap();
 
 
     // bal2.delete(&client).unwrap();
