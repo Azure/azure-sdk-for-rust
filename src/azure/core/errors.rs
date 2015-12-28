@@ -19,6 +19,7 @@ pub enum AzureError {
     ParseIntError(num::ParseIntError),
     ParseError(ParseError),
     GenericError,
+    ParsingError(ParsingError),
 }
 
 #[derive(Debug)]
@@ -51,6 +52,12 @@ impl From<hyper::error::Error> for AzureError {
     }
 }
 
+impl From<ParsingError> for AzureError {
+    fn from(pie: ParsingError) -> AzureError {
+        AzureError::ParsingError(pie)
+    }
+}
+
 impl From<chrono::format::ParseError> for AzureError {
     fn from(pe: chrono::format::ParseError) -> AzureError {
         AzureError::ResponseParsingError(TraversingError::DateTimeParseError(pe))
@@ -78,6 +85,12 @@ impl From<chrono::format::ParseError> for TraversingError {
 impl From<num::ParseIntError> for TraversingError {
     fn from(pie: num::ParseIntError) -> TraversingError {
         TraversingError::ParseIntError(pie)
+    }
+}
+
+impl From<ParsingError> for TraversingError {
+    fn from(pie: ParsingError) -> TraversingError {
+        TraversingError::ParsingError(pie)
     }
 }
 

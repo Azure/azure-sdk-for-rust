@@ -2,7 +2,6 @@ use xml::Element;
 use xml::Xml::{ElementNode, CharacterNode};
 use azure::core::errors::TraversingError;
 use chrono;
-use chrono::{DateTime, UTC};
 
 pub trait FromStringOptional<T> {
     fn from_str_optional(s: &str) -> Result<T, TraversingError>;

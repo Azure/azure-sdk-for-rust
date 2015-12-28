@@ -15,6 +15,7 @@ use azure::core::errors::TraversingError;
 use azure::core::parsing::FromStringOptional;
 
 use azure::core::range::Range;
+use mime::Mime;
 
 create_enum!(BlobType,
                             (BlockBlob,        "BlockBlob"),
@@ -29,6 +30,9 @@ create_enum!(CopyStatus,
                             (Failed,           "failed")
 );
 
+header! { (XMSBlobSequenceNumber, "x-ms-blob-sequence-number") => [u64] }
+header! { (XMSBlobType, "x-ms-blob-type") => [BlobType] }
+
 #[derive(Debug)]
 pub struct Blob {
     pub name: String,
@@ -36,12 +40,12 @@ pub struct Blob {
     pub last_modified: DateTime<UTC>,
     pub etag: String,
     pub content_length: u64,
-    pub content_type: String,
+    pub content_type: Mime,
     pub content_encoding: Option<String>,
     pub content_language: Option<String>,
     pub content_md5: Option<String>,
     pub cache_control: Option<String>,
-    pub x_ms_blob_sequence_number: Option<String>,
+    pub x_ms_blob_sequence_number: Option<u64>,
     pub blob_type: BlobType,
     pub lease_status: LeaseStatus,
     pub lease_state: LeaseState,
@@ -67,7 +71,7 @@ pub fn parse(elem: &Element) -> Result<Blob, core::errors::AzureError> {
     let content_language = try!(cast_optional::<String>(elem, &["Properties", "Content-Language"]));
     let content_md5 = try!(cast_optional::<String>(elem, &["Properties", "Content-MD5"]));
     let cache_control = try!(cast_optional::<String>(elem, &["Properties", "Cache-Control"]));
-    let x_ms_blob_sequence_number = try!(cast_optional::<String>(elem,
+    let x_ms_blob_sequence_number = try!(cast_optional::<u64>(elem,
                                                                  &["Properties",
                                                                    "x-ms-blob-sequence-number"]));
 
@@ -93,13 +97,15 @@ pub fn parse(elem: &Element) -> Result<Blob, core::errors::AzureError> {
         cp_bytes = Some(try!(txt.parse::<Range>()));
     }
 
+    let ctype = try!(content_type.parse::<Mime>());
+
     Ok(Blob {
         name: name,
         snapshot_time: snapshot_time,
         last_modified: last_modified,
         etag: etag,
         content_length: content_length,
-        content_type: content_type,
+        content_type: ctype,
         content_encoding: content_encoding,
         content_language: content_language,
         content_md5: content_md5,

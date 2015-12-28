@@ -53,7 +53,14 @@ fn main() {
          })
          .collect::<Vec<()>>();
 
-    let cont = vhds.get_blob_content(&client, "car21.png", None, None, None, true).unwrap();
+    let (blob, mut stream) = vhds.get_blob_content(&client, "DataCollector01.csv", None, None, None, true).unwrap();
+    println!("blob == {:?}", blob);
+
+    let mut buffer = String::new();
+    stream.read_to_string(&mut buffer).unwrap();
+
+    println!("buffer == {:?}", buffer);
+
 
 
     // bal2.delete(&client).unwrap();
