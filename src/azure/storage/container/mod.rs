@@ -1,18 +1,22 @@
 use azure::core;
 use azure::core::errors;
 use azure::core::enumerations;
-use azure::core::parsing::{traverse, cast_must, cast_optional};
+use azure::core::parsing::{traverse, cast_must, cast_optional, from_azure_time};
 
 use azure::storage::{LeaseStatus, LeaseState, LeaseDuration};
 use azure::storage::client::Client;
 
-use azure::core::{XMSRange, XMSLeaseId};
+use azure::core::{XMSRange, XMSLeaseId, ContentMD5};
+
+use mime::Mime;
 
 use azure::storage::blob;
 // use azure::core::parsing;
 // use hyper::error;
-use hyper::header::Headers;
+use hyper::header::{Headers, ContentType, ContentLength, LastModified};
 use hyper::status::StatusCode;
+use hyper::client::Response;
+
 use std::str::FromStr;
 use chrono::datetime::DateTime;
 use chrono::UTC;
@@ -188,6 +192,42 @@ impl Container {
         }
 
         let mut resp = try!(c.perform_request(&uri, core::HTTPMethod::Get, &headers));
+
+        // if we have requested a range the response code should be 207 (partial content)
+        // otherwise 200 (ok).
+        if let Some(_) = range {
+            try!(errors::check_status(&mut resp, StatusCode::PartialContent));
+        }   else {
+            try!(errors::check_status(&mut resp, StatusCode::Ok));
+        }
+
+        let content_type = match resp.headers.get::<ContentType>() {
+            Some(ct) => (ct as &Mime).clone(),
+            None => try!("application/octet-stream".parse::<Mime>()),
+        };
+        println!("content_type == {:?}", content_type);
+
+        let content_length = match resp.headers.get::<ContentLength>() {
+            Some(cl) => cl as &u64,
+            None => return Err(errors::AzureError::HeaderNotFound("Content-Length".to_owned())),
+        };
+        println!("content_length == {:?}", content_length);
+
+        let last_modified = match resp.headers.get::<LastModified>() {
+            Some(lm) => try!(from_azure_time(&lm.to_string())),
+            None => return Err(errors::AzureError::HeaderNotFound("Last-Modified".to_owned())),
+        };
+        println!("last_modified == {:?}", last_modified);
+
+        let last_modified = match resp.headers.get::<LastModified>() {
+            Some(lm) => try!(from_azure_time(&lm.to_string())),
+            None => return Err(errors::AzureError::HeaderNotFound("Last-Modified".to_owned())),
+        };
+        println!("last_modified == {:?}", last_modified);
+
+        let content_md5 = resp.headers.get::<ContentMD5>();
+
+        // TODO: get the remaining headers (https://msdn.microsoft.com/en-us/library/azure/dd179440.aspx)
 
         Ok(())
     }

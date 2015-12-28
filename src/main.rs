@@ -5,6 +5,8 @@ extern crate url;
 extern crate crypto;
 extern crate rustc_serialize as serialize;
 extern crate xml;
+#[macro_use]
+extern crate mime;
 
 
 #[macro_use]
@@ -28,7 +30,7 @@ fn main() {
         }
     };
 
-    let client = client::new(&azure_storage_account, &azure_storage_key, false);
+    let client = client::new(&azure_storage_account, &azure_storage_key, true);
 
     // client.create_container("balocco3", PublicAccess::Blob).unwrap();
     // // println!("{:?}", new);
@@ -50,6 +52,9 @@ fn main() {
                       x.lease_state)
          })
          .collect::<Vec<()>>();
+
+    let cont = vhds.get_blob_content(&client, "car21.png", None,None,None,true).unwrap();
+
 
     // bal2.delete(&client).unwrap();
     // println!("{:?} deleted!", bal2);

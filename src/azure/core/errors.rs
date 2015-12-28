@@ -14,9 +14,11 @@ pub enum AzureError {
     IOError(String),
     XMLError(String),
     UnexpectedResult((StatusCode, StatusCode, String)),
+    HeaderNotFound(String),
     ResponseParsingError(TraversingError),
     ParseIntError(num::ParseIntError),
     ParseError(ParseError),
+    GenericError,
 }
 
 #[derive(Debug)]
@@ -34,6 +36,12 @@ pub enum TraversingError {
 impl From<ParseError> for AzureError {
     fn from(pe: ParseError) -> AzureError {
         AzureError::ParseError(pe)
+    }
+}
+
+impl From<()> for AzureError {
+    fn from(_ : ()) -> AzureError {
+        AzureError::GenericError
     }
 }
 

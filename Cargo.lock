@@ -5,6 +5,7 @@ dependencies = [
  "RustyXML 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "chrono 0.2.17 (registry+https://github.com/rust-lang/crates.io-index)",
  "hyper 0.7.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "mime 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "rust-crypto 0.2.34 (registry+https://github.com/rust-lang/crates.io-index)",
  "rustc-serialize 0.3.16 (registry+https://github.com/rust-lang/crates.io-index)",
  "url 0.5.2 (git+https://github.com/servo/rust-url)",
@@ -25,6 +26,11 @@ dependencies = [
 ]
 
 [[package]]
+name = "bitflags"
+version = "0.3.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
 name = "chrono"
 version = "0.2.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -38,6 +44,8 @@ name = "cookie"
 version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
+ "openssl 0.7.4 (registry+https://github.com/rust-lang/crates.io-index)",
+ "rustc-serialize 0.3.16 (registry+https://github.com/rust-lang/crates.io-index)",
  "time 0.1.34 (registry+https://github.com/rust-lang/crates.io-index)",
  "url 0.5.2 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
@@ -48,6 +56,14 @@ version = "0.3.21"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "advapi32-sys 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "winapi 0.2.5 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "gdi32-sys"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
  "winapi 0.2.5 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -75,6 +91,7 @@ dependencies = [
  "log 0.3.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "mime 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "num_cpus 0.2.10 (registry+https://github.com/rust-lang/crates.io-index)",
+ "openssl 0.7.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "rustc-serialize 0.3.16 (registry+https://github.com/rust-lang/crates.io-index)",
  "solicit 0.4.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "time 0.1.34 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -99,6 +116,11 @@ version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
+name = "lazy_static"
+version = "0.1.15"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
 name = "libc"
 version = "0.1.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -107,6 +129,14 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 name = "libc"
 version = "0.2.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
+name = "libressl-pnacl-sys"
+version = "2.1.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "pnacl-build-helper 1.4.10 (registry+https://github.com/rust-lang/crates.io-index)",
+]
 
 [[package]]
 name = "log"
@@ -147,6 +177,54 @@ dependencies = [
  "kernel32-sys 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "libc 0.2.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "winapi 0.2.5 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "openssl"
+version = "0.7.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "bitflags 0.3.3 (registry+https://github.com/rust-lang/crates.io-index)",
+ "gcc 0.3.21 (registry+https://github.com/rust-lang/crates.io-index)",
+ "lazy_static 0.1.15 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.2.4 (registry+https://github.com/rust-lang/crates.io-index)",
+ "openssl-sys 0.7.4 (registry+https://github.com/rust-lang/crates.io-index)",
+ "openssl-sys-extras 0.7.4 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "openssl-sys"
+version = "0.7.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "gdi32-sys 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.2.4 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libressl-pnacl-sys 2.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
+ "pkg-config 0.3.6 (registry+https://github.com/rust-lang/crates.io-index)",
+ "user32-sys 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "openssl-sys-extras"
+version = "0.7.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "gcc 0.3.21 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.2.4 (registry+https://github.com/rust-lang/crates.io-index)",
+ "openssl-sys 0.7.4 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "pkg-config"
+version = "0.3.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
+name = "pnacl-build-helper"
+version = "1.4.10"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "tempdir 0.3.4 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -194,6 +272,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "tempdir"
+version = "0.3.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "rand 0.3.12 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
 name = "time"
 version = "0.1.34"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -236,6 +322,15 @@ dependencies = [
  "matches 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "rustc-serialize 0.3.16 (registry+https://github.com/rust-lang/crates.io-index)",
  "uuid 0.1.18 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "user32-sys"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "winapi 0.2.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "winapi-build 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
