@@ -18,6 +18,8 @@ use crypto::sha2::Sha256;
 use hyper::Client;
 use chrono;
 
+use azure::storage::{LeaseStatus, LeaseState, LeaseDuration};
+
 #[macro_use]
 pub mod errors;
 pub mod parsing;
@@ -46,6 +48,10 @@ header! { (IfNoneMatch, "If-None-Match") => [String] }
 header! { (Range, "Range") => [String] }
 header! { (XMSRange, "x-ms-range") => [range::Range] }
 header! { (XMSLeaseId, "x-ms-lease-id") => [lease_id::LeaseId] }
+header! { (XMSLeaseStatus, "x-ms-lease-status") => [LeaseStatus] }
+header! { (XMSLeaseState, "x-ms-lease-state") => [LeaseState] }
+header! { (XMSLeaseDuration, "x-ms-lease-duration") => [LeaseDuration] }
+header! { (ETag, "ETag") => [String] }
 
 pub fn generate_authorization(h: &Headers,
                               u: &url::Url,

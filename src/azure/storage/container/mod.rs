@@ -1,20 +1,17 @@
 use azure::core;
 use azure::core::errors;
 use azure::core::enumerations;
-use azure::core::parsing::{traverse, cast_must, cast_optional, from_azure_time};
+use azure::core::parsing::{traverse, cast_must, cast_optional};
 
 use azure::storage::{LeaseStatus, LeaseState, LeaseDuration};
 use azure::storage::client::Client;
-use azure::storage::blob::{XMSBlobSequenceNumber, XMSBlobType, BlobType};
 
-use azure::core::{XMSRange, XMSLeaseId, ContentMD5};
-
-use mime::Mime;
+use azure::core::{XMSRange, XMSLeaseId};
 
 use azure::storage::blob;
 // use azure::core::parsing;
 // use hyper::error;
-use hyper::header::{Headers, ContentType, ContentLength, LastModified};
+use hyper::header::Headers;
 use hyper::status::StatusCode;
 
 use std::str::FromStr;
@@ -201,70 +198,10 @@ impl Container {
             try!(errors::check_status(&mut resp, StatusCode::Ok));
         }
 
-        let content_type = match resp.headers.get::<ContentType>() {
-            Some(ct) => (ct as &Mime).clone(),
-            None => try!("application/octet-stream".parse::<Mime>()),
-        };
-        println!("content_type == {:?}", content_type);
+        let blob = try!(blob::from_headers(blob_name, &resp.headers));
+        let r: Box<Read> = Box::new(resp);
 
-        let content_length = match resp.headers.get::<ContentLength>() {
-            Some(cl) => (cl as &u64).clone(),
-            None => return Err(errors::AzureError::HeaderNotFound("Content-Length".to_owned())),
-        };
-        println!("content_length == {:?}", content_length);
-
-        let last_modified = match resp.headers.get::<LastModified>() {
-            Some(lm) => try!(from_azure_time(&lm.to_string())),
-            None => return Err(errors::AzureError::HeaderNotFound("Last-Modified".to_owned())),
-        };
-        println!("last_modified == {:?}", last_modified);
-
-        let x_ms_blob_sequence_number = match resp.headers.get::<XMSBlobSequenceNumber>() {
-            Some(lm) =>Some((&lm as &u64).clone()),
-            None => None,
-        };
-        println!("x_ms_blob_sequence_number == {:?}", x_ms_blob_sequence_number);
-
-        let blob_type = match resp.headers.get::<XMSBlobType>() {
-            Some(lm) => try!((&lm.to_string()).parse::<BlobType>()),
-            None => return Err(errors::AzureError::HeaderNotFound("x-ms-blob-type".to_owned())),
-        };
-        println!("blob_type == {:?}", blob_type);
-
-        let content_md5 = match resp.headers.get::<ContentMD5>() {
-            Some(md5) => Some(md5.to_string()).clone(),
-            None => None
-        };
-        println!("content_md5 == {:?}", content_md5);
-
-        // TODO: get the remaining headers (https://msdn.microsoft.com/en-us/library/azure/dd179440.aspx)
-
-        let r : Box<Read> = Box::new(resp);
-
-        Ok((blob::Blob {
-            name: blob_name.to_owned(),
-            snapshot_time: None,
-            last_modified: last_modified,
-            etag: "".to_owned(),
-            content_length: content_length,
-            content_type: content_type,
-            content_encoding: None, // TODO
-            content_language: None, // TODO
-            content_md5: content_md5,
-            cache_control: None, // TODO
-            x_ms_blob_sequence_number: x_ms_blob_sequence_number,
-            blob_type: blob_type,
-            lease_status: LeaseStatus::Unlocked, // TODO
-            lease_state: LeaseState::Available, // TODO
-            lease_duration: None, // TODO
-            copy_id: None, // TODO
-            copy_status: None, // TODO
-            copy_source: None, // TODO
-            copy_progress: None, // TODO
-            copy_completion: None, // TODO
-            copy_status_description: None, // TODO
-        },
-        r))
+        Ok((blob, r))
     }
 }
 

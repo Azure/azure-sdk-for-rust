@@ -1,9 +1,9 @@
-use hyper::header::{Headers};
+use hyper::header::Headers;
 use hyper::client::response::Response;
 use hyper::error::Error;
 
 use azure::storage::container;
-use azure::storage::container::{Container};
+use azure::storage::container::Container;
 
 
 use azure::core::errors;
