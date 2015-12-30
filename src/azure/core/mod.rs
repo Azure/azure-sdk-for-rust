@@ -18,6 +18,8 @@ use crypto::sha2::Sha256;
 use hyper::Client;
 use chrono;
 
+use std::io::Read;
+
 use azure::storage::{LeaseStatus, LeaseState, LeaseDuration};
 
 #[macro_use]
@@ -270,7 +272,8 @@ fn lexy_sort(vec: &Vec<(String, String)>, query_param: &str) -> Vec<(String)> {
 pub fn perform_request(uri: &str,
                        method: HTTPMethod,
                        azure_key: &str,
-                       headers: &Headers)
+                       headers: &Headers,
+                       body : Option<&Read>)
                        -> Result<hyper::client::response::Response, hyper::error::Error> {
     let client = Client::new();
 

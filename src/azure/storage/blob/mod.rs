@@ -13,6 +13,8 @@ use std::fmt;
 
 use azure::core::ETag;
 
+use std::io::Read;
+
 use azure::core::errors::{TraversingError, AzureError};
 use azure::core::parsing::FromStringOptional;
 
@@ -239,4 +241,8 @@ pub fn from_headers(blob_name: &str, h: &Headers) -> Result<Blob, AzureError> {
     })
 }
 
-impl Blob {}
+impl Blob {
+    pub fn put_block(&self, container_name : &str, r : &Read) {
+        
+    }
+}
