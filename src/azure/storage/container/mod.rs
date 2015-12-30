@@ -88,7 +88,10 @@ impl Container {
                           c.account(),
                           self.name);
 
-        let mut resp = try!(c.perform_request(&uri, core::HTTPMethod::Delete, &Headers::new()));
+        let mut resp = try!(c.perform_request(&uri,
+                                              core::HTTPMethod::Delete,
+                                              &Headers::new(),
+                                              None));
 
         try!(errors::check_status(&mut resp, StatusCode::Accepted));
         Ok(())
@@ -134,7 +137,7 @@ impl Container {
             uri = format!("{}&include={}", uri, include);
         }
 
-        let mut resp = try!(c.perform_request(&uri, core::HTTPMethod::Get, &Headers::new()));
+        let mut resp = try!(c.perform_request(&uri, core::HTTPMethod::Get, &Headers::new(), None));
 
         try!(errors::check_status(&mut resp, StatusCode::Ok));
 
@@ -188,7 +191,7 @@ impl Container {
             headers.set(XMSLeaseId(l.clone()));
         }
 
-        let mut resp = try!(c.perform_request(&uri, core::HTTPMethod::Get, &headers));
+        let mut resp = try!(c.perform_request(&uri, core::HTTPMethod::Get, &headers, None));
 
         // if we have requested a range the response code should be 207 (partial content)
         // otherwise 200 (ok).
@@ -221,7 +224,7 @@ pub fn create(c: &Client,
         headers.set(XMSBlobPublicAccess(pa));
     }
 
-    let mut resp = try!(c.perform_request(&uri, core::HTTPMethod::Put, &headers));
+    let mut resp = try!(c.perform_request(&uri, core::HTTPMethod::Put, &headers, None));
 
     try!(errors::check_status(&mut resp, StatusCode::Created));
 
@@ -233,7 +236,7 @@ pub fn list(c: &Client) -> Result<Vec<Container>, core::errors::AzureError> {
                       c.auth_scheme(),
                       c.account());
 
-    let mut resp = try!(c.perform_request(&uri, core::HTTPMethod::Get, &Headers::new()));
+    let mut resp = try!(c.perform_request(&uri, core::HTTPMethod::Get, &Headers::new(), None));
 
     try!(errors::check_status(&mut resp, StatusCode::Ok));
 

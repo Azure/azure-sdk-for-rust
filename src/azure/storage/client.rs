@@ -5,6 +5,7 @@ use hyper::error::Error;
 use azure::storage::container;
 use azure::storage::container::Container;
 
+use std::io::Read;
 
 use azure::core::errors;
 use azure::core::{HTTPMethod, perform_request};
@@ -54,9 +55,10 @@ impl Client {
     pub fn perform_request(&self,
                            uri: &str,
                            method: HTTPMethod,
-                           headers: &Headers)
+                           headers: &Headers,
+                           request_body: Option<(&mut Read, u64)>)
                            -> Result<Response, Error> {
-        perform_request(uri, method, &self.key, headers)
+        perform_request(uri, method, &self.key, headers, request_body)
     }
 }
 

@@ -273,7 +273,7 @@ pub fn perform_request(uri: &str,
                        method: HTTPMethod,
                        azure_key: &str,
                        headers: &Headers,
-                       body : Option<&Read>)
+                       request_body: Option<(&mut Read, u64)>)
                        -> Result<hyper::client::response::Response, hyper::error::Error> {
     let client = Client::new();
 
@@ -291,21 +291,41 @@ pub fn perform_request(uri: &str,
 
     let mut h = headers.clone();
 
+
+
     h.set(XMSDate(time));
     h.set(XMSVersion(AZURE_VERSION.to_owned()));
     let auth = generate_authorization(&h, &u, method, azure_key);
     // println!("auth == {:?}", auth);
 
+    if let Some((_, size)) = request_body {
+        h.set(ContentLength(size));
+    }
+
     h.set(Authorization(auth));
 
     // println!("{:?}", h);
 
-    match method {
-        HTTPMethod::Get => client.get(&u.to_string()).headers(h).send(),
-        HTTPMethod::Put => client.put(&u.to_string()).headers(h).send(),
-        HTTPMethod::Post => client.post(&u.to_string()).headers(h).send(),
-        HTTPMethod::Delete => client.delete(&u.to_string()).headers(h).send(),
+    if let Some((mut rb, size)) = request_body {
+        let b = hyper::client::Body::SizedBody(rb, size);
+
+        match method {
+            HTTPMethod::Get => client.get(&u.to_string()).headers(h).send(),
+            HTTPMethod::Put => client.put(&u.to_string()).body(b).headers(h).send(),
+            HTTPMethod::Post => client.post(&u.to_string()).body(b).headers(h).send(),
+            HTTPMethod::Delete => client.delete(&u.to_string()).body(b).headers(h).send(),
+        }
+    } else {
+        // no body
+        match method {
+            HTTPMethod::Get => client.get(&u.to_string()).headers(h).send(),
+            HTTPMethod::Put => client.put(&u.to_string()).headers(h).send(),
+            HTTPMethod::Post => client.post(&u.to_string()).headers(h).send(),
+            HTTPMethod::Delete => client.delete(&u.to_string()).headers(h).send(),
+        }
     }
+
+
 }
 
 
