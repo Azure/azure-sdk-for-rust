@@ -53,12 +53,7 @@ fn main() {
          })
          .collect::<Vec<()>>();
 
-    let (blob, mut stream) = vhds.get_blob_content(&client,
-                                                   "DataCollector01.csv",
-                                                   None,
-                                                   None,
-                                                   None,
-                                                   true)
+    let (blob, mut stream) = vhds.get_blob(&client, "DataCollector01.csv", None, None, None)
                                  .unwrap();
     println!("blob == {:?}", blob);
 

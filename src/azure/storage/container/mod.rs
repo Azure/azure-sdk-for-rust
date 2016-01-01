@@ -6,7 +6,7 @@ use azure::core::parsing::{traverse, cast_must, cast_optional};
 use azure::storage::{LeaseStatus, LeaseState, LeaseDuration};
 use azure::storage::client::Client;
 
-use azure::core::{XMSRange, XMSLeaseId};
+use azure::core::{XMSRange, XMSLeaseId, XMSRangeGetContentMD5};
 
 use azure::storage::blob;
 // use azure::core::parsing;
@@ -164,20 +164,24 @@ impl Container {
         Ok(v)
     }
 
-    pub fn get_blob_content(&self,
-                            c: &Client,
-                            blob_name: &str,
-                            snapshot: Option<&DateTime<UTC>>,
-                            range: Option<&Range>,
-                            lease_id: Option<&LeaseId>,
-                            get_md5: bool)
-                            -> Result<(blob::Blob, Box<Read>), core::errors::AzureError> {
-        let uri = format!("{}://{}.blob.core.windows.net/{}/{}",
-                          c.auth_scheme(),
-                          c.account(),
-                          self.name,
-                          blob_name);
+    pub fn get_blob(&self,
+                    c: &Client,
+                    blob_name: &str,
+                    snapshot: Option<&DateTime<UTC>>,
+                    range: Option<&Range>,
+                    lease_id: Option<&LeaseId>)
+                    -> Result<(blob::Blob, Box<Read>), core::errors::AzureError> {
+        let mut uri = format!("{}://{}.blob.core.windows.net/{}/{}",
+                              c.auth_scheme(),
+                              c.account(),
+                              self.name,
+                              blob_name);
 
+        if let Some(snapshot) = snapshot {
+            uri = format!("{}?snapshot={}", uri, snapshot.to_rfc2822());
+        }
+
+        let uri = uri;
 
         println!("uri == {:?}", uri);
 
@@ -185,11 +189,17 @@ impl Container {
 
         if let Some(r) = range {
             headers.set(XMSRange(r.clone()));
+
+            // if range is < 4MB request md5
+            if r.end - r.start <= 1024 * 1024 * 4 {
+                headers.set(XMSRangeGetContentMD5(true));
+            }
         }
 
         if let Some(l) = lease_id {
             headers.set(XMSLeaseId(l.clone()));
         }
+
 
         let mut resp = try!(c.perform_request(&uri, core::HTTPMethod::Get, &headers, None));
 

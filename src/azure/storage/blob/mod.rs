@@ -226,7 +226,7 @@ pub fn from_headers(blob_name: &str, h: &Headers) -> Result<Blob, AzureError> {
         content_encoding: content_encoding,
         content_language: content_language,
         content_md5: content_md5,
-        cache_control: None,
+        cache_control: None, // TODO
         x_ms_blob_sequence_number: x_ms_blob_sequence_number,
         blob_type: blob_type,
         lease_status: lease_status,
@@ -242,5 +242,5 @@ pub fn from_headers(blob_name: &str, h: &Headers) -> Result<Blob, AzureError> {
 }
 
 impl Blob {
-    pub fn put_block(&self, container_name: &str, r: &Read) {}
+    pub fn put_block_blob(&self, container_name: &str, r: &Read) {}
 }

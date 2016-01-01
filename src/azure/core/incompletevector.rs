@@ -1,4 +1,4 @@
-use std::ops::Index;
+// use std::ops::Index;
 
 #[derive(Debug)]
 pub struct IncompleteVector<T> {
