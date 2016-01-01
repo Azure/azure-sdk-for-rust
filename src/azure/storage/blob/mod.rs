@@ -241,6 +241,4 @@ pub fn from_headers(blob_name: &str, h: &Headers) -> Result<Blob, AzureError> {
     })
 }
 
-impl Blob {
-    pub fn put_block_blob(&self, container_name: &str, r: &Read) {}
-}
+impl Blob {}

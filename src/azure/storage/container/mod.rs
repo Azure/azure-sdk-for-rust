@@ -164,6 +164,19 @@ impl Container {
         Ok(v)
     }
 
+    pub fn put_blob(&self, c: &Client, blob_name: &str, r: &Read) {
+        let uri = format!("{}://{}.blob.core.windows.net/{}/{}",
+                          c.auth_scheme(),
+                          c.account(),
+                          self.name,
+                          blob_name);
+
+
+    }
+
+
+
+
     pub fn get_blob(&self,
                     c: &Client,
                     blob_name: &str,
