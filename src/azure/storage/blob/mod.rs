@@ -4,7 +4,10 @@ use chrono::UTC;
 use azure::storage::{LeaseStatus, LeaseState, LeaseDuration};
 use azure::storage::container::Container;
 use azure::storage::client::Client;
-use azure::core::{ContentMD5, XMSLeaseStatus, XMSLeaseDuration, XMSLeaseState};
+
+use azure::core;
+use azure::core::{ContentMD5, XMSLeaseStatus, XMSLeaseDuration, XMSLeaseState, XMSLeaseId};
+use azure::core::lease_id::LeaseId;
 use azure::core::parsing::{cast_must, cast_optional, from_azure_time};
 
 use xml::Element;
@@ -23,6 +26,7 @@ use azure::core::parsing::FromStringOptional;
 use azure::core::range::Range;
 use mime::Mime;
 
+use hyper::status::StatusCode;
 use hyper::header::{Headers, ContentType, ContentLength, LastModified, ContentEncoding,
                     ContentLanguage};
 
@@ -39,8 +43,11 @@ create_enum!(CopyStatus,
                             (Failed,           "failed")
 );
 
+header! { (XMSBlobContentLength, "x-ms-blob-content-length") => [u64] }
 header! { (XMSBlobSequenceNumber, "x-ms-blob-sequence-number") => [u64] }
 header! { (XMSBlobType, "x-ms-blob-type") => [BlobType] }
+header! { (XMSBlobContentDisposition, "x-ms-blob-content-disposition") => [String] }
+
 
 #[derive(Debug)]
 pub struct Blob {
@@ -244,25 +251,84 @@ pub fn from_headers(blob_name: &str, h: &Headers) -> Result<Blob, AzureError> {
 }
 
 impl Blob {
-    pub fn put_blob(&self, c: &Client, container: &Container, r: Option<(&Read, u64)>) -> Result<(), AzureError>{
+    pub fn put_blob(&self,
+                    c: &Client,
+                    container: &Container,
+                    lease_id: Option<LeaseId>,
+                    r: Option<(&mut Read, u64)>)
+                    -> Result<(), AzureError> {
+
+        // parameter sanity check
+        match self.blob_type {
+            BlobType::BlockBlob => {
+                if let None = r {
+                    return Err(AzureError::InputParametersError("cannot use put_blob with \
+                                                                 BlockBlob without a Read"
+                                                                    .to_owned()));
+                }
+            }
+            BlobType::PageBlob => {
+                if let Some(_) = r {
+                    return Err(AzureError::InputParametersError("cannot use put_blob with \
+                                                                 PageBlob with a Read"
+                                                                    .to_owned()));
+                }
+
+                if self.content_length % 512 != 0 {
+                    return Err(AzureError::InputParametersError("PageBlob size must be aligned \
+                                                                 to 512 bytes boundary"
+                                                                    .to_owned()));
+                }
+            }
+            BlobType::AppendBlob => {
+                if let Some(_) = r {
+                    return Err(AzureError::InputParametersError("cannot use put_blob with \
+                                                                 AppendBlob with a Read"
+                                                                    .to_owned()));
+                }
+            }
+        }
+
+
+
         let uri = format!("{}://{}.blob.core.windows.net/{}/{}",
                           c.auth_scheme(),
                           c.account(),
                           container.name,
                           self.name);
 
-                          let mut headers = Headers::new();
+        let mut headers = Headers::new();
 
-                          headers.set(ContentType(self.content_type.clone()));
+        headers.set(ContentType(self.content_type.clone()));
 
-                          if let Some(content_encoding) = self.content_encoding {
-                              use hyper::header::Encoding;
-                              let enc = try!(content_encoding.parse::<Encoding>());
-                              headers.set(ContentEncoding(vec!(enc)));
-                          };
+        if let Some(ref content_encoding) = self.content_encoding {
+            use hyper::header::Encoding;
+            let enc = try!(content_encoding.parse::<Encoding>());
+            headers.set(ContentEncoding(vec![enc]));
+        };
 
-                          Ok(())
+        // TODO Content-Language
 
+        if let Some(ref content_md5) = self.content_md5 {
+            headers.set(ContentMD5(content_md5.to_owned()));
+        };
+
+        headers.set(XMSBlobType(self.blob_type));
+
+        if let Some(lease_id) = lease_id {
+            headers.set(XMSLeaseId(lease_id));
+        }
+
+        // TODO x-ms-blob-content-disposition
+
+        if self.blob_type == BlobType::PageBlob {
+            headers.set(XMSBlobContentLength(self.content_length));
+        }
+
+        let mut resp = try!(c.perform_request(&uri, core::HTTPMethod::Put, &headers, r));
+
+        try!(core::errors::check_status(&mut resp, StatusCode::Created));
+
+        Ok(())
     }
-
 }

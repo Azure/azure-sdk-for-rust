@@ -9,11 +9,20 @@ extern crate xml;
 extern crate mime;
 
 
+use azure::storage::{LeaseState, LeaseStatus};
+use azure::storage::blob::{Blob, BlobType};
+
+
+
+
 #[macro_use]
 pub mod azure;
 
 use azure::storage::client;
-// use azure::storage::container::PublicAccess;
+// use chrono::datetime::DateTime;
+use chrono::UTC;
+
+use mime::Mime;
 
 fn main() {
     let azure_storage_account = match std::env::var("AZURE_STORAGE_ACCOUNT") {
@@ -62,6 +71,32 @@ fn main() {
 
     println!("buffer == {:?}", buffer);
 
+    let new_blob = Blob {
+        name: "from_rust.txt".to_owned(),
+        snapshot_time: None,
+        last_modified: UTC::now(),
+        etag: "".to_owned(),
+        content_length: 1024 * 1024 * 4, // 4MB
+        content_type: "application/octet-stream".parse::<Mime>().unwrap(),
+        content_encoding: None,
+        content_language: None,
+        content_md5: None,
+        cache_control: None,
+        x_ms_blob_sequence_number: None,
+        blob_type: BlobType::PageBlob,
+        lease_status: LeaseStatus::Unlocked,
+        lease_state: LeaseState::Available,
+        lease_duration: None,
+        copy_id: None,
+        copy_status: None,
+        copy_source: None,
+        copy_progress: None,
+        copy_completion: None,
+        copy_status_description: None,
+    };
+
+    new_blob.put_blob(&client, vhds, None, None)
+            .unwrap();
 
 
     // bal2.delete(&client).unwrap();

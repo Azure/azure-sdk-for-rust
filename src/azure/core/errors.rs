@@ -20,6 +20,7 @@ pub enum AzureError {
     ParseError(ParseError),
     GenericError,
     ParsingError(ParsingError),
+    InputParametersError(String),
 }
 
 #[derive(Debug)]
