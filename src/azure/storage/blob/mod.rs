@@ -2,6 +2,8 @@ use chrono::datetime::DateTime;
 use chrono::UTC;
 
 use azure::storage::{LeaseStatus, LeaseState, LeaseDuration};
+use azure::storage::container::Container;
+use azure::storage::client::Client;
 use azure::core::{ContentMD5, XMSLeaseStatus, XMSLeaseDuration, XMSLeaseState};
 use azure::core::parsing::{cast_must, cast_optional, from_azure_time};
 
@@ -241,4 +243,26 @@ pub fn from_headers(blob_name: &str, h: &Headers) -> Result<Blob, AzureError> {
     })
 }
 
-impl Blob {}
+impl Blob {
+    pub fn put_blob(&self, c: &Client, container: &Container, r: Option<(&Read, u64)>) -> Result<(), AzureError>{
+        let uri = format!("{}://{}.blob.core.windows.net/{}/{}",
+                          c.auth_scheme(),
+                          c.account(),
+                          container.name,
+                          self.name);
+
+                          let mut headers = Headers::new();
+
+                          headers.set(ContentType(self.content_type.clone()));
+
+                          if let Some(content_encoding) = self.content_encoding {
+                              use hyper::header::Encoding;
+                              let enc = try!(content_encoding.parse::<Encoding>());
+                              headers.set(ContentEncoding(vec!(enc)));
+                          };
+
+                          Ok(())
+
+    }
+
+}
