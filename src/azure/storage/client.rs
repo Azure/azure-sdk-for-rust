@@ -39,12 +39,12 @@ impl Client {
         &self.key
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn list_containers(&self) -> Result<Vec<Container>, errors::AzureError> {
         container::list(self)
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn create_container(&self,
                             container_name: &str,
                             pa: container::PublicAccess)

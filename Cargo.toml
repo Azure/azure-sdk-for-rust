@@ -9,6 +9,7 @@ rust-crypto = "^0.2"
 rustc-serialize = "*"
 RustyXML = "*"
 mime = "*"
+clippy = "0.0.30"
 
 [dependencies.hyper]
 version = "*"

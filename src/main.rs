@@ -1,3 +1,6 @@
+#![feature(plugin)]
+#![plugin(clippy)]
+
 #[macro_use]
 extern crate hyper;
 extern crate chrono;
@@ -53,14 +56,12 @@ fn main() {
 
     println!("len == {:?}", blobs.len());
 
-    blobs.iter()
-         .map(|x| {
-             println!("{}, {} KB ({:?})",
-                      x.name,
-                      (x.content_length / 1024),
-                      x.lease_state)
-         })
-         .collect::<Vec<()>>();
+    for blob in &blobs {
+        println!("{}, {} KB ({:?})",
+                 blob.name,
+                 (blob.content_length / 1024),
+                 blob.lease_state)
+    }
 
     let (blob, mut stream) = vhds.get_blob(&client, "DataCollector01.csv", None, None, None)
                                  .unwrap();

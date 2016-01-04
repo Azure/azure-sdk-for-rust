@@ -38,9 +38,9 @@ macro_rules! create_enum {
 
         impl fmt::Display for $en {
             fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-                match self {
+                match *self {
                     $(
-                        &$en::$na => write!(f, "{}", $x),
+                        $en::$na => write!(f, "{}", $x),
                     )*
                 }
             }

@@ -159,7 +159,7 @@ pub fn canonicalize_header(h: &hyper::header::Headers) -> String {
     let mut v_headers = Vec::new();
 
     for header in h.iter().filter(|h| h.name().starts_with("x-ms")) {
-        let s: String = header.name().to_string().trim().to_lowercase();
+        let s: String = header.name().to_owned().trim().to_lowercase();
 
         v_headers.push(s);
     }
@@ -243,11 +243,11 @@ pub fn canonicalized_resource(u: &url::Url) -> String {
 
                 can_res = can_res + &qparam.to_lowercase() + ":";
 
-                for i in 0usize..ret.len() {
+                for (i, item) in ret.iter().enumerate() {
                     if i > 0 {
                         can_res = can_res + ","
                     }
-                    can_res = can_res + &ret[i];
+                    can_res = can_res + item;
                 }
 
                 can_res = can_res + "\n";
@@ -256,16 +256,15 @@ pub fn canonicalized_resource(u: &url::Url) -> String {
         None => {}
     };
 
-    can_res[0..can_res.len() - 1].to_string()
+    can_res[0..can_res.len() - 1].to_owned()
 }
 
-fn lexy_sort(vec: &Vec<(String, String)>, query_param: &str) -> Vec<(String)> {
+fn lexy_sort(vec: &[(String, String)], query_param: &str) -> Vec<(String)> {
     let mut v_values = Vec::new();
 
-    vec.iter()
-       .filter(|x| x.0 == *query_param)
-       .map(|x| v_values.push(x.clone().1))
-       .collect::<Vec<()>>();
+    for item in vec.iter().filter(|x| x.0 == *query_param) {
+        v_values.push(item.clone().1)
+    }
     v_values.sort();
 
     v_values

@@ -110,19 +110,19 @@ impl Container {
             include = include + "snapshots";
         }
         if include_metadata {
-            if include.len() > 0 {
+            if include.is_empty() {
                 include = include + ",";
             }
             include = include + "metadata";
         }
         if include_uncommittedblobs {
-            if include.len() > 0 {
+            if include.is_empty() {
                 include = include + ",";
             }
             include = include + "uncommittedblobs";
         }
         if include_copy {
-            if include.len() > 0 {
+            if include.is_empty() {
                 include = include + ",";
             }
             include = include + "copy";
@@ -133,7 +133,7 @@ impl Container {
                               c.account(),
                               self.name);
 
-        if include.len() > 0 {
+        if include.is_empty() {
             uri = format!("{}&include={}", uri, include);
         }
 
