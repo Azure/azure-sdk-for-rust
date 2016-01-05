@@ -7,13 +7,13 @@
 * Get blob
 * Put blob
 
-## [0.0.4](https://github.com/MindFlavor/AzureSDKForRust/releases/tag/v0.0.4) (2015-12-15)
+## [0.0.4](https://github.com/MindFlavor/AzureSDKForRust/releases/tag/0.0.4) (2015-12-15)
 
 **Implemented features:**
 * Create container
 * Delete container
 
-## [0.0.3](https://github.com/MindFlavor/AzureSDKForRust/releases/tag/v0.0.3) (2015-12-14)
+## [0.0.3](https://github.com/MindFlavor/AzureSDKForRust/releases/tag/0.0.3) (2015-12-14)
 
 Initial release
 
