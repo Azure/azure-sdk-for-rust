@@ -14,9 +14,13 @@ pub enum AzureError {
     IOError(String),
     XMLError(String),
     UnexpectedResult((StatusCode, StatusCode, String)),
+    HeaderNotFound(String),
     ResponseParsingError(TraversingError),
     ParseIntError(num::ParseIntError),
     ParseError(ParseError),
+    GenericError,
+    ParsingError(ParsingError),
+    InputParametersError(String),
 }
 
 #[derive(Debug)]
@@ -37,9 +41,21 @@ impl From<ParseError> for AzureError {
     }
 }
 
+impl From<()> for AzureError {
+    fn from(_: ()) -> AzureError {
+        AzureError::GenericError
+    }
+}
+
 impl From<hyper::error::Error> for AzureError {
     fn from(he: hyper::error::Error) -> AzureError {
         AzureError::HyperError(he)
+    }
+}
+
+impl From<ParsingError> for AzureError {
+    fn from(pie: ParsingError) -> AzureError {
+        AzureError::ParsingError(pie)
     }
 }
 
@@ -70,6 +86,12 @@ impl From<chrono::format::ParseError> for TraversingError {
 impl From<num::ParseIntError> for TraversingError {
     fn from(pie: num::ParseIntError) -> TraversingError {
         TraversingError::ParseIntError(pie)
+    }
+}
+
+impl From<ParsingError> for TraversingError {
+    fn from(pie: ParsingError) -> TraversingError {
+        TraversingError::ParsingError(pie)
     }
 }
 

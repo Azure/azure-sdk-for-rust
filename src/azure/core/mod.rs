@@ -18,6 +18,10 @@ use crypto::sha2::Sha256;
 use hyper::Client;
 use chrono;
 
+use std::io::Read;
+
+use azure::storage::{LeaseStatus, LeaseState, LeaseDuration};
+
 #[macro_use]
 pub mod errors;
 pub mod parsing;
@@ -46,6 +50,12 @@ header! { (IfNoneMatch, "If-None-Match") => [String] }
 header! { (Range, "Range") => [String] }
 header! { (XMSRange, "x-ms-range") => [range::Range] }
 header! { (XMSLeaseId, "x-ms-lease-id") => [lease_id::LeaseId] }
+header! { (XMSLeaseStatus, "x-ms-lease-status") => [LeaseStatus] }
+header! { (XMSLeaseState, "x-ms-lease-state") => [LeaseState] }
+header! { (XMSLeaseDuration, "x-ms-lease-duration") => [LeaseDuration] }
+header! { (ETag, "ETag") => [String] }
+header! { (XMSRangeGetContentMD5, "x-ms-range-get-content-md5") => [bool] }
+
 
 pub fn generate_authorization(h: &Headers,
                               u: &url::Url,
@@ -149,7 +159,7 @@ pub fn canonicalize_header(h: &hyper::header::Headers) -> String {
     let mut v_headers = Vec::new();
 
     for header in h.iter().filter(|h| h.name().starts_with("x-ms")) {
-        let s: String = header.name().to_string().trim().to_lowercase();
+        let s: String = header.name().to_owned().trim().to_lowercase();
 
         v_headers.push(s);
     }
@@ -233,11 +243,11 @@ pub fn canonicalized_resource(u: &url::Url) -> String {
 
                 can_res = can_res + &qparam.to_lowercase() + ":";
 
-                for i in 0usize..ret.len() {
+                for (i, item) in ret.iter().enumerate() {
                     if i > 0 {
                         can_res = can_res + ","
                     }
-                    can_res = can_res + &ret[i];
+                    can_res = can_res + item;
                 }
 
                 can_res = can_res + "\n";
@@ -246,16 +256,15 @@ pub fn canonicalized_resource(u: &url::Url) -> String {
         None => {}
     };
 
-    can_res[0..can_res.len() - 1].to_string()
+    can_res[0..can_res.len() - 1].to_owned()
 }
 
-fn lexy_sort(vec: &Vec<(String, String)>, query_param: &str) -> Vec<(String)> {
+fn lexy_sort(vec: &[(String, String)], query_param: &str) -> Vec<(String)> {
     let mut v_values = Vec::new();
 
-    vec.iter()
-       .filter(|x| x.0 == *query_param)
-       .map(|x| v_values.push(x.clone().1))
-       .collect::<Vec<()>>();
+    for item in vec.iter().filter(|x| x.0 == *query_param) {
+        v_values.push(item.clone().1)
+    }
     v_values.sort();
 
     v_values
@@ -264,7 +273,8 @@ fn lexy_sort(vec: &Vec<(String, String)>, query_param: &str) -> Vec<(String)> {
 pub fn perform_request(uri: &str,
                        method: HTTPMethod,
                        azure_key: &str,
-                       headers: &Headers)
+                       headers: &Headers,
+                       request_body: Option<(&mut Read, u64)>)
                        -> Result<hyper::client::response::Response, hyper::error::Error> {
     let client = Client::new();
 
@@ -284,6 +294,11 @@ pub fn perform_request(uri: &str,
 
     h.set(XMSDate(time));
     h.set(XMSVersion(AZURE_VERSION.to_owned()));
+
+    if let Some((_, size)) = request_body {
+        h.set(ContentLength(size));
+    }
+
     let auth = generate_authorization(&h, &u, method, azure_key);
     // println!("auth == {:?}", auth);
 
@@ -291,12 +306,26 @@ pub fn perform_request(uri: &str,
 
     // println!("{:?}", h);
 
-    match method {
-        HTTPMethod::Get => client.get(&u.to_string()).headers(h).send(),
-        HTTPMethod::Put => client.put(&u.to_string()).headers(h).send(),
-        HTTPMethod::Post => client.post(&u.to_string()).headers(h).send(),
-        HTTPMethod::Delete => client.delete(&u.to_string()).headers(h).send(),
+    if let Some((mut rb, size)) = request_body {
+        let b = hyper::client::Body::SizedBody(rb, size);
+
+        match method {
+            HTTPMethod::Get => client.get(&u.to_string()).headers(h).send(),
+            HTTPMethod::Put => client.put(&u.to_string()).body(b).headers(h).send(),
+            HTTPMethod::Post => client.post(&u.to_string()).body(b).headers(h).send(),
+            HTTPMethod::Delete => client.delete(&u.to_string()).body(b).headers(h).send(),
+        }
+    } else {
+        // no body
+        match method {
+            HTTPMethod::Get => client.get(&u.to_string()).headers(h).send(),
+            HTTPMethod::Put => client.put(&u.to_string()).headers(h).send(),
+            HTTPMethod::Post => client.post(&u.to_string()).headers(h).send(),
+            HTTPMethod::Delete => client.delete(&u.to_string()).headers(h).send(),
+        }
     }
+
+
 }
 
 
