@@ -1,6 +1,3 @@
-#![feature(plugin)]
-#![plugin(clippy)]
-
 #[macro_use]
 extern crate hyper;
 extern crate chrono;
@@ -80,8 +77,8 @@ fn main() {
         use std::fs::metadata;
         use std::fs::File;
 
-        let file_name : &'static str = "C:\\temp\\list.txt";
-        let container_name : &'static str = "rust";
+        let file_name: &'static str = "C:\\temp\\list.txt";
+        let container_name: &'static str = "rust";
 
         let metadata = metadata(file_name).unwrap();
         let mut file = File::open(file_name).unwrap();
@@ -110,7 +107,11 @@ fn main() {
             copy_status_description: None,
         };
 
-        new_blob.put_blob(&client, container_name, None, Some((&mut file, metadata.len()))).unwrap();
+        new_blob.put_blob(&client,
+                          container_name,
+                          None,
+                          Some((&mut file, metadata.len())))
+                .unwrap();
     }
 
 

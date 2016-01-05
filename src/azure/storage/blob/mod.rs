@@ -2,7 +2,6 @@ use chrono::datetime::DateTime;
 use chrono::UTC;
 
 use azure::storage::{LeaseStatus, LeaseState, LeaseDuration};
-use azure::storage::container::Container;
 use azure::storage::client::Client;
 
 use azure::core;
