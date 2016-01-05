@@ -41,7 +41,7 @@ impl Client {
 
     #[inline]
     pub fn list_containers(&self) -> Result<Vec<Container>, errors::AzureError> {
-        container::list(self)
+        Container::list(self)
     }
 
     #[inline]
@@ -49,7 +49,7 @@ impl Client {
                             container_name: &str,
                             pa: container::PublicAccess)
                             -> Result<(), errors::AzureError> {
-        container::create(self, container_name, pa)
+        Container::create(self, container_name, pa)
     }
 
     pub fn perform_request(&self,

@@ -218,64 +218,63 @@ impl Container {
 
         Ok((blob, r))
     }
-}
 
+    pub fn create(c: &Client,
+                  container_name: &str,
+                  pa: PublicAccess)
+                  -> Result<(), core::errors::AzureError> {
+        let uri = format!("{}://{}.blob.core.windows.net/{}?restype=container",
+                          c.auth_scheme(),
+                          c.account(),
+                          container_name);
 
-pub fn create(c: &Client,
-              container_name: &str,
-              pa: PublicAccess)
-              -> Result<(), core::errors::AzureError> {
-    let uri = format!("{}://{}.blob.core.windows.net/{}?restype=container",
-                      c.auth_scheme(),
-                      c.account(),
-                      container_name);
+        let mut headers = Headers::new();
 
-    let mut headers = Headers::new();
+        if pa != PublicAccess::None {
+            headers.set(XMSBlobPublicAccess(pa));
+        }
 
-    if pa != PublicAccess::None {
-        headers.set(XMSBlobPublicAccess(pa));
+        let mut resp = try!(c.perform_request(&uri, core::HTTPMethod::Put, &headers, None));
+
+        try!(errors::check_status(&mut resp, StatusCode::Created));
+
+        Ok(())
     }
 
-    let mut resp = try!(c.perform_request(&uri, core::HTTPMethod::Put, &headers, None));
+    pub fn list(c: &Client) -> Result<Vec<Container>, core::errors::AzureError> {
+        let uri = format!("{}://{}.blob.core.windows.net?comp=list",
+                          c.auth_scheme(),
+                          c.account());
 
-    try!(errors::check_status(&mut resp, StatusCode::Created));
+        let mut resp = try!(c.perform_request(&uri, core::HTTPMethod::Get, &Headers::new(), None));
 
-    Ok(())
-}
+        try!(errors::check_status(&mut resp, StatusCode::Ok));
 
-pub fn list(c: &Client) -> Result<Vec<Container>, core::errors::AzureError> {
-    let uri = format!("{}://{}.blob.core.windows.net?comp=list",
-                      c.auth_scheme(),
-                      c.account());
+        // println!("{:?}", resp.status);
 
-    let mut resp = try!(c.perform_request(&uri, core::HTTPMethod::Get, &Headers::new(), None));
+        let mut resp_s = String::new();
+        match resp.read_to_string(&mut resp_s) {
+            Ok(_) => (),
+            Err(err) => return Err(errors::new_from_ioerror_string(err.to_string())),
+        };
 
-    try!(errors::check_status(&mut resp, StatusCode::Ok));
+        // println!("response == \n\n{:?}\n\n", resp_s);
 
-    // println!("{:?}", resp.status);
+        let sp = &resp_s;
+        let elem: Element = match sp.parse() {
+            Ok(res) => res,
+            Err(err) => return Err(errors::new_from_xmlerror_string(err.to_string())),
+        };
 
-    let mut resp_s = String::new();
-    match resp.read_to_string(&mut resp_s) {
-        Ok(_) => (),
-        Err(err) => return Err(errors::new_from_ioerror_string(err.to_string())),
-    };
+        let mut v = Vec::new();
 
-    // println!("response == \n\n{:?}\n\n", resp_s);
+        // let containers = try!(traverse(&elem, &["Containers", "Container"]));
+        // println!("containers == {:?}", containers);
 
-    let sp = &resp_s;
-    let elem: Element = match sp.parse() {
-        Ok(res) => res,
-        Err(err) => return Err(errors::new_from_xmlerror_string(err.to_string())),
-    };
+        for container in try!(traverse(&elem, &["Containers", "Container"], true)) {
+            v.push(try!(Container::parse(container)));
+        }
 
-    let mut v = Vec::new();
-
-    // let containers = try!(traverse(&elem, &["Containers", "Container"]));
-    // println!("containers == {:?}", containers);
-
-    for container in try!(traverse(&elem, &["Containers", "Container"], true)) {
-        v.push(try!(Container::parse(container)));
+        Ok(v)
     }
-
-    Ok(v)
 }
