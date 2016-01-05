@@ -66,6 +66,8 @@ If you want to contribute please do! No formality required! :wink:
 |Method | URL |
 | ----  | --- |
 |List blobs|[https://msdn.microsoft.com/en-us/library/azure/dd135734.aspx]()|
+|Get blob|[https://msdn.microsoft.com/en-us/library/azure/dd179440.aspx]()|
+|Put blob|[https://msdn.microsoft.com/en-us/library/azure/dd179451.aspx]()|
 
 ## License
 This project is published under [The MIT License (MIT)](LICENSE).
