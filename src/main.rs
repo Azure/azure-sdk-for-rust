@@ -44,8 +44,8 @@ fn main() {
     // client.create_container("balocco3", PublicAccess::Blob).unwrap();
     // // println!("{:?}", new);
     //
-    // let mut ret = client.list_containers().unwrap();
-    // println!("{:?}", ret);
+    let mut ret = client.list_containers().unwrap();
+    println!("{:?}", ret);
 
     // {
     //     let vhds = ret.iter_mut().find(|x| x.name == "canotto").unwrap();

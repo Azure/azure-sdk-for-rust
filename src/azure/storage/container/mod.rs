@@ -9,6 +9,7 @@ use azure::storage::client::Client;
 use azure::core::{XMSRange, XMSLeaseId, XMSRangeGetContentMD5};
 
 use azure::storage::blob;
+use azure::storage::blob::Blob;
 // use azure::core::parsing;
 // use hyper::error;
 use hyper::header::Headers;
@@ -48,40 +49,41 @@ pub struct Container {
     pub lease_duration: Option<LeaseDuration>,
 }
 
-pub fn new(name: &str) -> Container {
-    Container {
-        name: name.to_owned(),
-        last_modified: UTC::now(),
-        e_tag: "".to_owned(),
-        lease_status: LeaseStatus::Unlocked,
-        lease_state: LeaseState::Available,
-        lease_duration: None,
-    }
-}
-
-pub fn parse(elem: &Element) -> Result<Container, core::errors::AzureError> {
-    let name = try!(cast_must::<String>(elem, &["Name"]));
-    let last_modified = try!(cast_must::<DateTime<UTC>>(elem, &["Properties", "Last-Modified"]));
-    let e_tag = try!(cast_must::<String>(elem, &["Properties", "Etag"]));
-
-    let lease_state = try!(cast_must::<LeaseState>(elem, &["Properties", "LeaseState"]));
-
-    let lease_duration = try!(cast_optional::<LeaseDuration>(elem,
-                                                             &["Properties", "LeaseDuration"]));
-
-    let lease_status = try!(cast_must::<LeaseStatus>(elem, &["Properties", "LeaseStatus"]));
-
-    Ok(Container {
-        name: name,
-        last_modified: last_modified,
-        e_tag: e_tag,
-        lease_status: lease_status,
-        lease_state: lease_state,
-        lease_duration: lease_duration,
-    })
-}
-
 impl Container {
+    pub fn new(name: &str) -> Container {
+        Container {
+            name: name.to_owned(),
+            last_modified: UTC::now(),
+            e_tag: "".to_owned(),
+            lease_status: LeaseStatus::Unlocked,
+            lease_state: LeaseState::Available,
+            lease_duration: None,
+        }
+    }
+
+    pub fn parse(elem: &Element) -> Result<Container, core::errors::AzureError> {
+        let name = try!(cast_must::<String>(elem, &["Name"]));
+        let last_modified = try!(cast_must::<DateTime<UTC>>(elem,
+                                                            &["Properties", "Last-Modified"]));
+        let e_tag = try!(cast_must::<String>(elem, &["Properties", "Etag"]));
+
+        let lease_state = try!(cast_must::<LeaseState>(elem, &["Properties", "LeaseState"]));
+
+        let lease_duration = try!(cast_optional::<LeaseDuration>(elem,
+                                                                 &["Properties", "LeaseDuration"]));
+
+        let lease_status = try!(cast_must::<LeaseStatus>(elem, &["Properties", "LeaseStatus"]));
+
+        Ok(Container {
+            name: name,
+            last_modified: last_modified,
+            e_tag: e_tag,
+            lease_status: lease_status,
+            lease_state: lease_state,
+            lease_duration: lease_duration,
+        })
+    }
+
     pub fn delete(&mut self, c: &Client) -> Result<(), core::errors::AzureError> {
         let uri = format!("{}://{}.blob.core.windows.net/{}?restype=container",
                           c.auth_scheme(),
@@ -158,7 +160,7 @@ impl Container {
         let mut v = Vec::new();
         for node_blob in try!(traverse(&elem, &["Blobs", "Blob"], true)) {
             // println!("{:?}", blob);
-            v.push(try!(blob::parse(node_blob)));
+            v.push(try!(Blob::parse(node_blob)));
         }
 
         Ok(v)
@@ -211,7 +213,7 @@ impl Container {
             try!(errors::check_status(&mut resp, StatusCode::Ok));
         }
 
-        let blob = try!(blob::from_headers(blob_name, &resp.headers));
+        let blob = try!(Blob::from_headers(blob_name, &resp.headers));
         let r: Box<Read> = Box::new(resp);
 
         Ok((blob, r))
@@ -272,7 +274,7 @@ pub fn list(c: &Client) -> Result<Vec<Container>, core::errors::AzureError> {
     // println!("containers == {:?}", containers);
 
     for container in try!(traverse(&elem, &["Containers", "Container"], true)) {
-        v.push(try!(parse(container)));
+        v.push(try!(Container::parse(container)));
     }
 
     Ok(v)
