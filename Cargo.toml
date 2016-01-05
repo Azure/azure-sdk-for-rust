@@ -1,6 +1,6 @@
 [package]
 name = "azure_sdk_for_rust"
-version = "0.0.4"
+version = "0.0.5"
 authors = ["Francesco Cogno <francesco.cogno@outlook.com>"]
 
 [dependencies]
@@ -8,10 +8,11 @@ chrono = "*"
 rust-crypto = "^0.2"
 rustc-serialize = "*"
 RustyXML = "*"
+mime = "*"
 
 [dependencies.hyper]
 version = "*"
-default-features = false
+default-features = true
 
 [dependencies.url]
 git = "https://github.com/servo/rust-url"

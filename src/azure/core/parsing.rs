@@ -2,7 +2,6 @@ use xml::Element;
 use xml::Xml::{ElementNode, CharacterNode};
 use azure::core::errors::TraversingError;
 use chrono;
-use chrono::{DateTime, UTC};
 
 pub trait FromStringOptional<T> {
     fn from_str_optional(s: &str) -> Result<T, TraversingError>;
@@ -56,7 +55,7 @@ pub fn traverse_single_optional<'a>(node: &'a Element,
         return Err(TraversingError::MultipleNode(path[path.len() - 1].to_owned()));
     }
 
-    if vec.len() == 0 {
+    if vec.is_empty() {
         return Ok(None);
     }
 
@@ -78,20 +77,20 @@ pub fn traverse<'a>(node: &'a Element,
 
     let mut curnode = node;
 
-    for x in 0..path.len() {
+    for (x, item) in path.iter().enumerate() {
         // println!("x == {}, path[x] == {}", x, path[x]);
 
-        let vec = find_subnodes(curnode, path[x]);
-        if vec.len() == 0 {
+        let vec = find_subnodes(curnode, item);
+        if vec.is_empty() {
             if (x + 1) >= path.len() && ignore_empty_leaf {
                 return Ok(vec);
             } else {
-                return Err(TraversingError::PathNotFound(path[x].to_owned()));
+                return Err(TraversingError::PathNotFound((*item).to_owned()));
             }
         }
 
         if vec.len() > 1 && (x + 1) < path.len() {
-            return Err(TraversingError::MultipleNode(path[x].to_owned()));
+            return Err(TraversingError::MultipleNode((*item).to_owned()));
         }
 
         if (x + 1) >= path.len() {
@@ -109,14 +108,14 @@ pub fn find_subnodes<'a>(node: &'a Element, subnode: &str) -> Vec<&'a Element> {
     node.children
         .iter()
         .filter(|x| {
-            match x {
-                &&ElementNode(ref mynode) => mynode.name == subnode,
+            match **x {
+                ElementNode(ref mynode) => mynode.name == subnode,
                 _ => false,
             }
         })
         .map(|x| {
-            match x {
-                &ElementNode(ref mynode) => mynode,
+            match *x {
+                ElementNode(ref mynode) => mynode,
                 _ => unreachable!(),
             }
         })
@@ -126,8 +125,8 @@ pub fn find_subnodes<'a>(node: &'a Element, subnode: &str) -> Vec<&'a Element> {
 #[inline]
 pub fn inner_text(node: &Element) -> Result<&str, TraversingError> {
     for child in &node.children {
-        match child {
-            &CharacterNode(ref txt) => return Ok(txt),
+        match *child {
+            CharacterNode(ref txt) => return Ok(txt),
             _ => continue,
         };
     }

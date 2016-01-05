@@ -6,13 +6,15 @@ use azure::core::parsing::{traverse, cast_must, cast_optional};
 use azure::storage::{LeaseStatus, LeaseState, LeaseDuration};
 use azure::storage::client::Client;
 
-use azure::core::{XMSRange, XMSLeaseId};
+use azure::core::{XMSRange, XMSLeaseId, XMSRangeGetContentMD5};
 
 use azure::storage::blob;
+use azure::storage::blob::Blob;
 // use azure::core::parsing;
 // use hyper::error;
 use hyper::header::Headers;
 use hyper::status::StatusCode;
+
 use std::str::FromStr;
 use chrono::datetime::DateTime;
 use chrono::UTC;
@@ -47,47 +49,51 @@ pub struct Container {
     pub lease_duration: Option<LeaseDuration>,
 }
 
-pub fn new(name: &str) -> Container {
-    Container {
-        name: name.to_owned(),
-        last_modified: UTC::now(),
-        e_tag: "".to_owned(),
-        lease_status: LeaseStatus::Unlocked,
-        lease_state: LeaseState::Available,
-        lease_duration: None,
-    }
-}
-
-pub fn parse(elem: &Element) -> Result<Container, core::errors::AzureError> {
-    let name = try!(cast_must::<String>(elem, &["Name"]));
-    let last_modified = try!(cast_must::<DateTime<UTC>>(elem, &["Properties", "Last-Modified"]));
-    let e_tag = try!(cast_must::<String>(elem, &["Properties", "Etag"]));
-
-    let lease_state = try!(cast_must::<LeaseState>(elem, &["Properties", "LeaseState"]));
-
-    let lease_duration = try!(cast_optional::<LeaseDuration>(elem,
-                                                             &["Properties", "LeaseDuration"]));
-
-    let lease_status = try!(cast_must::<LeaseStatus>(elem, &["Properties", "LeaseStatus"]));
-
-    Ok(Container {
-        name: name,
-        last_modified: last_modified,
-        e_tag: e_tag,
-        lease_status: lease_status,
-        lease_state: lease_state,
-        lease_duration: lease_duration,
-    })
-}
-
 impl Container {
+    pub fn new(name: &str) -> Container {
+        Container {
+            name: name.to_owned(),
+            last_modified: UTC::now(),
+            e_tag: "".to_owned(),
+            lease_status: LeaseStatus::Unlocked,
+            lease_state: LeaseState::Available,
+            lease_duration: None,
+        }
+    }
+
+    pub fn parse(elem: &Element) -> Result<Container, core::errors::AzureError> {
+        let name = try!(cast_must::<String>(elem, &["Name"]));
+        let last_modified = try!(cast_must::<DateTime<UTC>>(elem,
+                                                            &["Properties", "Last-Modified"]));
+        let e_tag = try!(cast_must::<String>(elem, &["Properties", "Etag"]));
+
+        let lease_state = try!(cast_must::<LeaseState>(elem, &["Properties", "LeaseState"]));
+
+        let lease_duration = try!(cast_optional::<LeaseDuration>(elem,
+                                                                 &["Properties", "LeaseDuration"]));
+
+        let lease_status = try!(cast_must::<LeaseStatus>(elem, &["Properties", "LeaseStatus"]));
+
+        Ok(Container {
+            name: name,
+            last_modified: last_modified,
+            e_tag: e_tag,
+            lease_status: lease_status,
+            lease_state: lease_state,
+            lease_duration: lease_duration,
+        })
+    }
+
     pub fn delete(&mut self, c: &Client) -> Result<(), core::errors::AzureError> {
         let uri = format!("{}://{}.blob.core.windows.net/{}?restype=container",
                           c.auth_scheme(),
                           c.account(),
                           self.name);
 
-        let mut resp = try!(c.perform_request(&uri, core::HTTPMethod::Delete, &Headers::new()));
+        let mut resp = try!(c.perform_request(&uri,
+                                              core::HTTPMethod::Delete,
+                                              &Headers::new(),
+                                              None));
 
         try!(errors::check_status(&mut resp, StatusCode::Accepted));
         Ok(())
@@ -106,19 +112,19 @@ impl Container {
             include = include + "snapshots";
         }
         if include_metadata {
-            if include.len() > 0 {
+            if include.is_empty() {
                 include = include + ",";
             }
             include = include + "metadata";
         }
         if include_uncommittedblobs {
-            if include.len() > 0 {
+            if include.is_empty() {
                 include = include + ",";
             }
             include = include + "uncommittedblobs";
         }
         if include_copy {
-            if include.len() > 0 {
+            if include.is_empty() {
                 include = include + ",";
             }
             include = include + "copy";
@@ -129,11 +135,11 @@ impl Container {
                               c.account(),
                               self.name);
 
-        if include.len() > 0 {
+        if include.is_empty() {
             uri = format!("{}&include={}", uri, include);
         }
 
-        let mut resp = try!(c.perform_request(&uri, core::HTTPMethod::Get, &Headers::new()));
+        let mut resp = try!(c.perform_request(&uri, core::HTTPMethod::Get, &Headers::new(), None));
 
         try!(errors::check_status(&mut resp, StatusCode::Ok));
 
@@ -154,26 +160,30 @@ impl Container {
         let mut v = Vec::new();
         for node_blob in try!(traverse(&elem, &["Blobs", "Blob"], true)) {
             // println!("{:?}", blob);
-            v.push(try!(blob::parse(node_blob)));
+            v.push(try!(Blob::parse(node_blob)));
         }
 
         Ok(v)
     }
 
-    pub fn get_blob_content(&self,
-                            c: &Client,
-                            blob_name: &str,
-                            snapshot: Option<&DateTime<UTC>>,
-                            range: Option<&Range>,
-                            lease_id: Option<&LeaseId>,
-                            get_md5: bool)
-                            -> Result<(), core::errors::AzureError> {
-        let uri = format!("{}://{}.blob.core.windows.net/{}/{}",
-                          c.auth_scheme(),
-                          c.account(),
-                          self.name,
-                          blob_name);
+    pub fn get_blob(&self,
+                    c: &Client,
+                    blob_name: &str,
+                    snapshot: Option<&DateTime<UTC>>,
+                    range: Option<&Range>,
+                    lease_id: Option<&LeaseId>)
+                    -> Result<(blob::Blob, Box<Read>), core::errors::AzureError> {
+        let mut uri = format!("{}://{}.blob.core.windows.net/{}/{}",
+                              c.auth_scheme(),
+                              c.account(),
+                              self.name,
+                              blob_name);
 
+        if let Some(snapshot) = snapshot {
+            uri = format!("{}?snapshot={}", uri, snapshot.to_rfc2822());
+        }
+
+        let uri = uri;
 
         println!("uri == {:?}", uri);
 
@@ -181,74 +191,90 @@ impl Container {
 
         if let Some(r) = range {
             headers.set(XMSRange(r.clone()));
+
+            // if range is < 4MB request md5
+            if r.end - r.start <= 1024 * 1024 * 4 {
+                headers.set(XMSRangeGetContentMD5(true));
+            }
         }
 
         if let Some(l) = lease_id {
             headers.set(XMSLeaseId(l.clone()));
         }
 
-        let mut resp = try!(c.perform_request(&uri, core::HTTPMethod::Get, &headers));
+
+        let mut resp = try!(c.perform_request(&uri, core::HTTPMethod::Get, &headers, None));
+
+        // if we have requested a range the response code should be 207 (partial content)
+        // otherwise 200 (ok).
+        if let Some(_) = range {
+            try!(errors::check_status(&mut resp, StatusCode::PartialContent));
+        } else {
+            try!(errors::check_status(&mut resp, StatusCode::Ok));
+        }
+
+        let blob = try!(Blob::from_headers(blob_name, &resp.headers));
+        let r: Box<Read> = Box::new(resp);
+
+        Ok((blob, r))
+    }
+
+    pub fn create(c: &Client,
+                  container_name: &str,
+                  pa: PublicAccess)
+                  -> Result<(), core::errors::AzureError> {
+        let uri = format!("{}://{}.blob.core.windows.net/{}?restype=container",
+                          c.auth_scheme(),
+                          c.account(),
+                          container_name);
+
+        let mut headers = Headers::new();
+
+        if pa != PublicAccess::None {
+            headers.set(XMSBlobPublicAccess(pa));
+        }
+
+        let mut resp = try!(c.perform_request(&uri, core::HTTPMethod::Put, &headers, None));
+
+        try!(errors::check_status(&mut resp, StatusCode::Created));
 
         Ok(())
     }
-}
 
+    pub fn list(c: &Client) -> Result<Vec<Container>, core::errors::AzureError> {
+        let uri = format!("{}://{}.blob.core.windows.net?comp=list",
+                          c.auth_scheme(),
+                          c.account());
 
-pub fn create(c: &Client,
-              container_name: &str,
-              pa: PublicAccess)
-              -> Result<(), core::errors::AzureError> {
-    let uri = format!("{}://{}.blob.core.windows.net/{}?restype=container",
-                      c.auth_scheme(),
-                      c.account(),
-                      container_name);
+        let mut resp = try!(c.perform_request(&uri, core::HTTPMethod::Get, &Headers::new(), None));
 
-    let mut headers = Headers::new();
+        try!(errors::check_status(&mut resp, StatusCode::Ok));
 
-    if pa != PublicAccess::None {
-        headers.set(XMSBlobPublicAccess(pa));
+        // println!("{:?}", resp.status);
+
+        let mut resp_s = String::new();
+        match resp.read_to_string(&mut resp_s) {
+            Ok(_) => (),
+            Err(err) => return Err(errors::new_from_ioerror_string(err.to_string())),
+        };
+
+        // println!("response == \n\n{:?}\n\n", resp_s);
+
+        let sp = &resp_s;
+        let elem: Element = match sp.parse() {
+            Ok(res) => res,
+            Err(err) => return Err(errors::new_from_xmlerror_string(err.to_string())),
+        };
+
+        let mut v = Vec::new();
+
+        // let containers = try!(traverse(&elem, &["Containers", "Container"]));
+        // println!("containers == {:?}", containers);
+
+        for container in try!(traverse(&elem, &["Containers", "Container"], true)) {
+            v.push(try!(Container::parse(container)));
+        }
+
+        Ok(v)
     }
-
-    let mut resp = try!(c.perform_request(&uri, core::HTTPMethod::Put, &headers));
-
-    try!(errors::check_status(&mut resp, StatusCode::Created));
-
-    Ok(())
-}
-
-pub fn list(c: &Client) -> Result<Vec<Container>, core::errors::AzureError> {
-    let uri = format!("{}://{}.blob.core.windows.net?comp=list",
-                      c.auth_scheme(),
-                      c.account());
-
-    let mut resp = try!(c.perform_request(&uri, core::HTTPMethod::Get, &Headers::new()));
-
-    try!(errors::check_status(&mut resp, StatusCode::Ok));
-
-    // println!("{:?}", resp.status);
-
-    let mut resp_s = String::new();
-    match resp.read_to_string(&mut resp_s) {
-        Ok(_) => (),
-        Err(err) => return Err(errors::new_from_ioerror_string(err.to_string())),
-    };
-
-    // println!("response == \n\n{:?}\n\n", resp_s);
-
-    let sp = &resp_s;
-    let elem: Element = match sp.parse() {
-        Ok(res) => res,
-        Err(err) => return Err(errors::new_from_xmlerror_string(err.to_string())),
-    };
-
-    let mut v = Vec::new();
-
-    // let containers = try!(traverse(&elem, &["Containers", "Container"]));
-    // println!("containers == {:?}", containers);
-
-    for container in try!(traverse(&elem, &["Containers", "Container"], true)) {
-        v.push(try!(parse(container)));
-    }
-
-    Ok(v)
 }

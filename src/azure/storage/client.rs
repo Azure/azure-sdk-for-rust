@@ -1,10 +1,11 @@
-use hyper::header::{Header, Headers, HeaderFormat};
+use hyper::header::Headers;
 use hyper::client::response::Response;
 use hyper::error::Error;
 
 use azure::storage::container;
-use azure::storage::container::{Container, PublicAccess};
+use azure::storage::container::Container;
 
+use std::io::Read;
 
 use azure::core::errors;
 use azure::core::{HTTPMethod, perform_request};
@@ -38,25 +39,26 @@ impl Client {
         &self.key
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn list_containers(&self) -> Result<Vec<Container>, errors::AzureError> {
-        container::list(self)
+        Container::list(self)
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn create_container(&self,
                             container_name: &str,
                             pa: container::PublicAccess)
                             -> Result<(), errors::AzureError> {
-        container::create(self, container_name, pa)
+        Container::create(self, container_name, pa)
     }
 
     pub fn perform_request(&self,
                            uri: &str,
                            method: HTTPMethod,
-                           headers: &Headers)
+                           headers: &Headers,
+                           request_body: Option<(&mut Read, u64)>)
                            -> Result<Response, Error> {
-        perform_request(uri, method, &self.key, headers)
+        perform_request(uri, method, &self.key, headers, request_body)
     }
 }
 
