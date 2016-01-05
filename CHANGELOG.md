@@ -1,6 +1,6 @@
 # Change Log
 
-## [v0.0.5](https://github.com/MindFlavor/AzureSDKForRust/releases/tag/v0.0.5) (yet to publish)
+## [v0.0.5](https://github.com/MindFlavor/AzureSDKForRust/releases/tag/v0.0.5) (2016-01-05)
 
 **Implemented features:**
 * List blobs
