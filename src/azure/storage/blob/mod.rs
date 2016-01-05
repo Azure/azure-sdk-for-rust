@@ -253,7 +253,7 @@ pub fn from_headers(blob_name: &str, h: &Headers) -> Result<Blob, AzureError> {
 impl Blob {
     pub fn put_blob(&self,
                     c: &Client,
-                    container: &Container,
+                    container_name: &str,
                     lease_id: Option<LeaseId>,
                     r: Option<(&mut Read, u64)>)
                     -> Result<(), AzureError> {
@@ -294,7 +294,7 @@ impl Blob {
         let uri = format!("{}://{}.blob.core.windows.net/{}/{}",
                           c.auth_scheme(),
                           c.account(),
-                          container.name,
+                          container_name,
                           self.name);
 
         let mut headers = Headers::new();

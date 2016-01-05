@@ -12,9 +12,9 @@ addons:
 # run builds for all the trains (and more)
 rust:
   - nightly
-  - beta
+  #- beta
   # check it compiles on the latest stable compiler
-  - stable
+  #- stable
 
 # load travis-cargo
 before_script:
@@ -41,6 +41,6 @@ after_success:
 env:
   global:
     # override the default `--features unstable` used for the nightly branch (optional)
-    - TRAVIS_CARGO_NIGHTLY_FEATURE=""
+    # - TRAVIS_CARGO_NIGHTLY_FEATURE=""
     # encrypted github token for doc upload (see `GH_TOKEN` link above)
     - secure: "..."

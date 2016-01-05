@@ -292,16 +292,15 @@ pub fn perform_request(uri: &str,
 
     let mut h = headers.clone();
 
-
-
     h.set(XMSDate(time));
     h.set(XMSVersion(AZURE_VERSION.to_owned()));
-    let auth = generate_authorization(&h, &u, method, azure_key);
-    // println!("auth == {:?}", auth);
 
     if let Some((_, size)) = request_body {
         h.set(ContentLength(size));
     }
+
+    let auth = generate_authorization(&h, &u, method, azure_key);
+    // println!("auth == {:?}", auth);
 
     h.set(Authorization(auth));
 
