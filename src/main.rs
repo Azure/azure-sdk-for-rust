@@ -97,7 +97,7 @@ fn main() {
             snapshot_time: None,
             last_modified: UTC::now(),
             etag: "".to_owned(),
-            content_length: 1024 * 1024 * 4, // 4MB
+            content_length: metadata.len(),
             content_type: "application/octet-stream".parse::<Mime>().unwrap(),
             content_encoding: None,
             content_language: None,

@@ -16,8 +16,19 @@ Although I am a Microsoft employee, this is not a Microsoft endorsed project. It
 You can find examples in the test section (not yet existent as far as Azure is concerned) and in the main.rs file. Here is a sample however:
 
 ```rust
-use azure::storage::client;
-use azure::storage::container::PublicAccess;
+extern crate azure_sdk_for_rust;
+extern crate chrono;
+#[macro_use]
+extern crate mime;
+
+use azure::storage::{LeaseState, LeaseStatus};
+use azure::storage::client::Client;
+use azure::storage::blob::{Blob, BlobType};
+use azure::storage::container::{Container, PublicAccess};
+
+use chrono::UTC;
+
+use mime::Mime;
 
 fn main() {
 	let azure_storage_account = &"azure_storage_account";
@@ -26,21 +37,68 @@ fn main() {
 	// create the client struct. The third argument, if false, forces to use
 	// http instead of https. It's useful if you have trouble compiling
 	// hyper with openSSL activated.
-    let client = client::new(azure_storage_account, azure_storage_key, false);
+  let client = client::new(azure_storage_account, azure_storage_key, false);
 
-	// This call will create a new Azure Container called "wow"
-	// with public blob access (see https://msdn.microsoft.com/en-us/library/azure/dd179468.aspx).
-    client.create_container("wow", PublicAccess::Blob).unwrap();
 
 	// This call will list your containers.
-    let mut ret = client.list_containers().unwrap();
-    println!("{:?}", ret);
+	let containers = Container::list(&client).unwrap();
+  println!("{:?}", ret);
+
+	// This call will create a new Azure Container called "wow"
+	// with public blob access (see https://msdn.microsoft.com/en-us/library/azure/dd179468.aspx)
+	// if it doesn't exist already.
+	let cont = containers.iter().find(|x| x.name == container_name);
+	if let None = cont {
+			Container::create(&client, container_name, PublicAccess::Blob).unwrap();
+	}
+
+	// this code will upload a file to the container just created.
+	{
+			use std::fs::metadata;
+			use std::fs::File;
+
+			let file_name: &'static str = "C:\\temp\\from_rust.txt";
+			let container_name: &'static str = "wow";
+
+			let metadata = metadata(file_name).unwrap();
+			let mut file = File::open(file_name).unwrap();
+
+			let new_blob = Blob {
+					name: "from_rust.txt".to_owned(),
+					snapshot_time: None,
+					last_modified: UTC::now(),
+					etag: "".to_owned(),
+					content_length: metadata.len(),
+					content_type: "application/octet-stream".parse::<Mime>().unwrap(),
+					content_encoding: None,
+					content_language: None,
+					content_md5: None,
+					cache_control: None,
+					x_ms_blob_sequence_number: None,
+					blob_type: BlobType::BlockBlob,
+					lease_status: LeaseStatus::Unlocked,
+					lease_state: LeaseState::Available,
+					lease_duration: None,
+					copy_id: None,
+					copy_status: None,
+					copy_source: None,
+					copy_progress: None,
+					copy_completion: None,
+					copy_status_description: None,
+			};
+
+			new_blob.put(&client,
+									 container_name,
+									 None,
+									 Some((&mut file, metadata.len())))
+							.unwrap();
+	}
 
 	// This code will look for the "todelete" container and
 	// remove from Azure.
-    let mut to_delete = ret.iter_mut().find(|x| x.name == "todelete").unwrap();
-    to_delete.delete(&client).unwrap();
-    println!("{:?} deleted!", to_delete);
+  let mut to_delete = ret.iter_mut().find(|x| x.name == "todelete").unwrap();
+  to_delete.delete(&client).unwrap();
+  println!("{:?} deleted!", to_delete);
 }
 ```
 
