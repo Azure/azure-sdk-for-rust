@@ -1,12 +1,6 @@
-mod client;
-#[macro_use]
-mod blob;
-mod container;
-
-pub use self::client::Client;
-pub use self::blob::{Blob, BlobType, CopyStatus};
-pub use self::container::{Container, PublicAccess};
-
+pub mod client;
+pub mod container;
+pub mod blob;
 
 use std::fmt;
 use std::str::FromStr;

@@ -10,7 +10,9 @@ extern crate mime;
 
 
 use azure::storage::{LeaseState, LeaseStatus};
-use azure::storage::{Blob, BlobType, Client, Container, PublicAccess};
+use azure::storage::client::Client;
+use azure::storage::blob::{Blob, BlobType};
+use azure::storage::container::{Container, PublicAccess};
 
 // use azure::storage::container::PublicAccess;
 
