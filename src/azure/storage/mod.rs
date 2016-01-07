@@ -1,7 +1,11 @@
-pub mod client;
+mod client;
 #[macro_use]
-pub mod blob;
-pub mod container;
+mod blob;
+mod container;
+
+pub use self::client::Client;
+pub use self::blob::{Blob, BlobType, CopyStatus};
+pub use self::container::{Container, PublicAccess};
 
 
 use std::fmt;

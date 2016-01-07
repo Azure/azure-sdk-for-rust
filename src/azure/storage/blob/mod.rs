@@ -5,9 +5,10 @@ use azure::storage::{LeaseStatus, LeaseState, LeaseDuration};
 use azure::storage::client::Client;
 
 use azure::core;
-use azure::core::{ContentMD5, XMSLeaseStatus, XMSLeaseDuration, XMSLeaseState, XMSLeaseId};
+use azure::core::{XMSRange, ContentMD5, XMSLeaseStatus, XMSLeaseDuration, XMSLeaseState,
+                  XMSLeaseId, XMSRangeGetContentMD5};
 use azure::core::lease_id::LeaseId;
-use azure::core::parsing::{cast_must, cast_optional, from_azure_time};
+use azure::core::parsing::{cast_must, cast_optional, from_azure_time, traverse};
 
 use xml::Element;
 
@@ -19,7 +20,8 @@ use azure::core::ETag;
 
 use std::io::Read;
 
-use azure::core::errors::{TraversingError, AzureError};
+use azure::core::errors::{TraversingError, AzureError, check_status, new_from_ioerror_string,
+                          new_from_xmlerror_string};
 use azure::core::parsing::FromStringOptional;
 
 use azure::core::range::Range;
@@ -253,12 +255,132 @@ impl Blob {
         })
     }
 
-    pub fn put_blob(&self,
-                    c: &Client,
-                    container_name: &str,
-                    lease_id: Option<LeaseId>,
-                    r: Option<(&mut Read, u64)>)
-                    -> Result<(), AzureError> {
+    pub fn list(container_name: &str,
+                c: &Client,
+                include_snapshots: bool,
+                include_metadata: bool,
+                include_uncommittedblobs: bool,
+                include_copy: bool)
+                -> Result<Vec<Blob>, core::errors::AzureError> {
+
+        let mut include = String::new();
+        if include_snapshots {
+            include = include + "snapshots";
+        }
+        if include_metadata {
+            if include.is_empty() {
+                include = include + ",";
+            }
+            include = include + "metadata";
+        }
+        if include_uncommittedblobs {
+            if include.is_empty() {
+                include = include + ",";
+            }
+            include = include + "uncommittedblobs";
+        }
+        if include_copy {
+            if include.is_empty() {
+                include = include + ",";
+            }
+            include = include + "copy";
+        }
+
+        let mut uri = format!("{}://{}.blob.core.windows.net/{}?restype=container&comp=list",
+                              c.auth_scheme(),
+                              c.account(),
+                              container_name);
+
+        if include.is_empty() {
+            uri = format!("{}&include={}", uri, include);
+        }
+
+        let mut resp = try!(c.perform_request(&uri, core::HTTPMethod::Get, &Headers::new(), None));
+
+        try!(check_status(&mut resp, StatusCode::Ok));
+
+        let mut resp_s = String::new();
+        match resp.read_to_string(&mut resp_s) {
+            Ok(_) => (),
+            Err(err) => return Err(new_from_ioerror_string(err.to_string())),
+        };
+
+        println!("resp_s == {:?}\n\n", resp_s);
+
+        let sp = &resp_s;
+        let elem: Element = match sp.parse() {
+            Ok(res) => res,
+            Err(err) => return Err(new_from_xmlerror_string(err.to_string())),
+        };
+
+        let mut v = Vec::new();
+        for node_blob in try!(traverse(&elem, &["Blobs", "Blob"], true)) {
+            // println!("{:?}", blob);
+            v.push(try!(Blob::parse(node_blob)));
+        }
+
+        Ok(v)
+    }
+
+    pub fn get(&self,
+               c: &Client,
+               blob_name: &str,
+               snapshot: Option<&DateTime<UTC>>,
+               range: Option<&Range>,
+               lease_id: Option<&LeaseId>)
+               -> Result<(Blob, Box<Read>), core::errors::AzureError> {
+        let mut uri = format!("{}://{}.blob.core.windows.net/{}/{}",
+                              c.auth_scheme(),
+                              c.account(),
+                              self.name,
+                              blob_name);
+
+        if let Some(snapshot) = snapshot {
+            uri = format!("{}?snapshot={}", uri, snapshot.to_rfc2822());
+        }
+
+        let uri = uri;
+
+        println!("uri == {:?}", uri);
+
+        let mut headers = Headers::new();
+
+        if let Some(r) = range {
+            headers.set(XMSRange(r.clone()));
+
+            // if range is < 4MB request md5
+            if r.end - r.start <= 1024 * 1024 * 4 {
+                headers.set(XMSRangeGetContentMD5(true));
+            }
+        }
+
+        if let Some(l) = lease_id {
+            headers.set(XMSLeaseId(l.clone()));
+        }
+
+
+        let mut resp = try!(c.perform_request(&uri, core::HTTPMethod::Get, &headers, None));
+
+        // if we have requested a range the response code should be 207 (partial content)
+        // otherwise 200 (ok).
+        if let Some(_) = range {
+            try!(check_status(&mut resp, StatusCode::PartialContent));
+        } else {
+            try!(check_status(&mut resp, StatusCode::Ok));
+        }
+
+        let blob = try!(Blob::from_headers(blob_name, &resp.headers));
+        let r: Box<Read> = Box::new(resp);
+
+        Ok((blob, r))
+    }
+
+    pub fn put(&self,
+               c: &Client,
+               container_name: &str,
+               lease_id: Option<LeaseId>,
+               r: Option<(&mut Read, u64)>)
+               -> Result<(), AzureError> {
 
         // parameter sanity check
         match self.blob_type {

@@ -10,15 +10,13 @@ extern crate mime;
 
 
 use azure::storage::{LeaseState, LeaseStatus};
-use azure::storage::blob::{Blob, BlobType};
+use azure::storage::{Blob, BlobType, Client, Container, PublicAccess};
 
-
-
+// use azure::storage::container::PublicAccess;
 
 #[macro_use]
 pub mod azure;
 
-use azure::storage::client;
 // use chrono::datetime::DateTime;
 use chrono::UTC;
 
@@ -39,12 +37,12 @@ fn main() {
         }
     };
 
-    let client = client::new(&azure_storage_account, &azure_storage_key, true);
+    let client = Client::new(&azure_storage_account, &azure_storage_key, true);
 
     // client.create_container("balocco3", PublicAccess::Blob).unwrap();
     // // println!("{:?}", new);
     //
-    let mut ret = client.list_containers().unwrap();
+    let ret = Container::list(&client).unwrap();
     println!("{:?}", ret);
 
     // {
@@ -80,6 +78,15 @@ fn main() {
         let file_name: &'static str = "C:\\temp\\list.txt";
         let container_name: &'static str = "rust";
 
+        {
+            let containers = Container::list(&client).unwrap();
+
+            let cont = containers.iter().find(|x| x.name == container_name);
+            if let None = cont {
+                Container::create(&client, container_name, PublicAccess::Blob).unwrap();
+            }
+        }
+
         let metadata = metadata(file_name).unwrap();
         let mut file = File::open(file_name).unwrap();
 
@@ -107,10 +114,10 @@ fn main() {
             copy_status_description: None,
         };
 
-        new_blob.put_blob(&client,
-                          container_name,
-                          None,
-                          Some((&mut file, metadata.len())))
+        new_blob.put(&client,
+                     container_name,
+                     None,
+                     Some((&mut file, metadata.len())))
                 .unwrap();
     }
 
