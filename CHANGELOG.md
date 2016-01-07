@@ -1,5 +1,10 @@
 # Change Log
 
+## [0.0.6](https://github.com/MindFlavor/AzureSDKForRust/releases/tag/0.0.5) (yet-to-publish)
+
+**Refactoring:**
+* Most methods moved from storage::Client to correct structs (ie storage::container::Container and storage::blob::Blob).
+
 ## [0.0.5](https://github.com/MindFlavor/AzureSDKForRust/releases/tag/0.0.5) (2016-01-05)
 
 **Implemented features:**
