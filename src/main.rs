@@ -72,12 +72,11 @@ fn main() {
     // }
 
 
-
-    {
+    for i in 0..30 {
         use std::fs::metadata;
         use std::fs::File;
 
-        let file_name: &'static str = "C:\\temp\\list.txt";
+        let file_name: &'static str = "C:\\temp\\prova.txt";
         let container_name: &'static str = "rust";
 
         {
@@ -93,7 +92,7 @@ fn main() {
         let mut file = File::open(file_name).unwrap();
 
         let new_blob = Blob {
-            name: "from_rust.txt".to_owned(),
+            name: format!("go_rust{}.txt", i),
             snapshot_time: None,
             last_modified: UTC::now(),
             etag: "".to_owned(),
@@ -121,6 +120,8 @@ fn main() {
                      None,
                      Some((&mut file, metadata.len())))
                 .unwrap();
+
+        println!("{} created", new_blob.name);
     }
 
 
