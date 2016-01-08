@@ -257,7 +257,7 @@ impl Blob {
         })
     }
 
-    pub fn list(container_name: &str,
+    pub fn list<'a>(container_name: &str,
                 c: &Client,
                 include_snapshots: bool,
                 include_metadata: bool,
