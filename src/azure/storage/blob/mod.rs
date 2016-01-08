@@ -25,6 +25,8 @@ use azure::core::errors::{TraversingError, AzureError, check_status, new_from_io
 use azure::core::parsing::FromStringOptional;
 
 use azure::core::range::Range;
+use azure::core::incompletevector::IncompleteVector;
+
 use mime::Mime;
 
 use hyper::status::StatusCode;
@@ -261,7 +263,7 @@ impl Blob {
                 include_metadata: bool,
                 include_uncommittedblobs: bool,
                 include_copy: bool)
-                -> Result<Vec<Blob>, core::errors::AzureError> {
+                -> Result<IncompleteVector<Blob>, core::errors::AzureError> {
 
         let mut include = String::new();
         if include_snapshots {
@@ -313,13 +315,19 @@ impl Blob {
             Err(err) => return Err(new_from_xmlerror_string(err.to_string())),
         };
 
+         let next_marker = match try!(cast_optional::<String>(&elem, &["NextMarker"])) {
+             Some(ref nm) if nm == "" => None,
+             Some(nm) => Some(nm),
+             None => None,
+         };
+
         let mut v = Vec::new();
         for node_blob in try!(traverse(&elem, &["Blobs", "Blob"], true)) {
             // println!("{:?}", blob);
             v.push(try!(Blob::parse(node_blob)));
         }
 
-        Ok(v)
+        Ok(IncompleteVector::<Blob>::new(next_marker ,v))
     }
 
     pub fn get(&self,

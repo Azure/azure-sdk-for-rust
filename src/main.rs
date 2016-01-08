@@ -72,7 +72,7 @@ fn main() {
     // }
 
 
-    for i in 0..30 {
+    for i in 0..2 {
         use std::fs::metadata;
         use std::fs::File;
 
