@@ -61,6 +61,7 @@ header! { (XMSPageWrite, "x-ms-page-write") => [PageWriteType] }
 #[derive(Debug)]
 pub struct Blob {
     pub name: String,
+    pub container_name: String,
     pub snapshot_time: Option<DateTime<UTC>>,
     pub last_modified: DateTime<UTC>,
     pub etag: String,
@@ -84,7 +85,7 @@ pub struct Blob {
 }
 
 impl Blob {
-    pub fn parse(elem: &Element) -> Result<Blob, AzureError> {
+    pub fn parse(elem: &Element, container_name: &str) -> Result<Blob, AzureError> {
         let name = try!(cast_must::<String>(elem, &["Name"]));
         let snapshot_time = try!(cast_optional::<DateTime<UTC>>(elem, &["Snapshot"]));
         let last_modified = try!(cast_must::<DateTime<UTC>>(elem,
@@ -130,6 +131,7 @@ impl Blob {
 
         Ok(Blob {
             name: name,
+            container_name: container_name.to_owned(),
             snapshot_time: snapshot_time,
             last_modified: last_modified,
             etag: etag,
@@ -153,7 +155,10 @@ impl Blob {
         })
     }
 
-    pub fn from_headers(blob_name: &str, h: &Headers) -> Result<Blob, AzureError> {
+    pub fn from_headers(blob_name: &str,
+                        container_name: &str,
+                        h: &Headers)
+                        -> Result<Blob, AzureError> {
         let content_type = match h.get::<ContentType>() {
             Some(ct) => (ct as &Mime).clone(),
             None => try!("application/octet-stream".parse::<Mime>()),
@@ -240,6 +245,7 @@ impl Blob {
 
         Ok(Blob {
             name: blob_name.to_owned(),
+            container_name: container_name.to_owned(),
             snapshot_time: None,
             last_modified: last_modified,
             etag: etag,
@@ -330,14 +336,14 @@ impl Blob {
         let mut v = Vec::new();
         for node_blob in try!(traverse(&elem, &["Blobs", "Blob"], true)) {
             // println!("{:?}", blob);
-            v.push(try!(Blob::parse(node_blob)));
+            v.push(try!(Blob::parse(node_blob, container_name)));
         }
 
         Ok(IncompleteVector::<Blob>::new(next_marker, v))
     }
 
-    pub fn get(&self,
-               c: &Client,
+    pub fn get(c: &Client,
+               container_name: &str,
                blob_name: &str,
                snapshot: Option<&DateTime<UTC>>,
                range: Option<&Range>,
@@ -346,7 +352,7 @@ impl Blob {
         let mut uri = format!("{}://{}.blob.core.windows.net/{}/{}",
                               c.auth_scheme(),
                               c.account(),
-                              self.name,
+                              container_name,
                               blob_name);
 
         if let Some(snapshot) = snapshot {
@@ -383,7 +389,7 @@ impl Blob {
             try!(check_status(&mut resp, StatusCode::Ok));
         }
 
-        let blob = try!(Blob::from_headers(blob_name, &resp.headers));
+        let blob = try!(Blob::from_headers(blob_name, container_name, &resp.headers));
         let r: Box<Read> = Box::new(resp);
 
         Ok((blob, r))
@@ -391,7 +397,6 @@ impl Blob {
 
     pub fn put(&self,
                c: &Client,
-               container_name: &str,
                lease_id: Option<LeaseId>,
                r: Option<(&mut Read, u64)>)
                -> Result<(), AzureError> {
@@ -430,7 +435,7 @@ impl Blob {
         let uri = format!("{}://{}.blob.core.windows.net/{}/{}",
                           c.auth_scheme(),
                           c.account(),
-                          container_name,
+                          self.container_name,
                           self.name);
 
         let mut headers = Headers::new();
@@ -470,7 +475,6 @@ impl Blob {
 
     pub fn put_page(&self,
                     c: &Client,
-                    container_name: &str,
                     range: &BA512Range,
                     lease_id: Option<LeaseId>,
                     content: (&mut Read, u64))
@@ -479,7 +483,7 @@ impl Blob {
         let uri = format!("{}://{}.blob.core.windows.net/{}/{}?comp=page",
                           c.auth_scheme(),
                           c.account(),
-                          container_name,
+                          self.container_name,
                           self.name);
         let mut headers = Headers::new();
 
@@ -502,7 +506,6 @@ impl Blob {
 
     pub fn clear_page(&self,
                       c: &Client,
-                      container_name: &str,
                       range: &BA512Range,
                       lease_id: Option<LeaseId>)
                       -> Result<(), AzureError> {
@@ -510,7 +513,7 @@ impl Blob {
         let uri = format!("{}://{}.blob.core.windows.net/{}/{}?comp=page",
                           c.auth_scheme(),
                           c.account(),
-                          container_name,
+                          self.container_name,
                           self.name);
         let mut headers = Headers::new();
 
