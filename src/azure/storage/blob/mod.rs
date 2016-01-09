@@ -46,11 +46,16 @@ create_enum!(CopyStatus,
                             (Failed,           "failed")
 );
 
+create_enum!(PageWriteType,
+                            (Update,            "update"),
+                            (Clear,             "clear")
+);
+
 header! { (XMSBlobContentLength, "x-ms-blob-content-length") => [u64] }
 header! { (XMSBlobSequenceNumber, "x-ms-blob-sequence-number") => [u64] }
 header! { (XMSBlobType, "x-ms-blob-type") => [BlobType] }
 header! { (XMSBlobContentDisposition, "x-ms-blob-content-disposition") => [String] }
-
+header! { (XMSPageWrite, "x-ms-page-write") => [PageWriteType] }
 
 #[derive(Debug)]
 pub struct Blob {
@@ -258,12 +263,12 @@ impl Blob {
     }
 
     pub fn list<'a>(container_name: &str,
-                c: &Client,
-                include_snapshots: bool,
-                include_metadata: bool,
-                include_uncommittedblobs: bool,
-                include_copy: bool)
-                -> Result<IncompleteVector<Blob>, core::errors::AzureError> {
+                    c: &Client,
+                    include_snapshots: bool,
+                    include_metadata: bool,
+                    include_uncommittedblobs: bool,
+                    include_copy: bool)
+                    -> Result<IncompleteVector<Blob>, core::errors::AzureError> {
 
         let mut include = String::new();
         if include_snapshots {
@@ -315,11 +320,11 @@ impl Blob {
             Err(err) => return Err(new_from_xmlerror_string(err.to_string())),
         };
 
-         let next_marker = match try!(cast_optional::<String>(&elem, &["NextMarker"])) {
-             Some(ref nm) if nm == "" => None,
-             Some(nm) => Some(nm),
-             None => None,
-         };
+        let next_marker = match try!(cast_optional::<String>(&elem, &["NextMarker"])) {
+            Some(ref nm) if nm == "" => None,
+            Some(nm) => Some(nm),
+            None => None,
+        };
 
         let mut v = Vec::new();
         for node_blob in try!(traverse(&elem, &["Blobs", "Blob"], true)) {
@@ -327,7 +332,7 @@ impl Blob {
             v.push(try!(Blob::parse(node_blob)));
         }
 
-        Ok(IncompleteVector::<Blob>::new(next_marker ,v))
+        Ok(IncompleteVector::<Blob>::new(next_marker, v))
     }
 
     pub fn get(&self,
@@ -459,6 +464,66 @@ impl Blob {
 
         let mut resp = try!(c.perform_request(&uri, core::HTTPMethod::Put, &headers, r));
 
+        try!(core::errors::check_status(&mut resp, StatusCode::Created));
+
+        Ok(())
+    }
+
+    pub fn put_page(&self,
+                    c: &Client,
+                    container_name: &str,
+                    range: &Range,
+                    lease_id: Option<LeaseId>,
+                    content: (&mut Read, u64))
+                    -> Result<(), AzureError> {
+
+        let uri = format!("{}://{}.blob.core.windows.net/{}/{}?comp=page",
+                          c.auth_scheme(),
+                          c.account(),
+                          container_name,
+                          self.name);
+        let mut headers = Headers::new();
+
+        headers.set(XMSRange(range.clone()));
+        headers.set(XMSBlobContentLength(content.1));
+        if let Some(lease_id) = lease_id {
+            headers.set(XMSLeaseId(lease_id));
+        }
+
+        headers.set(XMSPageWrite(PageWriteType::Update));
+
+        let mut resp = try!(c.perform_request(&uri,
+                                              core::HTTPMethod::Put,
+                                              &headers,
+                                              Some(content)));
+        try!(core::errors::check_status(&mut resp, StatusCode::Created));
+
+        Ok(())
+    }
+
+    pub fn clear_page(&self,
+                      c: &Client,
+                      container_name: &str,
+                      range: &Range,
+                      lease_id: Option<LeaseId>)
+                      -> Result<(), AzureError> {
+
+        let uri = format!("{}://{}.blob.core.windows.net/{}/{}?comp=page",
+                          c.auth_scheme(),
+                          c.account(),
+                          container_name,
+                          self.name);
+        let mut headers = Headers::new();
+
+        headers.set(XMSRange(range.clone()));
+        headers.set(XMSBlobContentLength(0));
+        if let Some(lease_id) = lease_id {
+            headers.set(XMSLeaseId(lease_id));
+        }
+
+        headers.set(XMSPageWrite(PageWriteType::Clear));
+
+        let mut resp = try!(c.perform_request(&uri, core::HTTPMethod::Put, &headers, None));
         try!(core::errors::check_status(&mut resp, StatusCode::Created));
 
         Ok(())

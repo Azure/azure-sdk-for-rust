@@ -9,9 +9,9 @@ pub struct IncompleteVector<T> {
 #[allow(dead_code)]
 impl<'a, T> IncompleteVector<T> {
     pub fn new(next_marker: Option<String>, vector: Vec<T>) -> IncompleteVector<T> {
-        IncompleteVector{
-            next_marker : next_marker,
-            vector : vector
+        IncompleteVector {
+            next_marker: next_marker,
+            vector: vector,
         }
     }
 
@@ -40,7 +40,7 @@ mod test {
 
     #[test]
     fn test_incomplete_vector_complete() {
-        let v = vec![0,1,2,3,4,5];
+        let v = vec![0, 1, 2, 3, 4, 5];
         let ic = IncompleteVector::new(None, v);
 
         assert_eq!(ic.is_complete(), true);
@@ -48,7 +48,7 @@ mod test {
 
     #[test]
     fn test_incomplete_vector_incomplete() {
-        let v = vec![0,1,2,3,4,5];
+        let v = vec![0, 1, 2, 3, 4, 5];
         let ic = IncompleteVector::new(Some("aaa".to_owned()), v);
 
         assert_eq!(ic.is_complete(), false);
@@ -56,7 +56,7 @@ mod test {
 
     #[test]
     fn test_incomplete_vector_deref() {
-        let v = vec![0,1,2,3,4,5];
+        let v = vec![0, 1, 2, 3, 4, 5];
         let ic = IncompleteVector::new(None, v);
         assert_eq!(ic[0], 0);
     }
