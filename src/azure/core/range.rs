@@ -1,6 +1,8 @@
 use std::str::FromStr;
 use std::fmt;
 use std::num::ParseIntError;
+use std::convert::From;
+use azure::core::ba512_range::BA512Range;
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct Range {
@@ -12,6 +14,15 @@ pub struct Range {
 pub enum ParseError {
     SplitNotFound,
     ParseIntError(ParseIntError),
+}
+
+impl<'a> From<&'a BA512Range> for Range {
+    fn from(ba: &'a BA512Range) -> Range {
+        Range {
+            start: ba.start(),
+            end: ba.end(),
+        }
+    }
 }
 
 impl From<ParseIntError> for ParseError {

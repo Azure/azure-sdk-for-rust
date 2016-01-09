@@ -1,6 +1,8 @@
 use std::str::FromStr;
 use std::fmt;
 use std::num::ParseIntError;
+use azure::core::range::Range;
+use std::convert::Into;
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct BA512Range {
@@ -53,6 +55,15 @@ impl From<ParseIntError> for ParseError {
 impl From<Not512ByteAlignedError> for ParseError {
     fn from(nae: Not512ByteAlignedError) -> ParseError {
         ParseError::Not512ByteAlignedError(nae)
+    }
+}
+
+impl Into<Range> for BA512Range {
+    fn into(self) -> Range {
+        Range {
+            start: self.start(),
+            end: self.end(),
+        }
     }
 }
 

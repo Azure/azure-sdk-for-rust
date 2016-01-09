@@ -25,6 +25,7 @@ use azure::core::errors::{TraversingError, AzureError, check_status, new_from_io
 use azure::core::parsing::FromStringOptional;
 
 use azure::core::range::Range;
+use azure::core::ba512_range::BA512Range;
 use azure::core::incompletevector::IncompleteVector;
 
 use mime::Mime;
@@ -426,8 +427,6 @@ impl Blob {
             }
         }
 
-
-
         let uri = format!("{}://{}.blob.core.windows.net/{}/{}",
                           c.auth_scheme(),
                           c.account(),
@@ -472,7 +471,7 @@ impl Blob {
     pub fn put_page(&self,
                     c: &Client,
                     container_name: &str,
-                    range: &Range,
+                    range: &BA512Range,
                     lease_id: Option<LeaseId>,
                     content: (&mut Read, u64))
                     -> Result<(), AzureError> {
@@ -484,7 +483,7 @@ impl Blob {
                           self.name);
         let mut headers = Headers::new();
 
-        headers.set(XMSRange(range.clone()));
+        headers.set(XMSRange(range.into()));
         headers.set(XMSBlobContentLength(content.1));
         if let Some(lease_id) = lease_id {
             headers.set(XMSLeaseId(lease_id));
@@ -504,7 +503,7 @@ impl Blob {
     pub fn clear_page(&self,
                       c: &Client,
                       container_name: &str,
-                      range: &Range,
+                      range: &BA512Range,
                       lease_id: Option<LeaseId>)
                       -> Result<(), AzureError> {
 
@@ -515,7 +514,7 @@ impl Blob {
                           self.name);
         let mut headers = Headers::new();
 
-        headers.set(XMSRange(range.clone()));
+        headers.set(XMSRange(range.into()));
         headers.set(XMSBlobContentLength(0));
         if let Some(lease_id) = lease_id {
             headers.set(XMSLeaseId(lease_id));
