@@ -30,6 +30,7 @@ pub mod enumerations;
 pub mod incompletevector;
 pub mod range;
 pub mod lease_id;
+pub mod ba512_range;
 
 #[derive(Debug, Copy, Clone)]
 pub enum HTTPMethod {
