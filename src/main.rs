@@ -11,7 +11,7 @@ extern crate mime;
 
 use azure::storage::{LeaseState, LeaseStatus};
 use azure::storage::client::Client;
-use azure::storage::blob::{Blob, BlobType};
+use azure::storage::blob::{Blob, BlobType, ListBlobOptions, LIST_BLOB_OPTIONS_DEFAULT};
 use azure::storage::container::{Container, PublicAccess};
 
 // use azure::storage::container::PublicAccess;
@@ -46,6 +46,26 @@ fn main() {
     //
     let ret = Container::list(&client).unwrap();
     println!("{:?}", ret);
+
+
+    let lbo = ListBlobOptions::new(10, true, true, true, true, None);
+    let mut lbo2 = LIST_BLOB_OPTIONS_DEFAULT.clone();
+    lbo2.max_results = 2;
+
+    loop {
+        let uc = Blob::list(&client, "rust", &lbo2).unwrap();
+
+        println!("uc {:?}\n\n", uc);
+
+        if !uc.is_complete() {
+            lbo2.next_marker = Some(uc.next_marker().unwrap().to_owned());
+        } else {
+            break
+        }
+    };
+
+
+    return;
 
     // {
     //     let vhds = ret.iter_mut().find(|x| x.name == "canotto").unwrap();

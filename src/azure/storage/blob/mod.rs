@@ -1,3 +1,6 @@
+mod list_blob_options;
+pub use self::list_blob_options::{ListBlobOptions, LIST_BLOB_OPTIONS_DEFAULT};
+
 use chrono::datetime::DateTime;
 use chrono::UTC;
 
@@ -257,44 +260,47 @@ impl Blob {
         })
     }
 
-    pub fn list<'a>(container_name: &str,
-                c: &Client,
-                include_snapshots: bool,
-                include_metadata: bool,
-                include_uncommittedblobs: bool,
-                include_copy: bool)
-                -> Result<IncompleteVector<Blob>, core::errors::AzureError> {
+    pub fn list<'a>(
+        c: &Client,
+        container_name: &str,
+        lbo : &ListBlobOptions)
+        -> Result<IncompleteVector<Blob>, core::errors::AzureError> {
 
         let mut include = String::new();
-        if include_snapshots {
+        if lbo.include_snapshots {
             include = include + "snapshots";
         }
-        if include_metadata {
+        if lbo.include_metadata {
             if include.is_empty() {
                 include = include + ",";
             }
             include = include + "metadata";
         }
-        if include_uncommittedblobs {
+        if lbo.include_uncommittedblobs {
             if include.is_empty() {
                 include = include + ",";
             }
             include = include + "uncommittedblobs";
         }
-        if include_copy {
+        if lbo.include_copy {
             if include.is_empty() {
                 include = include + ",";
             }
             include = include + "copy";
         }
 
-        let mut uri = format!("{}://{}.blob.core.windows.net/{}?restype=container&comp=list",
+        let mut uri = format!("{}://{}.blob.core.windows.net/{}?restype=container&comp=list&maxresults={}",
                               c.auth_scheme(),
                               c.account(),
-                              container_name);
+                              container_name,
+                              lbo.max_results);
 
-        if include.is_empty() {
+        if !include.is_empty() {
             uri = format!("{}&include={}", uri, include);
+        }
+
+        if let Some(ref nm) = lbo.next_marker {
+            uri = format!("{}&marker={}", uri, nm);
         }
 
         let mut resp = try!(c.perform_request(&uri, core::HTTPMethod::Get, &Headers::new(), None));
