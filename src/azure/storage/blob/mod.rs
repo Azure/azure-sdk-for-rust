@@ -315,6 +315,10 @@ impl Blob {
             uri = format!("{}&marker={}", uri, nm);
         }
 
+        if let Some(ref pref) = lbo.prefix {
+            uri = format!("{}&prefix={}", uri, pref);            
+        }
+
         let mut resp = try!(c.perform_request(&uri, core::HTTPMethod::Get, &Headers::new(), None));
 
         try!(check_status(&mut resp, StatusCode::Ok));

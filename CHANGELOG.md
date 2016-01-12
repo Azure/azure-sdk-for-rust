@@ -1,5 +1,14 @@
 # Change Log
 
+
+## [0.0.7](https://github.com/MindFlavor/AzureSDKForRust/releases/tag/0.0.7) (yet-to-publish)
+
+**Implemented features:**
+* Added support for ```filter``` in list_blobs. Now you can filter the blobs to find specifying the starting string.
+
+** Removed methods:**
+* Removed ```ListBlobOptions::new``` as it was just useless boilerplate.
+
 ## [0.0.6](https://github.com/MindFlavor/AzureSDKForRust/releases/tag/0.0.6) (2016-01-12)
 
 **Implemented features:**

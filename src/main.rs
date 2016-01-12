@@ -48,7 +48,7 @@ fn main() {
     println!("{:?}", ret);
 
 
-    let lbo = ListBlobOptions::new(10, true, true, true, true, None);
+    let lbo = ListBlobOptions::new(10, true, true, true, true, None, None);
     let mut lbo2 = LIST_BLOB_OPTIONS_DEFAULT.clone();
     lbo2.max_results = 2;
 
