@@ -12,7 +12,7 @@ extern crate mime;
 use azure::storage::{LeaseState, LeaseStatus};
 use azure::storage::client::Client;
 use azure::storage::blob::{Blob, BlobType, ListBlobOptions, LIST_BLOB_OPTIONS_DEFAULT};
-use azure::storage::container::{Container, PublicAccess};
+use azure::storage::container::{Container, PublicAccess, LIST_CONTAINER_OPTIONS_DEFAULT};
 
 // use azure::storage::container::PublicAccess;
 
@@ -44,13 +44,25 @@ fn main() {
     // client.create_container("balocco3", PublicAccess::Blob).unwrap();
     // // println!("{:?}", new);
     //
-    let ret = Container::list(&client).unwrap();
-    println!("{:?}", ret);
+    let mut lco = LIST_CONTAINER_OPTIONS_DEFAULT.clone();
+    lco.max_results = 2;
+    loop {
+        let ret = Container::list(&client, &lco).unwrap();
+
+        println!("ret {:?}\n\n", ret);
+
+        if !ret.is_complete() {
+            lco.next_marker = Some(ret.next_marker().unwrap().to_owned());
+        } else {
+            break;
+        }
+    }
+
+    return;
 
 
-    let lbo = ListBlobOptions::new(10, true, true, true, true, None, None);
     let mut lbo2 = LIST_BLOB_OPTIONS_DEFAULT.clone();
-    lbo2.max_results = 2;
+    lbo2.max_results = 15;
 
     loop {
         let uc = Blob::list(&client, "rust", &lbo2).unwrap();
@@ -65,7 +77,6 @@ fn main() {
     }
 
 
-    return;
 
     // {
     //     let vhds = ret.iter_mut().find(|x| x.name == "canotto").unwrap();
@@ -156,7 +167,7 @@ fn main() {
         let mut file = File::open(file_name).unwrap();
 
         {
-            let containers = Container::list(&client).unwrap();
+            let containers = Container::list(&client, &LIST_CONTAINER_OPTIONS_DEFAULT).unwrap();
 
             let cont = containers.iter().find(|x| x.name == container_name);
             if let None = cont {

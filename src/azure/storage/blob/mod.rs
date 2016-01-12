@@ -316,7 +316,11 @@ impl Blob {
         }
 
         if let Some(ref pref) = lbo.prefix {
-            uri = format!("{}&prefix={}", uri, pref);            
+            uri = format!("{}&prefix={}", uri, pref);
+        }
+
+        if let Some(ref timeout) = lbo.timeout {
+            uri = format!("{}&timeout={}", uri, timeout);
         }
 
         let mut resp = try!(c.perform_request(&uri, core::HTTPMethod::Get, &Headers::new(), None));

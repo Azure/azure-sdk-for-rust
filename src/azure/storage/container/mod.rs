@@ -1,8 +1,11 @@
+mod list_container_options;
+pub use self::list_container_options::{ListContainerOptions, LIST_CONTAINER_OPTIONS_DEFAULT};
 
 use azure::core;
 use azure::core::errors;
 use azure::core::enumerations;
 use azure::core::parsing::{traverse, cast_must, cast_optional};
+use azure::core::incompletevector::IncompleteVector;
 
 use azure::storage::{LeaseStatus, LeaseState, LeaseDuration};
 use azure::storage::client::Client;
@@ -114,10 +117,29 @@ impl Container {
         Ok(())
     }
 
-    pub fn list(c: &Client) -> Result<Vec<Container>, core::errors::AzureError> {
-        let uri = format!("{}://{}.blob.core.windows.net?comp=list",
-                          c.auth_scheme(),
-                          c.account());
+    pub fn list(c: &Client,
+                lco: &ListContainerOptions)
+                -> Result<IncompleteVector<Container>, core::errors::AzureError> {
+        let mut uri = format!("{}://{}.blob.core.windows.net?comp=list&maxresults={}",
+                              c.auth_scheme(),
+                              c.account(),
+                              lco.max_results);
+
+        if !lco.include_metadata {
+            uri = format!("{}&include=metadata", uri);
+        }
+
+        if let Some(ref prefix) = lco.prefix {
+            uri = format!("{}&prefix={}", uri, prefix);
+        }
+
+        if let Some(ref nm) = lco.next_marker {
+            uri = format!("{}&marker={}", uri, nm);
+        }
+
+        if let Some(ref timeout) = lco.timeout {
+            uri = format!("{}&timeout={}", uri, timeout);
+        }
 
         let mut resp = try!(c.perform_request(&uri, core::HTTPMethod::Get, &Headers::new(), None));
 
@@ -148,6 +170,12 @@ impl Container {
             v.push(try!(Container::parse(container)));
         }
 
-        Ok(v)
+        let next_marker = match try!(cast_optional::<String>(&elem, &["NextMarker"])) {
+            Some(ref nm) if nm == "" => None,
+            Some(nm) => Some(nm),
+            None => None,
+        };
+
+        Ok(IncompleteVector::new(next_marker, v))
     }
 }

@@ -7,6 +7,7 @@ pub struct ListBlobOptions {
     pub include_copy: bool,
     pub next_marker: Option<String>,
     pub prefix: Option<String>,
+    pub timeout: Option<u64>,
 }
 
 pub const LIST_BLOB_OPTIONS_DEFAULT: ListBlobOptions = ListBlobOptions {
@@ -17,7 +18,7 @@ pub const LIST_BLOB_OPTIONS_DEFAULT: ListBlobOptions = ListBlobOptions {
     include_copy: false,
     next_marker: None,
     prefix: None,
+    timeout: None,
 };
 
-impl ListBlobOptions {
-}
+impl ListBlobOptions {}
