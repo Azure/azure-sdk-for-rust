@@ -1,6 +1,6 @@
 # Change Log
 
-## [0.0.6](https://github.com/MindFlavor/AzureSDKForRust/releases/tag/0.0.5) (yet-to-publish)
+## [0.0.6](https://github.com/MindFlavor/AzureSDKForRust/releases/tag/0.0.6) (2016-01-12)
 
 * Added support for maxresults in list_blobs. Now you can limit how many blobs could be returned by a single call.
 * Added support for next_marker in list_blobs. Now you can continue enumerating your blobs in subsequent calls.
