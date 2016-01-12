@@ -1,8 +1,6 @@
 pub mod client;
-#[macro_use]
-pub mod blob;
 pub mod container;
-
+pub mod blob;
 
 use std::fmt;
 use std::str::FromStr;

@@ -10,15 +10,15 @@ extern crate mime;
 
 
 use azure::storage::{LeaseState, LeaseStatus};
-use azure::storage::blob::{Blob, BlobType};
+use azure::storage::client::Client;
+use azure::storage::blob::{Blob, BlobType, ListBlobOptions, LIST_BLOB_OPTIONS_DEFAULT};
+use azure::storage::container::{Container, PublicAccess};
 
-
-
+// use azure::storage::container::PublicAccess;
 
 #[macro_use]
 pub mod azure;
 
-use azure::storage::client;
 // use chrono::datetime::DateTime;
 use chrono::UTC;
 
@@ -39,13 +39,33 @@ fn main() {
         }
     };
 
-    let client = client::new(&azure_storage_account, &azure_storage_key, true);
+    let client = Client::new(&azure_storage_account, &azure_storage_key, true);
 
     // client.create_container("balocco3", PublicAccess::Blob).unwrap();
     // // println!("{:?}", new);
     //
-    let mut ret = client.list_containers().unwrap();
+    let ret = Container::list(&client).unwrap();
     println!("{:?}", ret);
+
+
+    let lbo = ListBlobOptions::new(10, true, true, true, true, None);
+    let mut lbo2 = LIST_BLOB_OPTIONS_DEFAULT.clone();
+    lbo2.max_results = 2;
+
+    loop {
+        let uc = Blob::list(&client, "rust", &lbo2).unwrap();
+
+        println!("uc {:?}\n\n", uc);
+
+        if !uc.is_complete() {
+            lbo2.next_marker = Some(uc.next_marker().unwrap().to_owned());
+        } else {
+            break;
+        }
+    }
+
+
+    return;
 
     // {
     //     let vhds = ret.iter_mut().find(|x| x.name == "canotto").unwrap();
@@ -72,30 +92,95 @@ fn main() {
     // }
 
 
+    // for i in 0..2 {
+    //     use std::fs::metadata;
+    //     use std::fs::File;
+    //
+    //     let file_name: &'static str = "C:\\temp\\prova.txt";
+    //     let container_name: &'static str = "rust";
+    //
+    //     {
+    //         let containers = Container::list(&client).unwrap();
+    //
+    //         let cont = containers.iter().find(|x| x.name == container_name);
+    //         if let None = cont {
+    //             Container::create(&client, container_name, PublicAccess::Blob).unwrap();
+    //         }
+    //     }
+    //
+    //     let metadata = metadata(file_name).unwrap();
+    //     let mut file = File::open(file_name).unwrap();
+    //
+    //     let new_blob = Blob {
+    //         name: format!("go_rust{}.txt", i),
+    //         snapshot_time: None,
+    //         last_modified: UTC::now(),
+    //         etag: "".to_owned(),
+    //         content_length: metadata.len(),
+    //         content_type: "application/octet-stream".parse::<Mime>().unwrap(),
+    //         content_encoding: None,
+    //         content_language: None,
+    //         content_md5: None,
+    //         cache_control: None,
+    //         x_ms_blob_sequence_number: None,
+    //         blob_type: BlobType::BlockBlob,
+    //         lease_status: LeaseStatus::Unlocked,
+    //         lease_state: LeaseState::Available,
+    //         lease_duration: None,
+    //         copy_id: None,
+    //         copy_status: None,
+    //         copy_source: None,
+    //         copy_progress: None,
+    //         copy_completion: None,
+    //         copy_status_description: None,
+    //     };
+    //
+    //     new_blob.put(&client,
+    //                  container_name,
+    //                  None,
+    //                  Some((&mut file, metadata.len())))
+    //             .unwrap();
+    //
+    //     println!("{} created", new_blob.name);
+    // }
+
 
     {
         use std::fs::metadata;
         use std::fs::File;
 
-        let file_name: &'static str = "C:\\temp\\list.txt";
+        let blob_name: &'static str = "MindDB_Log.ldf";
+        let file_name: &'static str = "C:\\temp\\MindDB_Log.ldf";
         let container_name: &'static str = "rust";
-
         let metadata = metadata(file_name).unwrap();
         let mut file = File::open(file_name).unwrap();
 
+        {
+            let containers = Container::list(&client).unwrap();
+
+            let cont = containers.iter().find(|x| x.name == container_name);
+            if let None = cont {
+                Container::create(&client, container_name, PublicAccess::Blob).unwrap();
+            }
+        }
+
+        // align to 512 bytes
+        let content_length = metadata.len() % 512 + metadata.len();
+
         let new_blob = Blob {
-            name: "from_rust.txt".to_owned(),
+            name: blob_name.to_owned(),
+            container_name: container_name.to_owned(),
             snapshot_time: None,
             last_modified: UTC::now(),
             etag: "".to_owned(),
-            content_length: 1024 * 1024 * 4, // 4MB
+            content_length: content_length,
             content_type: "application/octet-stream".parse::<Mime>().unwrap(),
             content_encoding: None,
             content_language: None,
             content_md5: None,
             cache_control: None,
             x_ms_blob_sequence_number: None,
-            blob_type: BlobType::BlockBlob,
+            blob_type: BlobType::PageBlob,
             lease_status: LeaseStatus::Unlocked,
             lease_state: LeaseState::Available,
             lease_duration: None,
@@ -107,13 +192,13 @@ fn main() {
             copy_status_description: None,
         };
 
-        new_blob.put_blob(&client,
-                          container_name,
-                          None,
-                          Some((&mut file, metadata.len())))
+        new_blob.put(&client, None, None)
                 .unwrap();
-    }
 
+        println!("created {:?}", new_blob);
+
+        // new_blob.put_page(undefined)
+    }
 
     // bal2.delete(&client).unwrap();
     // println!("{:?} deleted!", bal2);

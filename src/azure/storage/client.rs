@@ -2,12 +2,8 @@ use hyper::header::Headers;
 use hyper::client::response::Response;
 use hyper::error::Error;
 
-use azure::storage::container;
-use azure::storage::container::Container;
-
 use std::io::Read;
 
-use azure::core::errors;
 use azure::core::{HTTPMethod, perform_request};
 
 #[derive(Debug)]
@@ -19,6 +15,14 @@ pub struct Client {
 
 
 impl Client {
+    pub fn new(account: &str, key: &str, use_https: bool) -> Client {
+        Client {
+            account: account.to_owned(),
+            key: key.to_owned(),
+            use_https: use_https,
+        }
+    }
+
     pub fn account(&self) -> &str {
         &self.account
     }
@@ -39,19 +43,6 @@ impl Client {
         &self.key
     }
 
-    #[inline]
-    pub fn list_containers(&self) -> Result<Vec<Container>, errors::AzureError> {
-        Container::list(self)
-    }
-
-    #[inline]
-    pub fn create_container(&self,
-                            container_name: &str,
-                            pa: container::PublicAccess)
-                            -> Result<(), errors::AzureError> {
-        Container::create(self, container_name, pa)
-    }
-
     pub fn perform_request(&self,
                            uri: &str,
                            method: HTTPMethod,
@@ -59,13 +50,5 @@ impl Client {
                            request_body: Option<(&mut Read, u64)>)
                            -> Result<Response, Error> {
         perform_request(uri, method, &self.key, headers, request_body)
-    }
-}
-
-pub fn new(account: &str, key: &str, use_https: bool) -> Client {
-    Client {
-        account: account.to_owned(),
-        key: key.to_owned(),
-        use_https: use_https,
     }
 }
