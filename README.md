@@ -115,17 +115,18 @@ If you want to contribute please do! No formality required! :wink:
 
 |Method | URL |
 | ----  | --- |
-|Create container|[https://msdn.microsoft.com/en-us/library/azure/dd179468.aspx]()|
-|List containers|[https://msdn.microsoft.com/en-us/library/azure/dd179352.aspx]()|
-|Delete container|[https://msdn.microsoft.com/en-us/library/azure/dd179408.aspx]()|
+|Create container|[https://msdn.microsoft.com/en-us/library/azure/dd179468.aspx](https://msdn.microsoft.com/en-us/library/azure/dd179468.aspx)|
+|List containers|[https://msdn.microsoft.com/en-us/library/azure/dd179352.aspx](https://msdn.microsoft.com/en-us/library/azure/dd179352.aspx)|
+|Delete container|[https://msdn.microsoft.com/en-us/library/azure/dd179408.aspx](https://msdn.microsoft.com/en-us/library/azure/dd179408.aspx)|
 
 #### Storage blobs
 
 |Method | URL |
 | ----  | --- |
-|List blobs|[https://msdn.microsoft.com/en-us/library/azure/dd135734.aspx]()|
-|Get blob|[https://msdn.microsoft.com/en-us/library/azure/dd179440.aspx]()|
-|Put blob|[https://msdn.microsoft.com/en-us/library/azure/dd179451.aspx]()|
-
+|List blobs|[https://msdn.microsoft.com/en-us/library/azure/dd135734.aspx](https://msdn.microsoft.com/en-us/library/azure/dd135734.aspx)|
+|Get blob|[https://msdn.microsoft.com/en-us/library/azure/dd179440.aspx](https://msdn.microsoft.com/en-us/library/azure/dd179440.aspx)|
+|Put blob|[https://msdn.microsoft.com/en-us/library/azure/dd179451.aspx](https://msdn.microsoft.com/en-us/library/azure/dd179451.aspx)|
+|Put blob page|[https://msdn.microsoft.com/en-us/library/azure/dd179451.aspx](https://msdn.microsoft.com/en-us/library/azure/dd179451.aspx)|
+|Clear blob page|[https://msdn.microsoft.com/en-us/library/azure/dd179451.aspx](https://msdn.microsoft.com/en-us/library/azure/dd179451.aspx)|
 ## License
 This project is published under [The MIT License (MIT)](LICENSE).
