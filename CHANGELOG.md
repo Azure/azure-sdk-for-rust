@@ -2,10 +2,14 @@
 
 ## [0.0.6](https://github.com/MindFlavor/AzureSDKForRust/releases/tag/0.0.6) (2016-01-12)
 
-* Added support for maxresults in list_blobs. Now you can limit how many blobs could be returned by a single call.
+**Implemented features:**
+* Added support for max_results in list_blobs. Now you can limit how many blobs could be returned by a single call.
 * Added support for next_marker in list_blobs. Now you can continue enumerating your blobs in subsequent calls.
+* Added put page for page blobs.
+* Added clear page for page blobs.
 
 **Refactoring:**
+* Added page constraints (512-bytes aligned).
 * Most methods moved from storage::Client to correct structs (ie storage::container::Container and storage::blob::Blob).
 * Moved list_blobs options in a separate structure (```azure::storage::blob::ListBlobOptions```).
 
