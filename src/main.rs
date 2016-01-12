@@ -60,9 +60,9 @@ fn main() {
         if !uc.is_complete() {
             lbo2.next_marker = Some(uc.next_marker().unwrap().to_owned());
         } else {
-            break
+            break;
         }
-    };
+    }
 
 
     return;

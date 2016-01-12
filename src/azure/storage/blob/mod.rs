@@ -272,11 +272,10 @@ impl Blob {
         })
     }
 
-    pub fn list<'a>(
-        c: &Client,
-        container_name: &str,
-        lbo : &ListBlobOptions)
-        -> Result<IncompleteVector<Blob>, core::errors::AzureError> {
+    pub fn list<'a>(c: &Client,
+                    container_name: &str,
+                    lbo: &ListBlobOptions)
+                    -> Result<IncompleteVector<Blob>, core::errors::AzureError> {
 
         let mut include = String::new();
         if lbo.include_snapshots {
@@ -301,7 +300,8 @@ impl Blob {
             include = include + "copy";
         }
 
-        let mut uri = format!("{}://{}.blob.core.windows.net/{}?restype=container&comp=list&maxresults={}",
+        let mut uri = format!("{}://{}.blob.core.windows.\
+                               net/{}?restype=container&comp=list&maxresults={}",
                               c.auth_scheme(),
                               c.account(),
                               container_name,
