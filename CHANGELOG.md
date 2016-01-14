@@ -4,6 +4,7 @@
 ## [0.0.7](https://github.com/MindFlavor/AzureSDKForRust/releases/tag/0.0.7) (yet-to-publish)
 
 **Implemented features:**
+* Added support for ```put_block``` in ```Blob```.
 * Added support for ```filter```  in ```Blob::list```. Now you can filter the blobs to find specifying the starting string.
 * Added support for ```timeout``` in ```Blob::list```.
 * Added support for ```timeout```, ```prefix``` and ```max_results```  in ```Container::list```.
@@ -12,6 +13,7 @@
 
 **Refactoring:**
 * Moved ```Container::list``` options in a separate structure (```azure::storage::container::ListContainerOptions```).
+* Moved ```Blob::put_page``` options in a separate structure (```azure::storage::blob::PutPageOptions```).
 
 **Removed methods:**
 * Removed ```ListBlobOptions::new``` as it was just useless boilerplate.
