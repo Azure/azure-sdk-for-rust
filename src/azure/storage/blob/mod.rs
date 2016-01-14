@@ -539,12 +539,14 @@ impl Blob {
                      content: (&mut Read, u64))
                      -> Result<(), AzureError> {
 
+        let encoded_block_id = block_id.as_bytes().to_base64(STANDARD);
+
         let mut uri = format!("{}://{}.blob.core.windows.net/{}/{}?comp=block&blockid={}",
                               c.auth_scheme(),
                               c.account(),
                               self.container_name,
                               self.name,
-                              block_id); //.to_base64(STANDARD));
+                              encoded_block_id); 
 
         if let Some(ref timeout) = pbo.timeout {
             uri = format!("{}&timeout={}", uri, timeout);
