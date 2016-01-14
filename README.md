@@ -24,7 +24,7 @@ extern crate mime;
 use azure::storage::{LeaseState, LeaseStatus};
 use azure::storage::client::Client;
 use azure::storage::blob::{Blob, BlobType};
-use azure::storage::container::{Container, PublicAccess};
+use azure::storage::container::{Container, PublicAccess, LIST_CONTAINER_OPTIONS_DEFAULT};
 
 use chrono::UTC;
 
@@ -41,7 +41,7 @@ fn main() {
 
 
   // This call will list your containers.
-  let containers = Container::list(&client).unwrap();
+  let containers = Container::list(&client, &LIST_CONTAINER_OPTIONS_DEFAULT).unwrap();
   println!("{:?}", ret);
 
   // This call will create a new Azure Container called "wow"
@@ -128,5 +128,7 @@ If you want to contribute please do! No formality required! :wink:
 |Put blob|[https://msdn.microsoft.com/en-us/library/azure/dd179451.aspx](https://msdn.microsoft.com/en-us/library/azure/dd179451.aspx)|
 |Put blob page|[https://msdn.microsoft.com/en-us/library/azure/dd179451.aspx](https://msdn.microsoft.com/en-us/library/azure/dd179451.aspx)|
 |Clear blob page|[https://msdn.microsoft.com/en-us/library/azure/dd179451.aspx](https://msdn.microsoft.com/en-us/library/azure/dd179451.aspx)|
+|Put block|[https://msdn.microsoft.com/en-us/library/azure/dd135726.aspx](https://msdn.microsoft.com/en-us/library/azure/dd135726.aspx)|
+
 ## License
 This project is published under [The MIT License (MIT)](LICENSE).

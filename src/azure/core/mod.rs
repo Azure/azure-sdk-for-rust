@@ -57,7 +57,7 @@ header! { (XMSLeaseState, "x-ms-lease-state") => [LeaseState] }
 header! { (XMSLeaseDuration, "x-ms-lease-duration") => [LeaseDuration] }
 header! { (ETag, "ETag") => [String] }
 header! { (XMSRangeGetContentMD5, "x-ms-range-get-content-md5") => [bool] }
-
+header! { (XMSClientRequestId, "x-ms-client-request-id") => [String] }
 
 pub fn generate_authorization(h: &Headers,
                               u: &url::Url,

@@ -31,6 +31,11 @@ impl BA512Range {
             end: end,
         })
     }
+
+    #[inline]
+    pub fn len(&self) -> u64 {
+        self.end - self.start + 1
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -86,7 +91,7 @@ impl FromStr for BA512Range {
 
 impl fmt::Display for BA512Range {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}/{}", self.start, self.end)
+        write!(f, "bytes={}-{}", self.start, self.end)
     }
 }
 
@@ -135,6 +140,6 @@ mod test {
 
         let txt = format!("{}", range);
 
-        assert_eq!(txt, "0/511");
+        assert_eq!(txt, "bytes=0-511");
     }
 }

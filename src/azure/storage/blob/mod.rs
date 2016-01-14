@@ -1,5 +1,14 @@
+mod put_options;
+pub use self::put_options::{PutOptions, PUT_OPTIONS_DEFAULT};
+
 mod list_blob_options;
 pub use self::list_blob_options::{ListBlobOptions, LIST_BLOB_OPTIONS_DEFAULT};
+
+mod put_block_options;
+pub use self::put_block_options::{PutBlockOptions, PUT_BLOCK_OPTIONS_DEFAULT};
+
+mod put_page_options;
+pub use self::put_page_options::{PutPageOptions, PUT_PAGE_OPTIONS_DEFAULT};
 
 use chrono::datetime::DateTime;
 use chrono::UTC;
@@ -9,7 +18,7 @@ use azure::storage::client::Client;
 
 use azure::core;
 use azure::core::{XMSRange, ContentMD5, XMSLeaseStatus, XMSLeaseDuration, XMSLeaseState,
-                  XMSLeaseId, XMSRangeGetContentMD5};
+                  XMSLeaseId, XMSRangeGetContentMD5, XMSClientRequestId};
 use azure::core::lease_id::LeaseId;
 use azure::core::parsing::{cast_must, cast_optional, from_azure_time, traverse};
 
@@ -36,6 +45,9 @@ use mime::Mime;
 use hyper::status::StatusCode;
 use hyper::header::{Headers, ContentType, ContentLength, LastModified, ContentEncoding,
                     ContentLanguage};
+
+use serialize::base64::{STANDARD, ToBase64, FromBase64};
+
 
 create_enum!(BlobType,
                             (BlockBlob,        "BlockBlob"),
@@ -315,6 +327,14 @@ impl Blob {
             uri = format!("{}&marker={}", uri, nm);
         }
 
+        if let Some(ref pref) = lbo.prefix {
+            uri = format!("{}&prefix={}", uri, pref);
+        }
+
+        if let Some(ref timeout) = lbo.timeout {
+            uri = format!("{}&timeout={}", uri, timeout);
+        }
+
         let mut resp = try!(c.perform_request(&uri, core::HTTPMethod::Get, &Headers::new(), None));
 
         try!(check_status(&mut resp, StatusCode::Ok));
@@ -403,7 +423,7 @@ impl Blob {
 
     pub fn put(&self,
                c: &Client,
-               lease_id: Option<LeaseId>,
+               po: &PutOptions,
                r: Option<(&mut Read, u64)>)
                -> Result<(), AzureError> {
 
@@ -438,11 +458,15 @@ impl Blob {
             }
         }
 
-        let uri = format!("{}://{}.blob.core.windows.net/{}/{}",
-                          c.auth_scheme(),
-                          c.account(),
-                          self.container_name,
-                          self.name);
+        let mut uri = format!("{}://{}.blob.core.windows.net/{}/{}",
+                              c.auth_scheme(),
+                              c.account(),
+                              self.container_name,
+                              self.name);
+
+        if let Some(ref timeout) = po.timeout {
+            uri = format!("{}&timeout={}", uri, timeout);
+        }
 
         let mut headers = Headers::new();
 
@@ -462,8 +486,8 @@ impl Blob {
 
         headers.set(XMSBlobType(self.blob_type));
 
-        if let Some(lease_id) = lease_id {
-            headers.set(XMSLeaseId(lease_id));
+        if let Some(ref lease_id) = po.lease_id {
+            headers.set(XMSLeaseId(lease_id.clone()));
         }
 
         // TODO x-ms-blob-content-disposition
@@ -482,21 +506,26 @@ impl Blob {
     pub fn put_page(&self,
                     c: &Client,
                     range: &BA512Range,
-                    lease_id: Option<LeaseId>,
+                    ppo: &PutPageOptions,
                     content: (&mut Read, u64))
                     -> Result<(), AzureError> {
 
-        let uri = format!("{}://{}.blob.core.windows.net/{}/{}?comp=page",
-                          c.auth_scheme(),
-                          c.account(),
-                          self.container_name,
-                          self.name);
+        let mut uri = format!("{}://{}.blob.core.windows.net/{}/{}?comp=page",
+                              c.auth_scheme(),
+                              c.account(),
+                              self.container_name,
+                              self.name);
+
+        if let Some(ref timeout) = ppo.timeout {
+            uri = format!("{}&timeout={}", uri, timeout);
+        }
+
         let mut headers = Headers::new();
 
         headers.set(XMSRange(range.into()));
         headers.set(XMSBlobContentLength(content.1));
-        if let Some(lease_id) = lease_id {
-            headers.set(XMSLeaseId(lease_id));
+        if let Some(ref lease_id) = ppo.lease_id {
+            headers.set(XMSLeaseId(lease_id.clone()));
         }
 
         headers.set(XMSPageWrite(PageWriteType::Update));
@@ -505,6 +534,47 @@ impl Blob {
                                               core::HTTPMethod::Put,
                                               &headers,
                                               Some(content)));
+        try!(core::errors::check_status(&mut resp, StatusCode::Created));
+
+        Ok(())
+    }
+
+    pub fn put_block(&self,
+                     c: &Client,
+                     block_id: &str,
+                     pbo: &PutBlockOptions,
+                     content: (&mut Read, u64))
+                     -> Result<(), AzureError> {
+
+        let encoded_block_id = block_id.as_bytes().to_base64(STANDARD);
+
+        let mut uri = format!("{}://{}.blob.core.windows.net/{}/{}?comp=block&blockid={}",
+                              c.auth_scheme(),
+                              c.account(),
+                              self.container_name,
+                              self.name,
+                              encoded_block_id);
+
+        if let Some(ref timeout) = pbo.timeout {
+            uri = format!("{}&timeout={}", uri, timeout);
+        }
+
+        let mut headers = Headers::new();
+
+        headers.set(XMSBlobContentLength(content.1));
+
+        if let Some(ref lease_id) = pbo.lease_id {
+            headers.set(XMSLeaseId(lease_id.clone()));
+        }
+        if let Some(ref request_id) = pbo.request_id {
+            headers.set(XMSClientRequestId(request_id.to_owned()));
+        }
+
+        let mut resp = try!(c.perform_request(&uri,
+                                              core::HTTPMethod::Put,
+                                              &headers,
+                                              Some(content)));
+
         try!(core::errors::check_status(&mut resp, StatusCode::Created));
 
         Ok(())
