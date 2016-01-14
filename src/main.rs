@@ -15,7 +15,9 @@ extern crate env_logger;
 
 use azure::storage::{LeaseState, LeaseStatus};
 use azure::storage::client::Client;
-use azure::storage::blob::{Blob, BlobType, ListBlobOptions, LIST_BLOB_OPTIONS_DEFAULT, PUT_OPTIONS_DEFAULT, PUT_BLOCK_OPTIONS_DEFAULT, PUT_PAGE_OPTIONS_DEFAULT};
+use azure::storage::blob::{Blob, BlobType, ListBlobOptions, LIST_BLOB_OPTIONS_DEFAULT,
+                           PUT_OPTIONS_DEFAULT, PUT_BLOCK_OPTIONS_DEFAULT,
+                           PUT_PAGE_OPTIONS_DEFAULT};
 use azure::storage::container::{Container, PublicAccess, LIST_CONTAINER_OPTIONS_DEFAULT};
 use azure::core::ba512_range::BA512Range;
 
@@ -232,7 +234,10 @@ fn put_block_blob(client: &Client) {
         copy_status_description: None,
     };
 
-    new_blob.put_block(&client, "block_name", &PUT_BLOCK_OPTIONS_DEFAULT, (&mut file, 1024*1024))
+    new_blob.put_block(&client,
+                       "block_name",
+                       &PUT_BLOCK_OPTIONS_DEFAULT,
+                       (&mut file, 1024 * 1024))
             .unwrap();
 
     println!("created {:?}", new_blob);
@@ -291,13 +296,13 @@ fn put_page_blob(client: &Client) {
     new_blob.put(&client, &PUT_OPTIONS_DEFAULT, None)
             .unwrap();
 
-    let range = BA512Range::new(0, 1024*1024-1).unwrap();
+    let range = BA512Range::new(0, 1024 * 1024 - 1).unwrap();
 
     new_blob.put_page(client,
-        &range, // 1MB
-        &PUT_PAGE_OPTIONS_DEFAULT,
-        (&mut file, range.len()))
-        .unwrap();
+                      &range, // 1MB
+                      &PUT_PAGE_OPTIONS_DEFAULT,
+                      (&mut file, range.len()))
+            .unwrap();
 
     println!("created {:?}", new_blob);
 }
