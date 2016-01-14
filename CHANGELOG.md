@@ -1,5 +1,14 @@
 # Change Log
 
+## [0.0.8](https://github.com/MindFlavor/AzureSDKForRust/releases/tag/0.0.8) (yet-to-publish)
+
+**Implemented features:**
+
+**Refactoring:**
+
+**Bugfixes:**
+
+**Removed methods:**
 
 ## [0.0.7](https://github.com/MindFlavor/AzureSDKForRust/releases/tag/0.0.7) (2015-01-14)
 
