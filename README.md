@@ -24,7 +24,7 @@ extern crate mime;
 use azure::storage::{LeaseState, LeaseStatus};
 use azure::storage::client::Client;
 use azure::storage::blob::{Blob, BlobType};
-use azure::storage::container::{Container, PublicAccess};
+use azure::storage::container::{Container, PublicAccess, LIST_CONTAINER_OPTIONS_DEFAULT};
 
 use chrono::UTC;
 
@@ -41,7 +41,7 @@ fn main() {
 
 
   // This call will list your containers.
-  let containers = Container::list(&client).unwrap();
+  let containers = Container::list(&client, &LIST_CONTAINER_OPTIONS_DEFAULT).unwrap();
   println!("{:?}", ret);
 
   // This call will create a new Azure Container called "wow"
