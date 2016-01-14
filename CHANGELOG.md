@@ -15,6 +15,11 @@
 * Moved ```Container::list``` options in a separate structure (```azure::storage::container::ListContainerOptions```).
 * Moved ```Blob::put_page``` options in a separate structure (```azure::storage::blob::PutPageOptions```).
 
+**Bugfixes:**
+* Corrected the format bug in ```azure::core::range::Range``` and ```azure::core::range::ba512_range::BA512Range```. Previously the string returned was
+formatted as ```{}/{}``` which is invalid for the ```x-ms-range``` header. Now the format is ```bytes={}-{}``` as expected. I still need to figure out if
+  I need to change the ```FromStr``` trait too to match the change.
+
 **Removed methods:**
 * Removed ```ListBlobOptions::new``` as it was just useless boilerplate.
 

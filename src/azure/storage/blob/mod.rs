@@ -1,3 +1,6 @@
+mod put_options;
+pub use self::put_options::{PutOptions, PUT_OPTIONS_DEFAULT};
+
 mod list_blob_options;
 pub use self::list_blob_options::{ListBlobOptions, LIST_BLOB_OPTIONS_DEFAULT};
 
@@ -420,7 +423,7 @@ impl Blob {
 
     pub fn put(&self,
                c: &Client,
-               lease_id: Option<LeaseId>,
+               po: &PutOptions,
                r: Option<(&mut Read, u64)>)
                -> Result<(), AzureError> {
 
@@ -455,11 +458,15 @@ impl Blob {
             }
         }
 
-        let uri = format!("{}://{}.blob.core.windows.net/{}/{}",
-                          c.auth_scheme(),
-                          c.account(),
-                          self.container_name,
-                          self.name);
+        let mut uri = format!("{}://{}.blob.core.windows.net/{}/{}",
+                              c.auth_scheme(),
+                              c.account(),
+                              self.container_name,
+                              self.name);
+
+        if let Some(ref timeout) = po.timeout {
+            uri = format!("{}&timeout={}", uri, timeout);
+        }
 
         let mut headers = Headers::new();
 
@@ -479,8 +486,8 @@ impl Blob {
 
         headers.set(XMSBlobType(self.blob_type));
 
-        if let Some(lease_id) = lease_id {
-            headers.set(XMSLeaseId(lease_id));
+        if let Some(ref lease_id) = po.lease_id {
+            headers.set(XMSLeaseId(lease_id.clone()));
         }
 
         // TODO x-ms-blob-content-disposition
@@ -546,7 +553,7 @@ impl Blob {
                               c.account(),
                               self.container_name,
                               self.name,
-                              encoded_block_id); 
+                              encoded_block_id);
 
         if let Some(ref timeout) = pbo.timeout {
             uri = format!("{}&timeout={}", uri, timeout);
