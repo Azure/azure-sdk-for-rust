@@ -1,5 +1,9 @@
 # Change Log
 
+## [0.1.0](https://github.com/MindFlavor/AzureSDKForRust/releases/tag/0.0.8) (2015-01-16)
+
+**Implemented features:**
+* Added crate exports in ```lib.rs```.
 
 ## [0.0.7](https://github.com/MindFlavor/AzureSDKForRust/releases/tag/0.0.7) (2015-01-14)
 
