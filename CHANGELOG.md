@@ -7,6 +7,12 @@
 **Refactoring:**
 
 **Bugfixes:**
+* Added the non-doc option for the bin test file:
+```rust
+[[bin]]
+name = "main"
+doc = false
+```
 
 **Removed methods:**
 

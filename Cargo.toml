@@ -3,6 +3,10 @@ name = "azure_sdk_for_rust"
 version = "0.1.0"
 authors = ["Francesco Cogno <francesco.cogno@outlook.com>"]
 
+[[bin]]
+name = "main"
+doc = false
+
 [dependencies]
 chrono = "*"
 rust-crypto = "^0.2"
