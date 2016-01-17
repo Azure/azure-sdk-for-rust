@@ -117,6 +117,9 @@ impl Container {
         Ok(())
     }
 
+    // TODO
+    // pub fn get_acl(c : &Client, gao : &GetAclOptions)
+
     pub fn list(c: &Client,
                 lco: &ListContainerOptions)
                 -> Result<IncompleteVector<Container>, core::errors::AzureError> {

@@ -10,6 +10,9 @@ pub use self::put_block_options::{PutBlockOptions, PUT_BLOCK_OPTIONS_DEFAULT};
 mod put_page_options;
 pub use self::put_page_options::{PutPageOptions, PUT_PAGE_OPTIONS_DEFAULT};
 
+mod lease_blob_options;
+pub use self::lease_blob_options::{LeaseBlobOptions, LEASE_BLOB_OPTIONS_DEFAULT};
+
 use chrono::datetime::DateTime;
 use chrono::UTC;
 
@@ -501,6 +504,19 @@ impl Blob {
         try!(core::errors::check_status(&mut resp, StatusCode::Created));
 
         Ok(())
+    }
+
+    pub fn lease(&self, c: &Client, lbo: &LeaseBlobOptions) -> Result<LeaseId, AzureError> {
+        let mut uri = format!("{}://{}.blob.core.windows.net/{}/{}?comp=lease",
+                              c.auth_scheme(),
+                              c.account(),
+                              self.container_name,
+                              self.name);
+        if let Some(ref timeout) = lbo.timeout {
+            uri = format!("{}&timeout={}", uri, timeout);
+        }
+
+        Ok("todo".parse::<LeaseId>().unwrap())
     }
 
     pub fn put_page(&self,
