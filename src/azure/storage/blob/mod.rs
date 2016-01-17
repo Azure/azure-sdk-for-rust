@@ -516,7 +516,13 @@ impl Blob {
             uri = format!("{}&timeout={}", uri, timeout);
         }
 
-        Ok("todo".parse::<LeaseId>().unwrap())
+        let mut headers = Headers::new();
+
+        if let Some(ref lease_id) = lbo.lease_id {
+            headers.set(XMSLeaseId(lease_id.to_owned()));
+        }
+
+        Ok(LeaseId::new(&"test"))
     }
 
     pub fn put_page(&self,

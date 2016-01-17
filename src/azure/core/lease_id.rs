@@ -8,6 +8,12 @@ pub struct LeaseId {
     id: String,
 }
 
+impl LeaseId {
+    pub fn new(s: &str) -> LeaseId {
+        LeaseId { id: s.to_owned() }
+    }
+}
+
 impl FromStr for LeaseId {
     type Err = ParseError;
     fn from_str(s: &str) -> Result<LeaseId, ParseError> {
