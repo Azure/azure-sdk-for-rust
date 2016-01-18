@@ -12,12 +12,13 @@ extern crate mime;
 extern crate log;
 extern crate env_logger;
 
+extern crate uuid;
 
-use azure::core::lease::{LeaseState, LeaseStatus};
+use azure::core::lease::{LeaseState, LeaseStatus, LeaseAction};
 use azure::storage::client::Client;
 use azure::storage::blob::{Blob, BlobType, ListBlobOptions, LIST_BLOB_OPTIONS_DEFAULT,
                            PUT_OPTIONS_DEFAULT, PUT_BLOCK_OPTIONS_DEFAULT,
-                           PUT_PAGE_OPTIONS_DEFAULT};
+                           PUT_PAGE_OPTIONS_DEFAULT, LEASE_BLOB_OPTIONS_DEFAULT};
 use azure::storage::container::{Container, PublicAccess, LIST_CONTAINER_OPTIONS_DEFAULT};
 use azure::core::ba512_range::BA512Range;
 
@@ -56,9 +57,11 @@ fn main() {
 
     info!("Beginning tests");
 
-    put_block_blob(&client);
+    lease_blob(&client);
 
-    put_page_blob(&client);
+    // put_block_blob(&client);
+    //
+    // put_page_blob(&client);
 
     // {
     //     let vhds = ret.iter_mut().find(|x| x.name == "canotto").unwrap();
@@ -146,6 +149,23 @@ fn main() {
     // let ret = client.delete_container("balocco2").unwrap();
     // println!("{:?}", ret);
     // inc_a!("main");
+}
+
+fn lease_blob(client: &Client) {
+    println!("running lease_blob");
+
+    let ret = Container::list(client, &LIST_CONTAINER_OPTIONS_DEFAULT).unwrap();
+    let vhds = ret.iter().find(|x| x.name == "rust").unwrap();
+    let blobs = Blob::list(&client, &vhds.name, &LIST_BLOB_OPTIONS_DEFAULT).unwrap();
+    let blob = blobs.iter().find(|ref x| x.name == "go_rust12.txt").unwrap();
+
+    println!("blob == {:?}", blob);
+
+    let mut lbo = LEASE_BLOB_OPTIONS_DEFAULT.clone();
+    lbo.lease_duration = Some(30);
+    let ret = blob.lease(client, LeaseAction::Acquire, &lbo).unwrap();
+    println!("ret == {:?}", ret);
+
 }
 
 fn list_blobs(client: &Client) {

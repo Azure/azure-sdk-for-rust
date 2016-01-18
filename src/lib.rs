@@ -5,6 +5,8 @@ extern crate url;
 extern crate crypto;
 extern crate rustc_serialize as serialize;
 extern crate xml;
+extern crate uuid;
+
 #[macro_use]
 extern crate mime;
 

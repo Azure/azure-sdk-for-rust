@@ -1,3 +1,5 @@
+extern crate uuid;
+
 mod put_options;
 pub use self::put_options::{PutOptions, PUT_OPTIONS_DEFAULT};
 
@@ -52,6 +54,7 @@ use hyper::header::{Headers, ContentType, ContentLength, LastModified, ContentEn
 
 use serialize::base64::{STANDARD, ToBase64};
 
+use uuid::Uuid;
 
 create_enum!(BlobType,
                             (BlockBlob,        "BlockBlob"),
@@ -542,7 +545,24 @@ impl Blob {
             headers.set(XMSClientRequestId(request_id.to_owned()));
         }
 
-        Ok(LeaseId::new(&"test"))
+        let mut resp = try!(c.perform_request(&uri, core::HTTPMethod::Put, &headers, None));
+
+        let expected_result = match la {
+            LeaseAction::Acquire => StatusCode::Created,
+            LeaseAction::Renew => StatusCode::Ok,
+            LeaseAction::Change => StatusCode::Ok,
+            LeaseAction::Release => StatusCode::Ok,
+            LeaseAction::Break => StatusCode::Accepted,
+        };
+
+        try!(core::errors::check_status(&mut resp, expected_result));
+
+        let lid = match resp.headers.get::<XMSLeaseId>() {
+            Some(l) => l as &Uuid,
+            None => return Err(AzureError::HeaderNotFound("x-ms-lease-id".to_owned())),
+        };
+
+        Ok(lid.clone())
     }
 
     pub fn put_page(&self,

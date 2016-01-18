@@ -11,6 +11,7 @@ dependencies = [
  "rust-crypto 0.2.34 (registry+https://github.com/rust-lang/crates.io-index)",
  "rustc-serialize 0.3.16 (registry+https://github.com/rust-lang/crates.io-index)",
  "url 0.5.2 (git+https://github.com/servo/rust-url)",
+ "uuid 0.1.18 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
