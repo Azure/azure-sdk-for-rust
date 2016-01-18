@@ -1,6 +1,4 @@
 use std::str::FromStr;
-use std::string::ParseError;
-use std::fmt::{Display, Formatter};
 use std::fmt;
 use azure::core::enumerations;
 use azure::core::errors::TraversingError;

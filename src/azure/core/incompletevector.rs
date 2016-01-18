@@ -1,4 +1,4 @@
-use std::ops::Deref;
+use std::ops::{Deref, DerefMut};
 
 #[derive(Debug)]
 pub struct IncompleteVector<T> {
@@ -27,6 +27,12 @@ impl<'a, T> IncompleteVector<T> {
     }
 }
 
+impl<T> DerefMut for IncompleteVector<T> {
+    fn deref_mut(&mut self) -> &mut [T] {
+        &mut self.vector
+    }
+}
+
 impl<T> Deref for IncompleteVector<T> {
     type Target = [T];
 
@@ -36,7 +42,8 @@ impl<T> Deref for IncompleteVector<T> {
 }
 
 mod test {
-    use super::*;
+    #[allow(unused_imports)]
+    use super::IncompleteVector;
 
     #[test]
     fn test_incomplete_vector_complete() {

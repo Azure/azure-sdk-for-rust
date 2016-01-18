@@ -33,7 +33,7 @@ impl BA512Range {
     }
 
     #[inline]
-    pub fn len(&self) -> u64 {
+    pub fn size(&self) -> u64 {
         self.end - self.start + 1
     }
 }

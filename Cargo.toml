@@ -1,6 +1,6 @@
 [package]
 name = "azure_sdk_for_rust"
-version = "0.1.1"
+version = "0.1.2"
 authors = ["Francesco Cogno <francesco.cogno@outlook.com>"]
 
 [[bin]]
@@ -16,6 +16,8 @@ mime = "*"
 log = "0.3"
 env_logger = "0.3"
 uuid = "^0.1"
+
+clippy="*"
 
 [dependencies.hyper]
 version = "*"

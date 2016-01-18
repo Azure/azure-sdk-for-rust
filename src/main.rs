@@ -1,3 +1,7 @@
+#![feature(plugin)]
+
+#![plugin(clippy)]
+
 #[macro_use]
 extern crate hyper;
 extern crate chrono;
@@ -16,9 +20,9 @@ extern crate uuid;
 
 use azure::core::lease::{LeaseState, LeaseStatus, LeaseAction};
 use azure::storage::client::Client;
-use azure::storage::blob::{Blob, BlobType, ListBlobOptions, LIST_BLOB_OPTIONS_DEFAULT,
-                           PUT_OPTIONS_DEFAULT, PUT_BLOCK_OPTIONS_DEFAULT,
-                           PUT_PAGE_OPTIONS_DEFAULT, LEASE_BLOB_OPTIONS_DEFAULT};
+use azure::storage::blob::{Blob, BlobType, LIST_BLOB_OPTIONS_DEFAULT, PUT_OPTIONS_DEFAULT,
+                           PUT_BLOCK_OPTIONS_DEFAULT, PUT_PAGE_OPTIONS_DEFAULT,
+                           LEASE_BLOB_OPTIONS_DEFAULT};
 use azure::storage::container::{Container, PublicAccess, LIST_CONTAINER_OPTIONS_DEFAULT};
 use azure::core::ba512_range::BA512Range;
 
@@ -168,6 +172,7 @@ fn lease_blob(client: &Client) {
 
 }
 
+#[allow(dead_code)]
 fn list_blobs(client: &Client) {
     println!("running list_blobs");
 
@@ -187,6 +192,7 @@ fn list_blobs(client: &Client) {
     }
 }
 
+#[allow(dead_code)]
 fn list_containers(client: &Client) {
     println!("running list_containers");
 
@@ -205,7 +211,7 @@ fn list_containers(client: &Client) {
     }
 }
 
-
+#[allow(dead_code)]
 fn put_block_blob(client: &Client) {
     use std::fs::metadata;
     use std::fs::File;
@@ -263,7 +269,7 @@ fn put_block_blob(client: &Client) {
     println!("created {:?}", new_blob);
 }
 
-
+#[allow(dead_code)]
 fn put_page_blob(client: &Client) {
     use std::fs::metadata;
     use std::fs::File;
@@ -321,7 +327,7 @@ fn put_page_blob(client: &Client) {
     new_blob.put_page(client,
                       &range, // 1MB
                       &PUT_PAGE_OPTIONS_DEFAULT,
-                      (&mut file, range.len()))
+                      (&mut file, range.size()))
             .unwrap();
 
     println!("created {:?}", new_blob);

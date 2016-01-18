@@ -225,41 +225,38 @@ pub fn canonicalized_resource(u: &url::Url) -> String {
     can_res = can_res + "\n";
 
     // query parameters
-    match u.query_pairs() {
-        Some(query_pairs) => {
-            let mut qps = Vec::new();
-            {
-                for qp in &query_pairs {
-                    // println!("adding to qps {:?}", qp);
+    if let Some(query_pairs) = u.query_pairs() {
+        let mut qps = Vec::new();
+        {
+            for qp in &query_pairs {
+                // println!("adding to qps {:?}", qp);
 
-                    // add only once
-                    if !(qps.iter().any(|x: &String| x == &qp.0)) {
-                        qps.push(qp.clone().0);
-                    }
+                // add only once
+                if !(qps.iter().any(|x: &String| x == &qp.0)) {
+                    qps.push(qp.clone().0);
                 }
-            }
-
-            qps.sort();
-
-            for qparam in qps {
-                // find correct parameter
-                let ret = lexy_sort(&query_pairs, &qparam);
-
-                // println!("adding to can_res {:?}", ret);
-
-                can_res = can_res + &qparam.to_lowercase() + ":";
-
-                for (i, item) in ret.iter().enumerate() {
-                    if i > 0 {
-                        can_res = can_res + ","
-                    }
-                    can_res = can_res + item;
-                }
-
-                can_res = can_res + "\n";
             }
         }
-        None => {}
+
+        qps.sort();
+
+        for qparam in qps {
+            // find correct parameter
+            let ret = lexy_sort(&query_pairs, &qparam);
+
+            // println!("adding to can_res {:?}", ret);
+
+            can_res = can_res + &qparam.to_lowercase() + ":";
+
+            for (i, item) in ret.iter().enumerate() {
+                if i > 0 {
+                    can_res = can_res + ","
+                }
+                can_res = can_res + item;
+            }
+
+            can_res = can_res + "\n";
+        }
     };
 
     can_res[0..can_res.len() - 1].to_owned()
@@ -343,7 +340,6 @@ mod test {
     #[test]
     fn test_canonicalize_header() {
         use super::*;
-        use chrono::DateTime;
 
         let dt = chrono::DateTime::parse_from_rfc2822("Fri, 28 Nov 2014 21:00:09 +0900").unwrap();
         let time = format!("{}", dt.format("%a, %d %h %Y %T GMT%Z"));
