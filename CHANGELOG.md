@@ -1,6 +1,6 @@
 git# Change Log
 
-## [0.1.1](https://github.com/MindFlavor/AzureSDKForRust/releases/tag/0.0.7) (yet-to-publish)
+## [0.1.1](https://github.com/MindFlavor/AzureSDKForRust/releases/tag/0.0.7) (2016-01-18)
 
 **Implemented features:**
 * Lease blob (https://msdn.microsoft.com/library/azure/ee691972.aspx).
@@ -16,8 +16,6 @@ git# Change Log
 name = "main"
 doc = false
 ```
-
-**Removed methods:**
 
 ## [0.1.0](https://github.com/MindFlavor/AzureSDKForRust/releases/tag/0.0.8) (2015-01-16)
 
