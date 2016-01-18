@@ -132,4 +132,4 @@ If you want to contribute please do! No formality required! :wink:
 |Lease blob|[https://msdn.microsoft.com/library/azure/ee691972.aspx](https://msdn.microsoft.com/library/azure/ee691972.aspx)|
 
 ## License
-This project is published under [The MIT License (MIT)](LICENSE).
+This project is published under [Apache license, version 2.0](LICENSE).
