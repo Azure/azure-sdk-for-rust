@@ -7,7 +7,7 @@ use azure::core::enumerations;
 use azure::core::parsing::{traverse, cast_must, cast_optional};
 use azure::core::incompletevector::IncompleteVector;
 
-use azure::storage::{LeaseStatus, LeaseState, LeaseDuration};
+use azure::core::lease::{LeaseStatus, LeaseState, LeaseDuration};
 use azure::storage::client::Client;
 
 use hyper::header::Headers;

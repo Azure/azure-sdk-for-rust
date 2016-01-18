@@ -13,7 +13,7 @@ extern crate log;
 extern crate env_logger;
 
 
-use azure::storage::{LeaseState, LeaseStatus};
+use azure::core::lease::{LeaseState, LeaseStatus};
 use azure::storage::client::Client;
 use azure::storage::blob::{Blob, BlobType, ListBlobOptions, LIST_BLOB_OPTIONS_DEFAULT,
                            PUT_OPTIONS_DEFAULT, PUT_BLOCK_OPTIONS_DEFAULT,

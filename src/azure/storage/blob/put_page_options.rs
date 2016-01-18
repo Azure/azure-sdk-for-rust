@@ -1,4 +1,4 @@
-use azure::core::lease_id::LeaseId;
+use azure::core::lease::LeaseId;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct PutPageOptions {

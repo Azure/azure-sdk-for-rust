@@ -1,10 +1,13 @@
-# Change Log
+git# Change Log
 
 ## [0.1.1](https://github.com/MindFlavor/AzureSDKForRust/releases/tag/0.0.7) (yet-to-publish)
 
 **Implemented features:**
+* Lease blob (https://msdn.microsoft.com/library/azure/ee691972.aspx).
 
 **Refactoring:**
+* Renamed ```azure::core::lease_id``` module in ```azure::core::lease```.
+* Moved lease enumerations in ```azure::core::lease``` module.
 
 **Bugfixes:**
 * Added the non-doc option for the bin test file:

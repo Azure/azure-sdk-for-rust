@@ -16,13 +16,13 @@ pub use self::lease_blob_options::{LeaseBlobOptions, LEASE_BLOB_OPTIONS_DEFAULT}
 use chrono::datetime::DateTime;
 use chrono::UTC;
 
-use azure::storage::{LeaseStatus, LeaseState, LeaseDuration};
+use azure::core::lease::{LeaseId, LeaseStatus, LeaseState, LeaseDuration};
 use azure::storage::client::Client;
 
 use azure::core;
 use azure::core::{XMSRange, ContentMD5, XMSLeaseStatus, XMSLeaseDuration, XMSLeaseState,
                   XMSLeaseId, XMSRangeGetContentMD5, XMSClientRequestId};
-use azure::core::lease_id::LeaseId;
+
 use azure::core::parsing::{cast_must, cast_optional, from_azure_time, traverse};
 
 use xml::Element;
@@ -521,6 +521,8 @@ impl Blob {
         if let Some(ref lease_id) = lbo.lease_id {
             headers.set(XMSLeaseId(lease_id.to_owned()));
         }
+
+
 
         Ok(LeaseId::new(&"test"))
     }
