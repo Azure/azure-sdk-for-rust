@@ -1,4 +1,13 @@
 git# Change Log
+## [0.1.2](https://github.com/MindFlavor/AzureSDKForRust/releases/tag/0.0.7) (2016-01-18)
+
+**Bugfixes:**
+* Added ```std::ops::DerefMut``` trait to ```azure::core::incompletevector::IncompleteVector```.
+* Corrected [README](README.md) sample.
+
+**Refactoring:**
+* Renamed ```azure::core::ba512_range::BA512Range::len()``` function in ```azure::core::ba512_range::BA512Range::size()``` for better linting (len requires is_empty
+  and was therefore misleading).
 
 ## [0.1.1](https://github.com/MindFlavor/AzureSDKForRust/releases/tag/0.0.7) (2016-01-18)
 

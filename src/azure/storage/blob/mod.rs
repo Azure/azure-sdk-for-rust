@@ -291,10 +291,10 @@ impl Blob {
         })
     }
 
-    pub fn list<'a>(c: &Client,
-                    container_name: &str,
-                    lbo: &ListBlobOptions)
-                    -> Result<IncompleteVector<Blob>, core::errors::AzureError> {
+    pub fn list(c: &Client,
+                container_name: &str,
+                lbo: &ListBlobOptions)
+                -> Result<IncompleteVector<Blob>, core::errors::AzureError> {
 
         let mut include = String::new();
         if lbo.include_snapshots {
