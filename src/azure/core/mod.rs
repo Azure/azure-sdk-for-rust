@@ -20,7 +20,7 @@ use chrono;
 
 use std::io::Read;
 
-use azure::storage::{LeaseStatus, LeaseState, LeaseDuration};
+use azure::core::lease::{LeaseId, LeaseStatus, LeaseState, LeaseDuration, LeaseAction};
 
 #[macro_use]
 pub mod errors;
@@ -28,7 +28,7 @@ pub mod parsing;
 #[macro_use]
 pub mod enumerations;
 pub mod incompletevector;
-pub mod lease_id;
+pub mod lease;
 
 pub mod range;
 pub mod ba512_range;
@@ -51,10 +51,14 @@ header! { (IfMatch, "If-Match") => [String] }
 header! { (IfNoneMatch, "If-None-Match") => [String] }
 header! { (Range, "Range") => [String] }
 header! { (XMSRange, "x-ms-range") => [range::Range] }
-header! { (XMSLeaseId, "x-ms-lease-id") => [lease_id::LeaseId] }
+header! { (XMSLeaseId, "x-ms-lease-id") => [LeaseId] }
 header! { (XMSLeaseStatus, "x-ms-lease-status") => [LeaseStatus] }
 header! { (XMSLeaseState, "x-ms-lease-state") => [LeaseState] }
+header! { (XMSLeaseAction, "x-ms-lease-action") => [LeaseAction] }
 header! { (XMSLeaseDuration, "x-ms-lease-duration") => [LeaseDuration] }
+header! { (XMSLeaseDurationSeconds, "x-ms-lease-duration") => [u32] }
+header! { (XMSLeaseBreakPeriod, "x-ms-lease-break-period") => [u32] }
+header! { (XMSProposedLeaseId, "x-ms-proposed-lease-id") => [LeaseId] }
 header! { (ETag, "ETag") => [String] }
 header! { (XMSRangeGetContentMD5, "x-ms-range-get-content-md5") => [bool] }
 header! { (XMSClientRequestId, "x-ms-client-request-id") => [String] }

@@ -1,3 +1,5 @@
+extern crate uuid;
+
 mod put_options;
 pub use self::put_options::{PutOptions, PUT_OPTIONS_DEFAULT};
 
@@ -10,16 +12,20 @@ pub use self::put_block_options::{PutBlockOptions, PUT_BLOCK_OPTIONS_DEFAULT};
 mod put_page_options;
 pub use self::put_page_options::{PutPageOptions, PUT_PAGE_OPTIONS_DEFAULT};
 
+mod lease_blob_options;
+pub use self::lease_blob_options::{LeaseBlobOptions, LEASE_BLOB_OPTIONS_DEFAULT};
+
 use chrono::datetime::DateTime;
 use chrono::UTC;
 
-use azure::storage::{LeaseStatus, LeaseState, LeaseDuration};
+use azure::core::lease::{LeaseId, LeaseStatus, LeaseState, LeaseDuration, LeaseAction};
 use azure::storage::client::Client;
 
 use azure::core;
 use azure::core::{XMSRange, ContentMD5, XMSLeaseStatus, XMSLeaseDuration, XMSLeaseState,
-                  XMSLeaseId, XMSRangeGetContentMD5, XMSClientRequestId};
-use azure::core::lease_id::LeaseId;
+                  XMSLeaseId, XMSRangeGetContentMD5, XMSClientRequestId, XMSLeaseAction,
+                  XMSLeaseDurationSeconds, XMSLeaseBreakPeriod, XMSProposedLeaseId};
+
 use azure::core::parsing::{cast_must, cast_optional, from_azure_time, traverse};
 
 use xml::Element;
@@ -48,6 +54,7 @@ use hyper::header::{Headers, ContentType, ContentLength, LastModified, ContentEn
 
 use serialize::base64::{STANDARD, ToBase64};
 
+use uuid::Uuid;
 
 create_enum!(BlobType,
                             (BlockBlob,        "BlockBlob"),
@@ -501,6 +508,61 @@ impl Blob {
         try!(core::errors::check_status(&mut resp, StatusCode::Created));
 
         Ok(())
+    }
+
+    pub fn lease(&self,
+                 c: &Client,
+                 la: LeaseAction,
+                 lbo: &LeaseBlobOptions)
+                 -> Result<LeaseId, AzureError> {
+        let mut uri = format!("{}://{}.blob.core.windows.net/{}/{}?comp=lease",
+                              c.auth_scheme(),
+                              c.account(),
+                              self.container_name,
+                              self.name);
+        if let Some(ref timeout) = lbo.timeout {
+            uri = format!("{}&timeout={}", uri, timeout);
+        }
+
+        let mut headers = Headers::new();
+
+        if let Some(ref lease_id) = lbo.lease_id {
+            headers.set(XMSLeaseId(lease_id.to_owned()));
+        }
+
+        headers.set(XMSLeaseAction(la));
+
+        if let Some(lease_break_period) = lbo.lease_break_period {
+            headers.set(XMSLeaseBreakPeriod(lease_break_period));
+        }
+        if let Some(lease_duration) = lbo.lease_duration {
+            headers.set(XMSLeaseDurationSeconds(lease_duration));
+        }
+        if let Some(ref proposed_lease_id) = lbo.proposed_lease_id {
+            headers.set(XMSProposedLeaseId(proposed_lease_id.clone()));
+        }
+        if let Some(ref request_id) = lbo.request_id {
+            headers.set(XMSClientRequestId(request_id.to_owned()));
+        }
+
+        let mut resp = try!(c.perform_request(&uri, core::HTTPMethod::Put, &headers, None));
+
+        let expected_result = match la {
+            LeaseAction::Acquire => StatusCode::Created,
+            LeaseAction::Renew => StatusCode::Ok,
+            LeaseAction::Change => StatusCode::Ok,
+            LeaseAction::Release => StatusCode::Ok,
+            LeaseAction::Break => StatusCode::Accepted,
+        };
+
+        try!(core::errors::check_status(&mut resp, expected_result));
+
+        let lid = match resp.headers.get::<XMSLeaseId>() {
+            Some(l) => l as &Uuid,
+            None => return Err(AzureError::HeaderNotFound("x-ms-lease-id".to_owned())),
+        };
+
+        Ok(lid.clone())
     }
 
     pub fn put_page(&self,
