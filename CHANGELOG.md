@@ -1,4 +1,5 @@
-git# Change Log
+# Change Log
+
 ## [0.1.2](https://github.com/MindFlavor/AzureSDKForRust/releases/tag/0.0.7) (2016-01-18)
 
 **Bugfixes:**
