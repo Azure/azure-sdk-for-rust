@@ -17,7 +17,7 @@ log = "0.3"
 env_logger = "0.3"
 uuid = "^0.1"
 
-clippy="*"
+# clippy="*"
 
 [dependencies.hyper]
 version = "*"
