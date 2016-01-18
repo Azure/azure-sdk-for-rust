@@ -16,12 +16,13 @@ pub use self::lease_blob_options::{LeaseBlobOptions, LEASE_BLOB_OPTIONS_DEFAULT}
 use chrono::datetime::DateTime;
 use chrono::UTC;
 
-use azure::core::lease::{LeaseId, LeaseStatus, LeaseState, LeaseDuration};
+use azure::core::lease::{LeaseId, LeaseStatus, LeaseState, LeaseDuration, LeaseAction};
 use azure::storage::client::Client;
 
 use azure::core;
 use azure::core::{XMSRange, ContentMD5, XMSLeaseStatus, XMSLeaseDuration, XMSLeaseState,
-                  XMSLeaseId, XMSRangeGetContentMD5, XMSClientRequestId};
+                  XMSLeaseId, XMSRangeGetContentMD5, XMSClientRequestId, XMSLeaseAction,
+                  XMSLeaseDurationSeconds, XMSLeaseBreakPeriod, XMSProposedLeaseId};
 
 use azure::core::parsing::{cast_must, cast_optional, from_azure_time, traverse};
 
@@ -506,7 +507,11 @@ impl Blob {
         Ok(())
     }
 
-    pub fn lease(&self, c: &Client, lbo: &LeaseBlobOptions) -> Result<LeaseId, AzureError> {
+    pub fn lease(&self,
+                 c: &Client,
+                 la: LeaseAction,
+                 lbo: &LeaseBlobOptions)
+                 -> Result<LeaseId, AzureError> {
         let mut uri = format!("{}://{}.blob.core.windows.net/{}/{}?comp=lease",
                               c.auth_scheme(),
                               c.account(),
@@ -522,7 +527,20 @@ impl Blob {
             headers.set(XMSLeaseId(lease_id.to_owned()));
         }
 
+        headers.set(XMSLeaseAction(la));
 
+        if let Some(lease_break_period) = lbo.lease_break_period {
+            headers.set(XMSLeaseBreakPeriod(lease_break_period));
+        }
+        if let Some(lease_duration) = lbo.lease_duration {
+            headers.set(XMSLeaseDurationSeconds(lease_duration));
+        }
+        if let Some(ref proposed_lease_id) = lbo.proposed_lease_id {
+            headers.set(XMSProposedLeaseId(proposed_lease_id.clone()));
+        }
+        if let Some(ref request_id) = lbo.request_id {
+            headers.set(XMSClientRequestId(request_id.to_owned()));
+        }
 
         Ok(LeaseId::new(&"test"))
     }

@@ -56,9 +56,14 @@ header! { (XMSLeaseStatus, "x-ms-lease-status") => [LeaseStatus] }
 header! { (XMSLeaseState, "x-ms-lease-state") => [LeaseState] }
 header! { (XMSLeaseAction, "x-ms-lease-action") => [LeaseAction] }
 header! { (XMSLeaseDuration, "x-ms-lease-duration") => [LeaseDuration] }
+header! { (XMSLeaseDurationSeconds, "x-ms-lease-duration") => [u32] }
+header! { (XMSLeaseBreakPeriod, "x-ms-lease-break-period") => [u32] }
+header! { (XMSProposedLeaseId, "x-ms-proposed-lease-id") => [LeaseId] }
 header! { (ETag, "ETag") => [String] }
 header! { (XMSRangeGetContentMD5, "x-ms-range-get-content-md5") => [bool] }
 header! { (XMSClientRequestId, "x-ms-client-request-id") => [String] }
+
+
 
 pub fn generate_authorization(h: &Headers,
                               u: &url::Url,
