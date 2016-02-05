@@ -3,7 +3,7 @@
 [![Build Status](https://travis-ci.org/MindFlavor/AzureSDKForRust.svg?branch=master)](https://travis-ci.org/MindFlavor/AzureSDKForRust) [![Coverage Status](https://coveralls.io/repos/MindFlavor/AzureSDKForRust/badge.svg?branch=master&service=github)](https://coveralls.io/github/MindFlavor/AzureSDKForRust?branch=master) [![experimental](http://badges.github.io/stability-badges/dist/experimental.svg)](http://github.com/badges/stability-badges)
 
 ## Introduction
-Microsoft Azure expose its technologies via REST API. These APIs are easily consumable from any language (good) but are weakly typed. With this library and its related (as soon as I figure out how to make it) crate you can exploit the power of Microsoft Azure from Rust in a idiomatic way.    
+Microsoft Azure expose its technologies via REST API. These APIs are easily consumable from any language (good) but are weakly typed. With this library and its related [crate](https://crates.io/crates/azure_sdk_for_rust/) you can exploit the power of Microsoft Azure from Rust in a idiomatic way.    
 
 > **NOTE:** This repository is under heavy ongoing development and
 is likely to break over time. I currently do not have any releases
@@ -108,7 +108,9 @@ fn main() {
 
 ## State of the art
 Right now very few methods have been implemented but the key framework is in place (authentication, enumerations, parsing and so on). If you want to contribute please do!
+Methods are added daily so please check the [CHANGELOG.md](CHANGELOG.md) for updates on the progress.
 Also note that the project is in early stages so the APIs are bound to change at any moment. I will strive to keep things steady but since I'm new to Rust I'm sure I'll have to correct some serious mistake before too long :smile:.
+I generally build for the latest nightly and leave to Travis to check the retrocompatibility.
 
 ## Contributing
 If you want to contribute please do! No formality required! :wink:
@@ -134,6 +136,13 @@ If you want to contribute please do! No formality required! :wink:
 |Clear blob page|[https://msdn.microsoft.com/en-us/library/azure/dd179451.aspx](https://msdn.microsoft.com/en-us/library/azure/dd179451.aspx)|
 |Put block|[https://msdn.microsoft.com/en-us/library/azure/dd135726.aspx](https://msdn.microsoft.com/en-us/library/azure/dd135726.aspx)|
 |Lease blob|[https://msdn.microsoft.com/library/azure/ee691972.aspx](https://msdn.microsoft.com/library/azure/ee691972.aspx)|
+
+#### Event Hubs
+
+|Method | URL |
+| ----  | --- |
+|Send Event|[https://msdn.microsoft.com/en-us/library/azure/dn790664.aspx](https://msdn.microsoft.com/en-us/library/azure/dn790664.aspx)|
+
 
 ## License
 This project is published under [Apache license, version 2.0](LICENSE).

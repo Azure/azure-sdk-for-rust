@@ -1,5 +1,4 @@
 // #![feature(plugin)]
-//
 // #![plugin(clippy)]
 
 #[macro_use]
@@ -11,6 +10,7 @@ extern crate rustc_serialize as serialize;
 extern crate xml;
 #[macro_use]
 extern crate mime;
+extern crate time;
 
 #[macro_use]
 extern crate log;
@@ -26,6 +26,9 @@ use azure::storage::blob::{Blob, BlobType, LIST_BLOB_OPTIONS_DEFAULT, PUT_OPTION
 use azure::storage::container::{Container, PublicAccess, LIST_CONTAINER_OPTIONS_DEFAULT};
 use azure::core::ba512_range::BA512Range;
 
+use std::fs;
+use time::Duration;
+
 // use azure::storage::container::PublicAccess;
 
 #[macro_use]
@@ -36,6 +39,7 @@ use chrono::UTC;
 
 use mime::Mime;
 
+#[allow(unused_variables)]
 fn main() {
     env_logger::init().unwrap();
 
@@ -55,13 +59,54 @@ fn main() {
 
     let client = Client::new(&azure_storage_account, &azure_storage_key, true);
 
+    let policy_name = match std::env::var("AZURE_POLICY_NAME") {
+        Ok(val) => val,
+        Err(_) => {
+            panic!("Please set AZURE_POLICY_NAME env variable first!");
+        }
+    };
+
+    let policy_key = match std::env::var("AZURE_POLICY_KEY") {
+        Ok(val) => val,
+        Err(_) => {
+            panic!("Please set AZURE_POLICY_KEY env variable first!");
+        }
+    };
+
+    let sb_namespace = match std::env::var("AZURE_SERVICE_BUS_NAMESPACE") {
+        Ok(val) => val,
+        Err(_) => {
+            panic!("Please set AZURE_SERVICE_BUS_NAMESPACE env variable first!");
+        }
+    };
+
+    let ev_name = match std::env::var("AZURE_EVENT_HUB_NAME") {
+        Ok(val) => val,
+        Err(_) => {
+            panic!("Please set AZURE_EVENT_HUB_NAME env variable first!");
+        }
+    };
+
+    let mut eh_client = azure::service_bus::event_hub::Client::new(&sb_namespace,
+                                                                   &ev_name,
+                                                                   &policy_name,
+                                                                   &policy_key);
+    // "todeleh",
+    // "write_policy",
+    // "9GIzBhQhMKg/patjrI2XS6gSGn6ju2+N40CQEYmowJ8=");
+
     // client.create_container("balocco3", PublicAccess::Blob).unwrap();
     // // println!("{:?}", new);
     //
 
     info!("Beginning tests");
 
-    lease_blob(&client);
+    for i in 0..20 {
+        info!("Sending message {}", i);
+        send_event(&mut eh_client);
+    }
+
+    // lease_blob(&client);
 
     // put_block_blob(&client);
     //
@@ -155,6 +200,19 @@ fn main() {
     // inc_a!("main");
 }
 
+#[allow(dead_code)]
+fn send_event(cli: &mut azure::service_bus::event_hub::Client) {
+    debug!("running send_event");
+    let file_name = "C:\\temp\\samplein.json";
+
+    let metadata = fs::metadata(file_name).unwrap();
+    let mut file_handle = fs::File::open(file_name).unwrap();
+
+    cli.send_event((&mut file_handle, metadata.len()), Duration::hours(1))
+       .unwrap();
+}
+
+#[allow(dead_code)]
 fn lease_blob(client: &Client) {
     println!("running lease_blob");
 

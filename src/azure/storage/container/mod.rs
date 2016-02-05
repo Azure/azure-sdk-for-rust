@@ -29,10 +29,9 @@ use azure::core::parsing::FromStringOptional;
 header! { (XMSBlobPublicAccess, "x-ms-blob-public-access") => [PublicAccess] }
 
 create_enum!(PublicAccess,
-                            (None,          "none"),
-                            (Container,     "container"),
-                            (Blob,          "blob")
-);
+             (None, "none"),
+             (Container, "container"),
+             (Blob, "blob"));
 
 
 #[derive(Debug)]
@@ -151,18 +150,12 @@ impl Container {
         // println!("{:?}", resp.status);
 
         let mut resp_s = String::new();
-        match resp.read_to_string(&mut resp_s) {
-            Ok(_) => (),
-            Err(err) => return Err(errors::new_from_ioerror_string(err.to_string())),
-        };
+        try!(resp.read_to_string(&mut resp_s));
 
         // println!("response == \n\n{:?}\n\n", resp_s);
 
         let sp = &resp_s;
-        let elem: Element = match sp.parse() {
-            Ok(res) => res,
-            Err(err) => return Err(errors::new_from_xmlerror_string(err.to_string())),
-        };
+        let elem: Element = try!(sp.parse());
 
         let mut v = Vec::new();
 

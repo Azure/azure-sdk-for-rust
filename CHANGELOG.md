@@ -1,6 +1,13 @@
-# Change Log
+## [0.1.3](https://github.com/MindFlavor/AzureSDKForRust/releases/tag/0.1.3) (2016-02-05)
 
-## [0.1.2](https://github.com/MindFlavor/AzureSDKForRust/releases/tag/0.0.7) (2016-01-18)
+**Implemented features:**
+* Added Event Hub Send Event REST API implementation (as for [https://msdn.microsoft.com/en-us/library/azure/dn790664.aspx](https://msdn.microsoft.com/en-us/library/azure/dn790664.aspx)).
+
+**Refactoring:**
+* Corrected  ```azure::core::errors::AzureError``` to include the ``std::io::Error`` and ```xml::BuilderError``` instead of their ```to_string()``` result.
+* Changed ```UnexpectedResult``` enum of ```azure::core::errors::AzureError``` to ```UnexpectedHTTPResult``` which holds an instance of  ```azure::core::errors::UnexpectedHTTPResult``` instead of a tuple for better field description.
+
+## [0.1.2](https://github.com/MindFlavor/AzureSDKForRust/releases/tag/0.1.2) (2016-01-18)
 
 **Bugfixes:**
 * Added ```std::ops::DerefMut``` trait to ```azure::core::incompletevector::IncompleteVector```.
@@ -10,7 +17,7 @@
 * Renamed ```azure::core::ba512_range::BA512Range::len()``` function in ```azure::core::ba512_range::BA512Range::size()``` for better linting (len requires is_empty
   and was therefore misleading).
 
-## [0.1.1](https://github.com/MindFlavor/AzureSDKForRust/releases/tag/0.0.7) (2016-01-18)
+## [0.1.1](https://github.com/MindFlavor/AzureSDKForRust/releases/tag/0.1.1) (2016-01-18)
 
 **Implemented features:**
 * Lease blob (https://msdn.microsoft.com/library/azure/ee691972.aspx).
@@ -27,7 +34,7 @@ name = "main"
 doc = false
 ```
 
-## [0.1.0](https://github.com/MindFlavor/AzureSDKForRust/releases/tag/0.0.8) (2015-01-16)
+## [0.1.0](https://github.com/MindFlavor/AzureSDKForRust/releases/tag/0.1.0) (2015-01-16)
 
 **Implemented features:**
 * Added crate exports in ```lib.rs```.

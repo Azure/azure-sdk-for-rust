@@ -41,6 +41,7 @@ impl<T> Deref for IncompleteVector<T> {
     }
 }
 
+#[cfg(test)]
 mod test {
     #[allow(unused_imports)]
     use super::IncompleteVector;

@@ -151,8 +151,10 @@ pub fn string_to_sign(h: &Headers, u: &url::Url, method: HTTPMethod) -> String {
     // \n    /*If-None-Match*/
     // \n    /*If-Unmodified-Since*/
     // \n    /*Range*/
-    // x-ms-date:Sun, 11 Oct 2009 21:49:13 GMT\nx-ms-version:2009-09-19\n    /*CanonicalizedHeaders*/
-    // /myaccount /mycontainer\ncomp:metadata\nrestype:container\ntimeout:20    /*CanonicalizedResource*/
+    // x-ms-date:Sun, 11 Oct 2009 21:49:13 GMT\nx-ms-version:2009-09-19\n
+    //                                  /*CanonicalizedHeaders*/
+    // /myaccount /mycontainer\ncomp:metadata\nrestype:container\ntimeout:20
+    //                                  /*CanonicalizedResource*/
     //
     //
 
