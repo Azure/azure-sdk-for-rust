@@ -1,6 +1,8 @@
 # Microsoft Azure SDK for Rust
 
-[![Build Status](https://travis-ci.org/MindFlavor/AzureSDKForRust.svg?branch=master)](https://travis-ci.org/MindFlavor/AzureSDKForRust) [![Coverage Status](https://coveralls.io/repos/MindFlavor/AzureSDKForRust/badge.svg?branch=master&service=github)](https://coveralls.io/github/MindFlavor/AzureSDKForRust?branch=master) [![experimental](http://badges.github.io/stability-badges/dist/experimental.svg)](http://github.com/badges/stability-badges)
+[![Build Status](https://travis-ci.org/MindFlavor/AzureSDKForRust.svg?branch=master)](https://travis-ci.org/MindFlavor/AzureSDKForRust) [![Coverage Status](https://coveralls.io/repos/MindFlavor/AzureSDKForRust/badge.svg?branch=master&service=github)](https://coveralls.io/github/MindFlavor/AzureSDKForRust?branch=master) [![alpha](https://img.shields.io/badge/stability-alpha-yellow.svg)](https://img.shields.io/badge/stability-alpha-yellow.svg)
+
+[![Crate](https://img.shields.io/crates/v/azure_sdk_for_rust.svg)](https://img.shields.io/crates/v/azure_sdk_for_rust.svg) [![legal](https://img.shields.io/crates/l/azure_sdk_for_rust.svg)](https://img.shields.io/crates/l/azure_sdk_for_rust.svg) [![cratedown](https://img.shields.io/crates/d/azure_sdk_for_rust.svg)](https://img.shields.io/crates/d/azure_sdk_for_rust.svg) [![cratelastdown](https://img.shields.io/crates/dv/azure_sdk_for_rust.svg)](https://img.shields.io/crates/dv/azure_sdk_for_rust.svg)
 
 ## Introduction
 Microsoft Azure expose its technologies via REST API. These APIs are easily consumable from any language (good) but are weakly typed. With this library and its related [crate](https://crates.io/crates/azure_sdk_for_rust/) you can exploit the power of Microsoft Azure from Rust in a idiomatic way.    
