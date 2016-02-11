@@ -2,7 +2,11 @@
 
 [![Build Status](https://travis-ci.org/MindFlavor/AzureSDKForRust.svg?branch=master)](https://travis-ci.org/MindFlavor/AzureSDKForRust) [![Coverage Status](https://coveralls.io/repos/MindFlavor/AzureSDKForRust/badge.svg?branch=master&service=github)](https://coveralls.io/github/MindFlavor/AzureSDKForRust?branch=master) [![alpha](https://img.shields.io/badge/stability-alpha-yellow.svg)](https://img.shields.io/badge/stability-alpha-yellow.svg)
 
-[![Crate](https://img.shields.io/crates/v/azure_sdk_for_rust.svg)](https://img.shields.io/crates/v/azure_sdk_for_rust.svg) [![legal](https://img.shields.io/crates/l/azure_sdk_for_rust.svg)](https://img.shields.io/crates/l/azure_sdk_for_rust.svg) [![cratedown](https://img.shields.io/crates/d/azure_sdk_for_rust.svg)](https://img.shields.io/crates/d/azure_sdk_for_rust.svg) [![cratelastdown](https://img.shields.io/crates/dv/azure_sdk_for_rust.svg)](https://img.shields.io/crates/dv/azure_sdk_for_rust.svg)
+[![Crate](https://img.shields.io/crates/v/azure_sdk_for_rust.svg)](https://crates.io/crates/azure_sdk_for_rust) [![legal](https://img.shields.io/crates/l/azure_sdk_for_rust.svg)](LICENSE) [![cratedown](https://img.shields.io/crates/d/azure_sdk_for_rust.svg)](https://crates.io/crates/azure_sdk_for_rust) [![cratelastdown](https://img.shields.io/crates/dv/azure_sdk_for_rust.svg)](https://crates.io/crates/azure_sdk_for_rust)
+
+[![tag](https://img.shields.io/github/tag/mindflavor/AzureSDKForRust.svg)](https://github.com/MindFlavor/AzureSDKForRust/tree/0.1.3)
+[![release](https://img.shields.io/github/release/mindflavor/AzureSDKForRust.svg)](https://github.com/MindFlavor/AzureSDKForRust/tree/0.1.3)
+[![commitssince](https://img.shields.io/github/commits-since/mindflavor/AzureSDKForRust/0.1.3.svg)](sdsd)
 
 ## Introduction
 Microsoft Azure expose its technologies via REST API. These APIs are easily consumable from any language (good) but are weakly typed. With this library and its related [crate](https://crates.io/crates/azure_sdk_for_rust/) you can exploit the power of Microsoft Azure from Rust in a idiomatic way.    
