@@ -39,8 +39,29 @@ use chrono::UTC;
 
 use mime::Mime;
 
-#[allow(unused_variables)]
+fn get_from_env(varname: &str) -> String {
+    match std::env::var(varname) {
+        Ok(val) => val,
+        Err(_) => {
+            panic!("Please set {} env variable first!", varname);
+        }
+    }
+}
+
+fn create_storage_client() -> Client {
+    let azure_storage_account = get_from_env("AZURE_STORAGE_ACCOUNT");
+    let azure_storage_key = get_from_env("AZURE_STORAGE_KEY");
+    Client::new(&azure_storage_account, &azure_storage_key, true)
+}
+
 fn main() {
+    let client = create_storage_client();
+    list_containers(&client);
+}
+
+#[allow(dead_code)]
+#[allow(unused_variables)]
+fn main_old() {
     env_logger::init().unwrap();
 
     let azure_storage_account = match std::env::var("AZURE_STORAGE_ACCOUNT") {
