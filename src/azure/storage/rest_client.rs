@@ -37,7 +37,7 @@ header! { (ETag, "ETag") => [String] }
 header! { (XMSRangeGetContentMD5, "x-ms-range-get-content-md5") => [bool] }
 header! { (XMSClientRequestId, "x-ms-client-request-id") => [String] }
 
-pub fn generate_authorization(h: &Headers,
+fn generate_authorization(h: &Headers,
                               u: &url::Url,
                               method: HTTPMethod,
                               hmac_key: &str)
@@ -53,7 +53,7 @@ pub fn generate_authorization(h: &Headers,
     format!("SharedKey {}:{}", get_account(u), auth)
 }
 
-pub fn encode_str_to_sign(str_to_sign: &str, hmac_key: &str) -> String {
+fn encode_str_to_sign(str_to_sign: &str, hmac_key: &str) -> String {
     let mut v_hmac_key: Vec<u8> = Vec::new();
 
     v_hmac_key.extend(hmac_key.from_base64().unwrap());
@@ -77,7 +77,7 @@ fn add_if_exists<H: Header + HeaderFormat + Display>(h: &Headers) -> String {
     m + "\n"
 }
 
-pub fn string_to_sign(h: &Headers, u: &url::Url, method: HTTPMethod) -> String {
+fn string_to_sign(h: &Headers, u: &url::Url, method: HTTPMethod) -> String {
     let mut str_to_sign = String::new();
     let verb = format!("{:?}", method);
     str_to_sign = str_to_sign + &verb.to_uppercase() + "\n";
@@ -135,7 +135,7 @@ pub fn string_to_sign(h: &Headers, u: &url::Url, method: HTTPMethod) -> String {
     str_to_sign
 }
 
-pub fn canonicalize_header(h: &Headers) -> String {
+fn canonicalize_header(h: &Headers) -> String {
     // println!("{:?}", h);
 
     let mut v_headers = Vec::new();
@@ -180,7 +180,7 @@ fn get_account(u: &url::Url) -> String {
     }
 }
 
-pub fn canonicalized_resource(u: &url::Url) -> String {
+fn canonicalized_resource(u: &url::Url) -> String {
     let mut can_res: String = String::new();
     can_res = can_res + "/";
 
