@@ -58,10 +58,11 @@ fn create_storage_client() -> Client {
 
 fn main() {
     let client = create_storage_client();
-    match list_tables(&client) {
-        Err(e) => {  println!("{:?}",e) ; panic!("1") }
-        _ => {}
-    };
+    list_containers(&client);
+    // match list_tables(&client) {
+    //     Err(e) => {  println!("{:?}",e) ; panic!("1") }
+    //     _ => {}
+    // };
 }
 
 #[allow(dead_code)]

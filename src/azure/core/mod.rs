@@ -41,7 +41,7 @@ pub enum HTTPMethod {
     Delete,
 }
 
-const AZURE_VERSION: &'static str = "2015-04-05";
+const AZURE_VERSION: &'static str = "2016-05-31";
 
 header! { (XMSVersion, "x-ms-version") => [String] }
 header! { (XMSDate, "x-ms-date") => [String] }
