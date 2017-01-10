@@ -3,8 +3,8 @@ use hyper::client::response::Response;
 use hyper::error::Error;
 
 use std::io::Read;
-
-use azure::core::{HTTPMethod, perform_request};
+use azure::core::HTTPMethod;
+use super::rest_client::perform_request;
 
 #[derive(Debug)]
 pub struct Client {

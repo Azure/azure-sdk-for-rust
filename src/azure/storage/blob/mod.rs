@@ -22,9 +22,9 @@ use azure::core::lease::{LeaseId, LeaseStatus, LeaseState, LeaseDuration, LeaseA
 use azure::storage::client::Client;
 
 use azure::core;
-use azure::core::{XMSRange, ContentMD5, XMSLeaseStatus, XMSLeaseDuration, XMSLeaseState,
+use azure::storage::rest_client::{XMSRange, ContentMD5, XMSLeaseStatus, XMSLeaseDuration, XMSLeaseState,
                   XMSLeaseId, XMSRangeGetContentMD5, XMSClientRequestId, XMSLeaseAction,
-                  XMSLeaseDurationSeconds, XMSLeaseBreakPeriod, XMSProposedLeaseId};
+                  XMSLeaseDurationSeconds, XMSLeaseBreakPeriod, XMSProposedLeaseId, ETag};
 
 use azure::core::parsing::{cast_must, cast_optional, from_azure_time, traverse};
 
@@ -33,8 +33,6 @@ use xml::Element;
 use std::str::FromStr;
 use azure::core::enumerations;
 use std::fmt;
-
-use azure::core::ETag;
 
 use std::io::Read;
 
