@@ -271,6 +271,7 @@ pub fn perform_request(uri: &str,
                        azure_key: &str,
                        headers: &Headers,
                        request_body: Option<(&mut Read, u64)>,
+                       request_str: Option<&str>,
                        service_type: ServiceType)
                        -> Result<hyper::client::response::Response, hyper::error::Error> {
     let dt = chrono::UTC::now();
@@ -308,9 +309,14 @@ pub fn perform_request(uri: &str,
         HTTPMethod::Post => client.post(&u.to_string()),
         HTTPMethod::Delete => client.delete(&u.to_string()),
     };
+
     if let Some((mut rb, size)) = request_body {
         let b = hyper::client::Body::SizedBody(rb, size);
         builder = builder.body(b);
+    } else {
+        if let Some(body) = request_str {
+            builder = builder.body(body);
+        }
     }
 
     builder.headers(h).send()

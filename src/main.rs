@@ -58,9 +58,9 @@ fn create_storage_client() -> Client {
 
 fn main() {
     let client = create_storage_client();
-    for x in list_tables(&client).unwrap() {
-        println!("{}", x);
-    }
+    // for x in list_tables(&client).unwrap() {
+    //     println!("{}", x);
+    // }
 
     insert_entity(&client, "rtest1").unwrap();
 }

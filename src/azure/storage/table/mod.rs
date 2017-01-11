@@ -34,8 +34,10 @@ pub fn insert_entity(client: &Client, table_name:& str) -> Result<(), core::erro
                             client.auth_scheme(),
                             client.account(),
                             table_name);
-
-    let mut resp = try!(client.perform_table_request(&uri, core::HTTPMethod::Post, None));
-    try!(errors::check_status(&mut resp, StatusCode::Ok));
+    let body = r#"{"NumberOfOrders":"251",  
+"PartitionKey":"myparti1nkey",  
+"RowKey":"myrowkey"}"#;
+    let mut resp = try!(client.perform_table_request(&uri, core::HTTPMethod::Post, Some(&body)));
+    try!(errors::check_status(&mut resp, StatusCode::Created));
     Ok(())
 }

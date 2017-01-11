@@ -53,21 +53,21 @@ impl Client {
                            headers: &Headers,
                            request_body: Option<(&mut Read, u64)>)
                            -> Result<Response, Error> {
-        perform_request(uri, method, &self.key, headers, request_body, ServiceType::Blob)
+        perform_request(uri, method, &self.key, headers, request_body, None, ServiceType::Blob)
     }
 
     pub fn perform_table_request(&self,
                            uri: &str,
                            method: HTTPMethod,
-                           request_body: Option<(&mut Read, u64)>)
+                           request_str: Option<&str>)
                            -> Result<Response, Error> {
 
         let mut headers = Headers::new();
         headers.set(Accept(vec![qitem(get_default_json_mime())]));
-        if request_body.is_some() {
+        if request_str.is_some() {
             headers.set(ContentType(get_default_json_mime()));
         }
 
-        perform_request(uri, method, &self.key, &headers, request_body, ServiceType::Table)
+        perform_request(uri, method, &self.key, &headers, None, request_str, ServiceType::Table)
     }
 }
