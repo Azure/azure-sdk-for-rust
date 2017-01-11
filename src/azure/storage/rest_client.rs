@@ -273,8 +273,6 @@ pub fn perform_request(uri: &str,
                        request_body: Option<(&mut Read, u64)>,
                        service_type: ServiceType)
                        -> Result<hyper::client::response::Response, hyper::error::Error> {
-    let client = Client::new();
-
     let dt = chrono::UTC::now();
     let time = format!("{}", dt.format("%a, %d %h %Y %T GMT"));
 
@@ -302,27 +300,20 @@ pub fn perform_request(uri: &str,
     h.set(Authorization(auth));
 
     // println!("{:?}", h);
-
+      
+    let client = Client::new();
+    let mut builder = match method {
+        HTTPMethod::Get => client.get(&u.to_string()),
+        HTTPMethod::Put => client.put(&u.to_string()),
+        HTTPMethod::Post => client.post(&u.to_string()),
+        HTTPMethod::Delete => client.delete(&u.to_string()),
+    };
     if let Some((mut rb, size)) = request_body {
         let b = hyper::client::Body::SizedBody(rb, size);
-
-        match method {
-            HTTPMethod::Get => client.get(&u.to_string()).headers(h).send(),
-            HTTPMethod::Put => client.put(&u.to_string()).body(b).headers(h).send(),
-            HTTPMethod::Post => client.post(&u.to_string()).body(b).headers(h).send(),
-            HTTPMethod::Delete => client.delete(&u.to_string()).body(b).headers(h).send(),
-        }
-    } else {
-        // no body
-        match method {
-            HTTPMethod::Get => client.get(&u.to_string()).headers(h).send(),
-            HTTPMethod::Put => client.put(&u.to_string()).headers(h).send(),
-            HTTPMethod::Post => client.post(&u.to_string()).headers(h).send(),
-            HTTPMethod::Delete => client.delete(&u.to_string()).headers(h).send(),
-        }
+        builder = builder.body(b);
     }
 
-
+    builder.headers(h).send()
 }
 
 
