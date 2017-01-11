@@ -8,8 +8,7 @@ use crypto::sha2::Sha256;
 use hyper;
 use hyper::Client;
 use hyper::header::{Header, HeaderFormat, Headers,ContentEncoding, ContentLanguage, ContentLength, ContentType, Date,
-                    IfModifiedSince, IfUnmodifiedSince, Accept, qitem};
-use hyper::mime::{ Attr, Mime, SubLevel, TopLevel, Value };
+                    IfModifiedSince, IfUnmodifiedSince };
 use serialize::base64::{STANDARD, ToBase64, FromBase64};
 use std::fmt::Display;
 use std::io::Read;
@@ -292,12 +291,6 @@ pub fn perform_request(uri: &str,
 
     h.set(XMSDate(time));
     h.set(XMSVersion(AZURE_VERSION.to_owned()));
-    if let ServiceType::Table = service_type {
-        h.set(Accept(vec![
-            qitem(Mime(TopLevel::Application, SubLevel::Json,
-                    vec![(Attr::Charset, Value::Utf8)])),
-        ]));
-    }
 
     if let Some((_, size)) = request_body {
         h.set(ContentLength(size));
