@@ -4,7 +4,7 @@ use hyper::error::Error;
 
 use std::io::Read;
 use azure::core::HTTPMethod;
-use super::rest_client::perform_request;
+use super::rest_client::{perform_request, ServiceType};
 
 #[derive(Debug)]
 pub struct Client {
@@ -49,6 +49,15 @@ impl Client {
                            headers: &Headers,
                            request_body: Option<(&mut Read, u64)>)
                            -> Result<Response, Error> {
-        perform_request(uri, method, &self.key, headers, request_body)
+        perform_request(uri, method, &self.key, headers, request_body, ServiceType::Blob)
+    }
+
+    pub fn perform_table_request(&self,
+                           uri: &str,
+                           method: HTTPMethod,
+                           headers: &Headers,
+                           request_body: Option<(&mut Read, u64)>)
+                           -> Result<Response, Error> {
+        perform_request(uri, method, &self.key, headers, request_body, ServiceType::Table)
     }
 }

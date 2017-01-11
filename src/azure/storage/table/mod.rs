@@ -9,7 +9,7 @@ pub fn list_tables(client: &Client) -> Result<(), core::errors::AzureError> {
     let uri = format!("{}://{}.table.core.windows.net/Tables",
                             client.auth_scheme(),
                             client.account());
-    let mut resp = try!(client.perform_request(&uri, core::HTTPMethod::Get, &Headers::new(), None));
+    let mut resp = try!(client.perform_table_request(&uri, core::HTTPMethod::Get, &Headers::new(), None));
 
     try!(errors::check_status(&mut resp, StatusCode::Ok));
     println!("{:?}", resp.status);

@@ -8,12 +8,18 @@ use crypto::sha2::Sha256;
 use hyper;
 use hyper::Client;
 use hyper::header::{Header, HeaderFormat, Headers,ContentEncoding, ContentLanguage, ContentLength, ContentType, Date,
-                    IfModifiedSince, IfUnmodifiedSince};
+                    IfModifiedSince, IfUnmodifiedSince, Accept, qitem};
+use hyper::mime::{ Attr, Mime, SubLevel, TopLevel, Value };
 use serialize::base64::{STANDARD, ToBase64, FromBase64};
 use std::fmt::Display;
 use std::io::Read;
 use url;
 
+pub enum ServiceType {
+    Blob,
+    // Queue, File,
+    Table,
+}
 
 const AZURE_VERSION: &'static str = "2016-05-31";
 
@@ -40,9 +46,10 @@ header! { (XMSClientRequestId, "x-ms-client-request-id") => [String] }
 fn generate_authorization(h: &Headers,
                               u: &url::Url,
                               method: HTTPMethod,
-                              hmac_key: &str)
+                              hmac_key: &str,
+                              service_type: ServiceType)
                               -> String {
-    let str_to_sign = string_to_sign(h, u, method);
+    let str_to_sign = string_to_sign(h, u, method, service_type);
 
     // println!("\nstr_to_sign == {:?}\n", str_to_sign);
     // println!("str_to_sign == {}", str_to_sign);
@@ -77,39 +84,50 @@ fn add_if_exists<H: Header + HeaderFormat + Display>(h: &Headers) -> String {
     m + "\n"
 }
 
-fn string_to_sign(h: &Headers, u: &url::Url, method: HTTPMethod) -> String {
+fn string_to_sign(h: &Headers, u: &url::Url, method: HTTPMethod, service_type: ServiceType) -> String {
     let mut str_to_sign = String::new();
     let verb = format!("{:?}", method);
     str_to_sign = str_to_sign + &verb.to_uppercase() + "\n";
 
-    str_to_sign = str_to_sign + &add_if_exists::<ContentEncoding>(h);
-    str_to_sign = str_to_sign + &add_if_exists::<ContentLanguage>(h);
+    match service_type {
+        ServiceType::Table => {},
+        _ => {
+            str_to_sign = str_to_sign + &add_if_exists::<ContentEncoding>(h);
+            str_to_sign = str_to_sign + &add_if_exists::<ContentLanguage>(h);
+            // content lenght must only be specified if != 0
+            // this is valid from 2015-02-21
+            let m = match h.get::<ContentLength>() {
+                Some(ce) => {
+                    if ce.to_be() != 0u64 {
+                        ce.to_string()
+                    } else {
+                        String::default()
+                    }
+                }
+                None => String::default(),
+            };
 
-    // content lenght must only be specified if != 0
-    // this is valid from 2015-02-21
-    let m = match h.get::<ContentLength>() {
-        Some(ce) => {
-            if ce.to_be() != 0u64 {
-                ce.to_string()
-            } else {
-                String::default()
-            }
+            str_to_sign = str_to_sign + &m + "\n";
         }
-        None => String::default(),
-    };
-
-    str_to_sign = str_to_sign + &m + "\n";
+    }
 
     str_to_sign = str_to_sign + &add_if_exists::<ContentMD5>(h);
     str_to_sign = str_to_sign + &add_if_exists::<ContentType>(h);
-    str_to_sign = str_to_sign + &add_if_exists::<Date>(h);
-    str_to_sign = str_to_sign + &add_if_exists::<IfModifiedSince>(h);
-    str_to_sign = str_to_sign + &add_if_exists::<IfMatch>(h);
-    str_to_sign = str_to_sign + &add_if_exists::<IfNoneMatch>(h);
-    str_to_sign = str_to_sign + &add_if_exists::<IfUnmodifiedSince>(h);
-    str_to_sign = str_to_sign + &add_if_exists::<Range>(h);
 
-    str_to_sign = str_to_sign + &canonicalize_header(h);
+    match service_type {
+        ServiceType::Table => {
+            str_to_sign = str_to_sign + &add_if_exists::<XMSDate>(h);
+        },
+        _ => {
+            str_to_sign = str_to_sign + &add_if_exists::<Date>(h);
+            str_to_sign = str_to_sign + &add_if_exists::<IfModifiedSince>(h);
+            str_to_sign = str_to_sign + &add_if_exists::<IfMatch>(h);
+            str_to_sign = str_to_sign + &add_if_exists::<IfNoneMatch>(h);
+            str_to_sign = str_to_sign + &add_if_exists::<IfUnmodifiedSince>(h);
+            str_to_sign = str_to_sign + &add_if_exists::<Range>(h);
+            str_to_sign = str_to_sign + &canonicalize_header(h);
+        }
+    }
     str_to_sign = str_to_sign + &canonicalized_resource(u);
 
     // expected
@@ -253,7 +271,8 @@ pub fn perform_request(uri: &str,
                        method: HTTPMethod,
                        azure_key: &str,
                        headers: &Headers,
-                       request_body: Option<(&mut Read, u64)>)
+                       request_body: Option<(&mut Read, u64)>,
+                       service_type: ServiceType)
                        -> Result<hyper::client::response::Response, hyper::error::Error> {
     let client = Client::new();
 
@@ -273,12 +292,18 @@ pub fn perform_request(uri: &str,
 
     h.set(XMSDate(time));
     h.set(XMSVersion(AZURE_VERSION.to_owned()));
+    if let ServiceType::Table = service_type {
+        h.set(Accept(vec![
+            qitem(Mime(TopLevel::Application, SubLevel::Json,
+                    vec![(Attr::Charset, Value::Utf8)])),
+        ]));
+    }
 
     if let Some((_, size)) = request_body {
         h.set(ContentLength(size));
     }
 
-    let auth = generate_authorization(&h, &u, method, azure_key);
+    let auth = generate_authorization(&h, &u, method, azure_key, service_type);
     // println!("auth == {:?}", auth);
 
     h.set(Authorization(auth));
