@@ -62,7 +62,9 @@ fn main() {
     //     println!("{}", x);
     // }
 
-    insert_entity(&client, "rtest1").unwrap();
+    // insert_entity(&client, "rtest1", "a", "b1", "c", "mo").unwrap();
+    let f= query_entity(&client, "rtest1", "a", "b1", "c");
+    println!("{}",f.unwrap());
 }
 
 #[allow(dead_code)]
