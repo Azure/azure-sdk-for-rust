@@ -58,10 +58,11 @@ fn create_storage_client() -> Client {
 
 fn main() {
     let client = create_storage_client();
-    let list = list_tables(&client).unwrap();
-    for x in list {
-        println!("{}", x);
-    }
+    // let list = list_tables(&client).unwrap();
+    // for x in list {
+    //     println!("{}", x);
+    // }
+    insert_entity(&client, "rtest1").unwrap();
 }
 
 #[allow(dead_code)]

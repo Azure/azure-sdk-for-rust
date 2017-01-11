@@ -308,7 +308,7 @@ pub fn perform_request(uri: &str,
 
     h.set(Authorization(auth));
 
-    println!("{:?}", h);
+    // println!("{:?}", h);
 
     if let Some((mut rb, size)) = request_body {
         let b = hyper::client::Body::SizedBody(rb, size);
