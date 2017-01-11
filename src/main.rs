@@ -58,11 +58,10 @@ fn create_storage_client() -> Client {
 
 fn main() {
     let client = create_storage_client();
-    list_containers(&client);
-    match list_tables(&client) {
-        Err(e) => {  println!("{:?}",e) ; panic!("1") }
-        _ => {}
-    };
+    let list = list_tables(&client).unwrap();
+    for x in list {
+        println!("{}", x);
+    }
 }
 
 #[allow(dead_code)]
