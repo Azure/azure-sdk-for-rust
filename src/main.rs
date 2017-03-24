@@ -63,8 +63,9 @@ fn main() {
     // }
 
     // insert_entity(&client, "rtest1", "a", "b1", "c", "mo").unwrap();
-    let f= query_entity(&client, "rtest1", "a", "b1", "c");
-    println!("{}",f.unwrap());
+    // let f= query_entity(&client, "rtest1", "a", "b1", "c");
+    // println!("{}",f.unwrap());
+    Blob::del(&client, "slstore1", "d").unwrap();
 }
 
 #[allow(dead_code)]
