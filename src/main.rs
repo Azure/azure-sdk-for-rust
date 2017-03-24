@@ -39,7 +39,7 @@ use chrono::UTC;
 
 use mime::Mime;
 
-use azure::storage::table::*;
+use azure::storage::table::Table;
 
 fn get_from_env(varname: &str) -> String {
     match std::env::var(varname) {
@@ -58,14 +58,14 @@ fn create_storage_client() -> Client {
 
 fn main() {
     let client = create_storage_client();
-    // for x in list_tables(&client).unwrap() {
-    //     println!("{}", x);
-    // }
+    for x in Table::list(&client).unwrap() {
+        println!("{}", x);
+    }
 
-    // insert_entity(&client, "rtest1", "a", "b1", "c", "mo").unwrap();
-    // let f= query_entity(&client, "rtest1", "a", "b1", "c");
-    // println!("{}",f.unwrap());
-    Blob::del(&client, "slstore1", "d").unwrap();
+    Table::insert(&client, "rtest1", "a61", "b15", "c", "mot").unwrap();
+    let f= Table::query(&client, "rtest1", "a61", "b15", "c");
+    println!("{}",f.unwrap());
+    // Blob::del(&client, "slstore1", "d").unwrap();
 }
 
 #[allow(dead_code)]
