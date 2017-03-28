@@ -24,6 +24,7 @@ uuid = "0.1.18"
 time = "0.1.34"
 url = "0.5.4"
 json = "0.11.4"
+serde_json = "0.9"
 
 # clippy="*"
 

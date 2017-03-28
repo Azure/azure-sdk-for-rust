@@ -2,18 +2,46 @@
 
 extern crate azure_sdk_for_rust;
 extern crate chrono;
+extern crate env_logger;
 
 use azure_sdk_for_rust::azure::storage::client::Client;
 use azure_sdk_for_rust::azure::storage::table::Table;
 
+extern crate rustc_serialize;
+use rustc_serialize::json;
+
+#[derive(RustcDecodable, RustcEncodable)]
+struct Entry {
+    c: String,
+}
+
 #[test]
-fn insert_to_table() {
+fn insert_query() {
     let client = create_storage_client();
-    let utc = chrono::UTC::now(); 
+    let utc = chrono::UTC::now();
     let s = utc.to_string();
-    Table::insert(&client, "rtest1", "a62", s.as_str(), "c", "mot").unwrap();
-    let result = Table::query(&client, "rtest1", "a62", s.as_str(), "c").unwrap();
-    assert_eq!("mot", result );
+    Table::insert(&client, "rtest1", "a62", s.as_str(), "{\"c\":\"mot1\"}").unwrap();
+    let result = Table::query(&client, "rtest1", "a62", s.as_str()).unwrap();
+    let entry: Entry = json::decode(result.as_str()).unwrap();
+    assert_eq!("mot1", entry.c);
+}
+
+#[test]
+fn query_range() {
+    env_logger::init().unwrap();
+
+    let client = create_storage_client();
+    let utc = chrono::UTC::now();
+    let s = utc.to_string();
+    for i in 0..5 {
+        let key = format!("b{}0", i);
+        let body = format!("{{\"c\":\"val{}\"}}", i);
+        Table::insert(&client, "rtest1", key.as_str(), s.as_str(), body.as_str()).unwrap();
+    }
+
+    let result = Table::query_range(&client, "rtest1", "b20", true, 3).unwrap();
+    // let entry: Entry = json::decode(result.as_str()).unwrap();
+    // assert_eq!("mot1", entry.c);
 }
 
 fn create_storage_client() -> Client {

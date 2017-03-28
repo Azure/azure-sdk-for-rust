@@ -62,9 +62,9 @@ fn main() {
         println!("{}", x);
     }
 
-    Table::insert(&client, "rtest1", "a61", "b15", "c", "mot").unwrap();
-    let f= Table::query(&client, "rtest1", "a61", "b15", "c");
-    println!("{}",f.unwrap());
+    // Table::insert(&client, "rtest1", "a61", "b15", "c:mot").unwrap();
+    // let f= Table::query(&client, "rtest1", "a61", "b15", "c");
+    // println!("{}",f.unwrap());
     // Blob::del(&client, "slstore1", "d").unwrap();
 }
 

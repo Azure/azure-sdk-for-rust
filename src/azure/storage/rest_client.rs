@@ -222,7 +222,7 @@ fn canonicalized_resource(u: &url::Url) -> String {
         let mut qps = Vec::new();
         {
             for qp in &query_pairs {
-                // println!("adding to qps {:?}", qp);
+                trace!("adding to qps {:?}", qp);
 
                 // add only once
                 if !(qps.iter().any(|x: &String| x == &qp.0)) {
@@ -252,6 +252,7 @@ fn canonicalized_resource(u: &url::Url) -> String {
         }
     };
 
+    trace!("canres:{}", can_res);
     can_res[0..can_res.len() - 1].to_owned()
 }
 
