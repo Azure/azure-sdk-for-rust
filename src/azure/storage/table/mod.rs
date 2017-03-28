@@ -9,26 +9,6 @@ use std::io::Read;
 const TABLE_SUFFIX: &'static str = "table.core.windows.net";
 
 pub struct Table;
-
-pub fn perform_table_request(client: &Client,
-                             segment: &str,
-                             method: core::HTTPMethod,
-                             request_str: Option<&str>,
-                             expected_status_code: StatusCode)
-                             -> Result<String, core::errors::AzureError> {
-    let uri = format!("{}://{}.{}/{}",
-                      client.auth_scheme(),
-                      client.account(),
-                      TABLE_SUFFIX,
-                      segment);
-    let mut resp = try!(client.perform_table_request(&uri, method, request_str));
-    try!(errors::check_status(&mut resp, expected_status_code));
-    let mut resp_s = String::new();
-    try!(resp.read_to_string(&mut resp_s));
-
-    Ok(resp_s)
-}
-
 impl Table {
     pub fn list(client: &Client) -> Result<Vec<String>, core::errors::AzureError> {
         let resp_s = try!(perform_table_request(client,
@@ -107,4 +87,24 @@ impl Table {
             Err(errors::AzureError::GenericError)
         }
     }
+}
+
+
+pub fn perform_table_request(client: &Client,
+                             segment: &str,
+                             method: core::HTTPMethod,
+                             request_str: Option<&str>,
+                             expected_status_code: StatusCode)
+                             -> Result<String, core::errors::AzureError> {
+    let uri = format!("{}://{}.{}/{}",
+                      client.auth_scheme(),
+                      client.account(),
+                      TABLE_SUFFIX,
+                      segment);
+    let mut resp = try!(client.perform_table_request(&uri, method, request_str));
+    try!(errors::check_status(&mut resp, expected_status_code));
+    let mut resp_s = String::new();
+    try!(resp.read_to_string(&mut resp_s));
+
+    Ok(resp_s)
 }
