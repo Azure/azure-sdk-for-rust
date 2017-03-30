@@ -60,11 +60,11 @@ impl Table {
     }
 
 
-    pub fn query(client: &Client,
-                 table_name: &str,
-                 partition_key: &str,
-                 row_key: &str)
-                 -> Result<String, core::errors::AzureError> {
+    pub fn get(client: &Client,
+               table_name: &str,
+               partition_key: &str,
+               row_key: &str)
+               -> Result<String, core::errors::AzureError> {
         let segment = format!("{}(PartitionKey='{}',RowKey='{}')",
                               table_name,
                               partition_key,
@@ -79,24 +79,15 @@ impl Table {
 
     pub fn query_range(client: &Client,
                        table_name: &str,
-                       partition_key: &str,
-                       ge: bool,
-                       limit: u16)
+                       clause: &str)
                        -> Result<String, core::errors::AzureError> {
-        let op = if ge { "ge" } else { "le" };
-        let segment = format!("{}?$filter=PartitionKey {} {}&$top={}",
-                              table_name,
-                              op,
-                              partition_key,
-                              limit);
         perform_table_request(client,
-                              segment.as_str(),
+                              format!("{}?{}", table_name, clause).as_str(),
                               core::HTTPMethod::Get,
                               None,
                               StatusCode::Ok)
     }
 }
-
 
 pub fn perform_table_request(client: &Client,
                              segment: &str,

@@ -7,8 +7,8 @@ use crypto::mac::Mac;
 use crypto::sha2::Sha256;
 use hyper;
 use hyper::Client;
-use hyper::header::{Header, HeaderFormat, Headers,ContentEncoding, ContentLanguage, ContentLength, ContentType, Date,
-                    IfModifiedSince, IfUnmodifiedSince };
+use hyper::header::{Header, HeaderFormat, Headers, ContentEncoding, ContentLanguage, ContentLength,
+                    ContentType, Date, IfModifiedSince, IfUnmodifiedSince};
 use serialize::base64::{STANDARD, ToBase64, FromBase64};
 use std::fmt::Display;
 use std::io::Read;
@@ -43,11 +43,11 @@ header! { (XMSRangeGetContentMD5, "x-ms-range-get-content-md5") => [bool] }
 header! { (XMSClientRequestId, "x-ms-client-request-id") => [String] }
 
 fn generate_authorization(h: &Headers,
-                              u: &url::Url,
-                              method: HTTPMethod,
-                              hmac_key: &str,
-                              service_type: ServiceType)
-                              -> String {
+                          u: &url::Url,
+                          method: HTTPMethod,
+                          hmac_key: &str,
+                          service_type: ServiceType)
+                          -> String {
     let str_to_sign = string_to_sign(h, u, method, service_type);
 
     // println!("\nstr_to_sign == {:?}\n", str_to_sign);
@@ -83,13 +83,17 @@ fn add_if_exists<H: Header + HeaderFormat + Display>(h: &Headers) -> String {
     m + "\n"
 }
 
-fn string_to_sign(h: &Headers, u: &url::Url, method: HTTPMethod, service_type: ServiceType) -> String {
+fn string_to_sign(h: &Headers,
+                  u: &url::Url,
+                  method: HTTPMethod,
+                  service_type: ServiceType)
+                  -> String {
     let mut str_to_sign = String::new();
     let verb = format!("{:?}", method);
     str_to_sign = str_to_sign + &verb.to_uppercase() + "\n";
 
     match service_type {
-        ServiceType::Table => {},
+        ServiceType::Table => {}
         _ => {
             str_to_sign = str_to_sign + &add_if_exists::<ContentEncoding>(h);
             str_to_sign = str_to_sign + &add_if_exists::<ContentLanguage>(h);
@@ -116,7 +120,8 @@ fn string_to_sign(h: &Headers, u: &url::Url, method: HTTPMethod, service_type: S
     match service_type {
         ServiceType::Table => {
             str_to_sign = str_to_sign + &add_if_exists::<XMSDate>(h);
-        },
+            str_to_sign = str_to_sign + &canonicalized_resource_table(u);
+        }
         _ => {
             str_to_sign = str_to_sign + &add_if_exists::<Date>(h);
             str_to_sign = str_to_sign + &add_if_exists::<IfModifiedSince>(h);
@@ -125,9 +130,11 @@ fn string_to_sign(h: &Headers, u: &url::Url, method: HTTPMethod, service_type: S
             str_to_sign = str_to_sign + &add_if_exists::<IfUnmodifiedSince>(h);
             str_to_sign = str_to_sign + &add_if_exists::<Range>(h);
             str_to_sign = str_to_sign + &canonicalize_header(h);
+            str_to_sign = str_to_sign + &canonicalized_resource(u);
         }
     }
-    str_to_sign = str_to_sign + &canonicalized_resource(u);
+
+
 
     // expected
     // GET\n /*HTTP Verb*/
@@ -158,7 +165,10 @@ fn canonicalize_header(h: &Headers) -> String {
     let mut v_headers = Vec::new();
 
     for header in h.iter().filter(|h| h.name().starts_with("x-ms")) {
-        let s: String = header.name().to_owned().trim().to_lowercase();
+        let s: String = header.name()
+            .to_owned()
+            .trim()
+            .to_lowercase();
 
         v_headers.push(s);
     }
@@ -195,6 +205,11 @@ fn get_account(u: &url::Url) -> String {
         }
         _ => panic!("only Domains are supported in canonicalized_resource"),
     }
+}
+
+// For table
+fn canonicalized_resource_table(u: &url::Url) -> String {
+    format!("/{}/{}", get_account(u), u.path().unwrap().join("/"))
 }
 
 fn canonicalized_resource(u: &url::Url) -> String {
@@ -252,7 +267,6 @@ fn canonicalized_resource(u: &url::Url) -> String {
         }
     };
 
-    trace!("canres:{}", can_res);
     can_res[0..can_res.len() - 1].to_owned()
 }
 
@@ -302,7 +316,7 @@ pub fn perform_request(uri: &str,
     h.set(Authorization(auth));
 
     // println!("{:?}", h);
-      
+
     let client = Client::new();
     let mut builder = match method {
         HTTPMethod::Get => client.get(&u.to_string()),
@@ -351,7 +365,7 @@ mod test {
     fn test_canonicalize_resource_1() {
         let url = url::Url::parse("http://myaccount.blob.core.windows.\
                                    net/mycontainer?restype=container&comp=metadata")
-                      .unwrap();
+                .unwrap();
         assert_eq!(super::canonicalized_resource(&url),
                    "/myaccount/mycontainer\ncomp:metadata\nrestype:container");
     }
@@ -361,7 +375,7 @@ mod test {
         let url = url::Url::parse("http://myaccount.blob.core.windows.\
                                    net/mycontainer?restype=container&comp=list&include=snapshots&\
                                    include=metadata&include=uncommittedblobs")
-                      .unwrap();
+                .unwrap();
         assert_eq!(super::canonicalized_resource(&url),
                    "/myaccount/mycontainer\ncomp:list\ninclude:metadata,snapshots,\
                     uncommittedblobs\nrestype:container");
@@ -371,7 +385,7 @@ mod test {
     fn test_canonicalize_resource_3() {
         let url = url::Url::parse("https://myaccount-secondary.blob.core.windows.\
                                    net/mycontainer/myblob")
-                      .unwrap();
+                .unwrap();
         assert_eq!(super::canonicalized_resource(&url),
                    "/myaccount-secondary/mycontainer/myblob");
     }
@@ -381,7 +395,7 @@ mod test {
         let str_to_sign = "53d7e14aee681a00340300032015-01-01T10:00:00.0000000".to_owned();
         let hmac_key = "pXeTVaaaaU9XxH6fPcPlq8Y9D9G3Cdo5Eh2nMSgKj/DWqeSFFXDdmpz5Trv+L2hQNM+nGa704R\
                         f8Z22W9O1jdQ=="
-                           .to_owned();
+                .to_owned();
 
         assert_eq!(super::encode_str_to_sign(&str_to_sign, &hmac_key),
                    "gZzaRaIkvC9jYRY123tq3xXZdsMAcgAbjKQo8y0p0Fs=".to_owned());
@@ -392,7 +406,7 @@ mod test {
         let str_to_sign = "This is the data to sign".to_owned();
         let hmac_key = "pXeTVaaaaU9XxH6fPcPlq8Y9D9G3Cdo5Eh2nMSgKj/DWqeSFFXDdmpz5Trv+L2hQNM+nGa704R\
                         f8Z22W9O1jdQ=="
-                           .to_owned();
+                .to_owned();
 
         assert_eq!(super::encode_str_to_sign(&str_to_sign, &hmac_key),
                    "YuKoXELO9M9HXeeGaSXBr4Nk+CgPAEQhcwJ6tVtBRCw=".to_owned());
@@ -403,7 +417,7 @@ mod test {
         let str_to_sign = "This is the data to sign".to_owned();
         let hmac_key = "pXeTVaaaaU9XxH6fPcPlq8Y9D9G3Cdo5Eh2nMSgKj/DWqeSFFXDdmpz5Trv+L2hQNM+nGa704R\
                         f8Z22W9O1jdQ=="
-                           .to_owned();
+                .to_owned();
 
         assert_eq!(super::encode_str_to_sign(&str_to_sign, &hmac_key),
                    "YuKoXELO9M9HXeeGaSXBr4Nk+CgPAEQhcwJ6tVtBRCw=".to_owned());
