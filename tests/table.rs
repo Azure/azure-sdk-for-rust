@@ -3,13 +3,11 @@
 extern crate azure_sdk_for_rust;
 extern crate chrono;
 extern crate env_logger;
+extern crate rustc_serialize;
 
 use azure_sdk_for_rust::azure::storage::client::Client;
 use azure_sdk_for_rust::azure::storage::table::Table;
 use azure_sdk_for_rust::azure::core::errors::AzureError;
-
-extern crate rustc_serialize;
-use rustc_serialize::json;
 
 #[derive(RustcDecodable, RustcEncodable, Debug)]
 struct Entry {
@@ -22,9 +20,8 @@ fn insert_get() {
     let client = create_storage_client();
     let utc = chrono::UTC::now();
     let s = utc.to_string();
-    Table::insert(&client, "rtest1", "a62", s.as_str(), "{\"c\":\"mot1\"}").unwrap();
-    let result = Table::get(&client, "rtest1", "a62", s.as_str()).unwrap();
-    let entry: Entry = json::decode(result.as_str()).unwrap();
+    Table::insert_entry(&client, "rtest1", "a62", s.as_str(), &Entry{pk:"w".to_owned(), c: "mot1".to_owned()}).unwrap();
+    let entry: Entry = Table::get_entry(&client, "rtest1", "a62", s.as_str()).unwrap();
     assert_eq!("mot1", entry.c);
 }
 
@@ -41,8 +38,7 @@ fn query_range() {
             pk: key.clone(),
         };
 
-        let body = json::encode(&tc).unwrap();
-        Table::insert(&client, "rtest1", key.as_str(), s.as_str(), body.as_str()).unwrap();
+        Table::insert_entry(&client, "rtest1", key.as_str(), s.as_str(), &tc).unwrap();
     }
 
     let ec = test_query_range(&client, "rtest1", "b20", s.as_str(), false, 3).unwrap();

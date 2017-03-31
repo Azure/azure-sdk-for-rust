@@ -3,7 +3,7 @@ use azure::core;
 use azure::core::errors::{self, AzureError};
 use azure::storage::client::Client;
 use hyper::status::StatusCode;
-use rustc_serialize::{Decodable, json};
+use rustc_serialize::{Decodable, Encodable, json};
 
 const TABLE_SUFFIX: &'static str = "table.core.windows.net";
 
@@ -15,12 +15,25 @@ impl Table {
         Ok(v1.into_iter().map(|x| x.TableName).collect())
     }
 
-    pub fn insert(client: &Client,
-                  table_name: &str,
-                  partition_key: &str,
-                  row_key: &str,
-                  body: &str)
-                  -> Result<(), core::errors::AzureError> {
+    pub fn insert_entry<T: Encodable>(client: &Client,
+                                      table_name: &str,
+                                      partition_key: &str,
+                                      row_key: &str,
+                                      entry: &T)
+                                      -> Result<(), core::errors::AzureError> {
+        Self::insert(client,
+                     table_name,
+                     partition_key,
+                     row_key,
+                     json::encode(entry).unwrap().as_str())
+    }
+
+    fn insert(client: &Client,
+              table_name: &str,
+              partition_key: &str,
+              row_key: &str,
+              body: &str)
+              -> Result<(), core::errors::AzureError> {
         // TODO: more elegant ways for insert keys.
         if !body.starts_with("{") {
             return Err(AzureError::InputParametersError("body not valid.".to_owned()));
@@ -39,8 +52,15 @@ impl Table {
         Ok(())
     }
 
+    pub fn get_entry<T: Decodable>(client: &Client,
+                                   table_name: &str,
+                                   partition_key: &str,
+                                   row_key: &str)
+                                   -> Result<T, core::errors::AzureError> {
+        Ok(json::decode(Self::get(client, table_name, partition_key, row_key)?.as_str()).unwrap())
+    }
 
-    pub fn get(client: &Client,
+    fn get(client: &Client,
                table_name: &str,
                partition_key: &str,
                row_key: &str)
@@ -57,10 +77,10 @@ impl Table {
                               StatusCode::Ok)
     }
 
-    pub fn query_range(client: &Client,
-                       path: &str,
-                       query: Option<&str>)
-                       -> Result<String, core::errors::AzureError> {
+    fn query_range(client: &Client,
+                   path: &str,
+                   query: Option<&str>)
+                   -> Result<String, core::errors::AzureError> {
         perform_table_request(client,
                               format!("{}?{}",
                                       path,
