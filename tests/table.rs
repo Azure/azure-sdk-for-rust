@@ -8,7 +8,7 @@ use azure_sdk_for_rust::azure::storage::client::Client;
 use azure_sdk_for_rust::azure::storage::table::Table;
 use azure_sdk_for_rust::azure::core::errors::AzureError;
 
-// extern crate rustc_serialize;
+extern crate rustc_serialize;
 use rustc_serialize::json;
 
 #[derive(RustcDecodable, RustcEncodable, Debug)]

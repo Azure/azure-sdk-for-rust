@@ -8,7 +8,7 @@ use chrono;
 use time::Duration;
 
 use std::ops::Add;
-use serialize::base64::{STANDARD, ToBase64};
+use rustc_serialize::base64::{STANDARD, ToBase64};
 
 use url::percent_encoding::{utf8_percent_encode, HTTP_VALUE_ENCODE_SET, FORM_URLENCODED_ENCODE_SET};
 

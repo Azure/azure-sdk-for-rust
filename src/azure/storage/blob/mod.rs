@@ -50,7 +50,7 @@ use hyper::status::StatusCode;
 use hyper::header::{Headers, ContentType, ContentLength, LastModified, ContentEncoding,
                     ContentLanguage};
 
-use serialize::base64::{STANDARD, ToBase64};
+use rustc_serialize::base64::{STANDARD, ToBase64};
 
 use uuid::Uuid;
 

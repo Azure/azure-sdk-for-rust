@@ -6,7 +6,7 @@ extern crate hyper;
 extern crate chrono;
 extern crate url;
 extern crate crypto;
-extern crate rustc_serialize as serialize;
+extern crate rustc_serialize;
 extern crate xml;
 #[macro_use]
 extern crate mime;

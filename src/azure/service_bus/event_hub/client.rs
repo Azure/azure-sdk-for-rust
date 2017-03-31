@@ -54,7 +54,7 @@ mod test {
     #[test]
     pub fn client_enc() {
         use crypto::mac::Mac;
-        use serialize::base64::{STANDARD, ToBase64};
+        use rustc_serialize::base64::{STANDARD, ToBase64};
 
         let str_to_sign = "This must be secret!";
 

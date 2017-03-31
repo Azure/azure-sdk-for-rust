@@ -9,7 +9,7 @@ use hyper;
 use hyper::Client;
 use hyper::header::{Header, HeaderFormat, Headers, ContentEncoding, ContentLanguage, ContentLength,
                     ContentType, Date, IfModifiedSince, IfUnmodifiedSince};
-use serialize::base64::{STANDARD, ToBase64, FromBase64};
+use rustc_serialize::base64::{STANDARD, ToBase64, FromBase64};
 use std::fmt::Display;
 use std::io::Read;
 use url;
