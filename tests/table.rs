@@ -17,11 +17,6 @@ struct Entry {
     c: String,
 }
 
-#[derive(RustcDecodable, RustcEncodable)]
-struct EntryCollection {
-    value: Vec<Entry>
-}
-
 #[test]
 fn insert_get() {
     let client = create_storage_client();
@@ -35,8 +30,7 @@ fn insert_get() {
 
 #[test]
 fn query_range() {
-    env_logger::init().unwrap();
-
+    // env_logger::init().unwrap();
     let client = create_storage_client();
     let utc = chrono::UTC::now();
     let s = utc.to_string();
@@ -51,31 +45,28 @@ fn query_range() {
         Table::insert(&client, "rtest1", key.as_str(), s.as_str(), body.as_str()).unwrap();
     }
 
-    let result = test_query_range(&client, "rtest1", "b20", s.as_str(), false, 3).unwrap();
-
-    let liset: EntryCollection = json::decode(result.as_str()).unwrap();
-    let ec = liset.value;
+    let ec = test_query_range(&client, "rtest1", "b20", s.as_str(), false, 3).unwrap();
     for item in ec {
         println!("{:?}", item);
     }
     // assert_eq!("mot1", entry.c);
 }
 
-pub fn test_query_range(client: &Client,
+fn test_query_range(client: &Client,
                         table_name: &str,
                         partition_key: &str,
                         row_key: &str,
                         ge: bool,
                         limit: u16)
-                        -> Result<String, AzureError> {
-    Table::query_range(client,
+                        -> Result<Vec<Entry>, AzureError> {
+    Table::query_range_entry(client,
                        table_name,
-                       format!("$filter=PartitionKey {} '{}' and RowKey ge '{}'&$top={}",
+                       Some(format!("$filter=PartitionKey {} '{}' and RowKey ge '{}'&$top={}",
                                if ge { "ge" } else { "le" },
                                partition_key,
                                row_key,
                                limit)
-                               .as_str())
+                               .as_str()))
 }
 
 fn create_storage_client() -> Client {

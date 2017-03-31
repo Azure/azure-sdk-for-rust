@@ -57,6 +57,7 @@ fn create_storage_client() -> Client {
 }
 
 fn main() {
+    env_logger::init().unwrap();
     let client = create_storage_client();
     for x in Table::list(&client).unwrap() {
         println!("{}", x);

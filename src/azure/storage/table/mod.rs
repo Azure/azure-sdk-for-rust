@@ -1,38 +1,18 @@
-extern crate json;
-
+use std::io::Read;
 use azure::core;
 use azure::core::errors::{self, AzureError};
 use azure::storage::client::Client;
 use hyper::status::StatusCode;
-use std::io::Read;
+use rustc_serialize::{Decodable, json};
 
 const TABLE_SUFFIX: &'static str = "table.core.windows.net";
 
 pub struct Table;
+
 impl Table {
     pub fn list(client: &Client) -> Result<Vec<String>, core::errors::AzureError> {
-        let resp_s = try!(perform_table_request(client,
-                                                "Tables",
-                                                core::HTTPMethod::Get,
-                                                None,
-                                                StatusCode::Ok));
-        let parsed = json::parse(&resp_s).unwrap();
-        if let json::JsonValue::Array(ref value) = parsed["value"] {
-            let mut ret = Vec::new();
-            for item in value {
-                if let json::JsonValue::Object(ref obj) = *item {
-                    ret.push(obj.get("TableName")
-                                 .unwrap()
-                                 .as_str()
-                                 .unwrap()
-                                 .to_string());
-                }
-            }
-
-            Ok(ret)
-        } else {
-            Err(AzureError::GenericError)
-        }
+        let v1: Vec<TableEntry> = try!(Self::query_range_entry(client, "Tables", None));
+        Ok(v1.into_iter().map(|x| x.TableName).collect())
     }
 
     pub fn insert(client: &Client,
@@ -78,15 +58,41 @@ impl Table {
     }
 
     pub fn query_range(client: &Client,
-                       table_name: &str,
-                       clause: &str)
+                       path: &str,
+                       query: Option<&str>)
                        -> Result<String, core::errors::AzureError> {
         perform_table_request(client,
-                              format!("{}?{}", table_name, clause).as_str(),
+                              format!("{}?{}",
+                                      path,
+                                      match query {
+                                          Some(clause) => clause,
+                                          None => "",
+                                      })
+                                      .as_str(),
                               core::HTTPMethod::Get,
                               None,
                               StatusCode::Ok)
     }
+
+    pub fn query_range_entry<T: Decodable>(client: &Client,
+                                           path: &str,
+                                           query: Option<&str>)
+                                           -> Result<Vec<T>, core::errors::AzureError> {
+        let result = Self::query_range(client, path, query);
+        let ec: EntryCollection<T> = json::decode(result?.as_str()).unwrap();
+        Ok(ec.value)
+    }
+}
+
+#[allow(non_snake_case)]
+#[derive(RustcDecodable)]
+struct TableEntry {
+    TableName: String,
+}
+
+#[derive(RustcDecodable)]
+struct EntryCollection<T> {
+    value: Vec<T>,
 }
 
 pub fn perform_table_request(client: &Client,
