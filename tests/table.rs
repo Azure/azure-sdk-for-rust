@@ -8,13 +8,18 @@ use azure_sdk_for_rust::azure::storage::client::Client;
 use azure_sdk_for_rust::azure::storage::table::Table;
 use azure_sdk_for_rust::azure::core::errors::AzureError;
 
-extern crate rustc_serialize;
+// extern crate rustc_serialize;
 use rustc_serialize::json;
 
-#[derive(RustcDecodable, RustcEncodable)]
+#[derive(RustcDecodable, RustcEncodable, Debug)]
 struct Entry {
     pk: String,
     c: String,
+}
+
+#[derive(RustcDecodable, RustcEncodable)]
+struct EntryCollection {
+    value: Vec<Entry>
 }
 
 #[test]
@@ -35,7 +40,7 @@ fn query_range() {
     let client = create_storage_client();
     let utc = chrono::UTC::now();
     let s = utc.to_string();
-    for i in 0..5 {
+    for i in 1..5 {
         let key = format!("b{}0", i);
         let tc = Entry {
             c: format!("val{}", i),
@@ -46,11 +51,15 @@ fn query_range() {
         Table::insert(&client, "rtest1", key.as_str(), s.as_str(), body.as_str()).unwrap();
     }
 
-    let result = test_query_range(&client, "rtest1", "b20", s.as_str(), true, 3).unwrap();
-    // let entry: Entry = json::decode(result.as_str()).unwrap();
+    let result = test_query_range(&client, "rtest1", "b20", s.as_str(), false, 3).unwrap();
+
+    let liset: EntryCollection = json::decode(result.as_str()).unwrap();
+    let ec = liset.value;
+    for item in ec {
+        println!("{:?}", item);
+    }
     // assert_eq!("mot1", entry.c);
 }
-
 
 pub fn test_query_range(client: &Client,
                         table_name: &str,
