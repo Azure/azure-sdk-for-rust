@@ -86,7 +86,7 @@ impl TableClient {
                       -> Result<Option<String>, core::errors::AzureError> {
         let client = &self.client;
         if let Some(ref body) = request_str {
-            trace!("Request: {}", body);
+            trace!("Request: {:?} {}", method, body);
         }
 
         let uri = format!("{}://{}.{}/{}",
@@ -101,6 +101,7 @@ impl TableClient {
         }
 
         let cs = errors::check_status(&mut resp, expected_status_code);
+        trace!("cs check: {:?}", cs);
         if cs.is_err() {
             trace!("Err Response:{:?}", cs);
             try!(cs);
