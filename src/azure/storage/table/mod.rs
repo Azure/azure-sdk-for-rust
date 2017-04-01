@@ -86,7 +86,7 @@ impl TableClient {
                       -> Result<Option<String>, core::errors::AzureError> {
         let client = &self.client;
         if let Some(ref body) = request_str {
-            trace!("Request: {:?} {}", method, body);
+            trace!("Request: {}", body);
         }
 
         let uri = format!("{}://{}.{}/{}",
@@ -94,7 +94,7 @@ impl TableClient {
                           client.account(),
                           TABLE_SUFFIX,
                           segment);
-        trace!("uri:{}", uri);
+        trace!("{:?} {}", method, uri);
         let mut resp = try!(client.perform_table_request(&uri, method, request_str));
         if StatusCode::NotFound == resp.status {
             return Ok(None);
