@@ -63,9 +63,9 @@ impl TableClient {
     }
 
     pub fn query_range_entity<T: Decodable>(&self,
-                                           path: &str,
-                                           query: Option<&str>)
-                                           -> Result<Vec<T>, core::errors::AzureError> {
+                                            path: &str,
+                                            query: Option<&str>)
+                                            -> Result<Vec<T>, core::errors::AzureError> {
         let ref path = format!("{}?{}",
                                path,
                                match query {
@@ -100,7 +100,12 @@ impl TableClient {
             return Ok(None);
         }
 
-        try!(errors::check_status(&mut resp, expected_status_code));
+        let cs = errors::check_status(&mut resp, expected_status_code);
+        if cs.is_err() {
+            trace!("Err Response:{:?}", cs);
+            try!(cs);
+        }
+
         let mut resp_s = String::new();
         try!(resp.read_to_string(&mut resp_s));
 
