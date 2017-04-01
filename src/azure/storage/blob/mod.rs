@@ -175,56 +175,56 @@ impl Blob {
             Some(ct) => (ct as &Mime).clone(),
             None => try!("application/octet-stream".parse::<Mime>()),
         };
-        println!("content_type == {:?}", content_type);
+        trace!("content_type == {:?}", content_type);
 
         let content_length = match h.get::<ContentLength>() {
             Some(cl) => (cl as &u64).clone(),
             None => return Err(AzureError::HeaderNotFound("Content-Length".to_owned())),
         };
-        println!("content_length == {:?}", content_length);
+        trace!("content_length == {:?}", content_length);
 
         let last_modified = match h.get::<LastModified>() {
             Some(lm) => try!(from_azure_time(&lm.to_string())),
             None => return Err(AzureError::HeaderNotFound("Last-Modified".to_owned())),
         };
-        println!("last_modified == {:?}", last_modified);
+        trace!("last_modified == {:?}", last_modified);
 
         let etag = match h.get::<ETag>() {
             Some(lm) => lm.to_string(),
             None => return Err(AzureError::HeaderNotFound("ETag".to_owned())),
         };
-        println!("etag == {:?}", etag);
+        trace!("etag == {:?}", etag);
 
         let x_ms_blob_sequence_number = match h.get::<XMSBlobSequenceNumber>() {
             Some(lm) => Some((&lm as &u64).clone()),
             None => None,
         };
-        println!("x_ms_blob_sequence_number == {:?}",
+        trace!("x_ms_blob_sequence_number == {:?}",
                  x_ms_blob_sequence_number);
 
         let blob_type = match h.get::<XMSBlobType>() {
             Some(lm) => try!((&lm.to_string()).parse::<BlobType>()),
             None => return Err(AzureError::HeaderNotFound("x-ms-blob-type".to_owned())),
         };
-        println!("blob_type == {:?}", blob_type);
+        trace!("blob_type == {:?}", blob_type);
 
         let content_encoding = match h.get::<ContentEncoding>() {
             Some(ce) => Some(ce.to_string()),
             None => None,
         };
-        println!("content_encoding == {:?}", content_encoding);
+        trace!("content_encoding == {:?}", content_encoding);
 
         let content_language = match h.get::<ContentLanguage>() {
             Some(cl) => Some(cl.to_string()),
             None => None,
         };
-        println!("content_language == {:?}", content_language);
+        trace!("content_language == {:?}", content_language);
 
         let content_md5 = match h.get::<ContentMD5>() {
             Some(md5) => Some(md5.to_string()),
             None => None,
         };
-        println!("content_md5 == {:?}", content_md5);
+        trace!("content_md5 == {:?}", content_md5);
 
         // TODO
         // let cache_control = match h.get::<CacheControl>() {
@@ -237,21 +237,21 @@ impl Blob {
             Some(ls) => try!(ls.to_string().parse::<LeaseStatus>()),
             None => return Err(AzureError::HeaderNotFound("x-ms-lease-status".to_owned())),
         };
-        println!("lease_status == {:?}", lease_status);
+        trace!("lease_status == {:?}", lease_status);
 
 
         let lease_state = match h.get::<XMSLeaseState>() {
             Some(ls) => try!(ls.to_string().parse::<LeaseState>()),
             None => return Err(AzureError::HeaderNotFound("x-ms-lease-state".to_owned())),
         };
-        println!("lease_state == {:?}", lease_state);
+        trace!("lease_state == {:?}", lease_state);
 
 
         let lease_duration = match h.get::<XMSLeaseDuration>() {
             Some(ls) => Some(try!(ls.to_string().parse::<LeaseDuration>())),
             None => None,
         };
-        println!("lease_duration == {:?}", lease_duration);
+        trace!("lease_duration == {:?}", lease_duration);
 
         // TODO: get the remaining headers
         // (https://msdn.microsoft.com/en-us/library/azure/dd179440.aspx)
@@ -340,7 +340,7 @@ impl Blob {
         let mut resp_s = String::new();
         try!(resp.read_to_string(&mut resp_s));
 
-        println!("resp_s == {:?}\n\n", resp_s);
+        trace!("resp_s == {:?}\n\n", resp_s);
 
         let sp = &resp_s;
         let elem: Element = try!(sp.parse());
@@ -379,7 +379,7 @@ impl Blob {
 
         let uri = uri;
 
-        println!("uri == {:?}", uri);
+        trace!("uri == {:?}", uri);
 
         let mut headers = Headers::new();
 

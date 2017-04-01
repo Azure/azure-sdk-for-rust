@@ -126,7 +126,7 @@ fn test_query_range(client: &TableClient,
                     -> Result<Vec<Entry>, AzureError> {
     client.query_range_entity(
                              table_name,
-                             Some(format!("$filter=PartitionKey {} '{}' and RowKey ge '{}'&$top={}",
+                             Some(format!("$filter=PartitionKey {} '{}' and RowKey le '{}'&$top={}",
                                           if ge { "ge" } else { "le" },
                                           partition_key,
                                           row_key,
