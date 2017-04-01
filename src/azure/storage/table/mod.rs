@@ -56,15 +56,18 @@ impl Table {
                                    table_name: &str,
                                    partition_key: &str,
                                    row_key: &str)
-                                   -> Result<T, core::errors::AzureError> {
-        Ok(json::decode(Self::get(client, table_name, partition_key, row_key)?.as_str()).unwrap())
+                                   -> Result<Option<T>, core::errors::AzureError> {
+        Ok(Self::get(client, table_name, partition_key, row_key)?.map(|x| {
+                                                                          json::decode(x.as_str())
+                                                                              .unwrap()
+                                                                      }))
     }
 
     fn get(client: &Client,
-               table_name: &str,
-               partition_key: &str,
-               row_key: &str)
-               -> Result<String, core::errors::AzureError> {
+           table_name: &str,
+           partition_key: &str,
+           row_key: &str)
+           -> Result<Option<String>, core::errors::AzureError> {
         let segment = format!("{}(PartitionKey='{}',RowKey='{}')",
                               table_name,
                               partition_key,
@@ -92,6 +95,7 @@ impl Table {
                               core::HTTPMethod::Get,
                               None,
                               StatusCode::Ok)
+                .map(|x| x.unwrap())
     }
 
     pub fn query_range_entry<T: Decodable>(client: &Client,
@@ -120,7 +124,7 @@ pub fn perform_table_request(client: &Client,
                              method: core::HTTPMethod,
                              request_str: Option<&str>,
                              expected_status_code: StatusCode)
-                             -> Result<String, core::errors::AzureError> {
+                             -> Result<Option<String>, core::errors::AzureError> {
 
     if let Some(ref body) = request_str {
         trace!("Request: {}", body);
@@ -133,10 +137,14 @@ pub fn perform_table_request(client: &Client,
                       segment);
     trace!("uri:{}", uri);
     let mut resp = try!(client.perform_table_request(&uri, method, request_str));
+    if StatusCode::NotFound == resp.status {
+        return Ok(None);
+    }
+
     try!(errors::check_status(&mut resp, expected_status_code));
     let mut resp_s = String::new();
     try!(resp.read_to_string(&mut resp_s));
 
     trace!("Response: {}", resp_s);
-    Ok(resp_s)
+    Ok(Some(resp_s))
 }

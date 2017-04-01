@@ -21,13 +21,23 @@ fn insert_get() {
     let utc = chrono::UTC::now();
     let s = utc.to_string();
     Table::insert_entry(&client, "rtest1", "a62", s.as_str(), &Entry{pk:"w".to_owned(), c: "mot1".to_owned()}).unwrap();
-    let entry: Entry = Table::get_entry(&client, "rtest1", "a62", s.as_str()).unwrap();
+    let entry: Entry = Table::get_entry(&client, "rtest1", "a62", s.as_str()).unwrap().unwrap();
     assert_eq!("mot1", entry.c);
 }
 
 #[test]
+fn get_non_exist() {
+    env_logger::init().unwrap();
+    let client = create_storage_client();
+    let utc = chrono::UTC::now();
+    let s = utc.to_string();
+    let entry_o: Option<Entry> = Table::get_entry(&client, "rtest1", "a62", s.as_str()).unwrap();
+    assert!(entry_o.is_none());
+}
+
+
+#[test]
 fn query_range() {
-    // env_logger::init().unwrap();
     let client = create_storage_client();
     let utc = chrono::UTC::now();
     let s = utc.to_string();
