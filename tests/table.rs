@@ -6,39 +6,56 @@ extern crate env_logger;
 extern crate rustc_serialize;
 
 use azure_sdk_for_rust::azure::storage::client::Client;
-use azure_sdk_for_rust::azure::storage::table::Table;
+use azure_sdk_for_rust::azure::storage::table::TableClient;
 use azure_sdk_for_rust::azure::core::errors::AzureError;
 
 #[derive(RustcDecodable, RustcEncodable, Debug)]
 struct Entry {
     pk: String,
     c: String,
+    deleted: Option<String>,
 }
 
 #[test]
 fn insert_get() {
-    let client = create_storage_client();
+    env_logger::init().unwrap();
+    let client = create_table_client();
     let utc = chrono::UTC::now();
-    let s = utc.to_string();
-    Table::insert_entry(&client, "rtest1", "a62", s.as_str(), &Entry{pk:"w".to_owned(), c: "mot1".to_owned()}).unwrap();
-    let entry: Entry = Table::get_entry(&client, "rtest1", "a62", s.as_str()).unwrap().unwrap();
+    let ref s = utc.to_string();
+    let ref entry1 = &Entry {
+                          pk: "w".to_owned(),
+                          c: "mot1".to_owned(),
+                          deleted: Some("DELET".to_owned()),
+                      };
+    client.insert_entity("rtest1", "e1", s, entry1).unwrap();
+    let entry: Entry = client.get_entity("rtest1", "e1", s).unwrap().unwrap();
     assert_eq!("mot1", entry.c);
+    assert!(entry.deleted.is_some());
+
+    let ref entry2 = &Entry {
+                          pk: "w".to_owned(),
+                          c: "mot2".to_owned(),
+                          deleted: None,
+                      };
+    client.insert_entity("rtest1", "e2", s, entry2).unwrap();
+    let entry: Entry = client.get_entity("rtest1", "e2", s).unwrap().unwrap();
+    assert_eq!("mot2", entry.c);
+    assert!(entry.deleted.is_none());
 }
 
 #[test]
 fn get_non_exist() {
-    env_logger::init().unwrap();
-    let client = create_storage_client();
+    let client = create_table_client();
     let utc = chrono::UTC::now();
     let s = utc.to_string();
-    let entry_o: Option<Entry> = Table::get_entry(&client, "rtest1", "a62", s.as_str()).unwrap();
+    let entry_o: Option<Entry> = client.get_entity("rtest1", "a62", s.as_str()).unwrap();
     assert!(entry_o.is_none());
 }
 
 
 #[test]
 fn query_range() {
-    let client = create_storage_client();
+    let client = create_table_client();
     let utc = chrono::UTC::now();
     let s = utc.to_string();
     for i in 1..5 {
@@ -46,9 +63,10 @@ fn query_range() {
         let tc = Entry {
             c: format!("val{}", i),
             pk: key.clone(),
+            deleted: None,
         };
 
-        Table::insert_entry(&client, "rtest1", key.as_str(), s.as_str(), &tc).unwrap();
+        client.insert_entity("rtest1", key.as_str(), s.as_str(), &tc).unwrap();
     }
 
     let ec = test_query_range(&client, "rtest1", "b20", s.as_str(), false, 3).unwrap();
@@ -58,27 +76,27 @@ fn query_range() {
     // assert_eq!("mot1", entry.c);
 }
 
-fn test_query_range(client: &Client,
-                        table_name: &str,
-                        partition_key: &str,
-                        row_key: &str,
-                        ge: bool,
-                        limit: u16)
-                        -> Result<Vec<Entry>, AzureError> {
-    Table::query_range_entry(client,
-                       table_name,
-                       Some(format!("$filter=PartitionKey {} '{}' and RowKey ge '{}'&$top={}",
-                               if ge { "ge" } else { "le" },
-                               partition_key,
-                               row_key,
-                               limit)
-                               .as_str()))
+fn test_query_range(client: &TableClient,
+                    table_name: &str,
+                    partition_key: &str,
+                    row_key: &str,
+                    ge: bool,
+                    limit: u16)
+                    -> Result<Vec<Entry>, AzureError> {
+    client.query_range_entity(
+                             table_name,
+                             Some(format!("$filter=PartitionKey {} '{}' and RowKey ge '{}'&$top={}",
+                                          if ge { "ge" } else { "le" },
+                                          partition_key,
+                                          row_key,
+                                          limit)
+                                          .as_str()))
 }
 
-fn create_storage_client() -> Client {
+fn create_table_client() -> TableClient {
     let azure_storage_account = get_from_env("AZURE_STORAGE_ACCOUNT");
     let azure_storage_key = get_from_env("AZURE_STORAGE_KEY");
-    Client::new(&azure_storage_account, &azure_storage_key, true)
+    TableClient::new(Client::new(&azure_storage_account, &azure_storage_key, true))
 }
 
 fn get_from_env(varname: &str) -> String {

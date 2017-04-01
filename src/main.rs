@@ -39,7 +39,7 @@ use chrono::UTC;
 
 use mime::Mime;
 
-use azure::storage::table::Table;
+use azure::storage::table::TableClient;
 
 fn get_from_env(varname: &str) -> String {
     match std::env::var(varname) {
@@ -58,8 +58,8 @@ fn create_storage_client() -> Client {
 
 fn main() {
     env_logger::init().unwrap();
-    let client = create_storage_client();
-    for x in Table::list(&client).unwrap() {
+    let client = TableClient::new(create_storage_client());
+    for x in client.list().unwrap() {
         println!("{}", x);
     }
 
@@ -239,8 +239,7 @@ fn send_event(cli: &mut azure::service_bus::event_hub::Client) {
     let metadata = fs::metadata(file_name).unwrap();
     let mut file_handle = fs::File::open(file_name).unwrap();
 
-    cli.send_event((&mut file_handle, metadata.len()), Duration::hours(1))
-       .unwrap();
+    cli.send_event((&mut file_handle, metadata.len()), Duration::hours(1)).unwrap();
 }
 
 #[allow(dead_code)]
@@ -353,7 +352,7 @@ fn put_block_blob(client: &Client) {
                        "block_name",
                        &PUT_BLOCK_OPTIONS_DEFAULT,
                        (&mut file, 1024 * 1024))
-            .unwrap();
+        .unwrap();
 
     println!("created {:?}", new_blob);
 }
@@ -408,8 +407,7 @@ fn put_page_blob(client: &Client) {
         copy_status_description: None,
     };
 
-    new_blob.put(&client, &PUT_OPTIONS_DEFAULT, None)
-            .unwrap();
+    new_blob.put(&client, &PUT_OPTIONS_DEFAULT, None).unwrap();
 
     let range = BA512Range::new(0, 1024 * 1024 - 1).unwrap();
 
@@ -417,7 +415,7 @@ fn put_page_blob(client: &Client) {
                       &range, // 1MB
                       &PUT_PAGE_OPTIONS_DEFAULT,
                       (&mut file, range.size()))
-            .unwrap();
+        .unwrap();
 
     println!("created {:?}", new_blob);
 }
