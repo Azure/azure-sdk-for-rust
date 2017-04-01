@@ -52,6 +52,25 @@ fn get_non_exist() {
     assert!(entry_o.is_none());
 }
 
+#[test]
+fn insert_to_non_exist() {
+    let client = create_table_client();
+    let utc = chrono::UTC::now();
+    let s = utc.to_string();
+    let ref entity = Entry {
+        pk: "a".to_owned(),
+        c: "c".to_owned(),
+        deleted: None,
+    };
+    assert!(client.insert_entity("nonrtest1", "a62", s.as_str(), entity).is_err());
+}
+
+#[test]
+fn create_table() {
+    let client = create_table_client();
+    let s = "t123";
+    client.create_if_not_exists(s).unwrap();
+}
 
 #[test]
 fn query_range() {

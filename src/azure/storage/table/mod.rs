@@ -2,10 +2,12 @@ use std::io::Read;
 use azure::core;
 use azure::core::errors::{self, AzureError};
 use azure::storage::client::Client;
+use hyper::client::response::Response;
 use hyper::status::StatusCode;
 use rustc_serialize::{Decodable, Encodable, json};
 
 const TABLE_SUFFIX: &'static str = "table.core.windows.net";
+const TABLE_TABLES: &'static str = "TABLES";
 
 pub struct TableClient {
     client: Client,
@@ -17,10 +19,24 @@ impl TableClient {
     }
 
     pub fn list(&self) -> Result<Vec<String>, core::errors::AzureError> {
-        Ok(self.query_range_entity("Tables", None)?
+        Ok(self.query_range_entity(TABLE_TABLES, None)?
                .into_iter()
                .map(|x: TableEntry| x.TableName)
                .collect())
+    }
+
+    pub fn create_if_not_exists<T: Into<String>>(&self,
+                                                 table_name: T)
+                                                 -> Result<(), core::errors::AzureError> {
+        let ref body = json::encode(&TableEntry { TableName: table_name.into() }).unwrap();
+        let mut response = try!(self.do_request(TABLE_TABLES, core::HTTPMethod::Post, Some(body)));
+        // TODO: Here treats conflict as existed, but could be reserved name, such as 'Tables',
+        // should check table existence directly
+        if !(StatusCode::Created == response.status || StatusCode::Conflict == response.status) {
+            try!(errors::check_status(&mut response, StatusCode::Created));
+        }
+
+        Ok(())
     }
 
     pub fn insert_entity<T: Encodable>(&self,
@@ -39,10 +55,8 @@ impl TableClient {
                                     row_key,
                                     &body[1..]);
 
-        try!(self.do_request(table_name,
-                             core::HTTPMethod::Post,
-                             Some(post_body),
-                             StatusCode::Created));
+        let mut resp = try!(self.do_request(table_name, core::HTTPMethod::Post, Some(post_body)));
+        try!(errors::check_status(&mut resp, StatusCode::Created));
         Ok(())
     }
 
@@ -55,11 +69,13 @@ impl TableClient {
                                table_name,
                                partition_key,
                                row_key);
-        Ok(self.do_request(path,
-                           core::HTTPMethod::Get,
-                           None,
-                           StatusCode::Ok)?
-               .map(|x| json::decode(x.as_str()).unwrap()))
+        let mut response = try!(self.do_request(path, core::HTTPMethod::Get, None));
+        if StatusCode::NotFound == response.status {
+            return Ok(None);
+        }
+        try!(errors::check_status(&mut response, StatusCode::Ok));
+        let ref body = try!(get_response_body(&mut response));
+        Ok(json::decode(body).unwrap())
     }
 
     pub fn query_range_entity<T: Decodable>(&self,
@@ -72,51 +88,58 @@ impl TableClient {
                                    Some(clause) => clause,
                                    None => "",
                                });
-        let result =
-            self.do_request(path, core::HTTPMethod::Get, None, StatusCode::Ok).map(|x| x.unwrap());
-        let ec: EntryCollection<T> = json::decode(result?.as_str()).unwrap();
+        let mut response = try!(self.do_request(path, core::HTTPMethod::Get, None));
+        try!(errors::check_status(&mut response, StatusCode::Ok));
+        let ref body = try!(get_response_body(&mut response));
+        let ec: EntryCollection<T> = json::decode(body).unwrap();
         Ok(ec.value)
     }
 
     pub fn do_request(&self,
                       segment: &str,
                       method: core::HTTPMethod,
-                      request_str: Option<&str>,
-                      expected_status_code: StatusCode)
-                      -> Result<Option<String>, core::errors::AzureError> {
+                      request_str: Option<&str>)
+                      -> Result<Response, core::errors::AzureError> {
         let client = &self.client;
-        if let Some(ref body) = request_str {
-            trace!("Request: {}", body);
-        }
-
         let uri = format!("{}://{}.{}/{}",
                           client.auth_scheme(),
                           client.account(),
                           TABLE_SUFFIX,
                           segment);
         trace!("{:?} {}", method, uri);
-        let mut resp = try!(client.perform_table_request(&uri, method, request_str));
-        if StatusCode::NotFound == resp.status {
-            return Ok(None);
+        if let Some(ref body) = request_str {
+            trace!("Request: {}", body);
         }
 
-        let cs = errors::check_status(&mut resp, expected_status_code);
-        trace!("cs check: {:?}", cs);
-        if cs.is_err() {
-            trace!("Err Response:{:?}", cs);
-            try!(cs);
-        }
+        let resp = try!(client.perform_table_request(&uri, method, request_str));
+        trace!("Response status: {:?}", resp.status);
+        Ok(resp)
+        // if StatusCode::NotFound == resp.status {
+        //     return Ok(None);
+        // }
 
-        let mut resp_s = String::new();
-        try!(resp.read_to_string(&mut resp_s));
+        // let cs = errors::check_status(&mut resp, expected_status_code);
+        // if cs.is_err() {
+        //     trace!("Err Response:{:?}", cs);
+        //     try!(cs);
+        // }
 
-        trace!("Response: {}", resp_s);
-        Ok(Some(resp_s))
+        // let mut resp_s = String::new();
+        // try!(resp.read_to_string(&mut resp_s));
+
+        // trace!("Response: {}", resp_s);
+        // Ok(Some(resp_s))
     }
 }
 
+fn get_response_body(resp: &mut Response) -> Result<String, core::errors::AzureError> {
+    let mut body = String::new();
+    try!(resp.read_to_string(&mut body));
+    Ok(body)
+}
+
 #[allow(non_snake_case)]
-#[derive(RustcDecodable)]
+#[derive(RustcEncodable, RustcDecodable)]
 struct TableEntry {
     TableName: String,
 }
