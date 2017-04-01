@@ -22,12 +22,12 @@ fn insert_get() {
     let client = create_table_client();
     let utc = chrono::UTC::now();
     let ref s = utc.to_string();
-    let ref entry1 = &Entry {
-                          pk: "w".to_owned(),
-                          c: "mot1".to_owned(),
-                          deleted: Some("DELET".to_owned()),
-                      };
-    client.insert_entity("rtest1", "e1", s, entry1).unwrap();
+    let ref entity1 = &Entry {
+                           pk: "w".to_owned(),
+                           c: "mot1".to_owned(),
+                           deleted: Some("DELET".to_owned()),
+                       };
+    client.insert_entity("rtest1", "e1", s, entity1).unwrap();
     let entry: Entry = client.get_entity("rtest1", "e1", s).unwrap().unwrap();
     assert_eq!("mot1", entry.c);
     assert!(entry.deleted.is_some());
@@ -41,6 +41,28 @@ fn insert_get() {
     let entry: Entry = client.get_entity("rtest1", "e2", s).unwrap().unwrap();
     assert_eq!("mot2", entry.c);
     assert!(entry.deleted.is_none());
+}
+
+#[test]
+fn insert_update() {
+    env_logger::init().unwrap();
+    let client = create_table_client();
+    let utc = chrono::UTC::now();
+    let ref s = utc.to_string();
+    let mut entity1 = Entry {
+                           pk: "w".to_owned(),
+                           c: "mot1".to_owned(),
+                           deleted: Some("DELET".to_owned()),
+                       };
+    client.insert_entity("rtest1", "e1", s, &entity1).unwrap();
+    let entry: Entry = client.get_entity("rtest1", "e1", s).unwrap().unwrap();
+    assert_eq!("mot1", entry.c);
+    assert!(entry.deleted.is_some());
+
+    entity1.c = "mot1edit".to_owned();
+    client.update_entity("rtest1", "e1", s, &entity1).unwrap();
+    let entry: Entry = client.get_entity("rtest1", "e1", s).unwrap().unwrap();
+    assert_eq!("mot1edit", entry.c);
 }
 
 #[test]
