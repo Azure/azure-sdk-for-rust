@@ -161,6 +161,7 @@ impl TableClient {
 fn get_response_body(resp: &mut Response) -> Result<String, core::errors::AzureError> {
     let mut body = String::new();
     try!(resp.read_to_string(&mut body));
+    trace!("Response Body:{}", body);
     Ok(body)
 }
 
