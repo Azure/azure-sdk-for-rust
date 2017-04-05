@@ -289,6 +289,26 @@ pub fn perform_request(uri: &str,
                        request_str: Option<&str>,
                        service_type: ServiceType)
                        -> Result<hyper::client::response::Response, hyper::error::Error> {
+    perform_request_with_client(&Client::new(),
+                                uri,
+                                method,
+                                azure_key,
+                                headers,
+                                request_body,
+                                request_str,
+                                service_type)
+}
+
+pub fn perform_request_with_client
+    (client: &Client,
+     uri: &str,
+     method: HTTPMethod,
+     azure_key: &str,
+     headers: &Headers,
+     request_body: Option<(&mut Read, u64)>,
+     request_str: Option<&str>,
+     service_type: ServiceType)
+     -> Result<hyper::client::response::Response, hyper::error::Error> {
     let dt = chrono::UTC::now();
     let time = format!("{}", dt.format("%a, %d %h %Y %T GMT"));
 
@@ -317,7 +337,6 @@ pub fn perform_request(uri: &str,
 
     // println!("{:?}", h);
 
-    let client = Client::new();
     let mut builder = match method {
         HTTPMethod::Get => client.get(&u.to_string()),
         HTTPMethod::Put => client.put(&u.to_string()),
