@@ -21,6 +21,13 @@ fn get_default_json_mime() -> Mime {
                 vec![(Attr::Charset, Value::Utf8)]);
 }
 
+#[inline]
+fn get_json_mime_nometadata() -> Mime {
+    return Mime(TopLevel::Application,
+                SubLevel::Json,
+                vec![(Attr::Ext("odata".to_owned()), Value::Ext("nometadata".to_owned()))]);
+}
+
 impl Client {
     pub fn new(account: &str, key: &str, use_https: bool) -> Client {
         Client {
@@ -69,7 +76,7 @@ impl Client {
                                  -> Result<Response, Error> {
 
         let mut headers = Headers::new();
-        headers.set(Accept(vec![qitem(get_default_json_mime())]));
+        headers.set(Accept(vec![qitem(get_json_mime_nometadata())]));
         if request_str.is_some() {
             headers.set(ContentType(get_default_json_mime()));
         }

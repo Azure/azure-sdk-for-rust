@@ -140,21 +140,6 @@ impl TableClient {
         let resp = try!(client.perform_table_request(&uri, method, request_str));
         trace!("Response status: {:?}", resp.status);
         Ok(resp)
-        // if StatusCode::NotFound == resp.status {
-        //     return Ok(None);
-        // }
-
-        // let cs = errors::check_status(&mut resp, expected_status_code);
-        // if cs.is_err() {
-        //     trace!("Err Response:{:?}", cs);
-        //     try!(cs);
-        // }
-
-        // let mut resp_s = String::new();
-        // try!(resp.read_to_string(&mut resp_s));
-
-        // trace!("Response: {}", resp_s);
-        // Ok(Some(resp_s))
     }
 }
 

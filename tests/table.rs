@@ -18,7 +18,7 @@ struct Entry {
 
 #[test]
 fn insert_get() {
-    env_logger::init().unwrap();
+    // env_logger::init().unwrap();
     let client = create_table_client();
     let utc = chrono::UTC::now();
     let ref s = utc.to_string();
@@ -45,7 +45,7 @@ fn insert_get() {
 
 #[test]
 fn insert_update() {
-    env_logger::init().unwrap();
+    // env_logger::init().unwrap();
     let client = create_table_client();
     let utc = chrono::UTC::now();
     let ref s = utc.to_string();
@@ -96,6 +96,7 @@ fn create_table() {
 
 #[test]
 fn query_range() {
+    env_logger::init().unwrap();
     let client = create_table_client();
     let utc = chrono::UTC::now();
     let s = utc.to_string();
