@@ -9,9 +9,11 @@ use azure_sdk_for_rust::azure::storage::client::Client;
 use azure_sdk_for_rust::azure::storage::table::TableClient;
 use azure_sdk_for_rust::azure::core::errors::AzureError;
 
+#[allow(non_snake_case)]
 #[derive(RustcDecodable, RustcEncodable, Debug)]
 struct Entry {
-    pk: String,
+    PartitionKey: String,
+    RowKey: String,
     c: String,
     deleted: Option<String>,
 }
@@ -23,21 +25,23 @@ fn insert_get() {
     let utc = chrono::UTC::now();
     let ref s = utc.to_string();
     let ref entity1 = &Entry {
-                           pk: "w".to_owned(),
+                           PartitionKey: "e1".to_owned(),
+                           RowKey: s.to_owned(),
                            c: "mot1".to_owned(),
                            deleted: Some("DELET".to_owned()),
                        };
-    client.insert_entity("rtest1", "e1", s, entity1).unwrap();
+    client.insert_entity("rtest1", entity1).unwrap();
     let entry: Entry = client.get_entity("rtest1", "e1", s).unwrap().unwrap();
     assert_eq!("mot1", entry.c);
     assert!(entry.deleted.is_some());
 
     let ref entry2 = &Entry {
-                          pk: "w".to_owned(),
+                          PartitionKey: "e2".to_owned(),
+                          RowKey: s.to_owned(),
                           c: "mot2".to_owned(),
                           deleted: None,
                       };
-    client.insert_entity("rtest1", "e2", s, entry2).unwrap();
+    client.insert_entity("rtest1", entry2).unwrap();
     let entry: Entry = client.get_entity("rtest1", "e2", s).unwrap().unwrap();
     assert_eq!("mot2", entry.c);
     assert!(entry.deleted.is_none());
@@ -45,16 +49,17 @@ fn insert_get() {
 
 #[test]
 fn insert_update() {
-    // env_logger::init().unwrap();
+    env_logger::init().unwrap();
     let client = create_table_client();
     let utc = chrono::UTC::now();
     let ref s = utc.to_string();
     let mut entity1 = Entry {
-                           pk: "w".to_owned(),
+                           PartitionKey: "e1".to_owned(),
+                           RowKey: s.to_owned(),
                            c: "mot1".to_owned(),
                            deleted: Some("DELET".to_owned()),
                        };
-    client.insert_entity("rtest1", "e1", s, &entity1).unwrap();
+    client.insert_entity("rtest1", &entity1).unwrap();
     let entry: Entry = client.get_entity("rtest1", "e1", s).unwrap().unwrap();
     assert_eq!("mot1", entry.c);
     assert!(entry.deleted.is_some());
@@ -80,11 +85,12 @@ fn insert_to_non_exist() {
     let utc = chrono::UTC::now();
     let s = utc.to_string();
     let ref entity = Entry {
-        pk: "a".to_owned(),
+        PartitionKey: "a62".to_owned(),
+        RowKey: s.to_owned(),
         c: "c".to_owned(),
         deleted: None,
     };
-    assert!(client.insert_entity("nonrtest1", "a62", s.as_str(), entity).is_err());
+    assert!(client.insert_entity("nonrtest1", entity).is_err());
 }
 
 #[test]
@@ -96,19 +102,20 @@ fn create_table() {
 
 #[test]
 fn query_range() {
-    env_logger::init().unwrap();
+    // env_logger::init().unwrap();
     let client = create_table_client();
     let utc = chrono::UTC::now();
     let s = utc.to_string();
     for i in 1..5 {
         let key = format!("b{}0", i);
         let tc = Entry {
+            PartitionKey: key.clone(),
+            RowKey: s.to_owned(),
             c: format!("val{}", i),
-            pk: key.clone(),
             deleted: None,
         };
 
-        client.insert_entity("rtest1", key.as_str(), s.as_str(), &tc).unwrap();
+        client.insert_entity("rtest1", &tc).unwrap();
     }
 
     let ec = test_query_range(&client, "rtest1", "b20", s.as_str(), false, 3).unwrap();

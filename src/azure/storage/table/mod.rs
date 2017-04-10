@@ -41,21 +41,10 @@ impl TableClient {
 
     pub fn insert_entity<T: Encodable>(&self,
                                        table_name: &str,
-                                       partition_key: &str,
-                                       row_key: &str,
                                        entity: &T)
-                                       -> Result<(), core::errors::AzureError> {
+                                       -> Result<(), AzureError> {
         let ref body = json::encode(entity).unwrap();
-        if !body.starts_with("{") {
-            return Err(AzureError::InputParametersError("body not valid.".to_owned()));
-        };
-
-        let ref post_body = format!(r#"{{"PartitionKey":"{}","RowKey":"{}",{}"#,
-                                    partition_key,
-                                    row_key,
-                                    &body[1..]);
-
-        let mut resp = try!(self.do_request(table_name, core::HTTPMethod::Post, Some(post_body)));
+        let mut resp = try!(self.do_request(table_name, core::HTTPMethod::Post, Some(body)));
         try!(errors::check_status(&mut resp, StatusCode::Created));
         Ok(())
     }
@@ -67,21 +56,11 @@ impl TableClient {
                                        entity: &T)
                                        -> Result<(), core::errors::AzureError> {
         let ref body = json::encode(entity).unwrap();
-        if !body.starts_with("{") {
-            return Err(AzureError::InputParametersError("body not valid.".to_owned()));
-        };
-
-        let ref send_body = format!(r#"{{"PartitionKey":"{}","RowKey":"{}",{}"#,
-                                    partition_key,
-                                    row_key,
-                                    &body[1..]);
-
         let ref path = format!("{}(PartitionKey='{}',RowKey='{}')",
                                table_name,
                                partition_key,
                                row_key);
-
-        let mut resp = try!(self.do_request(path, core::HTTPMethod::Put, Some(send_body)));
+        let mut resp = try!(self.do_request(path, core::HTTPMethod::Put, Some(body)));
         try!(errors::check_status(&mut resp, StatusCode::NoContent));
         Ok(())
     }
