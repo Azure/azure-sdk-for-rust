@@ -6,8 +6,10 @@ extern crate env_logger;
 extern crate rustc_serialize;
 
 use azure_sdk_for_rust::azure::storage::client::Client;
-use azure_sdk_for_rust::azure::storage::table::TableClient;
+use azure_sdk_for_rust::azure::storage::table::{TableClient, BatchItem};
 use azure_sdk_for_rust::azure::core::errors::AzureError;
+
+const TEST_TABLE: &'static str = "rtest1";
 
 #[allow(non_snake_case)]
 #[derive(RustcDecodable, RustcEncodable, Debug)]
@@ -49,16 +51,16 @@ fn insert_get() {
 
 #[test]
 fn insert_update() {
-    env_logger::init().unwrap();
+    // env_logger::init().unwrap();
     let client = create_table_client();
     let utc = chrono::UTC::now();
     let ref s = utc.to_string();
     let mut entity1 = Entry {
-                           PartitionKey: "e1".to_owned(),
-                           RowKey: s.to_owned(),
-                           c: "mot1".to_owned(),
-                           deleted: Some("DELET".to_owned()),
-                       };
+        PartitionKey: "e1".to_owned(),
+        RowKey: s.to_owned(),
+        c: "mot1".to_owned(),
+        deleted: Some("DELET".to_owned()),
+    };
     client.insert_entity("rtest1", &entity1).unwrap();
     let entry: Entry = client.get_entity("rtest1", "e1", s).unwrap().unwrap();
     assert_eq!("mot1", entry.c);
@@ -68,6 +70,52 @@ fn insert_update() {
     client.update_entity("rtest1", "e1", s, &entity1).unwrap();
     let entry: Entry = client.get_entity("rtest1", "e1", s).unwrap().unwrap();
     assert_eq!("mot1edit", entry.c);
+}
+
+#[test]
+fn batch() {
+    env_logger::init().unwrap();
+    let client = create_table_client();
+    client.create_if_not_exists(TEST_TABLE).unwrap();
+    let partition_key = "e1";
+    let r1 = chrono::UTC::now().to_string();
+    let entity1 = Entry {
+        PartitionKey: partition_key.to_owned(),
+        RowKey: r1.clone(),
+        c: "mot1".to_owned(),
+        deleted: Some("DELET".to_owned()),
+    };
+    client.insert_entity(TEST_TABLE, &entity1).unwrap();
+    let entry: Entry = client.get_entity(TEST_TABLE, partition_key, r1.as_str()).unwrap().unwrap();
+    assert_eq!("mot1", entry.c);
+    assert!(entry.deleted.is_some());
+
+    let r2 = chrono::UTC::now().to_string();
+    let entity2 = Entry {
+        PartitionKey: partition_key.to_owned(),
+        RowKey: r2.clone(),
+        c: "mot2".to_owned(),
+        deleted: Some("DELET".to_owned()),
+    };
+    client.insert_entity(TEST_TABLE, &entity2).unwrap();
+    let entry: Entry = client.get_entity(TEST_TABLE, partition_key, r2.as_str()).unwrap().unwrap();
+    assert_eq!("mot2", entry.c);
+    assert!(entry.deleted.is_some());
+
+    let ref items = [BatchItem::new(r1.clone(),
+                                    Some(Entry {
+                                             PartitionKey: partition_key.to_owned(),
+                                             RowKey: r1.clone(),
+                                             c: "mot1edit".to_owned(),
+                                             deleted: Some("DELET".to_owned()),
+                                         })),
+                     BatchItem::new(r2.clone(), None)];
+    client.batch(TEST_TABLE, partition_key, items).unwrap();
+
+    let entry: Entry = client.get_entity(TEST_TABLE, partition_key, r1.as_str()).unwrap().unwrap();
+    assert_eq!("mot1edit", entry.c);
+    let result: Option<Entry> = client.get_entity(TEST_TABLE, partition_key, r2.as_str()).unwrap();
+    assert!(result.is_none());
 }
 
 #[test]

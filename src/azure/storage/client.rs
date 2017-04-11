@@ -28,6 +28,13 @@ fn get_json_mime_nometadata() -> Mime {
                 vec![(Attr::Ext("odata".to_owned()), Value::Ext("nometadata".to_owned()))]);
 }
 
+#[inline]
+fn get_batch_mime() -> Mime {
+    return Mime(TopLevel::Multipart,
+                SubLevel::Ext("Mixed".to_owned()),
+                vec![(Attr::Ext("boundary".to_owned()), Value::Ext("batch_a1e9d677-b28b-435e-a89e-87e6a768a431".to_owned()))]);
+}
+
 impl Client {
     pub fn new(account: &str, key: &str, use_https: bool) -> Client {
         Client {
@@ -72,13 +79,18 @@ impl Client {
     pub fn perform_table_request(&self,
                                  uri: &str,
                                  method: HTTPMethod,
-                                 request_str: Option<&str>)
+                                 request_str: Option<&str>,
+                                 is_batch: bool)
                                  -> Result<Response, Error> {
 
         let mut headers = Headers::new();
-        headers.set(Accept(vec![qitem(get_json_mime_nometadata())]));
-        if request_str.is_some() {
-            headers.set(ContentType(get_default_json_mime()));
+        if is_batch {
+            headers.set(ContentType(get_batch_mime()));
+        } else {
+            headers.set(Accept(vec![qitem(get_json_mime_nometadata())]));
+            if request_str.is_some() {
+                headers.set(ContentType(get_default_json_mime()));
+            }
         }
 
         perform_request_with_client(&self.hc,

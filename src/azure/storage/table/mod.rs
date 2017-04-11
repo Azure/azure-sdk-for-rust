@@ -1,7 +1,7 @@
 mod batch;
 
+pub use self::batch::BatchItem;
 use self::batch::generate_batch_payload;
-
 use std::io::Read;
 use azure::core;
 use azure::core::errors::{self, AzureError};
@@ -87,6 +87,25 @@ impl TableClient {
         Ok(json::decode(body).unwrap())
     }
 
+    pub fn batch<T: Encodable>(&self,
+                               table_name: &str,
+                               partition_key: &str,
+                               batch_items: &[BatchItem<T>])
+                               -> Result<(), AzureError> {
+        let ref payload = generate_batch_payload(self.client.account(),
+                                                 table_name,
+                                                 partition_key,
+                                                 batch_items,
+                                                 self.client.use_https());
+        let mut response =
+            try!(self.do_request_internal("$batch", core::HTTPMethod::Post, Some(payload), true));
+        try!(errors::check_status(&mut response, StatusCode::Accepted));
+        // TODO deal body response.
+        // let ref body = try!(get_response_body(&mut response));
+        // info!("{}", body);
+        Ok(())
+    }
+
     pub fn query_range_entity<T: Decodable>(&self,
                                             path: &str,
                                             query: Option<&str>)
@@ -104,11 +123,20 @@ impl TableClient {
         Ok(ec.value)
     }
 
-    pub fn do_request(&self,
-                      segment: &str,
-                      method: core::HTTPMethod,
-                      request_str: Option<&str>)
-                      -> Result<Response, core::errors::AzureError> {
+    fn do_request(&self,
+                  segment: &str,
+                  method: core::HTTPMethod,
+                  request_str: Option<&str>)
+                  -> Result<Response, core::errors::AzureError> {
+        self.do_request_internal(segment, method, request_str, false)
+    }
+
+    fn do_request_internal(&self,
+                           segment: &str,
+                           method: core::HTTPMethod,
+                           request_str: Option<&str>,
+                           is_batch: bool)
+                           -> Result<Response, core::errors::AzureError> {
         let client = &self.client;
         let uri = format!("{}://{}{}/{}",
                           client.auth_scheme(),
@@ -120,7 +148,7 @@ impl TableClient {
             trace!("Request: {}", body);
         }
 
-        let resp = try!(client.perform_table_request(&uri, method, request_str));
+        let resp = try!(client.perform_table_request(&uri, method, request_str, is_batch));
         trace!("Response status: {:?}", resp.status);
         Ok(resp)
     }
