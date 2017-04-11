@@ -73,6 +73,28 @@ fn insert_update() {
 }
 
 #[test]
+fn insert_delete() {
+    // env_logger::init().unwrap();
+    let client = create_table_client();
+    let partition_key = "e1";
+    let r1 = chrono::UTC::now().to_string();
+    let entity1 = Entry {
+        PartitionKey: partition_key.to_owned(),
+        RowKey: r1.clone(),
+        c: "mot1".to_owned(),
+        deleted: Some("DELET".to_owned()),
+    };
+    client.insert_entity("rtest1", &entity1).unwrap();
+    let entry: Entry = client.get_entity("rtest1", partition_key, r1.as_str()).unwrap().unwrap();
+    assert_eq!("mot1", entry.c);
+    assert!(entry.deleted.is_some());
+
+    client.delete_entity(TEST_TABLE, partition_key, r1.as_str()).unwrap();
+    let result: Option<Entry> = client.get_entity(TEST_TABLE, partition_key, r1.as_str()).unwrap();
+    assert!(result.is_none());
+}
+
+#[test]
 fn batch() {
     env_logger::init().unwrap();
     let client = create_table_client();

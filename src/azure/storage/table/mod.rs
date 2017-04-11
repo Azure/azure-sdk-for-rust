@@ -1,12 +1,15 @@
 mod batch;
 
 pub use self::batch::BatchItem;
+
 use self::batch::generate_batch_payload;
 use std::io::Read;
 use azure::core;
 use azure::core::errors::{self, AzureError};
 use azure::storage::client::Client;
 use hyper::client::response::Response;
+use hyper::header::{Accept, ContentType, Headers, IfMatch, qitem};
+use hyper::mime::{Attr, Mime, SubLevel, TopLevel, Value};
 use hyper::status::StatusCode;
 use rustc_serialize::{Decodable, Encodable, json};
 
@@ -97,12 +100,36 @@ impl TableClient {
                                                  partition_key,
                                                  batch_items,
                                                  self.client.use_https());
-        let mut response =
-            try!(self.do_request_internal("$batch", core::HTTPMethod::Post, Some(payload), true));
+        let mut headers = Headers::new();
+        headers.set(ContentType(get_batch_mime()));
+        let mut response = try!(self.do_request_with_headers("$batch",
+                                                             core::HTTPMethod::Post,
+                                                             Some(payload),
+                                                             headers));
         try!(errors::check_status(&mut response, StatusCode::Accepted));
         // TODO deal body response.
         // let ref body = try!(get_response_body(&mut response));
         // info!("{}", body);
+        Ok(())
+    }
+
+    pub fn delete_entity(&self,
+                         table_name: &str,
+                         partition_key: &str,
+                         row_key: &str)
+                         -> Result<(), core::errors::AzureError> {
+        let ref path = format!("{}(PartitionKey='{}',RowKey='{}')",
+                               table_name,
+                               partition_key,
+                               row_key);
+
+        let mut headers = Headers::new();
+        headers.set(Accept(vec![qitem(get_json_mime_nometadata())]));
+        headers.set(IfMatch::Any);
+
+        let mut resp =
+            try!(self.do_request_with_headers(path, core::HTTPMethod::Delete, None, headers));
+        try!(errors::check_status(&mut resp, StatusCode::NoContent));
         Ok(())
     }
 
@@ -128,15 +155,20 @@ impl TableClient {
                   method: core::HTTPMethod,
                   request_str: Option<&str>)
                   -> Result<Response, core::errors::AzureError> {
-        self.do_request_internal(segment, method, request_str, false)
+        let mut headers = Headers::new();
+        headers.set(Accept(vec![qitem(get_json_mime_nometadata())]));
+        if request_str.is_some() {
+            headers.set(ContentType(get_default_json_mime()));
+        }
+        self.do_request_with_headers(segment, method, request_str, headers)
     }
 
-    fn do_request_internal(&self,
-                           segment: &str,
-                           method: core::HTTPMethod,
-                           request_str: Option<&str>,
-                           is_batch: bool)
-                           -> Result<Response, core::errors::AzureError> {
+    fn do_request_with_headers(&self,
+                               segment: &str,
+                               method: core::HTTPMethod,
+                               request_str: Option<&str>,
+                               headers: Headers)
+                               -> Result<Response, core::errors::AzureError> {
         let client = &self.client;
         let uri = format!("{}://{}{}/{}",
                           client.auth_scheme(),
@@ -148,7 +180,7 @@ impl TableClient {
             trace!("Request: {}", body);
         }
 
-        let resp = try!(client.perform_table_request(&uri, method, request_str, is_batch));
+        let resp = try!(client.perform_table_request(&uri, method, headers, request_str));
         trace!("Response status: {:?}", resp.status);
         Ok(resp)
     }
@@ -170,4 +202,26 @@ struct TableEntry {
 #[derive(RustcDecodable)]
 struct EntryCollection<T> {
     value: Vec<T>,
+}
+
+#[inline]
+fn get_default_json_mime() -> Mime {
+    return Mime(TopLevel::Application,
+                SubLevel::Json,
+                vec![(Attr::Charset, Value::Utf8)]);
+}
+
+#[inline]
+fn get_json_mime_nometadata() -> Mime {
+    return Mime(TopLevel::Application,
+                SubLevel::Json,
+                vec![(Attr::Ext("odata".to_owned()), Value::Ext("nometadata".to_owned()))]);
+}
+
+#[inline]
+fn get_batch_mime() -> Mime {
+    return Mime(TopLevel::Multipart,
+                SubLevel::Ext("Mixed".to_owned()),
+                vec![(Attr::Ext("boundary".to_owned()),
+                      Value::Ext("batch_a1e9d677-b28b-435e-a89e-87e6a768a431".to_owned()))]);
 }
