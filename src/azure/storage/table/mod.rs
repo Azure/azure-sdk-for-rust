@@ -1,3 +1,7 @@
+mod batch;
+
+use self::batch::generate_batch_payload;
+
 use std::io::Read;
 use azure::core;
 use azure::core::errors::{self, AzureError};
@@ -6,7 +10,7 @@ use hyper::client::response::Response;
 use hyper::status::StatusCode;
 use rustc_serialize::{Decodable, Encodable, json};
 
-const TABLE_SUFFIX: &'static str = "table.core.windows.net";
+const TABLE_SUFFIX: &'static str = ".table.core.windows.net";
 const TABLE_TABLES: &'static str = "TABLES";
 
 pub struct TableClient {
@@ -106,7 +110,7 @@ impl TableClient {
                       request_str: Option<&str>)
                       -> Result<Response, core::errors::AzureError> {
         let client = &self.client;
-        let uri = format!("{}://{}.{}/{}",
+        let uri = format!("{}://{}{}/{}",
                           client.auth_scheme(),
                           client.account(),
                           TABLE_SUFFIX,
