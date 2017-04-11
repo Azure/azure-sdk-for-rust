@@ -5,7 +5,7 @@ use hyper::header::{Accept, ContentType, Headers, qitem};
 use hyper::mime::{Attr, Mime, SubLevel, TopLevel, Value};
 use std::io::Read;
 use azure::core::HTTPMethod;
-use super::rest_client::{perform_request, perform_request_with_client, ServiceType};
+use super::rest_client::{perform_request, ServiceType};
 
 pub struct Client {
     account: String,
@@ -32,7 +32,8 @@ fn get_json_mime_nometadata() -> Mime {
 fn get_batch_mime() -> Mime {
     return Mime(TopLevel::Multipart,
                 SubLevel::Ext("Mixed".to_owned()),
-                vec![(Attr::Ext("boundary".to_owned()), Value::Ext("batch_a1e9d677-b28b-435e-a89e-87e6a768a431".to_owned()))]);
+                vec![(Attr::Ext("boundary".to_owned()),
+                      Value::Ext("batch_a1e9d677-b28b-435e-a89e-87e6a768a431".to_owned()))]);
 }
 
 impl Client {
@@ -67,7 +68,8 @@ impl Client {
                            headers: &Headers,
                            request_body: Option<(&mut Read, u64)>)
                            -> Result<Response, Error> {
-        perform_request(uri,
+        perform_request(&self.hc,
+                        uri,
                         method,
                         &self.key,
                         headers,
@@ -93,13 +95,13 @@ impl Client {
             }
         }
 
-        perform_request_with_client(&self.hc,
-                                    uri,
-                                    method,
-                                    &self.key,
-                                    &headers,
-                                    None,
-                                    request_str,
-                                    ServiceType::Table)
+        perform_request(&self.hc,
+                        uri,
+                        method,
+                        &self.key,
+                        &headers,
+                        None,
+                        request_str,
+                        ServiceType::Table)
     }
 }

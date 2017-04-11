@@ -281,25 +281,7 @@ fn lexy_sort(vec: &[(String, String)], query_param: &str) -> Vec<(String)> {
     v_values
 }
 
-pub fn perform_request(uri: &str,
-                       method: HTTPMethod,
-                       azure_key: &str,
-                       headers: &Headers,
-                       request_body: Option<(&mut Read, u64)>,
-                       request_str: Option<&str>,
-                       service_type: ServiceType)
-                       -> Result<hyper::client::response::Response, hyper::error::Error> {
-    perform_request_with_client(&Client::new(),
-                                uri,
-                                method,
-                                azure_key,
-                                headers,
-                                request_body,
-                                request_str,
-                                service_type)
-}
-
-pub fn perform_request_with_client
+pub fn perform_request
     (client: &Client,
      uri: &str,
      method: HTTPMethod,
