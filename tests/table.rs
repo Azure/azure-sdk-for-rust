@@ -5,6 +5,9 @@ extern crate chrono;
 extern crate env_logger;
 extern crate rustc_serialize;
 
+mod util;
+use util::get_from_env;
+
 use azure_sdk_for_rust::azure::storage::client::Client;
 use azure_sdk_for_rust::azure::storage::table::{TableService, BatchItem};
 use azure_sdk_for_rust::azure::core::errors::AzureError;
@@ -211,13 +214,4 @@ fn create_table_service() -> TableService {
     let azure_storage_account = get_from_env("AZURE_STORAGE_ACCOUNT");
     let azure_storage_key = get_from_env("AZURE_STORAGE_KEY");
     TableService::new(Client::new(&azure_storage_account, &azure_storage_key, true))
-}
-
-fn get_from_env(varname: &str) -> String {
-    match std::env::var(varname) {
-        Ok(val) => val,
-        Err(_) => {
-            panic!("Please set {} env variable first!", varname);
-        }
-    }
 }

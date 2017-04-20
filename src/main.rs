@@ -250,25 +250,6 @@ fn list_blobs(client: &Client) {
 }
 
 #[allow(dead_code)]
-fn list_containers(client: &Client) {
-    println!("running list_containers");
-
-    let mut lco = LIST_CONTAINER_OPTIONS_DEFAULT.clone();
-    lco.max_results = 2;
-    loop {
-        let ret = Container::list(&client, &lco).unwrap();
-
-        println!("ret {:?}\n\n", ret);
-
-        if !ret.is_complete() {
-            lco.next_marker = Some(ret.next_marker().unwrap().to_owned());
-        } else {
-            break;
-        }
-    }
-}
-
-#[allow(dead_code)]
 fn put_block_blob(client: &Client) {
     use std::fs::metadata;
     use std::fs::File;
