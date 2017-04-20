@@ -28,13 +28,13 @@ impl TableService {
     pub fn list_tables(&self) -> Result<Vec<String>, AzureError> {
         Ok(self.query_entities(TABLE_TABLES, None)?
                .into_iter()
-               .map(|x: TableEntry| x.TableName)
+               .map(|x: TableEntity| x.TableName)
                .collect())
     }
 
     // Create table if not exists.
     pub fn create_table<T: Into<String>>(&self, table_name: T) -> Result<(), AzureError> {
-        let ref body = json::encode(&TableEntry { TableName: table_name.into() }).unwrap();
+        let ref body = json::encode(&TableEntity { TableName: table_name.into() }).unwrap();
         let mut response = try!(self.request_with_default_header(TABLE_TABLES,
                                                                  core::HTTPMethod::Post,
                                                                  Some(body)));
@@ -77,7 +77,7 @@ impl TableService {
             try!(self.request_with_default_header(path.as_str(), core::HTTPMethod::Get, None));
         try!(errors::check_status(&mut response, StatusCode::Ok));
         let ref body = try!(get_response_body(&mut response));
-        let ec: EntryCollection<T> = json::decode(body).unwrap();
+        let ec: EntityCollection<T> = json::decode(body).unwrap();
         Ok(ec.value)
     }
 
@@ -175,12 +175,12 @@ impl TableService {
 
 #[allow(non_snake_case)]
 #[derive(RustcEncodable, RustcDecodable)]
-struct TableEntry {
+struct TableEntity {
     TableName: String,
 }
 
 #[derive(RustcDecodable)]
-struct EntryCollection<T> {
+struct EntityCollection<T> {
     value: Vec<T>,
 }
 

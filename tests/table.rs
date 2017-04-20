@@ -13,7 +13,7 @@ const TEST_TABLE: &'static str = "rtest1";
 
 #[allow(non_snake_case)]
 #[derive(RustcDecodable, RustcEncodable, Debug)]
-struct Entry {
+struct Entity {
     PartitionKey: String,
     RowKey: String,
     c: String,
@@ -33,27 +33,27 @@ fn insert_get() {
     let client = create_table_service();
     let utc = chrono::UTC::now();
     let ref s = utc.to_string();
-    let ref entity1 = &Entry {
+    let ref entity1 = &Entity {
                            PartitionKey: "e1".to_owned(),
                            RowKey: s.to_owned(),
                            c: "mot1".to_owned(),
                            deleted: Some("DELET".to_owned()),
                        };
     client.insert_entity("rtest1", entity1).unwrap();
-    let entry: Entry = client.get_entity("rtest1", "e1", s).unwrap().unwrap();
-    assert_eq!("mot1", entry.c);
-    assert!(entry.deleted.is_some());
+    let entity: Entity = client.get_entity("rtest1", "e1", s).unwrap().unwrap();
+    assert_eq!("mot1", entity.c);
+    assert!(entity.deleted.is_some());
 
-    let ref entry2 = &Entry {
+    let ref entity2 = &Entity {
                           PartitionKey: "e2".to_owned(),
                           RowKey: s.to_owned(),
                           c: "mot2".to_owned(),
                           deleted: None,
                       };
-    client.insert_entity("rtest1", entry2).unwrap();
-    let entry: Entry = client.get_entity("rtest1", "e2", s).unwrap().unwrap();
-    assert_eq!("mot2", entry.c);
-    assert!(entry.deleted.is_none());
+    client.insert_entity("rtest1", entity2).unwrap();
+    let entity: Entity = client.get_entity("rtest1", "e2", s).unwrap().unwrap();
+    assert_eq!("mot2", entity.c);
+    assert!(entity.deleted.is_none());
 }
 
 #[test]
@@ -61,21 +61,21 @@ fn insert_update() {
     let client = create_table_service();
     let utc = chrono::UTC::now();
     let ref s = utc.to_string();
-    let mut entity1 = Entry {
+    let mut entity1 = Entity {
         PartitionKey: "e1".to_owned(),
         RowKey: s.to_owned(),
         c: "mot1".to_owned(),
         deleted: Some("DELET".to_owned()),
     };
     client.insert_entity("rtest1", &entity1).unwrap();
-    let entry: Entry = client.get_entity("rtest1", "e1", s).unwrap().unwrap();
-    assert_eq!("mot1", entry.c);
-    assert!(entry.deleted.is_some());
+    let entity: Entity = client.get_entity("rtest1", "e1", s).unwrap().unwrap();
+    assert_eq!("mot1", entity.c);
+    assert!(entity.deleted.is_some());
 
     entity1.c = "mot1edit".to_owned();
     client.update_entity("rtest1", "e1", s, &entity1).unwrap();
-    let entry: Entry = client.get_entity("rtest1", "e1", s).unwrap().unwrap();
-    assert_eq!("mot1edit", entry.c);
+    let entity: Entity = client.get_entity("rtest1", "e1", s).unwrap().unwrap();
+    assert_eq!("mot1edit", entity.c);
 }
 
 #[test]
@@ -83,19 +83,19 @@ fn insert_delete() {
     let client = create_table_service();
     let partition_key = "e1";
     let r1 = chrono::UTC::now().to_string();
-    let entity1 = Entry {
+    let entity1 = Entity {
         PartitionKey: partition_key.to_owned(),
         RowKey: r1.clone(),
         c: "mot1".to_owned(),
         deleted: Some("DELET".to_owned()),
     };
     client.insert_entity("rtest1", &entity1).unwrap();
-    let entry: Entry = client.get_entity("rtest1", partition_key, r1.as_str()).unwrap().unwrap();
-    assert_eq!("mot1", entry.c);
-    assert!(entry.deleted.is_some());
+    let entity: Entity = client.get_entity("rtest1", partition_key, r1.as_str()).unwrap().unwrap();
+    assert_eq!("mot1", entity.c);
+    assert!(entity.deleted.is_some());
 
     client.delete_entity(TEST_TABLE, partition_key, r1.as_str()).unwrap();
-    let result: Option<Entry> = client.get_entity(TEST_TABLE, partition_key, r1.as_str()).unwrap();
+    let result: Option<Entity> = client.get_entity(TEST_TABLE, partition_key, r1.as_str()).unwrap();
     assert!(result.is_none());
 }
 
@@ -106,31 +106,31 @@ fn batch() {
     client.create_table(TEST_TABLE).unwrap();
     let partition_key = "e1";
     let r1 = chrono::UTC::now().to_string();
-    let entity1 = Entry {
+    let entity1 = Entity {
         PartitionKey: partition_key.to_owned(),
         RowKey: r1.clone(),
         c: "mot1".to_owned(),
         deleted: Some("DELET".to_owned()),
     };
     client.insert_entity(TEST_TABLE, &entity1).unwrap();
-    let entry: Entry = client.get_entity(TEST_TABLE, partition_key, r1.as_str()).unwrap().unwrap();
-    assert_eq!("mot1", entry.c);
-    assert!(entry.deleted.is_some());
+    let entity: Entity = client.get_entity(TEST_TABLE, partition_key, r1.as_str()).unwrap().unwrap();
+    assert_eq!("mot1", entity.c);
+    assert!(entity.deleted.is_some());
 
     let r2 = chrono::UTC::now().to_string();
-    let entity2 = Entry {
+    let entity2 = Entity {
         PartitionKey: partition_key.to_owned(),
         RowKey: r2.clone(),
         c: "mot2".to_owned(),
         deleted: Some("DELET".to_owned()),
     };
     client.insert_entity(TEST_TABLE, &entity2).unwrap();
-    let entry: Entry = client.get_entity(TEST_TABLE, partition_key, r2.as_str()).unwrap().unwrap();
-    assert_eq!("mot2", entry.c);
-    assert!(entry.deleted.is_some());
+    let entity: Entity = client.get_entity(TEST_TABLE, partition_key, r2.as_str()).unwrap().unwrap();
+    assert_eq!("mot2", entity.c);
+    assert!(entity.deleted.is_some());
 
     let ref items = [BatchItem::new(r1.clone(),
-                                    Some(Entry {
+                                    Some(Entity {
                                              PartitionKey: partition_key.to_owned(),
                                              RowKey: r1.clone(),
                                              c: "mot1edit".to_owned(),
@@ -139,9 +139,9 @@ fn batch() {
                      BatchItem::new(r2.clone(), None)];
     client.batch(TEST_TABLE, partition_key, items).unwrap();
 
-    let entry: Entry = client.get_entity(TEST_TABLE, partition_key, r1.as_str()).unwrap().unwrap();
-    assert_eq!("mot1edit", entry.c);
-    let result: Option<Entry> = client.get_entity(TEST_TABLE, partition_key, r2.as_str()).unwrap();
+    let entity: Entity = client.get_entity(TEST_TABLE, partition_key, r1.as_str()).unwrap().unwrap();
+    assert_eq!("mot1edit", entity.c);
+    let result: Option<Entity> = client.get_entity(TEST_TABLE, partition_key, r2.as_str()).unwrap();
     assert!(result.is_none());
 }
 
@@ -150,8 +150,8 @@ fn get_non_exist() {
     let client = create_table_service();
     let utc = chrono::UTC::now();
     let s = utc.to_string();
-    let entry_o: Option<Entry> = client.get_entity("rtest1", "a62", s.as_str()).unwrap();
-    assert!(entry_o.is_none());
+    let entity_o: Option<Entity> = client.get_entity("rtest1", "a62", s.as_str()).unwrap();
+    assert!(entity_o.is_none());
 }
 
 #[test]
@@ -159,7 +159,7 @@ fn insert_to_non_exist() {
     let client = create_table_service();
     let utc = chrono::UTC::now();
     let s = utc.to_string();
-    let ref entity = Entry {
+    let ref entity = Entity {
         PartitionKey: "a62".to_owned(),
         RowKey: s.to_owned(),
         c: "c".to_owned(),
@@ -175,7 +175,7 @@ fn query_range() {
     let s = utc.to_string();
     for i in 1..5 {
         let key = format!("b{}0", i);
-        let tc = Entry {
+        let tc = Entity {
             PartitionKey: key.clone(),
             RowKey: s.to_owned(),
             c: format!("val{}", i),
@@ -197,7 +197,7 @@ fn test_query_range(client: &TableService,
                     row_key: &str,
                     ge: bool,
                     limit: u16)
-                    -> Result<Vec<Entry>, AzureError> {
+                    -> Result<Vec<Entity>, AzureError> {
     client.query_entities(table_name,
                           Some(format!("$filter=PartitionKey {} '{}' and RowKey le '{}'&$top={}",
                                        if ge { "ge" } else { "le" },

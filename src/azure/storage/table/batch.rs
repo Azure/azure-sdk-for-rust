@@ -4,6 +4,7 @@
 2. Only allow PUT and GET in changeset
 */
 use rustc_serialize::{Encodable, json};
+use super::entity_path;
 
 const BATCH_BEGIN: &'static str = r#"--batch_a1e9d677-b28b-435e-a89e-87e6a768a431
 Content-Type: multipart/mixed; boundary=changeset_8a28b620-b4bb-458c-a177-0959fb14c977
@@ -40,12 +41,8 @@ pub fn generate_batch_payload<T: Encodable>(uri_prefix: &str,
         payload.push_str(if item.1.is_some() { "PUT" } else { "DELETE" });
         payload.push_str(" ");
         payload.push_str(uri_prefix);
-        payload.push_str(table);
-        payload.push_str("(PartitionKey='");
-        payload.push_str(primary_key);
-        payload.push_str("',RowKey='");
-        payload.push_str(item.0.as_str());
-        payload.push_str("') HTTP/1.1\n");
+        payload.push_str(entity_path(table, primary_key, item.0.as_str()).as_str());
+        payload.push_str(" HTTP/1.1\n");
         payload.push_str(ACCEPT_HEADER);
         if let Some(ref v) = item.1 {
             payload.push_str(UPDATE_HEADER);
