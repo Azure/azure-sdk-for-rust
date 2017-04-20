@@ -31,4 +31,4 @@ version = "0.7.2"
 default-features = true
 
 [features]
-e2e_test = []
+test_e2e = []

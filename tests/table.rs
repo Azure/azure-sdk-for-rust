@@ -1,4 +1,4 @@
-#![cfg(all(test,feature = "e2e_test"))]
+#![cfg(all(test,feature = "test_e2e"))]
 
 extern crate azure_sdk_for_rust;
 extern crate chrono;
@@ -198,14 +198,13 @@ fn test_query_range(client: &TableService,
                     ge: bool,
                     limit: u16)
                     -> Result<Vec<Entry>, AzureError> {
-    client.query_entities(
-                             table_name,
-                             Some(format!("$filter=PartitionKey {} '{}' and RowKey le '{}'&$top={}",
-                                          if ge { "ge" } else { "le" },
-                                          partition_key,
-                                          row_key,
-                                          limit)
-                                          .as_str()))
+    client.query_entities(table_name,
+                          Some(format!("$filter=PartitionKey {} '{}' and RowKey le '{}'&$top={}",
+                                       if ge { "ge" } else { "le" },
+                                       partition_key,
+                                       row_key,
+                                       limit)
+                                       .as_str()))
 }
 
 fn create_table_service() -> TableService {

@@ -7,13 +7,13 @@ use std::io::Read;
 use azure::core;
 use azure::core::errors::{self, AzureError};
 use azure::storage::client::Client;
+use azure::storage::rest_client::ServiceType;
 use hyper::client::response::Response;
 use hyper::header::{Accept, ContentType, Headers, IfMatch, qitem};
 use hyper::mime::{Attr, Mime, SubLevel, TopLevel, Value};
 use hyper::status::StatusCode;
 use rustc_serialize::{Decodable, Encodable, json};
 
-const TABLE_SUFFIX: &'static str = ".table.core.windows.net";
 const TABLE_TABLES: &'static str = "TABLES";
 
 pub struct TableService {
@@ -35,7 +35,9 @@ impl TableService {
     // Create table if not exists.
     pub fn create_table<T: Into<String>>(&self, table_name: T) -> Result<(), AzureError> {
         let ref body = json::encode(&TableEntry { TableName: table_name.into() }).unwrap();
-        let mut response = try!(self.request_with_default_header(TABLE_TABLES, core::HTTPMethod::Post, Some(body)));
+        let mut response = try!(self.request_with_default_header(TABLE_TABLES,
+                                                                 core::HTTPMethod::Post,
+                                                                 Some(body)));
         // TODO: Here treats conflict as existed, but could be reserved name, such as 'Tables',
         // should check table existence directly
         if !(StatusCode::Created == response.status || StatusCode::Conflict == response.status) {
@@ -50,11 +52,9 @@ impl TableService {
                                     partition_key: &str,
                                     row_key: &str)
                                     -> Result<Option<T>, AzureError> {
-        let ref path = format!("{}(PartitionKey='{}',RowKey='{}')",
-                               table_name,
-                               partition_key,
-                               row_key);
-        let mut response = try!(self.request_with_default_header(path, core::HTTPMethod::Get, None));
+        let ref path = entity_path(table_name, partition_key, row_key);
+        let mut response =
+            try!(self.request_with_default_header(path, core::HTTPMethod::Get, None));
         if StatusCode::NotFound == response.status {
             return Ok(None);
         }
@@ -64,16 +64,17 @@ impl TableService {
     }
 
     pub fn query_entities<T: Decodable>(&self,
-                                        path: &str,
+                                        table_name: &str,
                                         query: Option<&str>)
                                         -> Result<Vec<T>, AzureError> {
-        let ref path = format!("{}?{}",
-                               path,
-                               match query {
-                                   Some(clause) => clause,
-                                   None => "",
-                               });
-        let mut response = try!(self.request_with_default_header(path, core::HTTPMethod::Get, None));
+        let mut path = table_name.to_owned();
+        if let Some(clause) = query {
+            path.push_str("?");
+            path.push_str(clause);
+        }
+
+        let mut response =
+            try!(self.request_with_default_header(path.as_str(), core::HTTPMethod::Get, None));
         try!(errors::check_status(&mut response, StatusCode::Ok));
         let ref body = try!(get_response_body(&mut response));
         let ec: EntryCollection<T> = json::decode(body).unwrap();
@@ -85,7 +86,8 @@ impl TableService {
                                        entity: &T)
                                        -> Result<(), AzureError> {
         let ref body = json::encode(entity).unwrap();
-        let mut resp = try!(self.request_with_default_header(table_name, core::HTTPMethod::Post, Some(body)));
+        let mut resp =
+            try!(self.request_with_default_header(table_name, core::HTTPMethod::Post, Some(body)));
         try!(errors::check_status(&mut resp, StatusCode::Created));
         Ok(())
     }
@@ -97,11 +99,9 @@ impl TableService {
                                        entity: &T)
                                        -> Result<(), AzureError> {
         let ref body = json::encode(entity).unwrap();
-        let ref path = format!("{}(PartitionKey='{}',RowKey='{}')",
-                               table_name,
-                               partition_key,
-                               row_key);
-        let mut resp = try!(self.request_with_default_header(path, core::HTTPMethod::Put, Some(body)));
+        let ref path = entity_path(table_name, partition_key, row_key);
+        let mut resp =
+            try!(self.request_with_default_header(path, core::HTTPMethod::Put, Some(body)));
         try!(errors::check_status(&mut resp, StatusCode::NoContent));
         Ok(())
     }
@@ -111,17 +111,12 @@ impl TableService {
                          partition_key: &str,
                          row_key: &str)
                          -> Result<(), AzureError> {
-        let ref path = format!("{}(PartitionKey='{}',RowKey='{}')",
-                               table_name,
-                               partition_key,
-                               row_key);
-
+        let ref path = entity_path(table_name, partition_key, row_key);
         let mut headers = Headers::new();
         headers.set(Accept(vec![qitem(get_json_mime_nometadata())]));
         headers.set(IfMatch::Any);
 
-        let mut resp =
-            try!(self.request(path, core::HTTPMethod::Delete, None, headers));
+        let mut resp = try!(self.request(path, core::HTTPMethod::Delete, None, headers));
         try!(errors::check_status(&mut resp, StatusCode::NoContent));
         Ok(())
     }
@@ -131,17 +126,15 @@ impl TableService {
                                partition_key: &str,
                                batch_items: &[BatchItem<T>])
                                -> Result<(), AzureError> {
-        let ref payload = generate_batch_payload(self.client.account(),
-                                                 table_name,
-                                                 partition_key,
-                                                 batch_items,
-                                                 self.client.use_https());
+        let ref payload =
+            generate_batch_payload(self.client.get_uri_prefix(ServiceType::Table).as_str(),
+                                   table_name,
+                                   partition_key,
+                                   batch_items);
         let mut headers = Headers::new();
         headers.set(ContentType(get_batch_mime()));
-        let mut response = try!(self.request("$batch",
-                                                             core::HTTPMethod::Post,
-                                                             Some(payload),
-                                                             headers));
+        let mut response =
+            try!(self.request("$batch", core::HTTPMethod::Post, Some(payload), headers));
         try!(errors::check_status(&mut response, StatusCode::Accepted));
         // TODO deal with body response, handle batch failure.
         // let ref body = try!(get_response_body(&mut response));
@@ -150,10 +143,10 @@ impl TableService {
     }
 
     fn request_with_default_header(&self,
-                  segment: &str,
-                  method: core::HTTPMethod,
-                  request_str: Option<&str>)
-                  -> Result<Response, AzureError> {
+                                   segment: &str,
+                                   method: core::HTTPMethod,
+                                   request_str: Option<&str>)
+                                   -> Result<Response, AzureError> {
         let mut headers = Headers::new();
         headers.set(Accept(vec![qitem(get_json_mime_nometadata())]));
         if request_str.is_some() {
@@ -168,29 +161,17 @@ impl TableService {
                request_str: Option<&str>,
                headers: Headers)
                -> Result<Response, AzureError> {
-        let client = &self.client;
-        let uri = format!("{}://{}{}/{}",
-                          client.auth_scheme(),
-                          client.account(),
-                          TABLE_SUFFIX,
-                          segment);
-        trace!("{:?} {}", method, uri);
+        trace!("{:?} {}", method, segment);
         if let Some(ref body) = request_str {
             trace!("Request: {}", body);
         }
 
-        let resp = try!(client.perform_table_request(&uri, method, headers, request_str));
+        let resp = try!(self.client.perform_table_request(segment, method, headers, request_str));
         trace!("Response status: {:?}", resp.status);
         Ok(resp)
     }
 }
 
-fn get_response_body(resp: &mut Response) -> Result<String, AzureError> {
-    let mut body = String::new();
-    try!(resp.read_to_string(&mut body));
-    trace!("Response Body:{}", body);
-    Ok(body)
-}
 
 #[allow(non_snake_case)]
 #[derive(RustcEncodable, RustcDecodable)]
@@ -201,6 +182,18 @@ struct TableEntry {
 #[derive(RustcDecodable)]
 struct EntryCollection<T> {
     value: Vec<T>,
+}
+
+fn get_response_body(resp: &mut Response) -> Result<String, AzureError> {
+    let mut body = String::new();
+    try!(resp.read_to_string(&mut body));
+    trace!("Response Body:{}", body);
+    Ok(body)
+}
+
+#[inline]
+fn entity_path(table_name: &str, partition_key: &str, row_key: &str) -> String {
+    table_name.to_owned() + "(PartitionKey='" + partition_key + "',RowKey='" + row_key + "')"
 }
 
 #[inline]

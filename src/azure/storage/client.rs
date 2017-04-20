@@ -6,6 +6,10 @@ use hyper::header::Headers;
 use azure::core::HTTPMethod;
 use super::rest_client::{perform_request, ServiceType};
 
+// Can be variant for different cloud environment
+const SERVICE_SUFFIX_BLOB: &'static str = ".blob.core.windows.net";
+const SERVICE_SUFFIX_TABLE: &'static str = ".table.core.windows.net";
+
 pub struct Client {
     account: String,
     key: String,
@@ -56,18 +60,27 @@ impl Client {
     }
 
     pub fn perform_table_request(&self,
-                                 uri: &str,
+                                 segment: &str,
                                  method: HTTPMethod,
                                  headers: Headers,
                                  request_str: Option<&str>)
                                  -> Result<Response, Error> {
         perform_request(&self.hc,
-                        uri,
+                        (self.get_uri_prefix(ServiceType::Table) + segment).as_str(),
                         method,
                         &self.key,
                         &headers,
                         None,
                         request_str,
                         ServiceType::Table)
+    }
+
+    /// Uri scheme + authority e.g. http://myaccount.table.core.windows.net/
+    pub fn get_uri_prefix(&self, service_type: ServiceType) -> String {
+        self.auth_scheme().to_owned() + "://" + self.account() +
+        match service_type {
+            ServiceType::Blob => SERVICE_SUFFIX_BLOB,
+            ServiceType::Table => SERVICE_SUFFIX_TABLE,
+        } + "/"
     }
 }
