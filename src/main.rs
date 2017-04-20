@@ -39,39 +39,8 @@ use chrono::UTC;
 
 use mime::Mime;
 
-use azure::storage::table::TableClient;
-
-fn get_from_env(varname: &str) -> String {
-    match std::env::var(varname) {
-        Ok(val) => val,
-        Err(_) => {
-            panic!("Please set {} env variable first!", varname);
-        }
-    }
-}
-
-fn create_storage_client() -> Client {
-    let azure_storage_account = get_from_env("AZURE_STORAGE_ACCOUNT");
-    let azure_storage_key = get_from_env("AZURE_STORAGE_KEY");
-    Client::new(&azure_storage_account, &azure_storage_key, true)
-}
-
-fn main() {
-    env_logger::init().unwrap();
-    let client = TableClient::new(create_storage_client());
-    for x in client.list().unwrap() {
-        println!("{}", x);
-    }
-
-    // Table::insert(&client, "rtest1", "a61", "b15", "c:mot").unwrap();
-    // let f= Table::query(&client, "rtest1", "a61", "b15", "c");
-    // println!("{}",f.unwrap());
-    // Blob::del(&client, "slstore1", "d").unwrap();
-}
-
-#[allow(dead_code)]
 #[allow(unused_variables)]
-fn main_old() {
+fn main() {
     env_logger::init().unwrap();
 
     let azure_storage_account = match std::env::var("AZURE_STORAGE_ACCOUNT") {
@@ -239,7 +208,8 @@ fn send_event(cli: &mut azure::service_bus::event_hub::Client) {
     let metadata = fs::metadata(file_name).unwrap();
     let mut file_handle = fs::File::open(file_name).unwrap();
 
-    cli.send_event((&mut file_handle, metadata.len()), Duration::hours(1)).unwrap();
+    cli.send_event((&mut file_handle, metadata.len()), Duration::hours(1))
+       .unwrap();
 }
 
 #[allow(dead_code)]
@@ -352,7 +322,7 @@ fn put_block_blob(client: &Client) {
                        "block_name",
                        &PUT_BLOCK_OPTIONS_DEFAULT,
                        (&mut file, 1024 * 1024))
-        .unwrap();
+            .unwrap();
 
     println!("created {:?}", new_blob);
 }
@@ -407,7 +377,8 @@ fn put_page_blob(client: &Client) {
         copy_status_description: None,
     };
 
-    new_blob.put(&client, &PUT_OPTIONS_DEFAULT, None).unwrap();
+    new_blob.put(&client, &PUT_OPTIONS_DEFAULT, None)
+            .unwrap();
 
     let range = BA512Range::new(0, 1024 * 1024 - 1).unwrap();
 
@@ -415,7 +386,7 @@ fn put_page_blob(client: &Client) {
                       &range, // 1MB
                       &PUT_PAGE_OPTIONS_DEFAULT,
                       (&mut file, range.size()))
-        .unwrap();
+            .unwrap();
 
     println!("created {:?}", new_blob);
 }
