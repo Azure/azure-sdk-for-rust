@@ -1,4 +1,4 @@
-// #![cfg(all(test,feature = "test_e2e"))]
+#![cfg(all(test,feature = "test_e2e"))]
 
 extern crate azure_sdk_for_rust;
 extern crate chrono;
