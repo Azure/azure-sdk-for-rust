@@ -6,7 +6,7 @@ extern crate env_logger;
 extern crate rustc_serialize;
 
 use azure_sdk_for_rust::azure::storage::client::Client;
-use azure_sdk_for_rust::azure::storage::table::{TableClient, BatchItem};
+use azure_sdk_for_rust::azure::storage::table::{TableService, BatchItem};
 use azure_sdk_for_rust::azure::core::errors::AzureError;
 
 const TEST_TABLE: &'static str = "rtest1";
@@ -21,9 +21,16 @@ struct Entry {
 }
 
 #[test]
+fn create_table() {
+    let client = create_table_service();
+    let s = "t123";
+    client.create_table(s).unwrap();
+}
+
+#[test]
 fn insert_get() {
     // env_logger::init().unwrap();
-    let client = create_table_client();
+    let client = create_table_service();
     let utc = chrono::UTC::now();
     let ref s = utc.to_string();
     let ref entity1 = &Entry {
@@ -51,8 +58,7 @@ fn insert_get() {
 
 #[test]
 fn insert_update() {
-    // env_logger::init().unwrap();
-    let client = create_table_client();
+    let client = create_table_service();
     let utc = chrono::UTC::now();
     let ref s = utc.to_string();
     let mut entity1 = Entry {
@@ -74,8 +80,7 @@ fn insert_update() {
 
 #[test]
 fn insert_delete() {
-    // env_logger::init().unwrap();
-    let client = create_table_client();
+    let client = create_table_service();
     let partition_key = "e1";
     let r1 = chrono::UTC::now().to_string();
     let entity1 = Entry {
@@ -97,8 +102,8 @@ fn insert_delete() {
 #[test]
 fn batch() {
     env_logger::init().unwrap();
-    let client = create_table_client();
-    client.create_if_not_exists(TEST_TABLE).unwrap();
+    let client = create_table_service();
+    client.create_table(TEST_TABLE).unwrap();
     let partition_key = "e1";
     let r1 = chrono::UTC::now().to_string();
     let entity1 = Entry {
@@ -142,7 +147,7 @@ fn batch() {
 
 #[test]
 fn get_non_exist() {
-    let client = create_table_client();
+    let client = create_table_service();
     let utc = chrono::UTC::now();
     let s = utc.to_string();
     let entry_o: Option<Entry> = client.get_entity("rtest1", "a62", s.as_str()).unwrap();
@@ -151,7 +156,7 @@ fn get_non_exist() {
 
 #[test]
 fn insert_to_non_exist() {
-    let client = create_table_client();
+    let client = create_table_service();
     let utc = chrono::UTC::now();
     let s = utc.to_string();
     let ref entity = Entry {
@@ -164,16 +169,8 @@ fn insert_to_non_exist() {
 }
 
 #[test]
-fn create_table() {
-    let client = create_table_client();
-    let s = "t123";
-    client.create_if_not_exists(s).unwrap();
-}
-
-#[test]
 fn query_range() {
-    // env_logger::init().unwrap();
-    let client = create_table_client();
+    let client = create_table_service();
     let utc = chrono::UTC::now();
     let s = utc.to_string();
     for i in 1..5 {
@@ -192,17 +189,16 @@ fn query_range() {
     for item in ec {
         println!("{:?}", item);
     }
-    // assert_eq!("mot1", entry.c);
 }
 
-fn test_query_range(client: &TableClient,
+fn test_query_range(client: &TableService,
                     table_name: &str,
                     partition_key: &str,
                     row_key: &str,
                     ge: bool,
                     limit: u16)
                     -> Result<Vec<Entry>, AzureError> {
-    client.query_range_entity(
+    client.query_entities(
                              table_name,
                              Some(format!("$filter=PartitionKey {} '{}' and RowKey le '{}'&$top={}",
                                           if ge { "ge" } else { "le" },
@@ -212,10 +208,10 @@ fn test_query_range(client: &TableClient,
                                           .as_str()))
 }
 
-fn create_table_client() -> TableClient {
+fn create_table_service() -> TableService {
     let azure_storage_account = get_from_env("AZURE_STORAGE_ACCOUNT");
     let azure_storage_key = get_from_env("AZURE_STORAGE_KEY");
-    TableClient::new(Client::new(&azure_storage_account, &azure_storage_key, true))
+    TableService::new(Client::new(&azure_storage_account, &azure_storage_key, true))
 }
 
 fn get_from_env(varname: &str) -> String {

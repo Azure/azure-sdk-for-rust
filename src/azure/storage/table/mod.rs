@@ -16,27 +16,26 @@ use rustc_serialize::{Decodable, Encodable, json};
 const TABLE_SUFFIX: &'static str = ".table.core.windows.net";
 const TABLE_TABLES: &'static str = "TABLES";
 
-pub struct TableClient {
+pub struct TableService {
     client: Client,
 }
 
-impl TableClient {
+impl TableService {
     pub fn new(client: Client) -> Self {
-        TableClient { client: client }
+        TableService { client: client }
     }
 
-    pub fn list(&self) -> Result<Vec<String>, core::errors::AzureError> {
-        Ok(self.query_range_entity(TABLE_TABLES, None)?
+    pub fn list_tables(&self) -> Result<Vec<String>, AzureError> {
+        Ok(self.query_entities(TABLE_TABLES, None)?
                .into_iter()
                .map(|x: TableEntry| x.TableName)
                .collect())
     }
 
-    pub fn create_if_not_exists<T: Into<String>>(&self,
-                                                 table_name: T)
-                                                 -> Result<(), core::errors::AzureError> {
+    // Create table if not exists.
+    pub fn create_table<T: Into<String>>(&self, table_name: T) -> Result<(), AzureError> {
         let ref body = json::encode(&TableEntry { TableName: table_name.into() }).unwrap();
-        let mut response = try!(self.do_request(TABLE_TABLES, core::HTTPMethod::Post, Some(body)));
+        let mut response = try!(self.request_with_default_header(TABLE_TABLES, core::HTTPMethod::Post, Some(body)));
         // TODO: Here treats conflict as existed, but could be reserved name, such as 'Tables',
         // should check table existence directly
         if !(StatusCode::Created == response.status || StatusCode::Conflict == response.status) {
@@ -46,12 +45,47 @@ impl TableClient {
         Ok(())
     }
 
+    pub fn get_entity<T: Decodable>(&self,
+                                    table_name: &str,
+                                    partition_key: &str,
+                                    row_key: &str)
+                                    -> Result<Option<T>, AzureError> {
+        let ref path = format!("{}(PartitionKey='{}',RowKey='{}')",
+                               table_name,
+                               partition_key,
+                               row_key);
+        let mut response = try!(self.request_with_default_header(path, core::HTTPMethod::Get, None));
+        if StatusCode::NotFound == response.status {
+            return Ok(None);
+        }
+        try!(errors::check_status(&mut response, StatusCode::Ok));
+        let ref body = try!(get_response_body(&mut response));
+        Ok(json::decode(body).unwrap())
+    }
+
+    pub fn query_entities<T: Decodable>(&self,
+                                        path: &str,
+                                        query: Option<&str>)
+                                        -> Result<Vec<T>, AzureError> {
+        let ref path = format!("{}?{}",
+                               path,
+                               match query {
+                                   Some(clause) => clause,
+                                   None => "",
+                               });
+        let mut response = try!(self.request_with_default_header(path, core::HTTPMethod::Get, None));
+        try!(errors::check_status(&mut response, StatusCode::Ok));
+        let ref body = try!(get_response_body(&mut response));
+        let ec: EntryCollection<T> = json::decode(body).unwrap();
+        Ok(ec.value)
+    }
+
     pub fn insert_entity<T: Encodable>(&self,
                                        table_name: &str,
                                        entity: &T)
                                        -> Result<(), AzureError> {
         let ref body = json::encode(entity).unwrap();
-        let mut resp = try!(self.do_request(table_name, core::HTTPMethod::Post, Some(body)));
+        let mut resp = try!(self.request_with_default_header(table_name, core::HTTPMethod::Post, Some(body)));
         try!(errors::check_status(&mut resp, StatusCode::Created));
         Ok(())
     }
@@ -61,33 +95,35 @@ impl TableClient {
                                        partition_key: &str,
                                        row_key: &str,
                                        entity: &T)
-                                       -> Result<(), core::errors::AzureError> {
+                                       -> Result<(), AzureError> {
         let ref body = json::encode(entity).unwrap();
         let ref path = format!("{}(PartitionKey='{}',RowKey='{}')",
                                table_name,
                                partition_key,
                                row_key);
-        let mut resp = try!(self.do_request(path, core::HTTPMethod::Put, Some(body)));
+        let mut resp = try!(self.request_with_default_header(path, core::HTTPMethod::Put, Some(body)));
         try!(errors::check_status(&mut resp, StatusCode::NoContent));
         Ok(())
     }
 
-    pub fn get_entity<T: Decodable>(&self,
-                                    table_name: &str,
-                                    partition_key: &str,
-                                    row_key: &str)
-                                    -> Result<Option<T>, core::errors::AzureError> {
+    pub fn delete_entity(&self,
+                         table_name: &str,
+                         partition_key: &str,
+                         row_key: &str)
+                         -> Result<(), AzureError> {
         let ref path = format!("{}(PartitionKey='{}',RowKey='{}')",
                                table_name,
                                partition_key,
                                row_key);
-        let mut response = try!(self.do_request(path, core::HTTPMethod::Get, None));
-        if StatusCode::NotFound == response.status {
-            return Ok(None);
-        }
-        try!(errors::check_status(&mut response, StatusCode::Ok));
-        let ref body = try!(get_response_body(&mut response));
-        Ok(json::decode(body).unwrap())
+
+        let mut headers = Headers::new();
+        headers.set(Accept(vec![qitem(get_json_mime_nometadata())]));
+        headers.set(IfMatch::Any);
+
+        let mut resp =
+            try!(self.request(path, core::HTTPMethod::Delete, None, headers));
+        try!(errors::check_status(&mut resp, StatusCode::NoContent));
+        Ok(())
     }
 
     pub fn batch<T: Encodable>(&self,
@@ -102,73 +138,36 @@ impl TableClient {
                                                  self.client.use_https());
         let mut headers = Headers::new();
         headers.set(ContentType(get_batch_mime()));
-        let mut response = try!(self.do_request_with_headers("$batch",
+        let mut response = try!(self.request("$batch",
                                                              core::HTTPMethod::Post,
                                                              Some(payload),
                                                              headers));
         try!(errors::check_status(&mut response, StatusCode::Accepted));
-        // TODO deal body response.
+        // TODO deal with body response, handle batch failure.
         // let ref body = try!(get_response_body(&mut response));
         // info!("{}", body);
         Ok(())
     }
 
-    pub fn delete_entity(&self,
-                         table_name: &str,
-                         partition_key: &str,
-                         row_key: &str)
-                         -> Result<(), core::errors::AzureError> {
-        let ref path = format!("{}(PartitionKey='{}',RowKey='{}')",
-                               table_name,
-                               partition_key,
-                               row_key);
-
-        let mut headers = Headers::new();
-        headers.set(Accept(vec![qitem(get_json_mime_nometadata())]));
-        headers.set(IfMatch::Any);
-
-        let mut resp =
-            try!(self.do_request_with_headers(path, core::HTTPMethod::Delete, None, headers));
-        try!(errors::check_status(&mut resp, StatusCode::NoContent));
-        Ok(())
-    }
-
-    pub fn query_range_entity<T: Decodable>(&self,
-                                            path: &str,
-                                            query: Option<&str>)
-                                            -> Result<Vec<T>, core::errors::AzureError> {
-        let ref path = format!("{}?{}",
-                               path,
-                               match query {
-                                   Some(clause) => clause,
-                                   None => "",
-                               });
-        let mut response = try!(self.do_request(path, core::HTTPMethod::Get, None));
-        try!(errors::check_status(&mut response, StatusCode::Ok));
-        let ref body = try!(get_response_body(&mut response));
-        let ec: EntryCollection<T> = json::decode(body).unwrap();
-        Ok(ec.value)
-    }
-
-    fn do_request(&self,
+    fn request_with_default_header(&self,
                   segment: &str,
                   method: core::HTTPMethod,
                   request_str: Option<&str>)
-                  -> Result<Response, core::errors::AzureError> {
+                  -> Result<Response, AzureError> {
         let mut headers = Headers::new();
         headers.set(Accept(vec![qitem(get_json_mime_nometadata())]));
         if request_str.is_some() {
             headers.set(ContentType(get_default_json_mime()));
         }
-        self.do_request_with_headers(segment, method, request_str, headers)
+        self.request(segment, method, request_str, headers)
     }
 
-    fn do_request_with_headers(&self,
-                               segment: &str,
-                               method: core::HTTPMethod,
-                               request_str: Option<&str>,
-                               headers: Headers)
-                               -> Result<Response, core::errors::AzureError> {
+    fn request(&self,
+               segment: &str,
+               method: core::HTTPMethod,
+               request_str: Option<&str>,
+               headers: Headers)
+               -> Result<Response, AzureError> {
         let client = &self.client;
         let uri = format!("{}://{}{}/{}",
                           client.auth_scheme(),
@@ -186,7 +185,7 @@ impl TableClient {
     }
 }
 
-fn get_response_body(resp: &mut Response) -> Result<String, core::errors::AzureError> {
+fn get_response_body(resp: &mut Response) -> Result<String, AzureError> {
     let mut body = String::new();
     try!(resp.read_to_string(&mut body));
     trace!("Response Body:{}", body);

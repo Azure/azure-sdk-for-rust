@@ -1,3 +1,8 @@
+/* Table batch support
+* Current limitation:
+1. Only support single changeset in a batch request
+2. Only allow PUT and GET in changeset
+*/
 use rustc_serialize::{Encodable, json};
 use super::TABLE_SUFFIX;
 
@@ -16,6 +21,7 @@ const UPDATE_HEADER: &'static str = "Content-Type: application/json\n";
 const ACCEPT_HEADER: &'static str = "Accept: application/json;odata=nometadata\n";
 const IF_MATCH_HEADER: &'static str = "If-Match: *\n";
 
+// RowKey, Payload. Payload None for deletion
 pub struct BatchItem<T: Encodable>(String, Option<T>);
 
 impl<T: Encodable> BatchItem<T> {
