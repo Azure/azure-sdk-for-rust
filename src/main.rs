@@ -10,9 +10,10 @@ extern crate rustc_serialize;
 extern crate xml;
 extern crate mime;
 extern crate time;
-
 #[macro_use]
 extern crate log;
+#[macro_use]
+extern crate quick_error;
 extern crate env_logger;
 
 extern crate uuid;

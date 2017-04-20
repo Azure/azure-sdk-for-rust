@@ -16,6 +16,7 @@ doc = false
 chrono = "0.2.19"
 rust-crypto = "0.2.34"
 rustc-serialize = "0.3.16"
+quick-error = "1.1.0"
 RustyXML = "0.1.1"
 mime = "0.1.1"
 log = "0.3.5"

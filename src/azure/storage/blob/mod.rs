@@ -184,7 +184,7 @@ impl Blob {
         trace!("content_length == {:?}", content_length);
 
         let last_modified = match h.get::<LastModified>() {
-            Some(lm) => try!(from_azure_time(&lm.to_string())),
+            Some(lm) => try!(from_azure_time(&lm.to_string()).map_err(|e| {let te: TraversingError= e.into(); te})),
             None => return Err(AzureError::HeaderNotFound("Last-Modified".to_owned())),
         };
         trace!("last_modified == {:?}", last_modified);
@@ -200,7 +200,7 @@ impl Blob {
             None => None,
         };
         trace!("x_ms_blob_sequence_number == {:?}",
-                 x_ms_blob_sequence_number);
+               x_ms_blob_sequence_number);
 
         let blob_type = match h.get::<XMSBlobType>() {
             Some(lm) => try!((&lm.to_string()).parse::<BlobType>()),
@@ -659,7 +659,8 @@ impl Blob {
                           c.account(),
                           container_name,
                           blob_name);
-        let mut resp = try!(c.perform_request(&uri, core::HTTPMethod::Delete, &&Headers::new(), None));
+        let mut resp =
+            try!(c.perform_request(&uri, core::HTTPMethod::Delete, &&Headers::new(), None));
         try!(core::errors::check_status(&mut resp, StatusCode::Accepted));
         Ok(())
     }

@@ -2,10 +2,9 @@ use hyper;
 use hyper::status::StatusCode;
 use chrono;
 use std::io::Error as IOError;
-use xml::BuilderError as XMLError;
 use std::io::Read;
 use std::num;
-// use xml;
+use xml::BuilderError as XMLError;
 use url::ParseError as URLParseError;
 use azure::core::enumerations::ParsingError;
 use azure::core::range::ParseError;
@@ -27,109 +26,97 @@ impl UnexpectedHTTPResult {
     }
 }
 
-#[derive(Debug)]
-pub enum AzureError {
-    HyperError(hyper::error::Error),
-    IOError(IOError),
-    XMLError(XMLError),
-    UnexpectedHTTPResult(UnexpectedHTTPResult),
-    HeaderNotFound(String),
-    ResponseParsingError(TraversingError),
-    ParseIntError(num::ParseIntError),
-    ParseError(ParseError),
-    GenericError,
-    ParsingError(ParsingError),
-    InputParametersError(String),
-    URLParseError(URLParseError),
-}
-
-#[derive(Debug)]
-pub enum TraversingError {
-    PathNotFound(String),
-    MultipleNode(String),
-    EnumerationNotMatched(String),
-    DateTimeParseError(chrono::format::ParseError),
-    TextNotFound,
-    ParseIntError(num::ParseIntError),
-    GenericParseError(String),
-    ParsingError(ParsingError),
-}
-
-impl From<URLParseError> for AzureError {
-    fn from(upe: URLParseError) -> AzureError {
-        AzureError::URLParseError(upe)
+quick_error! {
+    #[derive(Debug)]
+    pub enum AzureError {
+        HyperError(err: hyper::error::Error){
+            from()
+            display("Hyper error: {}", err)
+            cause(err)
+        }
+        IOError(err: IOError){
+            from()
+            display("IO error: {}", err)
+            cause(err)
+        }
+        XMLError(err: XMLError){
+            from()
+            display("XML error: {}", err)
+            cause(err)
+        }
+        UnexpectedHTTPResult(err: UnexpectedHTTPResult){
+            from()
+            display("UnexpectedHTTPResult error")
+        }
+        HeaderNotFound(msg: String) {
+            display("Header not found: {}", msg)
+        }
+        ResponseParsingError(err: TraversingError){
+            from()
+            display("Traversing error: {}", err)
+            cause(err)
+        }
+        ParseIntError(err: num::ParseIntError){
+            from()
+            display("Parse int error: {}", err)
+            cause(err)
+        }
+        ParseError(err: ParseError){
+            from()
+            display("Parse error")
+        }
+        GenericError
+        ParsingError(err: ParsingError){
+            from()
+            display("Parsing error")
+        }
+        InputParametersError(msg: String) {
+            display("Input parameters error: {}", msg)
+        }
+        URLParseError(err: URLParseError){
+            from()
+            display("URL parse error: {}", err)
+            cause(err)
+        }
     }
 }
 
-impl From<ParseError> for AzureError {
-    fn from(pe: ParseError) -> AzureError {
-        AzureError::ParseError(pe)
+quick_error! {
+    #[derive(Debug)]
+    pub enum TraversingError {
+        PathNotFound(msg: String) {
+            display("Path not found: {}", msg)
+        }
+        MultipleNode(msg: String) {
+            display("Multiple node: {}", msg)
+        }
+        EnumerationNotMatched(msg: String) {
+            display("Enumeration not matched: {}", msg)
+        }
+        DateTimeParseError(err: chrono::format::ParseError){
+            from()
+            display("DateTime parse error: {}", err)
+            cause(err)
+        }
+        TextNotFound
+        ParseIntError(err: num::ParseIntError){
+            from()
+            display("Parse int error: {}", err)
+            cause(err)
+        }
+        GenericParseError(msg: String) {
+            display("Generic parse error: {}", msg)
+        }
+        ParsingError(err: ParsingError){
+            from()
+            display("Parsing error")
+        }
     }
 }
 
 impl From<()> for AzureError {
     fn from(_: ()) -> AzureError {
         AzureError::GenericError
-    }
-}
-
-impl From<hyper::error::Error> for AzureError {
-    fn from(he: hyper::error::Error) -> AzureError {
-        AzureError::HyperError(he)
-    }
-}
-
-impl From<ParsingError> for AzureError {
-    fn from(pie: ParsingError) -> AzureError {
-        AzureError::ParsingError(pie)
-    }
-}
-
-impl From<XMLError> for AzureError {
-    fn from(xmle: XMLError) -> AzureError {
-        AzureError::XMLError(xmle)
-    }
-}
-
-impl From<IOError> for AzureError {
-    fn from(ioe: IOError) -> AzureError {
-        AzureError::IOError(ioe)
-    }
-}
-
-impl From<chrono::format::ParseError> for AzureError {
-    fn from(pe: chrono::format::ParseError) -> AzureError {
-        AzureError::ResponseParsingError(TraversingError::DateTimeParseError(pe))
-    }
-}
-
-impl From<TraversingError> for AzureError {
-    fn from(te: TraversingError) -> AzureError {
-        AzureError::ResponseParsingError(te)
-    }
-}
-
-impl From<num::ParseIntError> for AzureError {
-    fn from(pie: num::ParseIntError) -> AzureError {
-        AzureError::ParseIntError(pie)
-    }
-}
-
-impl From<chrono::format::ParseError> for TraversingError {
-    fn from(pe: chrono::format::ParseError) -> TraversingError {
-        TraversingError::DateTimeParseError(pe)
-    }
-}
-
-impl From<num::ParseIntError> for TraversingError {
-    fn from(pie: num::ParseIntError) -> TraversingError {
-        TraversingError::ParseIntError(pie)
-    }
-}
-
-impl From<ParsingError> for TraversingError {
-    fn from(pie: ParsingError) -> TraversingError {
-        TraversingError::ParsingError(pie)
     }
 }
 
