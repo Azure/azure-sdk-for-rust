@@ -18,6 +18,13 @@ yet.
 ## Disclaimer
 Although I am a Microsoft employee, this is not a Microsoft endorsed project. It's simply a pet project of mine: I love Rust (who doesn't? :smirk:) and Microsoft Azure technologies so I thought to close the gap between them. It's also a good project for learning Rust.
 
+## Run E2E test
+```
+AZURE_STORAGE_ACCOUNT=<account>
+AZURE_STORAGE_KEY=<key>
+cargo test --features=test_e2e
+```
+
 ## Example
 You can find examples in the test section (not yet existent as far as Azure is concerned) and in the main.rs file. Here is a sample however:
 

@@ -6,14 +6,14 @@ extern crate hyper;
 extern crate chrono;
 extern crate url;
 extern crate crypto;
-extern crate rustc_serialize as serialize;
+extern crate rustc_serialize;
 extern crate xml;
-#[macro_use]
 extern crate mime;
 extern crate time;
-
 #[macro_use]
 extern crate log;
+#[macro_use]
+extern crate quick_error;
 extern crate env_logger;
 
 extern crate uuid;
@@ -244,25 +244,6 @@ fn list_blobs(client: &Client) {
 
         if !uc.is_complete() {
             lbo2.next_marker = Some(uc.next_marker().unwrap().to_owned());
-        } else {
-            break;
-        }
-    }
-}
-
-#[allow(dead_code)]
-fn list_containers(client: &Client) {
-    println!("running list_containers");
-
-    let mut lco = LIST_CONTAINER_OPTIONS_DEFAULT.clone();
-    lco.max_results = 2;
-    loop {
-        let ret = Container::list(&client, &lco).unwrap();
-
-        println!("ret {:?}\n\n", ret);
-
-        if !ret.is_complete() {
-            lco.next_marker = Some(ret.next_marker().unwrap().to_owned());
         } else {
             break;
         }
