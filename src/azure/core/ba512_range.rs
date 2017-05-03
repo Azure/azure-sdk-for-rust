@@ -27,9 +27,9 @@ impl BA512Range {
         }
 
         Ok(BA512Range {
-            start: start,
-            end: end,
-        })
+               start: start,
+               end: end,
+           })
     }
 
     #[inline]
@@ -75,7 +75,7 @@ impl Into<Range> for BA512Range {
 impl FromStr for BA512Range {
     type Err = ParseError;
     fn from_str(s: &str) -> Result<BA512Range, ParseError> {
-        let v = s.split("/").collect::<Vec<&str>>();
+        let v = s.split('/').collect::<Vec<&str>>();
         if v.len() != 2 {
             return Err(ParseError::SplitNotFound);
         }
@@ -133,10 +133,7 @@ mod test {
 
     #[test]
     fn test_512range_display() {
-        let range = BA512Range {
-            start: 0,
-            end: 511,
-        };
+        let range = BA512Range { start: 0, end: 511 };
 
         let txt = format!("{}", range);
 

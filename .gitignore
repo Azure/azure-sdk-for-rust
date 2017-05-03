@@ -3,3 +3,6 @@ target
 .vscode
 sample/
 /.project
+\#*\#
+\.#*
+*~

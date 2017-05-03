@@ -4,14 +4,14 @@
 
 [![Crate](https://img.shields.io/crates/v/azure_sdk_for_rust.svg)](https://crates.io/crates/azure_sdk_for_rust) [![legal](https://img.shields.io/crates/l/azure_sdk_for_rust.svg)](LICENSE) [![cratedown](https://img.shields.io/crates/d/azure_sdk_for_rust.svg)](https://crates.io/crates/azure_sdk_for_rust) [![cratelastdown](https://img.shields.io/crates/dv/azure_sdk_for_rust.svg)](https://crates.io/crates/azure_sdk_for_rust)
 
-[![tag](https://img.shields.io/github/tag/mindflavor/AzureSDKForRust.svg)](https://github.com/MindFlavor/AzureSDKForRust/tree/0.1.3)
-[![release](https://img.shields.io/github/release/mindflavor/AzureSDKForRust.svg)](https://github.com/MindFlavor/AzureSDKForRust/tree/0.1.3)
-[![commitssince](https://img.shields.io/github/commits-since/mindflavor/AzureSDKForRust/0.1.3.svg)](https://img.shields.io/github/commits-since/mindflavor/AzureSDKForRust/0.1.3.svg)
+[![tag](https://img.shields.io/github/tag/mindflavor/AzureSDKForRust.svg)](https://github.com/MindFlavor/AzureSDKForRust/tree/0.2.0)
+[![release](https://img.shields.io/github/release/mindflavor/AzureSDKForRust.svg)](https://github.com/MindFlavor/AzureSDKForRust/tree/0.2.0)
+[![commitssince](https://img.shields.io/github/commits-since/mindflavor/AzureSDKForRust/0.2.0.svg)](https://img.shields.io/github/commits-since/mindflavor/AzureSDKForRust/0.2.0.svg)
 
 ## Introduction
-Microsoft Azure expose its technologies via REST API. These APIs are easily consumable from any language (good) but are weakly typed. With this library and its related [crate](https://crates.io/crates/azure_sdk_for_rust/) you can exploit the power of Microsoft Azure from Rust in a idiomatic way.    
+Microsoft Azure expose its technologies via REST API. These APIs are easily consumable from any language (good) but are weakly typed. With this library and its related [crate](https://crates.io/crates/azure_sdk_for_rust/) you can exploit the power of Microsoft Azure from Rust in a idiomatic way.
 
-> **NOTE:** This repository is under heavy ongoing development and
+> **NOTE:** This repository is under heavy development and
 is likely to break over time. I currently do not have any releases
 yet.
 
@@ -26,7 +26,7 @@ cargo test --features=test_e2e
 ```
 
 ## Example
-You can find examples in the test section (not yet existent as far as Azure is concerned) and in the main.rs file. Here is a sample however:
+You can find examples in the test section and in the main.rs file. Here is a sample however:
 
 ### main.rs
 ```rust
@@ -156,6 +156,18 @@ If you want to contribute please do! No formality required! :wink:
 | ----  | --- |
 |Send Event|[https://msdn.microsoft.com/en-us/library/azure/dn790664.aspx](https://msdn.microsoft.com/en-us/library/azure/dn790664.aspx)|
 
+#### Azure tables
+
+|Method | URL |
+| ----  | --- |
+| Create table | [https://docs.microsoft.com/en-us/rest/api/storageservices/create-table](https://docs.microsoft.com/en-us/rest/api/storageservices/create-table) |
+| Query tables  | [https://docs.microsoft.com/en-us/rest/api/storageservices/query-tables](https://docs.microsoft.com/en-us/rest/api/storageservices/query-tables) |
+| Query entities | [https://docs.microsoft.com/en-us/rest/api/storageservices/query-entities](https://docs.microsoft.com/en-us/rest/api/storageservices/query-entities) |
+| Insert entity | [https://docs.microsoft.com/en-us/rest/api/storageservices/insert-entity](https://docs.microsoft.com/en-us/rest/api/storageservices/insert-entity) |
+| Update entity | [https://docs.microsoft.com/en-us/rest/api/storageservices/update-entity2](https://docs.microsoft.com/en-us/rest/api/storageservices/update-entity2) |
+| Delete entity | [https://docs.microsoft.com/en-us/rest/api/storageservices/delete-entity1](https://docs.microsoft.com/en-us/rest/api/storageservices/delete-entity1) |
+
+Azure tables entities can be manipulated in batches. The entities are serialized in ```JSON```.
 
 ## License
 This project is published under [Apache license, version 2.0](LICENSE).

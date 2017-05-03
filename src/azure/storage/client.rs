@@ -1,4 +1,6 @@
 use std::io::Read;
+use hyper::net::HttpsConnector;
+use hyper_native_tls::NativeTlsClient;
 use hyper::client::response::Response;
 use hyper::client::Client as HyperClient;
 use hyper::error::Error;
@@ -19,11 +21,17 @@ pub struct Client {
 
 impl Client {
     pub fn new(account: &str, key: &str, use_https: bool) -> Client {
+        use hyper;
+
+        let ssl = NativeTlsClient::new().unwrap();
+        let connector = HttpsConnector::new(ssl);
+        let client = hyper::Client::with_connector(connector);
+
         Client {
             account: account.to_owned(),
             key: key.to_owned(),
             use_https: use_https,
-            hc: HyperClient::new(),
+            hc: client,
         }
     }
 
@@ -65,6 +73,11 @@ impl Client {
                                  headers: Headers,
                                  request_str: Option<&str>)
                                  -> Result<Response, Error> {
+
+        debug!("segment: {}, method: {:?}, headers: {:?}",
+               segment,
+               method,
+               headers);
         perform_request(&self.hc,
                         (self.get_uri_prefix(ServiceType::Table) + segment).as_str(),
                         method,

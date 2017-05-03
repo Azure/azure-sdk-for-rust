@@ -78,6 +78,11 @@ quick_error! {
             display("URL parse error: {}", err)
             cause(err)
         }
+        ChronoParserError(err: chrono::ParseError) {
+            from()
+            display("Chrono parser error: {}", err)
+            cause(err)
+        }
     }
 }
 

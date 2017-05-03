@@ -1,7 +1,6 @@
 extern crate crypto;
 extern crate hyper;
 extern crate url;
-extern crate rustc_serialize as serialize;
 
 #[macro_use]
 pub mod errors;

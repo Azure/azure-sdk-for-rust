@@ -29,7 +29,7 @@ impl Client {
     }
 
     pub fn send_event(&mut self,
-                      event_body: (&mut Read, u64),
+                      event_body: &mut (&mut Read, u64),
                       duration: Duration)
                       -> Result<(), AzureError> {
         send_event(&self.namespace,
@@ -54,14 +54,14 @@ mod test {
     #[test]
     pub fn client_enc() {
         use crypto::mac::Mac;
-        use rustc_serialize::base64::{STANDARD, ToBase64};
+        use base64;
 
         let str_to_sign = "This must be secret!";
 
         let mut c = Client::new("namespace", "event_hub", "policy", "key");
 
         c.hmac.input(str_to_sign.as_bytes());
-        let sig = c.hmac.result().code().to_base64(STANDARD);
+        let sig = base64::encode(c.hmac.result().code());
 
         assert_eq!(sig, "2UNXaoPpeJBAhh6qxmTqXyNzTpOflGO6IhxegeUQBcU=");
     }

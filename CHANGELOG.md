@@ -1,3 +1,17 @@
+## [0.2.0](https://github.com/MindFlavor/AzureSDKForRust/releases/tag/0.2.0) (2017-05-04)
+
+**Refactoring:**
+* Upgraded all the references to the state of the art. This includes Hyper with external TLS support.
+* Removed ```rustc-serialize``` crate as it's now officially deprecated. Azure SDK for Rust now uses [Serde](https://github.com/serde-rs/serde). This closes issue [12](https://github.com/MindFlavor/AzureSDKForRust/issues/12).
+* Added more end-to-end tests.
+* Clippy'd all the code.
+
+## 0.1.4-beta (2017-04-26)
+
+**Implemented features:**
+* Added azure table support thanks to this huge [pull request](https://github.com/MindFlavor/AzureSDKForRust/pull/11) from [Dong Liu](https://github.com/karataliu). 
+* Added end-to-end tests.
+
 ## [0.1.3](https://github.com/MindFlavor/AzureSDKForRust/releases/tag/0.1.3) (2016-02-05)
 
 **Implemented features:**

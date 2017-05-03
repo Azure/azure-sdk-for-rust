@@ -5,7 +5,7 @@ extern crate chrono;
 extern crate env_logger;
 #[macro_use]
 extern crate log;
-extern crate rustc_serialize;
+extern crate serde;
 
 mod util;
 
@@ -14,12 +14,33 @@ use azure_sdk_for_rust::azure::storage::container::{Container, PublicAccess,
                                                     LIST_CONTAINER_OPTIONS_DEFAULT};
 use util::get_from_env;
 
-// TODO, add validation logic
+use std::ops::Deref;
+
+#[test]
+fn create_and_delete_container() {
+    let name : &'static str = "azuresdkrustetoets";
+    
+    let client = create_client();
+    Container::create(&client, name, PublicAccess::Container).unwrap();
+
+    let mut lco = LIST_CONTAINER_OPTIONS_DEFAULT.clone();
+    lco.prefix = Some(name.to_owned());
+
+    let list = Container::list(&client, &lco).unwrap();
+    let cont_list :Vec<&Container> = list.deref().into_iter().filter(|e| e.name == name).collect();
+
+    if cont_list.len() != 1 {
+        panic!("More than 1 container returned with the same name!");
+    }
+
+    let mut cont = cont_list[0].clone();
+    
+    cont.delete(&client).unwrap();
+}
 
 #[test]
 fn list_containers() {
-    let ref client = create_client();
-    let _ = Container::create(client, "con1", PublicAccess::Container);
+    let client = create_client();
 
     trace!("running list_containers");
     let mut lco = LIST_CONTAINER_OPTIONS_DEFAULT.clone();
@@ -36,6 +57,7 @@ fn list_containers() {
         }
     }
 }
+
 
 fn create_client() -> Client {
     let azure_storage_account = get_from_env("AZURE_STORAGE_ACCOUNT");
