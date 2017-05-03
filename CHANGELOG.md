@@ -6,7 +6,7 @@
 * Added more end-to-end tests.
 * Clippy'd all the code.
 
-## 0.1.4-beta (2017-04-26)
+## 0.1.4-beta (2017-04-24)
 
 **Implemented features:**
 * Added azure table support thanks to this huge [pull request](https://github.com/MindFlavor/AzureSDKForRust/pull/11) from [Dong Liu](https://github.com/karataliu). 
