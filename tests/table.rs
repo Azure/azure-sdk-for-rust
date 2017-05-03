@@ -3,7 +3,9 @@
 extern crate azure_sdk_for_rust;
 extern crate chrono;
 extern crate env_logger;
-extern crate rustc_serialize;
+#[macro_use]
+extern crate serde_derive;
+extern crate serde;
 
 mod util;
 use util::get_from_env;
@@ -15,7 +17,7 @@ use azure_sdk_for_rust::azure::core::errors::AzureError;
 const TEST_TABLE: &'static str = "rtest1";
 
 #[allow(non_snake_case)]
-#[derive(RustcDecodable, RustcEncodable, Debug)]
+#[derive(Serialize, Deserialize, Debug)]
 struct Entity {
     PartitionKey: String,
     RowKey: String,

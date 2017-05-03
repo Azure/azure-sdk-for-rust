@@ -69,7 +69,7 @@ pub fn traverse<'a>(node: &'a Element,
                     -> Result<Vec<&'a Element>, TraversingError> {
     // println!("path.len() == {:?}", path.len());
 
-    if path.len() == 0 {
+    if path.is_empty() {
         let mut vec = Vec::new();
         vec.push(node);
         return Ok(vec);
@@ -107,18 +107,14 @@ pub fn traverse<'a>(node: &'a Element,
 pub fn find_subnodes<'a>(node: &'a Element, subnode: &str) -> Vec<&'a Element> {
     node.children
         .iter()
-        .filter(|x| {
-            match **x {
-                ElementNode(ref mynode) => mynode.name == subnode,
-                _ => false,
-            }
-        })
-        .map(|x| {
-            match *x {
-                ElementNode(ref mynode) => mynode,
-                _ => unreachable!(),
-            }
-        })
+        .filter(|x| match **x {
+                    ElementNode(ref mynode) => mynode.name == subnode,
+                    _ => false,
+                })
+        .map(|x| match *x {
+                 ElementNode(ref mynode) => mynode,
+                 _ => unreachable!(),
+             })
         .collect::<Vec<_>>()
 }
 
@@ -280,7 +276,7 @@ mod test {
 
         let res = super::traverse(&elem, &["Containers", "Container"], false).unwrap();
         let res_final = super::traverse_single_must(res[1], &["Properties", "LeaseStatus"])
-                            .unwrap();
+            .unwrap();
 
         if let Ok(inner) = super::inner_text(res_final) {
             assert_eq!(inner, "locked");
@@ -295,7 +291,7 @@ mod test {
 
         let res = super::traverse(&elem, &["Containers", "Container"], false).unwrap();
         let res_final = super::traverse_single_optional(res[1], &["Properties", "Pinocchio"])
-                            .unwrap();
+            .unwrap();
 
         assert_eq!(res_final, None);
     }

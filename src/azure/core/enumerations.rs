@@ -4,7 +4,7 @@ pub enum ParsingError {
 }
 
 /// use as
-/// create_enum!(SecondCollection, (Pollo, "Pollo"), (Bianco, "Bianco"), (Giallo, "Giallo"));
+/// ```create_enum!(SecondCollection, (Pollo, "Pollo"), (Bianco, "Bianco"), (Giallo, "Giallo"));```
 macro_rules! create_enum {
     ($en:ident, $(($na:ident, $x:expr)), *) => (
         #[derive(Debug, PartialEq, PartialOrd, Clone, Copy)]

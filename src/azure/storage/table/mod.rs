@@ -12,7 +12,9 @@ use hyper::client::response::Response;
 use hyper::header::{Accept, ContentType, Headers, IfMatch, qitem};
 use hyper::mime::{Attr, Mime, SubLevel, TopLevel, Value};
 use hyper::status::StatusCode;
-use rustc_serialize::{Decodable, Encodable, json};
+use serde::Serialize;
+use serde::de::DeserializeOwned;
+use serde_json;
 
 const TABLE_TABLES: &'static str = "TABLES";
 
@@ -34,7 +36,8 @@ impl TableService {
 
     // Create table if not exists.
     pub fn create_table<T: Into<String>>(&self, table_name: T) -> Result<(), AzureError> {
-        let ref body = json::encode(&TableEntity { TableName: table_name.into() }).unwrap();
+        let body = &serde_json::to_string(&TableEntity { TableName: table_name.into() }).unwrap();
+        debug!("body == {}", body);
         let mut response = try!(self.request_with_default_header(TABLE_TABLES,
                                                                  core::HTTPMethod::Post,
                                                                  Some(body)));
@@ -47,26 +50,31 @@ impl TableService {
         Ok(())
     }
 
-    pub fn get_entity<T: Decodable>(&self,
-                                    table_name: &str,
-                                    partition_key: &str,
-                                    row_key: &str)
-                                    -> Result<Option<T>, AzureError> {
-        let ref path = entity_path(table_name, partition_key, row_key);
+    pub fn get_entity<T: DeserializeOwned>(&self,
+                                           table_name: &str,
+                                           partition_key: &str,
+                                           row_key: &str)
+                                           -> Result<Option<T>, AzureError> {
+        let path = &entity_path(table_name, partition_key, row_key);
         let mut response =
             try!(self.request_with_default_header(path, core::HTTPMethod::Get, None));
         if StatusCode::NotFound == response.status {
             return Ok(None);
         }
         try!(errors::check_status(&mut response, StatusCode::Ok));
-        let ref body = try!(get_response_body(&mut response));
-        Ok(json::decode(body).unwrap())
+        let body = try!(get_response_body(&mut response));
+
+        let res = serde_json::from_str(&body).unwrap();
+
+        //res = res.clone();
+
+        Ok(res)
     }
 
-    pub fn query_entities<T: Decodable>(&self,
-                                        table_name: &str,
-                                        query: Option<&str>)
-                                        -> Result<Vec<T>, AzureError> {
+    pub fn query_entities<T: DeserializeOwned>(&self,
+                                               table_name: &str,
+                                               query: Option<&str>)
+                                               -> Result<Vec<T>, AzureError> {
         let mut path = table_name.to_owned();
         if let Some(clause) = query {
             path.push_str("?");
@@ -76,30 +84,30 @@ impl TableService {
         let mut response =
             try!(self.request_with_default_header(path.as_str(), core::HTTPMethod::Get, None));
         try!(errors::check_status(&mut response, StatusCode::Ok));
-        let ref body = try!(get_response_body(&mut response));
-        let ec: EntityCollection<T> = json::decode(body).unwrap();
+        let body = &try!(get_response_body(&mut response));
+        let ec: EntityCollection<T> = serde_json::from_str(body).unwrap();
         Ok(ec.value)
     }
 
-    pub fn insert_entity<T: Encodable>(&self,
+    pub fn insert_entity<T: Serialize>(&self,
                                        table_name: &str,
                                        entity: &T)
                                        -> Result<(), AzureError> {
-        let ref body = json::encode(entity).unwrap();
+        let body = &serde_json::to_string(entity).unwrap();
         let mut resp =
             try!(self.request_with_default_header(table_name, core::HTTPMethod::Post, Some(body)));
         try!(errors::check_status(&mut resp, StatusCode::Created));
         Ok(())
     }
 
-    pub fn update_entity<T: Encodable>(&self,
+    pub fn update_entity<T: Serialize>(&self,
                                        table_name: &str,
                                        partition_key: &str,
                                        row_key: &str,
                                        entity: &T)
                                        -> Result<(), AzureError> {
-        let ref body = json::encode(entity).unwrap();
-        let ref path = entity_path(table_name, partition_key, row_key);
+        let body = &serde_json::to_string(entity).unwrap();
+        let path = &entity_path(table_name, partition_key, row_key);
         let mut resp =
             try!(self.request_with_default_header(path, core::HTTPMethod::Put, Some(body)));
         try!(errors::check_status(&mut resp, StatusCode::NoContent));
@@ -111,7 +119,7 @@ impl TableService {
                          partition_key: &str,
                          row_key: &str)
                          -> Result<(), AzureError> {
-        let ref path = entity_path(table_name, partition_key, row_key);
+        let path = &entity_path(table_name, partition_key, row_key);
         let mut headers = Headers::new();
         headers.set(Accept(vec![qitem(get_json_mime_nometadata())]));
         headers.set(IfMatch::Any);
@@ -121,16 +129,16 @@ impl TableService {
         Ok(())
     }
 
-    pub fn batch<T: Encodable>(&self,
+    pub fn batch<T: Serialize>(&self,
                                table_name: &str,
                                partition_key: &str,
                                batch_items: &[BatchItem<T>])
                                -> Result<(), AzureError> {
-        let ref payload =
-            generate_batch_payload(self.client.get_uri_prefix(ServiceType::Table).as_str(),
-                                   table_name,
-                                   partition_key,
-                                   batch_items);
+        let payload =
+            &generate_batch_payload(self.client.get_uri_prefix(ServiceType::Table).as_str(),
+                                    table_name,
+                                    partition_key,
+                                    batch_items);
         let mut headers = Headers::new();
         headers.set(ContentType(get_batch_mime()));
         let mut response =
@@ -162,11 +170,12 @@ impl TableService {
                headers: Headers)
                -> Result<Response, AzureError> {
         trace!("{:?} {}", method, segment);
-        if let Some(ref body) = request_str {
+        if let Some(body) = request_str {
             trace!("Request: {}", body);
         }
 
-        let resp = try!(self.client.perform_table_request(segment, method, headers, request_str));
+        let resp = try!(self.client
+                            .perform_table_request(segment, method, headers, request_str));
         trace!("Response status: {:?}", resp.status);
         Ok(resp)
     }
@@ -174,12 +183,12 @@ impl TableService {
 
 
 #[allow(non_snake_case)]
-#[derive(RustcEncodable, RustcDecodable)]
+#[derive(Serialize, Deserialize)]
 struct TableEntity {
     TableName: String,
 }
 
-#[derive(RustcDecodable)]
+#[derive(Deserialize)]
 struct EntityCollection<T> {
     value: Vec<T>,
 }
@@ -197,23 +206,23 @@ fn entity_path(table_name: &str, partition_key: &str, row_key: &str) -> String {
 }
 
 #[inline]
-fn get_default_json_mime() -> Mime {
-    return Mime(TopLevel::Application,
-                SubLevel::Json,
-                vec![(Attr::Charset, Value::Utf8)]);
+pub fn get_default_json_mime() -> Mime {
+    Mime(TopLevel::Application,
+         SubLevel::Json,
+         vec![(Attr::Charset, Value::Utf8)])
 }
 
 #[inline]
-fn get_json_mime_nometadata() -> Mime {
-    return Mime(TopLevel::Application,
-                SubLevel::Json,
-                vec![(Attr::Ext("odata".to_owned()), Value::Ext("nometadata".to_owned()))]);
+pub fn get_json_mime_nometadata() -> Mime {
+    Mime(TopLevel::Application,
+         SubLevel::Json,
+         vec![(Attr::Ext("odata".to_owned()), Value::Ext("nometadata".to_owned()))])
 }
 
 #[inline]
-fn get_batch_mime() -> Mime {
-    return Mime(TopLevel::Multipart,
-                SubLevel::Ext("Mixed".to_owned()),
-                vec![(Attr::Ext("boundary".to_owned()),
-                      Value::Ext("batch_a1e9d677-b28b-435e-a89e-87e6a768a431".to_owned()))]);
+pub fn get_batch_mime() -> Mime {
+    Mime(TopLevel::Multipart,
+         SubLevel::Ext("Mixed".to_owned()),
+         vec![(Attr::Ext("boundary".to_owned()),
+               Value::Ext("batch_a1e9d677-b28b-435e-a89e-87e6a768a431".to_owned()))])
 }

@@ -34,7 +34,7 @@ create_enum!(PublicAccess,
              (Blob, "blob"));
 
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Container {
     pub name: String,
     pub last_modified: DateTime<UTC>,
@@ -70,13 +70,13 @@ impl Container {
         let lease_status = try!(cast_must::<LeaseStatus>(elem, &["Properties", "LeaseStatus"]));
 
         Ok(Container {
-            name: name,
-            last_modified: last_modified,
-            e_tag: e_tag,
-            lease_status: lease_status,
-            lease_state: lease_state,
-            lease_duration: lease_duration,
-        })
+               name: name,
+               last_modified: last_modified,
+               e_tag: e_tag,
+               lease_status: lease_status,
+               lease_state: lease_state,
+               lease_duration: lease_duration,
+           })
     }
 
     pub fn delete(&mut self, c: &Client) -> Result<(), core::errors::AzureError> {
@@ -85,10 +85,8 @@ impl Container {
                           c.account(),
                           self.name);
 
-        let mut resp = try!(c.perform_request(&uri,
-                                              core::HTTPMethod::Delete,
-                                              &Headers::new(),
-                                              None));
+        let mut resp =
+            try!(c.perform_request(&uri, core::HTTPMethod::Delete, &Headers::new(), None));
 
         try!(errors::check_status(&mut resp, StatusCode::Accepted));
         Ok(())

@@ -7,9 +7,9 @@ use crypto::mac::Mac;
 use crypto::sha2::Sha256;
 use hyper;
 use hyper::Client;
-use hyper::header::{Header, HeaderFormat, Headers, ContentEncoding, ContentLanguage, ContentLength,
-                    ContentType, Date, IfModifiedSince, IfUnmodifiedSince};
-use rustc_serialize::base64::{STANDARD, ToBase64, FromBase64};
+use hyper::header::{Header, HeaderFormat, Headers, ContentEncoding, ContentLanguage,
+                    ContentLength, ContentType, Date, IfModifiedSince, IfUnmodifiedSince};
+use base64;
 use std::fmt::Display;
 use std::io::Read;
 use url;
@@ -62,7 +62,7 @@ fn generate_authorization(h: &Headers,
 fn encode_str_to_sign(str_to_sign: &str, hmac_key: &str) -> String {
     let mut v_hmac_key: Vec<u8> = Vec::new();
 
-    v_hmac_key.extend(hmac_key.from_base64().unwrap());
+    v_hmac_key.extend(base64::decode(hmac_key).unwrap());
 
     let mut hmac = Hmac::new(Sha256::new(), &v_hmac_key);
     hmac.input(str_to_sign.as_bytes());
@@ -70,7 +70,7 @@ fn encode_str_to_sign(str_to_sign: &str, hmac_key: &str) -> String {
     // let res = hmac.result();
     // println!("{:?}", res.code());
 
-    hmac.result().code().to_base64(STANDARD)
+    base64::encode(hmac.result().code())
 }
 
 #[inline]
@@ -83,6 +83,8 @@ fn add_if_exists<H: Header + HeaderFormat + Display>(h: &Headers) -> String {
     m + "\n"
 }
 
+#[allow(unknown_lints)]
+#[allow(needless_pass_by_value)]
 fn string_to_sign(h: &Headers,
                   u: &url::Url,
                   method: HTTPMethod,
@@ -165,10 +167,7 @@ fn canonicalize_header(h: &Headers) -> String {
     let mut v_headers = Vec::new();
 
     for header in h.iter().filter(|h| h.name().starts_with("x-ms")) {
-        let s: String = header.name()
-            .to_owned()
-            .trim()
-            .to_lowercase();
+        let s: String = header.name().to_owned().trim().to_lowercase();
 
         v_headers.push(s);
     }
@@ -200,7 +199,7 @@ fn get_account(u: &url::Url) -> String {
         url::Host::Domain(dm) => {
             // println!("dom == {:?}", dm);
 
-            let first_dot = dm.find(".").unwrap();
+            let first_dot = dm.find('.').unwrap();
             String::from(&dm[0..first_dot])
         }
         _ => panic!("only Domains are supported in canonicalized_resource"),
@@ -209,7 +208,7 @@ fn get_account(u: &url::Url) -> String {
 
 // For table
 fn canonicalized_resource_table(u: &url::Url) -> String {
-    format!("/{}/{}", get_account(u), u.path().unwrap().join("/"))
+    format!("/{}{}", get_account(u), u.path())
 }
 
 fn canonicalized_resource(u: &url::Url) -> String {
@@ -219,11 +218,11 @@ fn canonicalized_resource(u: &url::Url) -> String {
     let account = get_account(u);
     can_res = can_res + &account;
 
-    let paths = u.path().unwrap();
+    let paths = u.path_segments().unwrap();
 
     {
         let mut path = String::new();
-        for p in paths.iter() {
+        for p in paths {
             path.push_str("/");
             path.push_str(&*p);
         }
@@ -233,15 +232,16 @@ fn canonicalized_resource(u: &url::Url) -> String {
     can_res = can_res + "\n";
 
     // query parameters
-    if let Some(query_pairs) = u.query_pairs() {
+    let query_pairs = u.query_pairs(); //.into_owned();
+    {
         let mut qps = Vec::new();
         {
-            for qp in &query_pairs {
+            for qp in query_pairs {
                 trace!("adding to qps {:?}", qp);
 
                 // add only once
                 if !(qps.iter().any(|x: &String| x == &qp.0)) {
-                    qps.push(qp.clone().0);
+                    qps.push(qp.0.into_owned());
                 }
             }
         }
@@ -270,27 +270,28 @@ fn canonicalized_resource(u: &url::Url) -> String {
     can_res[0..can_res.len() - 1].to_owned()
 }
 
-fn lexy_sort(vec: &[(String, String)], query_param: &str) -> Vec<(String)> {
-    let mut v_values = Vec::new();
+fn lexy_sort(vec: &url::form_urlencoded::Parse, query_param: &str) -> Vec<(String)> {
+    let mut v_values: Vec<String> = Vec::new();
 
-    for item in vec.iter().filter(|x| x.0 == *query_param) {
-        v_values.push(item.clone().1)
+    for item in vec.filter(|x| x.0 == *query_param) {
+        v_values.push(item.1.into_owned())
     }
     v_values.sort();
 
     v_values
 }
 
-pub fn perform_request
-    (client: &Client,
-     uri: &str,
-     method: HTTPMethod,
-     azure_key: &str,
-     headers: &Headers,
-     request_body: Option<(&mut Read, u64)>,
-     request_str: Option<&str>,
-     service_type: ServiceType)
-     -> Result<hyper::client::response::Response, hyper::error::Error> {
+#[allow(unknown_lints)]
+#[allow(too_many_arguments)]
+pub fn perform_request(client: &Client,
+                       uri: &str,
+                       method: HTTPMethod,
+                       azure_key: &str,
+                       headers: &Headers,
+                       request_body: Option<(&mut Read, u64)>,
+                       request_str: Option<&str>,
+                       service_type: ServiceType)
+                       -> Result<hyper::client::response::Response, hyper::error::Error> {
     let dt = chrono::UTC::now();
     let time = format!("{}", dt.format("%a, %d %h %Y %T GMT"));
 
@@ -329,10 +330,8 @@ pub fn perform_request
     if let Some((mut rb, size)) = request_body {
         let b = hyper::client::Body::SizedBody(rb, size);
         builder = builder.body(b);
-    } else {
-        if let Some(body) = request_str {
-            builder = builder.body(body);
-        }
+    } else if let Some(body) = request_str {
+        builder = builder.body(body);
     }
 
     builder.headers(h).send()
@@ -360,6 +359,44 @@ mod test {
 
         assert_eq!(super::canonicalize_header(&h),
                    "x-ms-date:Fri, 28 Nov 2014 21:00:09 GMT+09:00\nx-ms-version:2015-04-05\n");
+    }
+
+    #[test]
+    fn str_to_sign_test() {
+        use super::*;
+        use hyper::header::{Accept, qitem};
+        use azure::storage::table::{get_json_mime_nometadata, get_default_json_mime};
+
+        let mut headers: Headers = Headers::new();
+        headers.set(Accept(vec![qitem(get_json_mime_nometadata())]));
+        headers.set(ContentType(get_default_json_mime()));
+
+
+        let u: url::Url = url::Url::parse("https://mindrust.table.core.windows.net/TABLES")
+            .unwrap();
+        let method: HTTPMethod = HTTPMethod::Post;
+        let service_type: ServiceType = ServiceType::Table;
+
+        let dt = chrono::DateTime::parse_from_rfc2822("Wed,  3 May 2017 14:04:56 +0000").unwrap();
+        let time = format!("{}", dt.format("%a, %d %h %Y %T GMT"));
+
+        headers.set(XMSDate(time));
+        headers.set(XMSVersion(AZURE_VERSION.to_owned()));
+
+        let s = string_to_sign(&headers, &u, method, service_type);
+
+        assert_eq!(s,
+                   "POST
+
+application/json; charset=utf-8
+Wed, 03 May 2017 14:04:56 GMT
+/mindrust/TABLES");
+    }
+
+    #[test]
+    fn test_canonicalize_resource_10() {
+        let url = url::Url::parse("https://mindrust.table.core.windows.net/TABLES").unwrap();
+        assert_eq!(super::canonicalized_resource(&url), "/mindrust/TABLES");
     }
 
     #[test]

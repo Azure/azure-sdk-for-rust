@@ -3,10 +3,11 @@
 
 #[macro_use]
 extern crate hyper;
+extern crate hyper_native_tls;
 extern crate chrono;
 extern crate url;
 extern crate crypto;
-extern crate rustc_serialize;
+extern crate base64;
 extern crate xml;
 extern crate mime;
 extern crate time;
@@ -15,6 +16,11 @@ extern crate log;
 #[macro_use]
 extern crate quick_error;
 extern crate env_logger;
+
+#[macro_use]
+extern crate serde_derive;
+extern crate serde;
+extern crate serde_json;
 
 extern crate uuid;
 
@@ -28,6 +34,8 @@ use azure::core::ba512_range::BA512Range;
 
 use std::fs;
 use time::Duration;
+
+use azure::storage::table::TableService;
 
 // use azure::storage::container::PublicAccess;
 
@@ -45,14 +53,14 @@ fn main() {
 
     let azure_storage_account = match std::env::var("AZURE_STORAGE_ACCOUNT") {
         Ok(val) => val,
-        Err(_) => {
+        _ => {
             panic!("Please set AZURE_STORAGE_ACCOUNT env variable first!");
         }
     };
 
     let azure_storage_key = match std::env::var("AZURE_STORAGE_KEY") {
         Ok(val) => val,
-        Err(_) => {
+        _ => {
             panic!("Please set AZURE_STORAGE_KEY env variable first!");
         }
     };
@@ -61,43 +69,55 @@ fn main() {
 
     let policy_name = match std::env::var("AZURE_POLICY_NAME") {
         Ok(val) => val,
-        Err(_) => {
+        _ => {
             panic!("Please set AZURE_POLICY_NAME env variable first!");
         }
     };
 
     let policy_key = match std::env::var("AZURE_POLICY_KEY") {
         Ok(val) => val,
-        Err(_) => {
+        _ => {
             panic!("Please set AZURE_POLICY_KEY env variable first!");
         }
     };
 
     let sb_namespace = match std::env::var("AZURE_SERVICE_BUS_NAMESPACE") {
         Ok(val) => val,
-        Err(_) => {
+        _ => {
             panic!("Please set AZURE_SERVICE_BUS_NAMESPACE env variable first!");
         }
     };
 
     let ev_name = match std::env::var("AZURE_EVENT_HUB_NAME") {
         Ok(val) => val,
-        Err(_) => {
+        _ => {
             panic!("Please set AZURE_EVENT_HUB_NAME env variable first!");
         }
     };
+
+    let table_service =
+        TableService::new(Client::new(&azure_storage_account, &azure_storage_key, true));
+    table_service.create_table("mytable").unwrap();
+
 
     let mut eh_client = azure::service_bus::event_hub::Client::new(&sb_namespace,
                                                                    &ev_name,
                                                                    &policy_name,
                                                                    &policy_key);
-    // "todeleh",
-    // "write_policy",
-    // "9GIzBhQhMKg/patjrI2XS6gSGn6ju2+N40CQEYmowJ8=");
+    info!("Enumerating containers");
+    Container::list(&client, &LIST_CONTAINER_OPTIONS_DEFAULT).unwrap();
+    info!("Enumeration completed");
 
-    // client.create_container("balocco3", PublicAccess::Blob).unwrap();
-    // // println!("{:?}", new);
-    //
+    info!("Creating sample container");
+    match Container::create(&client, "sample", PublicAccess::Blob) {
+        Ok(_) => info!("container created"),
+        Err(ref ae) => error!("error: {}", ae),
+    };
+
+
+    //client.create_container("balocco3", PublicAccess::Blob).unwrap();
+    // println!("{:?}", new);
+
 
     info!("Beginning tests");
 
@@ -203,13 +223,13 @@ fn main() {
 #[allow(dead_code)]
 fn send_event(cli: &mut azure::service_bus::event_hub::Client) {
     debug!("running send_event");
-    let file_name = "C:\\temp\\samplein.json";
+    let file_name = "/home/mindflavor/samplein.json";
 
     let metadata = fs::metadata(file_name).unwrap();
     let mut file_handle = fs::File::open(file_name).unwrap();
 
-    cli.send_event((&mut file_handle, metadata.len()), Duration::hours(1))
-       .unwrap();
+    cli.send_event(&mut (&mut file_handle, metadata.len()), Duration::hours(1))
+        .unwrap();
 }
 
 #[allow(dead_code)]
@@ -218,8 +238,11 @@ fn lease_blob(client: &Client) {
 
     let ret = Container::list(client, &LIST_CONTAINER_OPTIONS_DEFAULT).unwrap();
     let vhds = ret.iter().find(|x| x.name == "rust").unwrap();
-    let blobs = Blob::list(&client, &vhds.name, &LIST_BLOB_OPTIONS_DEFAULT).unwrap();
-    let blob = blobs.iter().find(|ref x| x.name == "go_rust12.txt").unwrap();
+    let blobs = Blob::list(client, &vhds.name, &LIST_BLOB_OPTIONS_DEFAULT).unwrap();
+    let blob = blobs
+        .iter()
+        .find(|x| x.name == "go_rust12.txt")
+        .unwrap();
 
     println!("blob == {:?}", blob);
 
@@ -238,7 +261,7 @@ fn list_blobs(client: &Client) {
     lbo2.max_results = 15;
 
     loop {
-        let uc = Blob::list(&client, "rust", &lbo2).unwrap();
+        let uc = Blob::list(client, "rust", &lbo2).unwrap();
 
         println!("uc {:?}\n\n", uc);
 
@@ -266,10 +289,10 @@ fn put_block_blob(client: &Client) {
     let content_length = metadata.len();
 
     {
-        let containers = Container::list(&client, &LIST_CONTAINER_OPTIONS_DEFAULT).unwrap();
+        let containers = Container::list(client, &LIST_CONTAINER_OPTIONS_DEFAULT).unwrap();
 
         let cont = containers.iter().find(|x| x.name == container_name);
-        if let None = cont {
+        if cont.is_none() {
             Container::create(client, container_name, PublicAccess::Blob).unwrap();
         }
     }
@@ -299,11 +322,12 @@ fn put_block_blob(client: &Client) {
         copy_status_description: None,
     };
 
-    new_blob.put_block(&client,
-                       "block_name",
-                       &PUT_BLOCK_OPTIONS_DEFAULT,
-                       (&mut file, 1024 * 1024))
-            .unwrap();
+    new_blob
+        .put_block(client,
+                   "block_name",
+                   &PUT_BLOCK_OPTIONS_DEFAULT,
+                   (&mut file, 1024 * 1024))
+        .unwrap();
 
     println!("created {:?}", new_blob);
 }
@@ -322,10 +346,10 @@ fn put_page_blob(client: &Client) {
     let mut file = File::open(file_name).unwrap();
 
     {
-        let containers = Container::list(&client, &LIST_CONTAINER_OPTIONS_DEFAULT).unwrap();
+        let containers = Container::list(client, &LIST_CONTAINER_OPTIONS_DEFAULT).unwrap();
 
         let cont = containers.iter().find(|x| x.name == container_name);
-        if let None = cont {
+        if cont.is_none() {
             Container::create(client, container_name, PublicAccess::Blob).unwrap();
         }
     }
@@ -358,16 +382,16 @@ fn put_page_blob(client: &Client) {
         copy_status_description: None,
     };
 
-    new_blob.put(&client, &PUT_OPTIONS_DEFAULT, None)
-            .unwrap();
+    new_blob.put(client, &PUT_OPTIONS_DEFAULT, None).unwrap();
 
     let range = BA512Range::new(0, 1024 * 1024 - 1).unwrap();
 
-    new_blob.put_page(client,
-                      &range, // 1MB
-                      &PUT_PAGE_OPTIONS_DEFAULT,
-                      (&mut file, range.size()))
-            .unwrap();
+    new_blob
+        .put_page(client,
+                  &range, // 1MB
+                  &PUT_PAGE_OPTIONS_DEFAULT,
+                  (&mut file, range.size()))
+        .unwrap();
 
     println!("created {:?}", new_blob);
 }

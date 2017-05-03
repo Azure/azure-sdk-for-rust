@@ -50,7 +50,7 @@ use hyper::status::StatusCode;
 use hyper::header::{Headers, ContentType, ContentLength, LastModified, ContentEncoding,
                     ContentLanguage};
 
-use rustc_serialize::base64::{STANDARD, ToBase64};
+use base64;
 
 use uuid::Uuid;
 
@@ -178,13 +178,16 @@ impl Blob {
         trace!("content_type == {:?}", content_type);
 
         let content_length = match h.get::<ContentLength>() {
-            Some(cl) => (cl as &u64).clone(),
+            Some(cl) => *(cl as &u64),
             None => return Err(AzureError::HeaderNotFound("Content-Length".to_owned())),
         };
         trace!("content_length == {:?}", content_length);
 
         let last_modified = match h.get::<LastModified>() {
-            Some(lm) => try!(from_azure_time(&lm.to_string()).map_err(|e| {let te: TraversingError= e.into(); te})),
+            Some(lm) => {
+                try!(from_azure_time(&lm.to_string()))
+                //{let te: TraversingError= e.into(); te}))
+            }
             None => return Err(AzureError::HeaderNotFound("Last-Modified".to_owned())),
         };
         trace!("last_modified == {:?}", last_modified);
@@ -196,7 +199,7 @@ impl Blob {
         trace!("etag == {:?}", etag);
 
         let x_ms_blob_sequence_number = match h.get::<XMSBlobSequenceNumber>() {
-            Some(lm) => Some((&lm as &u64).clone()),
+            Some(lm) => Some(*(lm as &u64)),
             None => None,
         };
         trace!("x_ms_blob_sequence_number == {:?}",
@@ -384,7 +387,7 @@ impl Blob {
         let mut headers = Headers::new();
 
         if let Some(r) = range {
-            headers.set(XMSRange(r.clone()));
+            headers.set(XMSRange(*r));
 
             // if range is < 4MB request md5
             if r.end - r.start <= 1024 * 1024 * 4 {
@@ -393,7 +396,7 @@ impl Blob {
         }
 
         if let Some(l) = lease_id {
-            headers.set(XMSLeaseId(l.clone()));
+            headers.set(XMSLeaseId(*l));
         }
 
 
@@ -401,7 +404,7 @@ impl Blob {
 
         // if we have requested a range the response code should be 207 (partial content)
         // otherwise 200 (ok).
-        if let Some(_) = range {
+        if range.is_some() {
             try!(check_status(&mut resp, StatusCode::PartialContent));
         } else {
             try!(check_status(&mut resp, StatusCode::Ok));
@@ -422,14 +425,14 @@ impl Blob {
         // parameter sanity check
         match self.blob_type {
             BlobType::BlockBlob => {
-                if let None = r {
+                if r.is_some() {
                     return Err(AzureError::InputParametersError("cannot use put_blob with \
                                                                  BlockBlob without a Read"
                                                                         .to_owned()));
                 }
             }
             BlobType::PageBlob => {
-                if let Some(_) = r {
+                if r.is_some() {
                     return Err(AzureError::InputParametersError("cannot use put_blob with \
                                                                  PageBlob with a Read"
                                                                         .to_owned()));
@@ -442,7 +445,7 @@ impl Blob {
                 }
             }
             BlobType::AppendBlob => {
-                if let Some(_) = r {
+                if r.is_some() {
                     return Err(AzureError::InputParametersError("cannot use put_blob with \
                                                                  AppendBlob with a Read"
                                                                         .to_owned()));
@@ -479,7 +482,7 @@ impl Blob {
         headers.set(XMSBlobType(self.blob_type));
 
         if let Some(ref lease_id) = po.lease_id {
-            headers.set(XMSLeaseId(lease_id.clone()));
+            headers.set(XMSLeaseId(*lease_id));
         }
 
         // TODO x-ms-blob-content-disposition
@@ -524,7 +527,7 @@ impl Blob {
             headers.set(XMSLeaseDurationSeconds(lease_duration));
         }
         if let Some(ref proposed_lease_id) = lbo.proposed_lease_id {
-            headers.set(XMSProposedLeaseId(proposed_lease_id.clone()));
+            headers.set(XMSProposedLeaseId(*proposed_lease_id));
         }
         if let Some(ref request_id) = lbo.request_id {
             headers.set(XMSClientRequestId(request_id.to_owned()));
@@ -534,9 +537,7 @@ impl Blob {
 
         let expected_result = match la {
             LeaseAction::Acquire => StatusCode::Created,
-            LeaseAction::Renew => StatusCode::Ok,
-            LeaseAction::Change => StatusCode::Ok,
-            LeaseAction::Release => StatusCode::Ok,
+            LeaseAction::Renew | LeaseAction::Change | LeaseAction::Release => StatusCode::Ok,
             LeaseAction::Break => StatusCode::Accepted,
         };
 
@@ -547,7 +548,7 @@ impl Blob {
             None => return Err(AzureError::HeaderNotFound("x-ms-lease-id".to_owned())),
         };
 
-        Ok(lid.clone())
+        Ok(*lid)
     }
 
     pub fn put_page(&self,
@@ -572,7 +573,7 @@ impl Blob {
         headers.set(XMSRange(range.into()));
         headers.set(XMSBlobContentLength(content.1));
         if let Some(ref lease_id) = ppo.lease_id {
-            headers.set(XMSLeaseId(lease_id.clone()));
+            headers.set(XMSLeaseId(*lease_id));
         }
 
         headers.set(XMSPageWrite(PageWriteType::Update));
@@ -591,7 +592,7 @@ impl Blob {
                      content: (&mut Read, u64))
                      -> Result<(), AzureError> {
 
-        let encoded_block_id = block_id.as_bytes().to_base64(STANDARD);
+        let encoded_block_id = base64::encode(block_id.as_bytes());
 
         let mut uri = format!("{}://{}.blob.core.windows.net/{}/{}?comp=block&blockid={}",
                               c.auth_scheme(),
@@ -609,7 +610,7 @@ impl Blob {
         headers.set(XMSBlobContentLength(content.1));
 
         if let Some(ref lease_id) = pbo.lease_id {
-            headers.set(XMSLeaseId(lease_id.clone()));
+            headers.set(XMSLeaseId(*lease_id));
         }
         if let Some(ref request_id) = pbo.request_id {
             headers.set(XMSClientRequestId(request_id.to_owned()));
@@ -660,7 +661,7 @@ impl Blob {
                           container_name,
                           blob_name);
         let mut resp =
-            try!(c.perform_request(&uri, core::HTTPMethod::Delete, &&Headers::new(), None));
+            try!(c.perform_request(&uri, core::HTTPMethod::Delete, &Headers::new(), None));
         try!(core::errors::check_status(&mut resp, StatusCode::Accepted));
         Ok(())
     }

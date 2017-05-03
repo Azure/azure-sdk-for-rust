@@ -3,8 +3,9 @@
 1. Only support single changeset in a batch request
 2. Only allow PUT and GET in changeset
 */
-use rustc_serialize::{Encodable, json};
+use serde::Serialize;
 use super::entity_path;
+use serde_json;
 
 const BATCH_BEGIN: &'static str = r#"--batch_a1e9d677-b28b-435e-a89e-87e6a768a431
 Content-Type: multipart/mixed; boundary=changeset_8a28b620-b4bb-458c-a177-0959fb14c977
@@ -22,15 +23,15 @@ const ACCEPT_HEADER: &'static str = "Accept: application/json;odata=nometadata\n
 const IF_MATCH_HEADER: &'static str = "If-Match: *\n";
 
 // RowKey, Payload. Payload None for deletion
-pub struct BatchItem<T: Encodable>(String, Option<T>);
+pub struct BatchItem<T: Serialize>(String, Option<T>);
 
-impl<T: Encodable> BatchItem<T> {
+impl<T: Serialize> BatchItem<T> {
     pub fn new(row_key: String, value: Option<T>) -> Self {
         BatchItem(row_key, value)
     }
 }
 
-pub fn generate_batch_payload<T: Encodable>(uri_prefix: &str,
+pub fn generate_batch_payload<T: Serialize>(uri_prefix: &str,
                                             table: &str,
                                             primary_key: &str,
                                             items: &[BatchItem<T>])
@@ -47,7 +48,7 @@ pub fn generate_batch_payload<T: Encodable>(uri_prefix: &str,
         if let Some(ref v) = item.1 {
             payload.push_str(UPDATE_HEADER);
             payload.push_str("\n");
-            payload.push_str(json::encode(v).unwrap().as_str());
+            payload.push_str(serde_json::to_string(v).unwrap().as_str());
         } else {
             payload.push_str(IF_MATCH_HEADER);
         }
@@ -62,7 +63,7 @@ mod test {
     use super::*;
 
     #[allow(non_snake_case)]
-    #[derive(RustcEncodable)]
+    #[derive(Serialize)]
     struct Entity {
         PartitionKey: String,
         RowKey: String,
