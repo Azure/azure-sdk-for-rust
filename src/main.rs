@@ -157,61 +157,6 @@ fn main() {
     // }
 
 
-    // for i in 0..2 {
-    //     use std::fs::metadata;
-    //     use std::fs::File;
-    //
-    //     let file_name: &'static str = "C:\\temp\\prova.txt";
-    //     let container_name: &'static str = "rust";
-    //
-    //     {
-    //         let containers = Container::list(&client).unwrap();
-    //
-    //         let cont = containers.iter().find(|x| x.name == container_name);
-    //         if let None = cont {
-    //             Container::create(&client, container_name, PublicAccess::Blob).unwrap();
-    //         }
-    //     }
-    //
-    //     let metadata = metadata(file_name).unwrap();
-    //     let mut file = File::open(file_name).unwrap();
-    //
-    //     let new_blob = Blob {
-    //         name: format!("go_rust{}.txt", i),
-    //         snapshot_time: None,
-    //         last_modified: UTC::now(),
-    //         etag: "".to_owned(),
-    //         content_length: metadata.len(),
-    //         content_type: "application/octet-stream".parse::<Mime>().unwrap(),
-    //         content_encoding: None,
-    //         content_language: None,
-    //         content_md5: None,
-    //         cache_control: None,
-    //         x_ms_blob_sequence_number: None,
-    //         blob_type: BlobType::BlockBlob,
-    //         lease_status: LeaseStatus::Unlocked,
-    //         lease_state: LeaseState::Available,
-    //         lease_duration: None,
-    //         copy_id: None,
-    //         copy_status: None,
-    //         copy_source: None,
-    //         copy_progress: None,
-    //         copy_completion: None,
-    //         copy_status_description: None,
-    //     };
-    //
-    //     new_blob.put(&client,
-    //                  container_name,
-    //                  None,
-    //                  Some((&mut file, metadata.len())))
-    //             .unwrap();
-    //
-    //     println!("{} created", new_blob.name);
-    // }
-
-
-
-
     // bal2.delete(&client).unwrap();
     // println!("{:?} deleted!", bal2);
 

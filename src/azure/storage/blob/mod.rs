@@ -425,7 +425,7 @@ impl Blob {
         // parameter sanity check
         match self.blob_type {
             BlobType::BlockBlob => {
-                if r.is_some() {
+                if r.is_none() {
                     return Err(AzureError::InputParametersError("cannot use put_blob with \
                                                                  BlockBlob without a Read"
                                                                         .to_owned()));
