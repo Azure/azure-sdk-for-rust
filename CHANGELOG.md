@@ -1,3 +1,11 @@
+## [0.2.1](https://github.com/MindFlavor/AzureSDKForRust/releases/tag/0.2.1) (2017-05-04)
+
+**Bugfix:**
+* Corrected a bug in ```BlockBlob``` put command that would not allow sending data. For more details see [karataliu](https://github.com/karataliu)'s pull request [#16](https://github.com/MindFlavor/AzureSDKForRust/pull/16).
+
+**Enhancements:**
+* Expanded ```BlockBlob``` end-to-end tests.
+
 ## [0.2.0](https://github.com/MindFlavor/AzureSDKForRust/releases/tag/0.2.0) (2017-05-04)
 
 **Refactoring:**
