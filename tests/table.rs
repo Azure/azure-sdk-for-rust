@@ -50,11 +50,11 @@ fn insert_get() {
     assert!(entity.deleted.is_some());
 
     let ref entity2 = &Entity {
-                          PartitionKey: "e2".to_owned(),
-                          RowKey: s.to_owned(),
-                          c: "mot2".to_owned(),
-                          deleted: None,
-                      };
+                           PartitionKey: "e2".to_owned(),
+                           RowKey: s.to_owned(),
+                           c: "mot2".to_owned(),
+                           deleted: None,
+                       };
     client.insert_entity("rtest1", entity2).unwrap();
     let entity: Entity = client.get_entity("rtest1", "e2", s).unwrap().unwrap();
     assert_eq!("mot2", entity.c);
@@ -78,7 +78,9 @@ fn insert_update() {
     assert!(entity.deleted.is_some());
 
     entity1.c = "mot1edit".to_owned();
-    client.update_entity("rtest1", "e1", s, &entity1).unwrap();
+    client
+        .update_entity("rtest1", "e1", s, &entity1)
+        .unwrap();
     let entity: Entity = client.get_entity("rtest1", "e1", s).unwrap().unwrap();
     assert_eq!("mot1edit", entity.c);
 }
@@ -95,12 +97,19 @@ fn insert_delete() {
         deleted: Some("DELET".to_owned()),
     };
     client.insert_entity("rtest1", &entity1).unwrap();
-    let entity: Entity = client.get_entity("rtest1", partition_key, r1.as_str()).unwrap().unwrap();
+    let entity: Entity = client
+        .get_entity("rtest1", partition_key, r1.as_str())
+        .unwrap()
+        .unwrap();
     assert_eq!("mot1", entity.c);
     assert!(entity.deleted.is_some());
 
-    client.delete_entity(TEST_TABLE, partition_key, r1.as_str()).unwrap();
-    let result: Option<Entity> = client.get_entity(TEST_TABLE, partition_key, r1.as_str()).unwrap();
+    client
+        .delete_entity(TEST_TABLE, partition_key, r1.as_str())
+        .unwrap();
+    let result: Option<Entity> = client
+        .get_entity(TEST_TABLE, partition_key, r1.as_str())
+        .unwrap();
     assert!(result.is_none());
 }
 
@@ -118,7 +127,10 @@ fn batch() {
         deleted: Some("DELET".to_owned()),
     };
     client.insert_entity(TEST_TABLE, &entity1).unwrap();
-    let entity: Entity = client.get_entity(TEST_TABLE, partition_key, r1.as_str()).unwrap().unwrap();
+    let entity: Entity = client
+        .get_entity(TEST_TABLE, partition_key, r1.as_str())
+        .unwrap()
+        .unwrap();
     assert_eq!("mot1", entity.c);
     assert!(entity.deleted.is_some());
 
@@ -130,7 +142,10 @@ fn batch() {
         deleted: Some("DELET".to_owned()),
     };
     client.insert_entity(TEST_TABLE, &entity2).unwrap();
-    let entity: Entity = client.get_entity(TEST_TABLE, partition_key, r2.as_str()).unwrap().unwrap();
+    let entity: Entity = client
+        .get_entity(TEST_TABLE, partition_key, r2.as_str())
+        .unwrap()
+        .unwrap();
     assert_eq!("mot2", entity.c);
     assert!(entity.deleted.is_some());
 
@@ -144,9 +159,14 @@ fn batch() {
                      BatchItem::new(r2.clone(), None)];
     client.batch(TEST_TABLE, partition_key, items).unwrap();
 
-    let entity: Entity = client.get_entity(TEST_TABLE, partition_key, r1.as_str()).unwrap().unwrap();
+    let entity: Entity = client
+        .get_entity(TEST_TABLE, partition_key, r1.as_str())
+        .unwrap()
+        .unwrap();
     assert_eq!("mot1edit", entity.c);
-    let result: Option<Entity> = client.get_entity(TEST_TABLE, partition_key, r2.as_str()).unwrap();
+    let result: Option<Entity> = client
+        .get_entity(TEST_TABLE, partition_key, r2.as_str())
+        .unwrap();
     assert!(result.is_none());
 }
 

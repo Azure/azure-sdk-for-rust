@@ -110,7 +110,9 @@ fn put_blob() {
         copy_status_description: None,
     };
 
-    new_blob.put(client, &PUT_OPTIONS_DEFAULT, Some((&mut data, len))).unwrap();
+    new_blob
+        .put(client, &PUT_OPTIONS_DEFAULT, Some((&mut data, len)))
+        .unwrap();
 
     trace!("created {:?}", new_blob);
 }
