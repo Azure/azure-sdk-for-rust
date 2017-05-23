@@ -47,8 +47,23 @@ use chrono::UTC;
 
 use mime::Mime;
 
+use azure::cosmos::{generate_authorization, TokenType, ResourceType};
+
 #[allow(unused_variables)]
 fn main() {
+    let time = chrono::UTC::now();
+
+    let auth = generate_authorization("8F8xXXOptJxkblM1DBXW7a6NMI5oE8NnwPGYBmwxLCKfejOK7B7yhcCHMGvN3PBrlMLIOeol1Hv9RCdzAZR5sg==",
+                                      "GET",
+                                      TokenType::Master,
+                                      ResourceType::Databases,
+                                      "dbs/MyDatabase/colls/MyCollection",
+                                      &time);
+
+
+    println!("auth == {}", auth);
+    return;
+
     env_logger::init().unwrap();
 
     let azure_storage_account = match std::env::var("AZURE_STORAGE_ACCOUNT") {
@@ -184,10 +199,7 @@ fn lease_blob(client: &Client) {
     let ret = Container::list(client, &LIST_CONTAINER_OPTIONS_DEFAULT).unwrap();
     let vhds = ret.iter().find(|x| x.name == "rust").unwrap();
     let blobs = Blob::list(client, &vhds.name, &LIST_BLOB_OPTIONS_DEFAULT).unwrap();
-    let blob = blobs
-        .iter()
-        .find(|x| x.name == "go_rust12.txt")
-        .unwrap();
+    let blob = blobs.iter().find(|x| x.name == "go_rust12.txt").unwrap();
 
     println!("blob == {:?}", blob);
 
