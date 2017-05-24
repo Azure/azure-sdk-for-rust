@@ -34,6 +34,7 @@ use azure::core::ba512_range::BA512Range;
 
 use std::fs;
 use time::Duration;
+use chrono::TimeZone;
 
 use azure::storage::table::TableService;
 
@@ -51,7 +52,21 @@ use azure::cosmos::{generate_authorization, TokenType, ResourceType};
 
 #[allow(unused_variables)]
 fn main() {
+
+    let time = chrono::DateTime::parse_from_rfc3339("1900-01-01T01:00:00.000000000+00:00").unwrap();
+    let time = time.with_timezone(&chrono::UTC);
+    let ret = azure::cosmos::string_to_sign("GET",
+                                            ResourceType::Databases,
+                                            "dbs/MyDatabase/colls/MyCollection",
+                                            &time);
+    println!("{}", ret);
+
     let time = chrono::UTC::now();
+
+    let time = chrono::DateTime::parse_from_rfc3339("1900-01-01T00:00:00.000000000+00:00").unwrap();
+    let time = time.with_timezone(&chrono::UTC);
+    //let time = chrono::UTC::ymd(1900, 01, 01).and_hms(0, 0, 0);
+
 
     let auth = generate_authorization("8F8xXXOptJxkblM1DBXW7a6NMI5oE8NnwPGYBmwxLCKfejOK7B7yhcCHMGvN3PBrlMLIOeol1Hv9RCdzAZR5sg==",
                                       "GET",

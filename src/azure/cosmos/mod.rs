@@ -1,3 +1,5 @@
+#![allow(unused_imports)]
+
 use azure::core::range;
 use azure::core::HTTPMethod;
 use azure::core::lease::{LeaseId, LeaseStatus, LeaseState, LeaseDuration, LeaseAction};
@@ -14,7 +16,7 @@ use std::fmt::Display;
 use std::io::Read;
 use url;
 
-use url::percent_encoding::utf8_percent_encode;
+use url::percent_encoding::{utf8_percent_encode, USERINFO_ENCODE_SET};
 use hyper::header::parsing::HTTP_VALUE;
 
 const AZURE_VERSION: &'static str = "2017-02-22";
@@ -49,7 +51,8 @@ pub fn generate_authorization(hmac_key: &str,
                 encode_str_to_sign(&string_to_sign(verb, resource_type, resource_link, dt),
                                    hmac_key));
 
-    utf8_percent_encode(&str_unencoded, HTTP_VALUE).collect::<String>()
+    utf8_percent_encode(&str_unencoded, url::percent_encoding::USERINFO_ENCODE_SET)
+        .collect::<String>()
 }
 
 fn encode_str_to_sign(str_to_sign: &str, hmac_key: &str) -> String {
@@ -65,11 +68,11 @@ fn encode_str_to_sign(str_to_sign: &str, hmac_key: &str) -> String {
 
 
 
-fn string_to_sign(verb: &str,
-                  rt: ResourceType,
-                  resource_link: &str,
-                  dt: &chrono::DateTime<chrono::UTC>)
-                  -> String {
+pub fn string_to_sign(verb: &str,
+                      rt: ResourceType,
+                      resource_link: &str,
+                      dt: &chrono::DateTime<chrono::UTC>)
+                      -> String {
     let time = format!("{}", dt.format("%a, %d %h %Y %T GMT"));
 
     // From official docs:
@@ -87,4 +90,42 @@ fn string_to_sign(verb: &str,
             time.to_lowercase())
 
 
+}
+
+#[cfg(test)]
+mod tests {
+    use azure::cosmos::*;
+
+    #[test]
+    fn string_to_sign_00() {
+        let time = chrono::DateTime::parse_from_rfc3339("1900-01-01T01:00:00.000000000+00:00")
+            .unwrap();
+        let time = time.with_timezone(&chrono::UTC);
+        let ret = string_to_sign("GET",
+                                 ResourceType::Databases,
+                                 "dbs/MyDatabase/colls/MyCollection",
+                                 &time);
+        assert_eq!(ret,
+                   "get
+dbs
+dbs/MyDatabase/colls/MyCollection
+mon, 01 jan 1900 01:00:00 gmt
+
+");
+     #[test]
+    fn generate_authorization_00() {
+        let time = chrono::DateTime::parse_from_rfc3339("1900-01-01T01:00:00.000000000+00:00")
+            .unwrap();
+        let time = time.with_timezone(&chrono::UTC);
+        let ret = generate_authorization(
+            "8F8xXXOptJxkblM1DBXW7a6NMI5oE8NnwPGYBmwxLCKfejOK7B7yhcCHMGvN3PBrlMLIOeol1Hv9RCdzAZR5sg==",
+            "GET",
+            TokenType::Master,
+                                 ResourceType::Databases,
+
+                                 "dbs/MyDatabase/colls/MyCollection",
+                                 &time);
+        assert_eq!(ret,
+        "type%3dmaster%26ver%3d1.0%26sig%3dQkz%2fr%2b1N2%2bPEnNijxGbGB%2fADvLsLBQmZ7uBBMuIwf4I%3d");
+    }
 }
