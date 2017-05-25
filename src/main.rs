@@ -5,6 +5,7 @@
 extern crate hyper;
 extern crate hyper_native_tls;
 extern crate chrono;
+#[macro_use]
 extern crate url;
 extern crate crypto;
 extern crate base64;
