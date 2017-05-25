@@ -51,7 +51,7 @@ pub fn generate_authorization(hmac_key: &str,
                 encode_str_to_sign(&string_to_sign(verb, resource_type, resource_link, dt),
                                    hmac_key));
 
-    utf8_percent_encode(&str_unencoded, url::percent_encoding::USERINFO_ENCODE_SET)
+    utf8_percent_encode(&str_unencoded, url::percent_encoding::DEFAULT_ENCODE_SET)
         .collect::<String>()
 }
 
@@ -112,20 +112,35 @@ dbs/MyDatabase/colls/MyCollection
 mon, 01 jan 1900 01:00:00 gmt
 
 ");
-     #[test]
+    }
+
+    #[test]
     fn generate_authorization_00() {
         let time = chrono::DateTime::parse_from_rfc3339("1900-01-01T01:00:00.000000000+00:00")
             .unwrap();
         let time = time.with_timezone(&chrono::UTC);
-        let ret = generate_authorization(
-            "8F8xXXOptJxkblM1DBXW7a6NMI5oE8NnwPGYBmwxLCKfejOK7B7yhcCHMGvN3PBrlMLIOeol1Hv9RCdzAZR5sg==",
-            "GET",
-            TokenType::Master,
-                                 ResourceType::Databases,
-
-                                 "dbs/MyDatabase/colls/MyCollection",
-                                 &time);
+        let ret = generate_authorization("8F8xXXOptJxkblM1DBXW7a6NMI5oE8NnwPGYBmwxLCKfejOK7B7yhcCHMGvN3PBrlMLIOeol1Hv9RCdzAZR5sg==",
+                                         "GET",
+                                         TokenType::Master,
+                                         ResourceType::Databases,
+                                         "dbs/MyDatabase/colls/MyCollection",
+                                         &time);
         assert_eq!(ret,
-        "type%3dmaster%26ver%3d1.0%26sig%3dQkz%2fr%2b1N2%2bPEnNijxGbGB%2fADvLsLBQmZ7uBBMuIwf4I%3d");
+                   "type%3dmaster%26ver%3d1.0%26sig%3dQkz%2fr%2b1N2%2bPEnNijxGbGB%2fADvLsLBQmZ7uBBMuIwf4I%3d");
+    }
+
+    #[test]
+    fn generate_authorization_01() {
+        let time = chrono::DateTime::parse_from_rfc3339("2017-04-27T00:51:12.000000000+00:00")
+            .unwrap();
+        let time = time.with_timezone(&chrono::UTC);
+        let ret = generate_authorization("dsZQi3KtZmCv1ljt3VNWNm7sQUF1y5rJfC6kv5JiwvW0EndXdDku/dkKBp8/ufDToSxL",
+                                         "GET",
+                                         TokenType::Master,
+                                         ResourceType::Databases,
+                                         "dbs/ToDoList",
+                                         &time);
+        assert_eq!(ret,
+                   "type%3dmaster%26ver%3d1.0%26sig%3dc09PEVJrgp2uQRkr934kFbTqhByc7TVr3O");
     }
 }
