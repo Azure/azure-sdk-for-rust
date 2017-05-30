@@ -14,6 +14,7 @@ use hyper::header::{Header, HeaderFormat, Headers, ContentEncoding, ContentLangu
 use base64;
 use std::fmt::Display;
 use std::io::Read;
+use hyper_native_tls::NativeTlsClient;
 
 use url;
 
@@ -35,10 +36,49 @@ pub enum ResourceType {
     Documents,
 }
 
+header! { (XMSVersion, "x-ms-version") => [String] }
+header! { (XMSDate, "x-ms-date") => [String] }
+header! { (Authorization, "Authorization") => [String] }
+
 define_encode_set! {
     pub COMPLETE_ENCODE_SET = [url::percent_encoding::USERINFO_ENCODE_SET] | {
         '+', '-', '&'
     }
+}
+
+pub fn list_databases() {
+    let ssl = NativeTlsClient::new().unwrap();
+    let connector = hyper::net::HttpsConnector::new(ssl);
+    let client = hyper::Client::with_connector(connector);
+
+    let dt = chrono::UTC::now();
+    let time = format!("{}", dt.format("%a, %d %h %Y %T GMT"));
+
+    let u = url::Url::parse("https://mindflavor.documents.azure.com/dbs").unwrap();
+
+    let mut h = Headers::new();
+
+    h.set(XMSDate(time));
+    h.set(XMSVersion(AZURE_VERSION.to_owned()));
+
+    let key = "toset";
+    let verb = "GET";
+    let resource_link = "dbs";
+
+    let auth = generate_authorization(key,
+                                      verb,
+                                      TokenType::Master,
+                                      ResourceType::Databases,
+                                      resource_link,
+                                      &dt);
+    println!("auth == {}", auth);
+    h.set(Authorization(auth));
+
+    let mut builder = client.get(&u.to_string());
+
+    let res = builder.headers(h).send().unwrap();
+
+    println!("res == {:?}", res);
 }
 
 pub fn generate_authorization(hmac_key: &str,

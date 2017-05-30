@@ -78,7 +78,11 @@ fn main() {
 
 
     println!("auth == {}", auth);
+
+    azure::cosmos::list_databases();
+
     return;
+
 
     env_logger::init().unwrap();
 
