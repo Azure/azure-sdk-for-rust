@@ -23,6 +23,7 @@ use hyper::header::parsing::HTTP_VALUE;
 
 const AZURE_VERSION: &'static str = "2017-02-22";
 const VERSION: &'static str = "1.0";
+const TIME_FORMAT: &'static str = "%a, %d %h %Y %T GMT";
 
 pub enum TokenType {
     Master,
@@ -52,33 +53,41 @@ pub fn list_databases() {
     let client = hyper::Client::with_connector(connector);
 
     let dt = chrono::UTC::now();
-    let time = format!("{}", dt.format("%a, %d %h %Y %T GMT"));
+    let time = format!("{}", dt.format(TIME_FORMAT));
 
     let u = url::Url::parse("https://mindflavor.documents.azure.com/dbs").unwrap();
 
     let mut h = Headers::new();
 
-    h.set(XMSDate(time));
-    h.set(XMSVersion(AZURE_VERSION.to_owned()));
-
-    let key = "toset";
+    let key = "insert_here";
     let verb = "GET";
-    let resource_link = "dbs";
+    let resource_link = "";
 
     let auth = generate_authorization(key,
                                       verb,
                                       TokenType::Master,
                                       ResourceType::Databases,
                                       resource_link,
-                                      &dt);
-    println!("auth == {}", auth);
+                                      &time);
+    println!("list_databases::auth == {:?}", auth);
+
+    h.set(XMSDate(time));
+    h.set(XMSVersion(AZURE_VERSION.to_owned()));
     h.set(Authorization(auth));
 
-    let mut builder = client.get(&u.to_string());
+    println!("list_databases::headers == {:?}", h);
 
-    let res = builder.headers(h).send().unwrap();
+    let builder = client.get(&u.to_string());
 
-    println!("res == {:?}", res);
+    let mut res = builder.headers(h).send().unwrap();
+
+    println!("list_databases::res == {:?}", res);
+
+    let mut res_body = String::new();
+
+    res.read_to_string(&mut res_body).unwrap();
+
+    println!("list_databases::res_body == {}", res_body);
 }
 
 pub fn generate_authorization(hmac_key: &str,
@@ -86,17 +95,22 @@ pub fn generate_authorization(hmac_key: &str,
                               token_type: TokenType,
                               resource_type: ResourceType,
                               resource_link: &str,
-                              dt: &chrono::DateTime<chrono::UTC>)
+                              time: &str)
                               -> String {
-    let str_unencoded =
-        format!("type={}&ver={}&sig={}",
-                match token_type {
-                    TokenType::Master => "master",
-                    TokenType::Resource => "resource",
-                },
-                VERSION,
-                encode_str_to_sign(&string_to_sign(verb, resource_type, resource_link, dt),
-                                   hmac_key));
+    let string_to_sign = string_to_sign(verb, resource_type, resource_link, time);
+    println!("generate_authorization::string_to_sign == {:?}",
+             string_to_sign);
+
+    let str_unencoded = format!("type={}&ver={}&sig={}",
+                                match token_type {
+                                    TokenType::Master => "master",
+                                    TokenType::Resource => "resource",
+                                },
+                                VERSION,
+                                encode_str_to_sign(&string_to_sign, hmac_key));
+
+    println!("generate_authorization::str_unencoded == {:?}",
+             str_unencoded);
 
     utf8_percent_encode(&str_unencoded, COMPLETE_ENCODE_SET).collect::<String>()
 }
@@ -114,13 +128,7 @@ fn encode_str_to_sign(str_to_sign: &str, hmac_key: &str) -> String {
 
 
 
-pub fn string_to_sign(verb: &str,
-                      rt: ResourceType,
-                      resource_link: &str,
-                      dt: &chrono::DateTime<chrono::UTC>)
-                      -> String {
-    let time = format!("{}", dt.format("%a, %d %h %Y %T GMT"));
-
+pub fn string_to_sign(verb: &str, rt: ResourceType, resource_link: &str, time: &str) -> String {
     // From official docs:
     // StringToSign = Verb.toLowerCase() + "\n" + ResourceType.toLowerCase() + "\n" + ResourceLink + "\n" + Date.toLowerCase() + "\n" + "" + "\n";
     // Notice the empty string at the end so we need to add two carriage returns
@@ -147,6 +155,8 @@ mod tests {
         let time = chrono::DateTime::parse_from_rfc3339("1900-01-01T01:00:00.000000000+00:00")
             .unwrap();
         let time = time.with_timezone(&chrono::UTC);
+        let time = format!("{}", time.format(TIME_FORMAT));
+
         let ret = string_to_sign("GET",
                                  ResourceType::Databases,
                                  "dbs/MyDatabase/colls/MyCollection",
@@ -165,6 +175,8 @@ mon, 01 jan 1900 01:00:00 gmt
         let time = chrono::DateTime::parse_from_rfc3339("1900-01-01T01:00:00.000000000+00:00")
             .unwrap();
         let time = time.with_timezone(&chrono::UTC);
+        let time = format!("{}", time.format(TIME_FORMAT));
+
         let ret = generate_authorization("8F8xXXOptJxkblM1DBXW7a6NMI5oE8NnwPGYBmwxLCKfejOK7B7yhcCHMGvN3PBrlMLIOeol1Hv9RCdzAZR5sg==",
                                          "GET",
                                          TokenType::Master,
@@ -175,18 +187,26 @@ mon, 01 jan 1900 01:00:00 gmt
                    "type%3Dmaster%26ver%3D1.0%26sig%3DQkz%2Fr%2B1N2%2BPEnNijxGbGB%2FADvLsLBQmZ7uBBMuIwf4I%3D");
     }
 
-    //    #[test]
-    //    fn generate_authorization_01() {
-    //        let time = chrono::DateTime::parse_from_rfc3339("2017-04-27T00:51:12.000000000+00:00")
-    //            .unwrap();
-    //        let time = time.with_timezone(&chrono::UTC);
-    //        let ret = generate_authorization("dsZQi3KtZmCv1ljt3VNWNm7sQUF1y5rJfC6kv5JiwvW0EndXdDku/dkKBp8/ufDToSxL",
-    //                                         "GET",
-    //                                         TokenType::Master,
-    //                                         ResourceType::Databases,
-    //                                         "dbs/ToDoList",
-    //                                         &time);
-    //        assert_eq!(ret,
-    //                   "type%3dmaster%26ver%3d1.0%26sig%3dc09PEVJrgp2uQRkr934kFbTqhByc7TVr3O");
-    //    }
+    #[test]
+    fn generate_authorization_01() {
+        let time = chrono::DateTime::parse_from_rfc3339("2017-04-27T00:51:12.000000000+00:00")
+            .unwrap();
+        let time = time.with_timezone(&chrono::UTC);
+        let time = format!("{}", time.format(TIME_FORMAT));
+
+        let ret = generate_authorization("dsZQi3KtZmCv1ljt3VNWNm7sQUF1y5rJfC6kv5JiwvW0EndXdDku/dkKBp8/ufDToSxL",
+                                         "GET",
+                                         TokenType::Master,
+                                         ResourceType::Databases,
+                                         "dbs/ToDoList",
+                                         &time);
+
+        // This is the result shown in the MSDN page. Clearly is wrong :)
+        // below is the right one.
+        //assert_eq!(ret,
+        //           "type%3dmaster%26ver%3d1.0%26sig%3dc09PEVJrgp2uQRkr934kFbTqhByc7TVr3O");
+
+        assert_eq!(ret,
+                   "type%3Dmaster%26ver%3D1.0%26sig%3DKvBM8vONofkv3yKm%2F8zD9MEGlbu6jjHDJBp4E9c2ZZI%3D");
+    }
 }

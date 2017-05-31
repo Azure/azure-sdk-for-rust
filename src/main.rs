@@ -1,6 +1,9 @@
 // #![feature(plugin)]
 // #![plugin(clippy)]
 
+#![allow(unused_imports)]
+#![allow(unreachable_code)]
+
 #[macro_use]
 extern crate hyper;
 extern crate hyper_native_tls;
@@ -53,31 +56,36 @@ use azure::cosmos::{generate_authorization, TokenType, ResourceType};
 
 #[allow(unused_variables)]
 fn main() {
+    //let time = chrono::DateTime::parse_from_rfc3339("2017-04-27T00:51:12.000000000+00:00").unwrap();
 
-    let time = chrono::DateTime::parse_from_rfc3339("1900-01-01T01:00:00.000000000+00:00").unwrap();
-    let time = time.with_timezone(&chrono::UTC);
-    let ret = azure::cosmos::string_to_sign("GET",
-                                            ResourceType::Databases,
-                                            "dbs/MyDatabase/colls/MyCollection",
-                                            &time);
-    println!("{}", ret);
+    //let time = time.with_timezone(&chrono::UTC);
+    //println!("{}", time);
 
-    let time = chrono::UTC::now();
+    //let time = chrono::DateTime::parse_from_rfc3339("1900-01-01T01:00:00.000000000+00:00").unwrap();
+    //let time = format!("{}", time.format("%a, %d %h %Y %T GMT"));
 
-    let time = chrono::DateTime::parse_from_rfc3339("1900-01-01T00:00:00.000000000+00:00").unwrap();
-    let time = time.with_timezone(&chrono::UTC);
-    //let time = chrono::UTC::ymd(1900, 01, 01).and_hms(0, 0, 0);
+    //let time = time.with_timezone(&chrono::UTC);
+    //let ret = azure::cosmos::string_to_sign("GET",
+    //                                        ResourceType::Databases,
+    //                                        "dbs/MyDatabase/colls/MyCollection",
+    //                                        &time);
+    //println!("{}", ret);
 
+    //let time = chrono::UTC::now();
 
-    let auth = generate_authorization("8F8xXXOptJxkblM1DBXW7a6NMI5oE8NnwPGYBmwxLCKfejOK7B7yhcCHMGvN3PBrlMLIOeol1Hv9RCdzAZR5sg==",
-                                      "GET",
-                                      TokenType::Master,
-                                      ResourceType::Databases,
-                                      "dbs/MyDatabase/colls/MyCollection",
-                                      &time);
+    //let time = chrono::DateTime::parse_from_rfc3339("1900-01-01T00:00:00.000000000+00:00").unwrap();
+    //let time = time.with_timezone(&chrono::UTC);
 
+    //let time = format!("{}", time.format("%a, %d %h %Y %T GMT"));
 
-    println!("auth == {}", auth);
+    //let auth = generate_authorization("8F8xXXOptJxkblM1DBXW7a6NMI5oE8NnwPGYBmwxLCKfejOK7B7yhcCHMGvN3PBrlMLIOeol1Hv9RCdzAZR5sg==",
+    //                                  "GET",
+    //                                  TokenType::Master,
+    //                                  ResourceType::Databases,
+    //                                  "dbs/MyDatabase/colls/MyCollection",
+    //                                  &time);
+
+    //println!("auth == {}", auth);
 
     azure::cosmos::list_databases();
 
