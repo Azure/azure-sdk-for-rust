@@ -1,4 +1,5 @@
 use azure::cosmos::authorization_token::{TokenType, AuthorizationToken};
+use azure::core::HTTPMethod;
 
 use url;
 
@@ -53,54 +54,74 @@ impl Client {
         Ok(Client { hyper_client: client })
     }
 
-    pub fn list_databases(&self) {
+    fn perform_request(&self,
+                       url: &url::Url,
+                       http_method: HTTPMethod,
+                       resource_type: ResourceType,
+                       authorization_token: &AuthorizationToken,
+                       mut headers: Headers) {
         let dt = chrono::UTC::now();
         let time = format!("{}", dt.format(TIME_FORMAT));
 
-        let u = url::Url::parse("https://mindflavor.documents.azure.com/dbs").unwrap();
 
-        let mut h = Headers::new();
-
-        let authorization_token =
-            AuthorizationToken::new(TokenType::Master, "insert_here".to_owned()).unwrap();
-
-        let verb = "GET";
+        // to do: calculate resource link
         let resource_link = "";
 
         let auth = generate_authorization(&authorization_token,
-                                          verb,
-                                          ResourceType::Databases,
+                                          http_method,
+                                          resource_type,
                                           resource_link,
                                           &time);
-        println!("list_databases::auth == {:?}", auth);
+        println!("perform_request::auth == {:?}", auth);
 
-        h.set(XMSDate(time));
-        h.set(XMSVersion(AZURE_VERSION.to_owned()));
-        h.set(Authorization(auth));
+        headers.set(XMSDate(time));
+        headers.set(XMSVersion(AZURE_VERSION.to_owned()));
+        headers.set(Authorization(auth));
 
-        println!("list_databases::headers == {:?}", h);
+        println!("perform_request::headers == {:?}", headers);
 
-        let builder = self.hyper_client.get(&u.to_string());
+        let builder = match http_method {
+            HTTPMethod::Get => self.hyper_client.get(&url.to_string()),
+            HTTPMethod::Put => self.hyper_client.put(&url.to_string()),
+            HTTPMethod::Post => self.hyper_client.post(&url.to_string()),
+            HTTPMethod::Delete => self.hyper_client.delete(&url.to_string()),
+        };
 
-        let mut res = builder.headers(h).send().unwrap();
 
-        println!("list_databases::res == {:?}", res);
+        let mut res = builder.headers(headers).send().unwrap();
+
+        println!("perform_request::res == {:?}", res);
 
         let mut res_body = String::new();
 
         res.read_to_string(&mut res_body).unwrap();
 
-        println!("list_databases::res_body == {}", res_body);
+        println!("perform_request::res_body == {}", res_body);
+    }
+
+
+    pub fn list_databases(&self, authorization_token: &AuthorizationToken, account: &str) {
+        let url = url::Url::parse(&format!("https://{}.documents.azure.com/dbs", account)).unwrap();
+        let h = Headers::new();
+
+        // nothing to add here, list databases only needs standard headers
+        // which will be provied by perform_request
+
+        self.perform_request(&url,
+                             HTTPMethod::Get,
+                             ResourceType::Databases,
+                             authorization_token,
+                             h);
     }
 }
 
 pub fn generate_authorization(authorization_token: &AuthorizationToken,
-                              verb: &str,
+                              http_method: HTTPMethod,
                               resource_type: ResourceType,
                               resource_link: &str,
                               time: &str)
                               -> String {
-    let string_to_sign = string_to_sign(verb, resource_type, resource_link, time);
+    let string_to_sign = string_to_sign(http_method, resource_type, resource_link, time);
     println!("generate_authorization::string_to_sign == {:?}",
              string_to_sign);
 
@@ -127,13 +148,22 @@ fn encode_str_to_sign(str_to_sign: &str, authorization_token: &AuthorizationToke
 
 
 
-pub fn string_to_sign(verb: &str, rt: ResourceType, resource_link: &str, time: &str) -> String {
+pub fn string_to_sign(http_method: HTTPMethod,
+                      rt: ResourceType,
+                      resource_link: &str,
+                      time: &str)
+                      -> String {
     // From official docs:
     // StringToSign = Verb.toLowerCase() + "\n" + ResourceType.toLowerCase() + "\n" + ResourceLink + "\n" + Date.toLowerCase() + "\n" + "" + "\n";
     // Notice the empty string at the end so we need to add two carriage returns
 
     format!("{}\n{}\n{}\n{}\n\n",
-            verb.to_lowercase(),
+            match http_method {
+                HTTPMethod::Get => "get",
+                HTTPMethod::Put => "put",
+                HTTPMethod::Post => "post",
+                HTTPMethod::Delete => "delete",
+            },
             match rt { 
                 ResourceType::Databases => "dbs",
                 ResourceType::Collections => "colls",
@@ -157,7 +187,7 @@ mod tests {
         let time = time.with_timezone(&chrono::UTC);
         let time = format!("{}", time.format(TIME_FORMAT));
 
-        let ret = string_to_sign("GET",
+        let ret = string_to_sign(HTTPMethod::Get,
                                  ResourceType::Databases,
                                  "dbs/MyDatabase/colls/MyCollection",
                                  &time);
@@ -184,7 +214,7 @@ mon, 01 jan 1900 01:00:00 gmt
 
 
         let ret = generate_authorization(&authorization_token,
-                                         "GET",
+                                         HTTPMethod::Get,
                                          ResourceType::Databases,
                                          "dbs/MyDatabase/colls/MyCollection",
                                          &time);
@@ -204,7 +234,7 @@ mon, 01 jan 1900 01:00:00 gmt
                                                          "dsZQi3KtZmCv1ljt3VNWNm7sQUF1y5rJfC6kv5JiwvW0EndXdDku/dkKBp8/ufDToSxL".to_owned()).unwrap();
 
         let ret = generate_authorization(&authorization_token,
-                                         "GET",
+                                         HTTPMethod::Get,
                                          ResourceType::Databases,
                                          "dbs/ToDoList",
                                          &time);

@@ -53,7 +53,7 @@ use chrono::UTC;
 use mime::Mime;
 
 use azure::cosmos::client::{generate_authorization, ResourceType};
-use azure::cosmos::authorization_token::TokenType;
+use azure::cosmos::authorization_token::{AuthorizationToken, TokenType};
 
 #[allow(unused_variables)]
 fn main() {
@@ -87,8 +87,16 @@ fn main() {
     //                                  &time);
 
     //println!("auth == {}", auth);
+
+    let master_key = std::env::var("COSMOS_MASTER_KEY")
+        .expect("Set env variable COSMOS_MASTER_KEY first!");
+
+
     let c = azure::cosmos::client::Client::new().unwrap();
-    c.list_databases();
+
+    let authorization_token = AuthorizationToken::new(TokenType::Master, master_key).unwrap();
+
+    c.list_databases(&authorization_token, "mindflavor");
 
     return;
 
