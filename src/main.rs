@@ -52,7 +52,8 @@ use chrono::UTC;
 
 use mime::Mime;
 
-use azure::cosmos::{generate_authorization, TokenType, ResourceType};
+use azure::cosmos::{generate_authorization, ResourceType};
+use azure::cosmos::authorization_token::TokenType;
 
 #[allow(unused_variables)]
 fn main() {

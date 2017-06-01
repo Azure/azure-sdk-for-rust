@@ -1,9 +1,13 @@
 #![allow(unused_imports)]
 
+pub mod authorization_token;
+use self::authorization_token::{TokenType, AuthorizationToken};
+
 use azure::core::range;
 use azure::core::HTTPMethod;
 use azure::core::lease::{LeaseId, LeaseStatus, LeaseState, LeaseDuration, LeaseAction};
 use chrono;
+use base64;
 use crypto::hmac::Hmac;
 use crypto::mac::Mac;
 use crypto::sha2::Sha256;
@@ -11,7 +15,6 @@ use hyper;
 use hyper::Client;
 use hyper::header::{Header, HeaderFormat, Headers, ContentEncoding, ContentLanguage,
                     ContentLength, ContentType, Date, IfModifiedSince, IfUnmodifiedSince};
-use base64;
 use std::fmt::Display;
 use std::io::Read;
 use hyper_native_tls::NativeTlsClient;
@@ -24,11 +27,6 @@ use hyper::header::parsing::HTTP_VALUE;
 const AZURE_VERSION: &'static str = "2017-02-22";
 const VERSION: &'static str = "1.0";
 const TIME_FORMAT: &'static str = "%a, %d %h %Y %T GMT";
-
-pub enum TokenType {
-    Master,
-    Resource,
-}
 
 #[derive(Clone,Copy)]
 pub enum ResourceType {
@@ -59,13 +57,14 @@ pub fn list_databases() {
 
     let mut h = Headers::new();
 
-    let key = "insert_here";
+    let authorization_token = AuthorizationToken::new(TokenType::Master, "insert_here".to_owned())
+        .unwrap();
+
     let verb = "GET";
     let resource_link = "";
 
-    let auth = generate_authorization(key,
+    let auth = generate_authorization(&authorization_token,
                                       verb,
-                                      TokenType::Master,
                                       ResourceType::Databases,
                                       resource_link,
                                       &time);
@@ -90,9 +89,10 @@ pub fn list_databases() {
     println!("list_databases::res_body == {}", res_body);
 }
 
-pub fn generate_authorization(hmac_key: &str,
+// pub fn perform_request(url: &url, headers: &mut Headers, verb : &str,
+
+pub fn generate_authorization(authorization_token: &AuthorizationToken,
                               verb: &str,
-                              token_type: TokenType,
                               resource_type: ResourceType,
                               resource_link: &str,
                               time: &str)
@@ -102,12 +102,12 @@ pub fn generate_authorization(hmac_key: &str,
              string_to_sign);
 
     let str_unencoded = format!("type={}&ver={}&sig={}",
-                                match token_type {
+                                match authorization_token.token_type() {
                                     TokenType::Master => "master",
                                     TokenType::Resource => "resource",
                                 },
                                 VERSION,
-                                encode_str_to_sign(&string_to_sign, hmac_key));
+                                encode_str_to_sign(&string_to_sign, authorization_token));
 
     println!("generate_authorization::str_unencoded == {:?}",
              str_unencoded);
@@ -115,12 +115,8 @@ pub fn generate_authorization(hmac_key: &str,
     utf8_percent_encode(&str_unencoded, COMPLETE_ENCODE_SET).collect::<String>()
 }
 
-fn encode_str_to_sign(str_to_sign: &str, hmac_key: &str) -> String {
-    let mut v_hmac_key: Vec<u8> = Vec::new();
-
-    v_hmac_key.extend(base64::decode(hmac_key).unwrap());
-
-    let mut hmac = Hmac::new(Sha256::new(), &v_hmac_key);
+fn encode_str_to_sign(str_to_sign: &str, authorization_token: &AuthorizationToken) -> String {
+    let mut hmac = Hmac::new(Sha256::new(), &authorization_token.binary_form());
     hmac.input(str_to_sign.as_bytes());
 
     base64::encode(hmac.result().code())
@@ -177,9 +173,14 @@ mon, 01 jan 1900 01:00:00 gmt
         let time = time.with_timezone(&chrono::UTC);
         let time = format!("{}", time.format(TIME_FORMAT));
 
-        let ret = generate_authorization("8F8xXXOptJxkblM1DBXW7a6NMI5oE8NnwPGYBmwxLCKfejOK7B7yhcCHMGvN3PBrlMLIOeol1Hv9RCdzAZR5sg==",
+        let authorization_token =
+            authorization_token::AuthorizationToken::new(authorization_token::TokenType::Master,
+                                                         "8F8xXXOptJxkblM1DBXW7a6NMI5oE8NnwPGYBmwxLCKfejOK7B7yhcCHMGvN3PBrlMLIOeol1Hv9RCdzAZR5sg==".to_owned()).unwrap();
+
+
+
+        let ret = generate_authorization(&authorization_token,
                                          "GET",
-                                         TokenType::Master,
                                          ResourceType::Databases,
                                          "dbs/MyDatabase/colls/MyCollection",
                                          &time);
@@ -194,9 +195,12 @@ mon, 01 jan 1900 01:00:00 gmt
         let time = time.with_timezone(&chrono::UTC);
         let time = format!("{}", time.format(TIME_FORMAT));
 
-        let ret = generate_authorization("dsZQi3KtZmCv1ljt3VNWNm7sQUF1y5rJfC6kv5JiwvW0EndXdDku/dkKBp8/ufDToSxL",
+        let authorization_token =
+            authorization_token::AuthorizationToken::new(authorization_token::TokenType::Master,
+                                                         "dsZQi3KtZmCv1ljt3VNWNm7sQUF1y5rJfC6kv5JiwvW0EndXdDku/dkKBp8/ufDToSxL".to_owned()).unwrap();
+
+        let ret = generate_authorization(&authorization_token,
                                          "GET",
-                                         TokenType::Master,
                                          ResourceType::Databases,
                                          "dbs/ToDoList",
                                          &time);
