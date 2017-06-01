@@ -52,7 +52,7 @@ use chrono::UTC;
 
 use mime::Mime;
 
-use azure::cosmos::{generate_authorization, ResourceType};
+use azure::cosmos::client::{generate_authorization, ResourceType};
 use azure::cosmos::authorization_token::TokenType;
 
 #[allow(unused_variables)]
@@ -87,8 +87,8 @@ fn main() {
     //                                  &time);
 
     //println!("auth == {}", auth);
-
-    azure::cosmos::list_databases();
+    let c = azure::cosmos::client::Client::new().unwrap();
+    c.list_databases();
 
     return;
 
