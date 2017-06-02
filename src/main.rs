@@ -100,6 +100,7 @@ fn main() {
 
     let c = azure::cosmos::client::Client::new(&authorization_token).unwrap();
 
+    let new_db = c.create_database("palazzo").unwrap();
 
     let dbs = c.list_databases().unwrap();
 

@@ -7,6 +7,7 @@ use azure::core::errors::{AzureError, check_status_extract_body};
 
 use url;
 
+use std::io::{Read, Cursor};
 
 use crypto::hmac::Hmac;
 use crypto::mac::Mac;
@@ -15,7 +16,7 @@ use crypto::sha2::Sha256;
 use base64;
 use hyper;
 use serde_json;
-use hyper::header::Headers;
+use hyper::header::{ContentLength, Headers};
 use hyper::status::StatusCode;
 use hyper_native_tls;
 
@@ -55,6 +56,11 @@ struct ListDatabasesResponse {
     count: u32,
 }
 
+#[derive(Serialize)]
+struct CreateDatabaseRequest<'a> {
+    id: &'a str,
+}
+
 pub struct Client<'a> {
     hyper_client: hyper::client::Client,
     authorization_token: &'a AuthorizationToken<'a>,
@@ -81,6 +87,7 @@ impl<'a> Client<'a> {
     fn perform_request(&self,
                        url: &url::Url,
                        http_method: HTTPMethod,
+                       request_body: Option<(&mut Read, u64)>,
                        resource_type: ResourceType,
                        mut headers: Headers)
                        -> Result<hyper::client::Response, AzureError> {
@@ -98,33 +105,34 @@ impl<'a> Client<'a> {
                                           &time);
         trace!("perform_request::auth == {:?}", auth);
 
+        if let Some((_, size)) = request_body {
+            headers.set(ContentLength(size));
+        }
+
         headers.set(XMSDate(time));
         headers.set(XMSVersion(AZURE_VERSION.to_owned()));
         headers.set(Authorization(auth));
 
         trace!("perform_request::headers == {:?}", headers);
 
-        let builder = match http_method {
+        let mut builder = match http_method {
             HTTPMethod::Get => self.hyper_client.get(&url.to_string()),
             HTTPMethod::Put => self.hyper_client.put(&url.to_string()),
             HTTPMethod::Post => self.hyper_client.post(&url.to_string()),
             HTTPMethod::Delete => self.hyper_client.delete(&url.to_string()),
         };
 
+        if let Some((mut rb, size)) = request_body {
+            let b = hyper::client::Body::SizedBody(rb, size);
+            builder = builder.body(b);
+        }
+        //} else if let Some(body) = request_str {
+        //    builder = builder.body(body);
+        //}
 
         let res = builder.headers(headers).send()?;
 
         Ok(res)
-
-        //trace!("perform_request::res == {:?}", res);
-
-        //let mut res_body = String::new();
-
-        //res.read_to_string(&mut res_body)?;
-
-        //trace!("perform_request::res_body == {}", res_body);
-
-        //res.sss();
     }
 
 
@@ -139,12 +147,42 @@ impl<'a> Client<'a> {
         // nothing to add here, list databases only needs standard headers
         // which will be provied by perform_request
 
-        let mut resp = self.perform_request(&url, HTTPMethod::Get, ResourceType::Databases, h)?;
+        let mut resp =
+            self.perform_request(&url, HTTPMethod::Get, None, ResourceType::Databases, h)?;
 
         let body = check_status_extract_body(&mut resp, StatusCode::Ok)?;
         let db: ListDatabasesResponse = serde_json::from_str(&body)?;
 
         Ok((db.databases))
+    }
+
+    pub fn create_database(&self, database_name: &str) -> Result<Database, AzureError> {
+        trace!("create_databases called (database_name == {})",
+               database_name);
+
+        let url = url::Url::parse(&format!("https://{}.documents.azure.com/dbs",
+                                          self.authorization_token.account()))
+                .unwrap();
+        let h = Headers::new();
+
+        // no headers to add here, create databases only needs standard headers
+        // which will be provied by perform_request
+        // for the body, we will serialize the appropriate structure
+
+        let req = CreateDatabaseRequest { id: database_name };
+        let req = serde_json::to_string(&req)?;
+        let mut curs = Cursor::new(&req);
+
+        let mut resp = self.perform_request(&url,
+                                            HTTPMethod::Post,
+                                            Some((&mut curs, req.len() as u64)),
+                                            ResourceType::Databases,
+                                            h)?;
+
+        let body = check_status_extract_body(&mut resp, StatusCode::Created)?;
+        let db: Database = serde_json::from_str(&body)?;
+
+        Ok((db))
     }
 }
 
