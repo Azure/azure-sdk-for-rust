@@ -98,7 +98,10 @@ fn main() {
 
     let authorization_token = AuthorizationToken::new(TokenType::Master, master_key).unwrap();
 
-    c.list_databases(&authorization_token, "mindflavor");
+    let dbs = c.list_databases(&authorization_token, "mindflavor")
+        .unwrap();
+
+    println!("dbs.len() == {}", dbs.len());
 
     return;
 

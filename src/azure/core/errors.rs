@@ -8,6 +8,7 @@ use xml::BuilderError as XMLError;
 use url::ParseError as URLParseError;
 use azure::core::enumerations::ParsingError;
 use azure::core::range::ParseError;
+use serde_json;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct UnexpectedHTTPResult {
@@ -29,6 +30,11 @@ impl UnexpectedHTTPResult {
 quick_error! {
     #[derive(Debug)]
     pub enum AzureError {
+        JSONError(err: serde_json::Error) {
+            from()
+            display("json error: {}", err)
+            cause(err)
+        }
         HyperError(err: hyper::error::Error){
             from()
             display("Hyper error: {}", err)

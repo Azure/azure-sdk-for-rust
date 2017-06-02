@@ -13,6 +13,7 @@ use crypto::sha2::Sha256;
 
 use base64;
 use hyper;
+use serde_json;
 use hyper::header::Headers;
 use hyper::status::StatusCode;
 use hyper_native_tls;
@@ -41,6 +42,14 @@ pub enum ResourceType {
     Databases,
     Collections,
     Documents,
+}
+
+#[derive(Deserialize)]
+#[allow(dead_code)]
+struct ListDatabasesResponse {
+    _rid: String,
+    databases: Vec<Database>,
+    count: u32,
 }
 
 pub struct Client {
@@ -129,8 +138,9 @@ impl Client {
                                             h)?;
 
         let body = check_status_extract_body(&mut resp, StatusCode::Ok)?;
+        let db: ListDatabasesResponse = serde_json::from_str(&body)?;
 
-        Ok(())
+        Ok((db.databases))
     }
 }
 
