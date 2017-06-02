@@ -92,14 +92,16 @@ fn main() {
 
     let master_key = std::env::var("COSMOS_MASTER_KEY")
         .expect("Set env variable COSMOS_MASTER_KEY first!");
+    let account = std::env::var("COSMOS_ACCOUNT").expect("Set env variable COSMOS_ACCOUNT first!");
 
 
-    let c = azure::cosmos::client::Client::new().unwrap();
-
-    let authorization_token = AuthorizationToken::new(TokenType::Master, master_key).unwrap();
-
-    let dbs = c.list_databases(&authorization_token, "mindflavor")
+    let authorization_token = AuthorizationToken::new(&account, TokenType::Master, master_key)
         .unwrap();
+
+    let c = azure::cosmos::client::Client::new(&authorization_token).unwrap();
+
+
+    let dbs = c.list_databases().unwrap();
 
     println!("dbs.len() == {}", dbs.len());
 

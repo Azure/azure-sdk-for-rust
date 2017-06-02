@@ -7,6 +7,7 @@ use azure::core::errors::{AzureError, check_status_extract_body};
 
 use url;
 
+
 use crypto::hmac::Hmac;
 use crypto::mac::Mac;
 use crypto::sha2::Sha256;
@@ -48,29 +49,39 @@ pub enum ResourceType {
 #[allow(dead_code)]
 struct ListDatabasesResponse {
     _rid: String,
+    #[serde(rename = "Databases")]
     databases: Vec<Database>,
+    #[serde(rename = "_count")]
     count: u32,
 }
 
-pub struct Client {
+pub struct Client<'a> {
     hyper_client: hyper::client::Client,
+    authorization_token: &'a AuthorizationToken<'a>,
 }
 
 
-impl Client {
-    pub fn new() -> Result<Client, hyper_native_tls::native_tls::Error> {
+impl<'a> Client<'a> {
+    pub fn new(authorization_token: &'a AuthorizationToken<'a>)
+               -> Result<Client<'a>, hyper_native_tls::native_tls::Error> {
         let ssl = hyper_native_tls::NativeTlsClient::new()?;
         let connector = hyper::net::HttpsConnector::new(ssl);
         let client = hyper::Client::with_connector(connector);
 
-        Ok(Client { hyper_client: client })
+        Ok(Client {
+               hyper_client: client,
+               authorization_token: authorization_token,
+           })
+    }
+
+    pub fn set_authorization_token(&mut self, at: &'a AuthorizationToken<'a>) {
+        self.authorization_token = at;
     }
 
     fn perform_request(&self,
                        url: &url::Url,
                        http_method: HTTPMethod,
                        resource_type: ResourceType,
-                       authorization_token: &AuthorizationToken,
                        mut headers: Headers)
                        -> Result<hyper::client::Response, AzureError> {
         let dt = chrono::UTC::now();
@@ -80,7 +91,7 @@ impl Client {
         // to do: calculate resource link
         let resource_link = "";
 
-        let auth = generate_authorization(&authorization_token,
+        let auth = generate_authorization(self.authorization_token,
                                           http_method,
                                           resource_type,
                                           resource_link,
@@ -117,25 +128,18 @@ impl Client {
     }
 
 
-    pub fn list_databases(&self,
-                          authorization_token: &AuthorizationToken,
-                          account: &str)
-                          -> Result<Vec<Database>, AzureError> {
-        trace!("list_databases called (authorization_token= {:?}, account = {:?}",
-               authorization_token,
-               account);
+    pub fn list_databases(&self) -> Result<Vec<Database>, AzureError> {
+        trace!("list_databases called");
 
-        let url = url::Url::parse(&format!("https://{}.documents.azure.com/dbs", account)).unwrap();
+        let url = url::Url::parse(&format!("https://{}.documents.azure.com/dbs",
+                                          self.authorization_token.account()))
+                .unwrap();
         let h = Headers::new();
 
         // nothing to add here, list databases only needs standard headers
         // which will be provied by perform_request
 
-        let mut resp = self.perform_request(&url,
-                                            HTTPMethod::Get,
-                                            ResourceType::Databases,
-                                            authorization_token,
-                                            h)?;
+        let mut resp = self.perform_request(&url, HTTPMethod::Get, ResourceType::Databases, h)?;
 
         let body = check_status_extract_body(&mut resp, StatusCode::Ok)?;
         let db: ListDatabasesResponse = serde_json::from_str(&body)?;
@@ -237,7 +241,7 @@ mon, 01 jan 1900 01:00:00 gmt
         let time = format!("{}", time.format(TIME_FORMAT));
 
         let authorization_token =
-            authorization_token::AuthorizationToken::new(authorization_token::TokenType::Master,
+            authorization_token::AuthorizationToken::new("mindflavor", authorization_token::TokenType::Master,
                                                          "8F8xXXOptJxkblM1DBXW7a6NMI5oE8NnwPGYBmwxLCKfejOK7B7yhcCHMGvN3PBrlMLIOeol1Hv9RCdzAZR5sg==".to_owned()).unwrap();
 
 
@@ -259,7 +263,7 @@ mon, 01 jan 1900 01:00:00 gmt
         let time = format!("{}", time.format(TIME_FORMAT));
 
         let authorization_token =
-            authorization_token::AuthorizationToken::new(authorization_token::TokenType::Master,
+            authorization_token::AuthorizationToken::new("mindflavor", authorization_token::TokenType::Master,
                                                          "dsZQi3KtZmCv1ljt3VNWNm7sQUF1y5rJfC6kv5JiwvW0EndXdDku/dkKBp8/ufDToSxL".to_owned()).unwrap();
 
         let ret = generate_authorization(&authorization_token,
