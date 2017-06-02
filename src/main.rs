@@ -57,6 +57,8 @@ use azure::cosmos::authorization_token::{AuthorizationToken, TokenType};
 
 #[allow(unused_variables)]
 fn main() {
+    env_logger::init().unwrap();
+
     //let time = chrono::DateTime::parse_from_rfc3339("2017-04-27T00:51:12.000000000+00:00").unwrap();
 
     //let time = time.with_timezone(&chrono::UTC);
@@ -101,7 +103,6 @@ fn main() {
     return;
 
 
-    env_logger::init().unwrap();
 
     let azure_storage_account = match std::env::var("AZURE_STORAGE_ACCOUNT") {
         Ok(val) => val,

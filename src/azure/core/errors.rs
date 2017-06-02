@@ -131,7 +131,7 @@ pub fn check_status(resp: &mut hyper::client::response::Response,
                     -> Result<(), AzureError> {
     if resp.status != s {
         let mut resp_s = String::new();
-        try!(resp.read_to_string(&mut resp_s));
+        resp.read_to_string(&mut resp_s)?;
 
         return Err(AzureError::UnexpectedHTTPResult(UnexpectedHTTPResult::new(s,
                                                                               resp.status,
@@ -139,4 +139,15 @@ pub fn check_status(resp: &mut hyper::client::response::Response,
     }
 
     Ok(())
+}
+
+pub fn check_status_extract_body(resp: &mut hyper::client::response::Response,
+                                 s: StatusCode)
+                                 -> Result<String, AzureError> {
+
+    check_status(resp, s)?;
+
+    let mut resp_s = String::new();
+    resp.read_to_string(&mut resp_s)?;
+    Ok((resp_s))
 }

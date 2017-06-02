@@ -1,6 +1,10 @@
 use azure::cosmos::authorization_token::{TokenType, AuthorizationToken};
 use azure::core::HTTPMethod;
 
+use azure::cosmos::database::Database;
+
+use azure::core::errors::{AzureError, check_status_extract_body};
+
 use url;
 
 use crypto::hmac::Hmac;
@@ -10,13 +14,12 @@ use crypto::sha2::Sha256;
 use base64;
 use hyper;
 use hyper::header::Headers;
+use hyper::status::StatusCode;
 use hyper_native_tls;
 
 use chrono;
 
 use url::percent_encoding::utf8_percent_encode;
-
-use std::io::Read;
 
 const AZURE_VERSION: &'static str = "2017-02-22";
 const VERSION: &'static str = "1.0";
@@ -59,7 +62,8 @@ impl Client {
                        http_method: HTTPMethod,
                        resource_type: ResourceType,
                        authorization_token: &AuthorizationToken,
-                       mut headers: Headers) {
+                       mut headers: Headers)
+                       -> Result<hyper::client::Response, AzureError> {
         let dt = chrono::UTC::now();
         let time = format!("{}", dt.format(TIME_FORMAT));
 
@@ -72,13 +76,13 @@ impl Client {
                                           resource_type,
                                           resource_link,
                                           &time);
-        println!("perform_request::auth == {:?}", auth);
+        trace!("perform_request::auth == {:?}", auth);
 
         headers.set(XMSDate(time));
         headers.set(XMSVersion(AZURE_VERSION.to_owned()));
         headers.set(Authorization(auth));
 
-        println!("perform_request::headers == {:?}", headers);
+        trace!("perform_request::headers == {:?}", headers);
 
         let builder = match http_method {
             HTTPMethod::Get => self.hyper_client.get(&url.to_string()),
@@ -88,30 +92,45 @@ impl Client {
         };
 
 
-        let mut res = builder.headers(headers).send().unwrap();
+        let res = builder.headers(headers).send()?;
 
-        println!("perform_request::res == {:?}", res);
+        Ok(res)
 
-        let mut res_body = String::new();
+        //trace!("perform_request::res == {:?}", res);
 
-        res.read_to_string(&mut res_body).unwrap();
+        //let mut res_body = String::new();
 
-        println!("perform_request::res_body == {}", res_body);
+        //res.read_to_string(&mut res_body)?;
+
+        //trace!("perform_request::res_body == {}", res_body);
+
+        //res.sss();
     }
 
 
-    pub fn list_databases(&self, authorization_token: &AuthorizationToken, account: &str) {
+    pub fn list_databases(&self,
+                          authorization_token: &AuthorizationToken,
+                          account: &str)
+                          -> Result<Vec<Database>, AzureError> {
+        trace!("list_databases called (authorization_token= {:?}, account = {:?}",
+               authorization_token,
+               account);
+
         let url = url::Url::parse(&format!("https://{}.documents.azure.com/dbs", account)).unwrap();
         let h = Headers::new();
 
         // nothing to add here, list databases only needs standard headers
         // which will be provied by perform_request
 
-        self.perform_request(&url,
-                             HTTPMethod::Get,
-                             ResourceType::Databases,
-                             authorization_token,
-                             h);
+        let mut resp = self.perform_request(&url,
+                                            HTTPMethod::Get,
+                                            ResourceType::Databases,
+                                            authorization_token,
+                                            h)?;
+
+        let body = check_status_extract_body(&mut resp, StatusCode::Ok)?;
+
+        Ok(())
     }
 }
 
@@ -122,8 +141,8 @@ pub fn generate_authorization(authorization_token: &AuthorizationToken,
                               time: &str)
                               -> String {
     let string_to_sign = string_to_sign(http_method, resource_type, resource_link, time);
-    println!("generate_authorization::string_to_sign == {:?}",
-             string_to_sign);
+    trace!("generate_authorization::string_to_sign == {:?}",
+           string_to_sign);
 
     let str_unencoded = format!("type={}&ver={}&sig={}",
                                 match authorization_token.token_type() {
@@ -133,8 +152,8 @@ pub fn generate_authorization(authorization_token: &AuthorizationToken,
                                 VERSION,
                                 encode_str_to_sign(&string_to_sign, authorization_token));
 
-    println!("generate_authorization::str_unencoded == {:?}",
-             str_unencoded);
+    trace!("generate_authorization::str_unencoded == {:?}",
+           str_unencoded);
 
     utf8_percent_encode(&str_unencoded, COMPLETE_ENCODE_SET).collect::<String>()
 }
