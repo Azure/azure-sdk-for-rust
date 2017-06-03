@@ -89,7 +89,7 @@ impl<'a> Client<'a> {
                        http_method: HTTPMethod,
                        request_body: Option<(&mut Read, u64)>,
                        resource_type: ResourceType,
-                       mut headers: Headers)
+                       headers: Option<Headers>)
                        -> Result<hyper::client::Response, AzureError> {
         let dt = chrono::UTC::now();
         let time = format!("{}", dt.format(TIME_FORMAT));
@@ -104,6 +104,14 @@ impl<'a> Client<'a> {
                                           resource_link,
                                           &time);
         trace!("perform_request::auth == {:?}", auth);
+
+        // we need to add custom headers. If the caller has passed its collection of
+        // headers we will add to his. Otherwise we create one from scratch.
+        let mut headers = if let Some(h) = headers {
+            h
+        } else {
+            Headers::new()
+        };
 
         if let Some((_, size)) = request_body {
             headers.set(ContentLength(size));
@@ -126,9 +134,6 @@ impl<'a> Client<'a> {
             let b = hyper::client::Body::SizedBody(rb, size);
             builder = builder.body(b);
         }
-        //} else if let Some(body) = request_str {
-        //    builder = builder.body(body);
-        //}
 
         let res = builder.headers(headers).send()?;
 
@@ -142,18 +147,16 @@ impl<'a> Client<'a> {
         let url = url::Url::parse(&format!("https://{}.documents.azure.com/dbs",
                                           self.authorization_token.account()))
                 .unwrap();
-        let h = Headers::new();
 
-        // nothing to add here, list databases only needs standard headers
+        // No specific headers are required, list databases only needs standard headers
         // which will be provied by perform_request
-
         let mut resp =
-            self.perform_request(&url, HTTPMethod::Get, None, ResourceType::Databases, h)?;
+            self.perform_request(&url, HTTPMethod::Get, None, ResourceType::Databases, None)?;
 
         let body = check_status_extract_body(&mut resp, StatusCode::Ok)?;
         let db: ListDatabasesResponse = serde_json::from_str(&body)?;
 
-        Ok((db.databases))
+        Ok(db.databases)
     }
 
     pub fn create_database(&self, database_name: &str) -> Result<Database, AzureError> {
@@ -163,9 +166,8 @@ impl<'a> Client<'a> {
         let url = url::Url::parse(&format!("https://{}.documents.azure.com/dbs",
                                           self.authorization_token.account()))
                 .unwrap();
-        let h = Headers::new();
 
-        // no headers to add here, create databases only needs standard headers
+        // No specific headers are required, create databases only needs standard headers
         // which will be provied by perform_request
         // for the body, we will serialize the appropriate structure
 
@@ -177,12 +179,32 @@ impl<'a> Client<'a> {
                                             HTTPMethod::Post,
                                             Some((&mut curs, req.len() as u64)),
                                             ResourceType::Databases,
-                                            h)?;
+                                            None)?;
 
         let body = check_status_extract_body(&mut resp, StatusCode::Created)?;
         let db: Database = serde_json::from_str(&body)?;
 
-        Ok((db))
+        Ok(db)
+    }
+
+    pub fn get_database(&self, database_name: &str) -> Result<Database, AzureError> {
+        trace!("get_databases called (database_name == {})", database_name);
+
+        let url = url::Url::parse(&format!("https://{}.documents.azure.com/dbs/{}",
+                                          self.authorization_token.account(),
+                                          database_name))
+                .unwrap();
+
+        // No specific headers are required, get database only needs standard headers
+        // which will be provied by perform_request
+
+        let mut resp =
+            self.perform_request(&url, HTTPMethod::Get, None, ResourceType::Databases, None)?;
+
+        let body = check_status_extract_body(&mut resp, StatusCode::Ok)?;
+        let db: Database = serde_json::from_str(&body)?;
+
+        Ok(db)
     }
 }
 
@@ -246,10 +268,27 @@ pub fn string_to_sign(http_method: HTTPMethod,
 
 }
 
+fn generate_resource_link(u: &url::Url) -> &str {
+    let mut ps = u.path_segments().unwrap();
+
+    if let Some(segment) = ps.next() {
+        match segment {
+            "" => "", 
+            "dbs" => if ps.next() == None { "" } else { u.path() },
+            "colls" => if ps.next() == None { "" } else { u.path() },
+            "docs" => if ps.next() == None { "" } else { u.path() },
+            _ => u.path(),
+        }
+    } else {
+        ""
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use azure::cosmos::client::*;
     use azure::cosmos::authorization_token;
+    use url::Url;
 
     #[test]
     fn string_to_sign_00() {
@@ -317,5 +356,15 @@ mon, 01 jan 1900 01:00:00 gmt
 
         assert_eq!(ret,
                    "type%3Dmaster%26ver%3D1.0%26sig%3DKvBM8vONofkv3yKm%2F8zD9MEGlbu6jjHDJBp4E9c2ZZI%3D");
+    }
+
+    #[test]
+    fn generate_resource_link_00() {
+        let u = Url::parse("https://mindflavor.raldld.r4eee.sss/dbs/second").unwrap();
+        assert_eq!(generate_resource_link(&u), "dbs/second");
+        let u = Url::parse("https://mindflavor.raldld.r4eee.sss/dbs").unwrap();
+        assert_eq!(generate_resource_link(&u), "");
+        let u = Url::parse("https://mindflavor.raldld.r4eee.sss/colls/second/third").unwrap();
+        assert_eq!(generate_resource_link(&u), "colls/second/third");
     }
 }

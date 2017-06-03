@@ -33,7 +33,7 @@ impl<'a> AuthorizationToken<'a> {
     }
 
     pub fn account(&self) -> &str {
-        &self.account
+        self.account
     }
 
     pub fn token_type(&self) -> TokenType {
@@ -50,16 +50,14 @@ impl<'a> AuthorizationToken<'a> {
 impl<'a> Debug for AuthorizationToken<'a> {
     //! We provide a custom implementation to hide some of the chars
     //! since they are security sentive.
-    //! We show only the 6 first chars of base64_encoded form and only
+    //! We show only the 6 first chars of ```base64_encoded``` form and only
     //! the binary vector length.
     fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
         let mut obfuscated = Vec::new();
 
-        let mut idx = 0;
-        for ch in self.base64_encoded.chars() {
+        for (idx, ch) in self.base64_encoded.chars().enumerate() {
             let ch_obfuscated = if idx < 6 { ch } else { '*' };
             obfuscated.push(ch_obfuscated);
-            idx += 1;
         }
 
         let so = obfuscated.into_iter().collect::<String>();
