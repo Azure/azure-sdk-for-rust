@@ -3,7 +3,7 @@ use azure::core::HTTPMethod;
 
 use azure::cosmos::database::Database;
 
-use azure::core::errors::{AzureError, check_status_extract_body};
+use azure::core::errors::{AzureError, check_status_extract_body, check_status};
 
 use url;
 
@@ -188,7 +188,7 @@ impl<'a> Client<'a> {
     }
 
     pub fn get_database(&self, database_name: &str) -> Result<Database, AzureError> {
-        trace!("get_databases called (database_name == {})", database_name);
+        trace!("get_database called (database_name == {})", database_name);
 
         let url = url::Url::parse(&format!("https://{}.documents.azure.com/dbs/{}",
                                           self.authorization_token.account(),
@@ -205,6 +205,29 @@ impl<'a> Client<'a> {
         let db: Database = serde_json::from_str(&body)?;
 
         Ok(db)
+    }
+
+    pub fn delete_database(&self, database_name: &str) -> Result<(), AzureError> {
+        trace!("delete_database called (database_name == {})",
+               database_name);
+
+        let url = url::Url::parse(&format!("https://{}.documents.azure.com/dbs/{}",
+                                          self.authorization_token.account(),
+                                          database_name))
+                .unwrap();
+
+        // No specific headers are required, delete database only needs standard headers
+        // which will be provied by perform_request
+
+        let mut resp = self.perform_request(&url,
+                                            HTTPMethod::Delete,
+                                            None,
+                                            ResourceType::Databases,
+                                            None)?;
+
+        check_status(&mut resp, StatusCode::NoContent)?;
+
+        Ok(())
     }
 }
 

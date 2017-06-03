@@ -100,14 +100,20 @@ fn main() {
 
     let c = azure::cosmos::client::Client::new(&authorization_token).unwrap();
 
+    let new_db = c.create_database("palazzo").unwrap();
+    println!("palazzo created");
+
     let my_db = c.get_database("palazzo").unwrap();
     println!("{:?}", my_db);
 
-    //let new_db = c.create_database("palazzo").unwrap();
 
     let dbs = c.list_databases().unwrap();
 
     println!("dbs.len() == {}", dbs.len());
+
+    c.delete_database("palazzo").unwrap();
+
+    println!("palazzo deleted");
 
     return;
 
