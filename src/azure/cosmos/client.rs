@@ -96,7 +96,7 @@ impl<'a> Client<'a> {
 
 
         // to do: calculate resource link
-        let resource_link = "";
+        let resource_link = generate_resource_link(url);
 
         let auth = generate_authorization(self.authorization_token,
                                           http_method,
@@ -274,9 +274,27 @@ fn generate_resource_link(u: &url::Url) -> &str {
     if let Some(segment) = ps.next() {
         match segment {
             "" => "", 
-            "dbs" => if ps.next() == None { "" } else { u.path() },
-            "colls" => if ps.next() == None { "" } else { u.path() },
-            "docs" => if ps.next() == None { "" } else { u.path() },
+            "dbs" => {
+                if ps.next() == None {
+                    ""
+                } else {
+                    &u.path()[1..]
+                }
+            }
+            "colls" => {
+                if ps.next() == None {
+                    ""
+                } else {
+                    &u.path()[1..]
+                }
+            }
+            "docs" => {
+                if ps.next() == None {
+                    ""
+                } else {
+                    &u.path()[1..]
+                }
+            }
             _ => u.path(),
         }
     } else {
