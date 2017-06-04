@@ -284,21 +284,7 @@ fn generate_resource_link(u: &url::Url) -> &str {
     if let Some(segment) = ps.next() {
         match segment {
             "" => "", 
-            "dbs" => {
-                if ps.next() == None {
-                    ""
-                } else {
-                    &u.path()[1..]
-                }
-            }
-            "colls" => {
-                if ps.next() == None {
-                    ""
-                } else {
-                    &u.path()[1..]
-                }
-            }
-            "docs" => {
+            "dbs" | "colls" | "docs" => {
                 if ps.next() == None {
                     ""
                 } else {
