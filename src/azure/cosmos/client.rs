@@ -5,6 +5,8 @@ use azure::cosmos::database::Database;
 
 use azure::core::errors::{AzureError, check_status_extract_body, check_status};
 
+use azure::cosmos::request_response::{ListDatabasesResponse, CreateDatabaseRequest};
+
 use url;
 
 use std::io::{Read, Cursor};
@@ -23,6 +25,7 @@ use hyper_native_tls;
 use chrono;
 
 use url::percent_encoding::utf8_percent_encode;
+
 
 const AZURE_VERSION: &'static str = "2017-02-22";
 const VERSION: &'static str = "1.0";
@@ -46,26 +49,10 @@ pub enum ResourceType {
     Documents,
 }
 
-#[derive(Deserialize)]
-#[allow(dead_code)]
-struct ListDatabasesResponse {
-    _rid: String,
-    #[serde(rename = "Databases")]
-    databases: Vec<Database>,
-    #[serde(rename = "_count")]
-    count: u32,
-}
-
-#[derive(Serialize)]
-struct CreateDatabaseRequest<'a> {
-    id: &'a str,
-}
-
 pub struct Client<'a> {
     hyper_client: hyper::client::Client,
     authorization_token: &'a AuthorizationToken<'a>,
 }
-
 
 impl<'a> Client<'a> {
     pub fn new(authorization_token: &'a AuthorizationToken<'a>)
@@ -231,12 +218,12 @@ impl<'a> Client<'a> {
     }
 }
 
-pub fn generate_authorization(authorization_token: &AuthorizationToken,
-                              http_method: HTTPMethod,
-                              resource_type: ResourceType,
-                              resource_link: &str,
-                              time: &str)
-                              -> String {
+fn generate_authorization(authorization_token: &AuthorizationToken,
+                          http_method: HTTPMethod,
+                          resource_type: ResourceType,
+                          resource_link: &str,
+                          time: &str)
+                          -> String {
     let string_to_sign = string_to_sign(http_method, resource_type, resource_link, time);
     trace!("generate_authorization::string_to_sign == {:?}",
            string_to_sign);
@@ -264,11 +251,11 @@ fn encode_str_to_sign(str_to_sign: &str, authorization_token: &AuthorizationToke
 
 
 
-pub fn string_to_sign(http_method: HTTPMethod,
-                      rt: ResourceType,
-                      resource_link: &str,
-                      time: &str)
-                      -> String {
+fn string_to_sign(http_method: HTTPMethod,
+                  rt: ResourceType,
+                  resource_link: &str,
+                  time: &str)
+                  -> String {
     // From official docs:
     // StringToSign = Verb.toLowerCase() + "\n" + ResourceType.toLowerCase() + "\n" + ResourceLink + "\n" + Date.toLowerCase() + "\n" + "" + "\n";
     // Notice the empty string at the end so we need to add two carriage returns
