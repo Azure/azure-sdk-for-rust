@@ -1,4 +1,4 @@
-## [0.3.0] (https://github.com/MindFlavor/AzureSDKForRust/releases/tag/0.3.0) (2017-06-05)
+## [0.3.0](https://github.com/MindFlavor/AzureSDKForRust/releases/tag/0.3.0) (2017-06-05)
 
 **Implemented features:**
 * Added Cosmos support. Right now only database commands are implemented but the authentication frawework is in place. Both ```master keys``` and ```resource tokens``` are supported (see [https://docs.microsoft.com/it-it/rest/api/documentdb/access-control-on-documentdb-resources?redirectedfrom=MSDN](https://docs.microsoft.com/it-it/rest/api/documentdb/access-control-on-documentdb-resources?redirectedfrom=MSDN) for more details). 
