@@ -8,6 +8,7 @@ use xml::BuilderError as XMLError;
 use url::ParseError as URLParseError;
 use azure::core::enumerations::ParsingError;
 use azure::core::range::ParseError;
+use serde_json;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct UnexpectedHTTPResult {
@@ -29,6 +30,11 @@ impl UnexpectedHTTPResult {
 quick_error! {
     #[derive(Debug)]
     pub enum AzureError {
+        JSONError(err: serde_json::Error) {
+            from()
+            display("json error: {}", err)
+            cause(err)
+        }
         HyperError(err: hyper::error::Error){
             from()
             display("Hyper error: {}", err)
@@ -131,7 +137,7 @@ pub fn check_status(resp: &mut hyper::client::response::Response,
                     -> Result<(), AzureError> {
     if resp.status != s {
         let mut resp_s = String::new();
-        try!(resp.read_to_string(&mut resp_s));
+        resp.read_to_string(&mut resp_s)?;
 
         return Err(AzureError::UnexpectedHTTPResult(UnexpectedHTTPResult::new(s,
                                                                               resp.status,
@@ -139,4 +145,15 @@ pub fn check_status(resp: &mut hyper::client::response::Response,
     }
 
     Ok(())
+}
+
+pub fn check_status_extract_body(resp: &mut hyper::client::response::Response,
+                                 s: StatusCode)
+                                 -> Result<String, AzureError> {
+
+    check_status(resp, s)?;
+
+    let mut resp_s = String::new();
+    resp.read_to_string(&mut resp_s)?;
+    Ok(resp_s)
 }

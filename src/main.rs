@@ -1,10 +1,14 @@
 // #![feature(plugin)]
 // #![plugin(clippy)]
 
+#![allow(unused_imports)]
+#![allow(unreachable_code)]
+
 #[macro_use]
 extern crate hyper;
 extern crate hyper_native_tls;
 extern crate chrono;
+#[macro_use]
 extern crate url;
 extern crate crypto;
 extern crate base64;
@@ -34,6 +38,7 @@ use azure::core::ba512_range::BA512Range;
 
 use std::fs;
 use time::Duration;
+use chrono::TimeZone;
 
 use azure::storage::table::TableService;
 
@@ -47,9 +52,72 @@ use chrono::UTC;
 
 use mime::Mime;
 
+use azure::cosmos::client::ResourceType;
+use azure::cosmos::authorization_token::{AuthorizationToken, TokenType};
+
 #[allow(unused_variables)]
 fn main() {
     env_logger::init().unwrap();
+
+    //let time = chrono::DateTime::parse_from_rfc3339("2017-04-27T00:51:12.000000000+00:00").unwrap();
+
+    //let time = time.with_timezone(&chrono::UTC);
+    //println!("{}", time);
+
+    //let time = chrono::DateTime::parse_from_rfc3339("1900-01-01T01:00:00.000000000+00:00").unwrap();
+    //let time = format!("{}", time.format("%a, %d %h %Y %T GMT"));
+
+    //let time = time.with_timezone(&chrono::UTC);
+    //let ret = azure::cosmos::string_to_sign("GET",
+    //                                        ResourceType::Databases,
+    //                                        "dbs/MyDatabase/colls/MyCollection",
+    //                                        &time);
+    //println!("{}", ret);
+
+    //let time = chrono::UTC::now();
+
+    //let time = chrono::DateTime::parse_from_rfc3339("1900-01-01T00:00:00.000000000+00:00").unwrap();
+    //let time = time.with_timezone(&chrono::UTC);
+
+    //let time = format!("{}", time.format("%a, %d %h %Y %T GMT"));
+
+    //let auth = generate_authorization("8F8xXXOptJxkblM1DBXW7a6NMI5oE8NnwPGYBmwxLCKfejOK7B7yhcCHMGvN3PBrlMLIOeol1Hv9RCdzAZR5sg==",
+    //                                  "GET",
+    //                                  TokenType::Master,
+    //                                  ResourceType::Databases,
+    //                                  "dbs/MyDatabase/colls/MyCollection",
+    //                                  &time);
+
+    //println!("auth == {}", auth);
+
+    let master_key = std::env::var("COSMOS_MASTER_KEY")
+        .expect("Set env variable COSMOS_MASTER_KEY first!");
+    let account = std::env::var("COSMOS_ACCOUNT").expect("Set env variable COSMOS_ACCOUNT first!");
+
+
+    let authorization_token = AuthorizationToken::new(&account, TokenType::Master, master_key)
+        .unwrap();
+
+    let c = azure::cosmos::client::Client::new(&authorization_token).unwrap();
+
+    let new_db = c.create_database("palazzo").unwrap();
+    println!("palazzo created");
+
+    let my_db = c.get_database("palazzo").unwrap();
+    println!("{:?}", my_db);
+
+
+    let dbs = c.list_databases().unwrap();
+
+    println!("dbs.len() == {}", dbs.len());
+
+    c.delete_database("palazzo").unwrap();
+
+    println!("palazzo deleted");
+
+    return;
+
+
 
     let azure_storage_account = match std::env::var("AZURE_STORAGE_ACCOUNT") {
         Ok(val) => val,
@@ -184,10 +252,7 @@ fn lease_blob(client: &Client) {
     let ret = Container::list(client, &LIST_CONTAINER_OPTIONS_DEFAULT).unwrap();
     let vhds = ret.iter().find(|x| x.name == "rust").unwrap();
     let blobs = Blob::list(client, &vhds.name, &LIST_BLOB_OPTIONS_DEFAULT).unwrap();
-    let blob = blobs
-        .iter()
-        .find(|x| x.name == "go_rust12.txt")
-        .unwrap();
+    let blob = blobs.iter().find(|x| x.name == "go_rust12.txt").unwrap();
 
     println!("blob == {:?}", blob);
 
