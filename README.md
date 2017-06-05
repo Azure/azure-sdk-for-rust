@@ -12,10 +12,10 @@
 Microsoft Azure expose its technologies via REST API. These APIs are easily consumable from any language (good) but are weakly typed. With this library and its related [crate](https://crates.io/crates/azure_sdk_for_rust/) you can exploit the power of Microsoft Azure from Rust in a idiomatic way.
 
 > **NOTE:** This repository is under heavy development and
-is likely to break over time. The current releases will probabily contain bugs... Rust is good but not *that* good!
+is likely to break over time. The current releases will probabily contain bugs. As usual open issues if you find any.
 
 ## Disclaimer
-Although I am a Microsoft employee, this is not a Microsoft endorsed project. It's simply a pet project of mine: I love Rust (who doesn't? :smirk:) and Microsoft Azure technologies so I thought to close the gap between them. It's also a good project for learning Rust. This library relies heavily on [https://github.com/hyperium/hyper](Hyper). As the time of writing master Hyper does not support Tokio yet: this SDK will than be _blocking_. I plan to switch to futures as soon as possible.
+Although I am a Microsoft employee, this is not a Microsoft endorsed project. It's simply a pet project of mine: I love Rust (who doesn't? :smirk:) and Microsoft Azure technologies so I thought to close the gap between them. It's also a good project for learning Rust. This library relies heavily on [Hyper](https://github.com/hyperium/hyper). As the time of writing master Hyper does not support Tokio yet: this SDK will than be _blocking_. I plan to switch to futures as soon as possible.
 
 ## Run E2E test
 ```
