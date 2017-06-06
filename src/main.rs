@@ -100,6 +100,12 @@ fn main() {
 
     let c = azure::cosmos::client::Client::new(&authorization_token).unwrap();
 
+    let tdb = c.get_database("test_db").unwrap();
+    let coll = c.get_collection(&tdb, "test_collection").unwrap();
+
+    println!("coll == {:?}", coll);
+
+
     let new_db = c.create_database("palazzo").unwrap();
     println!("palazzo created");
 

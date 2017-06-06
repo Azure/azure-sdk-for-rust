@@ -155,5 +155,8 @@ pub fn check_status_extract_body(resp: &mut hyper::client::response::Response,
 
     let mut resp_s = String::new();
     resp.read_to_string(&mut resp_s)?;
+
+    debug!("resp_s == {}", resp_s);
+
     Ok(resp_s)
 }

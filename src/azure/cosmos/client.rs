@@ -2,6 +2,7 @@ use azure::cosmos::authorization_token::{TokenType, AuthorizationToken};
 use azure::core::HTTPMethod;
 
 use azure::cosmos::database::Database;
+use azure::cosmos::collection::Collection;
 
 use azure::core::errors::{AzureError, check_status_extract_body, check_status};
 
@@ -132,8 +133,8 @@ impl<'a> Client<'a> {
         trace!("list_databases called");
 
         let url = url::Url::parse(&format!("https://{}.documents.azure.com/dbs",
-                                          self.authorization_token.account()))
-                .unwrap();
+                                           self.authorization_token.account()))
+            .unwrap();
 
         // No specific headers are required, list databases only needs standard headers
         // which will be provied by perform_request
@@ -151,8 +152,8 @@ impl<'a> Client<'a> {
                database_name);
 
         let url = url::Url::parse(&format!("https://{}.documents.azure.com/dbs",
-                                          self.authorization_token.account()))
-                .unwrap();
+                                           self.authorization_token.account()))
+            .unwrap();
 
         // No specific headers are required, create databases only needs standard headers
         // which will be provied by perform_request
@@ -178,9 +179,9 @@ impl<'a> Client<'a> {
         trace!("get_database called (database_name == {})", database_name);
 
         let url = url::Url::parse(&format!("https://{}.documents.azure.com/dbs/{}",
-                                          self.authorization_token.account(),
-                                          database_name))
-                .unwrap();
+                                           self.authorization_token.account(),
+                                           database_name))
+            .unwrap();
 
         // No specific headers are required, get database only needs standard headers
         // which will be provied by perform_request
@@ -199,9 +200,9 @@ impl<'a> Client<'a> {
                database_name);
 
         let url = url::Url::parse(&format!("https://{}.documents.azure.com/dbs/{}",
-                                          self.authorization_token.account(),
-                                          database_name))
-                .unwrap();
+                                           self.authorization_token.account(),
+                                           database_name))
+            .unwrap();
 
         // No specific headers are required, delete database only needs standard headers
         // which will be provied by perform_request
@@ -216,7 +217,34 @@ impl<'a> Client<'a> {
 
         Ok(())
     }
+
+    pub fn get_collection(&self,
+                          database_name: &str,
+                          collection_name: &str)
+                          -> Result<Collection, AzureError> {
+        trace!("get_collection called (database_name == {}, collection_name == {})",
+               database_name,
+               collection_name);
+
+        let url = url::Url::parse(&format!("https://{}.documents.azure.com/dbs/{}/colls/{}",
+                                           self.authorization_token.account(),
+                                           database_name,
+                                           collection_name))
+            .unwrap();
+
+        // No specific headers are required, get database only needs standard headers
+        // which will be provied by perform_request
+
+        let mut resp =
+            self.perform_request(&url, HTTPMethod::Get, None, ResourceType::Collections, None)?;
+
+        let body = check_status_extract_body(&mut resp, StatusCode::Ok)?;
+        let coll: Collection = serde_json::from_str(&body)?;
+
+        Ok(coll)
+    }
 }
+
 
 fn generate_authorization(authorization_token: &AuthorizationToken,
                           http_method: HTTPMethod,

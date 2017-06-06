@@ -68,7 +68,7 @@ pub struct Collection {
     #[serde(rename = "_rid")]
     rid: String,
     #[serde(rename = "_ts")]
-    ts: String,
+    ts: u64,
     #[serde(rename = "_self")]
     _self: String,
     #[serde(rename = "_etag")]

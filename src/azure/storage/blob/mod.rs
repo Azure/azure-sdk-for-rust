@@ -428,27 +428,27 @@ impl Blob {
                 if r.is_none() {
                     return Err(AzureError::InputParametersError("cannot use put_blob with \
                                                                  BlockBlob without a Read"
-                                                                        .to_owned()));
+                                                                    .to_owned()));
                 }
             }
             BlobType::PageBlob => {
                 if r.is_some() {
                     return Err(AzureError::InputParametersError("cannot use put_blob with \
                                                                  PageBlob with a Read"
-                                                                        .to_owned()));
+                                                                    .to_owned()));
                 }
 
                 if self.content_length % 512 != 0 {
                     return Err(AzureError::InputParametersError("PageBlob size must be aligned \
                                                                  to 512 bytes boundary"
-                                                                        .to_owned()));
+                                                                    .to_owned()));
                 }
             }
             BlobType::AppendBlob => {
                 if r.is_some() {
                     return Err(AzureError::InputParametersError("cannot use put_blob with \
                                                                  AppendBlob with a Read"
-                                                                        .to_owned()));
+                                                                    .to_owned()));
                 }
             }
         }
