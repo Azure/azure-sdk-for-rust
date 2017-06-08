@@ -385,12 +385,14 @@ mod test {
 
         let s = string_to_sign(&headers, &u, method, service_type);
 
-        assert_eq!(s,
-                   "POST
+        assert_eq!(
+            s,
+            "POST
 
 application/json; charset=utf-8
 Wed, 03 May 2017 14:04:56 GMT
-/mindrust/TABLES");
+/mindrust/TABLES"
+        );
     }
 
     #[test]

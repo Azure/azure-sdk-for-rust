@@ -6,7 +6,8 @@ use azure::cosmos::collection::Collection;
 
 use azure::core::errors::{AzureError, check_status_extract_body, check_status};
 
-use azure::cosmos::request_response::{ListDatabasesResponse, CreateDatabaseRequest};
+use azure::cosmos::request_response::{ListDatabasesResponse, CreateDatabaseRequest,
+                                      ListCollectionsResponse};
 
 use url;
 
@@ -43,7 +44,7 @@ define_encode_set! {
 }
 
 
-#[derive(Clone,Copy)]
+#[derive(Clone, Copy)]
 pub enum ResourceType {
     Databases,
     Collections,
@@ -128,7 +129,6 @@ impl<'a> Client<'a> {
         Ok(res)
     }
 
-
     pub fn list_databases(&self) -> Result<Vec<Database>, AzureError> {
         trace!("list_databases called");
 
@@ -185,7 +185,6 @@ impl<'a> Client<'a> {
 
         // No specific headers are required, get database only needs standard headers
         // which will be provied by perform_request
-
         let mut resp =
             self.perform_request(&url, HTTPMethod::Get, None, ResourceType::Databases, None)?;
 
@@ -206,7 +205,6 @@ impl<'a> Client<'a> {
 
         // No specific headers are required, delete database only needs standard headers
         // which will be provied by perform_request
-
         let mut resp = self.perform_request(&url,
                                             HTTPMethod::Delete,
                                             None,
@@ -234,7 +232,6 @@ impl<'a> Client<'a> {
 
         // No specific headers are required, get database only needs standard headers
         // which will be provied by perform_request
-
         let mut resp =
             self.perform_request(&url, HTTPMethod::Get, None, ResourceType::Collections, None)?;
 
@@ -242,6 +239,25 @@ impl<'a> Client<'a> {
         let coll: Collection = serde_json::from_str(&body)?;
 
         Ok(coll)
+    }
+
+    pub fn list_collections(&self, database_name: &str) -> Result<Vec<Collection>, AzureError> {
+        trace!("list_collections called");
+
+        let url = url::Url::parse(&format!("https://{}.documents.azure.com/dbs/{}/colls",
+                                           self.authorization_token.account(),
+                                           database_name))
+            .unwrap();
+
+        // No specific headers are required, list collections only needs standard headers
+        // which will be provied by perform_request
+        let mut resp =
+            self.perform_request(&url, HTTPMethod::Get, None, ResourceType::Collections, None)?;
+
+        let body = check_status_extract_body(&mut resp, StatusCode::Ok)?;
+        let colls: ListCollectionsResponse = serde_json::from_str(&body)?;
+
+        Ok(colls.collections)
     }
 }
 
@@ -284,6 +300,7 @@ fn string_to_sign(http_method: HTTPMethod,
                   resource_link: &str,
                   time: &str)
                   -> String {
+
     // From official docs:
     // StringToSign = Verb.toLowerCase() + "\n" + ResourceType.toLowerCase() + "\n" + ResourceLink + "\n" + Date.toLowerCase() + "\n" + "" + "\n";
     // Notice the empty string at the end so we need to add two carriage returns
@@ -308,6 +325,8 @@ fn string_to_sign(http_method: HTTPMethod,
 
 fn generate_resource_link(u: &url::Url) -> &str {
     let mut ps = u.path_segments().unwrap();
+
+    // store the element only if it does not end with dbs, colls or docs
 
     if let Some(segment) = ps.next() {
         match segment {
@@ -343,13 +362,15 @@ mod tests {
                                  ResourceType::Databases,
                                  "dbs/MyDatabase/colls/MyCollection",
                                  &time);
-        assert_eq!(ret,
-                   "get
+        assert_eq!(
+            ret,
+            "get
 dbs
 dbs/MyDatabase/colls/MyCollection
 mon, 01 jan 1900 01:00:00 gmt
 
-");
+"
+        );
     }
 
     #[test]
@@ -408,5 +429,8 @@ mon, 01 jan 1900 01:00:00 gmt
         assert_eq!(generate_resource_link(&u), "");
         let u = Url::parse("https://mindflavor.raldld.r4eee.sss/colls/second/third").unwrap();
         assert_eq!(generate_resource_link(&u), "colls/second/third");
+        let u = Url::parse("https://mindflavor.documents.azure.com/dbs/test_db/colls").unwrap();
+        assert_eq!(generate_resource_link(&u), "dbs/test_db");
+
     }
 }
