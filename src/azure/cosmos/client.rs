@@ -324,26 +324,28 @@ fn string_to_sign(http_method: HTTPMethod,
 }
 
 fn generate_resource_link(u: &url::Url) -> &str {
-    let mut ps = u.path_segments().unwrap();
+    static ENDING_STRINGS: &'static [&str] = &["/dbs", "/colls", "/sososo"];
 
     // store the element only if it does not end with dbs, colls or docs
+    let p = u.path();
 
-    if let Some(segment) = ps.next() {
-        match segment {
-            "" => "", 
-            "dbs" | "colls" | "docs" => {
-                if ps.next() == None {
-                    ""
-                } else {
-                    &u.path()[1..]
+    for str_to_match in ENDING_STRINGS {
+        if str_to_match.len() <= p.len() {
+            let sm = &p[p.len() - str_to_match.len()..];
+            if &sm == str_to_match {
+                if p.len() == str_to_match.len() {
+                    return "";
                 }
+
+                let ret = &p[1..p.len() - str_to_match.len()];
+                return ret;
             }
-            _ => u.path(),
         }
-    } else {
-        ""
     }
+
+    &p[1..]
 }
+
 
 #[cfg(test)]
 mod tests {

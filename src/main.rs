@@ -100,9 +100,9 @@ fn main() {
 
     let c = azure::cosmos::client::Client::new(&authorization_token).unwrap();
 
-    //let tdb = c.get_database("test_db").unwrap();
-    //let coll = c.get_collection(&tdb, "test_collection").unwrap();
-    //println!("coll == {:?}", coll);
+    let tdb = c.get_database("test_db").unwrap();
+    let coll = c.get_collection(&tdb, "test_collection").unwrap();
+    println!("coll == {:?}", coll);
 
     let colls = c.list_collections("test_db").unwrap();
     println!("colls == {:?}", colls);
