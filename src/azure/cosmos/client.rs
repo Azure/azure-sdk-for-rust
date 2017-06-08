@@ -36,6 +36,7 @@ const TIME_FORMAT: &'static str = "%a, %d %h %Y %T GMT";
 header! { (XMSVersion, "x-ms-version") => [String] }
 header! { (XMSDate, "x-ms-date") => [String] }
 header! { (Authorization, "Authorization") => [String] }
+header! { (OfferThroughput, "x-ms-offer-throughput") => [u64] }
 
 define_encode_set! {
     pub COMPLETE_ENCODE_SET = [url::percent_encoding::USERINFO_ENCODE_SET] | {
@@ -259,6 +260,38 @@ impl<'a> Client<'a> {
 
         Ok(colls.collections)
     }
+
+    pub fn create_collection(&self,
+                             database_name: &str,
+                             required_throughput: u64,
+                             collection: &Collection)
+                             -> Result<Collection, AzureError> {
+        trace!("create_collection called");
+
+        let url = url::Url::parse(&format!("https://{}.documents.azure.com/dbs/{}/colls",
+                                           self.authorization_token.account(),
+                                           database_name))
+            .unwrap();
+
+        // Headers added as per https://docs.microsoft.com/en-us/rest/api/documentdb/create-a-collection
+        // Standard headers (auth and version) will be provied by perform_request
+        let mut headers = Headers::new();
+        headers.set(OfferThroughput(required_throughput));
+
+        let collection_serialized = serde_json::to_string(collection)?;
+        let mut curs = Cursor::new(&collection_serialized);
+
+        let mut resp = self.perform_request(&url,
+                                            HTTPMethod::Post,
+                                            Some((&mut curs, collection_serialized.len() as u64)),
+                                            ResourceType::Collections,
+                                            Some(headers))?;
+
+        let body = check_status_extract_body(&mut resp, StatusCode::Created)?;
+        let coll: Collection = serde_json::from_str(&body)?;
+
+        Ok(coll)
+    }
 }
 
 
@@ -414,8 +447,8 @@ mon, 01 jan 1900 01:00:00 gmt
                                          "dbs/ToDoList",
                                          &time);
 
-        // This is the result shown in the MSDN page. Clearly is wrong :)
-        // below is the right one.
+        // This is the result shown in the MSDN page. It's clearly wrong :)
+        // below is the correct one.
         //assert_eq!(ret,
         //           "type%3dmaster%26ver%3d1.0%26sig%3dc09PEVJrgp2uQRkr934kFbTqhByc7TVr3O");
 
