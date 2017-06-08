@@ -324,7 +324,7 @@ fn string_to_sign(http_method: HTTPMethod,
 }
 
 fn generate_resource_link(u: &url::Url) -> &str {
-    static ENDING_STRINGS: &'static [&str] = &["/dbs", "/colls", "/sososo"];
+    static ENDING_STRINGS: &'static [&str] = &["/dbs", "/colls", "/docs"];
 
     // store the element only if it does not end with dbs, colls or docs
     let p = u.path();
