@@ -58,30 +58,12 @@ pub struct IndexingPolicy {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct IndexingPolicyCreate {
-    #[serde(rename = "automatic")]
-    pub automatic: bool,
-    #[serde(rename = "indexingMode")]
-    pub indexing_mode: String,
-    #[serde(rename = "includedPaths")]
-    pub included_paths: Vec<IncludedPath>,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct CreateCollection {
-    pub id: String,
-    #[serde(rename = "indexingPolicy")]
-    pub indexing_policy: IndexingPolicyCreate,
-    //#[serde(rename = "partitionKey")]
-    //pub parition_key: Option<PartitionKey>,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
 pub struct Collection {
     pub id: String,
     #[serde(rename = "indexingPolicy")]
     pub indexing_policy: IndexingPolicy,
     #[serde(rename = "partitionKey")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub parition_key: Option<PartitionKey>,
     #[serde(rename = "_rid")]
     pub rid: String,

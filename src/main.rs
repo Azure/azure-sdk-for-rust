@@ -114,23 +114,33 @@ fn main() {
     };
 
 
-    let ip = azure::cosmos::collection::IndexingPolicyCreate {
+    let ip = azure::cosmos::collection::IndexingPolicy {
         automatic: true,
         indexing_mode: "Consistent".to_owned(),
         included_paths: vec![ip],
+        excluded_paths: vec![],
     };
 
 
-    let coll = azure::cosmos::collection::CreateCollection {
+    let coll = azure::cosmos::collection::Collection {
         id: "mycollection".to_owned(),
         indexing_policy: ip,
-        //parition_key: None,
+        parition_key: None,
+        rid: "".to_owned(),
+        ts: 0,
+        _self: "".to_owned(),
+        etag: "".to_owned(),
+        docs: "".to_owned(),
+        sprocs: "".to_owned(),
+        triggers: "".to_owned(),
+        udfs: "".to_owned(),
+        conflicts: "".to_owned(),
     };
 
     let created_coll = c.create_collection("test_db", 400, &coll).unwrap();
     println!("collection created == {:?}", created_coll);
 
-
+    return;
 
     let tdb = c.get_database("test_db").unwrap();
     let coll = c.get_collection(&tdb, "test_collection").unwrap();
