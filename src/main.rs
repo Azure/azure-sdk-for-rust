@@ -100,6 +100,48 @@ fn main() {
 
     let c = azure::cosmos::client::Client::new(&authorization_token).unwrap();
 
+    let ep = azure::cosmos::collection::ExcludedPath { path: "".to_owned() };
+
+    let indexes = azure::cosmos::collection::IncludedPathIndex {
+        kind: azure::cosmos::collection::KeyKind::Range,
+        data_type: azure::cosmos::collection::DataType::String,
+        precision: Some(-1),
+    };
+
+    let ip = azure::cosmos::collection::IncludedPath {
+        path: "/*".to_owned(),
+        indexes: vec![indexes],
+    };
+
+
+    let ip = azure::cosmos::collection::IndexingPolicy {
+        automatic: true,
+        indexing_mode: "Consistent".to_owned(),
+        included_paths: vec![ip],
+        excluded_paths: vec![ep],
+    };
+
+
+    let coll = azure::cosmos::collection::Collection {
+        id: "mycollection".to_owned(),
+        indexing_policy: ip,
+        parition_key: None,
+        rid: "".to_owned(),
+        ts: 0,
+        _self: "".to_owned(),
+        etag: "".to_owned(),
+        docs: "".to_owned(),
+        sprocs: "".to_owned(),
+        triggers: "".to_owned(),
+        udfs: "".to_owned(),
+        conflicts: "".to_owned(),
+    };
+
+    let created_coll = c.create_collection("test_db", 400, &coll).unwrap();
+    println!("collection created == {:?}", created_coll);
+
+
+
     let tdb = c.get_database("test_db").unwrap();
     let coll = c.get_collection(&tdb, "test_collection").unwrap();
     println!("coll == {:?}", coll);

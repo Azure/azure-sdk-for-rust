@@ -279,6 +279,9 @@ impl<'a> Client<'a> {
         headers.set(OfferThroughput(required_throughput));
 
         let collection_serialized = serde_json::to_string(collection)?;
+
+        trace!("collection_serialized == {}", collection_serialized);
+
         let mut curs = Cursor::new(&collection_serialized);
 
         let mut resp = self.perform_request(&url,

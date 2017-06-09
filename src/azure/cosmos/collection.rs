@@ -17,70 +17,70 @@ pub enum DataType {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct IncludedPath {
     #[serde(rename = "path")]
-    path: String,
+    pub path: String,
     #[serde(rename = "indexes")]
-    indexes: Vec<IncludedPathIndex>,
+    pub indexes: Vec<IncludedPathIndex>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct IncludedPathIndex {
     #[serde(rename = "kind")]
-    kind: KeyKind,
+    pub kind: KeyKind,
     #[serde(rename = "dataType")]
-    data_type: DataType,
+    pub data_type: DataType,
     #[serde(rename = "precision")]
-    precision: Option<i8>,
+    pub precision: Option<i8>,
 }
 
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct ExcludedPath {
     #[serde(rename = "path")]
-    path: String,
+    pub path: String,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct PartitionKey {
-    paths: Vec<String>,
-    kind: KeyKind,
+    pub paths: Vec<String>,
+    pub kind: KeyKind,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct IndexingPolicy {
     #[serde(rename = "automatic")]
-    automatic: bool,
+    pub automatic: bool,
     #[serde(rename = "indexingMode")]
-    indexing_mode: String,
+    pub indexing_mode: String,
     #[serde(rename = "includedPaths")]
-    included_paths: Vec<IncludedPath>,
+    pub included_paths: Vec<IncludedPath>,
     #[serde(rename = "excludedPaths")]
-    excluded_paths: Vec<ExcludedPath>,
+    pub excluded_paths: Vec<ExcludedPath>,
 }
 
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Collection {
-    id: String,
+    pub id: String,
     #[serde(rename = "indexingPolicy")]
-    indexing_policy: IndexingPolicy,
+    pub indexing_policy: IndexingPolicy,
     #[serde(rename = "partitionKey")]
-    parition_key: PartitionKey,
+    pub parition_key: Option<PartitionKey>,
     #[serde(rename = "_rid")]
-    rid: String,
+    pub rid: String,
     #[serde(rename = "_ts")]
-    ts: u64,
+    pub ts: u64,
     #[serde(rename = "_self")]
-    _self: String,
+    pub _self: String,
     #[serde(rename = "_etag")]
-    etag: String,
+    pub etag: String,
     #[serde(rename = "_docs")]
-    docs: String,
+    pub docs: String,
     #[serde(rename = "_sprocs")]
-    sprocs: String,
+    pub sprocs: String,
     #[serde(rename = "_triggers")]
-    triggers: String,
+    pub triggers: String,
     #[serde(rename = "_udfs")]
-    udfs: String,
+    pub udfs: String,
     #[serde(rename = "_conflicts")]
-    conflicts: String,
+    pub conflicts: String,
 }

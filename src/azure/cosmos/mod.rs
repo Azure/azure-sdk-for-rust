@@ -3,4 +3,5 @@ pub mod client;
 pub mod database;
 
 mod request_response;
-mod collection;
+
+pub mod collection;
