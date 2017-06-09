@@ -24,12 +24,12 @@ pub struct IncludedPath {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct IncludedPathIndex {
-    #[serde(rename = "kind")]
-    pub kind: KeyKind,
     #[serde(rename = "dataType")]
     pub data_type: DataType,
     #[serde(rename = "precision")]
     pub precision: Option<i8>,
+    #[serde(rename = "kind")]
+    pub kind: KeyKind,
 }
 
 
@@ -57,6 +57,24 @@ pub struct IndexingPolicy {
     pub excluded_paths: Vec<ExcludedPath>,
 }
 
+#[derive(Serialize, Deserialize, Debug)]
+pub struct IndexingPolicyCreate {
+    #[serde(rename = "automatic")]
+    pub automatic: bool,
+    #[serde(rename = "indexingMode")]
+    pub indexing_mode: String,
+    #[serde(rename = "includedPaths")]
+    pub included_paths: Vec<IncludedPath>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct CreateCollection {
+    pub id: String,
+    #[serde(rename = "indexingPolicy")]
+    pub indexing_policy: IndexingPolicyCreate,
+    //#[serde(rename = "partitionKey")]
+    //pub parition_key: Option<PartitionKey>,
+}
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Collection {

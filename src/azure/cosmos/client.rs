@@ -2,7 +2,7 @@ use azure::cosmos::authorization_token::{TokenType, AuthorizationToken};
 use azure::core::HTTPMethod;
 
 use azure::cosmos::database::Database;
-use azure::cosmos::collection::Collection;
+use azure::cosmos::collection::{Collection, CreateCollection};
 
 use azure::core::errors::{AzureError, check_status_extract_body, check_status};
 
@@ -264,7 +264,7 @@ impl<'a> Client<'a> {
     pub fn create_collection(&self,
                              database_name: &str,
                              required_throughput: u64,
-                             collection: &Collection)
+                             collection: &CreateCollection)
                              -> Result<Collection, AzureError> {
         trace!("create_collection called");
 
