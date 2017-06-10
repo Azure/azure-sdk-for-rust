@@ -314,6 +314,36 @@ impl<'a> Client<'a> {
 
         Ok(())
     }
+
+    pub fn replace_collection(&self,
+                              database_name: &str,
+                              collection: &Collection)
+                              -> Result<Collection, AzureError> {
+        trace!("replace_collection called");
+
+        let url = url::Url::parse(&format!("https://{}.documents.azure.com/dbs/{}/colls",
+                                           self.authorization_token.account(),
+                                           database_name))?;
+
+        // No specific headers are required.
+        // Standard headers (auth and version) will be provied by perform_request
+        let collection_serialized = serde_json::to_string(collection)?;
+
+        println!("collection_serialized == {}", collection_serialized);
+
+        let mut curs = Cursor::new(&collection_serialized);
+
+        let mut resp = self.perform_request(&url,
+                                            HTTPMethod::Put,
+                                            Some((&mut curs, collection_serialized.len() as u64)),
+                                            ResourceType::Collections,
+                                            None)?;
+
+        let body = check_status_extract_body(&mut resp, StatusCode::Created)?;
+        let coll: Collection = serde_json::from_str(&body)?;
+
+        Ok(coll)
+    }
 }
 
 

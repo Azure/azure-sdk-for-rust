@@ -112,9 +112,9 @@ fn main() {
     let ep = azure::cosmos::collection::ExcludedPath { path: "".to_owned() };
 
     let indexes = azure::cosmos::collection::IncludedPathIndex {
-        kind: azure::cosmos::collection::KeyKind::Range,
+        kind: azure::cosmos::collection::KeyKind::Hash,
         data_type: azure::cosmos::collection::DataType::String,
-        precision: Some(-1),
+        precision: Some(3),
     };
 
     let ip = azure::cosmos::collection::IncludedPath {
@@ -136,6 +136,21 @@ fn main() {
     let created_coll = c.create_collection("test_db", 400, &coll).unwrap();
     println!("collection created == {:?}", created_coll);
 
+
+    //// now let's get back the created collection and add an index
+    //// using replace_collection
+    //let mut created_coll = c.get_collection("test_db", &created_coll).unwrap();
+    //println!("\nretrieved coll = {:?}", created_coll);
+    //created_coll.indexing_policy.included_paths[0]
+    //    .indexes
+    //    .push(azure::cosmos::collection::IncludedPathIndex {
+    //              data_type: azure::cosmos::collection::DataType::Point,
+    //              precision: Some(-1),
+    //              kind: azure::cosmos::collection::KeyKind::Hash,
+    //          });
+
+    //c.replace_collection("test_db", &created_coll).unwrap();
+    //println!("collection replaced!");
     return;
 
     let tdb = c.get_database("test_db").unwrap();
