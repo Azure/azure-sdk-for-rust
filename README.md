@@ -125,7 +125,7 @@ Also note that the project is in early stages so the APIs are bound to change at
 I generally build for the latest nightly and leave to Travis to check the retrocompatibility.
 
 ## Contributing
-If you want to contribute please do! No formality required! :wink:
+If you want to contribute please do! No formality required! :wink:. Please note that asking for a pull request you accept to yield your code as per [Apache license, version 2.0](LICENSE).
 
 ### Implemented methods
 
