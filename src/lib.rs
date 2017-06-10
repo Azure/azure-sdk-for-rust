@@ -12,7 +12,6 @@ extern crate base64;
 extern crate xml;
 extern crate uuid;
 extern crate time;
-extern crate mime;
 
 #[macro_use]
 extern crate log;

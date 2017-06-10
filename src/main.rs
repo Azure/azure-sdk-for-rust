@@ -13,7 +13,6 @@ extern crate url;
 extern crate crypto;
 extern crate base64;
 extern crate xml;
-extern crate mime;
 extern crate time;
 #[macro_use]
 extern crate log;
@@ -50,7 +49,7 @@ pub mod azure;
 // use chrono::datetime::DateTime;
 use chrono::UTC;
 
-use mime::Mime;
+use hyper::mime::Mime;
 
 use azure::cosmos::client::ResourceType;
 use azure::cosmos::authorization_token::{AuthorizationToken, TokenType};

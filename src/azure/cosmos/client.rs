@@ -329,7 +329,7 @@ impl<'a> Client<'a> {
         // Standard headers (auth and version) will be provied by perform_request
         let collection_serialized = serde_json::to_string(collection)?;
 
-        println!("collection_serialized == {}", collection_serialized);
+        trace!("collection_serialized == {}", collection_serialized);
 
         let mut curs = Cursor::new(&collection_serialized);
 

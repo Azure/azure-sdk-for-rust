@@ -44,7 +44,9 @@ use azure::core::range::Range;
 use azure::core::ba512_range::BA512Range;
 use azure::core::incompletevector::IncompleteVector;
 
-use mime::Mime;
+//use mime::Mime;
+
+use hyper::mime::Mime;
 
 use hyper::status::StatusCode;
 use hyper::header::{Headers, ContentType, ContentLength, LastModified, ContentEncoding,
