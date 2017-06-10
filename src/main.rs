@@ -13,7 +13,6 @@ extern crate url;
 extern crate crypto;
 extern crate base64;
 extern crate xml;
-extern crate mime;
 extern crate time;
 #[macro_use]
 extern crate log;
@@ -50,7 +49,7 @@ pub mod azure;
 // use chrono::datetime::DateTime;
 use chrono::UTC;
 
-use mime::Mime;
+use hyper::mime::Mime;
 
 use azure::cosmos::client::ResourceType;
 use azure::cosmos::authorization_token::{AuthorizationToken, TokenType};
@@ -99,6 +98,65 @@ fn main() {
         .unwrap();
 
     let c = azure::cosmos::client::Client::new(&authorization_token).unwrap();
+
+    let colls = c.list_collections("test_db").unwrap();
+    println!("colls == {:?}", colls);
+
+    // delete mycollection if exists
+    if let Some(coll_to_del) = colls.iter().find(|ref c| c.id == "mycollection") {
+        c.delete_collection("test_db", coll_to_del).unwrap();
+        println!("collection deleted!");
+    }
+
+    let ep = azure::cosmos::collection::ExcludedPath { path: "".to_owned() };
+
+    let indexes = azure::cosmos::collection::IncludedPathIndex {
+        kind: azure::cosmos::collection::KeyKind::Hash,
+        data_type: azure::cosmos::collection::DataType::String,
+        precision: Some(3),
+    };
+
+    let ip = azure::cosmos::collection::IncludedPath {
+        path: "/*".to_owned(),
+        indexes: vec![indexes],
+    };
+
+
+    let ip = azure::cosmos::collection::IndexingPolicy {
+        automatic: true,
+        indexing_mode: azure::cosmos::collection::IndexingMode::Consistent,
+        included_paths: vec![ip],
+        excluded_paths: vec![],
+    };
+
+
+    let coll = azure::cosmos::collection::Collection::new("mycollection", ip);
+
+    let created_coll = c.create_collection("test_db", 400, &coll).unwrap();
+    println!("collection created == {:?}", created_coll);
+
+
+    //// now let's get back the created collection and add an index
+    //// using replace_collection
+    //let mut created_coll = c.get_collection("test_db", &created_coll).unwrap();
+    //println!("\nretrieved coll = {:?}", created_coll);
+    //created_coll.indexing_policy.included_paths[0]
+    //    .indexes
+    //    .push(azure::cosmos::collection::IncludedPathIndex {
+    //              data_type: azure::cosmos::collection::DataType::Point,
+    //              precision: Some(-1),
+    //              kind: azure::cosmos::collection::KeyKind::Hash,
+    //          });
+
+    //c.replace_collection("test_db", &created_coll).unwrap();
+    //println!("collection replaced!");
+    return;
+
+    let tdb = c.get_database("test_db").unwrap();
+    let coll = c.get_collection(&tdb, "test_collection").unwrap();
+    println!("coll == {:?}", coll);
+
+    return;
 
     let new_db = c.create_database("palazzo").unwrap();
     println!("palazzo created");

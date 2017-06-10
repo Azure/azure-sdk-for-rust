@@ -1,9 +1,23 @@
+## [0.3.1](https://github.com/MindFlavor/AzureSDKForRust/releases/tag/0.3.1) (2017-06-10)
+
+**Implemented features:**
+
+* Added Cosmos' collection structures to interact with Cosmos collections.
+* Added Cosmos' create collection method.
+* Added Cosmos' list collections method.
+* Added Cosmos' get collection method.
+* Added Cosmos' delete collection method.
+* Added Cosmos' replace collection method.
+
+**Updated references to bleeding edge**
+
 ## [0.3.0](https://github.com/MindFlavor/AzureSDKForRust/releases/tag/0.3.0) (2017-06-05)
 
 **Implemented features:**
+
 * Added Cosmos support. Right now only database commands are implemented but the authentication frawework is in place. Both ```master keys``` and ```resource tokens``` are supported (see [https://docs.microsoft.com/it-it/rest/api/documentdb/access-control-on-documentdb-resources?redirectedfrom=MSDN](https://docs.microsoft.com/it-it/rest/api/documentdb/access-control-on-documentdb-resources?redirectedfrom=MSDN) for more details). 
 
-* Added Cosmos' client struct to interact with a a Cosmos instance.
+* Added Cosmos' client struct to interact with a Cosmos instance.
 * Added Cosmos' create database method.
 * Added Cosmos' list databases method.
 * Added Cosmos' get database method.

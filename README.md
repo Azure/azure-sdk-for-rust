@@ -170,12 +170,22 @@ Azure tables entities can be manipulated in batches. The entities are serialized
 
 #### Cosmos database
 
+##### Database
+
 | Method          | URL                                                                                                                                                |
 | ----            | ---                                                                                                                                                |
 | Create database | [https://docs.microsoft.com/en-us/rest/api/documentdb/create-a-database](https://docs.microsoft.com/en-us/rest/api/documentdb/create-a-database)   |
 | List database   | [https://docs.microsoft.com/en-us/rest/api/documentdb/list-databases](https://docs.microsoft.com/en-us/rest/api/documentdb/list-databases)         |
 | Get database    | [https://docs.microsoft.com/en-us/rest/api/documentdb/get-a-database](https://docs.microsoft.com/en-us/rest/api/documentdb/get-a-database)         |
 | Delete database | [https://docs.microsoft.com/en-us/rest/api/documentdb/delete-a-database1](https://docs.microsoft.com/en-us/rest/api/documentdb/delete-a-database1) |
+
+##### Collection
+
+| Create collection  | [https://docs.microsoft.com/en-us/rest/api/documentdb/create-a-collection](https://docs.microsoft.com/en-us/rest/api/documentdb/create-a-collection)   |
+| List collections   | [https://docs.microsoft.com/en-us/rest/api/documentdb/list-collections](https://docs.microsoft.com/en-us/rest/api/documentdb/list-collections)         |
+| Get collection     | [https://docs.microsoft.com/en-us/rest/api/documentdb/get-a-collection](https://docs.microsoft.com/en-us/rest/api/documentdb/get-a-collection)         |
+| Delete collection  | [https://docs.microsoft.com/en-us/rest/api/documentdb/delete-a-collection](https://docs.microsoft.com/en-us/rest/api/documentdb/delete-a-collection)   |
+| Replace collection | [https://docs.microsoft.com/en-us/rest/api/documentdb/replace-a-collection](https://docs.microsoft.com/en-us/rest/api/documentdb/replace-a-collection) |
 
 ## License
 This project is published under [Apache license, version 2.0](LICENSE).

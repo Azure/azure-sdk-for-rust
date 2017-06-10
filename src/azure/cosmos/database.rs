@@ -1,3 +1,5 @@
+use std::ops::Deref;
+
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Database {
     pub id: String,
@@ -13,4 +15,12 @@ pub struct Database {
     pub colls: String,
     #[serde(rename = "_users")]
     pub users: String,
+}
+
+impl Deref for Database {
+    type Target = str;
+
+    fn deref(&self) -> &str {
+        &self.id
+    }
 }

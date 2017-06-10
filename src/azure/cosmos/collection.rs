@@ -1,3 +1,5 @@
+use std::ops::Deref;
+
 #[derive(Serialize, Deserialize, Debug)]
 pub enum KeyKind {
     Hash,
@@ -15,72 +17,107 @@ pub enum DataType {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
+pub enum IndexingMode {
+    #[serde(rename = "consistent")]
+    Consistent,
+    #[serde(rename = "lazy")]
+    Lazy,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
 pub struct IncludedPath {
     #[serde(rename = "path")]
-    path: String,
+    pub path: String,
     #[serde(rename = "indexes")]
-    indexes: Vec<IncludedPathIndex>,
+    pub indexes: Vec<IncludedPathIndex>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct IncludedPathIndex {
-    #[serde(rename = "kind")]
-    kind: KeyKind,
     #[serde(rename = "dataType")]
-    data_type: DataType,
+    pub data_type: DataType,
     #[serde(rename = "precision")]
-    precision: Option<i8>,
+    pub precision: Option<i8>,
+    #[serde(rename = "kind")]
+    pub kind: KeyKind,
 }
 
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct ExcludedPath {
     #[serde(rename = "path")]
-    path: String,
+    pub path: String,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct PartitionKey {
-    paths: Vec<String>,
-    kind: KeyKind,
+    pub paths: Vec<String>,
+    pub kind: KeyKind,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct IndexingPolicy {
     #[serde(rename = "automatic")]
-    automatic: bool,
+    pub automatic: bool,
     #[serde(rename = "indexingMode")]
-    indexing_mode: String,
+    pub indexing_mode: IndexingMode,
     #[serde(rename = "includedPaths")]
-    included_paths: Vec<IncludedPath>,
+    pub included_paths: Vec<IncludedPath>,
     #[serde(rename = "excludedPaths")]
-    excluded_paths: Vec<ExcludedPath>,
+    pub excluded_paths: Vec<ExcludedPath>,
 }
-
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Collection {
-    id: String,
+    pub id: String,
     #[serde(rename = "indexingPolicy")]
-    indexing_policy: IndexingPolicy,
+    pub indexing_policy: IndexingPolicy,
     #[serde(rename = "partitionKey")]
-    parition_key: PartitionKey,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub parition_key: Option<PartitionKey>,
     #[serde(rename = "_rid")]
-    rid: String,
+    pub rid: String,
     #[serde(rename = "_ts")]
-    ts: String,
+    pub ts: u64,
     #[serde(rename = "_self")]
-    _self: String,
+    pub _self: String,
     #[serde(rename = "_etag")]
-    etag: String,
+    pub etag: String,
     #[serde(rename = "_docs")]
-    docs: String,
+    pub docs: String,
     #[serde(rename = "_sprocs")]
-    sprocs: String,
+    pub sprocs: String,
     #[serde(rename = "_triggers")]
-    triggers: String,
+    pub triggers: String,
     #[serde(rename = "_udfs")]
-    udfs: String,
+    pub udfs: String,
     #[serde(rename = "_conflicts")]
-    conflicts: String,
+    pub conflicts: String,
+}
+
+impl Collection {
+    pub fn new(id: &str, indexing_policy: IndexingPolicy) -> Collection {
+        Collection {
+            id: id.to_owned(),
+            indexing_policy: indexing_policy,
+            parition_key: None,
+            rid: "".to_owned(),
+            ts: 0,
+            _self: "".to_owned(),
+            etag: "".to_owned(),
+            docs: "".to_owned(),
+            sprocs: "".to_owned(),
+            triggers: "".to_owned(),
+            udfs: "".to_owned(),
+            conflicts: "".to_owned(),
+        }
+    }
+}
+
+impl Deref for Collection {
+    type Target = str;
+
+    fn deref(&self) -> &str {
+        &self.id
+    }
 }

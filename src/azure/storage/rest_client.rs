@@ -385,12 +385,14 @@ mod test {
 
         let s = string_to_sign(&headers, &u, method, service_type);
 
-        assert_eq!(s,
-                   "POST
+        assert_eq!(
+            s,
+            "POST
 
 application/json; charset=utf-8
 Wed, 03 May 2017 14:04:56 GMT
-/mindrust/TABLES");
+/mindrust/TABLES"
+        );
     }
 
     #[test]
@@ -403,7 +405,7 @@ Wed, 03 May 2017 14:04:56 GMT
     fn test_canonicalize_resource_1() {
         let url = url::Url::parse("http://myaccount.blob.core.windows.\
                                    net/mycontainer?restype=container&comp=metadata")
-                .unwrap();
+            .unwrap();
         assert_eq!(super::canonicalized_resource(&url),
                    "/myaccount/mycontainer\ncomp:metadata\nrestype:container");
     }
@@ -413,7 +415,7 @@ Wed, 03 May 2017 14:04:56 GMT
         let url = url::Url::parse("http://myaccount.blob.core.windows.\
                                    net/mycontainer?restype=container&comp=list&include=snapshots&\
                                    include=metadata&include=uncommittedblobs")
-                .unwrap();
+            .unwrap();
         assert_eq!(super::canonicalized_resource(&url),
                    "/myaccount/mycontainer\ncomp:list\ninclude:metadata,snapshots,\
                     uncommittedblobs\nrestype:container");
@@ -423,7 +425,7 @@ Wed, 03 May 2017 14:04:56 GMT
     fn test_canonicalize_resource_3() {
         let url = url::Url::parse("https://myaccount-secondary.blob.core.windows.\
                                    net/mycontainer/myblob")
-                .unwrap();
+            .unwrap();
         assert_eq!(super::canonicalized_resource(&url),
                    "/myaccount-secondary/mycontainer/myblob");
     }
@@ -433,7 +435,7 @@ Wed, 03 May 2017 14:04:56 GMT
         let str_to_sign = "53d7e14aee681a00340300032015-01-01T10:00:00.0000000".to_owned();
         let hmac_key = "pXeTVaaaaU9XxH6fPcPlq8Y9D9G3Cdo5Eh2nMSgKj/DWqeSFFXDdmpz5Trv+L2hQNM+nGa704R\
                         f8Z22W9O1jdQ=="
-                .to_owned();
+            .to_owned();
 
         assert_eq!(super::encode_str_to_sign(&str_to_sign, &hmac_key),
                    "gZzaRaIkvC9jYRY123tq3xXZdsMAcgAbjKQo8y0p0Fs=".to_owned());
@@ -444,7 +446,7 @@ Wed, 03 May 2017 14:04:56 GMT
         let str_to_sign = "This is the data to sign".to_owned();
         let hmac_key = "pXeTVaaaaU9XxH6fPcPlq8Y9D9G3Cdo5Eh2nMSgKj/DWqeSFFXDdmpz5Trv+L2hQNM+nGa704R\
                         f8Z22W9O1jdQ=="
-                .to_owned();
+            .to_owned();
 
         assert_eq!(super::encode_str_to_sign(&str_to_sign, &hmac_key),
                    "YuKoXELO9M9HXeeGaSXBr4Nk+CgPAEQhcwJ6tVtBRCw=".to_owned());
@@ -455,7 +457,7 @@ Wed, 03 May 2017 14:04:56 GMT
         let str_to_sign = "This is the data to sign".to_owned();
         let hmac_key = "pXeTVaaaaU9XxH6fPcPlq8Y9D9G3Cdo5Eh2nMSgKj/DWqeSFFXDdmpz5Trv+L2hQNM+nGa704R\
                         f8Z22W9O1jdQ=="
-                .to_owned();
+            .to_owned();
 
         assert_eq!(super::encode_str_to_sign(&str_to_sign, &hmac_key),
                    "YuKoXELO9M9HXeeGaSXBr4Nk+CgPAEQhcwJ6tVtBRCw=".to_owned());
