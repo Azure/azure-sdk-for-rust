@@ -100,6 +100,15 @@ fn main() {
 
     let c = azure::cosmos::client::Client::new(&authorization_token).unwrap();
 
+    let colls = c.list_collections("test_db").unwrap();
+    println!("colls == {:?}", colls);
+
+    // delete mycollection if exists
+    if let Some(coll_to_del) = colls.iter().find(|ref c| c.id == "mycollection") {
+        c.delete_collection("test_db", coll_to_del).unwrap();
+        println!("collection deleted!");
+    }
+
     let ep = azure::cosmos::collection::ExcludedPath { path: "".to_owned() };
 
     let indexes = azure::cosmos::collection::IncludedPathIndex {
@@ -116,26 +125,13 @@ fn main() {
 
     let ip = azure::cosmos::collection::IndexingPolicy {
         automatic: true,
-        indexing_mode: "Consistent".to_owned(),
+        indexing_mode: azure::cosmos::collection::IndexingMode::Consistent,
         included_paths: vec![ip],
         excluded_paths: vec![],
     };
 
 
-    let coll = azure::cosmos::collection::Collection {
-        id: "mycollection".to_owned(),
-        indexing_policy: ip,
-        parition_key: None,
-        rid: "".to_owned(),
-        ts: 0,
-        _self: "".to_owned(),
-        etag: "".to_owned(),
-        docs: "".to_owned(),
-        sprocs: "".to_owned(),
-        triggers: "".to_owned(),
-        udfs: "".to_owned(),
-        conflicts: "".to_owned(),
-    };
+    let coll = azure::cosmos::collection::Collection::new("mycollection", ip);
 
     let created_coll = c.create_collection("test_db", 400, &coll).unwrap();
     println!("collection created == {:?}", created_coll);
@@ -145,9 +141,6 @@ fn main() {
     let tdb = c.get_database("test_db").unwrap();
     let coll = c.get_collection(&tdb, "test_collection").unwrap();
     println!("coll == {:?}", coll);
-
-    let colls = c.list_collections("test_db").unwrap();
-    println!("colls == {:?}", colls);
 
     return;
 

@@ -134,8 +134,7 @@ impl<'a> Client<'a> {
         trace!("list_databases called");
 
         let url = url::Url::parse(&format!("https://{}.documents.azure.com/dbs",
-                                           self.authorization_token.account()))
-            .unwrap();
+                                           self.authorization_token.account()))?;
 
         // No specific headers are required, list databases only needs standard headers
         // which will be provied by perform_request
@@ -153,8 +152,7 @@ impl<'a> Client<'a> {
                database_name);
 
         let url = url::Url::parse(&format!("https://{}.documents.azure.com/dbs",
-                                           self.authorization_token.account()))
-            .unwrap();
+                                           self.authorization_token.account()))?;
 
         // No specific headers are required, create databases only needs standard headers
         // which will be provied by perform_request
@@ -181,8 +179,7 @@ impl<'a> Client<'a> {
 
         let url = url::Url::parse(&format!("https://{}.documents.azure.com/dbs/{}",
                                            self.authorization_token.account(),
-                                           database_name))
-            .unwrap();
+                                           database_name))?;
 
         // No specific headers are required, get database only needs standard headers
         // which will be provied by perform_request
@@ -201,8 +198,7 @@ impl<'a> Client<'a> {
 
         let url = url::Url::parse(&format!("https://{}.documents.azure.com/dbs/{}",
                                            self.authorization_token.account(),
-                                           database_name))
-            .unwrap();
+                                           database_name))?;
 
         // No specific headers are required, delete database only needs standard headers
         // which will be provied by perform_request
@@ -228,8 +224,7 @@ impl<'a> Client<'a> {
         let url = url::Url::parse(&format!("https://{}.documents.azure.com/dbs/{}/colls/{}",
                                            self.authorization_token.account(),
                                            database_name,
-                                           collection_name))
-            .unwrap();
+                                           collection_name))?;
 
         // No specific headers are required, get database only needs standard headers
         // which will be provied by perform_request
@@ -247,8 +242,7 @@ impl<'a> Client<'a> {
 
         let url = url::Url::parse(&format!("https://{}.documents.azure.com/dbs/{}/colls",
                                            self.authorization_token.account(),
-                                           database_name))
-            .unwrap();
+                                           database_name))?;
 
         // No specific headers are required, list collections only needs standard headers
         // which will be provied by perform_request
@@ -270,8 +264,7 @@ impl<'a> Client<'a> {
 
         let url = url::Url::parse(&format!("https://{}.documents.azure.com/dbs/{}/colls",
                                            self.authorization_token.account(),
-                                           database_name))
-            .unwrap();
+                                           database_name))?;
 
         // Headers added as per https://docs.microsoft.com/en-us/rest/api/documentdb/create-a-collection
         // Standard headers (auth and version) will be provied by perform_request
@@ -294,6 +287,32 @@ impl<'a> Client<'a> {
         let coll: Collection = serde_json::from_str(&body)?;
 
         Ok(coll)
+    }
+
+    pub fn delete_collection(&self,
+                             database_name: &str,
+                             collection_name: &str)
+                             -> Result<(), AzureError> {
+        trace!("delete_collection called (database_name == {}, collection_name == {}",
+               database_name,
+               collection_name);
+
+        let url = url::Url::parse(&format!("https://{}.documents.azure.com/dbs/{}/colls/{}",
+                                           self.authorization_token.account(),
+                                           database_name,
+                                           collection_name))?;
+
+        // No specific headers are required.
+        // Standard headers (auth and version) will be provied by perform_request
+        let mut resp = self.perform_request(&url,
+                                            HTTPMethod::Delete,
+                                            None,
+                                            ResourceType::Collections,
+                                            None)?;
+
+        check_status(&mut resp, StatusCode::NoContent)?;
+
+        Ok(())
     }
 }
 

@@ -1,3 +1,5 @@
+use std::ops::Deref;
+
 #[derive(Serialize, Deserialize, Debug)]
 pub enum KeyKind {
     Hash,
@@ -12,6 +14,14 @@ pub enum DataType {
     Point,
     Polygon,
     LineString,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub enum IndexingMode {
+    #[serde(rename = "consistent")]
+    Consistent,
+    #[serde(rename = "lazy")]
+    Lazy,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -50,7 +60,7 @@ pub struct IndexingPolicy {
     #[serde(rename = "automatic")]
     pub automatic: bool,
     #[serde(rename = "indexingMode")]
-    pub indexing_mode: String,
+    pub indexing_mode: IndexingMode,
     #[serde(rename = "includedPaths")]
     pub included_paths: Vec<IncludedPath>,
     #[serde(rename = "excludedPaths")]
@@ -83,4 +93,31 @@ pub struct Collection {
     pub udfs: String,
     #[serde(rename = "_conflicts")]
     pub conflicts: String,
+}
+
+impl Collection {
+    pub fn new(id: &str, indexing_policy: IndexingPolicy) -> Collection {
+        Collection {
+            id: id.to_owned(),
+            indexing_policy: indexing_policy,
+            parition_key: None,
+            rid: "".to_owned(),
+            ts: 0,
+            _self: "".to_owned(),
+            etag: "".to_owned(),
+            docs: "".to_owned(),
+            sprocs: "".to_owned(),
+            triggers: "".to_owned(),
+            udfs: "".to_owned(),
+            conflicts: "".to_owned(),
+        }
+    }
+}
+
+impl Deref for Collection {
+    type Target = str;
+
+    fn deref(&self) -> &str {
+        &self.id
+    }
 }
