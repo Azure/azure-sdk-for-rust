@@ -31,7 +31,7 @@ cargo test --features=test_e2e
 ```
 
 ## Example
-You can find examples in the test section and in the main.rs file. Here is a sample however:
+You can find examples in the [```tests```](https://github.com/MindFlavor/AzureSDKForRust/tree/master/tests) folder, in the [```examples```](https://github.com/MindFlavor/AzureSDKForRust/tree/master/examples) folder and in the [```src/main.rs```](https://github.com/MindFlavor/AzureSDKForRust/blob/master/src/main.rs) file (which I shall try to remove in the future). Here is a sample however:
 
 ### main.rs
 ```rust
