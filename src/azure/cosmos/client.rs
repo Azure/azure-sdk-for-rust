@@ -3,6 +3,7 @@ use azure::core::HTTPMethod;
 
 use azure::cosmos::database::Database;
 use azure::cosmos::collection::Collection;
+use azure::cosmos::document::{IndexingDirective, DocumentAttributes};
 
 use azure::core::errors::{AzureError, check_status_extract_body, check_status};
 
@@ -10,6 +11,8 @@ use azure::cosmos::request_response::{ListDatabasesResponse, CreateDatabaseReque
                                       ListCollectionsResponse};
 
 use url;
+
+use serde::Serialize;
 
 use std::io::{Read, Cursor};
 
@@ -37,6 +40,8 @@ header! { (XMSVersion, "x-ms-version") => [String] }
 header! { (XMSDate, "x-ms-date") => [String] }
 header! { (Authorization, "Authorization") => [String] }
 header! { (OfferThroughput, "x-ms-offer-throughput") => [u64] }
+header! { (DocumentIsUpsert, "x-ms-documentdb-is-upsert") => [bool] }
+header! { (DocumentIndexingDirective, "x-ms-indexing-directive	") => [IndexingDirective] }
 
 define_encode_set! {
     pub COMPLETE_ENCODE_SET = [url::percent_encoding::USERINFO_ENCODE_SET] | {
@@ -258,7 +263,7 @@ impl<'a> Client<'a> {
     pub fn create_collection(&self,
                              database_name: &str,
                              required_throughput: u64,
-                             collection: &Collection)
+                             collection: &str)
                              -> Result<Collection, AzureError> {
         trace!("create_collection called");
 
@@ -317,7 +322,7 @@ impl<'a> Client<'a> {
 
     pub fn replace_collection(&self,
                               database_name: &str,
-                              collection: &Collection)
+                              collection: &str)
                               -> Result<Collection, AzureError> {
         trace!("replace_collection called");
 
@@ -343,6 +348,50 @@ impl<'a> Client<'a> {
         let coll: Collection = serde_json::from_str(&body)?;
 
         Ok(coll)
+    }
+
+    pub fn create_document<T>(&self,
+                              database: &str,
+                              collection: &str,
+                              is_upsert: bool,
+                              indexing_directive: Option<IndexingDirective>,
+                              document: &T)
+                              -> Result<DocumentAttributes, AzureError>
+        where T: Serialize
+    {
+        trace!("create_document called(database == {}, collection == {}, is_upsert == {}",
+               database,
+               collection,
+               is_upsert);
+
+        let url = url::Url::parse(&format!("https://{}.documents.azure.com/dbs/{}/colls/{}",
+                                           self.authorization_token.account(),
+                                           database,
+                                           collection))?;
+
+        // Standard headers (auth and version) will be provied by perform_request
+        // Optional headers as per https://docs.microsoft.com/en-us/rest/api/documentdb/create-a-document
+        let mut headers = Headers::new();
+        headers.set(DocumentIsUpsert(is_upsert));
+        if let Some(id) = indexing_directive {
+            headers.set(DocumentIndexingDirective(id));
+        }
+
+        let document_serialized = serde_json::to_string(document)?;
+        trace!("document_serialized == {}", document_serialized);
+
+        let mut curs = Cursor::new(&document_serialized);
+
+        let mut resp = self.perform_request(&url,
+                                            HTTPMethod::Post,
+                                            Some((&mut curs, document_serialized.len() as u64)),
+                                            ResourceType::Documents,
+                                            Some(headers))?;
+
+        let body = check_status_extract_body(&mut resp, StatusCode::Created)?;
+        let document_attributes: DocumentAttributes = serde_json::from_str(&body)?;
+
+        Ok(document_attributes)
     }
 }
 

@@ -43,11 +43,10 @@ fn code() -> Result<(), Box<Error>> {
 
     // Each Cosmos' database contains zero or more collections. We can enumerate them using the
     // list_collection method.
-    for db in databases.iter() {
-
+    for db in &databases {
         let collections = client.list_collections(db)?;
         println!("*** {} *** ({} collections)", db as &str, collections.len());
-        for coll in collections.iter() {
+        for coll in &collections {
             // Collection does not implement Display but Deref to &str so this print works as
             // expected.
             println!("\t{}", coll as &str);
