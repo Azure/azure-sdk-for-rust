@@ -19,8 +19,14 @@ Although I am a Microsoft employee, this is not a Microsoft endorsed project. It
 
 ## Run E2E test
 ```
-AZURE_STORAGE_ACCOUNT=<account>
-AZURE_STORAGE_KEY=<key>
+export AZURE_STORAGE_ACCOUNT=<account>
+export AZURE_STORAGE_KEY=<key>
+
+export AZURE_SERVICE_BUS_NAMESPACE=<azure_service_bus_namespace>
+export AZURE_EVENT_HUB_NAME=<azure_event_hub_name>
+export AZURE_POLICY_NAME=<azure_policy_name>
+export AZURE_POLICY_KEY=<azure policy key>
+
 cargo test --features=test_e2e
 ```
 
