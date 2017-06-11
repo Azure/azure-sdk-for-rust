@@ -263,7 +263,7 @@ impl<'a> Client<'a> {
     pub fn create_collection(&self,
                              database_name: &str,
                              required_throughput: u64,
-                             collection: &str)
+                             collection: &Collection)
                              -> Result<Collection, AzureError> {
         trace!("create_collection called");
 
