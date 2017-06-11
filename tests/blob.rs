@@ -5,8 +5,8 @@ extern crate chrono;
 extern crate env_logger;
 #[macro_use]
 extern crate log;
-extern crate mime;
 extern crate serde;
+extern crate hyper;
 
 mod util;
 
@@ -19,7 +19,7 @@ use azure_sdk_for_rust::azure::storage::client::Client;
 use azure_sdk_for_rust::azure::storage::container::{Container, PublicAccess,
                                                     LIST_CONTAINER_OPTIONS_DEFAULT};
 use chrono::UTC;
-use mime::Mime;
+use hyper::mime::Mime;
 use util::get_from_env;
 
 #[test]
