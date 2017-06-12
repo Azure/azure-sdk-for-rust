@@ -364,7 +364,7 @@ impl<'a> Client<'a> {
                collection,
                is_upsert);
 
-        let url = url::Url::parse(&format!("https://{}.documents.azure.com/dbs/{}/colls/{}",
+        let url = url::Url::parse(&format!("https://{}.documents.azure.com/dbs/{}/colls/{}/docs",
                                            self.authorization_token.account(),
                                            database,
                                            collection))?;
