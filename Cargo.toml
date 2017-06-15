@@ -35,6 +35,7 @@ tokio = "*"
 tokio-core = "*"
 futures = "*"
 hyper-tls = "*"
+native-tls ="*"
 
 [features]
 test_e2e         = []

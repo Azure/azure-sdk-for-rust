@@ -8,6 +8,7 @@ extern crate chrono;
 extern crate futures;
 extern crate tokio_core;
 extern crate hyper_tls;
+extern crate native_tls; 
 
 #[macro_use]
 extern crate url;

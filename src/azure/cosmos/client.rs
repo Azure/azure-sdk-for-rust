@@ -32,6 +32,7 @@ use url::percent_encoding::utf8_percent_encode;
 
 use tokio_core;
 use hyper_tls;
+use native_tls;
 
 const AZURE_VERSION: &'static str = "2017-02-22";
 const VERSION: &'static str = "1.0";
@@ -59,22 +60,25 @@ pub enum ResourceType {
 }
 
 pub struct Client<'a> {
-    //hyper_client: hyper::Client,
+    hyper_client: hyper::Client<hyper::client::HttpConnector>,
     authorization_token: &'a AuthorizationToken<'a>,
 }
 
 impl<'a> Client<'a> {
     pub fn new(
+
         handle: &tokio_core::reactor::Handle,
         authorization_token: &'a AuthorizationToken<'a>)
-               -> Result<Client<'a>, ()>{  //hyper_tls::HttpsConnector::Error> {
-
+               -> Result<Client<'a>, native_tls::Error> {
+                 
         let client = hyper::Client::configure()
-            .connector(hyper_tls::HttpsConnector::new(4, handle))
-            .build(handle)?;
+            .connector(hyper_tls::HttpsConnector::new(4, handle)?)                       
+            .build(handle);
+        
+        let client = hyper::Client::new(handle);
                    
         Ok(Client {
-     //          hyper_client: client,
+               hyper_client: client,
                authorization_token: authorization_token,
            })
     }
@@ -86,10 +90,10 @@ impl<'a> Client<'a> {
     fn perform_request(&self,
                        uri: hyper::Uri,
                        http_method: hyper::Method,
-                       request_body: Option<(&mut Read, u64)>,
+                       request_body: Option<&str>,
                        resource_type: ResourceType,
                        headers: Option<Headers>)
-                       -> Result<hyper::client::Response, AzureError> {
+                       -> Result<hyper::client::FutureResponse, AzureError> {
         let dt = chrono::UTC::now();
         let time = format!("{}", dt.format(TIME_FORMAT));
 
@@ -105,15 +109,11 @@ impl<'a> Client<'a> {
         let mut request = hyper::Request::new(http_method, uri);
         
         // we need to add custom headers. If the caller has passed its collection of
-        // headers we will add to his ones. Otherwise we create one from scratch.
+        // headers we will import them.
         if let Some(hs) = headers {
             for h in hs.iter() {
-                request.headers_mut().set(h);                
+                request.headers_mut().set_raw(h.name(), h.value_string());                
             }
-        }
-
-        if let Some((_, size)) = request_body {
-            request.headers_mut().set(ContentLength(size));
         }
 
         request.headers_mut().set(XMSDate(time));
@@ -122,9 +122,9 @@ impl<'a> Client<'a> {
 
         trace!("perform_request::headers == {:?}", request.headers());
 
-        if let Some((mut rb, size)) = request_body {
-            //let b = hyper::client::Body::SizedBody(rb, size);
-            request.set_body(request_body);
+        if let Some(body) = request_body {
+            request.headers_mut().set(ContentLength(body.len() as u64));
+            request.set_body(body.to_string());
         }
 
         let future = self.hyper_client.request(request);
@@ -162,11 +162,10 @@ impl<'a> Client<'a> {
 
         let req = CreateDatabaseRequest { id: database_name };
         let req = serde_json::to_string(&req)?;
-        let mut curs = Cursor::new(&req);
 
         let mut resp = self.perform_request(uri,
                                             hyper::Method::Post,
-                                            Some((&mut curs, req.len() as u64)),
+                                            Some(&req),
                                             ResourceType::Databases,
                                             None)?;
 
@@ -277,11 +276,9 @@ impl<'a> Client<'a> {
 
         trace!("collection_serialized == {}", collection_serialized);
 
-        let mut curs = Cursor::new(&collection_serialized);
-
         let mut resp = self.perform_request(uri,
                                             hyper::Method::Post,
-                                            Some((&mut curs, collection_serialized.len() as u64)),
+                                            Some(&collection_serialized),
                                             ResourceType::Collections,
                                             Some(headers))?;
 
@@ -333,11 +330,9 @@ impl<'a> Client<'a> {
 
         trace!("collection_serialized == {}", collection_serialized);
 
-        let mut curs = Cursor::new(&collection_serialized);
-
         let mut resp = self.perform_request(uri,
                                             hyper::Method::Put,
-                                            Some((&mut curs, collection_serialized.len() as u64)),
+                                            Some(&collection_serialized),
                                             ResourceType::Collections,
                                             None)?;
 
@@ -377,11 +372,9 @@ impl<'a> Client<'a> {
         let document_serialized = serde_json::to_string(document)?;
         trace!("document_serialized == {}", document_serialized);
 
-        let mut curs = Cursor::new(&document_serialized);
-
         let mut resp = self.perform_request(uri,
                                             hyper::Method::Post,
-                                            Some((&mut curs, document_serialized.len() as u64)),
+                                            Some(&document_serialized),
                                             ResourceType::Documents,
                                             Some(headers))?;
 
