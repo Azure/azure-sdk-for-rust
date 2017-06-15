@@ -1,5 +1,5 @@
 use hyper;
-use hyper::status::StatusCode;
+use hyper::StatusCode;
 use chrono;
 use std::io::Error as IOError;
 use std::io::Read;
@@ -82,6 +82,11 @@ quick_error! {
         URLParseError(err: URLParseError){
             from()
             display("URL parse error: {}", err)
+            cause(err)
+        }
+        URIParseError(err: hyper::error::UriError) {
+            from()
+            display("URI parse error: {}", err)
             cause(err)
         }
         ChronoParserError(err: chrono::ParseError) {

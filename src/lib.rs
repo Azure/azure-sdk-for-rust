@@ -3,8 +3,12 @@
 
 #[macro_use]
 extern crate hyper;
-extern crate hyper_native_tls;
 extern crate chrono;
+
+extern crate futures;
+extern crate tokio_core;
+extern crate hyper_tls;
+
 #[macro_use]
 extern crate url;
 extern crate crypto;

@@ -9,8 +9,7 @@ use azure::core::errors::{AzureError, check_status_extract_body, check_status};
 
 use azure::cosmos::request_response::{ListDatabasesResponse, CreateDatabaseRequest,
                                       ListCollectionsResponse};
-
-use url;
+use std::str::FromStr;
 
 use serde::Serialize;
 
@@ -24,13 +23,15 @@ use base64;
 use hyper;
 use serde_json;
 use hyper::header::{ContentLength, Headers};
-use hyper::status::StatusCode;
-use hyper_native_tls;
+use hyper::StatusCode;
 
 use chrono;
 
+use url::percent_encoding;
 use url::percent_encoding::utf8_percent_encode;
 
+use tokio_core;
+use hyper_tls;
 
 const AZURE_VERSION: &'static str = "2017-02-22";
 const VERSION: &'static str = "1.0";
@@ -44,7 +45,7 @@ header! { (DocumentIsUpsert, "x-ms-documentdb-is-upsert") => [bool] }
 header! { (DocumentIndexingDirective, "x-ms-indexing-directive	") => [IndexingDirective] }
 
 define_encode_set! {
-    pub COMPLETE_ENCODE_SET = [url::percent_encoding::USERINFO_ENCODE_SET] | {
+    pub COMPLETE_ENCODE_SET = [percent_encoding::USERINFO_ENCODE_SET] | {
         '+', '-', '&'
     }
 }
@@ -58,19 +59,22 @@ pub enum ResourceType {
 }
 
 pub struct Client<'a> {
-    hyper_client: hyper::client::Client,
+    //hyper_client: hyper::Client,
     authorization_token: &'a AuthorizationToken<'a>,
 }
 
 impl<'a> Client<'a> {
-    pub fn new(authorization_token: &'a AuthorizationToken<'a>)
-               -> Result<Client<'a>, hyper_native_tls::native_tls::Error> {
-        let ssl = hyper_native_tls::NativeTlsClient::new()?;
-        let connector = hyper::net::HttpsConnector::new(ssl);
-        let client = hyper::Client::with_connector(connector);
+    pub fn new(
+        handle: &tokio_core::reactor::Handle,
+        authorization_token: &'a AuthorizationToken<'a>)
+               -> Result<Client<'a>, ()>{  //hyper_tls::HttpsConnector::Error> {
 
+        let client = hyper::Client::configure()
+            .connector(hyper_tls::HttpsConnector::new(4, handle))
+            .build(handle)?;
+                   
         Ok(Client {
-               hyper_client: client,
+     //          hyper_client: client,
                authorization_token: authorization_token,
            })
     }
@@ -80,8 +84,8 @@ impl<'a> Client<'a> {
     }
 
     fn perform_request(&self,
-                       url: &url::Url,
-                       http_method: HTTPMethod,
+                       uri: hyper::Uri,
+                       http_method: hyper::Method,
                        request_body: Option<(&mut Read, u64)>,
                        resource_type: ResourceType,
                        headers: Option<Headers>)
@@ -89,9 +93,7 @@ impl<'a> Client<'a> {
         let dt = chrono::UTC::now();
         let time = format!("{}", dt.format(TIME_FORMAT));
 
-
-        // to do: calculate resource link
-        let resource_link = generate_resource_link(url);
+        let resource_link = generate_resource_link(&uri);
 
         let auth = generate_authorization(self.authorization_token,
                                           http_method,
@@ -100,51 +102,46 @@ impl<'a> Client<'a> {
                                           &time);
         trace!("perform_request::auth == {:?}", auth);
 
+        let mut request = hyper::Request::new(http_method, uri);
+        
         // we need to add custom headers. If the caller has passed its collection of
-        // headers we will add to his. Otherwise we create one from scratch.
-        let mut headers = if let Some(h) = headers {
-            h
-        } else {
-            Headers::new()
-        };
+        // headers we will add to his ones. Otherwise we create one from scratch.
+        if let Some(hs) = headers {
+            for h in hs.iter() {
+                request.headers_mut().set(h);                
+            }
+        }
 
         if let Some((_, size)) = request_body {
-            headers.set(ContentLength(size));
+            request.headers_mut().set(ContentLength(size));
         }
 
-        headers.set(XMSDate(time));
-        headers.set(XMSVersion(AZURE_VERSION.to_owned()));
-        headers.set(Authorization(auth));
+        request.headers_mut().set(XMSDate(time));
+        request.headers_mut().set(XMSVersion(AZURE_VERSION.to_owned()));
+        request.headers_mut().set(Authorization(auth));
 
-        trace!("perform_request::headers == {:?}", headers);
-
-        let mut builder = match http_method {
-            HTTPMethod::Get => self.hyper_client.get(&url.to_string()),
-            HTTPMethod::Put => self.hyper_client.put(&url.to_string()),
-            HTTPMethod::Post => self.hyper_client.post(&url.to_string()),
-            HTTPMethod::Delete => self.hyper_client.delete(&url.to_string()),
-        };
+        trace!("perform_request::headers == {:?}", request.headers());
 
         if let Some((mut rb, size)) = request_body {
-            let b = hyper::client::Body::SizedBody(rb, size);
-            builder = builder.body(b);
+            //let b = hyper::client::Body::SizedBody(rb, size);
+            request.set_body(request_body);
         }
 
-        let res = builder.headers(headers).send()?;
+        let future = self.hyper_client.request(request);
 
-        Ok(res)
+        Ok(future)
     }
 
     pub fn list_databases(&self) -> Result<Vec<Database>, AzureError> {
         trace!("list_databases called");
 
-        let url = url::Url::parse(&format!("https://{}.documents.azure.com/dbs",
+        let uri = hyper::Uri::from_str(&format!("https://{}.documents.azure.com/dbs",
                                            self.authorization_token.account()))?;
 
         // No specific headers are required, list databases only needs standard headers
         // which will be provied by perform_request
         let mut resp =
-            self.perform_request(&url, HTTPMethod::Get, None, ResourceType::Databases, None)?;
+            self.perform_request(uri, hyper::Method::Get, None, ResourceType::Databases, None)?;
 
         let body = check_status_extract_body(&mut resp, StatusCode::Ok)?;
         let db: ListDatabasesResponse = serde_json::from_str(&body)?;
@@ -156,7 +153,7 @@ impl<'a> Client<'a> {
         trace!("create_databases called (database_name == {})",
                database_name);
 
-        let url = url::Url::parse(&format!("https://{}.documents.azure.com/dbs",
+        let uri = hyper::Uri::from_str(&format!("https://{}.documents.azure.com/dbs",
                                            self.authorization_token.account()))?;
 
         // No specific headers are required, create databases only needs standard headers
@@ -167,8 +164,8 @@ impl<'a> Client<'a> {
         let req = serde_json::to_string(&req)?;
         let mut curs = Cursor::new(&req);
 
-        let mut resp = self.perform_request(&url,
-                                            HTTPMethod::Post,
+        let mut resp = self.perform_request(uri,
+                                            hyper::Method::Post,
                                             Some((&mut curs, req.len() as u64)),
                                             ResourceType::Databases,
                                             None)?;
@@ -182,14 +179,14 @@ impl<'a> Client<'a> {
     pub fn get_database(&self, database_name: &str) -> Result<Database, AzureError> {
         trace!("get_database called (database_name == {})", database_name);
 
-        let url = url::Url::parse(&format!("https://{}.documents.azure.com/dbs/{}",
+        let uri = hyper::Uri::from_str(&format!("https://{}.documents.azure.com/dbs/{}",
                                            self.authorization_token.account(),
                                            database_name))?;
 
         // No specific headers are required, get database only needs standard headers
         // which will be provied by perform_request
         let mut resp =
-            self.perform_request(&url, HTTPMethod::Get, None, ResourceType::Databases, None)?;
+            self.perform_request(uri, hyper::Method::Get, None, ResourceType::Databases, None)?;
 
         let body = check_status_extract_body(&mut resp, StatusCode::Ok)?;
         let db: Database = serde_json::from_str(&body)?;
@@ -201,14 +198,14 @@ impl<'a> Client<'a> {
         trace!("delete_database called (database_name == {})",
                database_name);
 
-        let url = url::Url::parse(&format!("https://{}.documents.azure.com/dbs/{}",
+        let uri = hyper::Uri::from_str(&format!("https://{}.documents.azure.com/dbs/{}",
                                            self.authorization_token.account(),
                                            database_name))?;
 
         // No specific headers are required, delete database only needs standard headers
         // which will be provied by perform_request
-        let mut resp = self.perform_request(&url,
-                                            HTTPMethod::Delete,
+        let mut resp = self.perform_request(uri,
+                                            hyper::Method::Delete,
                                             None,
                                             ResourceType::Databases,
                                             None)?;
@@ -226,7 +223,7 @@ impl<'a> Client<'a> {
                database_name,
                collection_name);
 
-        let url = url::Url::parse(&format!("https://{}.documents.azure.com/dbs/{}/colls/{}",
+        let uri = hyper::Uri::from_str(&format!("https://{}.documents.azure.com/dbs/{}/colls/{}",
                                            self.authorization_token.account(),
                                            database_name,
                                            collection_name))?;
@@ -234,7 +231,7 @@ impl<'a> Client<'a> {
         // No specific headers are required, get database only needs standard headers
         // which will be provied by perform_request
         let mut resp =
-            self.perform_request(&url, HTTPMethod::Get, None, ResourceType::Collections, None)?;
+            self.perform_request(uri, hyper::Method::Get, None, ResourceType::Collections, None)?;
 
         let body = check_status_extract_body(&mut resp, StatusCode::Ok)?;
         let coll: Collection = serde_json::from_str(&body)?;
@@ -245,14 +242,14 @@ impl<'a> Client<'a> {
     pub fn list_collections(&self, database_name: &str) -> Result<Vec<Collection>, AzureError> {
         trace!("list_collections called");
 
-        let url = url::Url::parse(&format!("https://{}.documents.azure.com/dbs/{}/colls",
+        let uri = hyper::Uri::from_str(&format!("https://{}.documents.azure.com/dbs/{}/colls",
                                            self.authorization_token.account(),
                                            database_name))?;
 
         // No specific headers are required, list collections only needs standard headers
         // which will be provied by perform_request
         let mut resp =
-            self.perform_request(&url, HTTPMethod::Get, None, ResourceType::Collections, None)?;
+            self.perform_request(uri, hyper::Method::Get, None, ResourceType::Collections, None)?;
 
         let body = check_status_extract_body(&mut resp, StatusCode::Ok)?;
         let colls: ListCollectionsResponse = serde_json::from_str(&body)?;
@@ -267,7 +264,7 @@ impl<'a> Client<'a> {
                              -> Result<Collection, AzureError> {
         trace!("create_collection called");
 
-        let url = url::Url::parse(&format!("https://{}.documents.azure.com/dbs/{}/colls",
+        let uri = hyper::Uri::from_str(&format!("https://{}.documents.azure.com/dbs/{}/colls",
                                            self.authorization_token.account(),
                                            database_name))?;
 
@@ -282,8 +279,8 @@ impl<'a> Client<'a> {
 
         let mut curs = Cursor::new(&collection_serialized);
 
-        let mut resp = self.perform_request(&url,
-                                            HTTPMethod::Post,
+        let mut resp = self.perform_request(uri,
+                                            hyper::Method::Post,
                                             Some((&mut curs, collection_serialized.len() as u64)),
                                             ResourceType::Collections,
                                             Some(headers))?;
@@ -302,15 +299,15 @@ impl<'a> Client<'a> {
                database_name,
                collection_name);
 
-        let url = url::Url::parse(&format!("https://{}.documents.azure.com/dbs/{}/colls/{}",
+        let uri = hyper::Uri::from_str(&format!("https://{}.documents.azure.com/dbs/{}/colls/{}",
                                            self.authorization_token.account(),
                                            database_name,
                                            collection_name))?;
 
         // No specific headers are required.
         // Standard headers (auth and version) will be provied by perform_request
-        let mut resp = self.perform_request(&url,
-                                            HTTPMethod::Delete,
+        let mut resp = self.perform_request(uri,
+                                            hyper::Method::Delete,
                                             None,
                                             ResourceType::Collections,
                                             None)?;
@@ -326,7 +323,7 @@ impl<'a> Client<'a> {
                               -> Result<Collection, AzureError> {
         trace!("replace_collection called");
 
-        let url = url::Url::parse(&format!("https://{}.documents.azure.com/dbs/{}/colls",
+        let uri = hyper::Uri::from_str(&format!("https://{}.documents.azure.com/dbs/{}/colls",
                                            self.authorization_token.account(),
                                            database_name))?;
 
@@ -338,8 +335,8 @@ impl<'a> Client<'a> {
 
         let mut curs = Cursor::new(&collection_serialized);
 
-        let mut resp = self.perform_request(&url,
-                                            HTTPMethod::Put,
+        let mut resp = self.perform_request(uri,
+                                            hyper::Method::Put,
                                             Some((&mut curs, collection_serialized.len() as u64)),
                                             ResourceType::Collections,
                                             None)?;
@@ -364,7 +361,7 @@ impl<'a> Client<'a> {
                collection,
                is_upsert);
 
-        let url = url::Url::parse(&format!("https://{}.documents.azure.com/dbs/{}/colls/{}/docs",
+        let uri = hyper::Uri::from_str(&format!("https://{}.documents.azure.com/dbs/{}/colls/{}/docs",
                                            self.authorization_token.account(),
                                            database,
                                            collection))?;
@@ -382,8 +379,8 @@ impl<'a> Client<'a> {
 
         let mut curs = Cursor::new(&document_serialized);
 
-        let mut resp = self.perform_request(&url,
-                                            HTTPMethod::Post,
+        let mut resp = self.perform_request(uri,
+                                            hyper::Method::Post,
                                             Some((&mut curs, document_serialized.len() as u64)),
                                             ResourceType::Documents,
                                             Some(headers))?;
@@ -397,7 +394,7 @@ impl<'a> Client<'a> {
 
 
 fn generate_authorization(authorization_token: &AuthorizationToken,
-                          http_method: HTTPMethod,
+                          http_method: hyper::Method,
                           resource_type: ResourceType,
                           resource_link: &str,
                           time: &str)
@@ -429,7 +426,7 @@ fn encode_str_to_sign(str_to_sign: &str, authorization_token: &AuthorizationToke
 
 
 
-fn string_to_sign(http_method: HTTPMethod,
+fn string_to_sign(http_method: hyper::Method,
                   rt: ResourceType,
                   resource_link: &str,
                   time: &str)
@@ -441,10 +438,10 @@ fn string_to_sign(http_method: HTTPMethod,
 
     format!("{}\n{}\n{}\n{}\n\n",
             match http_method {
-                HTTPMethod::Get => "get",
-                HTTPMethod::Put => "put",
-                HTTPMethod::Post => "post",
-                HTTPMethod::Delete => "delete",
+                hyper::Method::Get => "get",
+                hyper::Method::Put => "put",
+                hyper::Method::Post => "post",
+                hyper::Method::Delete => "delete",
             },
             match rt { 
                 ResourceType::Databases => "dbs",
@@ -457,7 +454,7 @@ fn string_to_sign(http_method: HTTPMethod,
 
 }
 
-fn generate_resource_link(u: &url::Url) -> &str {
+fn generate_resource_link<'a>(u: &'a hyper::Uri) -> &'a str {
     static ENDING_STRINGS: &'static [&str] = &["/dbs", "/colls", "/docs"];
 
     // store the element only if it does not end with dbs, colls or docs
@@ -485,7 +482,7 @@ fn generate_resource_link(u: &url::Url) -> &str {
 mod tests {
     use azure::cosmos::client::*;
     use azure::cosmos::authorization_token;
-    use url::Url;
+    use uri::Url;
 
     #[test]
     fn string_to_sign_00() {
