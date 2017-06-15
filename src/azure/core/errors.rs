@@ -139,17 +139,16 @@ impl From<()> for AzureError {
 }
 
 #[inline]
-pub fn check_status(
-    resp: hyper::client::FutureResponse,
-    s: StatusCode,
-) -> Result<Future, AzureError> {
+pub fn check_status(resp: hyper::client::FutureResponse,
+                    s: StatusCode)
+                    -> Box<Future<Item = (), Error = AzureError>> {
 
     resp.and_then(|res| if res.status() != s {
         let resp_s = res.body().concat2();
-        return Err(AzureError::UnexpectedHTTPResult(
-            UnexpectedHTTPResult::new(s, res.status(), &resp_s),
-        ));
-    });
+        return Err(AzureError::UnexpectedHTTPResult(UnexpectedHTTPResult::new(s,
+                                                                              res.status(),
+                                                                              &resp_s)));
+    })
     // let mut resp_s = String::new();
     //resp.read_to_string(&mut resp_s)?;
 
@@ -158,13 +157,12 @@ pub fn check_status(
     //                                                                       &resp_s)));
     //  }
 
-    Ok(())
+    //Ok(())
 }
 
-pub fn check_status_extract_body(
-    resp: &mut hyper::client::response::Response,
-    s: StatusCode,
-) -> Result<String, AzureError> {
+pub fn check_status_extract_body(resp: &mut hyper::client::response::Response,
+                                 s: StatusCode)
+                                 -> Result<String, AzureError> {
 
     check_status(resp, s)?;
 
