@@ -9,6 +9,8 @@ use url::ParseError as URLParseError;
 use azure::core::enumerations::ParsingError;
 use azure::core::range::ParseError;
 use serde_json;
+use futures::Future;
+use futures::Stream;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct UnexpectedHTTPResult {
@@ -137,24 +139,32 @@ impl From<()> for AzureError {
 }
 
 #[inline]
-pub fn check_status(resp: &mut hyper::client::response::Response,
-                    s: StatusCode)
-                    -> Result<(), AzureError> {
-    if resp.status != s {
-        let mut resp_s = String::new();
-        resp.read_to_string(&mut resp_s)?;
+pub fn check_status(
+    resp: hyper::client::FutureResponse,
+    s: StatusCode,
+) -> Result<Future, AzureError> {
 
-        return Err(AzureError::UnexpectedHTTPResult(UnexpectedHTTPResult::new(s,
-                                                                              resp.status,
-                                                                              &resp_s)));
-    }
+    resp.and_then(|res| if res.status() != s {
+        let resp_s = res.body().concat2();
+        return Err(AzureError::UnexpectedHTTPResult(
+            UnexpectedHTTPResult::new(s, res.status(), &resp_s),
+        ));
+    });
+    // let mut resp_s = String::new();
+    //resp.read_to_string(&mut resp_s)?;
+
+    //        return Err(AzureError::UnexpectedHTTPResult(UnexpectedHTTPResult::new(s,
+    //                                                                         resp.status,
+    //                                                                       &resp_s)));
+    //  }
 
     Ok(())
 }
 
-pub fn check_status_extract_body(resp: &mut hyper::client::response::Response,
-                                 s: StatusCode)
-                                 -> Result<String, AzureError> {
+pub fn check_status_extract_body(
+    resp: &mut hyper::client::response::Response,
+    s: StatusCode,
+) -> Result<String, AzureError> {
 
     check_status(resp, s)?;
 
