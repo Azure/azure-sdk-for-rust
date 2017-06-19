@@ -139,16 +139,33 @@ impl From<()> for AzureError {
 }
 
 #[inline]
-pub fn check_status(resp: hyper::client::FutureResponse,
-                    s: StatusCode)
-                    -> Box<Future<Item = (), Error = AzureError>> {
+pub fn check_status(
+    resp: hyper::client::FutureResponse,
+    s: StatusCode,
+) -> Box<Future<Item = (), Error = AzureError>> {
+    Box::new(resp.then(|res| match res {
+        Ok(res) => {
+            if res.status() != s {
+                let resp_s = res.body().concat2();
+                //let resp_s = "palazzo!";
 
-    resp.and_then(|res| if res.status() != s {
-        let resp_s = res.body().concat2();
-        return Err(AzureError::UnexpectedHTTPResult(UnexpectedHTTPResult::new(s,
-                                                                              res.status(),
-                                                                              &resp_s)));
-    })
+                Err(AzureError::UnexpectedHTTPResult(
+                    UnexpectedHTTPResult::new(s, res.status(), &resp_s),
+                ))
+            } else {
+                Ok(())
+            }
+        }
+        Err(he) => Err(AzureError::HyperError(he)),
+    }))
+
+    //Err(AzureError::UnexpectedHTTPResult(UnexpectedHTTPResult::new(s,
+    //                                                                  res.status(),
+    //                                                                  &resp_s)))
+    //} else {
+    // Ok(())
+    //}))
+    //
     // let mut resp_s = String::new();
     //resp.read_to_string(&mut resp_s)?;
 
@@ -160,9 +177,10 @@ pub fn check_status(resp: hyper::client::FutureResponse,
     //Ok(())
 }
 
-pub fn check_status_extract_body(resp: &mut hyper::client::response::Response,
-                                 s: StatusCode)
-                                 -> Result<String, AzureError> {
+pub fn check_status_extract_body(
+    resp: &mut hyper::client::response::Response,
+    s: StatusCode,
+) -> Result<String, AzureError> {
 
     check_status(resp, s)?;
 
