@@ -11,6 +11,7 @@ use azure::core::range::ParseError;
 use serde_json;
 use futures::Future;
 use futures::Stream;
+use std::str;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct UnexpectedHTTPResult {
@@ -96,6 +97,11 @@ quick_error! {
             display("Chrono parser error: {}", err)
             cause(err)
         }
+        UTF8Error (err: str::Utf8Error) {
+            from()
+            display("UTF8 conversion error: {}", err)
+            cause(err)
+        }
     }
 }
 
@@ -129,7 +135,7 @@ quick_error! {
             from()
             display("Parsing error")
         }
-    }
+   }
 }
 
 impl From<()> for AzureError {
@@ -138,20 +144,38 @@ impl From<()> for AzureError {
     }
 }
 
+pub fn extract_body(b: &hyper::Body) -> Box<Future<Item = String, Error = AzureError>> {
+    let resp_s = b.concat2().then(|body| match body {
+        Ok(body) => Ok(str::from_utf8(&body)?.to_owned()),
+        Err(error) => Err(AzureError::HyperError(error)),
+    });
+    Box::new(resp_s)
+}
+
 #[inline]
 pub fn check_status(
     resp: hyper::client::FutureResponse,
     s: StatusCode,
 ) -> Box<Future<Item = (), Error = AzureError>> {
+    use std::str::from_utf8;
+
     Box::new(resp.then(|res| match res {
         Ok(res) => {
             if res.status() != s {
-                let resp_s = res.body().concat2();
-                //let resp_s = "palazzo!";
 
-                Err(AzureError::UnexpectedHTTPResult(
-                    UnexpectedHTTPResult::new(s, res.status(), &resp_s),
-                ))
+                //let b = res.body();
+                //let rb = extract_body(&b);
+                //res.body().rrr();
+
+                res.body().concat2().then(|body| match body {
+                    Ok(body) => {
+                        let resp_s = from_utf8(&body)?;
+                        Err(AzureError::UnexpectedHTTPResult(
+                            UnexpectedHTTPResult::new(s, res.status(), &resp_s),
+                        ))
+                    }
+                    Err(error) => Err(AzureError::HyperError(error)),
+                })
             } else {
                 Ok(())
             }

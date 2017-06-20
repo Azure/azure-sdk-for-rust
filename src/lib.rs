@@ -1,5 +1,4 @@
-// #![feature(plugin)]
-// #![plugin(clippy)]
+#![recursion_limit="128"]
 
 #[macro_use]
 extern crate hyper;
@@ -8,7 +7,7 @@ extern crate chrono;
 extern crate futures;
 extern crate tokio_core;
 extern crate hyper_tls;
-extern crate native_tls; 
+extern crate native_tls;
 
 #[macro_use]
 extern crate url;

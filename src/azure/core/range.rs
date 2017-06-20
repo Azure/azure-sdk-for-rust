@@ -43,9 +43,9 @@ impl FromStr for Range {
         let cp_end = try!(v[1].parse::<u64>());
 
         Ok(Range {
-               start: cp_start,
-               end: cp_end,
-           })
+            start: cp_start,
+            end: cp_end,
+        })
     }
 }
 

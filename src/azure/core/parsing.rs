@@ -36,23 +36,29 @@ pub fn from_azure_time(s: &str) -> Result<chrono::DateTime<chrono::UTC>, chrono:
 }
 
 #[inline]
-pub fn traverse_single_must<'a>(node: &'a Element,
-                                path: &[&str])
-                                -> Result<&'a Element, TraversingError> {
+pub fn traverse_single_must<'a>(
+    node: &'a Element,
+    path: &[&str],
+) -> Result<&'a Element, TraversingError> {
     let vec = try!(traverse(node, path, false));
     if vec.len() > 1 {
-        return Err(TraversingError::MultipleNode(path[path.len() - 1].to_owned()));
+        return Err(TraversingError::MultipleNode(
+            path[path.len() - 1].to_owned(),
+        ));
     }
 
     Ok(vec[0])
 }
 
-pub fn traverse_single_optional<'a>(node: &'a Element,
-                                    path: &[&str])
-                                    -> Result<Option<&'a Element>, TraversingError> {
+pub fn traverse_single_optional<'a>(
+    node: &'a Element,
+    path: &[&str],
+) -> Result<Option<&'a Element>, TraversingError> {
     let vec = try!(traverse(node, path, true));
     if vec.len() > 1 {
-        return Err(TraversingError::MultipleNode(path[path.len() - 1].to_owned()));
+        return Err(TraversingError::MultipleNode(
+            path[path.len() - 1].to_owned(),
+        ));
     }
 
     if vec.is_empty() {
@@ -63,10 +69,11 @@ pub fn traverse_single_optional<'a>(node: &'a Element,
 }
 
 #[inline]
-pub fn traverse<'a>(node: &'a Element,
-                    path: &[&str],
-                    ignore_empty_leaf: bool)
-                    -> Result<Vec<&'a Element>, TraversingError> {
+pub fn traverse<'a>(
+    node: &'a Element,
+    path: &[&str],
+    ignore_empty_leaf: bool,
+) -> Result<Vec<&'a Element>, TraversingError> {
     // println!("path.len() == {:?}", path.len());
 
     if path.is_empty() {
@@ -108,13 +115,13 @@ pub fn find_subnodes<'a>(node: &'a Element, subnode: &str) -> Vec<&'a Element> {
     node.children
         .iter()
         .filter(|x| match **x {
-                    ElementNode(ref mynode) => mynode.name == subnode,
-                    _ => false,
-                })
+            ElementNode(ref mynode) => mynode.name == subnode,
+            _ => false,
+        })
         .map(|x| match *x {
-                 ElementNode(ref mynode) => mynode,
-                 _ => unreachable!(),
-             })
+            ElementNode(ref mynode) => mynode,
+            _ => unreachable!(),
+        })
         .collect::<Vec<_>>()
 }
 
@@ -132,7 +139,8 @@ pub fn inner_text(node: &Element) -> Result<&str, TraversingError> {
 
 #[inline]
 pub fn cast_optional<'a, T>(node: &'a Element, path: &[&str]) -> Result<Option<T>, TraversingError>
-    where T: FromStringOptional<T>
+where
+    T: FromStringOptional<T>,
 {
     match try!(traverse_single_optional(node, path)) {
         Some(e) => {
@@ -147,7 +155,8 @@ pub fn cast_optional<'a, T>(node: &'a Element, path: &[&str]) -> Result<Option<T
 
 #[inline]
 pub fn cast_must<'a, T>(node: &'a Element, path: &[&str]) -> Result<T, TraversingError>
-    where T: FromStringOptional<T>
+where
+    T: FromStringOptional<T>,
 {
     let node = try!(traverse_single_must(node, path));
     let itxt = try!(inner_text(node));

@@ -16,20 +16,21 @@ pub struct AuthorizationToken<'a> {
 }
 
 impl<'a> AuthorizationToken<'a> {
-    pub fn new(account: &'a str,
-               token_type: TokenType,
-               base64_encoded: String)
-               -> Result<AuthorizationToken<'a>, base64::DecodeError> {
+    pub fn new(
+        account: &'a str,
+        token_type: TokenType,
+        base64_encoded: String,
+    ) -> Result<AuthorizationToken<'a>, base64::DecodeError> {
         let mut v_hmac_key: Vec<u8> = Vec::new();
 
         v_hmac_key.extend(base64::decode(&base64_encoded)?);
 
         Ok(AuthorizationToken {
-               account: account,
-               token_type: token_type,
-               base64_encoded: base64_encoded,
-               binary_form: v_hmac_key,
-           })
+            account: account,
+            token_type: token_type,
+            base64_encoded: base64_encoded,
+            binary_form: v_hmac_key,
+        })
     }
 
     pub fn account(&self) -> &str {
@@ -62,12 +63,14 @@ impl<'a> Debug for AuthorizationToken<'a> {
 
         let so = obfuscated.into_iter().collect::<String>();
 
-        write!(f,
-               "azure::core::cosmos::AuthorizationToken[account == {}, token_type == {:?}, base64_encoded == {}, binary_form.len() == {}]",
-               self.account,
-               self.token_type,
-               so,
-               self.binary_form.len())
+        write!(
+            f,
+            "azure::core::cosmos::AuthorizationToken[account == {}, token_type == {:?}, base64_encoded == {}, binary_form.len() == {}]",
+            self.account,
+            self.token_type,
+            so,
+            self.binary_form.len()
+        )
 
     }
 }
