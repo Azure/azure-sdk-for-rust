@@ -5,15 +5,13 @@ use azure::cosmos::database::Database;
 use azure::cosmos::collection::Collection;
 use azure::cosmos::document::{IndexingDirective, DocumentAttributes};
 
-use azure::core::errors::{AzureError, check_status_extract_body, extract_status_and_body};
+use azure::core::errors::{AzureError, check_status_extract_body};
 
 use azure::cosmos::request_response::{ListDatabasesResponse, CreateDatabaseRequest,
                                       ListCollectionsResponse};
 use std::str::FromStr;
 
 use serde::Serialize;
-
-use std::io::{Read, Cursor};
 
 use crypto::hmac::Hmac;
 use crypto::mac::Mac;
@@ -76,7 +74,7 @@ impl<'a> Client<'a> {
             .connector(hyper_tls::HttpsConnector::new(4, handle)?)
             .build(handle);
 
-        let client = hyper::Client::new(handle);
+        //let client = hyper::Client::new(handle);
 
         Ok(Client {
             hyper_client: client,
@@ -89,37 +87,44 @@ impl<'a> Client<'a> {
     }
 
     #[inline]
-    fn prepare_request(
+    fn prepare_request<F>(
         &self,
         uri: hyper::Uri,
         http_method: hyper::Method,
         request_body: Option<&str>,
         resource_type: ResourceType,
-        headers: Option<Headers>,
-    ) -> hyper::client::FutureResponse {
+        headers_func: F,
+    ) -> hyper::client::FutureResponse
+    where
+        F: FnOnce(&mut Headers),
+    {
         let dt = chrono::UTC::now();
         let time = format!("{}", dt.format(TIME_FORMAT));
 
-        let resource_link = generate_resource_link(&uri);
+        // we surround this two statements with a scope so the borrow
+        // on uri owned by generate_resource_link is released
+        // as soon as generate_authorization ends. This is needed
+        // because hyper::Request::new takes ownership of uri. And
+        // the borrow checked won't allow ownership move of a borrowed
+        // item. This way we save a useless clone.
+        let auth = {
+            let resource_link = generate_resource_link(&uri);
 
-        let auth = generate_authorization(
-            self.authorization_token,
-            http_method.clone(),
-            resource_type,
-            resource_link,
-            &time,
-        );
+            generate_authorization(
+                self.authorization_token,
+                http_method.clone(),
+                resource_type,
+                resource_link,
+                &time,
+            )
+        };
         trace!("prepare_request::auth == {:?}", auth);
-
         let mut request = hyper::Request::new(http_method, uri);
 
-        // we need to add custom headers. If the caller has passed its collection of
-        // headers we will import them.
-        if let Some(hs) = headers {
-            for h in hs.iter() {
-                request.headers_mut().set_raw(h.name(), h.value_string());
-            }
-        }
+        // This will give the caller the ability to add custom headers.
+        // The closure is needed to because request.headers_mut().set_raw(...) requires
+        // a Cow with 'static lifetime...
+        headers_func(request.headers_mut());
 
         request.headers_mut().set(XMSDate(time));
         request.headers_mut().set(
@@ -146,13 +151,14 @@ impl<'a> Client<'a> {
         ))).from_err()
             .and_then(move |uri| {
                 // No specific headers are required, list databases only needs standard headers
-                // which will be provied by perform_request
+                // which will be provied by perform_request. This is handled by passing an
+                // empty closure.
                 let future_request = self.prepare_request(
                     uri,
                     hyper::Method::Get,
                     None,
                     ResourceType::Databases,
-                    None,
+                    |_| {},
                 );
                 check_status_extract_body(future_request, StatusCode::Ok).and_then(|body| {
                     match serde_json::from_str::<ListDatabasesResponse>(&body) {
@@ -306,42 +312,42 @@ impl<'a> Client<'a> {
     //        Ok(colls.collections)
     //    }
     //
-    //    pub fn create_collection(
-    //        &self,
-    //        database_name: &str,
-    //        required_throughput: u64,
-    //        collection: &Collection,
-    //    ) -> Result<Collection, AzureError> {
-    //        trace!("create_collection called");
-    //
-    //        let uri = hyper::Uri::from_str(&format!(
-    //            "https://{}.documents.azure.com/dbs/{}/colls",
-    //            self.authorization_token.account(),
-    //            database_name
-    //        ))?;
-    //
-    //        // Headers added as per https://docs.microsoft.com/en-us/rest/api/documentdb/create-a-collection
-    //        // Standard headers (auth and version) will be provied by perform_request
-    //        let mut headers = Headers::new();
-    //        headers.set(OfferThroughput(required_throughput));
-    //
-    //        let collection_serialized = serde_json::to_string(collection)?;
-    //
-    //        trace!("collection_serialized == {}", collection_serialized);
-    //
-    //        let mut resp = self.perform_request(
-    //            uri,
-    //            hyper::Method::Post,
-    //            Some(&collection_serialized),
-    //            ResourceType::Collections,
-    //            Some(headers),
-    //        )?;
-    //
-    //        let body = check_status_extract_body(&mut resp, StatusCode::Created)?;
-    //        let coll: Collection = serde_json::from_str(&body)?;
-    //
-    //        Ok(coll)
-    //    }
+    pub fn create_collection<'b>(
+        &'a self,
+        database_name: &'b str,
+        required_throughput: u64,
+        collection: &'b Collection,
+    ) -> impl Future<Item = Collection, Error = AzureError> {
+        trace!("create_collection called");
+
+        done(hyper::Uri::from_str(&format!(
+            "https://{}.documents.azure.com/dbs/{}/colls",
+            self.authorization_token.account(),
+            database_name
+        ))).from_err().and_then(move |uri| {
+            done(serde_json::to_string(collection)).from_err().and_then(move |collection_serialized| {
+                trace!("collection_serialized == {}", collection_serialized);
+                
+                // Headers added as per https://docs.microsoft.com/en-us/rest/api/documentdb/create-a-collection
+                // Standard headers (auth and version) will be provied by perform_request
+                let future_request = self.prepare_request(
+                    uri,
+                    hyper::Method::Post,
+                    Some(&collection_serialized),
+                    ResourceType::Collections,
+                    |hs| { hs.set(OfferThroughput(required_throughput)); }
+                );
+
+                check_status_extract_body(future_request, StatusCode::Created).and_then(move |body| {
+                    match serde_json::from_str::<Collection>(&body) {
+                        Ok(r) => ok(r),
+                        Err(error) => err(error.into()),
+                     }
+                })
+            })
+        })
+    }
+
     //
     //    pub fn delete_collection(
     //        &self,
