@@ -1,5 +1,10 @@
 #![recursion_limit="128"]
 
+// this will force us on nightly. The alternative is to
+// Box everything which is annoying. This will *eventually* become
+// stable so we will support stable too.
+#![feature(conservative_impl_trait)]
+
 #[macro_use]
 extern crate hyper;
 extern crate chrono;
