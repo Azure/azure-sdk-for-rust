@@ -83,24 +83,21 @@ impl<'a> Client {
         self.authorization_token = at;
     }
 
-    pub fn list_databases(&self) -> Box<Future<Item = Vec<Database>, Error = AzureError>> {
+    pub fn list_databases(&self) -> impl Future<Item = Vec<Database>, Error = AzureError> {
         trace!("list_databases called");
 
-        Box::new(
-            done(prepare_list_database_request(
-                &self.hyper_client,
-                &self.authorization_token,
-            )).from_err()
-                .and_then(move |future_response| {
-                    check_status_extract_body(future_response, StatusCode::Ok)
-                        .and_then(move |body| {
-                            match serde_json::from_str::<ListDatabasesResponse>(&body) {
-                                Ok(r) => ok(r.databases),
-                                Err(error) => err(error.into()),
-                            }
-                        })
-                }),
-        )
+        done(prepare_list_database_request(
+            &self.hyper_client,
+            &self.authorization_token,
+        )).from_err()
+            .and_then(move |future_response| {
+                check_status_extract_body(future_response, StatusCode::Ok).and_then(move |body| {
+                    match serde_json::from_str::<ListDatabasesResponse>(&body) {
+                        Ok(r) => ok(r.databases),
+                        Err(error) => err(error.into()),
+                    }
+                })
+            })
     }
     //    pub fn create_database(&self, database_name: &str) -> Result<Database, AzureError> {
     //        trace!(

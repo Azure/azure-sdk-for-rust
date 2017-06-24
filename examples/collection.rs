@@ -38,7 +38,8 @@ fn code(core: &mut Core) -> Result<(), Box<Error>> {
     // errors, plus Azure specific ones. For example if a REST call returns the
     // unexpected result (ie NotFound instead of Ok) we return a Err telling
     // you that.
-    let authorization_token = AuthorizationToken::new(account, TokenType::Master, master_key)?;
+    let authorization_token =
+        AuthorizationToken::new(account.clone(), TokenType::Master, master_key)?;
 
     // Once we have an authorization token you can create a client instance. You can change the
     // authorization token at later time if you need, for example, to escalate the privileges for a
@@ -48,23 +49,11 @@ fn code(core: &mut Core) -> Result<(), Box<Error>> {
     // The Cosmos' client exposes a lot of methods. This one lists the databases in the specified
     // account. Database do not implement Display but defef to &str so you can pass it to methods
     // both as struct or id.
-
-    //let client = hyper::Client::configure()
-    //    .connector(hyper_tls::HttpsConnector::new(4, &core.handle())?)
-    //    .build(&core.handle());
-
-
-    //let future = list_databases(&client, &authorization_token).map(|res| {
-    //    println!("{:?}", res);
-    //});
-
-    let future = client.list_databases().map(|res| {
-        println!("{:?}", res);
+    let future = client.list_databases().map(move |databases| {
+        println!("Account {} has {} databases", account, databases.len());
     });
 
     core.run(future)?;
-
-    //println!("Account {} has {} databases", account, databases.len());
 
     //// Each Cosmos' database contains zero or more collections. We can enumerate them using the
     //// list_collection method.
