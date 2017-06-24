@@ -2,7 +2,6 @@ use hyper;
 use hyper::StatusCode;
 use chrono;
 use std::io::Error as IOError;
-use std::io::Read;
 use std::num;
 use xml::BuilderError as XMLError;
 use url::ParseError as URLParseError;
@@ -12,7 +11,6 @@ use serde_json;
 use futures::Future;
 use futures::Stream;
 use std::str;
-use std::str::from_utf8;
 use futures::future::*;
 
 #[derive(Debug, Clone, PartialEq)]

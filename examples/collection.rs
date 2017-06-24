@@ -1,22 +1,31 @@
 extern crate azure_sdk_for_rust;
 
+extern crate futures;
+extern crate tokio_core;
+extern crate tokio;
+
 use std::error::Error;
+
+use futures::future::*;
+use tokio_core::reactor::Core;
 
 use azure_sdk_for_rust::azure::cosmos::authorization_token::{AuthorizationToken, TokenType};
 use azure_sdk_for_rust::azure::cosmos::client::Client;
 
 
 fn main() {
-    code().unwrap();
+    let mut core = Core::new().unwrap();
+
+    code(&mut core).unwrap();
 }
 
 // We run a separate method to use the elegant quotation mark operator.
 // A series of unwrap(), unwrap() would have achieved the same result.
-fn code() -> Result<(), Box<Error>> {
+fn code(core: &mut Core) -> Result<(), Box<Error>> {
     // First we retrieve the account name and master key from environment variables.
     // We expect master keys (ie, not resource constrained)
-    let master_key = std::env::var("COSMOS_MASTER_KEY")
-        .expect("Set env variable COSMOS_MASTER_KEY first!");
+    let master_key =
+        std::env::var("COSMOS_MASTER_KEY").expect("Set env variable COSMOS_MASTER_KEY first!");
     let account = std::env::var("COSMOS_ACCOUNT").expect("Set env variable COSMOS_ACCOUNT first!");
 
     // This is how you construct an authorization token.
@@ -32,25 +41,29 @@ fn code() -> Result<(), Box<Error>> {
     // Once we have an authorization token you can create a client instance. You can change the
     // authorization token at later time if you need, for example, to escalate the privileges for a
     // single operation.
-    let client = Client::new(&authorization_token)?;
+    let client = Client::new(&core.handle(), &authorization_token)?;
 
     // The Cosmos' client exposes a lot of methods. This one lists the databases in the specified
     // account. Database do not implement Display but defef to &str so you can pass it to methods
     // both as struct or id.
-    let databases = client.list_databases()?;
+    let future = client.list_databases().map(|res| {
+        println!("{:?}", res);
+    });
 
-    println!("Account {} has {} databases", account, databases.len());
+    core.run(future)?;
 
-    // Each Cosmos' database contains zero or more collections. We can enumerate them using the
-    // list_collection method.
-    for db in &databases {
-        let collections = client.list_collections(db)?;
-        println!("*** {} *** ({} collections)", db as &str, collections.len());
-        for coll in &collections {
-            // Collection does not implement Display but Deref to &str so this print works as
-            // expected.
-            println!("\t{}", coll as &str);
-        }
-    }
+    //println!("Account {} has {} databases", account, databases.len());
+
+    //// Each Cosmos' database contains zero or more collections. We can enumerate them using the
+    //// list_collection method.
+    //for db in &databases {
+    //    let collections = client.list_collections(db)?;
+    //    println!("*** {} *** ({} collections)", db as &str, collections.len());
+    //    for coll in &collections {
+    //        // Collection does not implement Display but Deref to &str so this print works as
+    //        // expected.
+    //        println!("\t{}", coll as &str);
+    //    }
+    //}
     Ok(())
 }

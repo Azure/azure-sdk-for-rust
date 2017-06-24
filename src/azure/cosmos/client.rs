@@ -1,5 +1,4 @@
 use azure::cosmos::authorization_token::{TokenType, AuthorizationToken};
-use azure::core::HTTPMethod;
 
 use azure::cosmos::database::Database;
 use azure::cosmos::collection::Collection;
@@ -60,7 +59,7 @@ pub enum ResourceType {
 }
 
 pub struct Client<'a> {
-    hyper_client: hyper::Client<hyper::client::HttpConnector>,
+    hyper_client: hyper::Client<hyper_tls::HttpsConnector<hyper::client::HttpConnector>>,
     authorization_token: &'a AuthorizationToken<'a>,
 }
 
@@ -73,8 +72,6 @@ impl<'a> Client<'a> {
         let client = hyper::Client::configure()
             .connector(hyper_tls::HttpsConnector::new(4, handle)?)
             .build(handle);
-
-        //let client = hyper::Client::new(handle);
 
         Ok(Client {
             hyper_client: client,
@@ -312,41 +309,41 @@ impl<'a> Client<'a> {
     //        Ok(colls.collections)
     //    }
     //
-    pub fn create_collection<'b>(
-        &'a self,
-        database_name: &'b str,
-        required_throughput: u64,
-        collection: &'b Collection,
-    ) -> impl Future<Item = Collection, Error = AzureError> {
-        trace!("create_collection called");
+    //pub fn create_collection<'b>(
+    //    &'a self,
+    //    database_name: &'b str,
+    //    required_throughput: u64,
+    //    collection: &'b Collection,
+    //) -> impl Future<Item = Collection, Error = AzureError> {
+    //    trace!("create_collection called");
 
-        done(hyper::Uri::from_str(&format!(
-            "https://{}.documents.azure.com/dbs/{}/colls",
-            self.authorization_token.account(),
-            database_name
-        ))).from_err().and_then(move |uri| {
-            done(serde_json::to_string(collection)).from_err().and_then(move |collection_serialized| {
-                trace!("collection_serialized == {}", collection_serialized);
-                
-                // Headers added as per https://docs.microsoft.com/en-us/rest/api/documentdb/create-a-collection
-                // Standard headers (auth and version) will be provied by perform_request
-                let future_request = self.prepare_request(
-                    uri,
-                    hyper::Method::Post,
-                    Some(&collection_serialized),
-                    ResourceType::Collections,
-                    |hs| { hs.set(OfferThroughput(required_throughput)); }
-                );
+    //    done(hyper::Uri::from_str(&format!(
+    //        "https://{}.documents.azure.com/dbs/{}/colls",
+    //        self.authorization_token.account(),
+    //        database_name
+    //    ))).from_err().and_then(move |uri| {
+    //        done(serde_json::to_string(collection)).from_err().and_then(move |collection_serialized| {
+    //            trace!("collection_serialized == {}", collection_serialized);
+    //
+    //            // Headers added as per https://docs.microsoft.com/en-us/rest/api/documentdb/create-a-collection
+    //            // Standard headers (auth and version) will be provied by perform_request
+    //            let future_request = self.prepare_request(
+    //                uri,
+    //                hyper::Method::Post,
+    //                Some(&collection_serialized),
+    //                ResourceType::Collections,
+    //                |hs| { hs.set(OfferThroughput(required_throughput)); }
+    //            );
 
-                check_status_extract_body(future_request, StatusCode::Created).and_then(move |body| {
-                    match serde_json::from_str::<Collection>(&body) {
-                        Ok(r) => ok(r),
-                        Err(error) => err(error.into()),
-                     }
-                })
-            })
-        })
-    }
+    //            check_status_extract_body(future_request, StatusCode::Created).and_then(move |body| {
+    //                match serde_json::from_str::<Collection>(&body) {
+    //                    Ok(r) => ok(r),
+    //                    Err(error) => err(error.into()),
+    //                 }
+    //            })
+    //        })
+    //    })
+    //}
 
     //
     //    pub fn delete_collection(
@@ -466,7 +463,6 @@ impl<'a> Client<'a> {
     //    }
 }
 
-
 fn generate_authorization(
     authorization_token: &AuthorizationToken,
     http_method: hyper::Method,
@@ -505,8 +501,6 @@ fn encode_str_to_sign(str_to_sign: &str, authorization_token: &AuthorizationToke
     base64::encode(hmac.result().code())
 }
 
-
-
 fn string_to_sign(
     http_method: hyper::Method,
     rt: ResourceType,
@@ -540,8 +534,6 @@ fn string_to_sign(
         resource_link,
         time.to_lowercase()
     )
-
-
 }
 
 fn generate_resource_link<'a>(u: &'a hyper::Uri) -> &'a str {

@@ -12,11 +12,3 @@ pub mod lease;
 
 pub mod range;
 pub mod ba512_range;
-
-#[derive(Debug, Copy, Clone)]
-pub enum HTTPMethod {
-    Get,
-    Put,
-    Post,
-    Delete,
-}
