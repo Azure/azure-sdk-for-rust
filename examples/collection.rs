@@ -12,7 +12,7 @@ use futures::future::*;
 use tokio_core::reactor::Core;
 
 use azure_sdk_for_rust::azure::cosmos::authorization_token::{AuthorizationToken, TokenType};
-use azure_sdk_for_rust::azure::cosmos::client::{Client, list_databases};
+use azure_sdk_for_rust::azure::cosmos::client::Client;
 
 
 fn main() {
@@ -40,7 +40,6 @@ fn code() -> Result<(), Box<Error>> {
     let mut core = Core::new()?;
 
 
-
     // This is how you construct an authorization token.
     // Remeber to pick the correct token type.
     // Here we assume master.
@@ -56,12 +55,6 @@ fn code() -> Result<(), Box<Error>> {
         .connector(hyper_tls::HttpsConnector::new(4, &core.handle())?)
         .build(&core.handle());
 
-    //println!("before list_databases");
-    //let future = list_databases(&authorization_token, &hyper_client).map(move |databases| {
-    //    println!("Account {} has {} databases", account, databases.len());
-    //});
-    //println!("after list_databases");
-
     // Once we have an authorization token you can create a client instance. You can change the
     // authorization token at later time if you need, for example, to escalate the privileges for a
     // single operation.
@@ -71,19 +64,26 @@ fn code() -> Result<(), Box<Error>> {
     // account. Database do not implement Display but defef to &str so you can pass it to methods
     // both as struct or id.
     println!("before client.list_databases");
-    let future = client.list_databases().map(move |databases| {
-        println!("Account {} has {} databases", account, databases.len());
-    });
+    let future = client
+        .list_databases()
+        .and_then(move |databases| {
+            println!("Account {} has {} databases", account, databases.len());
+            ok(databases)
+        })
+        .for_each(|db| println!("ddd"))
+        .map(move |collections| {
+            println!("Database xxx has {} collections", collections.len());
+        });
     println!("after client.list_databases");
 
     println!("before core.run");
     core.run(future)?;
     println!("after core.run");
 
-    //// Each Cosmos' database contains zero or more collections. We can enumerate them using the
+    //// Each Cosmos' database contains zo or more collections. We can enumerate them using the
     //// list_collection method.
     //for db in &databases {
-    //    let collections = client.list_collections(db)?;
+    //    let collections = client.list_clections(db)?;
     //    println!("*** {} *** ({} collections)", db as &str, collections.len());
     //    for coll in &collections {
     //        // Collection does not implement Display but Deref to &str so this print works as

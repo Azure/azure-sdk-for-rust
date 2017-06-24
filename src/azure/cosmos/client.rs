@@ -104,7 +104,7 @@ impl<'a> Client {
                         |_| {},
                     );
 
-                    println!("request prepared");
+                    trace!("request prepared");
 
                     Ok(self.hyper_client.request(request))
                 }
@@ -121,6 +121,52 @@ impl<'a> Client {
             })
         })
     }
+
+    pub fn list_collections(
+        &self,
+        database_name: &str,
+    ) -> impl Future<Item = Vec<Collection>, Error = AzureError> {
+        trace!("list_collections called");
+
+        let req: Result<hyper::client::FutureResponse, AzureError> = {
+            match hyper::Uri::from_str(&format!(
+                "https://{}.documents.azure.com/dbs/{}/colls",
+                self.authorization_token.account(),
+                database_name
+            )) {
+                Ok(uri) => {
+                    // No specific headers are required, list collections only needs standard headers
+                    // which will be provied by perform_request. This is handled by passing an
+                    // empty closure.
+                    let request = prepare_request(
+                        &self.authorization_token,
+                        uri,
+                        hyper::Method::Get,
+                        None,
+                        ResourceType::Collections,
+                        |_| {},
+                    );
+
+                    trace!("request prepared");
+
+                    Ok(self.hyper_client.request(request))
+                }
+                Err(error) => Err(error.into()),
+            }
+        };
+
+        done(req).from_err().and_then(move |future_response| {
+            check_status_extract_body(future_response, StatusCode::Ok).and_then(move |body| {
+                match serde_json::from_str::<ListCollectionsResponse>(&body) {
+                    Ok(r) => ok(r.collections),
+                    Err(error) => err(error.into()),
+                }
+            })
+        })
+    }
+
+
+
 
     //    pub fn create_database(&self, database_name: &str) -> Result<Database, AzureError> {
     //        trace!(
@@ -240,30 +286,6 @@ impl<'a> Client {
     //        Ok(coll)
     //    }
     //
-    //    pub fn list_collections(&self, database_name: &str) -> Result<Vec<Collection>, AzureError> {
-    //        trace!("list_collections called");
-    //
-    //        let uri = hyper::Uri::from_str(&format!(
-    //            "https://{}.documents.azure.com/dbs/{}/colls",
-    //            self.authorization_token.account(),
-    //            database_name
-    //        ))?;
-    //
-    //        // No specific headers are required, list collections only needs standard headers
-    //        // which will be provied by perform_request
-    //        let mut resp = self.perform_request(
-    //            uri,
-    //            hyper::Method::Get,
-    //            None,
-    //            ResourceType::Collections,
-    //            None,
-    //        )?;
-    //
-    //        let body = check_status_extract_body(&mut resp, StatusCode::Ok)?;
-    //        let colls: ListCollectionsResponse = serde_json::from_str(&body)?;
-    //
-    //        Ok(colls.collections)
-    //    }
     //
     //pub fn create_collection<'b>(
     //    &'a self,
@@ -417,73 +439,6 @@ impl<'a> Client {
     //
     //        Ok(document_attributes)
     //    }
-}
-
-
-pub fn list_databases<'a>(
-    authorization_token: &'a AuthorizationToken,
-    hyper_client: &'a hyper::Client<hyper_tls::HttpsConnector<hyper::client::HttpConnector>>,
-) -> Box<Future<Item = Vec<Database>, Error = AzureError>> {
-    trace!("list_databases called");
-
-    let authorization_token = authorization_token.clone();
-    let hyper_client = hyper_client.clone();
-
-    Box::new(
-        done(hyper::Uri::from_str(&format!(
-            "https://{}.documents.azure.com/dbs",
-            authorization_token.account()
-        ))).and_then(move |uri| {
-            // No specific headers are required, list databases only needs standard headers
-            // which will be provied by perform_request. This is handled by passing an
-            // empty closure.
-            let request = prepare_request(
-                        &authorization_token,
-                        uri,
-                        hyper::Method::Get,
-                        None,
-                        ResourceType::Databases,
-                        |_| {},
-                    );
-
-            println!("request prepared");
-
-            ok(hyper_client.request(request))
-        })
-            .from_err()
-            .and_then(move |future_response| {
-                check_status_extract_body(future_response, StatusCode::Ok).and_then(move |body| {
-                    match serde_json::from_str::<ListDatabasesResponse>(&body) {
-                        Ok(r) => ok(r.databases),
-                        Err(error) => err(error.into()),
-                    }
-                })
-            }),
-    )
-}
-
-
-
-#[inline]
-fn prepare_list_database_request(
-    hc: &hyper::Client<hyper_tls::HttpsConnector<hyper::client::HttpConnector>>,
-    at: &AuthorizationToken,
-) -> Result<hyper::client::FutureResponse, AzureError> {
-    let uri = hyper::Uri::from_str(&format!("https://{}.documents.azure.com/dbs", at.account()))?;
-
-    // No specific headers are required, list databases only needs standard headers
-    // which will be provied by perform_request. This is handled by passing an
-    // empty closure.
-    let request = prepare_request(
-        at,
-        uri,
-        hyper::Method::Get,
-        None,
-        ResourceType::Databases,
-        |_| {},
-    );
-
-    Ok(hc.request(request))
 }
 
 #[inline]
