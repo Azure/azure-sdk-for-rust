@@ -58,16 +58,16 @@ pub enum ResourceType {
     Documents,
 }
 
-pub struct Client<'a> {
+pub struct Client {
     hyper_client: hyper::Client<hyper_tls::HttpsConnector<hyper::client::HttpConnector>>,
-    authorization_token: &'a AuthorizationToken<'a>,
+    authorization_token: AuthorizationToken,
 }
 
-impl<'a> Client<'a> {
+impl<'a> Client {
     pub fn new(
         handle: &tokio_core::reactor::Handle,
-        authorization_token: &'a AuthorizationToken<'a>,
-    ) -> Result<Client<'a>, native_tls::Error> {
+        authorization_token: AuthorizationToken,
+    ) -> Result<Client, native_tls::Error> {
 
         let client = hyper::Client::configure()
             .connector(hyper_tls::HttpsConnector::new(4, handle)?)
@@ -79,93 +79,29 @@ impl<'a> Client<'a> {
         })
     }
 
-    pub fn set_authorization_token(&mut self, at: &'a AuthorizationToken<'a>) {
+    pub fn set_authorization_token(&mut self, at: AuthorizationToken) {
         self.authorization_token = at;
     }
 
-    #[inline]
-    fn prepare_request<F>(
-        &self,
-        uri: hyper::Uri,
-        http_method: hyper::Method,
-        request_body: Option<&str>,
-        resource_type: ResourceType,
-        headers_func: F,
-    ) -> hyper::client::FutureResponse
-    where
-        F: FnOnce(&mut Headers),
-    {
-        let dt = chrono::UTC::now();
-        let time = format!("{}", dt.format(TIME_FORMAT));
-
-        // we surround this two statements with a scope so the borrow
-        // on uri owned by generate_resource_link is released
-        // as soon as generate_authorization ends. This is needed
-        // because hyper::Request::new takes ownership of uri. And
-        // the borrow checked won't allow ownership move of a borrowed
-        // item. This way we save a useless clone.
-        let auth = {
-            let resource_link = generate_resource_link(&uri);
-
-            generate_authorization(
-                self.authorization_token,
-                http_method.clone(),
-                resource_type,
-                resource_link,
-                &time,
-            )
-        };
-        trace!("prepare_request::auth == {:?}", auth);
-        let mut request = hyper::Request::new(http_method, uri);
-
-        // This will give the caller the ability to add custom headers.
-        // The closure is needed to because request.headers_mut().set_raw(...) requires
-        // a Cow with 'static lifetime...
-        headers_func(request.headers_mut());
-
-        request.headers_mut().set(XMSDate(time));
-        request.headers_mut().set(
-            XMSVersion(AZURE_VERSION.to_owned()),
-        );
-        request.headers_mut().set(Authorization(auth));
-
-        trace!("prepare_request::headers == {:?}", request.headers());
-
-        if let Some(body) = request_body {
-            request.headers_mut().set(ContentLength(body.len() as u64));
-            request.set_body(body.to_string());
-        }
-
-        self.hyper_client.request(request)
-    }
-
-    pub fn list_databases(&'a self) -> impl Future<Item = Vec<Database>, Error = AzureError> {
+    pub fn list_databases(&self) -> Box<Future<Item = Vec<Database>, Error = AzureError>> {
         trace!("list_databases called");
 
-        done(hyper::Uri::from_str(&format!(
-            "https://{}.documents.azure.com/dbs",
-            self.authorization_token.account()
-        ))).from_err()
-            .and_then(move |uri| {
-                // No specific headers are required, list databases only needs standard headers
-                // which will be provied by perform_request. This is handled by passing an
-                // empty closure.
-                let future_request = self.prepare_request(
-                    uri,
-                    hyper::Method::Get,
-                    None,
-                    ResourceType::Databases,
-                    |_| {},
-                );
-                check_status_extract_body(future_request, StatusCode::Ok).and_then(|body| {
-                    match serde_json::from_str::<ListDatabasesResponse>(&body) {
-                        Ok(r) => ok(r.databases),
-                        Err(error) => err(error.into()),
-                    }
-                })
-            })
+        Box::new(
+            done(prepare_list_database_request(
+                &self.hyper_client,
+                &self.authorization_token,
+            )).from_err()
+                .and_then(move |future_response| {
+                    check_status_extract_body(future_response, StatusCode::Ok)
+                        .and_then(move |body| {
+                            match serde_json::from_str::<ListDatabasesResponse>(&body) {
+                                Ok(r) => ok(r.databases),
+                                Err(error) => err(error.into()),
+                            }
+                        })
+                }),
+        )
     }
-
     //    pub fn create_database(&self, database_name: &str) -> Result<Database, AzureError> {
     //        trace!(
     //            "create_databases called (database_name == {})",
@@ -462,6 +398,109 @@ impl<'a> Client<'a> {
     //        Ok(document_attributes)
     //    }
 }
+
+#[inline]
+fn prepare_list_database_request(
+    hc: &hyper::Client<hyper_tls::HttpsConnector<hyper::client::HttpConnector>>,
+    at: &AuthorizationToken,
+) -> Result<hyper::client::FutureResponse, AzureError> {
+    let uri = hyper::Uri::from_str(&format!("https://{}.documents.azure.com/dbs", at.account()))?;
+
+    // No specific headers are required, list databases only needs standard headers
+    // which will be provied by perform_request. This is handled by passing an
+    // empty closure.
+    let request = prepare_request(
+        at,
+        uri,
+        hyper::Method::Get,
+        None,
+        ResourceType::Databases,
+        |_| {},
+    );
+
+    Ok(hc.request(request))
+}
+
+pub fn list_databases<'a>(
+    hc: &'a hyper::Client<hyper_tls::HttpsConnector<hyper::client::HttpConnector>>,
+    at: &'a AuthorizationToken,
+) -> Box<Future<Item = Vec<Database>, Error = AzureError>> {
+    trace!("list_databases called");
+
+    Box::new(
+        done(prepare_list_database_request(hc, at))
+            .from_err()
+            .and_then(move |future_response| {
+                check_status_extract_body(future_response, StatusCode::Ok).and_then(move |body| {
+                    match serde_json::from_str::<ListDatabasesResponse>(&body) {
+                        Ok(r) => ok(r.databases),
+                        Err(error) => err(error.into()),
+                    }
+                })
+            }),
+    )
+}
+
+#[inline]
+fn prepare_request<F>(
+    authorization_token: &AuthorizationToken,
+    uri: hyper::Uri,
+    http_method: hyper::Method,
+    request_body: Option<&str>,
+    resource_type: ResourceType,
+    headers_func: F,
+) -> hyper::client::Request
+where
+    F: FnOnce(&mut Headers),
+{
+    let dt = chrono::UTC::now();
+    let time = format!("{}", dt.format(TIME_FORMAT));
+
+    // we surround this two statements with a scope so the borrow
+    // on uri owned by generate_resource_link is released
+    // as soon as generate_authorization ends. This is needed
+    // because hyper::Request::new takes ownership of uri. And
+    // the borrow checked won't allow ownership move of a borrowed
+    // item. This way we save a useless clone.
+    let auth = {
+        let resource_link = generate_resource_link(&uri);
+
+        generate_authorization(
+            authorization_token,
+            http_method.clone(),
+            resource_type,
+            resource_link,
+            &time,
+        )
+    };
+    trace!("prepare_request::auth == {:?}", auth);
+    let mut request = hyper::Request::new(http_method, uri);
+
+    // This will give the caller the ability to add custom headers.
+    // The closure is needed to because request.headers_mut().set_raw(...) requires
+    // a Cow with 'static lifetime...
+    headers_func(request.headers_mut());
+
+    request.headers_mut().set(XMSDate(time));
+    request.headers_mut().set(
+        XMSVersion(AZURE_VERSION.to_owned()),
+    );
+    request.headers_mut().set(Authorization(auth));
+
+    trace!("prepare_request::headers == {:?}", request.headers());
+
+    if let Some(body) = request_body {
+        request.headers_mut().set(ContentLength(body.len() as u64));
+        request.set_body(body.to_string());
+    }
+
+    request
+
+    //self.hyper_client.request(request)
+}
+
+
+
 
 fn generate_authorization(
     authorization_token: &AuthorizationToken,

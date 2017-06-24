@@ -8,19 +8,20 @@ pub enum TokenType {
     Resource,
 }
 
-pub struct AuthorizationToken<'a> {
-    account: &'a str,
+#[derive(Clone)]
+pub struct AuthorizationToken {
+    account: String,
     token_type: TokenType,
     base64_encoded: String,
     binary_form: Vec<u8>,
 }
 
-impl<'a> AuthorizationToken<'a> {
+impl AuthorizationToken {
     pub fn new(
-        account: &'a str,
+        account: String,
         token_type: TokenType,
         base64_encoded: String,
-    ) -> Result<AuthorizationToken<'a>, base64::DecodeError> {
+    ) -> Result<AuthorizationToken, base64::DecodeError> {
         let mut v_hmac_key: Vec<u8> = Vec::new();
 
         v_hmac_key.extend(base64::decode(&base64_encoded)?);
@@ -34,7 +35,7 @@ impl<'a> AuthorizationToken<'a> {
     }
 
     pub fn account(&self) -> &str {
-        self.account
+        &self.account
     }
 
     pub fn token_type(&self) -> TokenType {
@@ -48,7 +49,7 @@ impl<'a> AuthorizationToken<'a> {
     }
 }
 
-impl<'a> Debug for AuthorizationToken<'a> {
+impl Debug for AuthorizationToken {
     //! We provide a custom implementation to hide some of the chars
     //! since they are security sentive.
     //! We show only the 6 first chars of ```base64_encoded``` form and only

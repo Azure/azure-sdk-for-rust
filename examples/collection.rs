@@ -3,6 +3,8 @@ extern crate azure_sdk_for_rust;
 extern crate futures;
 extern crate tokio_core;
 extern crate tokio;
+extern crate hyper;
+extern crate hyper_tls;
 
 use std::error::Error;
 
@@ -10,7 +12,7 @@ use futures::future::*;
 use tokio_core::reactor::Core;
 
 use azure_sdk_for_rust::azure::cosmos::authorization_token::{AuthorizationToken, TokenType};
-use azure_sdk_for_rust::azure::cosmos::client::Client;
+use azure_sdk_for_rust::azure::cosmos::client::{Client, list_databases};
 
 
 fn main() {
@@ -36,16 +38,26 @@ fn code(core: &mut Core) -> Result<(), Box<Error>> {
     // errors, plus Azure specific ones. For example if a REST call returns the
     // unexpected result (ie NotFound instead of Ok) we return a Err telling
     // you that.
-    let authorization_token = AuthorizationToken::new(&account, TokenType::Master, master_key)?;
+    let authorization_token = AuthorizationToken::new(account, TokenType::Master, master_key)?;
 
     // Once we have an authorization token you can create a client instance. You can change the
     // authorization token at later time if you need, for example, to escalate the privileges for a
     // single operation.
-    let client = Client::new(&core.handle(), &authorization_token)?;
+    let client = Client::new(&core.handle(), authorization_token)?;
 
     // The Cosmos' client exposes a lot of methods. This one lists the databases in the specified
     // account. Database do not implement Display but defef to &str so you can pass it to methods
     // both as struct or id.
+
+    //let client = hyper::Client::configure()
+    //    .connector(hyper_tls::HttpsConnector::new(4, &core.handle())?)
+    //    .build(&core.handle());
+
+
+    //let future = list_databases(&client, &authorization_token).map(|res| {
+    //    println!("{:?}", res);
+    //});
+
     let future = client.list_databases().map(|res| {
         println!("{:?}", res);
     });
