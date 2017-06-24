@@ -12,7 +12,7 @@ use futures::future::*;
 use tokio_core::reactor::Core;
 
 use azure_sdk_for_rust::azure::cosmos::authorization_token::{AuthorizationToken, TokenType};
-use azure_sdk_for_rust::azure::cosmos::client::Client;
+use azure_sdk_for_rust::azure::cosmos::client::{Client, list_databases};
 
 
 fn main() {
@@ -39,6 +39,8 @@ fn code() -> Result<(), Box<Error>> {
     // * This is something worth discussing *
     let mut core = Core::new()?;
 
+
+
     // This is how you construct an authorization token.
     // Remeber to pick the correct token type.
     // Here we assume master.
@@ -50,6 +52,16 @@ fn code() -> Result<(), Box<Error>> {
     let authorization_token =
         AuthorizationToken::new(account.clone(), TokenType::Master, master_key)?;
 
+    let hyper_client = hyper::Client::configure()
+        .connector(hyper_tls::HttpsConnector::new(4, &core.handle())?)
+        .build(&core.handle());
+
+    //println!("before list_databases");
+    //let future = list_databases(&authorization_token, &hyper_client).map(move |databases| {
+    //    println!("Account {} has {} databases", account, databases.len());
+    //});
+    //println!("after list_databases");
+
     // Once we have an authorization token you can create a client instance. You can change the
     // authorization token at later time if you need, for example, to escalate the privileges for a
     // single operation.
@@ -58,11 +70,15 @@ fn code() -> Result<(), Box<Error>> {
     // The Cosmos' client exposes a lot of methods. This one lists the databases in the specified
     // account. Database do not implement Display but defef to &str so you can pass it to methods
     // both as struct or id.
+    println!("before client.list_databases");
     let future = client.list_databases().map(move |databases| {
         println!("Account {} has {} databases", account, databases.len());
     });
+    println!("after client.list_databases");
 
+    println!("before core.run");
     core.run(future)?;
+    println!("after core.run");
 
     //// Each Cosmos' database contains zero or more collections. We can enumerate them using the
     //// list_collection method.

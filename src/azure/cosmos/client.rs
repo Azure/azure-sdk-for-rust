@@ -104,6 +104,8 @@ impl<'a> Client {
                         |_| {},
                     );
 
+                    println!("request prepared");
+
                     Ok(self.hyper_client.request(request))
                 }
                 Err(error) => Err(error.into()),
@@ -417,6 +419,51 @@ impl<'a> Client {
     //    }
 }
 
+
+pub fn list_databases<'a>(
+    authorization_token: &'a AuthorizationToken,
+    hyper_client: &'a hyper::Client<hyper_tls::HttpsConnector<hyper::client::HttpConnector>>,
+) -> Box<Future<Item = Vec<Database>, Error = AzureError>> {
+    trace!("list_databases called");
+
+    let authorization_token = authorization_token.clone();
+    let hyper_client = hyper_client.clone();
+
+    Box::new(
+        done(hyper::Uri::from_str(&format!(
+            "https://{}.documents.azure.com/dbs",
+            authorization_token.account()
+        ))).and_then(move |uri| {
+            // No specific headers are required, list databases only needs standard headers
+            // which will be provied by perform_request. This is handled by passing an
+            // empty closure.
+            let request = prepare_request(
+                        &authorization_token,
+                        uri,
+                        hyper::Method::Get,
+                        None,
+                        ResourceType::Databases,
+                        |_| {},
+                    );
+
+            println!("request prepared");
+
+            ok(hyper_client.request(request))
+        })
+            .from_err()
+            .and_then(move |future_response| {
+                check_status_extract_body(future_response, StatusCode::Ok).and_then(move |body| {
+                    match serde_json::from_str::<ListDatabasesResponse>(&body) {
+                        Ok(r) => ok(r.databases),
+                        Err(error) => err(error.into()),
+                    }
+                })
+            }),
+    )
+}
+
+
+
 #[inline]
 fn prepare_list_database_request(
     hc: &hyper::Client<hyper_tls::HttpsConnector<hyper::client::HttpConnector>>,
@@ -493,11 +540,7 @@ where
     }
 
     request
-
-    //self.hyper_client.request(request)
 }
-
-
 
 
 fn generate_authorization(
