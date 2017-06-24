@@ -12,23 +12,32 @@ use futures::future::*;
 use tokio_core::reactor::Core;
 
 use azure_sdk_for_rust::azure::cosmos::authorization_token::{AuthorizationToken, TokenType};
-use azure_sdk_for_rust::azure::cosmos::client::{Client, list_databases};
+use azure_sdk_for_rust::azure::cosmos::client::Client;
 
 
 fn main() {
-    let mut core = Core::new().unwrap();
-
-    code(&mut core).unwrap();
+    code().unwrap();
 }
+
 
 // We run a separate method to use the elegant quotation mark operator.
 // A series of unwrap(), unwrap() would have achieved the same result.
-fn code(core: &mut Core) -> Result<(), Box<Error>> {
+fn code() -> Result<(), Box<Error>> {
     // First we retrieve the account name and master key from environment variables.
     // We expect master keys (ie, not resource constrained)
     let master_key =
         std::env::var("COSMOS_MASTER_KEY").expect("Set env variable COSMOS_MASTER_KEY first!");
     let account = std::env::var("COSMOS_ACCOUNT").expect("Set env variable COSMOS_ACCOUNT first!");
+
+    // let's create a tokio-core reactor.
+    // It will drive our request. Remember, util run, futures do absolutely
+    // nothing. So, run them. Also note that, in order to avoid cloning the authorization_token at
+    // each request this library constructs the request **before** the future. This means the date
+    // sent to the server will be the one at Future creation time, not the execution time.
+    // Azure calls will block requests with time too much in the past (in order to prevent reply
+    // attacks) so make sure to execute the Future as soon as possibile after having it created.
+    // * This is something worth discussing *
+    let mut core = Core::new()?;
 
     // This is how you construct an authorization token.
     // Remeber to pick the correct token type.
