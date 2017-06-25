@@ -39,7 +39,6 @@ fn code() -> Result<(), Box<Error>> {
     // * This is something worth discussing *
     let mut core = Core::new()?;
 
-
     // This is how you construct an authorization token.
     // Remember to pick the correct token type.
     // Here we assume master.
@@ -59,26 +58,10 @@ fn code() -> Result<(), Box<Error>> {
     // The Cosmos' client exposes a lot of methods. This one lists the databases in the specified
     // account. Database do not implement Display but deref to &str so you can pass it to methods
     // both as struct or id.
-    let future = client.list_databases().and_then(move |databases| {
-        println!("Account {} has {} database(s)", account, databases.len());
 
-        let mut v = Vec::new();
-
-        // Each Cosmos' database contains so or more collections. We can enumerate them using the
-        // list_collection method.
-        for db in databases {
-            v.push(client.list_collections(&db).map(move |collections| {
-                println!("database {} has {} collection(s)", db.id, collections.len());
-
-                for collection in collections {
-                    println!("\tcollection {}", collection.id);
-                }
-            }));
-        }
-
-        futures::future::join_all(v)
+    let future = client.create_database("something").map(|db| {
+        println!("created database = {:?}", db);
     });
-
     core.run(future)?;
     Ok(())
 }
