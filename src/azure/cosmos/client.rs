@@ -31,7 +31,7 @@ use tokio_core;
 use hyper_tls;
 use native_tls;
 
-use futures::future::{Future, ok, err, done};
+use futures::future::{Future, ok, done};
 
 const AZURE_VERSION: &'static str = "2017-02-22";
 const VERSION: &'static str = "1.0";
@@ -252,33 +252,48 @@ impl<'a> Client {
         })
     }
 
-    //
-    //    pub fn delete_database(&self, database_name: &str) -> Result<(), AzureError> {
-    //        trace!(
-    //            "delete_database called (database_name == {})",
-    //            database_name
-    //        );
-    //
-    //        let uri = hyper::Uri::from_str(&format!(
-    //            "https://{}.documents.azure.com/dbs/{}",
-    //            self.authorization_token.account(),
-    //            database_name
-    //        ))?;
-    //
-    //        // No specific headers are required, delete database only needs standard headers
-    //        // which will be provied by perform_request
-    //        let future = self.perform_request(
-    //            uri,
-    //            hyper::Method::Delete,
-    //            None,
-    //            ResourceType::Databases,
-    //            None,
-    //        )?;
-    //
-    //        check_status(future, StatusCode::NoContent)?;
-    //
-    //        Ok(())
-    //    }
+    #[inline]
+    fn delete_database_create_request(
+        &self,
+        database_name: &str,
+    ) -> Result<hyper::client::FutureResponse, AzureError> {
+        let uri = hyper::Uri::from_str(&format!(
+            "https://{}.documents.azure.com/dbs/{}",
+            self.authorization_token.account(),
+            database_name
+        ))?;
+
+        // No specific headers are required, delete database only needs standard headers
+        // which will be provied by perform_request
+        let request = prepare_request(
+            &self.authorization_token,
+            uri,
+            hyper::Method::Delete,
+            None,
+            ResourceType::Databases,
+            |_| {},
+        );
+
+        trace!("request prepared");
+
+        Ok(self.hyper_client.request(request))
+    }
+
+    pub fn delete_database(
+        &self,
+        database_name: &str,
+    ) -> impl Future<Item = (), Error = AzureError> {
+        trace!(
+            "delete_database called (database_name == {})",
+            database_name
+        );
+
+        let req = self.delete_database_create_request(database_name);
+
+        done(req).from_err().and_then(move |future_response| {
+            check_status_extract_body(future_response, StatusCode::NoContent).and_then(|_| ok(()))
+        })
+    }
     //
     //    pub fn get_collection(
     //        &self,
@@ -510,9 +525,9 @@ where
     headers_func(request.headers_mut());
 
     request.headers_mut().set(XMSDate(time));
-    request.headers_mut().set(
-        XMSVersion(AZURE_VERSION.to_owned()),
-    );
+    request
+        .headers_mut()
+        .set(XMSVersion(AZURE_VERSION.to_owned()));
     request.headers_mut().set(Authorization(auth));
 
     trace!("prepare_request::headers == {:?}", request.headers());
@@ -689,8 +704,7 @@ mon, 01 jan 1900 01:00:00 gmt
         let authorization_token = authorization_token::AuthorizationToken::new(
             "mindflavor",
             authorization_token::TokenType::Master,
-            "dsZQi3KtZmCv1ljt3VNWNm7sQUF1y5rJfC6kv5JiwvW0EndXdDku/dkKBp8/ufDToSxL"
-                .to_owned(),
+            "dsZQi3KtZmCv1ljt3VNWNm7sQUF1y5rJfC6kv5JiwvW0EndXdDku/dkKBp8/ufDToSxL".to_owned(),
         ).unwrap();
 
         let ret = generate_authorization(

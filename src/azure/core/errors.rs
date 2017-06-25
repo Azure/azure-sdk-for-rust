@@ -151,11 +151,9 @@ pub fn extract_status_and_body(
     resp.from_err().and_then(|res| {
         let status = res.status();
         res.body().concat2().from_err().and_then(
-            move |whole_body| {
-                match str::from_utf8(&whole_body) {
-                    Ok(s_body) => ok((status, s_body.to_owned())),
-                    Err(error) => err(AzureError::UTF8Error(error)),
-                }
+            move |whole_body| match str::from_utf8(&whole_body) {
+                Ok(s_body) => ok((status, s_body.to_owned())),
+                Err(error) => err(AzureError::UTF8Error(error)),
             },
         )
     })

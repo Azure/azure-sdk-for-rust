@@ -59,9 +59,15 @@ fn code() -> Result<(), Box<Error>> {
     // account. Database do not implement Display but deref to &str so you can pass it to methods
     // both as struct or id.
 
-    let future = client.create_database("something").map(|db| {
-        println!("created database = {:?}", db);
-    });
+    let future = client
+        .create_database("something")
+        .and_then(|db| {
+            println!("created database = {:?}", db);
+            client.delete_database("something")
+        })
+        .map(|_| {
+            println!("database deleted");
+        });
     core.run(future)?;
     Ok(())
 }
