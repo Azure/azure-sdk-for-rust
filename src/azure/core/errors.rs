@@ -1,4 +1,5 @@
 use hyper;
+use native_tls;
 use hyper::StatusCode;
 use chrono;
 use std::io::Error as IOError;
@@ -100,6 +101,11 @@ quick_error! {
         UTF8Error(err: str::Utf8Error) {
             from()
             display("UTF8 conversion error: {}", err)
+            cause(err)
+        }
+        NativeTLSError(err: native_tls::Error) {
+            from()
+            display("Native TLS error: {}", err)
             cause(err)
         }
     }

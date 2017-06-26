@@ -8,6 +8,8 @@ use azure::core::errors::{AzureError, check_status_extract_body};
 
 use azure::cosmos::request_response::{ListDatabasesResponse, CreateDatabaseRequest,
                                       ListCollectionsResponse};
+use azure::core::COMPLETE_ENCODE_SET;
+
 use std::str::FromStr;
 
 use serde::Serialize;
@@ -24,7 +26,6 @@ use hyper::StatusCode;
 
 use chrono;
 
-use url::percent_encoding;
 use url::percent_encoding::utf8_percent_encode;
 
 use tokio_core;
@@ -43,12 +44,6 @@ header! { (Authorization, "Authorization") => [String] }
 header! { (OfferThroughput, "x-ms-offer-throughput") => [u64] }
 header! { (DocumentIsUpsert, "x-ms-documentdb-is-upsert") => [bool] }
 header! { (DocumentIndexingDirective, "x-ms-indexing-directive	") => [IndexingDirective] }
-
-define_encode_set! {
-    pub COMPLETE_ENCODE_SET = [percent_encoding::USERINFO_ENCODE_SET] | {
-        '+', '-', '&'
-    }
-}
 
 
 #[derive(Clone, Copy)]
