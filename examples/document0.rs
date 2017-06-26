@@ -91,7 +91,7 @@ fn code() -> Result<(), Box<Error>> {
         id: "unique_id1",
         a_string: "Something here",
         a_number: 100,
-        a_timestamp: chrono::UTC::now().timestamp(),
+        a_timestamp: chrono::Utc::now().timestamp(),
     };
 
     let document_attributes = core.run(

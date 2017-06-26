@@ -16,7 +16,7 @@ name             = "main"
 doc              = false
 
 [dependencies]
-chrono       = "0.3.0"
+chrono       = "*"
 rust-crypto  = "*"
 quick-error  = "*"
 RustyXML     = "*"

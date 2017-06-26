@@ -591,7 +591,7 @@ fn prepare_request<F>(
 where
     F: FnOnce(&mut Headers),
 {
-    let dt = chrono::UTC::now();
+    let dt = chrono::Utc::now();
     let time = format!("{}", dt.format(TIME_FORMAT));
 
     // we surround this two statements with a scope so the borrow
@@ -748,7 +748,7 @@ mod tests {
     fn string_to_sign_00() {
         let time = chrono::DateTime::parse_from_rfc3339("1900-01-01T01:00:00.000000000+00:00")
             .unwrap();
-        let time = time.with_timezone(&chrono::UTC);
+        let time = time.with_timezone(&chrono::Utc);
         let time = format!("{}", time.format(TIME_FORMAT));
 
         let ret = string_to_sign(
@@ -772,7 +772,7 @@ mon, 01 jan 1900 01:00:00 gmt
     fn generate_authorization_00() {
         let time = chrono::DateTime::parse_from_rfc3339("1900-01-01T01:00:00.000000000+00:00")
             .unwrap();
-        let time = time.with_timezone(&chrono::UTC);
+        let time = time.with_timezone(&chrono::Utc);
         let time = format!("{}", time.format(TIME_FORMAT));
 
         let authorization_token =
@@ -800,7 +800,7 @@ mon, 01 jan 1900 01:00:00 gmt
     fn generate_authorization_01() {
         let time = chrono::DateTime::parse_from_rfc3339("2017-04-27T00:51:12.000000000+00:00")
             .unwrap();
-        let time = time.with_timezone(&chrono::UTC);
+        let time = time.with_timezone(&chrono::Utc);
         let time = format!("{}", time.format(TIME_FORMAT));
 
         let authorization_token = authorization_token::AuthorizationToken::new(

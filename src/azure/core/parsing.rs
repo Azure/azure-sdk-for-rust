@@ -19,8 +19,8 @@ impl FromStringOptional<String> for String {
     }
 }
 
-impl FromStringOptional<chrono::DateTime<chrono::UTC>> for chrono::DateTime<chrono::UTC> {
-    fn from_str_optional(s: &str) -> Result<chrono::DateTime<chrono::UTC>, TraversingError> {
+impl FromStringOptional<chrono::DateTime<chrono::Utc>> for chrono::DateTime<chrono::Utc> {
+    fn from_str_optional(s: &str) -> Result<chrono::DateTime<chrono::Utc>, TraversingError> {
         match from_azure_time(s) {
             Err(e) => Err(TraversingError::DateTimeParseError(e)),
             Ok(dt) => Ok(dt),
@@ -29,9 +29,9 @@ impl FromStringOptional<chrono::DateTime<chrono::UTC>> for chrono::DateTime<chro
 }
 
 #[inline]
-pub fn from_azure_time(s: &str) -> Result<chrono::DateTime<chrono::UTC>, chrono::ParseError> {
+pub fn from_azure_time(s: &str) -> Result<chrono::DateTime<chrono::Utc>, chrono::ParseError> {
     let dt = try!(chrono::DateTime::parse_from_rfc2822(s));
-    let dt_utc: chrono::DateTime<chrono::UTC> = dt.with_timezone(&chrono::UTC);
+    let dt_utc: chrono::DateTime<chrono::Utc> = dt.with_timezone(&chrono::Utc);
     Ok(dt_utc)
 }
 
