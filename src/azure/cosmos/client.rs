@@ -294,144 +294,207 @@ impl<'a> Client {
             check_status_extract_body(future_response, StatusCode::NoContent).and_then(|_| ok(()))
         })
     }
-    //
-    //    pub fn get_collection(
-    //        &self,
-    //        database_name: &str,
-    //        collection_name: &str,
-    //    ) -> Result<Collection, AzureError> {
-    //        trace!(
-    //            "get_collection called (database_name == {}, collection_name == {})",
-    //            database_name,
-    //            collection_name
-    //        );
-    //
-    //        let uri = hyper::Uri::from_str(&format!(
-    //            "https://{}.documents.azure.com/dbs/{}/colls/{}",
-    //            self.authorization_token.account(),
-    //            database_name,
-    //            collection_name
-    //        ))?;
-    //
-    //        // No specific headers are required, get database only needs standard headers
-    //        // which will be provied by perform_request
-    //        let mut resp = self.perform_request(
-    //            uri,
-    //            hyper::Method::Get,
-    //            None,
-    //            ResourceType::Collections,
-    //            None,
-    //        )?;
-    //
-    //        let body = check_status_extract_body(&mut resp, StatusCode::Ok)?;
-    //        let coll: Collection = serde_json::from_str(&body)?;
-    //
-    //        Ok(coll)
-    //    }
-    //
-    //
-    //pub fn create_collection<'b>(
-    //    &'a self,
-    //    database_name: &'b str,
-    //    required_throughput: u64,
-    //    collection: &'b Collection,
-    //) -> impl Future<Item = Collection, Error = AzureError> {
-    //    trace!("create_collection called");
 
-    //    done(hyper::Uri::from_str(&format!(
-    //        "https://{}.documents.azure.com/dbs/{}/colls",
-    //        self.authorization_token.account(),
-    //        database_name
-    //    ))).from_err().and_then(move |uri| {
-    //        done(serde_json::to_string(collection)).from_err().and_then(move |collection_serialized| {
-    //            trace!("collection_serialized == {}", collection_serialized);
-    //
-    //            // Headers added as per https://docs.microsoft.com/en-us/rest/api/documentdb/create-a-collection
-    //            // Standard headers (auth and version) will be provied by perform_request
-    //            let future_request = self.prepare_request(
-    //                uri,
-    //                hyper::Method::Post,
-    //                Some(&collection_serialized),
-    //                ResourceType::Collections,
-    //                |hs| { hs.set(OfferThroughput(required_throughput)); }
-    //            );
+    #[inline]
+    fn get_collection_create_request(
+        &self,
+        database_name: &str,
+        collection_name: &str,
+    ) -> Result<hyper::client::FutureResponse, AzureError> {
+        let uri = hyper::Uri::from_str(&format!(
+            "https://{}.documents.azure.com/dbs/{}/colls/{}",
+            self.authorization_token.account(),
+            database_name,
+            collection_name
+        ))?;
 
-    //            check_status_extract_body(future_request, StatusCode::Created).and_then(move |body| {
-    //                match serde_json::from_str::<Collection>(&body) {
-    //                    Ok(r) => ok(r),
-    //                    Err(error) => err(error.into()),
-    //                 }
-    //            })
-    //        })
-    //    })
-    //}
+        // No specific headers are required, get database only needs standard headers
+        // which will be provied by perform_request
+        let request = prepare_request(
+            &self.authorization_token,
+            uri,
+            hyper::Method::Get,
+            None,
+            ResourceType::Collections,
+            |_| {},
+        );
 
-    //
-    //    pub fn delete_collection(
-    //        &self,
-    //        database_name: &str,
-    //        collection_name: &str,
-    //    ) -> Result<(), AzureError> {
-    //        trace!(
-    //            "delete_collection called (database_name == {}, collection_name == {}",
-    //            database_name,
-    //            collection_name
-    //        );
-    //
-    //        let uri = hyper::Uri::from_str(&format!(
-    //            "https://{}.documents.azure.com/dbs/{}/colls/{}",
-    //            self.authorization_token.account(),
-    //            database_name,
-    //            collection_name
-    //        ))?;
-    //
-    //        // No specific headers are required.
-    //        // Standard headers (auth and version) will be provied by perform_request
-    //        let future = self.perform_request(
-    //            uri,
-    //            hyper::Method::Delete,
-    //            None,
-    //            ResourceType::Collections,
-    //            None,
-    //        )?;
-    //
-    //        check_status(future, StatusCode::NoContent)?;
-    //
-    //        Ok(())
-    //    }
-    //
-    //    pub fn replace_collection(
-    //        &self,
-    //        database_name: &str,
-    //        collection: &str,
-    //    ) -> Result<Collection, AzureError> {
-    //        trace!("replace_collection called");
-    //
-    //        let uri = hyper::Uri::from_str(&format!(
-    //            "https://{}.documents.azure.com/dbs/{}/colls",
-    //            self.authorization_token.account(),
-    //            database_name
-    //        ))?;
-    //
-    //        // No specific headers are required.
-    //        // Standard headers (auth and version) will be provied by perform_request
-    //        let collection_serialized = serde_json::to_string(collection)?;
-    //
-    //        trace!("collection_serialized == {}", collection_serialized);
-    //
-    //        let mut resp = self.perform_request(
-    //            uri,
-    //            hyper::Method::Put,
-    //            Some(&collection_serialized),
-    //            ResourceType::Collections,
-    //            None,
-    //        )?;
-    //
-    //        let body = check_status_extract_body(&mut resp, StatusCode::Created)?;
-    //        let coll: Collection = serde_json::from_str(&body)?;
-    //
-    //        Ok(coll)
-    //    }
+        trace!("request prepared");
+
+        Ok(self.hyper_client.request(request))
+    }
+
+    pub fn get_collection(
+        &self,
+        database_name: &str,
+        collection_name: &str,
+    ) -> impl Future<Item = Collection, Error = AzureError> {
+        trace!(
+            "get_collection called (database_name == {}, collection_name == {})",
+            database_name,
+            collection_name
+        );
+
+        let req = self.get_collection_create_request(database_name, collection_name);
+
+        done(req).from_err().and_then(move |future_response| {
+            check_status_extract_body(future_response, StatusCode::Ok).and_then(move |body| {
+                done(serde_json::from_str::<Collection>(&body)).from_err()
+            })
+        })
+    }
+
+    #[inline]
+    fn create_collection_create_request(
+        &self,
+        database_name: &str,
+        required_throughput: u64,
+        collection: &Collection,
+    ) -> Result<hyper::client::FutureResponse, AzureError> {
+        let uri = hyper::Uri::from_str(&format!(
+            "https://{}.documents.azure.com/dbs/{}/colls",
+            self.authorization_token.account(),
+            database_name
+        ))?;
+
+        // Headers added as per
+        // https://docs.microsoft.com/en-us/rest/api/documentdb/create-a-collection
+        // Standard headers (auth and version) will be provied by perform_request
+        let collection_serialized = serde_json::to_string(collection)?;
+        trace!("collection_serialized == {}", collection_serialized);
+
+        let request = prepare_request(
+            &self.authorization_token,
+            uri,
+            hyper::Method::Post,
+            Some(&collection_serialized),
+            ResourceType::Collections,
+            |ref mut headers| {
+                headers.set(OfferThroughput(required_throughput));
+            }
+            );
+
+        trace!("request prepared");
+
+        Ok(self.hyper_client.request(request))
+    }
+
+    pub fn create_collection(
+        &self,
+        database_name: &str,
+        required_throughput: u64,
+        collection: &Collection,
+    ) -> impl Future<Item = Collection, Error = AzureError> {
+        trace!(
+            "create_collection(database_name == {:?}, required_throughput == {:?}, collection == {:?} called",
+            database_name,
+            required_throughput,
+            collection
+        );
+
+        let req =
+            self.create_collection_create_request(database_name, required_throughput, collection);
+
+        done(req).from_err().and_then(move |future_response| {
+            check_status_extract_body(future_response, StatusCode::Created).and_then(move |body| {
+                done(serde_json::from_str::<Collection>(&body)).from_err()
+            })
+        })
+    }
+
+    #[inline]
+    fn delete_collection_create_request(
+        &self,
+        database_name: &str,
+        collection_name: &str,
+    ) -> Result<hyper::client::FutureResponse, AzureError> {
+        let uri = hyper::Uri::from_str(&format!(
+            "https://{}.documents.azure.com/dbs/{}/colls/{}",
+            self.authorization_token.account(),
+            database_name,
+            collection_name
+        ))?;
+
+        // No specific headers are required.
+        // Standard headers (auth and version) will be provied by perform_request
+        let request = prepare_request(
+            &self.authorization_token,
+            uri,
+            hyper::Method::Delete,
+            None,
+            ResourceType::Collections,
+            |_| {}
+        );
+
+        trace!("request prepared");
+
+        Ok(self.hyper_client.request(request))
+    }
+
+    pub fn delete_collection(
+        &self,
+        database_name: &str,
+        collection_name: &str,
+    ) -> impl Future<Item = (), Error = AzureError> {
+        trace!(
+            "delete_collection called (database_name == {}, collection_name == {}",
+            database_name,
+            collection_name
+        );
+
+        let req = self.delete_collection_create_request(database_name, collection_name);
+
+        done(req).from_err().and_then(move |future_response| {
+            check_status_extract_body(future_response, StatusCode::NoContent).and_then(|_| ok(()))
+        })
+    }
+
+    #[inline]
+    fn replace_collection_prepare_request(
+        &self,
+        database_name: &str,
+        collection: &str,
+    ) -> Result<hyper::client::FutureResponse, AzureError> {
+        let uri = hyper::Uri::from_str(&format!(
+            "https://{}.documents.azure.com/dbs/{}/colls",
+            self.authorization_token.account(),
+            database_name
+        ))?;
+
+        // No specific headers are required.
+        // Standard headers (auth and version) will be provied by perform_request
+        let collection_serialized = serde_json::to_string(collection)?;
+        trace!("collection_serialized == {}", collection_serialized);
+
+        let request = prepare_request(
+            &self.authorization_token,
+            uri,
+            hyper::Method::Put,
+            Some(&collection_serialized),
+            ResourceType::Collections,
+            |_| {},
+        );
+
+        trace!("request prepared");
+
+        Ok(self.hyper_client.request(request))
+    }
+
+    pub fn replace_collection(
+        &self,
+        database_name: &str,
+        collection: &str,
+    ) -> impl Future<Item = Collection, Error = AzureError> {
+        trace!("replace_collection called");
+
+        let req = self.replace_collection_prepare_request(database_name, collection);
+
+        done(req).from_err().and_then(move |future_response| {
+            check_status_extract_body(future_response, StatusCode::Created).and_then(move |body| {
+                done(serde_json::from_str::<Collection>(&body)).from_err()
+            })
+        })
+    }
     //
     //    pub fn create_document<T>(
     //        &self,
@@ -604,7 +667,7 @@ fn string_to_sign(
             hyper::Method::Patch => "patch",
             hyper::Method::Extension(_) => "extension",
         },
-        match rt { 
+        match rt {
             ResourceType::Databases => "dbs",
             ResourceType::Collections => "colls",
             ResourceType::Documents => "docs",
