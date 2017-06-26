@@ -63,18 +63,15 @@ mod test {
     use super::Client;
 
     #[test]
-    pub fn client_ctor() {
-        Client::new("namespace", "event_hub", "policy", "key");
-    }
-
-    #[test]
     pub fn client_enc() {
         use crypto::mac::Mac;
         use base64;
+        use tokio_core::reactor::Core;
 
         let str_to_sign = "This must be secret!";
 
-        let mut c = Client::new("namespace", "event_hub", "policy", "key");
+        let core = Core::new().unwrap();
+        let mut c = Client::new(core.handle(), "namespace", "event_hub", "policy", "key");
 
         c.hmac.input(str_to_sign.as_bytes());
         let sig = base64::encode(c.hmac.result().code());
