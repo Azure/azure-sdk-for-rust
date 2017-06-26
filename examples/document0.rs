@@ -1,18 +1,25 @@
 extern crate azure_sdk_for_rust;
-extern crate chrono;
-extern crate serde;
-extern crate serde_json;
 
-#[macro_use]
-extern crate serde_derive;
+extern crate futures;
+extern crate tokio_core;
+extern crate tokio;
+extern crate hyper;
+extern crate hyper_tls;
+extern crate chrono;
+
 use std::error::Error;
+
+use futures::future::*;
+use tokio_core::reactor::Core;
 
 use azure_sdk_for_rust::azure::cosmos::authorization_token::{AuthorizationToken, TokenType};
 use azure_sdk_for_rust::azure::cosmos::client::Client;
 
+#[macro_use]
+extern crate serde_derive;
 use azure_sdk_for_rust::azure::cosmos;
 
-//use chrono::{DateTime, UTC};
+use chrono::{DateTime, UTC};
 
 //use serde::Serialize;
 
@@ -37,25 +44,27 @@ fn code() -> Result<(), Box<Error>> {
     let master_key = std::env::var("COSMOS_MASTER_KEY")
         .expect("Set env variable COSMOS_MASTER_KEY first!");
     let account = std::env::var("COSMOS_ACCOUNT").expect("Set env variable COSMOS_ACCOUNT first!");
-    let authorization_token = AuthorizationToken::new(&account, TokenType::Master, master_key)?;
-    let client = Client::new(&authorization_token)?;
+    let authorization_token = AuthorizationToken::new(account, TokenType::Master, master_key)?;
 
-    let database = {
-        let dbs = client.list_databases()?;
-        if let Some(db) = dbs.into_iter().find(|db| db.id == DATABASE) {
-            db
-        } else {
-            client.create_database(DATABASE)?
-        }
+    let mut core = Core::new()?;
+    let client = Client::new(&core.handle(), authorization_token)?;
+
+    let future = client.list_databases().and_then(|databases| {
+        ok(databases.into_iter().find(|db| db.id == DATABASE))
+    });
+
+    let database = match core.run(future)? {
+        Some(db) => db,
+        None => core.run(client.create_database(DATABASE))?,
     };
     println!("database == {:?}", database);
 
-    let coll = {
-        let colls = client.list_collections(&database)?;
-        if let Some(coll) = colls.into_iter().find(|coll| coll.id == COLLECTION) {
-            coll
-        } else {
+    let collection = {
+        let collections = core.run(client.list_collections(&database))?;
 
+        if let Some(collection) = collections.into_iter().find(|coll| coll.id == COLLECTION) {
+            collection
+        } else {
             let indexes = cosmos::collection::IncludedPathIndex {
                 kind: cosmos::collection::KeyKind::Hash,
                 data_type: cosmos::collection::DataType::String,
@@ -76,10 +85,11 @@ fn code() -> Result<(), Box<Error>> {
             };
 
             let coll = cosmos::collection::Collection::new(COLLECTION, ip);
-            client.create_collection(DATABASE, 400, &coll)?
+            core.run(client.create_collection(&database, 400, &coll))?
         }
     };
-    println!("collection == {:?}", coll);
+
+    println!("collection = {:?}", collection);
 
     let doc = MySampleStruct {
         id: "unique_id1",
@@ -88,12 +98,14 @@ fn code() -> Result<(), Box<Error>> {
         a_timestamp: chrono::UTC::now().timestamp(),
     };
 
-    let document_attributes = client.create_document(&database, &coll, false, None, &doc)?;
+    let document_attributes = core.run(
+        client.create_document(&database, &collection, false, None, &doc),
+    )?;
     println!("document_attributes == {:?}", document_attributes);
 
-    client.delete_collection(DATABASE, COLLECTION)?;
+    core.run(client.delete_collection(DATABASE, COLLECTION))?;
     println!("collection deleted");
-    client.delete_database(DATABASE)?;
+    core.run(client.delete_database(DATABASE))?;
     println!("database deleted");
 
     Ok(())

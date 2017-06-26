@@ -495,56 +495,86 @@ impl<'a> Client {
             })
         })
     }
-    //
-    //    pub fn create_document<T>(
-    //        &self,
-    //        database: &str,
-    //        collection: &str,
-    //        is_upsert: bool,
-    //        indexing_directive: Option<IndexingDirective>,
-    //        document: &T,
-    //    ) -> Result<DocumentAttributes, AzureError>
-    //    where
-    //        T: Serialize,
-    //    {
-    //        trace!(
-    //            "create_document called(database == {}, collection == {}, is_upsert == {}",
-    //            database,
-    //            collection,
-    //            is_upsert
-    //        );
-    //
-    //        let uri = hyper::Uri::from_str(&format!(
-    //            "https://{}.documents.azure.com/dbs/{}/colls/{}/docs",
-    //            self.authorization_token.account(),
-    //            database,
-    //            collection
-    //        ))?;
-    //
-    //        // Standard headers (auth and version) will be provied by perform_request
-    //        // Optional headers as per https://docs.microsoft.com/en-us/rest/api/documentdb/create-a-document
-    //        let mut headers = Headers::new();
-    //        headers.set(DocumentIsUpsert(is_upsert));
-    //        if let Some(id) = indexing_directive {
-    //            headers.set(DocumentIndexingDirective(id));
-    //        }
-    //
-    //        let document_serialized = serde_json::to_string(document)?;
-    //        trace!("document_serialized == {}", document_serialized);
-    //
-    //        let mut resp = self.perform_request(
-    //            uri,
-    //            hyper::Method::Post,
-    //            Some(&document_serialized),
-    //            ResourceType::Documents,
-    //            Some(headers),
-    //        )?;
-    //
-    //        let body = check_status_extract_body(&mut resp, StatusCode::Created)?;
-    //        let document_attributes: DocumentAttributes = serde_json::from_str(&body)?;
-    //
-    //        Ok(document_attributes)
-    //    }
+
+    #[inline]
+    fn create_document_create_request<T>(
+        &self,
+        database: &str,
+        collection: &str,
+        is_upsert: bool,
+        indexing_directive: Option<IndexingDirective>,
+        document: &T,
+    ) -> Result<hyper::client::FutureResponse, AzureError>
+    where
+        T: Serialize,
+    {
+        let uri = hyper::Uri::from_str(&format!(
+            "https://{}.documents.azure.com/dbs/{}/colls/{}/docs",
+            self.authorization_token.account(),
+            database,
+            collection
+        ))?;
+
+        // Standard headers (auth and version) will be provied by perform_request
+        // Optional headers as per https://docs.microsoft.com/en-us/rest/api/documentdb/create-a-document
+        let mut headers = Headers::new();
+        headers.set(DocumentIsUpsert(is_upsert));
+        if let Some(id) = indexing_directive {
+            headers.set(DocumentIndexingDirective(id));
+        }
+
+        let document_serialized = serde_json::to_string(document)?;
+        trace!("document_serialized == {}", document_serialized);
+
+        let request = prepare_request(
+                &self.authorization_token,
+                uri,
+                hyper::Method::Post,
+                Some(&document_serialized),
+                ResourceType::Documents,
+                |ref mut headers| {            
+                    if let Some(id) = indexing_directive {
+                        headers.set(DocumentIndexingDirective(id));
+                    }
+                });
+
+        trace!("request prepared");
+
+        Ok(self.hyper_client.request(request))
+    }
+
+    pub fn create_document<T>(
+        &self,
+        database: &str,
+        collection: &str,
+        is_upsert: bool,
+        indexing_directive: Option<IndexingDirective>,
+        document: &T,
+    ) -> impl Future<Item = DocumentAttributes, Error = AzureError>
+    where
+        T: Serialize,
+    {
+        trace!(
+            "create_document called(database == {}, collection == {}, is_upsert == {}",
+            database,
+            collection,
+            is_upsert
+        );
+
+        let req = self.create_document_create_request(
+            database,
+            collection,
+            is_upsert,
+            indexing_directive,
+            document,
+        );
+
+        done(req).from_err().and_then(move |future_response| {
+            check_status_extract_body(future_response, StatusCode::Created).and_then(move |body| {
+                done(serde_json::from_str::<DocumentAttributes>(&body)).from_err()
+            })
+        })
+    }
 }
 
 #[inline]
