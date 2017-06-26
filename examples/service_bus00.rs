@@ -1,0 +1,56 @@
+extern crate azure_sdk_for_rust;
+
+extern crate futures;
+extern crate tokio_core;
+extern crate tokio;
+extern crate hyper;
+extern crate hyper_tls;
+
+use std::error::Error;
+
+use tokio_core::reactor::Core;
+use futures::Future;
+
+use azure_sdk_for_rust::azure::service_bus::event_hub::Client;
+
+extern crate time;
+
+fn main() {
+    code().unwrap();
+}
+
+
+// We run a separate method to use the elegant quotation mark operator.
+// A series of unwrap(), unwrap() would have achieved the same result.
+fn code() -> Result<(), Box<Error>> {
+    // First we retrieve the account name and master key from environment variables.
+    // We expect master keys (ie, not resource constrained)
+    let service_bus_namespace = std::env::var("AZURE_SERVICE_BUS_NAMESPACE")
+        .expect("Set env variable AZURE_SERVICE_BUS_NAMESPACE first!");
+    let event_hub_name = std::env::var("AZURE_EVENT_HUB_NAME")
+        .expect("Set env variable AZURE_EVENT_HUB_NAME first!");
+    let policy_name = std::env::var("AZURE_POLICY_NAME")
+        .expect("Set env variable AZURE_POLICY_NAME first!");
+    let policy_key = std::env::var("AZURE_POLICY_KEY")
+        .expect("Set env variable AZURE_POLICY_KEY first!");
+
+    let mut core = Core::new()?;
+
+    let mut client = Client::new(
+        core.handle(),
+        &service_bus_namespace,
+        &event_hub_name,
+        &policy_name,
+        &policy_key,
+    );
+
+    let future = client
+        .send_event("sample body", time::Duration::days(1))
+        .map(|_| {
+            println!("event sent!");
+        });
+
+    core.run(future)?;
+
+    Ok(())
+}

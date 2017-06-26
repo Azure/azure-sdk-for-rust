@@ -70,7 +70,7 @@ fn send_event_prepare(
     Ok(client.request(request))
 }
 
-pub fn send_event(
+fn send_event(
     handle: &tokio_core::reactor::Handle,
     namespace: &str,
     event_hub: &str,
