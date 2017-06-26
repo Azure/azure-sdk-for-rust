@@ -44,11 +44,33 @@ fn code() -> Result<(), Box<Error>> {
         &policy_key,
     );
 
-    let future = client
-        .send_event("sample body", time::Duration::days(1))
-        .map(|_| {
-            println!("event sent!");
-        });
+    let messages = vec![
+        "These",
+        "are",
+        "useless",
+        "messages",
+        "provided",
+        "for",
+        "free",
+        "with",
+        "love",
+    ];
+    println!(
+        "Sending the following messages: {:?}. \
+         Please note they will be sent out of order!",
+        messages
+    );
+
+    let mut v = Vec::new();
+    for s in messages {
+        v.push(client.send_event(s, time::Duration::days(1)).map(
+            move |_| {
+                println!("{:?} event sent!", s);
+            },
+        ))
+    }
+
+    let future = futures::future::join_all(v);
 
     core.run(future)?;
 
