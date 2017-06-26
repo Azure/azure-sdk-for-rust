@@ -709,7 +709,7 @@ fn string_to_sign(
     )
 }
 
-fn generate_resource_link<'a>(u: &'a hyper::Uri) -> &'a str {
+fn generate_resource_link(u: &hyper::Uri) -> &str {
     static ENDING_STRINGS: &'static [&str] = &["/dbs", "/colls", "/docs"];
 
     // store the element only if it does not end with dbs, colls or docs
