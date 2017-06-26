@@ -66,7 +66,9 @@ impl Debug for AuthorizationToken {
 
         write!(
             f,
-            "azure::core::cosmos::AuthorizationToken[account == {}, token_type == {:?}, base64_encoded == {}, binary_form.len() == {}]",
+            "azure::core::cosmos::AuthorizationToken[\
+             account == {}, token_type == {:?}, \
+             base64_encoded == {}, binary_form.len() == {}]",
             self.account,
             self.token_type,
             so,

@@ -78,10 +78,11 @@ fn put_blob() {
     let len = value.len() as u64;
 
     if Container::list(client, &LIST_CONTAINER_OPTIONS_DEFAULT)
-           .unwrap()
-           .iter()
-           .find(|x| x.name == container_name)
-           .is_none() {
+        .unwrap()
+        .iter()
+        .find(|x| x.name == container_name)
+        .is_none()
+    {
         Container::create(client, container_name, PublicAccess::Blob).unwrap();
     }
 

@@ -386,7 +386,8 @@ impl<'a> Client {
         collection: &Collection,
     ) -> impl Future<Item = Collection, Error = AzureError> {
         trace!(
-            "create_collection(database_name == {:?}, required_throughput == {:?}, collection == {:?} called",
+            "create_collection(database_name == {:?}, \
+             required_throughput == {:?}, collection == {:?} called",
             database_name,
             required_throughput,
             collection
@@ -516,7 +517,8 @@ impl<'a> Client {
         ))?;
 
         // Standard headers (auth and version) will be provied by perform_request
-        // Optional headers as per https://docs.microsoft.com/en-us/rest/api/documentdb/create-a-document
+        // Optional headers as per
+        // https://docs.microsoft.com/en-us/rest/api/documentdb/create-a-document
         let mut headers = Headers::new();
         headers.set(DocumentIsUpsert(is_upsert));
         if let Some(id) = indexing_directive {
@@ -532,7 +534,7 @@ impl<'a> Client {
                 hyper::Method::Post,
                 Some(&document_serialized),
                 ResourceType::Documents,
-                |ref mut headers| {            
+                |ref mut headers| {
                     if let Some(id) = indexing_directive {
                         headers.set(DocumentIndexingDirective(id));
                     }
@@ -680,7 +682,12 @@ fn string_to_sign(
 ) -> String {
 
     // From official docs:
-    // StringToSign = Verb.toLowerCase() + "\n" + ResourceType.toLowerCase() + "\n" + ResourceLink + "\n" + Date.toLowerCase() + "\n" + "" + "\n";
+    // StringToSign =
+    //      Verb.toLowerCase() + "\n" +
+    //      ResourceType.toLowerCase() + "\n" +
+    //      ResourceLink + "\n" +
+    //      Date.toLowerCase() + "\n" +
+    //      "" + "\n";
     // Notice the empty string at the end so we need to add two carriage returns
 
     format!(
@@ -735,7 +742,7 @@ fn generate_resource_link<'a>(u: &'a hyper::Uri) -> &'a str {
 mod tests {
     use azure::cosmos::client::*;
     use azure::cosmos::authorization_token;
-    use uri::Url;
+    use hyper::Uri;
 
     #[test]
     fn string_to_sign_00() {
@@ -745,7 +752,7 @@ mod tests {
         let time = format!("{}", time.format(TIME_FORMAT));
 
         let ret = string_to_sign(
-            HTTPMethod::Get,
+            hyper::Method::Get,
             ResourceType::Databases,
             "dbs/MyDatabase/colls/MyCollection",
             &time,
@@ -769,14 +776,16 @@ mon, 01 jan 1900 01:00:00 gmt
         let time = format!("{}", time.format(TIME_FORMAT));
 
         let authorization_token =
-            authorization_token::AuthorizationToken::new("mindflavor", authorization_token::TokenType::Master,
-                                                         "8F8xXXOptJxkblM1DBXW7a6NMI5oE8NnwPGYBmwxLCKfejOK7B7yhcCHMGvN3PBrlMLIOeol1Hv9RCdzAZR5sg==".to_owned()).unwrap();
-
-
+            authorization_token::AuthorizationToken::new(
+                "mindflavor".to_owned(),
+                authorization_token::TokenType::Master,
+                "8F8xXXOptJxkblM1DBXW7a6NMI5oE8NnwPGYBmwxLCKfejOK7B7yhcCHMGvN3PBrlMLIOeol1Hv9RCdzAZR5sg=="
+                    .to_owned())
+            .unwrap();
 
         let ret = generate_authorization(
             &authorization_token,
-            HTTPMethod::Get,
+            hyper::Method::Get,
             ResourceType::Databases,
             "dbs/MyDatabase/colls/MyCollection",
             &time,
@@ -795,14 +804,14 @@ mon, 01 jan 1900 01:00:00 gmt
         let time = format!("{}", time.format(TIME_FORMAT));
 
         let authorization_token = authorization_token::AuthorizationToken::new(
-            "mindflavor",
+            "mindflavor".to_owned(),
             authorization_token::TokenType::Master,
             "dsZQi3KtZmCv1ljt3VNWNm7sQUF1y5rJfC6kv5JiwvW0EndXdDku/dkKBp8/ufDToSxL".to_owned(),
         ).unwrap();
 
         let ret = generate_authorization(
             &authorization_token,
-            HTTPMethod::Get,
+            hyper::Method::Get,
             ResourceType::Databases,
             "dbs/ToDoList",
             &time,
@@ -821,13 +830,13 @@ mon, 01 jan 1900 01:00:00 gmt
 
     #[test]
     fn generate_resource_link_00() {
-        let u = Url::parse("https://mindflavor.raldld.r4eee.sss/dbs/second").unwrap();
+        let u = Uri::from_str("https://mindflavor.raldld.r4eee.sss/dbs/second").unwrap();
         assert_eq!(generate_resource_link(&u), "dbs/second");
-        let u = Url::parse("https://mindflavor.raldld.r4eee.sss/dbs").unwrap();
+        let u = Uri::from_str("https://mindflavor.raldld.r4eee.sss/dbs").unwrap();
         assert_eq!(generate_resource_link(&u), "");
-        let u = Url::parse("https://mindflavor.raldld.r4eee.sss/colls/second/third").unwrap();
+        let u = Uri::from_str("https://mindflavor.raldld.r4eee.sss/colls/second/third").unwrap();
         assert_eq!(generate_resource_link(&u), "colls/second/third");
-        let u = Url::parse("https://mindflavor.documents.azure.com/dbs/test_db/colls").unwrap();
+        let u = Uri::from_str("https://mindflavor.documents.azure.com/dbs/test_db/colls").unwrap();
         assert_eq!(generate_resource_link(&u), "dbs/test_db");
 
     }

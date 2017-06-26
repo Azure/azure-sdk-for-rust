@@ -19,10 +19,6 @@ use azure_sdk_for_rust::azure::cosmos::client::Client;
 extern crate serde_derive;
 use azure_sdk_for_rust::azure::cosmos;
 
-use chrono::{DateTime, UTC};
-
-//use serde::Serialize;
-
 #[derive(Serialize, Deserialize, Debug)]
 struct MySampleStruct<'a> {
     id: &'a str,
