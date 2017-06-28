@@ -288,7 +288,7 @@ pub fn perform_request<F>(
     http_method: Method,
     azure_key: &str,
     headers_func: F,
-    request_body: Option<&str>,
+    request_body: Option<&[u8]>,
     service_type: ServiceType,
 ) -> Result<hyper::client::FutureResponse, AzureError>
 where
@@ -317,8 +317,9 @@ where
         .set(XMSVersion(AZURE_VERSION.to_owned()));
 
     if let Some(body) = request_body {
+        let b = Vec::from(body);
         request.headers_mut().set(ContentLength(body.len() as u64));
-        request.set_body(body.to_string());
+        request.set_body(b);
     }
 
     let auth = generate_authorization(

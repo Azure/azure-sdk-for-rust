@@ -468,8 +468,8 @@ impl Blob {
     //    &self,
     //    c: &Client,
     //    po: &PutOptions,
-    //    r: Option<(&mut Read, u64)>,
-    //) -> Result<(), AzureError> {
+    //    r: Option<&[u8]>,
+    //) -> Box<Future<Item = (), Error = AzureError>> {
 
     //    // parameter sanity check
     //    match self.blob_type {
@@ -522,39 +522,42 @@ impl Blob {
     //        uri = format!("{}&timeout={}", uri, timeout);
     //    }
 
-    //    let mut headers = Headers::new();
+    //    let req = c.perform_request(
+    //        &uri,
+    //        Method::Put,
+    //        |ref mut headers| {
+    //            headers.set(ContentType(self.content_type.clone()));
 
-    //    headers.set(ContentType(self.content_type.clone()));
+    //            if let Some(ref content_encoding) = self.content_encoding {
+    //                use hyper::header::Encoding;
+    //                let enc = content_encoding.parse::<Encoding>()?;
+    //                headers.set(ContentEncoding(vec![enc]));
+    //            };
 
-    //    if let Some(ref content_encoding) = self.content_encoding {
-    //        use hyper::header::Encoding;
-    //        let enc = try!(content_encoding.parse::<Encoding>());
-    //        headers.set(ContentEncoding(vec![enc]));
-    //    };
+    //            // TODO Content-Language
 
-    //    // TODO Content-Language
+    //            if let Some(ref content_md5) = self.content_md5 {
+    //                headers.set(ContentMD5(content_md5.to_owned()));
+    //            };
 
-    //    if let Some(ref content_md5) = self.content_md5 {
-    //        headers.set(ContentMD5(content_md5.to_owned()));
-    //    };
+    //            headers.set(XMSBlobType(self.blob_type));
 
-    //    headers.set(XMSBlobType(self.blob_type));
+    //            if let Some(ref lease_id) = po.lease_id {
+    //                headers.set(XMSLeaseId(*lease_id));
+    //            }
 
-    //    if let Some(ref lease_id) = po.lease_id {
-    //        headers.set(XMSLeaseId(*lease_id));
-    //    }
+    //            // TODO x-ms-blob-content-disposition
 
-    //    // TODO x-ms-blob-content-disposition
+    //            if self.blob_type == BlobType::PageBlob {
+    //                headers.set(XMSBlobContentLength(self.content_length));
+    //            }
+    //        },
+    //        r,
+    //    );
 
-    //    if self.blob_type == BlobType::PageBlob {
-    //        headers.set(XMSBlobContentLength(self.content_length));
-    //    }
-
-    //    let mut resp = try!(c.perform_request(&uri, Method::Put, &headers, r));
-
-    //    try!(core::errors::check_status(&mut resp, StatusCode::Created));
-
-    //    Ok(())
+    //    Box::new(done(req).from_err().and_then(move |future_response| {
+    //        check_status_extract_body(future_response, StatusCode::Created)
+    //    }))
     //}
 
     //pub fn lease(

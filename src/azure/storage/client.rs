@@ -46,7 +46,7 @@ impl Client {
         uri: &str,
         method: Method,
         headers_func: F,
-        request_body: Option<&str>,
+        request_body: Option<&[u8]>,
     ) -> Result<hyper::client::FutureResponse, AzureError>
     where
         F: FnOnce(&mut Headers),
@@ -67,7 +67,7 @@ impl Client {
         segment: &str,
         method: Method,
         headers_func: F,
-        request_str: Option<&str>,
+        request_str: Option<&[u8]>,
     ) -> Result<hyper::client::FutureResponse, AzureError>
     where
         F: FnOnce(&mut Headers),
