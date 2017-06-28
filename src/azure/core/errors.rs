@@ -151,6 +151,40 @@ impl From<()> for AzureError {
 }
 
 #[inline]
+pub fn extract_status_headers_and_body(
+    resp: hyper::client::FutureResponse,
+) -> impl Future<Item = (hyper::StatusCode, hyper::Headers, Vec<u8>), Error = AzureError> {
+    resp.from_err().and_then(|res| {
+        let status = res.status();
+        let headers = res.headers().clone();
+        res.body().concat2().from_err().and_then(move |whole_body| {
+            ok((status, headers, Vec::from(&whole_body as &[u8])))
+        })
+    })
+}
+
+#[inline]
+pub fn check_status_extract_headers_and_body(
+    resp: hyper::client::FutureResponse,
+    expected_status_code: hyper::StatusCode,
+) -> impl Future<Item = (hyper::Headers, Vec<u8>), Error = AzureError> {
+    extract_status_headers_and_body(resp).and_then(move |(status, headers, body)| {
+        if status == expected_status_code {
+            ok((headers, body))
+        } else {
+            match str::from_utf8(&body) {
+                Ok(s_body) => err(AzureError::UnexpectedHTTPResult(UnexpectedHTTPResult {
+                    expected: expected_status_code,
+                    received: status,
+                    body: s_body.to_owned(),
+                })),
+                Err(error) => err(AzureError::UTF8Error(error)),
+            }
+        }
+    })
+}
+
+#[inline]
 pub fn extract_status_and_body(
     resp: hyper::client::FutureResponse,
 ) -> impl Future<Item = (hyper::StatusCode, String), Error = AzureError> {

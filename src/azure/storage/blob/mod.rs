@@ -41,7 +41,8 @@ use std::fmt;
 
 use std::io::Read;
 
-use azure::core::errors::{TraversingError, AzureError, check_status_extract_body};
+use azure::core::errors::{TraversingError, AzureError, check_status_extract_body,
+                          UnexpectedHTTPResult, check_status_extract_headers_and_body};
 use azure::core::parsing::FromStringOptional;
 
 use azure::core::range::Range;
@@ -404,351 +405,353 @@ impl Blob {
             })
         }))
     }
+
+    pub fn get(
+        c: &Client,
+        container_name: &str,
+        blob_name: &str,
+        snapshot: Option<&DateTime<Utc>>,
+        range: Option<&Range>,
+        lease_id: Option<&LeaseId>,
+    ) -> Box<Future<Item = (Blob, Vec<u8>), Error = AzureError>> {
+        let mut uri = format!(
+            "https://{}.blob.core.windows.net/{}/{}",
+            c.account(),
+            container_name,
+            blob_name
+        );
+
+        if let Some(snapshot) = snapshot {
+            uri = format!("{}?snapshot={}", uri, snapshot.to_rfc2822());
+        }
+
+        trace!("uri == {:?}", uri);
+
+        let req = c.perform_request(
+            &uri,
+            Method::Get,
+            |ref mut headers| {
+                if let Some(r) = range {
+                    headers.set(XMSRange(*r));
+
+                    // if range is < 4MB request md5
+                    if r.end - r.start <= 1024 * 1024 * 4 {
+                        headers.set(XMSRangeGetContentMD5(true));
+                    }
+                }
+                if let Some(l) = lease_id {
+                    headers.set(XMSLeaseId(*l));
+                }
+            },
+            None,
+        );
+
+        let expected_status_code = if range.is_some() {
+            StatusCode::PartialContent
+        } else {
+            StatusCode::Ok
+        };
+
+        let container_name = container_name.to_owned();
+        let blob_name = blob_name.to_owned();
+
+        Box::new(done(req).from_err().and_then(move |future_response| {
+            check_status_extract_headers_and_body(future_response, expected_status_code)
+                .and_then(move |(headers, body)| {
+                    done(Blob::from_headers(&blob_name, &container_name, &headers))
+                        .and_then(move |blob| ok((blob, body)))
+                })
+        }))
+    }
+
+    //pub fn put(
+    //    &self,
+    //    c: &Client,
+    //    po: &PutOptions,
+    //    r: Option<(&mut Read, u64)>,
+    //) -> Result<(), AzureError> {
+
+    //    // parameter sanity check
+    //    match self.blob_type {
+    //        BlobType::BlockBlob => {
+    //            if r.is_none() {
+    //                return Err(AzureError::InputParametersError(
+    //                    "cannot use put_blob with \
+    //                     BlockBlob without a Read"
+    //                        .to_owned(),
+    //                ));
+    //            }
+    //        }
+    //        BlobType::PageBlob => {
+    //            if r.is_some() {
+    //                return Err(AzureError::InputParametersError(
+    //                    "cannot use put_blob with \
+    //                     PageBlob with a Read"
+    //                        .to_owned(),
+    //                ));
+    //            }
+
+    //            if self.content_length % 512 != 0 {
+    //                return Err(AzureError::InputParametersError(
+    //                    "PageBlob size must be aligned \
+    //                     to 512 bytes boundary"
+    //                        .to_owned(),
+    //                ));
+    //            }
+    //        }
+    //        BlobType::AppendBlob => {
+    //            if r.is_some() {
+    //                return Err(AzureError::InputParametersError(
+    //                    "cannot use put_blob with \
+    //                     AppendBlob with a Read"
+    //                        .to_owned(),
+    //                ));
+    //            }
+    //        }
+    //    }
+
+    //    let mut uri = format!(
+    //        "{}://{}.blob.core.windows.net/{}/{}",
+    //        c.auth_scheme(),
+    //        c.account(),
+    //        self.container_name,
+    //        self.name
+    //    );
+
+    //    if let Some(ref timeout) = po.timeout {
+    //        uri = format!("{}&timeout={}", uri, timeout);
+    //    }
+
+    //    let mut headers = Headers::new();
+
+    //    headers.set(ContentType(self.content_type.clone()));
+
+    //    if let Some(ref content_encoding) = self.content_encoding {
+    //        use hyper::header::Encoding;
+    //        let enc = try!(content_encoding.parse::<Encoding>());
+    //        headers.set(ContentEncoding(vec![enc]));
+    //    };
+
+    //    // TODO Content-Language
+
+    //    if let Some(ref content_md5) = self.content_md5 {
+    //        headers.set(ContentMD5(content_md5.to_owned()));
+    //    };
+
+    //    headers.set(XMSBlobType(self.blob_type));
+
+    //    if let Some(ref lease_id) = po.lease_id {
+    //        headers.set(XMSLeaseId(*lease_id));
+    //    }
+
+    //    // TODO x-ms-blob-content-disposition
+
+    //    if self.blob_type == BlobType::PageBlob {
+    //        headers.set(XMSBlobContentLength(self.content_length));
+    //    }
+
+    //    let mut resp = try!(c.perform_request(&uri, Method::Put, &headers, r));
+
+    //    try!(core::errors::check_status(&mut resp, StatusCode::Created));
+
+    //    Ok(())
+    //}
+
+    //pub fn lease(
+    //    &self,
+    //    c: &Client,
+    //    la: LeaseAction,
+    //    lbo: &LeaseBlobOptions,
+    //) -> Result<LeaseId, AzureError> {
+    //    let mut uri = format!(
+    //        "{}://{}.blob.core.windows.net/{}/{}?comp=lease",
+    //        c.auth_scheme(),
+    //        c.account(),
+    //        self.container_name,
+    //        self.name
+    //    );
+    //    if let Some(ref timeout) = lbo.timeout {
+    //        uri = format!("{}&timeout={}", uri, timeout);
+    //    }
+
+    //    let mut headers = Headers::new();
+
+    //    if let Some(ref lease_id) = lbo.lease_id {
+    //        headers.set(XMSLeaseId(lease_id.to_owned()));
+    //    }
+
+    //    headers.set(XMSLeaseAction(la));
+
+    //    if let Some(lease_break_period) = lbo.lease_break_period {
+    //        headers.set(XMSLeaseBreakPeriod(lease_break_period));
+    //    }
+    //    if let Some(lease_duration) = lbo.lease_duration {
+    //        headers.set(XMSLeaseDurationSeconds(lease_duration));
+    //    }
+    //    if let Some(ref proposed_lease_id) = lbo.proposed_lease_id {
+    //        headers.set(XMSProposedLeaseId(*proposed_lease_id));
+    //    }
+    //    if let Some(ref request_id) = lbo.request_id {
+    //        headers.set(XMSClientRequestId(request_id.to_owned()));
+    //    }
+
+    //    let mut resp = try!(c.perform_request(&uri, Method::Put, &headers, None));
+
+    //    let expected_result = match la {
+    //        LeaseAction::Acquire => StatusCode::Created,
+    //        LeaseAction::Renew | LeaseAction::Change | LeaseAction::Release => StatusCode::Ok,
+    //        LeaseAction::Break => StatusCode::Accepted,
+    //    };
+
+    //    try!(core::errors::check_status(&mut resp, expected_result));
+
+    //    let lid = match resp.headers.get::<XMSLeaseId>() {
+    //        Some(l) => l as &Uuid,
+    //        None => return Err(AzureError::HeaderNotFound("x-ms-lease-id".to_owned())),
+    //    };
+
+    //    Ok(*lid)
+    //}
+
+    //pub fn put_page(
+    //    &self,
+    //    c: &Client,
+    //    range: &BA512Range,
+    //    ppo: &PutPageOptions,
+    //    content: (&mut Read, u64),
+    //) -> Result<(), AzureError> {
+
+    //    let mut uri = format!(
+    //        "{}://{}.blob.core.windows.net/{}/{}?comp=page",
+    //        c.auth_scheme(),
+    //        c.account(),
+    //        self.container_name,
+    //        self.name
+    //    );
+
+    //    if let Some(ref timeout) = ppo.timeout {
+    //        uri = format!("{}&timeout={}", uri, timeout);
+    //    }
+
+    //    let mut headers = Headers::new();
+
+    //    headers.set(XMSRange(range.into()));
+    //    headers.set(XMSBlobContentLength(content.1));
+    //    if let Some(ref lease_id) = ppo.lease_id {
+    //        headers.set(XMSLeaseId(*lease_id));
+    //    }
+
+    //    headers.set(XMSPageWrite(PageWriteType::Update));
+
+    //    let mut resp = try!(c.perform_request(
+    //        &uri,
+    //        Method::Put,
+    //        &headers,
+    //        Some(content)
+    //    ));
+    //    try!(core::errors::check_status(&mut resp, StatusCode::Created));
+
+    //    Ok(())
+    //}
+
+    //pub fn put_block(
+    //    &self,
+    //    c: &Client,
+    //    block_id: &str,
+    //    pbo: &PutBlockOptions,
+    //    content: (&mut Read, u64),
+    //) -> Result<(), AzureError> {
+
+    //    let encoded_block_id = base64::encode(block_id.as_bytes());
+
+    //    let mut uri = format!(
+    //        "{}://{}.blob.core.windows.net/{}/{}?comp=block&blockid={}",
+    //        c.auth_scheme(),
+    //        c.account(),
+    //        self.container_name,
+    //        self.name,
+    //        encoded_block_id
+    //    );
+
+    //    if let Some(ref timeout) = pbo.timeout {
+    //        uri = format!("{}&timeout={}", uri, timeout);
+    //    }
+
+    //    let mut headers = Headers::new();
+
+    //    headers.set(XMSBlobContentLength(content.1));
+
+    //    if let Some(ref lease_id) = pbo.lease_id {
+    //        headers.set(XMSLeaseId(*lease_id));
+    //    }
+    //    if let Some(ref request_id) = pbo.request_id {
+    //        headers.set(XMSClientRequestId(request_id.to_owned()));
+    //    }
+
+    //    let mut resp = try!(c.perform_request(
+    //        &uri,
+    //        Method::Put,
+    //        &headers,
+    //        Some(content)
+    //    ));
+
+    //    try!(core::errors::check_status(&mut resp, StatusCode::Created));
+
+    //    Ok(())
+    //}
+
+    //pub fn clear_page(
+    //    &self,
+    //    c: &Client,
+    //    range: &BA512Range,
+    //    lease_id: Option<LeaseId>,
+    //) -> Result<(), AzureError> {
+
+    //    let uri = format!(
+    //        "{}://{}.blob.core.windows.net/{}/{}?comp=page",
+    //        c.auth_scheme(),
+    //        c.account(),
+    //        self.container_name,
+    //        self.name
+    //    );
+    //    let mut headers = Headers::new();
+
+    //    headers.set(XMSRange(range.into()));
+    //    headers.set(XMSBlobContentLength(0));
+    //    if let Some(lease_id) = lease_id {
+    //        headers.set(XMSLeaseId(lease_id));
+    //    }
+
+    //    headers.set(XMSPageWrite(PageWriteType::Clear));
+
+    //    let mut resp = try!(c.perform_request(&uri, Method::Put, &headers, None));
+    //    try!(core::errors::check_status(&mut resp, StatusCode::Created));
+
+    //    Ok(())
+    //}
+
+    //pub fn del(
+    //    c: &Client,
+    //    container_name: &str,
+    //    blob_name: &str,
+    //) -> Result<(), core::errors::AzureError> {
+    //    let uri = format!(
+    //        "{}://{}.blob.core.windows.net/{}/{}",
+    //        c.auth_scheme(),
+    //        c.account(),
+    //        container_name,
+    //        blob_name
+    //    );
+    //    let mut resp = try!(c.perform_request(
+    //        &uri,
+    //        Method::Delete,
+    //        &Headers::new(),
+    //        None
+    //    ));
+    //    try!(core::errors::check_status(&mut resp, StatusCode::Accepted));
+    //    Ok(())
+    //}
 }
-
-//pub fn get(
-//    c: &Client,
-//    container_name: &str,
-//    blob_name: &str,
-//    snapshot: Option<&DateTime<Utc>>,
-//    range: Option<&Range>,
-//    lease_id: Option<&LeaseId>,
-//) -> Result<(Blob, Box<Read>), core::errors::AzureError> {
-//    let mut uri = format!(
-//        "{}://{}.blob.core.windows.net/{}/{}",
-//        c.auth_scheme(),
-//        c.account(),
-//        container_name,
-//        blob_name
-//    );
-
-//    if let Some(snapshot) = snapshot {
-//        uri = format!("{}?snapshot={}", uri, snapshot.to_rfc2822());
-//    }
-
-//    let uri = uri;
-
-//    trace!("uri == {:?}", uri);
-
-//    let mut headers = Headers::new();
-
-//    if let Some(r) = range {
-//        headers.set(XMSRange(*r));
-
-//        // if range is < 4MB request md5
-//        if r.end - r.start <= 1024 * 1024 * 4 {
-//            headers.set(XMSRangeGetContentMD5(true));
-//        }
-//    }
-
-//    if let Some(l) = lease_id {
-//        headers.set(XMSLeaseId(*l));
-//    }
-
-
-//    let mut resp = try!(c.perform_request(&uri, Method::Get, &headers, None));
-
-//    // if we have requested a range the response code should be 207 (partial content)
-//    // otherwise 200 (ok).
-//    if range.is_some() {
-//        try!(check_status(&mut resp, StatusCode::PartialContent));
-//    } else {
-//        try!(check_status(&mut resp, StatusCode::Ok));
-//    }
-
-//    let blob = try!(Blob::from_headers(blob_name, container_name, &resp.headers));
-//    let r: Box<Read> = Box::new(resp);
-
-//    Ok((blob, r))
-//}
-
-//pub fn put(
-//    &self,
-//    c: &Client,
-//    po: &PutOptions,
-//    r: Option<(&mut Read, u64)>,
-//) -> Result<(), AzureError> {
-
-//    // parameter sanity check
-//    match self.blob_type {
-//        BlobType::BlockBlob => {
-//            if r.is_none() {
-//                return Err(AzureError::InputParametersError(
-//                    "cannot use put_blob with \
-//                     BlockBlob without a Read"
-//                        .to_owned(),
-//                ));
-//            }
-//        }
-//        BlobType::PageBlob => {
-//            if r.is_some() {
-//                return Err(AzureError::InputParametersError(
-//                    "cannot use put_blob with \
-//                     PageBlob with a Read"
-//                        .to_owned(),
-//                ));
-//            }
-
-//            if self.content_length % 512 != 0 {
-//                return Err(AzureError::InputParametersError(
-//                    "PageBlob size must be aligned \
-//                     to 512 bytes boundary"
-//                        .to_owned(),
-//                ));
-//            }
-//        }
-//        BlobType::AppendBlob => {
-//            if r.is_some() {
-//                return Err(AzureError::InputParametersError(
-//                    "cannot use put_blob with \
-//                     AppendBlob with a Read"
-//                        .to_owned(),
-//                ));
-//            }
-//        }
-//    }
-
-//    let mut uri = format!(
-//        "{}://{}.blob.core.windows.net/{}/{}",
-//        c.auth_scheme(),
-//        c.account(),
-//        self.container_name,
-//        self.name
-//    );
-
-//    if let Some(ref timeout) = po.timeout {
-//        uri = format!("{}&timeout={}", uri, timeout);
-//    }
-
-//    let mut headers = Headers::new();
-
-//    headers.set(ContentType(self.content_type.clone()));
-
-//    if let Some(ref content_encoding) = self.content_encoding {
-//        use hyper::header::Encoding;
-//        let enc = try!(content_encoding.parse::<Encoding>());
-//        headers.set(ContentEncoding(vec![enc]));
-//    };
-
-//    // TODO Content-Language
-
-//    if let Some(ref content_md5) = self.content_md5 {
-//        headers.set(ContentMD5(content_md5.to_owned()));
-//    };
-
-//    headers.set(XMSBlobType(self.blob_type));
-
-//    if let Some(ref lease_id) = po.lease_id {
-//        headers.set(XMSLeaseId(*lease_id));
-//    }
-
-//    // TODO x-ms-blob-content-disposition
-
-//    if self.blob_type == BlobType::PageBlob {
-//        headers.set(XMSBlobContentLength(self.content_length));
-//    }
-
-//    let mut resp = try!(c.perform_request(&uri, Method::Put, &headers, r));
-
-//    try!(core::errors::check_status(&mut resp, StatusCode::Created));
-
-//    Ok(())
-//}
-
-//pub fn lease(
-//    &self,
-//    c: &Client,
-//    la: LeaseAction,
-//    lbo: &LeaseBlobOptions,
-//) -> Result<LeaseId, AzureError> {
-//    let mut uri = format!(
-//        "{}://{}.blob.core.windows.net/{}/{}?comp=lease",
-//        c.auth_scheme(),
-//        c.account(),
-//        self.container_name,
-//        self.name
-//    );
-//    if let Some(ref timeout) = lbo.timeout {
-//        uri = format!("{}&timeout={}", uri, timeout);
-//    }
-
-//    let mut headers = Headers::new();
-
-//    if let Some(ref lease_id) = lbo.lease_id {
-//        headers.set(XMSLeaseId(lease_id.to_owned()));
-//    }
-
-//    headers.set(XMSLeaseAction(la));
-
-//    if let Some(lease_break_period) = lbo.lease_break_period {
-//        headers.set(XMSLeaseBreakPeriod(lease_break_period));
-//    }
-//    if let Some(lease_duration) = lbo.lease_duration {
-//        headers.set(XMSLeaseDurationSeconds(lease_duration));
-//    }
-//    if let Some(ref proposed_lease_id) = lbo.proposed_lease_id {
-//        headers.set(XMSProposedLeaseId(*proposed_lease_id));
-//    }
-//    if let Some(ref request_id) = lbo.request_id {
-//        headers.set(XMSClientRequestId(request_id.to_owned()));
-//    }
-
-//    let mut resp = try!(c.perform_request(&uri, Method::Put, &headers, None));
-
-//    let expected_result = match la {
-//        LeaseAction::Acquire => StatusCode::Created,
-//        LeaseAction::Renew | LeaseAction::Change | LeaseAction::Release => StatusCode::Ok,
-//        LeaseAction::Break => StatusCode::Accepted,
-//    };
-
-//    try!(core::errors::check_status(&mut resp, expected_result));
-
-//    let lid = match resp.headers.get::<XMSLeaseId>() {
-//        Some(l) => l as &Uuid,
-//        None => return Err(AzureError::HeaderNotFound("x-ms-lease-id".to_owned())),
-//    };
-
-//    Ok(*lid)
-//}
-
-//pub fn put_page(
-//    &self,
-//    c: &Client,
-//    range: &BA512Range,
-//    ppo: &PutPageOptions,
-//    content: (&mut Read, u64),
-//) -> Result<(), AzureError> {
-
-//    let mut uri = format!(
-//        "{}://{}.blob.core.windows.net/{}/{}?comp=page",
-//        c.auth_scheme(),
-//        c.account(),
-//        self.container_name,
-//        self.name
-//    );
-
-//    if let Some(ref timeout) = ppo.timeout {
-//        uri = format!("{}&timeout={}", uri, timeout);
-//    }
-
-//    let mut headers = Headers::new();
-
-//    headers.set(XMSRange(range.into()));
-//    headers.set(XMSBlobContentLength(content.1));
-//    if let Some(ref lease_id) = ppo.lease_id {
-//        headers.set(XMSLeaseId(*lease_id));
-//    }
-
-//    headers.set(XMSPageWrite(PageWriteType::Update));
-
-//    let mut resp = try!(c.perform_request(
-//        &uri,
-//        Method::Put,
-//        &headers,
-//        Some(content)
-//    ));
-//    try!(core::errors::check_status(&mut resp, StatusCode::Created));
-
-//    Ok(())
-//}
-
-//pub fn put_block(
-//    &self,
-//    c: &Client,
-//    block_id: &str,
-//    pbo: &PutBlockOptions,
-//    content: (&mut Read, u64),
-//) -> Result<(), AzureError> {
-
-//    let encoded_block_id = base64::encode(block_id.as_bytes());
-
-//    let mut uri = format!(
-//        "{}://{}.blob.core.windows.net/{}/{}?comp=block&blockid={}",
-//        c.auth_scheme(),
-//        c.account(),
-//        self.container_name,
-//        self.name,
-//        encoded_block_id
-//    );
-
-//    if let Some(ref timeout) = pbo.timeout {
-//        uri = format!("{}&timeout={}", uri, timeout);
-//    }
-
-//    let mut headers = Headers::new();
-
-//    headers.set(XMSBlobContentLength(content.1));
-
-//    if let Some(ref lease_id) = pbo.lease_id {
-//        headers.set(XMSLeaseId(*lease_id));
-//    }
-//    if let Some(ref request_id) = pbo.request_id {
-//        headers.set(XMSClientRequestId(request_id.to_owned()));
-//    }
-
-//    let mut resp = try!(c.perform_request(
-//        &uri,
-//        Method::Put,
-//        &headers,
-//        Some(content)
-//    ));
-
-//    try!(core::errors::check_status(&mut resp, StatusCode::Created));
-
-//    Ok(())
-//}
-
-//pub fn clear_page(
-//    &self,
-//    c: &Client,
-//    range: &BA512Range,
-//    lease_id: Option<LeaseId>,
-//) -> Result<(), AzureError> {
-
-//    let uri = format!(
-//        "{}://{}.blob.core.windows.net/{}/{}?comp=page",
-//        c.auth_scheme(),
-//        c.account(),
-//        self.container_name,
-//        self.name
-//    );
-//    let mut headers = Headers::new();
-
-//    headers.set(XMSRange(range.into()));
-//    headers.set(XMSBlobContentLength(0));
-//    if let Some(lease_id) = lease_id {
-//        headers.set(XMSLeaseId(lease_id));
-//    }
-
-//    headers.set(XMSPageWrite(PageWriteType::Clear));
-
-//    let mut resp = try!(c.perform_request(&uri, Method::Put, &headers, None));
-//    try!(core::errors::check_status(&mut resp, StatusCode::Created));
-
-//    Ok(())
-//}
-
-//pub fn del(
-//    c: &Client,
-//    container_name: &str,
-//    blob_name: &str,
-//) -> Result<(), core::errors::AzureError> {
-//    let uri = format!(
-//        "{}://{}.blob.core.windows.net/{}/{}",
-//        c.auth_scheme(),
-//        c.account(),
-//        container_name,
-//        blob_name
-//    );
-//    let mut resp = try!(c.perform_request(
-//        &uri,
-//        Method::Delete,
-//        &Headers::new(),
-//        None
-//    ));
-//    try!(core::errors::check_status(&mut resp, StatusCode::Accepted));
-//    Ok(())
-//}
 
 #[inline]
 fn incomplete_vector_from_response(
