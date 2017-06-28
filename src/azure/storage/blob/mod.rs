@@ -413,7 +413,7 @@ impl Blob {
         snapshot: Option<&DateTime<Utc>>,
         range: Option<&Range>,
         lease_id: Option<&LeaseId>,
-    ) -> Box<Future<Item = (Blob, Vec<u8>), Error = AzureError>> {
+    ) -> impl Future<Item = (Blob, Vec<u8>), Error = AzureError> {
         let mut uri = format!(
             "https://{}.blob.core.windows.net/{}/{}",
             c.account(),
@@ -455,13 +455,13 @@ impl Blob {
         let container_name = container_name.to_owned();
         let blob_name = blob_name.to_owned();
 
-        Box::new(done(req).from_err().and_then(move |future_response| {
+        done(req).from_err().and_then(move |future_response| {
             check_status_extract_headers_and_body(future_response, expected_status_code)
                 .and_then(move |(headers, body)| {
                     done(Blob::from_headers(&blob_name, &container_name, &headers))
                         .and_then(move |blob| ok((blob, body)))
                 })
-        }))
+        })
     }
 
     //pub fn put(
