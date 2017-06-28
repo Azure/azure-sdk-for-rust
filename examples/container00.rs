@@ -16,6 +16,8 @@ use azure_sdk_for_rust::azure::storage::client::Client;
 use azure_sdk_for_rust::azure::storage::container::Container;
 use azure_sdk_for_rust::azure::storage::container::LIST_CONTAINER_OPTIONS_DEFAULT;
 
+use azure_sdk_for_rust::azure::storage::blob::{Blob, LIST_BLOB_OPTIONS_DEFAULT};
+
 fn main() {
     code().unwrap();
 }
@@ -35,11 +37,25 @@ fn code() -> Result<(), Box<Error>> {
 
     let future = Container::list(&client, &LIST_CONTAINER_OPTIONS_DEFAULT).map(|iv| {
         println!("List containers returned {} containers.", iv.len());
-        for ref cont in iv.iter() {
+        for cont in iv.iter() {
             println!("\t{}", cont.name);
         }
     });
 
     core.run(future)?;
+
+    let future = Blob::list(&client, "mindarpa", &LIST_BLOB_OPTIONS_DEFAULT).map(|iv| {
+        println!("List blob returned {} blobs.", iv.len());
+        for cont in iv.iter() {
+            println!(
+                "\t{}\t{} MB",
+                cont.name,
+                cont.content_length / (1024 * 1024)
+            );
+        }
+    });
+
+    core.run(future)?;
+
     Ok(())
 }

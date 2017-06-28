@@ -91,7 +91,7 @@ pub struct Blob {
     pub last_modified: DateTime<Utc>,
     pub etag: String,
     pub content_length: u64,
-    pub content_type: Mime,
+    pub content_type: Option<Mime>,
     pub content_encoding: Option<String>,
     pub content_language: Option<String>,
     pub content_md5: Option<String>,
@@ -179,10 +179,15 @@ impl Blob {
         }
 
         let ctype = {
-            if let Ok(ctype) = content_type.parse::<Mime>() {
-                ctype
+            trace!("content_type == {:?}", content_type);
+            if content_type != "" {
+                if let Ok(ctype) = content_type.parse::<Mime>() {
+                    Some(ctype)
+                } else {
+                    return Err(AzureError::GenericError);
+                }
             } else {
-                return Err(AzureError::GenericError);
+                None
             }
         };
 
@@ -314,7 +319,7 @@ impl Blob {
             last_modified: last_modified,
             etag: etag,
             content_length: content_length,
-            content_type: content_type,
+            content_type: Some(content_type),
             content_encoding: content_encoding,
             content_language: content_language,
             content_md5: content_md5,
@@ -337,29 +342,29 @@ impl Blob {
         c: &Client,
         container_name: &str,
         lbo: &ListBlobOptions,
-    ) -> impl Future<Item = IncompleteVector<Blob>, Error = AzureError> {
+    ) -> Box<Future<Item = IncompleteVector<Blob>, Error = AzureError>> {
 
         let mut include = String::new();
         if lbo.include_snapshots {
-            include = include + "snapshots";
+            include += "snapshots";
         }
         if lbo.include_metadata {
             if include.is_empty() {
-                include = include + ",";
+                include += ",";
             }
-            include = include + "metadata";
+            include += "metadata";
         }
         if lbo.include_uncommittedblobs {
             if include.is_empty() {
-                include = include + ",";
+                include += ",";
             }
-            include = include + "uncommittedblobs";
+            include += "uncommittedblobs";
         }
         if lbo.include_copy {
             if include.is_empty() {
-                include = include + ",";
+                include += ",";
             }
-            include = include + "copy";
+            include += "copy";
         }
 
         let mut uri = format!(
@@ -393,11 +398,11 @@ impl Blob {
         // 'static lifetimes.
         let container_name = container_name.to_owned();
 
-        done(req).from_err().and_then(move |future_response| {
+        Box::new(done(req).from_err().and_then(move |future_response| {
             check_status_extract_body(future_response, StatusCode::Ok).and_then(move |body| {
-                done(incomplete_vector_from_response(&body, container_name)).from_err()
+                done(incomplete_vector_from_response(&body, &container_name)).from_err()
             })
-        })
+        }))
     }
 }
 
@@ -745,10 +750,13 @@ impl Blob {
 //    Ok(())
 //}
 
+#[inline]
 fn incomplete_vector_from_response(
     body: &str,
-    container_name: String,
+    container_name: &str,
 ) -> Result<IncompleteVector<Blob>, AzureError> {
+    trace!("body = {}", body);
+
     let elem: Element = body.parse()?;
 
     let next_marker = match cast_optional::<String>(&elem, &["NextMarker"])? {
@@ -757,10 +765,12 @@ fn incomplete_vector_from_response(
         None => None,
     };
 
+    debug!("next_marker == {:?}", next_marker);
+
     let mut v = Vec::new();
     for node_blob in traverse(&elem, &["Blobs", "Blob"], true)? {
         // println!("{:?}", blob);
-        v.push(Blob::parse(node_blob, &container_name)?);
+        v.push(Blob::parse(node_blob, container_name)?);
     }
 
     Ok(IncompleteVector::<Blob>::new(next_marker, v))

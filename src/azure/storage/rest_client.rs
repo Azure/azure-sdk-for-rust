@@ -212,10 +212,10 @@ fn canonicalized_resource_table(u: &url::Url) -> String {
 
 fn canonicalized_resource(u: &url::Url) -> String {
     let mut can_res: String = String::new();
-    can_res = can_res + "/";
+    can_res += "/";
 
     let account = get_account(u);
-    can_res = can_res + &account;
+    can_res += &account;
 
     let paths = u.path_segments().unwrap();
 
@@ -226,9 +226,9 @@ fn canonicalized_resource(u: &url::Url) -> String {
             path.push_str(&*p);
         }
 
-        can_res = can_res + &path;
+        can_res += &path;
     }
-    can_res = can_res + "\n";
+    can_res += "\n";
 
     // query parameters
     let query_pairs = u.query_pairs(); //.into_owned();
@@ -257,12 +257,12 @@ fn canonicalized_resource(u: &url::Url) -> String {
 
             for (i, item) in ret.iter().enumerate() {
                 if i > 0 {
-                    can_res = can_res + ","
+                    can_res += ","
                 }
-                can_res = can_res + item;
+                can_res += item;
             }
 
-            can_res = can_res + "\n";
+            can_res += "\n";
         }
     };
 

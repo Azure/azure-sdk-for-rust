@@ -74,6 +74,12 @@ pub fn traverse<'a>(
     path: &[&str],
     ignore_empty_leaf: bool,
 ) -> Result<Vec<&'a Element>, TraversingError> {
+    trace!(
+        "traverse(node == {:?}, path == {:?}, ignore_empty_leaf == {})",
+        node,
+        path,
+        ignore_empty_leaf
+    );
     // println!("path.len() == {:?}", path.len());
 
     if path.is_empty() {
@@ -134,7 +140,10 @@ pub fn inner_text(node: &Element) -> Result<&str, TraversingError> {
         };
     }
 
-    Err(TraversingError::TextNotFound)
+    Ok("")
+
+    //println!("\n!!! node == {}", node);
+    //Err(TraversingError::TextNotFound)
 }
 
 #[inline]

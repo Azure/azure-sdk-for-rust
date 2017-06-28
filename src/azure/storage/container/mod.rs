@@ -132,7 +132,7 @@ impl Container {
     pub fn list(
         c: &Client,
         lco: &ListContainerOptions,
-    ) -> impl Future<Item = IncompleteVector<Container>, Error = AzureError> {
+    ) -> Box<Future<Item = IncompleteVector<Container>, Error = AzureError>> {
         let mut uri = format!(
             "https://{}.blob.core.windows.net?comp=list&maxresults={}",
             c.account(),
@@ -157,15 +157,14 @@ impl Container {
 
         let req = c.perform_request(&uri, Method::Get, |_| {}, None);
 
-        done(req).from_err().and_then(move |future_response| {
+        Box::new(done(req).from_err().and_then(move |future_response| {
             check_status_extract_body(future_response, StatusCode::Ok).and_then(|body| {
                 done(incomplete_vector_from_response(&body)).from_err()
             })
-        })
+        }))
     }
 }
 
-#[inline]
 fn incomplete_vector_from_response(body: &str) -> Result<IncompleteVector<Container>, AzureError> {
     let elem: Element = body.parse()?;
 

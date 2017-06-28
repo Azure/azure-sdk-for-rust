@@ -139,7 +139,7 @@ quick_error! {
         }
         ParsingError(err: ParsingError){
             from()
-            display("Parsing error")
+            display("Parsing error: {:?}", err)
         }
    }
 }
