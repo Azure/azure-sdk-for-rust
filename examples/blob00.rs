@@ -1,0 +1,55 @@
+extern crate azure_sdk_for_rust;
+
+extern crate futures;
+extern crate tokio_core;
+extern crate tokio;
+extern crate hyper;
+extern crate hyper_tls;
+
+use std::error::Error;
+
+use futures::future::*;
+use tokio_core::reactor::Core;
+
+use azure_sdk_for_rust::azure::storage::client::Client;
+use azure_sdk_for_rust::azure::storage::blob::Blob;
+
+use std::str;
+
+fn main() {
+    code().unwrap();
+}
+
+// We run a separate method to use the elegant quotation mark operator.
+// A series of unwrap(), unwrap() would have achieved the same result.
+fn code() -> Result<(), Box<Error>> {
+    // First we retrieve the account name and master key from environment variables.
+    let account = std::env::var("STORAGE_ACCOUNT")
+        .expect("Set env variable STORAGE_ACCOUNT first!");
+    let master_key = std::env::var("STORAGE_MASTER_KEY")
+        .expect("Set env variable STORAGE_MASTER_KEY first!");
+
+    let container = std::env::args()
+        .nth(1)
+        .expect("please specify container name as command line parameter");
+    let blob = std::env::args()
+        .nth(2)
+        .expect("please specify blob name as command line parameter");
+
+    let mut core = Core::new()?;
+
+    let client = Client::new(&core.handle(), &account, &master_key)?;
+
+    let future = Blob::get(&client, &container, &blob, None, None, None)
+        .and_then(move |(blob, content)| {
+            done(String::from_utf8(content))
+                .map(move |s_content| {
+                    println!("blob == {:?}", blob);
+                    println!("s_content == {}", s_content);
+                })
+                .from_err()
+        });
+    core.run(future)?;
+
+    Ok(())
+}

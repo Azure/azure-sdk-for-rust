@@ -12,6 +12,7 @@ use serde_json;
 use futures::Future;
 use futures::Stream;
 use std::str;
+use std::string;
 use futures::future::*;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -101,6 +102,11 @@ quick_error! {
         UTF8Error(err: str::Utf8Error) {
             from()
             display("UTF8 conversion error: {}", err)
+            cause(err)
+        }
+        FromUtf8Error(err: string::FromUtf8Error) {
+            from()
+            display("FromUTF8 error: {}", err)
             cause(err)
         }
         NativeTLSError(err: native_tls::Error) {
