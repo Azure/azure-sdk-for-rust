@@ -464,101 +464,110 @@ impl Blob {
         })
     }
 
-    //pub fn put(
-    //    &self,
-    //    c: &Client,
-    //    po: &PutOptions,
-    //    r: Option<&[u8]>,
-    //) -> Box<Future<Item = (), Error = AzureError>> {
+    pub fn put(
+        &self,
+        c: &Client,
+        po: &PutOptions,
+        r: Option<&[u8]>,
+    ) -> Box<Future<Item = (), Error = AzureError>> {
 
-    //    // parameter sanity check
-    //    match self.blob_type {
-    //        BlobType::BlockBlob => {
-    //            if r.is_none() {
-    //                return Err(AzureError::InputParametersError(
-    //                    "cannot use put_blob with \
-    //                     BlockBlob without a Read"
-    //                        .to_owned(),
-    //                ));
-    //            }
-    //        }
-    //        BlobType::PageBlob => {
-    //            if r.is_some() {
-    //                return Err(AzureError::InputParametersError(
-    //                    "cannot use put_blob with \
-    //                     PageBlob with a Read"
-    //                        .to_owned(),
-    //                ));
-    //            }
+        // parameter sanity check
+        match self.blob_type {
+            BlobType::BlockBlob => {
+                if r.is_none() {
+                    return Box::new(err(AzureError::InputParametersError(
+                        "cannot use put_blob with \
+                         BlockBlob without a Read"
+                            .to_owned(),
+                    )));
+                }
+            }
+            BlobType::PageBlob => {
+                if r.is_some() {
+                    return Box::new(err(AzureError::InputParametersError(
+                        "cannot use put_blob with \
+                         PageBlob with a Read"
+                            .to_owned(),
+                    )));
+                }
 
-    //            if self.content_length % 512 != 0 {
-    //                return Err(AzureError::InputParametersError(
-    //                    "PageBlob size must be aligned \
-    //                     to 512 bytes boundary"
-    //                        .to_owned(),
-    //                ));
-    //            }
-    //        }
-    //        BlobType::AppendBlob => {
-    //            if r.is_some() {
-    //                return Err(AzureError::InputParametersError(
-    //                    "cannot use put_blob with \
-    //                     AppendBlob with a Read"
-    //                        .to_owned(),
-    //                ));
-    //            }
-    //        }
-    //    }
+                if self.content_length % 512 != 0 {
+                    return Box::new(err(AzureError::InputParametersError(
+                        "PageBlob size must be aligned \
+                         to 512 bytes boundary"
+                            .to_owned(),
+                    )));
+                }
+            }
+            BlobType::AppendBlob => {
+                if r.is_some() {
+                    return Box::new(err(AzureError::InputParametersError(
+                        "cannot use put_blob with \
+                         AppendBlob with a Read"
+                            .to_owned(),
+                    )));
+                }
+            }
+        }
 
-    //    let mut uri = format!(
-    //        "{}://{}.blob.core.windows.net/{}/{}",
-    //        c.auth_scheme(),
-    //        c.account(),
-    //        self.container_name,
-    //        self.name
-    //    );
+        let ce = if let Some(ref content_encoding) = self.content_encoding {
+            use hyper::header::Encoding;
+            match content_encoding.parse::<Encoding>() {
+                Ok(ct) => Some(ct),
+                Err(error) => return Box::new(err(error).from_err()),
+            }
+        } else {
+            None
+        };
 
-    //    if let Some(ref timeout) = po.timeout {
-    //        uri = format!("{}&timeout={}", uri, timeout);
-    //    }
 
-    //    let req = c.perform_request(
-    //        &uri,
-    //        Method::Put,
-    //        |ref mut headers| {
-    //            headers.set(ContentType(self.content_type.clone()));
+        let mut uri = format!(
+            "https://{}.blob.core.windows.net/{}/{}",
+            c.account(),
+            self.container_name,
+            self.name
+        );
 
-    //            if let Some(ref content_encoding) = self.content_encoding {
-    //                use hyper::header::Encoding;
-    //                let enc = content_encoding.parse::<Encoding>()?;
-    //                headers.set(ContentEncoding(vec![enc]));
-    //            };
+        if let Some(ref timeout) = po.timeout {
+            uri = format!("{}&timeout={}", uri, timeout);
+        }
 
-    //            // TODO Content-Language
+        let req = c.perform_request(
+            &uri,
+            Method::Put,
+            move |ref mut headers| {
+                if let Some(ct) = self.content_type.clone() {
+                    headers.set(ContentType(ct));
+                }
 
-    //            if let Some(ref content_md5) = self.content_md5 {
-    //                headers.set(ContentMD5(content_md5.to_owned()));
-    //            };
+                if let Some(ce) = ce {
+                    headers.set(ContentEncoding(vec![ce]));
+                }
+                // TODO Content-Language
 
-    //            headers.set(XMSBlobType(self.blob_type));
+                if let Some(ref content_md5) = self.content_md5 {
+                    headers.set(ContentMD5(content_md5.to_owned()));
+                };
 
-    //            if let Some(ref lease_id) = po.lease_id {
-    //                headers.set(XMSLeaseId(*lease_id));
-    //            }
+                headers.set(XMSBlobType(self.blob_type));
 
-    //            // TODO x-ms-blob-content-disposition
+                if let Some(ref lease_id) = po.lease_id {
+                    headers.set(XMSLeaseId(*lease_id));
+                }
 
-    //            if self.blob_type == BlobType::PageBlob {
-    //                headers.set(XMSBlobContentLength(self.content_length));
-    //            }
-    //        },
-    //        r,
-    //    );
+                // TODO x-ms-blob-content-disposition
 
-    //    Box::new(done(req).from_err().and_then(move |future_response| {
-    //        check_status_extract_body(future_response, StatusCode::Created)
-    //    }))
-    //}
+                if self.blob_type == BlobType::PageBlob {
+                    headers.set(XMSBlobContentLength(self.content_length));
+                }
+            },
+            r,
+        );
+
+        Box::new(done(req).from_err().and_then(move |future_response| {
+            check_status_extract_body(future_response, StatusCode::Created).and_then(|_| ok(()))
+        }))
+    }
 
     //pub fn lease(
     //    &self,
