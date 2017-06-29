@@ -79,7 +79,7 @@ fn code() -> Result<(), Box<Error>> {
         last_modified: chrono::Utc::now(),
         etag: "".to_owned(),
         content_length: metadata.len(),
-        content_type: Some("application/octet-stream".parse::<Mime>().unwrap()),
+        content_type: Some("text/plain".parse::<Mime>().unwrap()),
         content_encoding: None,
         content_language: None,
         content_md5: None,

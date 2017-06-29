@@ -514,12 +514,11 @@ impl Blob {
             use hyper::header::Encoding;
             match content_encoding.parse::<Encoding>() {
                 Ok(ct) => Some(ct),
-                Err(error) => return Box::new(err(error).from_err()),
+                Err(error) => return Box::new(err(AzureError::HyperError(error))),
             }
         } else {
             None
         };
-
 
         let mut uri = format!(
             "https://{}.blob.core.windows.net/{}/{}",
@@ -564,9 +563,14 @@ impl Blob {
             r,
         );
 
-        Box::new(done(req).from_err().and_then(move |future_response| {
-            check_status_extract_body(future_response, StatusCode::Created).and_then(|_| ok(()))
-        }))
+        Box::new(
+            done(req)
+                .from_err()
+                .and_then(move |future_response| {
+                    check_status_extract_body(future_response, StatusCode::Created)
+                })
+                .and_then(|_| ok(())),
+        )
     }
 
     //pub fn lease(
