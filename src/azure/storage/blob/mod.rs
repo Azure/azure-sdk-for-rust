@@ -84,7 +84,7 @@ header! { (XMSBlobType, "x-ms-blob-type") => [BlobType] }
 header! { (XMSBlobContentDisposition, "x-ms-blob-content-disposition") => [String] }
 header! { (XMSPageWrite, "x-ms-page-write") => [PageWriteType] }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Blob {
     pub name: String,
     pub container_name: String,
@@ -758,27 +758,27 @@ impl Blob {
     //    Ok(())
     //}
 
-    //pub fn del(
-    //    c: &Client,
-    //    container_name: &str,
-    //    blob_name: &str,
-    //) -> Result<(), core::errors::AzureError> {
-    //    let uri = format!(
-    //        "{}://{}.blob.core.windows.net/{}/{}",
-    //        c.auth_scheme(),
-    //        c.account(),
-    //        container_name,
-    //        blob_name
-    //    );
-    //    let mut resp = try!(c.perform_request(
-    //        &uri,
-    //        Method::Delete,
-    //        &Headers::new(),
-    //        None
-    //    ));
-    //    try!(core::errors::check_status(&mut resp, StatusCode::Accepted));
-    //    Ok(())
-    //}
+    pub fn delete(
+        c: &Client,
+        container_name: &str,
+        blob_name: &str,
+    ) -> impl Future<Item = (), Error = AzureError> {
+        let uri = format!(
+            "https://{}.blob.core.windows.net/{}/{}",
+            c.account(),
+            container_name,
+            blob_name
+        );
+
+        let req = c.perform_request(&uri, Method::Delete, |_| {}, None);
+
+        done(req)
+            .from_err()
+            .and_then(move |future_response| {
+                check_status_extract_body(future_response, StatusCode::Accepted)
+            })
+            .and_then(|_| ok(()))
+    }
 }
 
 #[inline]

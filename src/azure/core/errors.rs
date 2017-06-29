@@ -77,6 +77,9 @@ quick_error! {
             display("Parse error")
         }
         GenericError
+        GenericErrorWithText(err: String) {
+            display("Generic error: {}", err)
+        }
         ParsingError(err: ParsingError){
             from()
             display("Parsing error")

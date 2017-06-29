@@ -84,6 +84,9 @@ fn code() -> Result<(), Box<Error>> {
         last_modified: chrono::Utc::now(),
         etag: "".to_owned(),
         content_length: metadata.len(),
+        // here we pass text/plain as content_type. This means your browser will
+        // try to show you the file if you click on it in the Azure portal.
+        // Make sure to send a text file :)
         content_type: Some("text/plain".parse::<Mime>().unwrap()),
         content_encoding: None,
         content_language: None,
@@ -113,26 +116,37 @@ fn code() -> Result<(), Box<Error>> {
     let mut lbo = LEASE_BLOB_OPTIONS_DEFAULT.clone();
     lbo.lease_duration = Some(15);
     let future = new_blob.lease(&client, LeaseAction::Acquire, &lbo).map(
-        |_| {
+        |lease_id| {
             println!("Blob leased");
+            lease_id
         },
     );
 
-    core.run(future)?;
+    let lease_id = core.run(future)?;
+    println!("lease id == {:?}", lease_id);
 
-    let future = Blob::list(&client, &container_name, &LIST_BLOB_OPTIONS_DEFAULT).map(|blobs| {
-        match blobs.iter().find(|blob| blob.name == name) {
+    let future = Blob::list(&client, &container_name, &LIST_BLOB_OPTIONS_DEFAULT)
+        .map(|blobs| match blobs.iter().find(|blob| blob.name == name) {
             Some(retrieved_blob) => {
-                println!(
-                    "Our blob ({}/{}) == {:?}",
-                    container_name,
-                    name,
-                    retrieved_blob
-                )
+                let sc = (*retrieved_blob).clone();
+                Ok(sc)
             }
-            None => println!("Blob not found... something is amiss..."),
-        };
-    });
+            None => Err(AzureError::GenericErrorWithText(
+                "our blob should be here... where is it?".to_owned(),
+            )),
+        });
+
+    let retrieved_blob = core.run(future)??;
+    println!("retrieved_blob == {:?}", retrieved_blob);
+
+    // TODO
+    // this will fail because we did not specify a valid leaseID.
+    // I need to improve the method to allow that option at least.
+    let future = Blob::delete(
+        &client,
+        &retrieved_blob.container_name,
+        &retrieved_blob.name,
+    );
 
     core.run(future)?;
 
