@@ -290,6 +290,11 @@ impl Blob {
         // };
         // println!("cache_control == {:?}", cache_control);
 
+        //println!(
+        //    "h.get::<XMSLeaseStatus>() == {:?}",
+        //    h.get::<XMSLeaseStatus>()
+        //);
+
         let lease_status = match h.get::<XMSLeaseStatus>() {
             Some(ls) => try!(ls.to_string().parse::<LeaseStatus>()),
             None => return Err(AzureError::HeaderNotFound("x-ms-lease-status".to_owned())),
@@ -305,7 +310,7 @@ impl Blob {
 
 
         let lease_duration = match h.get::<XMSLeaseDuration>() {
-            Some(ls) => Some(try!(ls.to_string().parse::<LeaseDuration>())),
+            Some(ld) => Some(ld.to_string().parse::<LeaseDuration>()?),
             None => None,
         };
         trace!("lease_duration == {:?}", lease_duration);
@@ -344,7 +349,6 @@ impl Blob {
         container_name: &str,
         lbo: &ListBlobOptions,
     ) -> Box<Future<Item = IncompleteVector<Blob>, Error = AzureError>> {
-
         let mut include = String::new();
         if lbo.include_snapshots {
             include += "snapshots";
@@ -573,61 +577,69 @@ impl Blob {
         )
     }
 
-    //pub fn lease(
-    //    &self,
-    //    c: &Client,
-    //    la: LeaseAction,
-    //    lbo: &LeaseBlobOptions,
-    //) -> Result<LeaseId, AzureError> {
-    //    let mut uri = format!(
-    //        "{}://{}.blob.core.windows.net/{}/{}?comp=lease",
-    //        c.auth_scheme(),
-    //        c.account(),
-    //        self.container_name,
-    //        self.name
-    //    );
-    //    if let Some(ref timeout) = lbo.timeout {
-    //        uri = format!("{}&timeout={}", uri, timeout);
-    //    }
+    pub fn lease(
+        &self,
+        c: &Client,
+        la: LeaseAction,
+        lbo: &LeaseBlobOptions,
+    ) -> impl Future<Item = LeaseId, Error = AzureError> {
+        let mut uri = format!(
+            "https://{}.blob.core.windows.net/{}/{}?comp=lease",
+            c.account(),
+            self.container_name,
+            self.name
+        );
+        if let Some(ref timeout) = lbo.timeout {
+            uri = format!("{}&timeout={}", uri, timeout);
+        }
 
-    //    let mut headers = Headers::new();
+        let req = c.perform_request(
+            &uri,
+            Method::Put,
+            move |ref mut headers| {
+                if let Some(ref lease_id) = lbo.lease_id {
+                    headers.set(XMSLeaseId(lease_id.to_owned()));
+                }
 
-    //    if let Some(ref lease_id) = lbo.lease_id {
-    //        headers.set(XMSLeaseId(lease_id.to_owned()));
-    //    }
+                headers.set(XMSLeaseAction(la));
 
-    //    headers.set(XMSLeaseAction(la));
+                if let Some(lease_break_period) = lbo.lease_break_period {
+                    headers.set(XMSLeaseBreakPeriod(lease_break_period));
+                }
+                if let Some(lease_duration) = lbo.lease_duration {
+                    headers.set(XMSLeaseDurationSeconds(lease_duration));
+                }
+                if let Some(ref proposed_lease_id) = lbo.proposed_lease_id {
+                    headers.set(XMSProposedLeaseId(*proposed_lease_id));
+                }
+                if let Some(ref request_id) = lbo.request_id {
+                    headers.set(XMSClientRequestId(request_id.to_owned()));
+                }
 
-    //    if let Some(lease_break_period) = lbo.lease_break_period {
-    //        headers.set(XMSLeaseBreakPeriod(lease_break_period));
-    //    }
-    //    if let Some(lease_duration) = lbo.lease_duration {
-    //        headers.set(XMSLeaseDurationSeconds(lease_duration));
-    //    }
-    //    if let Some(ref proposed_lease_id) = lbo.proposed_lease_id {
-    //        headers.set(XMSProposedLeaseId(*proposed_lease_id));
-    //    }
-    //    if let Some(ref request_id) = lbo.request_id {
-    //        headers.set(XMSClientRequestId(request_id.to_owned()));
-    //    }
+            },
+            None,
+        );
 
-    //    let mut resp = try!(c.perform_request(&uri, Method::Put, &headers, None));
+        let expected_result = match la {
+            LeaseAction::Acquire => StatusCode::Created,
+            LeaseAction::Renew | LeaseAction::Change | LeaseAction::Release => StatusCode::Ok,
+            LeaseAction::Break => StatusCode::Accepted,
+        };
 
-    //    let expected_result = match la {
-    //        LeaseAction::Acquire => StatusCode::Created,
-    //        LeaseAction::Renew | LeaseAction::Change | LeaseAction::Release => StatusCode::Ok,
-    //        LeaseAction::Break => StatusCode::Accepted,
-    //    };
+        done(req)
+            .from_err()
+            .and_then(move |future_response| {
+                check_status_extract_headers_and_body(future_response, expected_result)
+            })
+            .and_then(|(headers, _)| {
+                let lid = match headers.get::<XMSLeaseId>() {
+                    Some(l) => l as &Uuid,
+                    None => return err(AzureError::HeaderNotFound("x-ms-lease-id".to_owned())),
+                };
 
-    //    try!(core::errors::check_status(&mut resp, expected_result));
-
-    //    let lid = match resp.headers.get::<XMSLeaseId>() {
-    //        Some(l) => l as &Uuid,
-    //        None => return Err(AzureError::HeaderNotFound("x-ms-lease-id".to_owned())),
-    //    };
-
-    //    Ok(*lid)
-    //}
+                ok(*lid)
+            })
+    }
 
     //pub fn put_page(
     //    &self,
@@ -788,7 +800,7 @@ fn incomplete_vector_from_response(
 
     let mut v = Vec::new();
     for node_blob in traverse(&elem, &["Blobs", "Blob"], true)? {
-        // println!("{:?}", blob);
+        //println!("{:?}", node_blob);
         v.push(Blob::parse(node_blob, container_name)?);
     }
 

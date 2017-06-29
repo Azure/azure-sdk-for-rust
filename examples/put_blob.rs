@@ -1,5 +1,6 @@
 extern crate azure_sdk_for_rust;
 
+extern crate env_logger;
 extern crate futures;
 extern crate tokio_core;
 extern crate tokio;
@@ -13,8 +14,11 @@ use futures::future::*;
 use tokio_core::reactor::Core;
 
 use azure_sdk_for_rust::azure::storage::client::Client;
-use azure_sdk_for_rust::azure::storage::blob::{BlobType, Blob, PUT_OPTIONS_DEFAULT};
-use azure_sdk_for_rust::azure::core::lease::{LeaseState, LeaseStatus};
+use azure_sdk_for_rust::azure::storage::blob::{BlobType, Blob, PUT_OPTIONS_DEFAULT,
+                                               LEASE_BLOB_OPTIONS_DEFAULT,
+                                               LIST_BLOB_OPTIONS_DEFAULT};
+use azure_sdk_for_rust::azure::core::lease::{LeaseState, LeaseStatus, LeaseAction};
+
 use azure_sdk_for_rust::azure::core::errors::AzureError;
 
 use std::str;
@@ -26,6 +30,7 @@ use hyper::mime::Mime;
 use std::io::Read;
 
 fn main() {
+    env_logger::init().unwrap();
     code().unwrap();
 }
 
@@ -99,9 +104,35 @@ fn code() -> Result<(), Box<Error>> {
 
     let future = new_blob
         .put(&client, &PUT_OPTIONS_DEFAULT, Some(&contents))
-        .map(move |_| {
+        .map(|_| {
             println!("{} uploaded", name);
         });
+
+    core.run(future)?;
+
+    let mut lbo = LEASE_BLOB_OPTIONS_DEFAULT.clone();
+    lbo.lease_duration = Some(15);
+    let future = new_blob.lease(&client, LeaseAction::Acquire, &lbo).map(
+        |_| {
+            println!("Blob leased");
+        },
+    );
+
+    core.run(future)?;
+
+    let future = Blob::list(&client, &container_name, &LIST_BLOB_OPTIONS_DEFAULT).map(|blobs| {
+        match blobs.iter().find(|blob| blob.name == name) {
+            Some(retrieved_blob) => {
+                println!(
+                    "Our blob ({}/{}) == {:?}",
+                    container_name,
+                    name,
+                    retrieved_blob
+                )
+            }
+            None => println!("Blob not found... something is amiss..."),
+        };
+    });
 
     core.run(future)?;
 
