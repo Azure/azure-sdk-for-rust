@@ -139,14 +139,28 @@ fn code() -> Result<(), Box<Error>> {
     let retrieved_blob = core.run(future)??;
     println!("retrieved_blob == {:?}", retrieved_blob);
 
-    // TODO
     // this will fail because we did not specify a valid leaseID.
-    // I need to improve the method to allow that option at least.
     let future = Blob::delete(
         &client,
         &retrieved_blob.container_name,
         &retrieved_blob.name,
+        None,
     );
+
+    core.run(future).unwrap_or_else(|err| {
+        println!(
+            "Failed to delete a locked blob without specifying a lease: {:?}",
+            err
+        );
+    });
+
+    // this will work because we did specify the valid leaseID.
+    let future = Blob::delete(
+        &client,
+        &retrieved_blob.container_name,
+        &retrieved_blob.name,
+        Some(lease_id),
+    ).map(|_| println!("Blob deleted!"));
 
     core.run(future)?;
 
