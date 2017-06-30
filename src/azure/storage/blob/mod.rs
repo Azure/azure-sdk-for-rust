@@ -762,7 +762,7 @@ impl Blob {
         c: &Client,
         container_name: &str,
         blob_name: &str,
-        lease_id: Option<LeaseId>,
+        lease_id: Option<&LeaseId>,
     ) -> impl Future<Item = (), Error = AzureError> {
         let uri = format!(
             "https://{}.blob.core.windows.net/{}/{}",
@@ -775,7 +775,7 @@ impl Blob {
             &uri,
             Method::Delete,
             |ref mut headers| if let Some(lease_id) = lease_id {
-                headers.set(XMSLeaseId(lease_id));
+                headers.set(XMSLeaseId(*lease_id));
             },
             None,
         );

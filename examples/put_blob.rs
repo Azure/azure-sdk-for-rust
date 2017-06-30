@@ -159,7 +159,7 @@ fn code() -> Result<(), Box<Error>> {
         &client,
         &retrieved_blob.container_name,
         &retrieved_blob.name,
-        Some(lease_id),
+        Some(&lease_id),
     ).map(|_| println!("Blob deleted!"));
 
     core.run(future)?;
