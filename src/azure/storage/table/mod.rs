@@ -3,12 +3,8 @@ mod batch;
 pub use self::batch::BatchItem;
 
 use self::batch::generate_batch_payload;
-use std::io::Read;
-use mime;
 use mime::Mime;
-use azure::core;
-use azure::core::errors::{self, AzureError, check_status_extract_body,
-                          check_status_extract_headers_and_body, extract_status_and_body,
+use azure::core::errors::{AzureError, check_status_extract_body, extract_status_and_body,
                           UnexpectedHTTPResult};
 use azure::storage::client::Client;
 use azure::storage::rest_client::ServiceType;
@@ -156,50 +152,56 @@ impl TableService {
         row_key: &str,
         entity: &T,
     ) -> impl Future<Item = (), Error = AzureError> {
-        let req = _prepare_update_entity(table_name, partition_key, row_key, entity);
+        let req = self._prepare_update_entity(table_name, partition_key, row_key, entity);
         done(req).from_err().and_then(move |future_response| {
             check_status_extract_body(future_response, StatusCode::NoContent)
                 .and_then(move |_| ok(()))
         })
     }
 
-    //pub fn delete_entity(
-    //    &self,
-    //    table_name: &str,
-    //    partition_key: &str,
-    //    row_key: &str,
-    //) -> Result<(), AzureError> {
-    //    let path = &entity_path(table_name, partition_key, row_key);
-    //    let mut headers = Headers::new();
-    //    headers.set(Accept(vec![qitem(get_json_mime_nometadata())]));
-    //    headers.set(IfMatch::Any);
+    pub fn delete_entity(
+        &self,
+        table_name: &str,
+        partition_key: &str,
+        row_key: &str,
+    ) -> impl Future<Item = (), Error = AzureError> {
+        let path = &entity_path(table_name, partition_key, row_key);
 
-    //    let mut resp = try!(self.request(path, Method::Delete, None, headers));
-    //    try!(errors::check_status(&mut resp, StatusCode::NoContent));
-    //    Ok(())
-    //}
+        let req = self.request(path, Method::Delete, None, |ref mut headers| {
+            headers.set(Accept(vec![qitem(get_json_mime_nometadata())]));
+            headers.set(IfMatch::Any);
+        });
+        done(req).from_err().and_then(move |future_response| {
+            check_status_extract_body(future_response, StatusCode::NoContent)
+                .and_then(move |_| ok(()))
+        })
+    }
 
-    //pub fn batch<T: Serialize>(
-    //    &self,
-    //    table_name: &str,
-    //    partition_key: &str,
-    //    batch_items: &[BatchItem<T>],
-    //) -> Result<(), AzureError> {
-    //    let payload = &generate_batch_payload(
-    //        self.client.get_uri_prefix(ServiceType::Table).as_str(),
-    //        table_name,
-    //        partition_key,
-    //        batch_items,
-    //    );
-    //    let mut headers = Headers::new();
-    //    headers.set(ContentType(get_batch_mime()));
-    //    let mut response = try!(self.request("$batch", Method::Post, Some(payload), headers));
-    //    try!(errors::check_status(&mut response, StatusCode::Accepted));
-    //    // TODO deal with body response, handle batch failure.
-    //    // let ref body = try!(get_response_body(&mut response));
-    //    // info!("{}", body);
-    //    Ok(())
-    //}
+    pub fn batch<T: Serialize>(
+        &self,
+        table_name: &str,
+        partition_key: &str,
+        batch_items: &[BatchItem<T>],
+    ) -> impl Future<Item = (), Error = AzureError> {
+        let payload = &generate_batch_payload(
+            self.client.get_uri_prefix(ServiceType::Table).as_str(),
+            table_name,
+            partition_key,
+            batch_items,
+        );
+
+        let req = self.request("$batch", Method::Post, Some(payload), |ref mut headers| {
+            headers.set(ContentType(get_batch_mime()));
+        });
+        done(req).from_err().and_then(move |future_response| {
+            check_status_extract_body(future_response, StatusCode::Accepted).and_then(move |_| {
+                // TODO deal with body response, handle batch failure.
+                // let ref body = try!(get_response_body(&mut response));
+                // info!("{}", body);
+                ok(())
+            })
+        })
+    }
 
     fn request_with_default_header(
         &self,
@@ -207,7 +209,6 @@ impl TableService {
         method: Method,
         request_str: Option<&str>,
     ) -> Result<FutureResponse, AzureError> {
-        let mut headers = Headers::new();
         self.request(segment, method, request_str, |ref mut headers| {
             headers.set(Accept(vec![qitem(get_json_mime_nometadata())]));
             if request_str.is_some() {
@@ -252,13 +253,6 @@ struct TableEntity {
 struct EntityCollection<T> {
     value: Vec<T>,
 }
-
-//fn get_response_body(resp: &mut Response) -> Result<String, AzureError> {
-//    let mut body = String::new();
-//    try!(resp.read_to_string(&mut body));
-//    trace!("Response Body:{}", body);
-//    Ok(body)
-//}
 
 #[inline]
 fn entity_path(table_name: &str, partition_key: &str, row_key: &str) -> String {
