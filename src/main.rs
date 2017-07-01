@@ -7,6 +7,7 @@
 
 #[macro_use]
 extern crate hyper;
+extern crate mime;
 extern crate chrono;
 
 extern crate futures;

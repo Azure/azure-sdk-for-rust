@@ -70,7 +70,7 @@ impl Client {
         request_str: Option<&[u8]>,
     ) -> Result<hyper::client::FutureResponse, AzureError>
     where
-        F: FnOnce(&mut Headers),
+        F: FnOnce(&mut hyper::header::Headers),
     {
         debug!("segment: {}, method: {:?}", segment, method,);
         perform_request(
