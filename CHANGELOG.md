@@ -2,15 +2,16 @@
 
 ### Migrated all code to asynchronous hyper using Futures 
 
-** Breaking changes **
+**Breaking changes**
 
 * Almost everything is now a future. So whenever you had a ```Result<A,AzureError>``` now you have ```impl FutureResult<A,AzureError>```.
 
-** Updated references to bleeding edge **
+**Updated references to bleeding edge**
 
-** TODO **
+**TODO**
 
-* Test the table code. My migration is now "on paper" only and should be tested.
+* Test the table code.
+* Perform the E2E test.
 
 ## [0.3.1](https://github.com/MindFlavor/AzureSDKForRust/releases/tag/0.3.1) (2017-06-10)
 
