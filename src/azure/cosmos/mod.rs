@@ -5,3 +5,4 @@ pub mod database;
 mod request_response;
 
 pub mod collection;
+pub mod document;

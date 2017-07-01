@@ -15,13 +15,16 @@ pub use self::put_page_options::{PutPageOptions, PUT_PAGE_OPTIONS_DEFAULT};
 mod lease_blob_options;
 pub use self::lease_blob_options::{LeaseBlobOptions, LEASE_BLOB_OPTIONS_DEFAULT};
 
-use chrono::datetime::DateTime;
-use chrono::UTC;
+use hyper::Method;
+
+use chrono::DateTime;
+use chrono::Utc;
+
+use futures::future::*;
 
 use azure::core::lease::{LeaseId, LeaseStatus, LeaseState, LeaseDuration, LeaseAction};
 use azure::storage::client::Client;
 
-use azure::core;
 use azure::storage::rest_client::{XMSRange, ContentMD5, XMSLeaseStatus, XMSLeaseDuration,
                                   XMSLeaseState, XMSLeaseId, XMSRangeGetContentMD5,
                                   XMSClientRequestId, XMSLeaseAction, XMSLeaseDurationSeconds,
@@ -35,9 +38,8 @@ use std::str::FromStr;
 use azure::core::enumerations;
 use std::fmt;
 
-use std::io::Read;
-
-use azure::core::errors::{TraversingError, AzureError, check_status};
+use azure::core::errors::{TraversingError, AzureError, check_status_extract_body,
+                          check_status_extract_headers_and_body};
 use azure::core::parsing::FromStringOptional;
 
 use azure::core::range::Range;
@@ -48,7 +50,7 @@ use azure::core::incompletevector::IncompleteVector;
 
 use hyper::mime::Mime;
 
-use hyper::status::StatusCode;
+use hyper::StatusCode;
 use hyper::header::{Headers, ContentType, ContentLength, LastModified, ContentEncoding,
                     ContentLanguage};
 
@@ -56,16 +58,20 @@ use base64;
 
 use uuid::Uuid;
 
-create_enum!(BlobType,
-             (BlockBlob, "BlockBlob"),
-             (PageBlob, "PageBlob"),
-             (AppendBlob, "AppendBlob"));
+create_enum!(
+    BlobType,
+    (BlockBlob, "BlockBlob"),
+    (PageBlob, "PageBlob"),
+    (AppendBlob, "AppendBlob")
+);
 
-create_enum!(CopyStatus,
-             (Pending, "pending"),
-             (Success, "success"),
-             (Aborted, "aborted"),
-             (Failed, "failed"));
+create_enum!(
+    CopyStatus,
+    (Pending, "pending"),
+    (Success, "success"),
+    (Aborted, "aborted"),
+    (Failed, "failed")
+);
 
 create_enum!(PageWriteType, (Update, "update"), (Clear, "clear"));
 
@@ -75,15 +81,15 @@ header! { (XMSBlobType, "x-ms-blob-type") => [BlobType] }
 header! { (XMSBlobContentDisposition, "x-ms-blob-content-disposition") => [String] }
 header! { (XMSPageWrite, "x-ms-page-write") => [PageWriteType] }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Blob {
     pub name: String,
     pub container_name: String,
-    pub snapshot_time: Option<DateTime<UTC>>,
-    pub last_modified: DateTime<UTC>,
+    pub snapshot_time: Option<DateTime<Utc>>,
+    pub last_modified: DateTime<Utc>,
     pub etag: String,
     pub content_length: u64,
-    pub content_type: Mime,
+    pub content_type: Option<Mime>,
     pub content_encoding: Option<String>,
     pub content_language: Option<String>,
     pub content_md5: Option<String>,
@@ -97,85 +103,126 @@ pub struct Blob {
     pub copy_status: Option<CopyStatus>,
     pub copy_source: Option<String>,
     pub copy_progress: Option<Range>,
-    pub copy_completion: Option<DateTime<UTC>>,
+    pub copy_completion: Option<DateTime<Utc>>,
     pub copy_status_description: Option<String>,
 }
 
 impl Blob {
     pub fn parse(elem: &Element, container_name: &str) -> Result<Blob, AzureError> {
         let name = try!(cast_must::<String>(elem, &["Name"]));
-        let snapshot_time = try!(cast_optional::<DateTime<UTC>>(elem, &["Snapshot"]));
-        let last_modified = try!(cast_must::<DateTime<UTC>>(elem,
-                                                            &["Properties", "Last-Modified"]));
+        let snapshot_time = try!(cast_optional::<DateTime<Utc>>(elem, &["Snapshot"]));
+        let last_modified = try!(cast_must::<DateTime<Utc>>(
+            elem,
+            &["Properties", "Last-Modified"]
+        ));
         let etag = try!(cast_must::<String>(elem, &["Properties", "Etag"]));
 
         let content_length = try!(cast_must::<u64>(elem, &["Properties", "Content-Length"]));
 
         let content_type = try!(cast_must::<String>(elem, &["Properties", "Content-Type"]));
-        let content_encoding = try!(cast_optional::<String>(elem,
-                                                            &["Properties", "Content-Encoding"]));
-        let content_language = try!(cast_optional::<String>(elem,
-                                                            &["Properties", "Content-Language"]));
-        let content_md5 = try!(cast_optional::<String>(elem, &["Properties", "Content-MD5"]));
-        let cache_control = try!(cast_optional::<String>(elem, &["Properties", "Cache-Control"]));
-        let x_ms_blob_sequence_number =
-            try!(cast_optional::<u64>(elem, &["Properties", "x-ms-blob-sequence-number"]));
+        let content_encoding = try!(cast_optional::<String>(
+            elem,
+            &["Properties", "Content-Encoding"]
+        ));
+        let content_language = try!(cast_optional::<String>(
+            elem,
+            &["Properties", "Content-Language"]
+        ));
+        let content_md5 = try!(cast_optional::<String>(
+            elem,
+            &["Properties", "Content-MD5"]
+        ));
+        let cache_control = try!(cast_optional::<String>(
+            elem,
+            &["Properties", "Cache-Control"]
+        ));
+        let x_ms_blob_sequence_number = try!(cast_optional::<u64>(
+            elem,
+            &["Properties", "x-ms-blob-sequence-number"]
+        ));
 
         let blob_type = try!(cast_must::<BlobType>(elem, &["Properties", "BlobType"]));
 
-        let lease_status = try!(cast_must::<LeaseStatus>(elem, &["Properties", "LeaseStatus"]));
+        let lease_status = try!(cast_must::<LeaseStatus>(
+            elem,
+            &["Properties", "LeaseStatus"]
+        ));
         let lease_state = try!(cast_must::<LeaseState>(elem, &["Properties", "LeaseState"]));
-        let lease_duration = try!(cast_optional::<LeaseDuration>(elem,
-                                                                 &["Properties", "LeaseDuration"]));
+        let lease_duration = try!(cast_optional::<LeaseDuration>(
+            elem,
+            &["Properties", "LeaseDuration"]
+        ));
         let copy_id = try!(cast_optional::<String>(elem, &["Properties", "CopyId"]));
-        let copy_status = try!(cast_optional::<CopyStatus>(elem, &["Properties", "CopyStatus"]));
+        let copy_status = try!(cast_optional::<CopyStatus>(
+            elem,
+            &["Properties", "CopyStatus"]
+        ));
         let copy_source = try!(cast_optional::<String>(elem, &["Properties", "CopySource"]));
-        let copy_progress = try!(cast_optional::<String>(elem, &["Properties", "CopyProgress"]));
-        let copy_completion =
-            try!(cast_optional::<DateTime<UTC>>(elem, &["Properties", "CopyCompletionTime"]));
-        let copy_status_description =
-            try!(cast_optional::<String>(elem, &["Properties", "CopyStatusDescription"]));
+        let copy_progress = try!(cast_optional::<String>(
+            elem,
+            &["Properties", "CopyProgress"]
+        ));
+        let copy_completion = try!(cast_optional::<DateTime<Utc>>(
+            elem,
+            &["Properties", "CopyCompletionTime"]
+        ));
+        let copy_status_description = try!(cast_optional::<String>(
+            elem,
+            &["Properties", "CopyStatusDescription"]
+        ));
 
         let mut cp_bytes: Option<Range> = None;
         if let Some(txt) = copy_progress {
             cp_bytes = Some(try!(txt.parse::<Range>()));
         }
 
-        let ctype = try!(content_type.parse::<Mime>());
+        let ctype = {
+            trace!("content_type == {:?}", content_type);
+            if content_type != "" {
+                if let Ok(ctype) = content_type.parse::<Mime>() {
+                    Some(ctype)
+                } else {
+                    return Err(AzureError::GenericError);
+                }
+            } else {
+                None
+            }
+        };
 
         Ok(Blob {
-               name: name,
-               container_name: container_name.to_owned(),
-               snapshot_time: snapshot_time,
-               last_modified: last_modified,
-               etag: etag,
-               content_length: content_length,
-               content_type: ctype,
-               content_encoding: content_encoding,
-               content_language: content_language,
-               content_md5: content_md5,
-               cache_control: cache_control,
-               x_ms_blob_sequence_number: x_ms_blob_sequence_number,
-               blob_type: blob_type,
-               lease_status: lease_status,
-               lease_state: lease_state,
-               lease_duration: lease_duration,
-               copy_id: copy_id,
-               copy_status: copy_status,
-               copy_source: copy_source,
-               copy_progress: cp_bytes,
-               copy_completion: copy_completion,
-               copy_status_description: copy_status_description,
-           })
+            name: name,
+            container_name: container_name.to_owned(),
+            snapshot_time: snapshot_time,
+            last_modified: last_modified,
+            etag: etag,
+            content_length: content_length,
+            content_type: ctype,
+            content_encoding: content_encoding,
+            content_language: content_language,
+            content_md5: content_md5,
+            cache_control: cache_control,
+            x_ms_blob_sequence_number: x_ms_blob_sequence_number,
+            blob_type: blob_type,
+            lease_status: lease_status,
+            lease_state: lease_state,
+            lease_duration: lease_duration,
+            copy_id: copy_id,
+            copy_status: copy_status,
+            copy_source: copy_source,
+            copy_progress: cp_bytes,
+            copy_completion: copy_completion,
+            copy_status_description: copy_status_description,
+        })
     }
 
-    pub fn from_headers(blob_name: &str,
-                        container_name: &str,
-                        h: &Headers)
-                        -> Result<Blob, AzureError> {
+    pub fn from_headers(
+        blob_name: &str,
+        container_name: &str,
+        h: &Headers,
+    ) -> Result<Blob, AzureError> {
         let content_type = match h.get::<ContentType>() {
             Some(ct) => (ct as &Mime).clone(),
-            None => try!("application/octet-stream".parse::<Mime>()),
+            None => "application/octet-stream".parse::<Mime>().unwrap(),
         };
         trace!("content_type == {:?}", content_type);
 
@@ -204,8 +251,10 @@ impl Blob {
             Some(lm) => Some(*(lm as &u64)),
             None => None,
         };
-        trace!("x_ms_blob_sequence_number == {:?}",
-               x_ms_blob_sequence_number);
+        trace!(
+            "x_ms_blob_sequence_number == {:?}",
+            x_ms_blob_sequence_number
+        );
 
         let blob_type = match h.get::<XMSBlobType>() {
             Some(lm) => try!((&lm.to_string()).parse::<BlobType>()),
@@ -238,6 +287,11 @@ impl Blob {
         // };
         // println!("cache_control == {:?}", cache_control);
 
+        //println!(
+        //    "h.get::<XMSLeaseStatus>() == {:?}",
+        //    h.get::<XMSLeaseStatus>()
+        //);
+
         let lease_status = match h.get::<XMSLeaseStatus>() {
             Some(ls) => try!(ls.to_string().parse::<LeaseStatus>()),
             None => return Err(AzureError::HeaderNotFound("x-ms-lease-status".to_owned())),
@@ -253,7 +307,7 @@ impl Blob {
 
 
         let lease_duration = match h.get::<XMSLeaseDuration>() {
-            Some(ls) => Some(try!(ls.to_string().parse::<LeaseDuration>())),
+            Some(ld) => Some(ld.to_string().parse::<LeaseDuration>()?),
             None => None,
         };
         trace!("lease_duration == {:?}", lease_duration);
@@ -262,65 +316,66 @@ impl Blob {
         // (https://msdn.microsoft.com/en-us/library/azure/dd179440.aspx)
 
         Ok(Blob {
-               name: blob_name.to_owned(),
-               container_name: container_name.to_owned(),
-               snapshot_time: None,
-               last_modified: last_modified,
-               etag: etag,
-               content_length: content_length,
-               content_type: content_type,
-               content_encoding: content_encoding,
-               content_language: content_language,
-               content_md5: content_md5,
-               cache_control: None, // TODO
-               x_ms_blob_sequence_number: x_ms_blob_sequence_number,
-               blob_type: blob_type,
-               lease_status: lease_status,
-               lease_state: lease_state,
-               lease_duration: lease_duration,
-               copy_id: None, // TODO
-               copy_status: None, // TODO
-               copy_source: None, // TODO
-               copy_progress: None, // TODO
-               copy_completion: None, // TODO
-               copy_status_description: None, // TODO
-           })
+            name: blob_name.to_owned(),
+            container_name: container_name.to_owned(),
+            snapshot_time: None,
+            last_modified: last_modified,
+            etag: etag,
+            content_length: content_length,
+            content_type: Some(content_type),
+            content_encoding: content_encoding,
+            content_language: content_language,
+            content_md5: content_md5,
+            cache_control: None, // TODO
+            x_ms_blob_sequence_number: x_ms_blob_sequence_number,
+            blob_type: blob_type,
+            lease_status: lease_status,
+            lease_state: lease_state,
+            lease_duration: lease_duration,
+            copy_id: None, // TODO
+            copy_status: None, // TODO
+            copy_source: None, // TODO
+            copy_progress: None, // TODO
+            copy_completion: None, // TODO
+            copy_status_description: None, // TODO
+        })
     }
 
-    pub fn list(c: &Client,
-                container_name: &str,
-                lbo: &ListBlobOptions)
-                -> Result<IncompleteVector<Blob>, core::errors::AzureError> {
-
+    pub fn list(
+        c: &Client,
+        container_name: &str,
+        lbo: &ListBlobOptions,
+    ) -> Box<Future<Item = IncompleteVector<Blob>, Error = AzureError>> {
         let mut include = String::new();
         if lbo.include_snapshots {
-            include = include + "snapshots";
+            include += "snapshots";
         }
         if lbo.include_metadata {
             if include.is_empty() {
-                include = include + ",";
+                include += ",";
             }
-            include = include + "metadata";
+            include += "metadata";
         }
         if lbo.include_uncommittedblobs {
             if include.is_empty() {
-                include = include + ",";
+                include += ",";
             }
-            include = include + "uncommittedblobs";
+            include += "uncommittedblobs";
         }
         if lbo.include_copy {
             if include.is_empty() {
-                include = include + ",";
+                include += ",";
             }
-            include = include + "copy";
+            include += "copy";
         }
 
-        let mut uri = format!("{}://{}.blob.core.windows.\
-                               net/{}?restype=container&comp=list&maxresults={}",
-                              c.auth_scheme(),
-                              c.account(),
-                              container_name,
-                              lbo.max_results);
+        let mut uri = format!(
+            "https://{}.blob.core.windows.\
+             net/{}?restype=container&comp=list&maxresults={}",
+            c.account(),
+            container_name,
+            lbo.max_results
+        );
 
         if !include.is_empty() {
             uri = format!("{}&include={}", uri, include);
@@ -338,204 +393,229 @@ impl Blob {
             uri = format!("{}&timeout={}", uri, timeout);
         }
 
-        let mut resp = try!(c.perform_request(&uri, core::HTTPMethod::Get, &Headers::new(), None));
+        let req = c.perform_request(&uri, Method::Get, |_| {}, None);
 
-        try!(check_status(&mut resp, StatusCode::Ok));
+        // we create a copy to move into the future's closure.
+        // We need to do this since the closure only accepts
+        // 'static lifetimes.
+        let container_name = container_name.to_owned();
 
-        let mut resp_s = String::new();
-        try!(resp.read_to_string(&mut resp_s));
-
-        trace!("resp_s == {:?}\n\n", resp_s);
-
-        let sp = &resp_s;
-        let elem: Element = try!(sp.parse());
-
-        let next_marker = match try!(cast_optional::<String>(&elem, &["NextMarker"])) {
-            Some(ref nm) if nm == "" => None,
-            Some(nm) => Some(nm),
-            None => None,
-        };
-
-        let mut v = Vec::new();
-        for node_blob in try!(traverse(&elem, &["Blobs", "Blob"], true)) {
-            // println!("{:?}", blob);
-            v.push(try!(Blob::parse(node_blob, container_name)));
-        }
-
-        Ok(IncompleteVector::<Blob>::new(next_marker, v))
+        Box::new(done(req).from_err().and_then(move |future_response| {
+            check_status_extract_body(future_response, StatusCode::Ok).and_then(move |body| {
+                done(incomplete_vector_from_response(&body, &container_name)).from_err()
+            })
+        }))
     }
 
-    pub fn get(c: &Client,
-               container_name: &str,
-               blob_name: &str,
-               snapshot: Option<&DateTime<UTC>>,
-               range: Option<&Range>,
-               lease_id: Option<&LeaseId>)
-               -> Result<(Blob, Box<Read>), core::errors::AzureError> {
-        let mut uri = format!("{}://{}.blob.core.windows.net/{}/{}",
-                              c.auth_scheme(),
-                              c.account(),
-                              container_name,
-                              blob_name);
+    pub fn get(
+        c: &Client,
+        container_name: &str,
+        blob_name: &str,
+        snapshot: Option<&DateTime<Utc>>,
+        range: Option<&Range>,
+        lease_id: Option<&LeaseId>,
+    ) -> impl Future<Item = (Blob, Vec<u8>), Error = AzureError> {
+        let mut uri = format!(
+            "https://{}.blob.core.windows.net/{}/{}",
+            c.account(),
+            container_name,
+            blob_name
+        );
 
         if let Some(snapshot) = snapshot {
             uri = format!("{}?snapshot={}", uri, snapshot.to_rfc2822());
         }
 
-        let uri = uri;
-
         trace!("uri == {:?}", uri);
 
-        let mut headers = Headers::new();
+        let req = c.perform_request(
+            &uri,
+            Method::Get,
+            |ref mut headers| {
+                if let Some(r) = range {
+                    headers.set(XMSRange(*r));
 
-        if let Some(r) = range {
-            headers.set(XMSRange(*r));
+                    // if range is < 4MB request md5
+                    if r.end - r.start <= 1024 * 1024 * 4 {
+                        headers.set(XMSRangeGetContentMD5(true));
+                    }
+                }
+                if let Some(l) = lease_id {
+                    headers.set(XMSLeaseId(*l));
+                }
+            },
+            None,
+        );
 
-            // if range is < 4MB request md5
-            if r.end - r.start <= 1024 * 1024 * 4 {
-                headers.set(XMSRangeGetContentMD5(true));
-            }
-        }
-
-        if let Some(l) = lease_id {
-            headers.set(XMSLeaseId(*l));
-        }
-
-
-        let mut resp = try!(c.perform_request(&uri, core::HTTPMethod::Get, &headers, None));
-
-        // if we have requested a range the response code should be 207 (partial content)
-        // otherwise 200 (ok).
-        if range.is_some() {
-            try!(check_status(&mut resp, StatusCode::PartialContent));
+        let expected_status_code = if range.is_some() {
+            StatusCode::PartialContent
         } else {
-            try!(check_status(&mut resp, StatusCode::Ok));
-        }
+            StatusCode::Ok
+        };
 
-        let blob = try!(Blob::from_headers(blob_name, container_name, &resp.headers));
-        let r: Box<Read> = Box::new(resp);
+        let container_name = container_name.to_owned();
+        let blob_name = blob_name.to_owned();
 
-        Ok((blob, r))
+        done(req).from_err().and_then(move |future_response| {
+            check_status_extract_headers_and_body(future_response, expected_status_code)
+                .and_then(move |(headers, body)| {
+                    done(Blob::from_headers(&blob_name, &container_name, &headers))
+                        .and_then(move |blob| ok((blob, body)))
+                })
+        })
     }
 
-    pub fn put(&self,
-               c: &Client,
-               po: &PutOptions,
-               r: Option<(&mut Read, u64)>)
-               -> Result<(), AzureError> {
+    pub fn put(
+        &self,
+        c: &Client,
+        po: &PutOptions,
+        r: Option<&[u8]>,
+    ) -> Box<Future<Item = (), Error = AzureError>> {
 
         // parameter sanity check
         match self.blob_type {
             BlobType::BlockBlob => {
                 if r.is_none() {
-                    return Err(AzureError::InputParametersError("cannot use put_blob with \
-                                                                 BlockBlob without a Read"
-                                                                    .to_owned()));
+                    return Box::new(err(AzureError::InputParametersError(
+                        "cannot use put_blob with \
+                         BlockBlob without a Read"
+                            .to_owned(),
+                    )));
                 }
             }
             BlobType::PageBlob => {
                 if r.is_some() {
-                    return Err(AzureError::InputParametersError("cannot use put_blob with \
-                                                                 PageBlob with a Read"
-                                                                    .to_owned()));
+                    return Box::new(err(AzureError::InputParametersError(
+                        "cannot use put_blob with \
+                         PageBlob with a Read"
+                            .to_owned(),
+                    )));
                 }
 
                 if self.content_length % 512 != 0 {
-                    return Err(AzureError::InputParametersError("PageBlob size must be aligned \
-                                                                 to 512 bytes boundary"
-                                                                    .to_owned()));
+                    return Box::new(err(AzureError::InputParametersError(
+                        "PageBlob size must be aligned \
+                         to 512 bytes boundary"
+                            .to_owned(),
+                    )));
                 }
             }
             BlobType::AppendBlob => {
                 if r.is_some() {
-                    return Err(AzureError::InputParametersError("cannot use put_blob with \
-                                                                 AppendBlob with a Read"
-                                                                    .to_owned()));
+                    return Box::new(err(AzureError::InputParametersError(
+                        "cannot use put_blob with \
+                         AppendBlob with a Read"
+                            .to_owned(),
+                    )));
                 }
             }
         }
 
-        let mut uri = format!("{}://{}.blob.core.windows.net/{}/{}",
-                              c.auth_scheme(),
-                              c.account(),
-                              self.container_name,
-                              self.name);
+        let ce = if let Some(ref content_encoding) = self.content_encoding {
+            use hyper::header::Encoding;
+            match content_encoding.parse::<Encoding>() {
+                Ok(ct) => Some(ct),
+                Err(error) => return Box::new(err(AzureError::HyperError(error))),
+            }
+        } else {
+            None
+        };
+
+        let mut uri = format!(
+            "https://{}.blob.core.windows.net/{}/{}",
+            c.account(),
+            self.container_name,
+            self.name
+        );
 
         if let Some(ref timeout) = po.timeout {
             uri = format!("{}&timeout={}", uri, timeout);
         }
 
-        let mut headers = Headers::new();
+        let req = c.perform_request(
+            &uri,
+            Method::Put,
+            move |ref mut headers| {
+                if let Some(ct) = self.content_type.clone() {
+                    headers.set(ContentType(ct));
+                }
 
-        headers.set(ContentType(self.content_type.clone()));
+                if let Some(ce) = ce {
+                    headers.set(ContentEncoding(vec![ce]));
+                }
+                // TODO Content-Language
 
-        if let Some(ref content_encoding) = self.content_encoding {
-            use hyper::header::Encoding;
-            let enc = try!(content_encoding.parse::<Encoding>());
-            headers.set(ContentEncoding(vec![enc]));
-        };
+                if let Some(ref content_md5) = self.content_md5 {
+                    headers.set(ContentMD5(content_md5.to_owned()));
+                };
 
-        // TODO Content-Language
+                headers.set(XMSBlobType(self.blob_type));
 
-        if let Some(ref content_md5) = self.content_md5 {
-            headers.set(ContentMD5(content_md5.to_owned()));
-        };
+                if let Some(ref lease_id) = po.lease_id {
+                    headers.set(XMSLeaseId(*lease_id));
+                }
 
-        headers.set(XMSBlobType(self.blob_type));
+                // TODO x-ms-blob-content-disposition
 
-        if let Some(ref lease_id) = po.lease_id {
-            headers.set(XMSLeaseId(*lease_id));
-        }
+                if self.blob_type == BlobType::PageBlob {
+                    headers.set(XMSBlobContentLength(self.content_length));
+                }
+            },
+            r,
+        );
 
-        // TODO x-ms-blob-content-disposition
-
-        if self.blob_type == BlobType::PageBlob {
-            headers.set(XMSBlobContentLength(self.content_length));
-        }
-
-        let mut resp = try!(c.perform_request(&uri, core::HTTPMethod::Put, &headers, r));
-
-        try!(core::errors::check_status(&mut resp, StatusCode::Created));
-
-        Ok(())
+        Box::new(
+            done(req)
+                .from_err()
+                .and_then(move |future_response| {
+                    check_status_extract_body(future_response, StatusCode::Created)
+                })
+                .and_then(|_| ok(())),
+        )
     }
 
-    pub fn lease(&self,
-                 c: &Client,
-                 la: LeaseAction,
-                 lbo: &LeaseBlobOptions)
-                 -> Result<LeaseId, AzureError> {
-        let mut uri = format!("{}://{}.blob.core.windows.net/{}/{}?comp=lease",
-                              c.auth_scheme(),
-                              c.account(),
-                              self.container_name,
-                              self.name);
+    pub fn lease(
+        &self,
+        c: &Client,
+        la: LeaseAction,
+        lbo: &LeaseBlobOptions,
+    ) -> impl Future<Item = LeaseId, Error = AzureError> {
+        let mut uri = format!(
+            "https://{}.blob.core.windows.net/{}/{}?comp=lease",
+            c.account(),
+            self.container_name,
+            self.name
+        );
         if let Some(ref timeout) = lbo.timeout {
             uri = format!("{}&timeout={}", uri, timeout);
         }
 
-        let mut headers = Headers::new();
+        let req = c.perform_request(
+            &uri,
+            Method::Put,
+            move |ref mut headers| {
+                if let Some(ref lease_id) = lbo.lease_id {
+                    headers.set(XMSLeaseId(lease_id.to_owned()));
+                }
 
-        if let Some(ref lease_id) = lbo.lease_id {
-            headers.set(XMSLeaseId(lease_id.to_owned()));
-        }
+                headers.set(XMSLeaseAction(la));
 
-        headers.set(XMSLeaseAction(la));
+                if let Some(lease_break_period) = lbo.lease_break_period {
+                    headers.set(XMSLeaseBreakPeriod(lease_break_period));
+                }
+                if let Some(lease_duration) = lbo.lease_duration {
+                    headers.set(XMSLeaseDurationSeconds(lease_duration));
+                }
+                if let Some(ref proposed_lease_id) = lbo.proposed_lease_id {
+                    headers.set(XMSProposedLeaseId(*proposed_lease_id));
+                }
+                if let Some(ref request_id) = lbo.request_id {
+                    headers.set(XMSClientRequestId(request_id.to_owned()));
+                }
 
-        if let Some(lease_break_period) = lbo.lease_break_period {
-            headers.set(XMSLeaseBreakPeriod(lease_break_period));
-        }
-        if let Some(lease_duration) = lbo.lease_duration {
-            headers.set(XMSLeaseDurationSeconds(lease_duration));
-        }
-        if let Some(ref proposed_lease_id) = lbo.proposed_lease_id {
-            headers.set(XMSProposedLeaseId(*proposed_lease_id));
-        }
-        if let Some(ref request_id) = lbo.request_id {
-            headers.set(XMSClientRequestId(request_id.to_owned()));
-        }
-
-        let mut resp = try!(c.perform_request(&uri, core::HTTPMethod::Put, &headers, None));
+            },
+            None,
+        );
 
         let expected_result = match la {
             LeaseAction::Acquire => StatusCode::Created,
@@ -543,128 +623,199 @@ impl Blob {
             LeaseAction::Break => StatusCode::Accepted,
         };
 
-        try!(core::errors::check_status(&mut resp, expected_result));
+        done(req)
+            .from_err()
+            .and_then(move |future_response| {
+                check_status_extract_headers_and_body(future_response, expected_result)
+            })
+            .and_then(|(headers, _)| {
+                let lid = match headers.get::<XMSLeaseId>() {
+                    Some(l) => l as &Uuid,
+                    None => return err(AzureError::HeaderNotFound("x-ms-lease-id".to_owned())),
+                };
 
-        let lid = match resp.headers.get::<XMSLeaseId>() {
-            Some(l) => l as &Uuid,
-            None => return Err(AzureError::HeaderNotFound("x-ms-lease-id".to_owned())),
-        };
-
-        Ok(*lid)
+                ok(*lid)
+            })
     }
 
-    pub fn put_page(&self,
-                    c: &Client,
-                    range: &BA512Range,
-                    ppo: &PutPageOptions,
-                    content: (&mut Read, u64))
-                    -> Result<(), AzureError> {
+    pub fn put_page(
+        &self,
+        c: &Client,
+        range: &BA512Range,
+        ppo: &PutPageOptions,
+        content: &[u8],
+    ) -> impl Future<Item = (), Error = AzureError> {
 
-        let mut uri = format!("{}://{}.blob.core.windows.net/{}/{}?comp=page",
-                              c.auth_scheme(),
-                              c.account(),
-                              self.container_name,
-                              self.name);
+        let mut uri = format!(
+            "https://{}.blob.core.windows.net/{}/{}?comp=page",
+            c.account(),
+            self.container_name,
+            self.name
+        );
 
         if let Some(ref timeout) = ppo.timeout {
             uri = format!("{}&timeout={}", uri, timeout);
         }
 
-        let mut headers = Headers::new();
+        let req = c.perform_request(
+            &uri,
+            Method::Put,
+            move |ref mut headers| {
+                headers.set(XMSRange(range.into()));
+                headers.set(XMSBlobContentLength(content.len() as u64));
+                if let Some(ref lease_id) = ppo.lease_id {
+                    headers.set(XMSLeaseId(*lease_id));
+                }
 
-        headers.set(XMSRange(range.into()));
-        headers.set(XMSBlobContentLength(content.1));
-        if let Some(ref lease_id) = ppo.lease_id {
-            headers.set(XMSLeaseId(*lease_id));
-        }
+                headers.set(XMSPageWrite(PageWriteType::Update));
+            },
+            Some(content),
+        );
 
-        headers.set(XMSPageWrite(PageWriteType::Update));
-
-        let mut resp =
-            try!(c.perform_request(&uri, core::HTTPMethod::Put, &headers, Some(content)));
-        try!(core::errors::check_status(&mut resp, StatusCode::Created));
-
-        Ok(())
+        done(req)
+            .from_err()
+            .and_then(move |future_response| {
+                check_status_extract_body(future_response, StatusCode::Created)
+            })
+            .and_then(|_| ok(()))
     }
 
-    pub fn put_block(&self,
-                     c: &Client,
-                     block_id: &str,
-                     pbo: &PutBlockOptions,
-                     content: (&mut Read, u64))
-                     -> Result<(), AzureError> {
+    pub fn put_block(
+        &self,
+        c: &Client,
+        block_id: &str,
+        pbo: &PutBlockOptions,
+        content: &[u8],
+    ) -> impl Future<Item = (), Error = AzureError> {
 
         let encoded_block_id = base64::encode(block_id.as_bytes());
 
-        let mut uri = format!("{}://{}.blob.core.windows.net/{}/{}?comp=block&blockid={}",
-                              c.auth_scheme(),
-                              c.account(),
-                              self.container_name,
-                              self.name,
-                              encoded_block_id);
+        let mut uri = format!(
+            "https://{}.blob.core.windows.net/{}/{}?comp=block&blockid={}",
+            c.account(),
+            self.container_name,
+            self.name,
+            encoded_block_id
+        );
 
         if let Some(ref timeout) = pbo.timeout {
             uri = format!("{}&timeout={}", uri, timeout);
         }
 
-        let mut headers = Headers::new();
+        let req = c.perform_request(
+            &uri,
+            Method::Put,
+            move |ref mut headers| {
+                headers.set(XMSBlobContentLength(content.len() as u64));
 
-        headers.set(XMSBlobContentLength(content.1));
+                if let Some(ref lease_id) = pbo.lease_id {
+                    headers.set(XMSLeaseId(*lease_id));
+                }
+                if let Some(ref request_id) = pbo.request_id {
+                    headers.set(XMSClientRequestId(request_id.to_owned()));
+                }
 
-        if let Some(ref lease_id) = pbo.lease_id {
-            headers.set(XMSLeaseId(*lease_id));
-        }
-        if let Some(ref request_id) = pbo.request_id {
-            headers.set(XMSClientRequestId(request_id.to_owned()));
-        }
+            },
+            Some(content),
+        );
 
-        let mut resp =
-            try!(c.perform_request(&uri, core::HTTPMethod::Put, &headers, Some(content)));
-
-        try!(core::errors::check_status(&mut resp, StatusCode::Created));
-
-        Ok(())
+        done(req)
+            .from_err()
+            .and_then(move |future_response| {
+                check_status_extract_body(future_response, StatusCode::Created)
+            })
+            .and_then(|_| ok(()))
     }
 
-    pub fn clear_page(&self,
-                      c: &Client,
-                      range: &BA512Range,
-                      lease_id: Option<LeaseId>)
-                      -> Result<(), AzureError> {
+    pub fn clear_page(
+        &self,
+        c: &Client,
+        range: &BA512Range,
+        lease_id: Option<&LeaseId>,
+    ) -> impl Future<Item = (), Error = AzureError> {
 
-        let uri = format!("{}://{}.blob.core.windows.net/{}/{}?comp=page",
-                          c.auth_scheme(),
-                          c.account(),
-                          self.container_name,
-                          self.name);
-        let mut headers = Headers::new();
+        let uri = format!(
+            "https://{}.blob.core.windows.net/{}/{}?comp=page",
+            c.account(),
+            self.container_name,
+            self.name
+        );
+        let req = c.perform_request(
+            &uri,
+            Method::Put,
+            move |ref mut headers| {
+                headers.set(XMSRange(range.into()));
+                headers.set(XMSBlobContentLength(0));
+                if let Some(lease_id) = lease_id {
+                    headers.set(XMSLeaseId(*lease_id));
+                }
 
-        headers.set(XMSRange(range.into()));
-        headers.set(XMSBlobContentLength(0));
-        if let Some(lease_id) = lease_id {
-            headers.set(XMSLeaseId(lease_id));
-        }
+                headers.set(XMSPageWrite(PageWriteType::Clear));
+            },
+            None,
+        );
 
-        headers.set(XMSPageWrite(PageWriteType::Clear));
-
-        let mut resp = try!(c.perform_request(&uri, core::HTTPMethod::Put, &headers, None));
-        try!(core::errors::check_status(&mut resp, StatusCode::Created));
-
-        Ok(())
+        done(req)
+            .from_err()
+            .and_then(move |future_response| {
+                check_status_extract_body(future_response, StatusCode::Created)
+            })
+            .and_then(|_| ok(()))
     }
 
-    pub fn del(c: &Client,
-               container_name: &str,
-               blob_name: &str)
-               -> Result<(), core::errors::AzureError> {
-        let uri = format!("{}://{}.blob.core.windows.net/{}/{}",
-                          c.auth_scheme(),
-                          c.account(),
-                          container_name,
-                          blob_name);
-        let mut resp =
-            try!(c.perform_request(&uri, core::HTTPMethod::Delete, &Headers::new(), None));
-        try!(core::errors::check_status(&mut resp, StatusCode::Accepted));
-        Ok(())
+    pub fn delete(
+        c: &Client,
+        container_name: &str,
+        blob_name: &str,
+        lease_id: Option<&LeaseId>,
+    ) -> impl Future<Item = (), Error = AzureError> {
+        let uri = format!(
+            "https://{}.blob.core.windows.net/{}/{}",
+            c.account(),
+            container_name,
+            blob_name
+        );
+
+        let req = c.perform_request(
+            &uri,
+            Method::Delete,
+            |ref mut headers| if let Some(lease_id) = lease_id {
+                headers.set(XMSLeaseId(*lease_id));
+            },
+            None,
+        );
+
+        done(req)
+            .from_err()
+            .and_then(move |future_response| {
+                check_status_extract_body(future_response, StatusCode::Accepted)
+            })
+            .and_then(|_| ok(()))
     }
+}
+
+#[inline]
+fn incomplete_vector_from_response(
+    body: &str,
+    container_name: &str,
+) -> Result<IncompleteVector<Blob>, AzureError> {
+    trace!("body = {}", body);
+
+    let elem: Element = body.parse()?;
+
+    let next_marker = match cast_optional::<String>(&elem, &["NextMarker"])? {
+        Some(ref nm) if nm == "" => None,
+        Some(nm) => Some(nm),
+        None => None,
+    };
+
+    debug!("next_marker == {:?}", next_marker);
+
+    let mut v = Vec::new();
+    for node_blob in traverse(&elem, &["Blobs", "Blob"], true)? {
+        //println!("{:?}", node_blob);
+        v.push(Blob::parse(node_blob, container_name)?);
+    }
+
+    Ok(IncompleteVector::<Blob>::new(next_marker, v))
 }

@@ -39,22 +39,22 @@ fn insert_get() {
     let utc = chrono::UTC::now();
     let ref s = utc.to_string();
     let ref entity1 = &Entity {
-                           PartitionKey: "e1".to_owned(),
-                           RowKey: s.to_owned(),
-                           c: "mot1".to_owned(),
-                           deleted: Some("DELET".to_owned()),
-                       };
+        PartitionKey: "e1".to_owned(),
+        RowKey: s.to_owned(),
+        c: "mot1".to_owned(),
+        deleted: Some("DELET".to_owned()),
+    };
     client.insert_entity("rtest1", entity1).unwrap();
     let entity: Entity = client.get_entity("rtest1", "e1", s).unwrap().unwrap();
     assert_eq!("mot1", entity.c);
     assert!(entity.deleted.is_some());
 
     let ref entity2 = &Entity {
-                           PartitionKey: "e2".to_owned(),
-                           RowKey: s.to_owned(),
-                           c: "mot2".to_owned(),
-                           deleted: None,
-                       };
+        PartitionKey: "e2".to_owned(),
+        RowKey: s.to_owned(),
+        c: "mot2".to_owned(),
+        deleted: None,
+    };
     client.insert_entity("rtest1", entity2).unwrap();
     let entity: Entity = client.get_entity("rtest1", "e2", s).unwrap().unwrap();
     assert_eq!("mot2", entity.c);
@@ -78,9 +78,7 @@ fn insert_update() {
     assert!(entity.deleted.is_some());
 
     entity1.c = "mot1edit".to_owned();
-    client
-        .update_entity("rtest1", "e1", s, &entity1)
-        .unwrap();
+    client.update_entity("rtest1", "e1", s, &entity1).unwrap();
     let entity: Entity = client.get_entity("rtest1", "e1", s).unwrap().unwrap();
     assert_eq!("mot1edit", entity.c);
 }
@@ -149,14 +147,18 @@ fn batch() {
     assert_eq!("mot2", entity.c);
     assert!(entity.deleted.is_some());
 
-    let ref items = [BatchItem::new(r1.clone(),
-                                    Some(Entity {
-                                             PartitionKey: partition_key.to_owned(),
-                                             RowKey: r1.clone(),
-                                             c: "mot1edit".to_owned(),
-                                             deleted: Some("DELET".to_owned()),
-                                         })),
-                     BatchItem::new(r2.clone(), None)];
+    let ref items = [
+        BatchItem::new(
+            r1.clone(),
+            Some(Entity {
+                PartitionKey: partition_key.to_owned(),
+                RowKey: r1.clone(),
+                c: "mot1edit".to_owned(),
+                deleted: Some("DELET".to_owned()),
+            }),
+        ),
+        BatchItem::new(r2.clone(), None),
+    ];
     client.batch(TEST_TABLE, partition_key, items).unwrap();
 
     let entity: Entity = client
@@ -216,24 +218,34 @@ fn query_range() {
     }
 }
 
-fn test_query_range(client: &TableService,
-                    table_name: &str,
-                    partition_key: &str,
-                    row_key: &str,
-                    ge: bool,
-                    limit: u16)
-                    -> Result<Vec<Entity>, AzureError> {
-    client.query_entities(table_name,
-                          Some(format!("$filter=PartitionKey {} '{}' and RowKey le '{}'&$top={}",
-                                       if ge { "ge" } else { "le" },
-                                       partition_key,
-                                       row_key,
-                                       limit)
-                                       .as_str()))
+fn test_query_range(
+    client: &TableService,
+    table_name: &str,
+    partition_key: &str,
+    row_key: &str,
+    ge: bool,
+    limit: u16,
+) -> Result<Vec<Entity>, AzureError> {
+    client.query_entities(
+        table_name,
+        Some(
+            format!(
+                "$filter=PartitionKey {} '{}' and RowKey le '{}'&$top={}",
+                if ge { "ge" } else { "le" },
+                partition_key,
+                row_key,
+                limit
+            ).as_str(),
+        ),
+    )
 }
 
 fn create_table_service() -> TableService {
     let azure_storage_account = get_from_env("AZURE_STORAGE_ACCOUNT");
     let azure_storage_key = get_from_env("AZURE_STORAGE_KEY");
-    TableService::new(Client::new(&azure_storage_account, &azure_storage_key, true))
+    TableService::new(Client::new(
+        &azure_storage_account,
+        &azure_storage_key,
+        true,
+    ))
 }

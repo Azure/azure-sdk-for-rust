@@ -31,11 +31,12 @@ impl<T: Serialize> BatchItem<T> {
     }
 }
 
-pub fn generate_batch_payload<T: Serialize>(uri_prefix: &str,
-                                            table: &str,
-                                            primary_key: &str,
-                                            items: &[BatchItem<T>])
-                                            -> String {
+pub fn generate_batch_payload<T: Serialize>(
+    uri_prefix: &str,
+    table: &str,
+    primary_key: &str,
+    items: &[BatchItem<T>],
+) -> String {
     let mut payload: String = BATCH_BEGIN.to_owned();
     for item in items {
         payload.push_str(CHANGESET_BEGIN);
@@ -106,24 +107,30 @@ If-Match: *
 --batch_a1e9d677-b28b-435e-a89e-87e6a768a431
 "#;
 
-        let items = vec![bupdate("Channel_17", "3", 9, ".NET..."),
-                         bupdate("Channel_17", "3", 9, "PDC 2008..."),
-                         bdelete("3")];
-        let actual = generate_batch_payload("https://myaccount.table.core.windows.net/",
-                                            "Blogs",
-                                            "Channel_17",
-                                            items.as_slice());
+        let items = vec![
+            bupdate("Channel_17", "3", 9, ".NET..."),
+            bupdate("Channel_17", "3", 9, "PDC 2008..."),
+            bdelete("3"),
+        ];
+        let actual = generate_batch_payload(
+            "https://myaccount.table.core.windows.net/",
+            "Blogs",
+            "Channel_17",
+            items.as_slice(),
+        );
         assert_eq!(expected, actual);
     }
 
     fn bupdate(pk: &str, rk: &str, rating: i32, text: &str) -> BatchItem<Entity> {
-        BatchItem(rk.to_owned(),
-                  Some(Entity {
-                           PartitionKey: pk.to_owned(),
-                           RowKey: rk.to_owned(),
-                           Rating: rating,
-                           Text: text.to_owned(),
-                       }))
+        BatchItem(
+            rk.to_owned(),
+            Some(Entity {
+                PartitionKey: pk.to_owned(),
+                RowKey: rk.to_owned(),
+                Rating: rating,
+                Text: text.to_owned(),
+            }),
+        )
     }
 
     fn bdelete(rk: &str) -> BatchItem<Entity> {

@@ -1,10 +1,15 @@
-use azure::core::errors::{AzureError, UnexpectedHTTPResult};
+use tokio_core;
+use hyper_tls;
+use futures::future::*;
+
+use azure::core::errors::{AzureError, check_status_extract_body};
+use azure::core::COMPLETE_ENCODE_SET;
+
+use std::str::FromStr;
 
 use hyper;
-use hyper::net::HttpsConnector;
-use hyper_native_tls::NativeTlsClient;
-use hyper::header::{Headers, ContentLength};
-use hyper::status::StatusCode;
+use hyper::header::ContentLength;
+use hyper::StatusCode;
 
 use chrono;
 use time::Duration;
@@ -15,80 +20,91 @@ use base64;
 use url::percent_encoding::utf8_percent_encode;
 use url::form_urlencoded::Serializer;
 
-use hyper::header::parsing::HTTP_VALUE;
-
 use crypto::sha2::Sha256;
 use crypto::hmac::Hmac;
 use crypto::mac::Mac;
-
-use url::Url;
-use std::io::Read;
 
 mod client;
 pub use self::client::Client;
 
 header! { (Authorization, "Authorization") => [String] }
 
-fn send_event(namespace: &str,
-              event_hub: &str,
-              policy_name: &str,
-              hmac: &mut Hmac<Sha256>,
-              event_body: &mut (&mut Read, u64),
-              duration: Duration)
-              -> Result<(), AzureError> {
+#[inline]
+fn send_event_prepare(
+    handle: &tokio_core::reactor::Handle,
+    namespace: &str,
+    event_hub: &str,
+    policy_name: &str,
+    hmac: &mut Hmac<Sha256>,
+    event_body: &str,
+    duration: Duration,
+) -> Result<hyper::client::FutureResponse, AzureError> {
 
     // prepare the url to call
-    let url = format!("https://{}.servicebus.windows.net/{}/messages",
-                      namespace,
-                      event_hub);
-    let url = try!(Url::parse(&url));
+    let url = format!(
+        "https://{}.servicebus.windows.net/{}/messages",
+        namespace,
+        event_hub
+    );
+    let url = hyper::Uri::from_str(&url)?;
     debug!("url == {:?}", url);
-
-    // create content
 
     // generate sas signature based on key name, key value, url and duration.
     let sas = generate_signature(policy_name, hmac, &url.to_string(), duration);
     debug!("sas == {}", sas);
 
-    // add required headers (in this case just the Authorization and Content-Length).
-    let ssl = NativeTlsClient::new().unwrap();
-    let connector = HttpsConnector::new(ssl);
-    let client = hyper::client::Client::with_connector(connector);
-    let mut headers = Headers::new();
-    headers.set(Authorization(sas));
-    headers.set(ContentLength(event_body.1));
-    debug!("headers == {:?}", headers);
+    let client = hyper::Client::configure()
+        .connector(hyper_tls::HttpsConnector::new(4, handle)?)
+        .build(handle);
 
-    let body = hyper::client::Body::SizedBody(event_body.0, event_body.1);
+    let mut request = hyper::Request::new(hyper::Method::Post, url);
 
-    // Post the request along with the headers and the body.
-    let mut response = try!(client.post(url).body(body).headers(headers).send());
-    info!("response.status == {}", response.status);
-    debug!("response.headers == {:?}", response.headers);
+    request.headers_mut().set(Authorization(sas));
+    request
+        .headers_mut()
+        .set(ContentLength(event_body.len() as u64));
+    debug!("request.headers() == {:?}", request.headers());
 
-    if response.status != StatusCode::Created {
-        debug!("response status unexpected, returning Err");
-        let mut resp_s = String::new();
-        try!(response.read_to_string(&mut resp_s));
-        return Err(AzureError::UnexpectedHTTPResult(UnexpectedHTTPResult::new(
-            StatusCode::Created,
-            response.status,
-            &resp_s)));
-    }
+    request.set_body(event_body.to_string());
 
-    debug!("response status ok, returning Ok");
-    Ok(())
+    Ok(client.request(request))
 }
 
-fn generate_signature(policy_name: &str,
-                      hmac: &mut Hmac<Sha256>,
-                      url: &str,
-                      ttl: Duration)
-                      -> String {
-    let expiry = chrono::UTC::now().add(ttl).timestamp();
+fn send_event(
+    handle: &tokio_core::reactor::Handle,
+    namespace: &str,
+    event_hub: &str,
+    policy_name: &str,
+    hmac: &mut Hmac<Sha256>,
+    event_body: &str,
+    duration: Duration,
+) -> impl Future<Item = (), Error = AzureError> {
+
+    let req = send_event_prepare(
+        handle,
+        namespace,
+        event_hub,
+        policy_name,
+        hmac,
+        event_body,
+        duration,
+    );
+
+    done(req).from_err().and_then(move |future_response| {
+        check_status_extract_body(future_response, StatusCode::Created).and_then(|_| ok(()))
+    })
+}
+
+fn generate_signature(
+    policy_name: &str,
+    hmac: &mut Hmac<Sha256>,
+    url: &str,
+    ttl: Duration,
+) -> String {
+    let expiry = chrono::Utc::now().add(ttl).timestamp();
     debug!("expiry == {:?}", expiry);
 
-    let url_encoded = utf8_percent_encode(url, HTTP_VALUE);
+    let url_encoded = utf8_percent_encode(url, COMPLETE_ENCODE_SET);
     //debug!("url_encoded == {:?}", url_encoded);
 
     let str_to_sign = format!("{}\n{}", url_encoded, expiry);
@@ -108,9 +124,11 @@ fn generate_signature(policy_name: &str,
 
     debug!("sig == {:?}", sig);
 
-    format!("SharedAccessSignature sr={}&{}&se={}&skn={}",
-            &url_encoded,
-            sig,
-            expiry,
-            policy_name)
+    format!(
+        "SharedAccessSignature sr={}&{}&se={}&skn={}",
+        &url_encoded,
+        sig,
+        expiry,
+        policy_name
+    )
 }

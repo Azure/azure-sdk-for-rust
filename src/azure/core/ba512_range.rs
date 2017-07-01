@@ -27,9 +27,9 @@ impl BA512Range {
         }
 
         Ok(BA512Range {
-               start: start,
-               end: end,
-           })
+            start: start,
+            end: end,
+        })
     }
 
     #[inline]

@@ -30,10 +30,8 @@ fn send_events_to_event_hub() {
 fn send_event(cli: &mut azure::service_bus::event_hub::Client) {
     debug!("running send_event");
 
-    let mut cursor = std::io::Cursor::new(vec![0;255]);
-    cursor
-        .write(b"{ numero: 100, testo: \"sample\" }")
-        .unwrap();
+    let mut cursor = std::io::Cursor::new(vec![0; 255]);
+    cursor.write(b"{ numero: 100, testo: \"sample\" }").unwrap();
     cursor.flush().unwrap();
     cursor.seek(std::io::SeekFrom::Start(0)).unwrap();
 
@@ -43,11 +41,11 @@ fn send_event(cli: &mut azure::service_bus::event_hub::Client) {
 
 
 fn create_client() -> azure::service_bus::event_hub::Client {
-    let policy_name = std::env::var("AZURE_POLICY_NAME").
-        expect("Please set AZURE_POLICY_NAME env variable first!");
+    let policy_name = std::env::var("AZURE_POLICY_NAME")
+        .expect("Please set AZURE_POLICY_NAME env variable first!");
 
-    let policy_key =
-        std::env::var("AZURE_POLICY_KEY").expect("Please set AZURE_POLICY_KEY env variable first!");
+    let policy_key = std::env::var("AZURE_POLICY_KEY")
+        .expect("Please set AZURE_POLICY_KEY env variable first!");
 
     let sb_namespace = std::env::var("AZURE_SERVICE_BUS_NAMESPACE")
         .expect("Please set AZURE_SERVICE_BUS_NAMESPACE env variable first!");

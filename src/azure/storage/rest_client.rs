@@ -1,18 +1,20 @@
 use azure::core::range;
-use azure::core::HTTPMethod;
+use azure::core::errors::AzureError;
+use hyper::Method;
 use azure::core::lease::{LeaseId, LeaseStatus, LeaseState, LeaseDuration, LeaseAction};
 use chrono;
 use crypto::hmac::Hmac;
 use crypto::mac::Mac;
 use crypto::sha2::Sha256;
 use hyper;
-use hyper::Client;
-use hyper::header::{Header, HeaderFormat, Headers, ContentEncoding, ContentLanguage,
-                    ContentLength, ContentType, Date, IfModifiedSince, IfUnmodifiedSince};
+use hyper_tls;
+use hyper::header::{Header, Headers, ContentEncoding, ContentLanguage, ContentLength, ContentType,
+                    Date, IfModifiedSince, IfUnmodifiedSince};
 use base64;
 use std::fmt::Display;
-use std::io::Read;
 use url;
+
+use std::str::FromStr;
 
 pub enum ServiceType {
     Blob,
@@ -42,12 +44,13 @@ header! { (ETag, "ETag") => [String] }
 header! { (XMSRangeGetContentMD5, "x-ms-range-get-content-md5") => [bool] }
 header! { (XMSClientRequestId, "x-ms-client-request-id") => [String] }
 
-fn generate_authorization(h: &Headers,
-                          u: &url::Url,
-                          method: HTTPMethod,
-                          hmac_key: &str,
-                          service_type: ServiceType)
-                          -> String {
+fn generate_authorization(
+    h: &Headers,
+    u: &url::Url,
+    method: Method,
+    hmac_key: &str,
+    service_type: ServiceType,
+) -> String {
     let str_to_sign = string_to_sign(h, u, method, service_type);
 
     // println!("\nstr_to_sign == {:?}\n", str_to_sign);
@@ -74,7 +77,7 @@ fn encode_str_to_sign(str_to_sign: &str, hmac_key: &str) -> String {
 }
 
 #[inline]
-fn add_if_exists<H: Header + HeaderFormat + Display>(h: &Headers) -> String {
+fn add_if_exists<H: Header + Display>(h: &Headers) -> String {
     let m = match h.get::<H>() {
         Some(ce) => ce.to_string(),
         None => String::default(),
@@ -85,11 +88,7 @@ fn add_if_exists<H: Header + HeaderFormat + Display>(h: &Headers) -> String {
 
 #[allow(unknown_lints)]
 #[allow(needless_pass_by_value)]
-fn string_to_sign(h: &Headers,
-                  u: &url::Url,
-                  method: HTTPMethod,
-                  service_type: ServiceType)
-                  -> String {
+fn string_to_sign(h: &Headers, u: &url::Url, method: Method, service_type: ServiceType) -> String {
     let mut str_to_sign = String::new();
     let verb = format!("{:?}", method);
     str_to_sign = str_to_sign + &verb.to_uppercase() + "\n";
@@ -213,10 +212,10 @@ fn canonicalized_resource_table(u: &url::Url) -> String {
 
 fn canonicalized_resource(u: &url::Url) -> String {
     let mut can_res: String = String::new();
-    can_res = can_res + "/";
+    can_res += "/";
 
     let account = get_account(u);
-    can_res = can_res + &account;
+    can_res += &account;
 
     let paths = u.path_segments().unwrap();
 
@@ -227,9 +226,9 @@ fn canonicalized_resource(u: &url::Url) -> String {
             path.push_str(&*p);
         }
 
-        can_res = can_res + &path;
+        can_res += &path;
     }
-    can_res = can_res + "\n";
+    can_res += "\n";
 
     // query parameters
     let query_pairs = u.query_pairs(); //.into_owned();
@@ -258,12 +257,12 @@ fn canonicalized_resource(u: &url::Url) -> String {
 
             for (i, item) in ret.iter().enumerate() {
                 if i > 0 {
-                    can_res = can_res + ","
+                    can_res += ","
                 }
-                can_res = can_res + item;
+                can_res += item;
             }
 
-            can_res = can_res + "\n";
+            can_res += "\n";
         }
     };
 
@@ -283,58 +282,57 @@ fn lexy_sort(vec: &url::form_urlencoded::Parse, query_param: &str) -> Vec<(Strin
 
 #[allow(unknown_lints)]
 #[allow(too_many_arguments)]
-pub fn perform_request(client: &Client,
-                       uri: &str,
-                       method: HTTPMethod,
-                       azure_key: &str,
-                       headers: &Headers,
-                       request_body: Option<(&mut Read, u64)>,
-                       request_str: Option<&str>,
-                       service_type: ServiceType)
-                       -> Result<hyper::client::response::Response, hyper::error::Error> {
-    let dt = chrono::UTC::now();
+pub fn perform_request<F>(
+    client: &hyper::Client<hyper_tls::HttpsConnector<hyper::client::HttpConnector>>,
+    uri: &str,
+    http_method: Method,
+    azure_key: &str,
+    headers_func: F,
+    request_body: Option<&[u8]>,
+    service_type: ServiceType,
+) -> Result<hyper::client::FutureResponse, AzureError>
+where
+    F: FnOnce(&mut Headers),
+{
+    let dt = chrono::Utc::now();
     let time = format!("{}", dt.format("%a, %d %h %Y %T GMT"));
 
-    // let mut h = Headers::new();
-
-    let u = url::Url::parse(uri).unwrap();
+    let url = url::Url::parse(uri)?;
+    let uri = hyper::Uri::from_str(uri)?;
 
     // for header in additional_headers.iter() {
     //     println!("{:?}", header.value_string());
     //     h.set();
     // }
+    let mut request = hyper::Request::new(http_method.clone(), uri);
 
-    let mut h = headers.clone();
+    // This will give the caller the ability to add custom headers.
+    // The closure is needed to because request.headers_mut().set_raw(...) requires
+    // a Cow with 'static lifetime...
+    headers_func(request.headers_mut());
 
-    h.set(XMSDate(time));
-    h.set(XMSVersion(AZURE_VERSION.to_owned()));
+    request.headers_mut().set(XMSDate(time));
+    request
+        .headers_mut()
+        .set(XMSVersion(AZURE_VERSION.to_owned()));
 
-    if let Some((_, size)) = request_body {
-        h.set(ContentLength(size));
+    if let Some(body) = request_body {
+        let b = Vec::from(body);
+        request.headers_mut().set(ContentLength(body.len() as u64));
+        request.set_body(b);
     }
 
-    let auth = generate_authorization(&h, &u, method, azure_key, service_type);
-    // println!("auth == {:?}", auth);
+    let auth = generate_authorization(
+        request.headers(),
+        &url,
+        http_method,
+        azure_key,
+        service_type,
+    );
 
-    h.set(Authorization(auth));
+    request.headers_mut().set(Authorization(auth));
 
-    // println!("{:?}", h);
-
-    let mut builder = match method {
-        HTTPMethod::Get => client.get(&u.to_string()),
-        HTTPMethod::Put => client.put(&u.to_string()),
-        HTTPMethod::Post => client.post(&u.to_string()),
-        HTTPMethod::Delete => client.delete(&u.to_string()),
-    };
-
-    if let Some((mut rb, size)) = request_body {
-        let b = hyper::client::Body::SizedBody(rb, size);
-        builder = builder.body(b);
-    } else if let Some(body) = request_str {
-        builder = builder.body(body);
-    }
-
-    builder.headers(h).send()
+    Ok(client.request(request))
 }
 
 
@@ -357,8 +355,10 @@ mod test {
         h.set(XMSDate(time));
         h.set(XMSVersion("2015-04-05".to_owned()));
 
-        assert_eq!(super::canonicalize_header(&h),
-                   "x-ms-date:Fri, 28 Nov 2014 21:00:09 GMT+09:00\nx-ms-version:2015-04-05\n");
+        assert_eq!(
+            super::canonicalize_header(&h),
+            "x-ms-date:Fri, 28 Nov 2014 21:00:09 GMT+09:00\nx-ms-version:2015-04-05\n"
+        );
     }
 
     #[test]
@@ -374,7 +374,7 @@ mod test {
 
         let u: url::Url = url::Url::parse("https://mindrust.table.core.windows.net/TABLES")
             .unwrap();
-        let method: HTTPMethod = HTTPMethod::Post;
+        let method: Method = Method::Post;
         let service_type: ServiceType = ServiceType::Table;
 
         let dt = chrono::DateTime::parse_from_rfc2822("Wed,  3 May 2017 14:04:56 +0000").unwrap();
@@ -403,31 +403,40 @@ Wed, 03 May 2017 14:04:56 GMT
 
     #[test]
     fn test_canonicalize_resource_1() {
-        let url = url::Url::parse("http://myaccount.blob.core.windows.\
-                                   net/mycontainer?restype=container&comp=metadata")
-            .unwrap();
-        assert_eq!(super::canonicalized_resource(&url),
-                   "/myaccount/mycontainer\ncomp:metadata\nrestype:container");
+        let url = url::Url::parse(
+            "http://myaccount.blob.core.windows.\
+             net/mycontainer?restype=container&comp=metadata",
+        ).unwrap();
+        assert_eq!(
+            super::canonicalized_resource(&url),
+            "/myaccount/mycontainer\ncomp:metadata\nrestype:container"
+        );
     }
 
     #[test]
     fn test_canonicalize_resource_2() {
-        let url = url::Url::parse("http://myaccount.blob.core.windows.\
-                                   net/mycontainer?restype=container&comp=list&include=snapshots&\
-                                   include=metadata&include=uncommittedblobs")
-            .unwrap();
-        assert_eq!(super::canonicalized_resource(&url),
-                   "/myaccount/mycontainer\ncomp:list\ninclude:metadata,snapshots,\
-                    uncommittedblobs\nrestype:container");
+        let url = url::Url::parse(
+            "http://myaccount.blob.core.windows.\
+             net/mycontainer?restype=container&comp=list&include=snapshots&\
+             include=metadata&include=uncommittedblobs",
+        ).unwrap();
+        assert_eq!(
+            super::canonicalized_resource(&url),
+            "/myaccount/mycontainer\ncomp:list\ninclude:metadata,snapshots,\
+             uncommittedblobs\nrestype:container"
+        );
     }
 
     #[test]
     fn test_canonicalize_resource_3() {
-        let url = url::Url::parse("https://myaccount-secondary.blob.core.windows.\
-                                   net/mycontainer/myblob")
-            .unwrap();
-        assert_eq!(super::canonicalized_resource(&url),
-                   "/myaccount-secondary/mycontainer/myblob");
+        let url = url::Url::parse(
+            "https://myaccount-secondary.blob.core.windows.\
+             net/mycontainer/myblob",
+        ).unwrap();
+        assert_eq!(
+            super::canonicalized_resource(&url),
+            "/myaccount-secondary/mycontainer/myblob"
+        );
     }
 
     #[test]
@@ -437,8 +446,10 @@ Wed, 03 May 2017 14:04:56 GMT
                         f8Z22W9O1jdQ=="
             .to_owned();
 
-        assert_eq!(super::encode_str_to_sign(&str_to_sign, &hmac_key),
-                   "gZzaRaIkvC9jYRY123tq3xXZdsMAcgAbjKQo8y0p0Fs=".to_owned());
+        assert_eq!(
+            super::encode_str_to_sign(&str_to_sign, &hmac_key),
+            "gZzaRaIkvC9jYRY123tq3xXZdsMAcgAbjKQo8y0p0Fs=".to_owned()
+        );
     }
 
     #[test]
@@ -448,8 +459,10 @@ Wed, 03 May 2017 14:04:56 GMT
                         f8Z22W9O1jdQ=="
             .to_owned();
 
-        assert_eq!(super::encode_str_to_sign(&str_to_sign, &hmac_key),
-                   "YuKoXELO9M9HXeeGaSXBr4Nk+CgPAEQhcwJ6tVtBRCw=".to_owned());
+        assert_eq!(
+            super::encode_str_to_sign(&str_to_sign, &hmac_key),
+            "YuKoXELO9M9HXeeGaSXBr4Nk+CgPAEQhcwJ6tVtBRCw=".to_owned()
+        );
     }
 
     #[test]
@@ -459,7 +472,9 @@ Wed, 03 May 2017 14:04:56 GMT
                         f8Z22W9O1jdQ=="
             .to_owned();
 
-        assert_eq!(super::encode_str_to_sign(&str_to_sign, &hmac_key),
-                   "YuKoXELO9M9HXeeGaSXBr4Nk+CgPAEQhcwJ6tVtBRCw=".to_owned());
+        assert_eq!(
+            super::encode_str_to_sign(&str_to_sign, &hmac_key),
+            "YuKoXELO9M9HXeeGaSXBr4Nk+CgPAEQhcwJ6tVtBRCw=".to_owned()
+        );
     }
 }

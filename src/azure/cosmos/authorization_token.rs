@@ -8,32 +8,34 @@ pub enum TokenType {
     Resource,
 }
 
-pub struct AuthorizationToken<'a> {
-    account: &'a str,
+#[derive(Clone)]
+pub struct AuthorizationToken {
+    account: String,
     token_type: TokenType,
     base64_encoded: String,
     binary_form: Vec<u8>,
 }
 
-impl<'a> AuthorizationToken<'a> {
-    pub fn new(account: &'a str,
-               token_type: TokenType,
-               base64_encoded: String)
-               -> Result<AuthorizationToken<'a>, base64::DecodeError> {
+impl AuthorizationToken {
+    pub fn new(
+        account: String,
+        token_type: TokenType,
+        base64_encoded: String,
+    ) -> Result<AuthorizationToken, base64::DecodeError> {
         let mut v_hmac_key: Vec<u8> = Vec::new();
 
         v_hmac_key.extend(base64::decode(&base64_encoded)?);
 
         Ok(AuthorizationToken {
-               account: account,
-               token_type: token_type,
-               base64_encoded: base64_encoded,
-               binary_form: v_hmac_key,
-           })
+            account: account,
+            token_type: token_type,
+            base64_encoded: base64_encoded,
+            binary_form: v_hmac_key,
+        })
     }
 
     pub fn account(&self) -> &str {
-        self.account
+        &self.account
     }
 
     pub fn token_type(&self) -> TokenType {
@@ -47,7 +49,7 @@ impl<'a> AuthorizationToken<'a> {
     }
 }
 
-impl<'a> Debug for AuthorizationToken<'a> {
+impl Debug for AuthorizationToken {
     //! We provide a custom implementation to hide some of the chars
     //! since they are security sentive.
     //! We show only the 6 first chars of ```base64_encoded``` form and only
@@ -62,12 +64,16 @@ impl<'a> Debug for AuthorizationToken<'a> {
 
         let so = obfuscated.into_iter().collect::<String>();
 
-        write!(f,
-               "azure::core::cosmos::AuthorizationToken[account == {}, token_type == {:?}, base64_encoded == {}, binary_form.len() == {}]",
-               self.account,
-               self.token_type,
-               so,
-               self.binary_form.len())
+        write!(
+            f,
+            "azure::core::cosmos::AuthorizationToken[\
+             account == {}, token_type == {:?}, \
+             base64_encoded == {}, binary_form.len() == {}]",
+            self.account,
+            self.token_type,
+            so,
+            self.binary_form.len()
+        )
 
     }
 }

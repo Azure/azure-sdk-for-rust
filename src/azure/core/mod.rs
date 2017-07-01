@@ -13,10 +13,9 @@ pub mod lease;
 pub mod range;
 pub mod ba512_range;
 
-#[derive(Debug, Copy, Clone)]
-pub enum HTTPMethod {
-    Get,
-    Put,
-    Post,
-    Delete,
+use url::percent_encoding;
+define_encode_set! {
+    pub COMPLETE_ENCODE_SET = [percent_encoding::USERINFO_ENCODE_SET] | {
+        '+', '-', '&'
+    }
 }
