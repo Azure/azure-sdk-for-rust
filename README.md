@@ -4,9 +4,9 @@
 
 [![Crate](https://img.shields.io/crates/v/azure_sdk_for_rust.svg)](https://crates.io/crates/azure_sdk_for_rust) [![legal](https://img.shields.io/crates/l/azure_sdk_for_rust.svg)](LICENSE) [![cratedown](https://img.shields.io/crates/d/azure_sdk_for_rust.svg)](https://crates.io/crates/azure_sdk_for_rust) [![cratelastdown](https://img.shields.io/crates/dv/azure_sdk_for_rust.svg)](https://crates.io/crates/azure_sdk_for_rust)
 
-[![tag](https://img.shields.io/github/tag/mindflavor/AzureSDKForRust.svg)](https://github.com/MindFlavor/AzureSDKForRust/tree/0.3.1)
-[![release](https://img.shields.io/github/release/mindflavor/AzureSDKForRust.svg)](https://github.com/MindFlavor/AzureSDKForRust/tree/0.3.1)
-[![commitssince](https://img.shields.io/github/commits-since/mindflavor/AzureSDKForRust/0.3.1.svg)](https://img.shields.io/github/commits-since/mindflavor/AzureSDKForRust/0.3.1.svg)
+[![tag](https://img.shields.io/github/tag/mindflavor/AzureSDKForRust.svg)](https://github.com/MindFlavor/AzureSDKForRust/tree/0.4.0)
+[![release](https://img.shields.io/github/release/mindflavor/AzureSDKForRust.svg)](https://github.com/MindFlavor/AzureSDKForRust/tree/0.4.0)
+[![commitssince](https://img.shields.io/github/commits-since/mindflavor/AzureSDKForRust/0.4.0.svg)](https://img.shields.io/github/commits-since/mindflavor/AzureSDKForRust/0.4.0.svg)
 
 ## Introduction
 Microsoft Azure expose its technologies via REST API. These APIs are easily consumable from any language (good) but are weakly typed. With this library and its related [crate](https://crates.io/crates/azure_sdk_for_rust/) you can exploit the power of Microsoft Azure from Rust in a idiomatic way.
@@ -17,7 +17,7 @@ is likely to break over time. The current releases will probabily contain bugs. 
 ## Disclaimer
 Although I am a Microsoft employee, this is not a Microsoft endorsed project. It's simply a pet project of mine: I love Rust (who doesn't? :smirk:) and Microsoft Azure technologies so I thought to close the gap between them. It's also a good project for learning Rust. This library relies heavily on [Hyper](https://github.com/hyperium/hyper). As the time of writing master Hyper does not support Tokio yet: this SDK will than be _blocking_. I plan to switch to futures as soon as possible.
 
-## Run E2E test
+## Run E2E test (in progress)
 ```
 export AZURE_STORAGE_ACCOUNT=<account>
 export AZURE_STORAGE_KEY=<key>
@@ -31,96 +31,160 @@ cargo test --features=test_e2e
 ```
 
 ## Example
-You can find examples in the [```tests```](https://github.com/MindFlavor/AzureSDKForRust/tree/master/tests) folder, in the [```examples```](https://github.com/MindFlavor/AzureSDKForRust/tree/master/examples) folder and in the [```src/main.rs```](https://github.com/MindFlavor/AzureSDKForRust/blob/master/src/main.rs) file (which I shall try to remove in the future). Here is a sample however:
+You can find examples in the [```examples```](https://github.com/MindFlavor/AzureSDKForRust/tree/master/examples) folder. Here is a sample however:
 
 ### main.rs
-```rust
+
+```rs
 extern crate azure_sdk_for_rust;
+
+extern crate futures;
+extern crate tokio_core;
+extern crate tokio;
+extern crate hyper;
+extern crate hyper_tls;
 extern crate chrono;
+
+use std::error::Error;
+
+use futures::future::*;
+use tokio_core::reactor::Core;
+
+use azure_sdk_for_rust::azure::cosmos::authorization_token::{AuthorizationToken, TokenType};
+use azure_sdk_for_rust::azure::cosmos::client::Client;
+
 #[macro_use]
-extern crate mime;
+extern crate serde_derive;
+use azure_sdk_for_rust::azure::cosmos;
 
-use azure_sdk_for_rust::azure::core::lease::{LeaseState, LeaseStatus};
-use azure_sdk_for_rust::azure::storage::client::Client;
-use azure_sdk_for_rust::azure::storage::blob::{Blob, BlobType, PUT_OPTIONS_DEFAULT};
-use azure_sdk_for_rust::azure::storage::container::{Container, PublicAccess, LIST_CONTAINER_OPTIONS_DEFAULT};
+#[derive(Serialize, Deserialize, Debug)]
+struct MySampleStruct<'a> {
+    id: &'a str,
+    a_string: &'a str,
+    a_number: u64,
+    a_timestamp: i64,
+}
 
-use chrono::UTC;
 
-use mime::Mime;
+const DATABASE: &'static str = "azuresdktestdb";
+const COLLECTION: &'static str = "azuresdktc";
+
 
 fn main() {
-  let azure_storage_account = &"azure_storage_account";
-  let azure_storage_key= &"azure_storage_key";
+    code().unwrap();
+}
 
-  // create the client struct. The third argument, if false, forces to use
-  // http instead of https. It's useful if you have trouble compiling
-  // hyper with openSSL activated.
-  let client = Client::new(azure_storage_account, azure_storage_key, false);
+// This code will perform these tasks:
+// 1. Find an Azure Cosmos DB called *DATABASE*. If it does not exist, create it.
+// 2. Find an Azure Cosmos collection called *COLLECTION* in *DATABASE*. If it does not exist, create it.
+// 3. Store an entry in collection *COLLECTION* of database *DATABASE*.
+// 4. Delete everything.
+//
+// We will use multiple futures for this hoping to make the code clearer.
+// There is no need to proceed this way in your code.
+// You can go crazy with future combinators if you want to :)
+fn code() -> Result<(), Box<Error>> {
+    // Let's get Cosmos account and master key from env variables.
+    // This helps automated testing.
+    let master_key = std::env::var("COSMOS_MASTER_KEY")
+        .expect("Set env variable COSMOS_MASTER_KEY first!");
+    let account = std::env::var("COSMOS_ACCOUNT").expect("Set env variable COSMOS_ACCOUNT first!");
+
+    // First, we create an authorization token. There are two types of tokens, master and resource
+    // constrained. Please check the Azure documentation for details. You can change tokens
+    // at will and it's a good practice to raise your privileges only when needed.
+    let authorization_token = AuthorizationToken::new(account, TokenType::Master, master_key)?;
+
+    // We will create a tokio-core reactor which will drive our futures.
+    let mut core = Core::new()?;
+
+    // Next we will create a Cosmos client. You need an authorization_token but you can later
+    // change it if needed. Notice the client will be tied to your reactor.
+    let client = Client::new(&core.handle(), authorization_token)?;
+
+    // list_databases will give us the databases available in our account. If there is
+    // an error (for example, the given key is not valid) you will receive a
+    // specific AzureError. In this example we will look for a specific database
+    // so we chain a filter operation.
+    let future = client.list_databases().and_then(|databases| {
+        ok(databases.into_iter().find(|db| db.id == DATABASE))
+    });
+
+    // Now we run the future and check the answer. If the requested database
+    // is not found we create it.
+    let database = match core.run(future)? {
+        Some(db) => db,
+        None => core.run(client.create_database(DATABASE))?,
+    };
+    println!("database == {:?}", database);
+
+    // Now we look for a specific collection. If is not already present
+    // we will create it. The collection creation is more complex and
+    // has many options (such as indexing and so on).
+    let collection = {
+        let collections = core.run(client.list_collections(&database))?;
+
+        if let Some(collection) = collections.into_iter().find(|coll| coll.id == COLLECTION) {
+            collection
+        } else {
+            let indexes = cosmos::collection::IncludedPathIndex {
+                kind: cosmos::collection::KeyKind::Hash,
+                data_type: cosmos::collection::DataType::String,
+                precision: Some(3),
+            };
+
+            let ip = cosmos::collection::IncludedPath {
+                path: "/*".to_owned(),
+                indexes: vec![indexes],
+            };
 
 
-  // This call will list your containers.
-  let containers = Container::list(&client, &LIST_CONTAINER_OPTIONS_DEFAULT).unwrap();
-  println!("{:?}", containers);
+            let ip = cosmos::collection::IndexingPolicy {
+                automatic: true,
+                indexing_mode: cosmos::collection::IndexingMode::Consistent,
+                included_paths: vec![ip],
+                excluded_paths: vec![],
+            };
 
-  let container_name = "rust";
-  // This call will create a new Azure Container called "wow"
-  // with public blob access (see https://msdn.microsoft.com/en-us/library/azure/dd179468.aspx)
-  // if it doesn't exist already.
+            let coll = cosmos::collection::Collection::new(COLLECTION, ip);
+            // Notice here we specify the expected performance level.
+            // Performance levels have price impact. Also, higher
+            // performance levels force you to specify an indexing
+            // strategy. Consult the documentation for more details.
+            core.run(client.create_collection(&database, 400, &coll))?
+        }
+    };
 
-  let cont = containers.iter().find(|x| x.name == container_name);
-  if let None = cont {
-  	Container::create(&client, container_name, PublicAccess::Blob).unwrap();
-  }
+    println!("collection = {:?}", collection);
 
-  // this code will upload a file to the container just created.
-  {
-	use std::fs::metadata;
-	use std::fs::File;
+    // Now that we have a database and a collection we can insert
+    // data in them. Let's create a struct. The only constraint
+    // is that the struct should be Serializable.
+    let doc = MySampleStruct {
+        id: "unique_id1",
+        a_string: "Something here",
+        a_number: 100,
+        a_timestamp: chrono::Utc::now().timestamp(),
+    };
 
-	let file_name: &'static str = "C:\\temp\\from_rust.txt";
-	let container_name: &'static str = "wow";
+    // Now we store the struct in Azure Cosmos DB.
+    // Notice how easy it is! :)
+    // The method create_document will return, upon success,
+    // the document attributes.
+    let document_attributes = core.run(
+        client.create_document(&database, &collection, false, None, &doc),
+    )?;
+    println!("document_attributes == {:?}", document_attributes);
 
-	let metadata = metadata(file_name).unwrap();
-	let mut file = File::open(file_name).unwrap();
+    // We will perform some cleanup. First we delete the collection...
+    core.run(client.delete_collection(DATABASE, COLLECTION))?;
+    println!("collection deleted");
 
-	let new_blob = Blob {
-		name: "from_rust.txt".to_owned(),
-        container_name: container_name.to_owned(),
-		snapshot_time: None,
-		last_modified: UTC::now(),
-		etag: "".to_owned(),
-		content_length: metadata.len(),
-		content_type: "application/octet-stream".parse::<Mime>().unwrap(),
-		content_encoding: None,
-		content_language: None,
-		content_md5: None,
-		cache_control: None,
-		x_ms_blob_sequence_number: None,
-		blob_type: BlobType::BlockBlob,
-		lease_status: LeaseStatus::Unlocked,
-		lease_state: LeaseState::Available,
-		lease_duration: None,
-		copy_id: None,
-		copy_status: None,
-		copy_source: None,
-		copy_progress: None,
-		copy_completion: None,
-		copy_status_description: None,
-	};
+    // And then we delete the database.
+    core.run(client.delete_database(DATABASE))?;
+    println!("database deleted");
 
-	new_blob.put(&client,
-        &PUT_OPTIONS_DEFAULT,
-		 Some((&mut file, metadata.len())))
-		.unwrap();
-  }
-
-
-  // This code will look for the "todelete" container and
-  // remove from Azure.
-  let mut to_delete = containers.iter_mut().find(|x| x.name == "todelete").unwrap();
-  to_delete.delete(&client).unwrap();
-  println!("{:?} deleted!", to_delete);
+    Ok(())
 }
 ```
 

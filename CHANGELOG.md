@@ -1,3 +1,17 @@
+## [0.4.0](https://github.com/MindFlavor/AzureSDKForRust/releases/tag/0.4.0) (2017-07-02)
+
+### Migrated all code to asynchronous hyper using Futures 
+
+** Breaking changes **
+
+* Almost everything is now a future. So whenever you had a ```Result<A,AzureError>``` now you have ```impl FutureResult<A,AzureError>```.
+
+** Updated references to bleeding edge **
+
+** TODO **
+
+* Test the table code. My migration is now "on paper" only and should be tested.
+
 ## [0.3.1](https://github.com/MindFlavor/AzureSDKForRust/releases/tag/0.3.1) (2017-06-10)
 
 **Implemented features:**
