@@ -33,14 +33,17 @@ impl TableService {
         TableService { client: client }
     }
 
-    //pub fn list_tables(&self) -> Result<Vec<String>, AzureError> {
-    //    Ok(
-    //        self.query_entities(TABLE_TABLES, None)?
-    //            .into_iter()
-    //            .map(|x: TableEntity| x.TableName)
-    //            .collect(),
-    //    )
-    //}
+    pub fn list_tables(&self) -> impl Future<Item = Vec<String>, Error = AzureError> {
+        self.query_entities(TABLE_TABLES, None).and_then(
+            |entities| {
+                let e: Vec<String> = entities
+                    .into_iter()
+                    .map(|x: TableEntity| x.TableName)
+                    .collect();
+                ok(e)
+            },
+        )
+    }
 
     // Create table if not exists.
     pub fn create_table<T: Into<String>>(
@@ -105,38 +108,60 @@ impl TableService {
         })
     }
 
-    //pub fn insert_entity<T: Serialize>(
-    //    &self,
-    //    table_name: &str,
-    //    entity: &T,
-    //) -> Result<(), AzureError> {
-    //    let body = &serde_json::to_string(entity).unwrap();
-    //    let mut resp = try!(self.request_with_default_header(
-    //        table_name,
-    //        Method::Post,
-    //        Some(body)
-    //    ));
-    //    try!(errors::check_status(&mut resp, StatusCode::Created));
-    //    Ok(())
-    //}
+    fn _prepare_insert_entity<T>(
+        &self,
+        table_name: &str,
+        entity: &T,
+    ) -> Result<FutureResponse, AzureError>
+    where
+        T: Serialize,
+    {
+        let obj_ser = serde_json::to_string(entity)?;
+        self.request_with_default_header(table_name, Method::Post, Some(&obj_ser))
+    }
 
-    //pub fn update_entity<T: Serialize>(
-    //    &self,
-    //    table_name: &str,
-    //    partition_key: &str,
-    //    row_key: &str,
-    //    entity: &T,
-    //) -> Result<(), AzureError> {
-    //    let body = &serde_json::to_string(entity).unwrap();
-    //    let path = &entity_path(table_name, partition_key, row_key);
-    //    let mut resp = try!(self.request_with_default_header(
-    //        path,
-    //        Method::Put,
-    //        Some(body)
-    //    ));
-    //    try!(errors::check_status(&mut resp, StatusCode::NoContent));
-    //    Ok(())
-    //}
+    pub fn insert_entity<T: Serialize>(
+        &self,
+        table_name: &str,
+        entity: &T,
+    ) -> impl Future<Item = (), Error = AzureError> {
+        let req = self._prepare_insert_entity(table_name, entity);
+
+        done(req).from_err().and_then(move |future_response| {
+            check_status_extract_body(future_response, StatusCode::Created)
+                .and_then(move |_| ok(()))
+        })
+    }
+
+
+    fn _prepare_update_entity<T>(
+        &self,
+        table_name: &str,
+        partition_key: &str,
+        row_key: &str,
+        entity: &T,
+    ) -> Result<FutureResponse, AzureError>
+    where
+        T: Serialize,
+    {
+        let body = &serde_json::to_string(entity)?;
+        let path = &entity_path(table_name, partition_key, row_key);
+        self.request_with_default_header(path, Method::Put, Some(body))
+    }
+
+    pub fn update_entity<T: Serialize>(
+        &self,
+        table_name: &str,
+        partition_key: &str,
+        row_key: &str,
+        entity: &T,
+    ) -> impl Future<Item = (), Error = AzureError> {
+        let req = _prepare_update_entity(table_name, partition_key, row_key, entity);
+        done(req).from_err().and_then(move |future_response| {
+            check_status_extract_body(future_response, StatusCode::NoContent)
+                .and_then(move |_| ok(()))
+        })
+    }
 
     //pub fn delete_entity(
     //    &self,
