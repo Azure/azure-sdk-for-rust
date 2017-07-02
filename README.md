@@ -252,8 +252,8 @@ Azure tables entities can be manipulated in batches. The entities are serialized
 
 ## Run E2E test (in progress)
 ```bash
-export AZURE_STORAGE_ACCOUNT=<account>
-export AZURE_STORAGE_KEY=<key>
+export STORAGE_ACCOUNT=<account>
+export STORAGE_MASTER_KEY=<key>
 
 export AZURE_SERVICE_BUS_NAMESPACE=<azure_service_bus_namespace>
 export AZURE_EVENT_HUB_NAME=<azure_event_hub_name>

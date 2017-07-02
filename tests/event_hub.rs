@@ -1,6 +1,18 @@
 #![cfg(all(test,feature = "test_e2e"))]
 
 extern crate azure_sdk_for_rust;
+
+extern crate futures;
+extern crate tokio_core;
+extern crate tokio;
+extern crate hyper;
+extern crate hyper_tls;
+
+use tokio_core::reactor::Core;
+
+use azure_sdk_for_rust::azure::service_bus::event_hub::Client;
+use azure_sdk_for_rust::azure::core::errors::AzureError;
+
 extern crate chrono;
 extern crate env_logger;
 #[macro_use]
@@ -13,46 +25,48 @@ mod util;
 use time::Duration;
 use azure_sdk_for_rust::azure;
 
-use std::io::{Write, Seek};
-
 #[test]
 fn send_events_to_event_hub() {
-    let mut eh_client = create_client();
-
+    let (mut eh_client, mut core) = create_client().unwrap();
 
     for i in 0..2 {
         info!("Sending message {}", i);
-        send_event(&mut eh_client);
+        send_event(&mut eh_client, &mut core);
     }
 }
 
 
-fn send_event(cli: &mut azure::service_bus::event_hub::Client) {
+fn send_event(cli: &mut azure::service_bus::event_hub::Client, core: &mut Core) {
     debug!("running send_event");
 
-    let mut cursor = std::io::Cursor::new(vec![0; 255]);
-    cursor.write(b"{ numero: 100, testo: \"sample\" }").unwrap();
-    cursor.flush().unwrap();
-    cursor.seek(std::io::SeekFrom::Start(0)).unwrap();
-
-    cli.send_event(&mut (&mut cursor, 255), Duration::hours(1))
-        .unwrap();
+    let text_to_send = "{ numero: 100, testo: \"sample\" }";
+    core.run(cli.send_event(&text_to_send, Duration::hours(1)))
+        .unwrap()
 }
 
-
-fn create_client() -> azure::service_bus::event_hub::Client {
+fn create_client() -> Result<(azure::service_bus::event_hub::Client, Core), AzureError> {
     let policy_name = std::env::var("AZURE_POLICY_NAME")
         .expect("Please set AZURE_POLICY_NAME env variable first!");
 
     let policy_key = std::env::var("AZURE_POLICY_KEY")
         .expect("Please set AZURE_POLICY_KEY env variable first!");
 
-    let sb_namespace = std::env::var("AZURE_SERVICE_BUS_NAMESPACE")
+    let service_bus_namespace = std::env::var("AZURE_SERVICE_BUS_NAMESPACE")
         .expect("Please set AZURE_SERVICE_BUS_NAMESPACE env variable first!");
 
-    let ev_name = std::env::var("AZURE_EVENT_HUB_NAME")
+    let event_hub_name = std::env::var("AZURE_EVENT_HUB_NAME")
         .expect("Please set AZURE_EVENT_HUB_NAME env variable first!");
 
-    azure::service_bus::event_hub::Client::new(&sb_namespace, &ev_name, &policy_name, &policy_key)
+    let core = Core::new()?;
 
+    Ok((
+        Client::new(
+            core.handle(),
+            &service_bus_namespace,
+            &event_hub_name,
+            &policy_name,
+            &policy_key,
+        ),
+        core,
+    ))
 }

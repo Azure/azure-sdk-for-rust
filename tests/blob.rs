@@ -1,24 +1,34 @@
 #![cfg(all(test,feature = "test_e2e"))]
-
 extern crate azure_sdk_for_rust;
+
+extern crate futures;
+extern crate tokio_core;
+extern crate tokio;
+extern crate hyper;
+extern crate hyper_tls;
+
+
 extern crate chrono;
 extern crate env_logger;
 #[macro_use]
 extern crate log;
 extern crate serde;
-extern crate hyper;
 
 mod util;
 
 use std::io::Cursor;
 use std::ops::Deref;
 
+use futures::future::*;
+use tokio_core::reactor::Core;
+
+use azure_sdk_for_rust::azure::core::errors::AzureError;
 use azure_sdk_for_rust::azure::core::lease::{LeaseState, LeaseStatus};
 use azure_sdk_for_rust::azure::storage::blob::{Blob, BlobType, PUT_OPTIONS_DEFAULT};
 use azure_sdk_for_rust::azure::storage::client::Client;
 use azure_sdk_for_rust::azure::storage::container::{Container, PublicAccess,
                                                     LIST_CONTAINER_OPTIONS_DEFAULT};
-use chrono::UTC;
+use chrono::Utc;
 use hyper::mime::Mime;
 use util::get_from_env;
 
@@ -26,13 +36,14 @@ use util::get_from_env;
 fn create_and_delete_container() {
     let name: &'static str = "azuresdkrustetoets";
 
-    let client = create_client();
-    Container::create(&client, name, PublicAccess::Container).unwrap();
+    let (client, mut core) = initialize().unwrap();
+    core.run(Container::create(&client, name, PublicAccess::Container))
+        .unwrap();
 
     let mut lco = LIST_CONTAINER_OPTIONS_DEFAULT.clone();
     lco.prefix = Some(name.to_owned());
 
-    let list = Container::list(&client, &lco).unwrap();
+    let list = core.run(Container::list(&client, &lco)).unwrap();
     let cont_list: Vec<&Container> = list.deref()
         .into_iter()
         .filter(|e| e.name == name)
@@ -44,19 +55,19 @@ fn create_and_delete_container() {
 
     let mut cont = cont_list[0].clone();
 
-    cont.delete(&client).unwrap();
+    core.run(cont.delete(&client)).unwrap();
 }
 
 #[test]
 fn list_containers() {
-    let client = create_client();
+    let (client, mut core) = initialize().unwrap();
 
     trace!("running list_containers");
     let mut lco = LIST_CONTAINER_OPTIONS_DEFAULT.clone();
     lco.max_results = 2;
 
     loop {
-        let ret = Container::list(&client, &lco).unwrap();
+        let ret = core.run(Container::list(&client, &lco)).unwrap();
 
         trace!("ret {:?}\n\n", ret);
         if !ret.is_complete() {
@@ -69,31 +80,33 @@ fn list_containers() {
 
 #[test]
 fn put_blob() {
-    let client = &create_client();
+    let (client, mut core) = initialize().unwrap();
 
     let blob_name: &'static str = "m1";
     let container_name: &'static str = "rust-upload-test";
     let value = "abcdef";
-    let mut data = Cursor::new(value);
-    let len = value.len() as u64;
 
-    if Container::list(client, &LIST_CONTAINER_OPTIONS_DEFAULT)
+    if core.run(Container::list(&client, &LIST_CONTAINER_OPTIONS_DEFAULT))
         .unwrap()
         .iter()
         .find(|x| x.name == container_name)
         .is_none()
     {
-        Container::create(client, container_name, PublicAccess::Blob).unwrap();
+        core.run(Container::create(
+            &client,
+            container_name,
+            PublicAccess::Blob,
+        )).unwrap();
     }
 
     let new_blob = Blob {
         name: blob_name.to_owned(),
         container_name: container_name.to_owned(),
         snapshot_time: None,
-        last_modified: UTC::now(),
+        last_modified: Utc::now(),
         etag: "".to_owned(),
-        content_length: len,
-        content_type: "application/octet-stream".parse::<Mime>().unwrap(),
+        content_length: value.as_bytes().len() as u64,
+        content_type: Some("application/octet-stream".parse::<Mime>().unwrap()),
         content_encoding: None,
         content_language: None,
         content_md5: None,
@@ -111,15 +124,19 @@ fn put_blob() {
         copy_status_description: None,
     };
 
-    new_blob
-        .put(client, &PUT_OPTIONS_DEFAULT, Some((&mut data, len)))
-        .unwrap();
+    core.run(
+        new_blob.put(&client, &PUT_OPTIONS_DEFAULT, Some(&value.as_bytes())),
+    ).unwrap();
 
     trace!("created {:?}", new_blob);
 }
 
-fn create_client() -> Client {
-    let azure_storage_account = get_from_env("AZURE_STORAGE_ACCOUNT");
-    let azure_storage_key = get_from_env("AZURE_STORAGE_KEY");
-    Client::new(&azure_storage_account, &azure_storage_key, false)
+fn initialize() -> Result<(Client, Core), AzureError> {
+    let account = std::env::var("STORAGE_ACCOUNT")
+        .expect("Set env variable STORAGE_ACCOUNT first!");
+    let master_key = std::env::var("STORAGE_MASTER_KEY")
+        .expect("Set env variable STORAGE_MASTER_KEY first!");
+    let mut core = Core::new()?;
+
+    Ok((Client::new(&core.handle(), &account, &master_key)?, core))
 }
