@@ -6,7 +6,7 @@ mod request_response;
 
 pub mod collection;
 pub mod document;
-pub mod list_documents_options;
+pub mod list_documents;
 
 
 use std::fmt;

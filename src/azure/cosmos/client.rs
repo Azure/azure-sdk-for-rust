@@ -4,15 +4,18 @@ use azure::cosmos::database::Database;
 use azure::cosmos::collection::Collection;
 use azure::cosmos::document::{IndexingDirective, DocumentAttributes};
 
-use azure::core::errors::{AzureError, check_status_extract_body};
+use azure::core::errors::{AzureError, check_status_extract_body,
+                          check_status_extract_headers_and_body};
 
 use azure::cosmos::request_response::{ListDatabasesResponse, CreateDatabaseRequest,
                                       ListCollectionsResponse};
 use azure::core::COMPLETE_ENCODE_SET;
 
 use azure::cosmos::ConsistencyLevel;
-use azure::cosmos::list_documents_options::ListDocumentsOptions;
-use std::str::FromStr;
+use azure::cosmos::list_documents::{ListDocumentsOptions, ListDocumentsResponseAdditionalHeaders};
+use azure::core::incompletevector::ContinuationToken;
+
+use std::str::{FromStr, from_utf8};
 
 use serde::Serialize;
 
@@ -34,7 +37,7 @@ use tokio_core;
 use hyper_tls;
 use native_tls;
 
-use futures::future::{Future, ok, done};
+use futures::future::{Future, ok, done, err};
 
 const AZURE_VERSION: &'static str = "2017-02-22";
 const VERSION: &'static str = "1.0";
@@ -47,10 +50,14 @@ header! { (OfferThroughput, "x-ms-offer-throughput") => [u64] }
 header! { (DocumentIsUpsert, "x-ms-documentdb-is-upsert") => [bool] }
 header! { (DocumentIndexingDirective, "x-ms-indexing-directive	") => [IndexingDirective] }
 header! { (MaxItemCount, "x-ms-max-item-count") => [u64] }
-header! { (ContinuationTokenHeader, "x-ms-continuation") => [String] }
+header! { (ContinuationTokenHeader, "x-ms-continuation") => [ContinuationToken] }
 header! { (ConsistencyLevelHeader, "x-ms-consistency-level") => [ConsistencyLevel] }
-header! { (ConsistencyTokenHeader, "x-ms-session-token") => [String] }
-
+header! { (SessionTokenHeader, "x-ms-session-token") => [ContinuationToken] }
+header! { (AIM, "A-IM") => [String] }
+header! { (IfNoneMatch, "If-None-Match") => [String] }
+header! { (PartitionRangeId, "x-ms-documentdb-partitionkeyrangeid") => [String] }
+header! { (Charge, "x-ms-request-charge") => [u64] }
+header! { (Etag, "etag") => [String] }
 
 #[derive(Clone, Copy)]
 pub enum ResourceType {
@@ -577,7 +584,7 @@ impl<'a> Client {
     }
 
     #[inline]
-    fn list_documents_create_request<T>(
+    fn list_documents_create_request(
         &self,
         database: &str,
         collection: &str,
@@ -597,10 +604,28 @@ impl<'a> Client {
                 None,
                 ResourceType::Documents,
                 |ref mut headers| {
-                    if let Some(id) = indexing_directive {
-                        headers.set(DocumentIndexingDirective(id));
+                    if let Some(val) = ldo.max_item_count {
+                        headers.set(MaxItemCount(val));
                     }
-                });
+                    if let Some(val) = ldo.continuation_token {
+                        headers.set(ContinuationTokenHeader(val.to_owned()));
+                    }
+                    if let Some(val) = ldo.consistency_level_override {
+                        headers.set(ConsistencyLevelHeader(val));
+                    }
+                    if let Some(val) = ldo.session_token {
+                        headers.set(SessionTokenHeader(val.to_owned()));
+                    }
+                    if ldo.incremental_feed {
+                        headers.set(AIM("Incremental feed".to_owned()));
+                    }
+                    if let Some(val) = ldo.if_none_match {
+                        headers.set(IfNoneMatch(val.to_owned()));
+                    }
+                     if let Some(val) = ldo.partition_range_id {
+                        headers.set(PartitionRangeId(val.to_owned()));
+                    }
+                 });
 
         trace!("request prepared");
 
@@ -608,34 +633,49 @@ impl<'a> Client {
     }
 
 
-    pub fn list_documents<'b, T, S>(
+    pub fn list_documents<'b, S>(
         &self,
         database: S,
         collection: S,
         ldo: &ListDocumentsOptions,
-    ) -> impl Future<Item = (), Error = AzureError>
+    ) -> impl Future<Item = (String, ListDocumentsResponseAdditionalHeaders), Error = AzureError>
     where
-        T: Serialize,
         S: Into<&'b str>,
     {
         let database = database.into();
         let collection = collection.into();
 
         trace!(
-            "list-_documents called(database == {}, collection == {}",
+            "list-_documents called(database == {}, collection == {}, ldo == {:?}",
             database,
             collection,
+            ldo
         );
 
         let req = self.list_documents_create_request(database, collection, ldo);
 
-        ok(())
-
-        //done(req).from_err().and_then(move |future_response| {
-        //    check_status_extract_body(future_response, StatusCode::Created).and_then(move |body| {
-        //        done(serde_json::from_str::<DocumentAttributes>(&body)).from_err()
-        //    })
-        //})
+        done(req).from_err().and_then(move |future_response| {
+            check_status_extract_headers_and_body(future_response, StatusCode::Ok)
+                .and_then(move |(headers, whole_body)| {
+                    let ado = ListDocumentsResponseAdditionalHeaders {
+                        continuation_token: headers
+                            .get::<ContinuationTokenHeader>()
+                            .unwrap()
+                            .to_string(),
+                        charge: headers
+                            .get::<Charge>()
+                            .unwrap()
+                            .to_string()
+                            .parse::<u64>()
+                            .unwrap(),
+                        etag: headers.get::<Etag>().unwrap().to_string(),
+                    };
+                    match from_utf8(&whole_body) {
+                        Ok(body) => ok((body.to_owned(), ado)),
+                        Err(error) => err(error.into()),
+                    }
+                })
+        })
     }
 }
 

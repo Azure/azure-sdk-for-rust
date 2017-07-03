@@ -1,20 +1,8 @@
 use std::ops::{Deref, DerefMut};
 
-pub trait ContinuationToken {
-    fn token(&self) -> Option<&str>;
-}
+pub type ContinuationToken = String;
 
-struct _NoContinuationToken {}
-
-impl ContinuationToken for _NoContinuationToken {
-    fn token(&self) -> Option<&str> {
-        None
-    }
-}
-
-pub const NO_CONTINUATION_TOKEN: &ContinuationToken = &_NoContinuationToken {};
-
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct IncompleteVector<T> {
     token: Option<String>,
     vector: Vec<T>,
@@ -30,6 +18,14 @@ impl<T> IncompleteVector<T> {
 
     pub fn is_complete(&self) -> bool {
         self.token().is_none()
+    }
+
+    fn token(&self) -> Option<&str> {
+        if let Some(ref t) = self.token {
+            Some(t)
+        } else {
+            None
+        }
     }
 }
 
@@ -47,15 +43,7 @@ impl<T> Deref for IncompleteVector<T> {
     }
 }
 
-impl<T> ContinuationToken for IncompleteVector<T> {
-    fn token(&self) -> Option<&str> {
-        if let Some(ref nm) = self.token {
-            return Some(nm);
-        } else {
-            return None;
-        }
-    }
-}
+
 
 #[cfg(test)]
 mod test {
