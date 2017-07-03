@@ -572,6 +572,43 @@ impl<'a> Client {
             })
         })
     }
+
+    pub fn list_documents<'b, T, S>(
+        &self,
+        database: S,
+        collection: S,
+        is_upsert: bool,
+        indexing_directive: Option<IndexingDirective>,
+        document: &T,
+    ) -> impl Future<Item = DocumentAttributes, Error = AzureError>
+    where
+        T: Serialize,
+        S: Into<&'b str>,
+    {
+        let database = database.into();
+        let collection = collection.into();
+
+        trace!(
+            "create_document called(database == {}, collection == {}, is_upsert == {}",
+            database,
+            collection,
+            is_upsert
+        );
+
+        let req = self.create_document_create_request(
+            database,
+            collection,
+            is_upsert,
+            indexing_directive,
+            document,
+        );
+
+        done(req).from_err().and_then(move |future_response| {
+            check_status_extract_body(future_response, StatusCode::Created).and_then(move |body| {
+                done(serde_json::from_str::<DocumentAttributes>(&body)).from_err()
+            })
+        })
+    }
 }
 
 #[inline]
