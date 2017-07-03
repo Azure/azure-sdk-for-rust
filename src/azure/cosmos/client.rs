@@ -10,6 +10,8 @@ use azure::cosmos::request_response::{ListDatabasesResponse, CreateDatabaseReque
                                       ListCollectionsResponse};
 use azure::core::COMPLETE_ENCODE_SET;
 
+use azure::cosmos::ConsistencyLevel;
+use azure::cosmos::list_documents_options::ListDocumentsOptions;
 use std::str::FromStr;
 
 use serde::Serialize;
@@ -44,6 +46,10 @@ header! { (Authorization, "Authorization") => [String] }
 header! { (OfferThroughput, "x-ms-offer-throughput") => [u64] }
 header! { (DocumentIsUpsert, "x-ms-documentdb-is-upsert") => [bool] }
 header! { (DocumentIndexingDirective, "x-ms-indexing-directive	") => [IndexingDirective] }
+header! { (MaxItemCount, "x-ms-max-item-count") => [u64] }
+header! { (ContinuationTokenHeader, "x-ms-continuation") => [String] }
+header! { (ConsistencyLevelHeader, "x-ms-consistency-level") => [ConsistencyLevel] }
+header! { (ConsistencyTokenHeader, "x-ms-session-token") => [String] }
 
 
 #[derive(Clone, Copy)]
@@ -514,11 +520,6 @@ impl<'a> Client {
         // Standard headers (auth and version) will be provied by perform_request
         // Optional headers as per
         // https://docs.microsoft.com/en-us/rest/api/documentdb/create-a-document
-        let mut headers = Headers::new();
-        headers.set(DocumentIsUpsert(is_upsert));
-        if let Some(id) = indexing_directive {
-            headers.set(DocumentIndexingDirective(id));
-        }
 
         let document_serialized = serde_json::to_string(document)?;
         trace!("document_serialized == {}", document_serialized);
@@ -530,6 +531,8 @@ impl<'a> Client {
                 Some(&document_serialized),
                 ResourceType::Documents,
                 |ref mut headers| {
+                   headers.set(DocumentIsUpsert(is_upsert));
+
                     if let Some(id) = indexing_directive {
                         headers.set(DocumentIndexingDirective(id));
                     }
@@ -573,14 +576,44 @@ impl<'a> Client {
         })
     }
 
+    #[inline]
+    fn list_documents_create_request<T>(
+        &self,
+        database: &str,
+        collection: &str,
+        ldo: &ListDocumentsOptions,
+    ) -> Result<hyper::client::FutureResponse, AzureError> {
+        let uri = hyper::Uri::from_str(&format!(
+            "https://{}.documents.azure.com/dbs/{}/colls/{}/docs",
+            self.authorization_token.account(),
+            database,
+            collection
+        ))?;
+
+        let request = prepare_request(
+                &self.authorization_token,
+                uri,
+                hyper::Method::Get,
+                None,
+                ResourceType::Documents,
+                |ref mut headers| {
+                    if let Some(id) = indexing_directive {
+                        headers.set(DocumentIndexingDirective(id));
+                    }
+                });
+
+        trace!("request prepared");
+
+        Ok(self.hyper_client.request(request))
+    }
+
+
     pub fn list_documents<'b, T, S>(
         &self,
         database: S,
         collection: S,
-        is_upsert: bool,
-        indexing_directive: Option<IndexingDirective>,
-        document: &T,
-    ) -> impl Future<Item = DocumentAttributes, Error = AzureError>
+        ldo: &ListDocumentsOptions,
+    ) -> impl Future<Item = (), Error = AzureError>
     where
         T: Serialize,
         S: Into<&'b str>,
@@ -589,25 +622,20 @@ impl<'a> Client {
         let collection = collection.into();
 
         trace!(
-            "create_document called(database == {}, collection == {}, is_upsert == {}",
+            "list-_documents called(database == {}, collection == {}",
             database,
             collection,
-            is_upsert
         );
 
-        let req = self.create_document_create_request(
-            database,
-            collection,
-            is_upsert,
-            indexing_directive,
-            document,
-        );
+        let req = self.list_documents_create_request(database, collection, ldo);
 
-        done(req).from_err().and_then(move |future_response| {
-            check_status_extract_body(future_response, StatusCode::Created).and_then(move |body| {
-                done(serde_json::from_str::<DocumentAttributes>(&body)).from_err()
-            })
-        })
+        ok(())
+
+        //done(req).from_err().and_then(move |future_response| {
+        //    check_status_extract_body(future_response, StatusCode::Created).and_then(move |body| {
+        //        done(serde_json::from_str::<DocumentAttributes>(&body)).from_err()
+        //    })
+        //})
     }
 }
 

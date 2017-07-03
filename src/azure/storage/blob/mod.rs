@@ -381,7 +381,7 @@ impl Blob {
             uri = format!("{}&include={}", uri, include);
         }
 
-        if let Some(ref nm) = lbo.next_marker {
+        if let Some(ref nm) = lbo.next_marker.token() {
             uri = format!("{}&marker={}", uri, nm);
         }
 
