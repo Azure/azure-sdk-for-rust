@@ -14,12 +14,8 @@ extern crate env_logger;
 extern crate log;
 extern crate serde;
 
-mod util;
-
-use std::io::Cursor;
 use std::ops::Deref;
 
-use futures::future::*;
 use tokio_core::reactor::Core;
 
 use azure_sdk_for_rust::azure::core::errors::AzureError;
@@ -30,7 +26,6 @@ use azure_sdk_for_rust::azure::storage::container::{Container, PublicAccess,
                                                     LIST_CONTAINER_OPTIONS_DEFAULT};
 use chrono::Utc;
 use hyper::mime::Mime;
-use util::get_from_env;
 
 #[test]
 fn create_and_delete_container() {
@@ -136,7 +131,7 @@ fn initialize() -> Result<(Client, Core), AzureError> {
         .expect("Set env variable STORAGE_ACCOUNT first!");
     let master_key = std::env::var("STORAGE_MASTER_KEY")
         .expect("Set env variable STORAGE_MASTER_KEY first!");
-    let mut core = Core::new()?;
+    let core = Core::new()?;
 
     Ok((Client::new(&core.handle(), &account, &master_key)?, core))
 }

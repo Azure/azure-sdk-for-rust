@@ -20,8 +20,6 @@ extern crate log;
 extern crate serde;
 extern crate time;
 
-mod util;
-
 use time::Duration;
 use azure_sdk_for_rust::azure;
 
