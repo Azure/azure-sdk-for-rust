@@ -1,41 +1,41 @@
 [package]
-name             = "azure_sdk_for_rust"
-version          = "0.4.0"
-description      = "Rust wrappers around Microsoft Azure REST APIs"
-readme           = "README.md"
-authors          = ["Francesco Cogno <francesco.cogno@outlook.com>", "Dong Liu <doliu@microsoft.com>"]
-license          = "Apache-2.0"
-repository       = "https://github.com/MindFlavor/AzureSDKForRust"
-documentation    = "http://mindflavor.github.io/AzureSDKForRust/azure_sdk_for_rust/index.html"
+name           = "azure_sdk_for_rust"
+version        = "0.4.1"
+description    = "Rust wrappers around Microsoft Azure REST APIs"
+readme         = "README.md"
+authors        = ["Francesco Cogno <francesco.cogno@outlook.com>", "Dong Liu <doliu@microsoft.com>"]
+license        = "Apache-2.0"
+repository     = "https://github.com/MindFlavor/AzureSDKForRust"
+documentation  = "http://mindflavor.github.io/AzureSDKForRust/azure_sdk_for_rust/index.html"
 
-keywords         = ["sdk", "azure", "rest", "iot", "cloud"]
-categories       = ["api-bindings"]
+keywords       = ["sdk", "azure", "rest", "iot", "cloud"]
+categories     = ["api-bindings"]
 
 [[bin]]
-name             = "main"
-doc              = false
+name           = "main"
+doc            = false
 
 [dependencies]
-chrono       = "0.4.0"
-rust-crypto  = "0.2.36"
-quick-error  = "1.2.0"
-RustyXML     = "0.1.1"
-log          = "0.3.8"
-env_logger   = "0.4.3"
-uuid         = "0.5.1"
-time         = "0.1.37"
-url          = "1.5.1"
-base64       = "0.6.0"
-serde        = "1.0.9"
-serde_json   = "1.0.2"
-serde_derive = "1.0.9"
-hyper        = "0.11.0"
-mime         = "0.3.2"
-tokio        = "0.0.0"
-tokio-core   = "0.1.8"
-futures      = "0.1.14"
-hyper-tls    = "0.1.2"
-native-tls   = "0.1.4"
+chrono         = "*"
+rust-crypto    = "*"
+quick-error    = "*"
+RustyXML       = "*"
+log            = "*"
+env_logger     = "*"
+uuid           = "*"
+time           = "*"
+url            = "*"
+base64         = "*"
+serde          = "*"
+serde_json     = "*"
+serde_derive   = "*"
+hyper          = "*"
+mime           = "*"
+tokio          = "*"
+tokio-core     = "*"
+futures        = "*"
+hyper-tls      = "*"
+native-tls     = "*"
 
 [features]
-test_e2e     = []
+test_e2e       = []
