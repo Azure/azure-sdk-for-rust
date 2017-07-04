@@ -640,10 +640,10 @@ impl<'a> Client {
         ldo: &ListDocumentsOptions,
     ) -> impl Future<Item = (String, ListDocumentsResponseAdditionalHeaders), Error = AzureError>
     where
-        S: Into<&'b str>,
+        S: AsRef<str>,
     {
-        let database = database.into();
-        let collection = collection.into();
+        let database = database.as_ref();
+        let collection = collection.as_ref();
 
         trace!(
             "list-_documents called(database == {}, collection == {}, ldo == {:?}",
@@ -657,19 +657,28 @@ impl<'a> Client {
         done(req).from_err().and_then(move |future_response| {
             check_status_extract_headers_and_body(future_response, StatusCode::Ok)
                 .and_then(move |(headers, whole_body)| {
+                    println!("headers == {:?}", headers);
+
                     let ado = ListDocumentsResponseAdditionalHeaders {
-                        continuation_token: headers
-                            .get::<ContinuationTokenHeader>()
-                            .unwrap()
-                            .to_string(),
-                        charge: headers
-                            .get::<Charge>()
-                            .unwrap()
-                            .to_string()
-                            .parse::<u64>()
-                            .unwrap(),
-                        etag: headers.get::<Etag>().unwrap().to_string(),
+                        // This match just tries to extract the info and convert it
+                        // into the correct type. It is complicated because headers
+                        // can be missing and also because headers.get<T> will return
+                        // a T reference (&T) so we need to cast it into the
+                        // correct type and clone it (in this case into a &str that will
+                        // become a String using to_owned())
+                        continuation_token: match headers.get::<ContinuationTokenHeader>() {
+                            Some(s) => Some((s as &str).to_owned()),
+                            None => None,
+                        },
+                        // Here we assume the header always present. If problems arise we
+                        // will change the field to be Option(al).
+                        charge: *(headers.get::<Charge>().unwrap() as &u64),
+                        etag: match headers.get::<Etag>() {
+                            Some(s) => Some((s as &str).to_owned()),
+                            None => None,
+                        },
                     };
+                    println!("ado == {:?}", ado);
                     match from_utf8(&whole_body) {
                         Ok(body) => ok((body.to_owned(), ado)),
                         Err(error) => err(error.into()),

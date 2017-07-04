@@ -22,8 +22,9 @@ pub const LIST_DOCUMENTS_OPTIONS_DEFAULT: ListDocumentsOptions = ListDocumentsOp
     partition_range_id: None,
 };
 
+#[derive(Debug, Clone)]
 pub struct ListDocumentsResponseAdditionalHeaders {
-    pub continuation_token: String,
+    pub continuation_token: Option<String>,
     pub charge: u64,
-    pub etag: String,
+    pub etag: Option<String>,
 }
