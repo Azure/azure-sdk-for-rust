@@ -29,7 +29,7 @@ impl FromStr for IndexingDirective {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct DocumentAttributes {
     id: String,
     #[serde(rename = "_rid")]

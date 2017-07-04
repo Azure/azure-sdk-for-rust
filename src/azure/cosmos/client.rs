@@ -8,16 +8,19 @@ use azure::core::errors::{AzureError, check_status_extract_body,
                           check_status_extract_headers_and_body};
 
 use azure::cosmos::request_response::{ListDatabasesResponse, CreateDatabaseRequest,
-                                      ListCollectionsResponse};
+                                      ListCollectionsResponse, ListDocumentsResponseAttributes,
+                                      ListDocumentsResponseEntities, ListDocumentsResponse,
+                                      ListDocumentsResponseEntry};
 use azure::core::COMPLETE_ENCODE_SET;
 
 use azure::cosmos::ConsistencyLevel;
 use azure::cosmos::list_documents::{ListDocumentsOptions, ListDocumentsResponseAdditionalHeaders};
 use azure::core::incompletevector::ContinuationToken;
 
-use std::str::{FromStr, from_utf8};
+use std::str::FromStr;
 
 use serde::Serialize;
+use serde::de::DeserializeOwned;
 
 use crypto::hmac::Hmac;
 use crypto::mac::Mac;
@@ -37,7 +40,7 @@ use tokio_core;
 use hyper_tls;
 use native_tls;
 
-use futures::future::{Future, ok, done, err};
+use futures::future::{Future, ok, done};
 
 const AZURE_VERSION: &'static str = "2017-02-22";
 const VERSION: &'static str = "1.0";
@@ -550,17 +553,21 @@ impl<'a> Client {
         Ok(self.hyper_client.request(request))
     }
 
-    pub fn create_document<T>(
+    pub fn create_document<T, S>(
         &self,
-        database: &str,
-        collection: &str,
+        database: S,
+        collection: S,
         is_upsert: bool,
         indexing_directive: Option<IndexingDirective>,
         document: &T,
     ) -> impl Future<Item = DocumentAttributes, Error = AzureError>
     where
         T: Serialize,
+        S: AsRef<str>,
     {
+        let database = database.as_ref();
+        let collection = collection.as_ref();
+
         trace!(
             "create_document called(database == {}, collection == {}, is_upsert == {}",
             database,
@@ -633,14 +640,21 @@ impl<'a> Client {
     }
 
 
-    pub fn list_documents<'b, S>(
+    pub fn list_documents<'b, S, T>(
         &self,
         database: S,
         collection: S,
         ldo: &ListDocumentsOptions,
-    ) -> impl Future<Item = (String, ListDocumentsResponseAdditionalHeaders), Error = AzureError>
+    ) -> impl Future<
+        Item = (
+            ListDocumentsResponse<T>,
+            ListDocumentsResponseAdditionalHeaders,
+        ),
+        Error = AzureError,
+    >
     where
         S: AsRef<str>,
+        T: DeserializeOwned,
     {
         let database = database.as_ref();
         let collection = collection.as_ref();
@@ -657,7 +671,7 @@ impl<'a> Client {
         done(req).from_err().and_then(move |future_response| {
             check_status_extract_headers_and_body(future_response, StatusCode::Ok)
                 .and_then(move |(headers, whole_body)| {
-                    println!("headers == {:?}", headers);
+                    debug!("headers == {:?}", headers);
 
                     let ado = ListDocumentsResponseAdditionalHeaders {
                         // This match just tries to extract the info and convert it
@@ -670,7 +684,8 @@ impl<'a> Client {
                             Some(s) => Some((s as &str).to_owned()),
                             None => None,
                         },
-                        // Here we assume the header always present. If problems arise we
+                        // Here we assume the Charge header to always be present.
+                        // If problems arise we
                         // will change the field to be Option(al).
                         charge: *(headers.get::<Charge>().unwrap() as &u64),
                         etag: match headers.get::<Etag>() {
@@ -678,14 +693,44 @@ impl<'a> Client {
                             None => None,
                         },
                     };
-                    println!("ado == {:?}", ado);
-                    match from_utf8(&whole_body) {
-                        Ok(body) => ok((body.to_owned(), ado)),
-                        Err(error) => err(error.into()),
-                    }
+                    debug!("ado == {:?}", ado);
+                    done(list_documents_extract_result::<T>(&whole_body))
+                        .and_then(move |body| ok((body, ado)))
                 })
         })
     }
+}
+
+fn list_documents_extract_result<'a, T>(
+    v_body: &[u8],
+) -> Result<ListDocumentsResponse<T>, AzureError>
+where
+    T: DeserializeOwned,
+{
+    // we will proceed in three steps:
+    // 1- Deserialize the result as DocumentAttributes. The extra field will be ignored.
+    // 2- Deserialize the result a type T. The extra fields will be ignored.
+    // 3- Zip 1 and 2 in the resulting structure.
+    // There is a lot of data movement here, let's hope the compiler is smarter than me :)
+    let document_attributes = serde_json::from_slice::<ListDocumentsResponseAttributes>(v_body)?;
+    let entries = serde_json::from_slice::<ListDocumentsResponseEntities<T>>(v_body)?;
+
+    let mut v = Vec::with_capacity(document_attributes.documents.len());
+    for (da, e) in document_attributes
+        .documents
+        .into_iter()
+        .zip(entries.entities.into_iter())
+    {
+        v.push(ListDocumentsResponseEntry {
+            document_attributes: da,
+            entity: e,
+        });
+    }
+
+    Ok(ListDocumentsResponse {
+        rid: document_attributes.rid,
+        entries: v,
+    })
 }
 
 #[inline]
