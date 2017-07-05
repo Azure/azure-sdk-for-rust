@@ -85,7 +85,7 @@ fn code() -> Result<(), Box<Error>> {
         client.list_documents::<_, MySampleStructOwned>(&database_name, &collection_name, &ldo),
     ).unwrap();
 
-    assert_eq!(entries.entries.len(), 3);
+    assert_eq!(entries.documents.len(), 3);
     println!("entries == {:?}\nldah = {:?}", entries, ldah);
 
     // we inserted 5 documents and retrieved the first 3.
@@ -101,17 +101,13 @@ fn code() -> Result<(), Box<Error>> {
             client.list_documents::<_, MySampleStructOwned>(&database_name, &collection_name, &ldo),
         ).unwrap();
 
-        assert_eq!(entries.entries.len(), 2);
+        assert_eq!(entries.documents.len(), 2);
         println!("entries == {:?}\nldah = {:?}", entries, ldah);
 
         // we got the last 2 entries. Now continuation_token
         // must be clear
         assert_eq!(ldah.continuation_token.is_some(), false);
     }
-
-    let (entries, ldah) = core.run(
-        client.list_documents::<_, String>(&database_name, &collection_name, &ldo),
-    ).unwrap();
 
     Ok(())
 }

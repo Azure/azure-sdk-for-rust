@@ -10,7 +10,7 @@ use azure::core::errors::{AzureError, check_status_extract_body,
 use azure::cosmos::request_response::{ListDatabasesResponse, CreateDatabaseRequest,
                                       ListCollectionsResponse, ListDocumentsResponseAttributes,
                                       ListDocumentsResponseEntities, ListDocumentsResponse,
-                                      ListDocumentsResponseEntry};
+                                      Document};
 use azure::core::COMPLETE_ENCODE_SET;
 
 use azure::cosmos::ConsistencyLevel;
@@ -756,6 +756,18 @@ impl<'a> Client {
                 })
         })
     }
+
+    //pub fn get_document<S, T>(
+    //    &self,
+    //    database: S,
+    //    collection: S,
+    //    ldo: &GetDocumentOptions,
+    //) -> impl Future<Item = (DocumentsResponse<T>, GetDocumentAdditionalHeaders), Error = AzureError>
+    //where
+    //    S: AsRef<str>,
+    //    T: DeserializeOwned,
+    //{
+    //}
 }
 
 fn list_documents_extract_result<'a, T>(
@@ -778,7 +790,7 @@ where
         .into_iter()
         .zip(entries.entities.into_iter())
     {
-        v.push(ListDocumentsResponseEntry {
+        v.push(Document {
             document_attributes: da,
             entity: e,
         });
@@ -786,7 +798,7 @@ where
 
     Ok(ListDocumentsResponse {
         rid: document_attributes.rid,
-        entries: v,
+        documents: v,
     })
 }
 

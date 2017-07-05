@@ -44,7 +44,7 @@ pub struct ListDocumentsResponseEntities<T> {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ListDocumentsResponseEntry<T> {
+pub struct Document<T> {
     pub document_attributes: DocumentAttributes,
     pub entity: T,
 }
@@ -52,5 +52,5 @@ pub struct ListDocumentsResponseEntry<T> {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ListDocumentsResponse<T> {
     pub rid: String,
-    pub entries: Vec<ListDocumentsResponseEntry<T>>,
+    pub documents: Vec<Document<T>>,
 }
