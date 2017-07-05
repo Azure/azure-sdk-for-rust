@@ -7,7 +7,7 @@ mod request_response;
 pub mod collection;
 pub mod document;
 pub mod list_documents;
-
+pub mod get_document;
 
 use std::fmt;
 use azure::core::enumerations;

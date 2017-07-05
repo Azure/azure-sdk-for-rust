@@ -15,6 +15,7 @@ use azure::core::COMPLETE_ENCODE_SET;
 
 use azure::cosmos::ConsistencyLevel;
 use azure::cosmos::list_documents::{ListDocumentsOptions, ListDocumentsResponseAdditionalHeaders};
+use azure::cosmos::get_document::{GetDocumentOptions, GetDocumentAdditionalHeaders};
 use azure::core::incompletevector::ContinuationToken;
 
 use std::str::FromStr;
@@ -61,6 +62,7 @@ header! { (IfNoneMatch, "If-None-Match") => [String] }
 header! { (PartitionRangeId, "x-ms-documentdb-partitionkeyrangeid") => [String] }
 header! { (Charge, "x-ms-request-charge") => [u64] }
 header! { (Etag, "etag") => [String] }
+header! { (CosmosDBPartitionKey, "x-ms-documentdb-partitionkey") => [String] }
 
 #[derive(Clone, Copy)]
 pub enum ResourceType {
@@ -757,17 +759,110 @@ impl<'a> Client {
         })
     }
 
-    //pub fn get_document<S, T>(
-    //    &self,
-    //    database: S,
-    //    collection: S,
-    //    ldo: &GetDocumentOptions,
-    //) -> impl Future<Item = (DocumentsResponse<T>, GetDocumentAdditionalHeaders), Error = AzureError>
-    //where
-    //    S: AsRef<str>,
-    //    T: DeserializeOwned,
-    //{
-    //}
+
+    #[inline]
+    fn get_document_create_request(
+        &self,
+        database: &str,
+        collection: &str,
+        document_id: &str,
+        gdo: &GetDocumentOptions,
+    ) -> Result<hyper::client::FutureResponse, AzureError> {
+        let uri = hyper::Uri::from_str(&format!(
+            "https://{}.documents.azure.com/dbs/{}/colls/{}/docs/{}",
+            self.authorization_token.account(),
+            database,
+            collection,
+            document_id
+        ))?;
+
+        let serialized_partition_key = match gdo.partition_key {
+            // the partition key should be a json formatted string list
+            Some(ref val) => Some(serde_json::to_string(val)?),
+            None => None,
+        };
+
+        let request = prepare_request(
+                &self.authorization_token,
+                uri,
+                hyper::Method::Get,
+                None,
+                ResourceType::Documents,
+                move |ref mut headers| {
+                    if let Some(val) = gdo.consistency_level_override {
+                        headers.set(ConsistencyLevelHeader(val));
+                    }
+                    if let Some(val) = gdo.session_token {
+                        headers.set(SessionTokenHeader(val.to_owned()));
+                    }
+                    if let Some(val) = gdo.if_none_match {
+                        headers.set(IfNoneMatch(val.to_owned()));
+                    }
+                    if let Some(val) = serialized_partition_key {
+                        headers.set(CosmosDBPartitionKey(val));
+                    }
+                 });
+
+        trace!("request prepared");
+
+        Ok(self.hyper_client.request(request))
+    }
+
+    pub fn get_document<S, T>(
+        &self,
+        database: S,
+        collection: S,
+        document_id: S,
+        gdo: &GetDocumentOptions,
+    ) -> impl Future<Item = (Document<T>, GetDocumentAdditionalHeaders), Error = AzureError>
+    where
+        S: AsRef<str>,
+        T: DeserializeOwned,
+    {
+        let database = database.as_ref();
+        let collection = collection.as_ref();
+        let document_id = document_id.as_ref();
+
+        trace!(
+            "get_document called(database == {}, collection == {}, document_id == {} gdo == {:?}",
+            database,
+            collection,
+            document_id,
+            gdo
+        );
+
+        let req = self.get_document_create_request(database, collection, document_id, gdo);
+
+        done(req).from_err().and_then(move |future_response| {
+            check_status_extract_headers_and_body(future_response, StatusCode::Ok)
+                .and_then(move |(headers, whole_body)| {
+                    debug!("headers == {:?}", headers);
+
+                    let gdah = GetDocumentAdditionalHeaders {
+                        // Here we assume the Charge header to always be present.
+                        // If problems arise we
+                        // will change the field to be Option(al).
+                        charge: *(headers.get::<Charge>().unwrap() as &u64),
+                    };
+                    debug!("gdah == {:?}", gdah);
+                    done(get_document_extract_result::<T>(&whole_body))
+                        .and_then(move |body| ok((body, gdah)))
+                })
+        })
+    }
+}
+
+fn get_document_extract_result<'a, T>(v_body: &[u8]) -> Result<Document<T>, AzureError>
+where
+    T: DeserializeOwned,
+{
+    // we will proceed in two steps:
+    // 1- Deserialize the result as DocumentAttributes. The extra field will be ignored.
+    // 2- Deserialize the result a type T. The extra fields will be ignored.
+    Ok(Document {
+        document_attributes: serde_json::from_slice::<DocumentAttributes>(v_body)?,
+        entity: serde_json::from_slice::<T>(v_body)?,
+    })
 }
 
 fn list_documents_extract_result<'a, T>(
