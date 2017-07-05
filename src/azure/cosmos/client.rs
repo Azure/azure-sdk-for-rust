@@ -509,16 +509,16 @@ impl<'a> Client {
     }
 
     #[inline]
-    fn create_document_create_request<T>(
+    fn create_document_as_str_create_request<S>(
         &self,
         database: &str,
         collection: &str,
         is_upsert: bool,
         indexing_directive: Option<IndexingDirective>,
-        document: &T,
+        document_str: S,
     ) -> Result<hyper::client::FutureResponse, AzureError>
     where
-        T: Serialize,
+        S: AsRef<str>,
     {
         let uri = hyper::Uri::from_str(&format!(
             "https://{}.documents.azure.com/dbs/{}/colls/{}/docs",
@@ -530,15 +530,11 @@ impl<'a> Client {
         // Standard headers (auth and version) will be provied by perform_request
         // Optional headers as per
         // https://docs.microsoft.com/en-us/rest/api/documentdb/create-a-document
-
-        let document_serialized = serde_json::to_string(document)?;
-        trace!("document_serialized == {}", document_serialized);
-
         let request = prepare_request(
                 &self.authorization_token,
                 uri,
                 hyper::Method::Post,
-                Some(&document_serialized),
+                Some(document_str.as_ref()),
                 ResourceType::Documents,
                 |ref mut headers| {
                    headers.set(DocumentIsUpsert(is_upsert));
@@ -553,7 +549,68 @@ impl<'a> Client {
         Ok(self.hyper_client.request(request))
     }
 
-    pub fn create_document<T, S>(
+    #[inline]
+    fn create_document_as_entity_create_request<T>(
+        &self,
+        database: &str,
+        collection: &str,
+        is_upsert: bool,
+        indexing_directive: Option<IndexingDirective>,
+        document: &T,
+    ) -> Result<hyper::client::FutureResponse, AzureError>
+    where
+        T: Serialize,
+    {
+        let document_serialized = serde_json::to_string(document)?;
+        trace!("document_serialized == {}", document_serialized);
+
+        self.create_document_as_str_create_request(
+            database,
+            collection,
+            is_upsert,
+            indexing_directive,
+            &document_serialized,
+        )
+    }
+
+    pub fn create_document_as_str<T, S>(
+        &self,
+        database: S,
+        collection: S,
+        is_upsert: bool,
+        indexing_directive: Option<IndexingDirective>,
+        document_str: S,
+    ) -> impl Future<Item = DocumentAttributes, Error = AzureError>
+    where
+        T: Serialize,
+        S: AsRef<str>,
+    {
+        let database = database.as_ref();
+        let collection = collection.as_ref();
+
+        trace!(
+            "create_document_as_str called(database == {}, collection == {}, is_upsert == {}",
+            database,
+            collection,
+            is_upsert
+        );
+
+        let req = self.create_document_as_str_create_request(
+            database.as_ref(),
+            collection.as_ref(),
+            is_upsert,
+            indexing_directive,
+            document_str,
+        );
+
+        done(req).from_err().and_then(move |future_response| {
+            check_status_extract_body(future_response, StatusCode::Created).and_then(move |body| {
+                done(serde_json::from_str::<DocumentAttributes>(&body)).from_err()
+            })
+        })
+    }
+
+    pub fn create_document_as_entity<T, S>(
         &self,
         database: S,
         collection: S,
@@ -575,7 +632,7 @@ impl<'a> Client {
             is_upsert
         );
 
-        let req = self.create_document_create_request(
+        let req = self.create_document_as_entity_create_request(
             database,
             collection,
             is_upsert,

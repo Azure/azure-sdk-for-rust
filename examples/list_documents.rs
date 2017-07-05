@@ -71,8 +71,9 @@ fn code() -> Result<(), Box<Error>> {
             a_timestamp: chrono::Utc::now().timestamp(),
         };
 
+        println!("Adding one entity");
         core.run(
-            client.create_document(&database_name, &collection_name, false, None, &doc),
+            client.create_document_as_entity(&database_name, &collection_name, false, None, &doc),
         );
     }
 
@@ -107,6 +108,10 @@ fn code() -> Result<(), Box<Error>> {
         // must be clear
         assert_eq!(ldah.continuation_token.is_some(), false);
     }
+
+    let (entries, ldah) = core.run(
+        client.list_documents::<_, String>(&database_name, &collection_name, &ldo),
+    ).unwrap();
 
     Ok(())
 }
