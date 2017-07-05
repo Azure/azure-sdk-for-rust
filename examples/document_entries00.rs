@@ -14,6 +14,7 @@ use tokio_core::reactor::Core;
 use azure_sdk_for_rust::azure::cosmos::authorization_token::{AuthorizationToken, TokenType};
 use azure_sdk_for_rust::azure::cosmos::client::Client;
 use azure_sdk_for_rust::azure::cosmos::list_documents::LIST_DOCUMENTS_OPTIONS_DEFAULT;
+use azure_sdk_for_rust::azure::cosmos::get_document::GET_DOCUMENT_OPTIONS_DEFAULT;
 
 #[macro_use]
 extern crate serde_derive;
@@ -107,6 +108,21 @@ fn code() -> Result<(), Box<Error>> {
         // we got the last 2 entries. Now continuation_token
         // must be clear
         assert_eq!(ldah.continuation_token.is_some(), false);
+
+        let gdo = GET_DOCUMENT_OPTIONS_DEFAULT.clone();
+        let id = format!("unique_id{}", 3);
+
+        let (entry, gdah) =
+            core.run(
+                client.get_document::<_, MySampleStructOwned>(
+                    &database_name,
+                    &collection_name,
+                    &id,
+                    &gdo,
+                ),
+            ).unwrap();
+
+        println!("entry == {:?}\ngdah == {:?}", entry, gdah);
     }
 
     Ok(())
