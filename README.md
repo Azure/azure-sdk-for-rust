@@ -4,14 +4,14 @@
 
 [![Crate](https://img.shields.io/crates/v/azure_sdk_for_rust.svg)](https://crates.io/crates/azure_sdk_for_rust) [![legal](https://img.shields.io/crates/l/azure_sdk_for_rust.svg)](LICENSE) [![cratedown](https://img.shields.io/crates/d/azure_sdk_for_rust.svg)](https://crates.io/crates/azure_sdk_for_rust) [![cratelastdown](https://img.shields.io/crates/dv/azure_sdk_for_rust.svg)](https://crates.io/crates/azure_sdk_for_rust)
 
-[![tag](https://img.shields.io/github/tag/mindflavor/AzureSDKForRust.svg)](https://github.com/MindFlavor/AzureSDKForRust/tree/0.4.0)
-[![release](https://img.shields.io/github/release/mindflavor/AzureSDKForRust.svg)](https://github.com/MindFlavor/AzureSDKForRust/tree/0.4.0)
-[![commitssince](https://img.shields.io/github/commits-since/mindflavor/AzureSDKForRust/0.4.0.svg)](https://img.shields.io/github/commits-since/mindflavor/AzureSDKForRust/0.4.0.svg)
+[![tag](https://img.shields.io/github/tag/mindflavor/AzureSDKForRust.svg)](https://github.com/MindFlavor/AzureSDKForRust/tree/0.4.1)
+[![release](https://img.shields.io/github/release/mindflavor/AzureSDKForRust.svg)](https://github.com/MindFlavor/AzureSDKForRust/tree/0.4.1)
+[![commitssince](https://img.shields.io/github/commits-since/mindflavor/AzureSDKForRust/0.4.1.svg)](https://img.shields.io/github/commits-since/mindflavor/AzureSDKForRust/0.4.1.svg)
 
 ## Introduction
 Microsoft Azure expose its technologies via REST API. These APIs are easily consumable from any language (good) but are weakly typed. With this library and its related [crate](https://crates.io/crates/azure_sdk_for_rust/) you can exploit the power of Microsoft Azure from Rust in a idiomatic way.
 
-This crate relies heavily on the excellent crate called [Hyper](https://github.com/hyperium/hyper). As of this library version [0.4.0](https://github.com/MindFlavor/AzureSDKForRust/releases/tag/0.4.0) all the methods are future-aware. That is, I'm using the latest Hyper code.
+This crate relies heavily on the excellent crate called [Hyper](https://github.com/hyperium/hyper). As of this library version [0.4.1](https://github.com/MindFlavor/AzureSDKForRust/releases/tag/0.4.1) all the methods are future-aware. That is, I'm using the latest Hyper code.
 
 Rust, however, still requires you to Box every future returned by a method. The alternative is to use the ```impl Trait``` feature which is nightly-only. Since I've used it everywhere this library will require a nightly Rust compiler until the ```impl Trait``` makes its way to the stable channel. Also since I'm using an unstable feature these is a very good chance of this code to break in the future.
 
