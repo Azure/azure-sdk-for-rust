@@ -1,11 +1,13 @@
-#[derive(Debug, Clone, PartialEq)]
-pub struct ListBlobOptions {
+use azure::core::incompletevector::ContinuationToken;
+
+#[derive(Debug, Clone)]
+pub struct ListBlobOptions<'a> {
     pub max_results: u32,
     pub include_snapshots: bool,
     pub include_metadata: bool,
     pub include_uncommittedblobs: bool,
     pub include_copy: bool,
-    pub next_marker: Option<String>,
+    pub next_marker: Option<&'a ContinuationToken>,
     pub prefix: Option<String>,
     pub timeout: Option<u64>,
 }
@@ -20,5 +22,3 @@ pub const LIST_BLOB_OPTIONS_DEFAULT: ListBlobOptions = ListBlobOptions {
     prefix: None,
     timeout: None,
 };
-
-impl ListBlobOptions {}

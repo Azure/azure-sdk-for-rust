@@ -1,29 +1,31 @@
 use std::ops::{Deref, DerefMut};
 
-#[derive(Debug)]
+pub type ContinuationToken = String;
+
+#[derive(Debug, Clone)]
 pub struct IncompleteVector<T> {
-    next_marker: Option<String>,
+    token: Option<String>,
     vector: Vec<T>,
 }
 
-#[allow(dead_code)]
-impl<'a, T> IncompleteVector<T> {
-    pub fn new(next_marker: Option<String>, vector: Vec<T>) -> IncompleteVector<T> {
+impl<T> IncompleteVector<T> {
+    pub fn new(token: Option<String>, vector: Vec<T>) -> IncompleteVector<T> {
         IncompleteVector {
-            next_marker: next_marker,
+            token: token,
             vector: vector,
         }
     }
 
-    pub fn next_marker(&self) -> Option<&str> {
-        match self.next_marker {
-            Some(ref nm) => Some(nm),
-            None => None,
-        }
+    pub fn is_complete(&self) -> bool {
+        self.token().is_none()
     }
 
-    pub fn is_complete(&self) -> bool {
-        self.next_marker().is_none()
+    fn token(&self) -> Option<&str> {
+        if let Some(ref t) = self.token {
+            Some(t)
+        } else {
+            None
+        }
     }
 }
 
@@ -40,6 +42,8 @@ impl<T> Deref for IncompleteVector<T> {
         &self.vector
     }
 }
+
+
 
 #[cfg(test)]
 mod test {

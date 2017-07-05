@@ -1,3 +1,12 @@
+## [0.4.1](https://github.com/MindFlavor/AzureSDKForRust/releases/tag/0.4.1) (2017-07-05)
+
+**Implemented features:**
+
+* Added Cosmos add document (both a plan ```&str``` and ```Serialize``` implementing struct).
+* Added Cosmos list documents method.
+* Added Cosmos get document method.
+* Added more examples.
+
 ## [0.4.0](https://github.com/MindFlavor/AzureSDKForRust/releases/tag/0.4.0) (2017-07-02)
 
 ### Migrated all code to asynchronous hyper using Futures 
