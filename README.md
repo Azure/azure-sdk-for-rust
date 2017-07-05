@@ -19,7 +19,7 @@ Rust, however, still requires you to Box every future returned by a method. The 
 is likely to break over time. The current releases will probabily contain bugs. As usual open issues if you find any.
 
 ## Disclaimer
-Although I am a Microsoft employee, this is not a Microsoft endorsed project. It's simply a pet project of mine: I love Rust (who doesn't? :smirk:) and Microsoft Azure technologies so I thought to close the gap between them. It's also a good project for learning Rust. This library relies heavily on [Hyper](https://github.com/hyperium/hyper). We use the laters Hyper code so this library is fully async with Futures and Tokio.
+Although I am a Microsoft employee, this is not a Microsoft endorsed project. It's simply a pet project of mine: I love Rust (who doesn't? :smirk:) and Microsoft Azure technologies so I thought to close the gap between them. It's also a good project for learning Rust. This library relies heavily on [Hyper](https://github.com/hyperium/hyper). We use the latest Hyper code so this library is fully async with Futures and Tokio.
  
 ## Example
 You can find examples in the [```examples```](https://github.com/MindFlavor/AzureSDKForRust/tree/master/examples) folder. Here is a sample however:
