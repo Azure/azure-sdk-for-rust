@@ -236,6 +236,11 @@ If you want to contribute please do! No formality required! :wink:. Please note 
 | Get collection     | [https://docs.microsoft.com/en-us/rest/api/documentdb/get-a-collection](https://docs.microsoft.com/en-us/rest/api/documentdb/get-a-collection)         |
 | Delete collection  | [https://docs.microsoft.com/en-us/rest/api/documentdb/delete-a-collection](https://docs.microsoft.com/en-us/rest/api/documentdb/delete-a-collection)   |
 | Replace collection | [https://docs.microsoft.com/en-us/rest/api/documentdb/replace-a-collection](https://docs.microsoft.com/en-us/rest/api/documentdb/replace-a-collection) |
+
+##### Document
+
+| Method             | URL                                                                                                                                                    |
+| ----               | ---                                                                                                                                                    |
 | Create document    | [https://docs.microsoft.com/en-us/rest/api/documentdb/create-a-document](https://docs.microsoft.com/en-us/rest/api/documentdb/create-a-document)       |
 | List documents     | [https://docs.microsoft.com/en-us/rest/api/documentdb/list-documents](https://docs.microsoft.com/en-us/rest/api/documentdb/list-documents)             |
 | Get document       | [https://docs.microsoft.com/en-us/rest/api/documentdb/get-a-document](https://docs.microsoft.com/en-us/rest/api/documentdb/get-a-document)             |
