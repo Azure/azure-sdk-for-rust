@@ -576,17 +576,19 @@ impl<'a> Client {
         )
     }
 
-    pub fn create_document_as_str<T, S>(
+    pub fn create_document_as_str<T, S1, S2, S3>(
         &self,
-        database: S,
-        collection: S,
+        database: S1,
+        collection: S2,
         is_upsert: bool,
         indexing_directive: Option<IndexingDirective>,
-        document_str: S,
+        document_str: S3,
     ) -> impl Future<Item = DocumentAttributes, Error = AzureError>
     where
         T: Serialize,
-        S: AsRef<str>,
+        S1: AsRef<str>,
+        S2: AsRef<str>,
+        S3: AsRef<str>,
     {
         let database = database.as_ref();
         let collection = collection.as_ref();
@@ -613,17 +615,18 @@ impl<'a> Client {
         })
     }
 
-    pub fn create_document_as_entity<T, S>(
+    pub fn create_document_as_entity<T, S1, S2>(
         &self,
-        database: S,
-        collection: S,
+        database: S1,
+        collection: S2,
         is_upsert: bool,
         indexing_directive: Option<IndexingDirective>,
         document: &T,
     ) -> impl Future<Item = DocumentAttributes, Error = AzureError>
     where
         T: Serialize,
-        S: AsRef<str>,
+        S1: AsRef<str>,
+        S2: AsRef<str>,
     {
         let database = database.as_ref();
         let collection = collection.as_ref();
@@ -700,10 +703,10 @@ impl<'a> Client {
     }
 
 
-    pub fn list_documents<'b, S, T>(
+    pub fn list_documents<'b, S1, S2, T>(
         &self,
-        database: S,
-        collection: S,
+        database: S1,
+        collection: S2,
         ldo: &ListDocumentsOptions,
     ) -> impl Future<
         Item = (
@@ -713,7 +716,8 @@ impl<'a> Client {
         Error = AzureError,
     >
     where
-        S: AsRef<str>,
+        S1: AsRef<str>,
+        S2: AsRef<str>,
         T: DeserializeOwned,
     {
         let database = database.as_ref();
@@ -809,15 +813,17 @@ impl<'a> Client {
         Ok(self.hyper_client.request(request))
     }
 
-    pub fn get_document<S, T>(
+    pub fn get_document<S1, S2, S3, T>(
         &self,
-        database: S,
-        collection: S,
-        document_id: S,
+        database: S1,
+        collection: S2,
+        document_id: S3,
         gdo: &GetDocumentOptions,
     ) -> impl Future<Item = (Option<Document<T>>, GetDocumentAdditionalHeaders), Error = AzureError>
     where
-        S: AsRef<str>,
+        S1: AsRef<str>,
+        S2: AsRef<str>,
+        S3: AsRef<str>,
         T: DeserializeOwned,
     {
         let database = database.as_ref();

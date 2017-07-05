@@ -134,7 +134,7 @@ fn code() -> Result<(), Box<Error>> {
     // The method create_document will return, upon success,
     // the document attributes.
     let document_attributes = core.run(
-        client.create_document(&database, &collection, false, None, &doc),
+        client.create_document_as_entity(&database, &collection, false, None, &doc),
     )?;
     println!("document_attributes == {:?}", document_attributes);
 

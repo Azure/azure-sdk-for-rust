@@ -24,3 +24,9 @@ impl Deref for Database {
         &self.id
     }
 }
+
+impl AsRef<str> for Database {
+    fn as_ref(&self) -> &str {
+        &self.id
+    }
+}

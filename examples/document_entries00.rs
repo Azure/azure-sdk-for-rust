@@ -72,10 +72,18 @@ fn code() -> Result<(), Box<Error>> {
             a_timestamp: chrono::Utc::now().timestamp(),
         };
 
-        println!("Adding one entity");
-        core.run(
+        // let's add an entity. we ignore the errors at this point and just
+        // notify the user.
+        match core.run(
             client.create_document_as_entity(&database_name, &collection_name, false, None, &doc),
-        );
+        ) {
+            Ok(_) => {
+                println!("entity added");
+            }
+            Err(error) => {
+                println!("entity add failed (maybe already there?) {:?}", error);
+            }
+        };
     }
 
     // let's get 3 entries at a time
@@ -83,7 +91,7 @@ fn code() -> Result<(), Box<Error>> {
     ldo.max_item_count = Some(3);
 
     let (entries, ldah) = core.run(
-        client.list_documents::<_, MySampleStructOwned>(&database_name, &collection_name, &ldo),
+        client.list_documents::<_, _, MySampleStructOwned>(&database_name, &collection_name, &ldo),
     ).unwrap();
 
     assert_eq!(entries.documents.len(), 3);
@@ -98,9 +106,14 @@ fn code() -> Result<(), Box<Error>> {
         let mut ldo = LIST_DOCUMENTS_OPTIONS_DEFAULT.clone();
         ldo.continuation_token = Some(&ct);
 
-        let (entries, ldah) = core.run(
-            client.list_documents::<_, MySampleStructOwned>(&database_name, &collection_name, &ldo),
-        ).unwrap();
+        let (entries, ldah) =
+            core.run(
+                client.list_documents::<_, _, MySampleStructOwned>(
+                    &database_name,
+                    &collection_name,
+                    &ldo,
+                ),
+            ).unwrap();
 
         assert_eq!(entries.documents.len(), 2);
         println!("entries == {:?}\nldah = {:?}", entries, ldah);
@@ -112,15 +125,12 @@ fn code() -> Result<(), Box<Error>> {
         let gdo = GET_DOCUMENT_OPTIONS_DEFAULT.clone();
         let id = format!("unique_id{}", 3);
 
-        let (entry, gdah) =
-            core.run(
-                client.get_document::<_, MySampleStructOwned>(
-                    &database_name,
-                    &collection_name,
-                    &id,
-                    &gdo,
-                ),
-            ).unwrap();
+        let (entry, gdah) = core.run(client.get_document::<_, _, _, MySampleStructOwned>(
+            &database_name,
+            &collection_name,
+            &id,
+            &gdo,
+        )).unwrap();
 
         assert_eq!(entry.is_some(), true);
         println!("entry == {:?}\ngdah == {:?}", entry, gdah);
@@ -128,15 +138,12 @@ fn code() -> Result<(), Box<Error>> {
         // This id should not be found. We expect None as result
         let id = format!("unique_id{}", 100);
 
-        let (entry, gdah) =
-            core.run(
-                client.get_document::<_, MySampleStructOwned>(
-                    &database_name,
-                    &collection_name,
-                    &id,
-                    &gdo,
-                ),
-            ).unwrap();
+        let (entry, gdah) = core.run(client.get_document::<_, _, _, MySampleStructOwned>(
+            &database_name,
+            &collection_name,
+            &id,
+            &gdo,
+        )).unwrap();
 
         assert_eq!(entry.is_some(), false);
         println!("entry == {:?}\ngdah == {:?}", entry, gdah);

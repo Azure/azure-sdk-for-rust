@@ -1,3 +1,11 @@
+## [0.4.2](https://github.com/MindFlavor/AzureSDKForRust/releases/tag/0.4.2) (2017-07-05)
+
+**Bugfix:**
+
+* Corrected a type mistake in multiple ```AsRef<str>``` parameters.
+* Implemented ```AsRef<str>``` in Cosmos document and collection.
+* Fixed type mismatch in examples (in README.md too).
+
 ## [0.4.1](https://github.com/MindFlavor/AzureSDKForRust/releases/tag/0.4.1) (2017-07-05)
 
 **Implemented features:**

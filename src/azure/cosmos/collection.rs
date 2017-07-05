@@ -121,3 +121,9 @@ impl Deref for Collection {
         &self.id
     }
 }
+
+impl AsRef<str> for Collection {
+    fn as_ref(&self) -> &str {
+        &self.id
+    }
+}
