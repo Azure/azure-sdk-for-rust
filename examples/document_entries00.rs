@@ -122,7 +122,26 @@ fn code() -> Result<(), Box<Error>> {
                 ),
             ).unwrap();
 
+        assert_eq!(entry.is_some(), true);
         println!("entry == {:?}\ngdah == {:?}", entry, gdah);
+
+        // This id should not be found. We expect None as result
+        let id = format!("unique_id{}", 100);
+
+        let (entry, gdah) =
+            core.run(
+                client.get_document::<_, MySampleStructOwned>(
+                    &database_name,
+                    &collection_name,
+                    &id,
+                    &gdo,
+                ),
+            ).unwrap();
+
+        assert_eq!(entry.is_some(), false);
+        println!("entry == {:?}\ngdah == {:?}", entry, gdah);
+
+
     }
 
     Ok(())

@@ -5,7 +5,8 @@ use azure::cosmos::collection::Collection;
 use azure::cosmos::document::{IndexingDirective, DocumentAttributes};
 
 use azure::core::errors::{AzureError, check_status_extract_body,
-                          check_status_extract_headers_and_body};
+                          check_status_extract_headers_and_body, extract_status_headers_and_body,
+                          UnexpectedHTTPResult};
 
 use azure::cosmos::request_response::{ListDatabasesResponse, CreateDatabaseRequest,
                                       ListCollectionsResponse, ListDocumentsResponseAttributes,
@@ -18,7 +19,7 @@ use azure::cosmos::list_documents::{ListDocumentsOptions, ListDocumentsResponseA
 use azure::cosmos::get_document::{GetDocumentOptions, GetDocumentAdditionalHeaders};
 use azure::core::incompletevector::ContinuationToken;
 
-use std::str::FromStr;
+use std::str::{FromStr, from_utf8};
 
 use serde::Serialize;
 use serde::de::DeserializeOwned;
@@ -41,7 +42,7 @@ use tokio_core;
 use hyper_tls;
 use native_tls;
 
-use futures::future::{Future, ok, done};
+use futures::future::*;
 
 const AZURE_VERSION: &'static str = "2017-02-22";
 const VERSION: &'static str = "1.0";
@@ -814,7 +815,7 @@ impl<'a> Client {
         collection: S,
         document_id: S,
         gdo: &GetDocumentOptions,
-    ) -> impl Future<Item = (Document<T>, GetDocumentAdditionalHeaders), Error = AzureError>
+    ) -> impl Future<Item = (Option<Document<T>>, GetDocumentAdditionalHeaders), Error = AzureError>
     where
         S: AsRef<str>,
         T: DeserializeOwned,
@@ -834,35 +835,62 @@ impl<'a> Client {
         let req = self.get_document_create_request(database, collection, document_id, gdo);
 
         done(req).from_err().and_then(move |future_response| {
-            check_status_extract_headers_and_body(future_response, StatusCode::Ok)
-                .and_then(move |(headers, whole_body)| {
-                    debug!("headers == {:?}", headers);
-
-                    let gdah = GetDocumentAdditionalHeaders {
-                        // Here we assume the Charge header to always be present.
-                        // If problems arise we
-                        // will change the field to be Option(al).
-                        charge: *(headers.get::<Charge>().unwrap() as &u64),
-                    };
-                    debug!("gdah == {:?}", gdah);
-                    done(get_document_extract_result::<T>(&whole_body))
-                        .and_then(move |body| ok((body, gdah)))
-                })
+            extract_status_headers_and_body(future_response).and_then(
+                move |(status, headers, v_body)| {
+                    done(get_document_extract_result(status, headers, &v_body))
+                },
+            )
         })
     }
 }
 
-fn get_document_extract_result<'a, T>(v_body: &[u8]) -> Result<Document<T>, AzureError>
+fn get_document_extract_result<'a, T>(
+    status: hyper::StatusCode,
+    headers: hyper::Headers,
+    v_body: &[u8],
+) -> Result<(Option<Document<T>>, GetDocumentAdditionalHeaders), AzureError>
 where
     T: DeserializeOwned,
 {
-    // we will proceed in two steps:
-    // 1- Deserialize the result as DocumentAttributes. The extra field will be ignored.
-    // 2- Deserialize the result a type T. The extra fields will be ignored.
-    Ok(Document {
-        document_attributes: serde_json::from_slice::<DocumentAttributes>(v_body)?,
-        entity: serde_json::from_slice::<T>(v_body)?,
-    })
+    match status {
+        StatusCode::Ok => {
+            let gdah = GetDocumentAdditionalHeaders {
+                charge: *(headers.get::<Charge>().unwrap() as &u64),
+            };
+            debug!("gdah == {:?}", gdah);
+
+            // we will proceed in two steps:
+            // 1- Deserialize the result as DocumentAttributes. The extra field will be ignored.
+            // 2- Deserialize the result a type T. The extra fields will be ignored.
+            let document = Document {
+                document_attributes: serde_json::from_slice::<DocumentAttributes>(v_body)?,
+                entity: serde_json::from_slice::<T>(v_body)?,
+            };
+
+            Ok((Some(document), gdah))
+        }
+        // NotFound is not an error so we return None along
+        // with the additional headers.
+        StatusCode::NotFound => {
+            let gdah = GetDocumentAdditionalHeaders {
+                charge: *(headers.get::<Charge>().unwrap() as &u64),
+            };
+            debug!("gdah == {:?}", gdah);
+
+            Ok((None, gdah))
+        }
+        _ => {
+            // We treat everything else as an error. We could
+            // handle 304 (Not modified) in a specific way but
+            // for now we do not.
+            let error_text = from_utf8(v_body)?;
+            Err(AzureError::UnexpectedHTTPResult(UnexpectedHTTPResult::new(
+                StatusCode::Ok,
+                status,
+                error_text,
+            )))
+        }
+    }
 }
 
 fn list_documents_extract_result<'a, T>(
