@@ -11,12 +11,13 @@ use azure::core::errors::{AzureError, check_status_extract_body,
 use azure::cosmos::request_response::{ListDatabasesResponse, CreateDatabaseRequest,
                                       ListCollectionsResponse, ListDocumentsResponseAttributes,
                                       ListDocumentsResponseEntities, ListDocumentsResponse,
-                                      Document, ListDocumentsResponseAdditionalHeaders};
+                                      Document, ListDocumentsResponseAdditionalHeaders,
+                                      GetDocumentAdditionalHeaders, GetDocumentResponse};
 use azure::core::COMPLETE_ENCODE_SET;
 
 use azure::cosmos::ConsistencyLevel;
 use azure::cosmos::list_documents::ListDocumentsOptions;
-use azure::cosmos::get_document::{GetDocumentOptions, GetDocumentAdditionalHeaders};
+use azure::cosmos::get_document::GetDocumentOptions;
 use azure::core::incompletevector::ContinuationToken;
 
 use std::str::{FromStr, from_utf8};
@@ -790,7 +791,7 @@ impl<'a> Client {
         collection: S2,
         document_id: S3,
         gdo: &GetDocumentOptions,
-    ) -> impl Future<Item = (Option<Document<T>>, GetDocumentAdditionalHeaders), Error = AzureError>
+    ) -> impl Future<Item = GetDocumentResponse<T>, Error = AzureError>
     where
         S1: AsRef<str>,
         S2: AsRef<str>,
@@ -825,7 +826,7 @@ fn get_document_extract_result<'a, T>(
     status: hyper::StatusCode,
     headers: hyper::Headers,
     v_body: &[u8],
-) -> Result<(Option<Document<T>>, GetDocumentAdditionalHeaders), AzureError>
+) -> Result<GetDocumentResponse<T>, AzureError>
 where
     T: DeserializeOwned,
 {
@@ -844,7 +845,10 @@ where
                 entity: serde_json::from_slice::<T>(v_body)?,
             };
 
-            Ok((Some(document), gdah))
+            Ok(GetDocumentResponse {
+                document: Some(document),
+                additional_headers: gdah,
+            })
         }
         // NotFound is not an error so we return None along
         // with the additional headers.
@@ -854,7 +858,10 @@ where
             };
             debug!("gdah == {:?}", gdah);
 
-            Ok((None, gdah))
+            Ok(GetDocumentResponse {
+                document: None,
+                additional_headers: gdah,
+            })
         }
         _ => {
             // We treat everything else as an error. We could

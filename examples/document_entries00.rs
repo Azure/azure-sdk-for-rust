@@ -15,7 +15,8 @@ use azure_sdk_for_rust::azure::cosmos::authorization_token::{AuthorizationToken,
 use azure_sdk_for_rust::azure::cosmos::client::Client;
 use azure_sdk_for_rust::azure::cosmos::list_documents::LIST_DOCUMENTS_OPTIONS_DEFAULT;
 use azure_sdk_for_rust::azure::cosmos::get_document::GET_DOCUMENT_OPTIONS_DEFAULT;
-use azure_sdk_for_rust::azure::cosmos::request_response::ListDocumentsResponse;
+use azure_sdk_for_rust::azure::cosmos::request_response::{ListDocumentsResponse,
+                                                          GetDocumentResponse};
 
 #[macro_use]
 extern crate serde_derive;
@@ -127,30 +128,22 @@ fn code() -> Result<(), Box<Error>> {
         let gdo = GET_DOCUMENT_OPTIONS_DEFAULT.clone();
         let id = format!("unique_id{}", 3);
 
-        let (entry, gdah) = core.run(client.get_document::<_, _, _, MySampleStructOwned>(
-            &database_name,
-            &collection_name,
-            &id,
-            &gdo,
-        )).unwrap();
+        let response: GetDocumentResponse<MySampleStructOwned> = core.run(
+            client.get_document(&database_name, &collection_name, &id, &gdo),
+        ).unwrap();
 
-        assert_eq!(entry.is_some(), true);
-        println!("entry == {:?}\ngdah == {:?}", entry, gdah);
+        assert_eq!(response.document.is_some(), true);
+        println!("response == {:?}", response);
 
         // This id should not be found. We expect None as result
         let id = format!("unique_id{}", 100);
 
-        let (entry, gdah) = core.run(client.get_document::<_, _, _, MySampleStructOwned>(
-            &database_name,
-            &collection_name,
-            &id,
-            &gdo,
-        )).unwrap();
+        let response: GetDocumentResponse<MySampleStructOwned> = core.run(
+            client.get_document(&database_name, &collection_name, &id, &gdo),
+        ).unwrap();
 
-        assert_eq!(entry.is_some(), false);
-        println!("entry == {:?}\ngdah == {:?}", entry, gdah);
-
-
+        assert_eq!(response.document.is_some(), false);
+        println!("response == {:?}", response);
     }
 
     Ok(())

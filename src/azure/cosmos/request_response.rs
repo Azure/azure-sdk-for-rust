@@ -62,3 +62,14 @@ pub struct ListDocumentsResponse<T> {
     pub documents: Vec<Document<T>>,
     pub additional_headers: ListDocumentsResponseAdditionalHeaders,
 }
+
+#[derive(Debug, Clone)]
+pub struct GetDocumentAdditionalHeaders {
+    pub charge: u64,
+}
+
+#[derive(Debug, Clone)]
+pub struct GetDocumentResponse<T> {
+    pub document: Option<Document<T>>,
+    pub additional_headers: GetDocumentAdditionalHeaders,
+}
