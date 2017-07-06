@@ -119,7 +119,7 @@ fn code() -> Result<(), Box<Error>> {
         println!("response == {:?}", response);
 
         // we got the last 2 entries. Now continuation_token
-        // must be clear
+        // must be absent
         assert_eq!(
             response.additional_headers.continuation_token.is_some(),
             false
