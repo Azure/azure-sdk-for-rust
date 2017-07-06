@@ -11,11 +11,11 @@ use azure::core::errors::{AzureError, check_status_extract_body,
 use azure::cosmos::request_response::{ListDatabasesResponse, CreateDatabaseRequest,
                                       ListCollectionsResponse, ListDocumentsResponseAttributes,
                                       ListDocumentsResponseEntities, ListDocumentsResponse,
-                                      Document};
+                                      Document, ListDocumentsResponseAdditionalHeaders};
 use azure::core::COMPLETE_ENCODE_SET;
 
 use azure::cosmos::ConsistencyLevel;
-use azure::cosmos::list_documents::{ListDocumentsOptions, ListDocumentsResponseAdditionalHeaders};
+use azure::cosmos::list_documents::ListDocumentsOptions;
 use azure::cosmos::get_document::{GetDocumentOptions, GetDocumentAdditionalHeaders};
 use azure::core::incompletevector::ContinuationToken;
 
@@ -708,13 +708,7 @@ impl<'a> Client {
         database: S1,
         collection: S2,
         ldo: &ListDocumentsOptions,
-    ) -> impl Future<
-        Item = (
-            ListDocumentsResponse<T>,
-            ListDocumentsResponseAdditionalHeaders,
-        ),
-        Error = AzureError,
-    >
+    ) -> impl Future<Item = ListDocumentsResponse<T>, Error = AzureError>
     where
         S1: AsRef<str>,
         S2: AsRef<str>,
@@ -735,31 +729,8 @@ impl<'a> Client {
         done(req).from_err().and_then(move |future_response| {
             check_status_extract_headers_and_body(future_response, StatusCode::Ok)
                 .and_then(move |(headers, whole_body)| {
-                    debug!("headers == {:?}", headers);
-
-                    let ado = ListDocumentsResponseAdditionalHeaders {
-                        // This match just tries to extract the info and convert it
-                        // into the correct type. It is complicated because headers
-                        // can be missing and also because headers.get<T> will return
-                        // a T reference (&T) so we need to cast it into the
-                        // correct type and clone it (in this case into a &str that will
-                        // become a String using to_owned())
-                        continuation_token: match headers.get::<ContinuationTokenHeader>() {
-                            Some(s) => Some((s as &str).to_owned()),
-                            None => None,
-                        },
-                        // Here we assume the Charge header to always be present.
-                        // If problems arise we
-                        // will change the field to be Option(al).
-                        charge: *(headers.get::<Charge>().unwrap() as &u64),
-                        etag: match headers.get::<Etag>() {
-                            Some(s) => Some((s as &str).to_owned()),
-                            None => None,
-                        },
-                    };
-                    debug!("ado == {:?}", ado);
-                    done(list_documents_extract_result::<T>(&whole_body))
-                        .and_then(move |body| ok((body, ado)))
+                    done(list_documents_extract_result::<T>(&whole_body, headers))
+                        .and_then(move |result| ok(result))
                 })
         })
     }
@@ -901,10 +872,35 @@ where
 
 fn list_documents_extract_result<'a, T>(
     v_body: &[u8],
+    headers: Headers,
 ) -> Result<ListDocumentsResponse<T>, AzureError>
 where
     T: DeserializeOwned,
 {
+    debug!("headers == {:?}", headers);
+
+    let ado = ListDocumentsResponseAdditionalHeaders {
+        // This match just tries to extract the info and convert it
+        // into the correct type. It is complicated because headers
+        // can be missing and also because headers.get<T> will return
+        // a T reference (&T) so we need to cast it into the
+        // correct type and clone it (in this case into a &str that will
+        // become a String using to_owned())
+        continuation_token: match headers.get::<ContinuationTokenHeader>() {
+            Some(s) => Some((s as &str).to_owned()),
+            None => None,
+        },
+        // Here we assume the Charge header to always be present.
+        // If problems arise we
+        // will change the field to be Option(al).
+        charge: *(headers.get::<Charge>().unwrap() as &u64),
+        etag: match headers.get::<Etag>() {
+            Some(s) => Some((s as &str).to_owned()),
+            None => None,
+        },
+    };
+    debug!("ado == {:?}", ado);
+
     // we will proceed in three steps:
     // 1- Deserialize the result as DocumentAttributes. The extra field will be ignored.
     // 2- Deserialize the result a type T. The extra fields will be ignored.
@@ -928,6 +924,7 @@ where
     Ok(ListDocumentsResponse {
         rid: document_attributes.rid,
         documents: v,
+        additional_headers: ado,
     })
 }
 

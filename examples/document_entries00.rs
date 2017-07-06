@@ -15,6 +15,7 @@ use azure_sdk_for_rust::azure::cosmos::authorization_token::{AuthorizationToken,
 use azure_sdk_for_rust::azure::cosmos::client::Client;
 use azure_sdk_for_rust::azure::cosmos::list_documents::LIST_DOCUMENTS_OPTIONS_DEFAULT;
 use azure_sdk_for_rust::azure::cosmos::get_document::GET_DOCUMENT_OPTIONS_DEFAULT;
+use azure_sdk_for_rust::azure::cosmos::request_response::ListDocumentsResponse;
 
 #[macro_use]
 extern crate serde_derive;
@@ -90,37 +91,38 @@ fn code() -> Result<(), Box<Error>> {
     let mut ldo = LIST_DOCUMENTS_OPTIONS_DEFAULT.clone();
     ldo.max_item_count = Some(3);
 
-    let (entries, ldah) = core.run(
-        client.list_documents::<_, _, MySampleStructOwned>(&database_name, &collection_name, &ldo),
+    let response: ListDocumentsResponse<MySampleStructOwned> = core.run(
+        client.list_documents(&database_name, &collection_name, &ldo),
     ).unwrap();
 
-    assert_eq!(entries.documents.len(), 3);
-    println!("entries == {:?}\nldah = {:?}", entries, ldah);
+    assert_eq!(response.documents.len(), 3);
+    println!("response == {:?}", response);
 
     // we inserted 5 documents and retrieved the first 3.
     // continuation_token must be present
-    assert_eq!(ldah.continuation_token.is_some(), true);
-    if let Some(ct) = ldah.continuation_token {
+    assert_eq!(
+        response.additional_headers.continuation_token.is_some(),
+        true
+    );
+    if let Some(ct) = response.additional_headers.continuation_token {
         println!("ct == {}", ct);
 
         let mut ldo = LIST_DOCUMENTS_OPTIONS_DEFAULT.clone();
         ldo.continuation_token = Some(&ct);
 
-        let (entries, ldah) =
-            core.run(
-                client.list_documents::<_, _, MySampleStructOwned>(
-                    &database_name,
-                    &collection_name,
-                    &ldo,
-                ),
-            ).unwrap();
+        let response: ListDocumentsResponse<MySampleStructOwned> = core.run(
+            client.list_documents(&database_name, &collection_name, &ldo),
+        ).unwrap();
 
-        assert_eq!(entries.documents.len(), 2);
-        println!("entries == {:?}\nldah = {:?}", entries, ldah);
+        assert_eq!(response.documents.len(), 2);
+        println!("response == {:?}", response);
 
         // we got the last 2 entries. Now continuation_token
         // must be clear
-        assert_eq!(ldah.continuation_token.is_some(), false);
+        assert_eq!(
+            response.additional_headers.continuation_token.is_some(),
+            false
+        );
 
         let gdo = GET_DOCUMENT_OPTIONS_DEFAULT.clone();
         let id = format!("unique_id{}", 3);
