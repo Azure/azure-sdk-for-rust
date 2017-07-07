@@ -4,16 +4,14 @@
 
 [![Crate](https://img.shields.io/crates/v/azure_sdk_for_rust.svg)](https://crates.io/crates/azure_sdk_for_rust) [![legal](https://img.shields.io/crates/l/azure_sdk_for_rust.svg)](LICENSE) [![cratedown](https://img.shields.io/crates/d/azure_sdk_for_rust.svg)](https://crates.io/crates/azure_sdk_for_rust) [![cratelastdown](https://img.shields.io/crates/dv/azure_sdk_for_rust.svg)](https://crates.io/crates/azure_sdk_for_rust)
 
-[![tag](https://img.shields.io/github/tag/mindflavor/AzureSDKForRust.svg)](https://github.com/MindFlavor/AzureSDKForRust/tree/0.4.2)
-[![release](https://img.shields.io/github/release/mindflavor/AzureSDKForRust.svg)](https://github.com/MindFlavor/AzureSDKForRust/tree/0.4.2)
-[![commitssince](https://img.shields.io/github/commits-since/mindflavor/AzureSDKForRust/0.4.2.svg)](https://img.shields.io/github/commits-since/mindflavor/AzureSDKForRust/0.4.2.svg)
+[![tag](https://img.shields.io/github/tag/mindflavor/AzureSDKForRust.svg)](https://github.com/MindFlavor/AzureSDKForRust/tree/0.4.3)
+[![release](https://img.shields.io/github/release/mindflavor/AzureSDKForRust.svg)](https://github.com/MindFlavor/AzureSDKForRust/tree/0.4.3)
+[![commitssince](https://img.shields.io/github/commits-since/mindflavor/AzureSDKForRust/0.4.3.svg)](https://img.shields.io/github/commits-since/mindflavor/AzureSDKForRust/0.4.3.svg)
 
 ## Introduction
 Microsoft Azure expose its technologies via REST API. These APIs are easily consumable from any language (good) but are weakly typed. With this library and its related [crate](https://crates.io/crates/azure_sdk_for_rust/) you can exploit the power of Microsoft Azure from Rust in a idiomatic way.
 
-This crate relies heavily on the excellent crate called [Hyper](https://github.com/hyperium/hyper). As of this library version [0.4.2](https://github.com/MindFlavor/AzureSDKForRust/releases/tag/0.4.2) all the methods are future-aware. That is, I'm using the latest Hyper code.
-
-Rust, however, still requires you to Box every future returned by a method. The alternative is to use the ```impl Trait``` feature which is nightly-only. Since I've used it everywhere this library will require a nightly Rust compiler until the ```impl Trait``` makes its way to the stable channel. Also since I'm using an unstable feature these is a very good chance of this code to break in the future.
+This crate relies heavily on the excellent crate called [Hyper](https://github.com/hyperium/hyper). As of this library version [0.4.0](https://github.com/MindFlavor/AzureSDKForRust/releases/tag/0.4.0) all the methods are future-aware. Rust, however, still requires you to Box every future returned by a method. The alternative is to use the ```impl Trait``` feature which is nightly-only. Since I've used it everywhere this library __will require a nightly Rust compiler__ until the ```impl Trait``` makes its way to the stable channel. Also since I'm using an unstable feature these is a very good chance of this code to break in the future.
 
 > **NOTE:** This repository is under heavy development and
 is likely to break over time. The current releases will probabily contain bugs. As usual open issues if you find any.
@@ -22,7 +20,7 @@ is likely to break over time. The current releases will probabily contain bugs. 
 Although I am a Microsoft employee, this is not a Microsoft endorsed project. It's simply a pet project of mine: I love Rust (who doesn't? :smirk:) and Microsoft Azure technologies so I thought to close the gap between them. It's also a good project for learning Rust. This library relies heavily on [Hyper](https://github.com/hyperium/hyper). We use the latest Hyper code so this library is fully async with Futures and Tokio.
  
 ## Example
-You can find examples in the [```examples```](https://github.com/MindFlavor/AzureSDKForRust/tree/master/examples) folder. Here is a sample however:
+You can find examples in the [```examples```](https://github.com/MindFlavor/AzureSDKForRust/tree/master/examples) folder. Here is a glimpse:
 
 ### main.rs
 
@@ -258,7 +256,10 @@ If you want to contribute please do! No formality required! :wink:. Please note 
 
 Azure tables entities can be manipulated in batches. The entities are serialized in ```JSON```.
 
-## Run E2E test (in progress)
+## Run E2E test 
+
+### Linux 
+
 ```bash
 export STORAGE_ACCOUNT=<account>
 export STORAGE_MASTER_KEY=<key>
@@ -267,6 +268,20 @@ export AZURE_SERVICE_BUS_NAMESPACE=<azure_service_bus_namespace>
 export AZURE_EVENT_HUB_NAME=<azure_event_hub_name>
 export AZURE_POLICY_NAME=<azure_policy_name>
 export AZURE_POLICY_KEY=<azure policy key>
+
+cargo test --features=test_e2e
+```
+
+### Windows
+
+```dos
+set STORAGE_ACCOUNT=<account>
+set STORAGE_MASTER_KEY=<key>
+
+set AZURE_SERVICE_BUS_NAMESPACE=<azure_service_bus_namespace>
+set AZURE_EVENT_HUB_NAME=<azure_event_hub_name>
+set AZURE_POLICY_NAME=<azure_policy_name>
+set AZURE_POLICY_KEY=<azure policy key>
 
 cargo test --features=test_e2e
 ```
