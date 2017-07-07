@@ -14,8 +14,3 @@ pub const GET_DOCUMENT_OPTIONS_DEFAULT: GetDocumentOptions = GetDocumentOptions 
     if_none_match: None,
     partition_key: None,
 };
-
-#[derive(Debug, Clone)]
-pub struct GetDocumentAdditionalHeaders {
-    pub charge: u64,
-}

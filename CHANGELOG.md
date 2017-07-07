@@ -1,3 +1,9 @@
+## [0.4.3](https://github.com/MindFlavor/AzureSDKForRust/releases/tag/0.4.3) (2017-07-07)
+
+**Breaking changes:**
+
+* Changed return type from tuple to single struct to make methods more ergonomic. Issue [https://github.com/MindFlavor/AzureSDKForRust/issues/26](https://github.com/MindFlavor/AzureSDKForRust/issues/26).
+
 ## [0.4.2](https://github.com/MindFlavor/AzureSDKForRust/releases/tag/0.4.2) (2017-07-05)
 
 **Bugfix:**

@@ -49,8 +49,27 @@ pub struct Document<T> {
     pub entity: T,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone)]
+pub struct ListDocumentsResponseAdditionalHeaders {
+    pub continuation_token: Option<String>,
+    pub charge: u64,
+    pub etag: Option<String>,
+}
+
+#[derive(Debug, Clone)]
 pub struct ListDocumentsResponse<T> {
     pub rid: String,
     pub documents: Vec<Document<T>>,
+    pub additional_headers: ListDocumentsResponseAdditionalHeaders,
+}
+
+#[derive(Debug, Clone)]
+pub struct GetDocumentAdditionalHeaders {
+    pub charge: u64,
+}
+
+#[derive(Debug, Clone)]
+pub struct GetDocumentResponse<T> {
+    pub document: Option<Document<T>>,
+    pub additional_headers: GetDocumentAdditionalHeaders,
 }

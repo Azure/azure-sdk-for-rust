@@ -66,7 +66,7 @@ fn list_containers() {
 
         trace!("ret {:?}\n\n", ret);
         if !ret.is_complete() {
-            lco.next_marker = Some(ret.next_marker().unwrap().to_owned());
+            lco.next_marker = Some(ret.token().unwrap().to_owned());
         } else {
             break;
         }
@@ -127,10 +127,10 @@ fn put_blob() {
 }
 
 fn initialize() -> Result<(Client, Core), AzureError> {
-    let account = std::env::var("STORAGE_ACCOUNT")
-        .expect("Set env variable STORAGE_ACCOUNT first!");
-    let master_key = std::env::var("STORAGE_MASTER_KEY")
-        .expect("Set env variable STORAGE_MASTER_KEY first!");
+    let account =
+        std::env::var("STORAGE_ACCOUNT").expect("Set env variable STORAGE_ACCOUNT first!");
+    let master_key =
+        std::env::var("STORAGE_MASTER_KEY").expect("Set env variable STORAGE_MASTER_KEY first!");
     let core = Core::new()?;
 
     Ok((Client::new(&core.handle(), &account, &master_key)?, core))

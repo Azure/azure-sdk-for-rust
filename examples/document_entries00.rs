@@ -15,6 +15,8 @@ use azure_sdk_for_rust::azure::cosmos::authorization_token::{AuthorizationToken,
 use azure_sdk_for_rust::azure::cosmos::client::Client;
 use azure_sdk_for_rust::azure::cosmos::list_documents::LIST_DOCUMENTS_OPTIONS_DEFAULT;
 use azure_sdk_for_rust::azure::cosmos::get_document::GET_DOCUMENT_OPTIONS_DEFAULT;
+use azure_sdk_for_rust::azure::cosmos::request_response::{ListDocumentsResponse,
+                                                          GetDocumentResponse};
 
 #[macro_use]
 extern crate serde_derive;
@@ -54,8 +56,8 @@ fn code() -> Result<(), Box<Error>> {
         "please specify collection name as second command line parameter",
     );
 
-    let master_key = std::env::var("COSMOS_MASTER_KEY")
-        .expect("Set env variable COSMOS_MASTER_KEY first!");
+    let master_key =
+        std::env::var("COSMOS_MASTER_KEY").expect("Set env variable COSMOS_MASTER_KEY first!");
     let account = std::env::var("COSMOS_ACCOUNT").expect("Set env variable COSMOS_ACCOUNT first!");
 
     let authorization_token = AuthorizationToken::new(account, TokenType::Master, master_key)?;
@@ -90,65 +92,58 @@ fn code() -> Result<(), Box<Error>> {
     let mut ldo = LIST_DOCUMENTS_OPTIONS_DEFAULT.clone();
     ldo.max_item_count = Some(3);
 
-    let (entries, ldah) = core.run(
-        client.list_documents::<_, _, MySampleStructOwned>(&database_name, &collection_name, &ldo),
+    let response: ListDocumentsResponse<MySampleStructOwned> = core.run(
+        client.list_documents(&database_name, &collection_name, &ldo),
     ).unwrap();
 
-    assert_eq!(entries.documents.len(), 3);
-    println!("entries == {:?}\nldah = {:?}", entries, ldah);
+    assert_eq!(response.documents.len(), 3);
+    println!("response == {:?}", response);
 
     // we inserted 5 documents and retrieved the first 3.
     // continuation_token must be present
-    assert_eq!(ldah.continuation_token.is_some(), true);
-    if let Some(ct) = ldah.continuation_token {
+    assert_eq!(
+        response.additional_headers.continuation_token.is_some(),
+        true
+    );
+    if let Some(ct) = response.additional_headers.continuation_token {
         println!("ct == {}", ct);
 
         let mut ldo = LIST_DOCUMENTS_OPTIONS_DEFAULT.clone();
         ldo.continuation_token = Some(&ct);
 
-        let (entries, ldah) =
-            core.run(
-                client.list_documents::<_, _, MySampleStructOwned>(
-                    &database_name,
-                    &collection_name,
-                    &ldo,
-                ),
-            ).unwrap();
+        let response: ListDocumentsResponse<MySampleStructOwned> = core.run(
+            client.list_documents(&database_name, &collection_name, &ldo),
+        ).unwrap();
 
-        assert_eq!(entries.documents.len(), 2);
-        println!("entries == {:?}\nldah = {:?}", entries, ldah);
+        assert_eq!(response.documents.len(), 2);
+        println!("response == {:?}", response);
 
         // we got the last 2 entries. Now continuation_token
-        // must be clear
-        assert_eq!(ldah.continuation_token.is_some(), false);
+        // must be absent
+        assert_eq!(
+            response.additional_headers.continuation_token.is_some(),
+            false
+        );
 
         let gdo = GET_DOCUMENT_OPTIONS_DEFAULT.clone();
         let id = format!("unique_id{}", 3);
 
-        let (entry, gdah) = core.run(client.get_document::<_, _, _, MySampleStructOwned>(
-            &database_name,
-            &collection_name,
-            &id,
-            &gdo,
-        )).unwrap();
+        let response: GetDocumentResponse<MySampleStructOwned> = core.run(
+            client.get_document(&database_name, &collection_name, &id, &gdo),
+        ).unwrap();
 
-        assert_eq!(entry.is_some(), true);
-        println!("entry == {:?}\ngdah == {:?}", entry, gdah);
+        assert_eq!(response.document.is_some(), true);
+        println!("response == {:?}", response);
 
         // This id should not be found. We expect None as result
         let id = format!("unique_id{}", 100);
 
-        let (entry, gdah) = core.run(client.get_document::<_, _, _, MySampleStructOwned>(
-            &database_name,
-            &collection_name,
-            &id,
-            &gdo,
-        )).unwrap();
+        let response: GetDocumentResponse<MySampleStructOwned> = core.run(
+            client.get_document(&database_name, &collection_name, &id, &gdo),
+        ).unwrap();
 
-        assert_eq!(entry.is_some(), false);
-        println!("entry == {:?}\ngdah == {:?}", entry, gdah);
-
-
+        assert_eq!(response.document.is_some(), false);
+        println!("response == {:?}", response);
     }
 
     Ok(())

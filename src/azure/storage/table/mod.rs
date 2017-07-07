@@ -46,7 +46,9 @@ impl TableService {
         &self,
         table_name: T,
     ) -> impl Future<Item = (), Error = AzureError> {
-        let body = &serde_json::to_string(&TableEntity { TableName: table_name.into() }).unwrap();
+        let body = &serde_json::to_string(&TableEntity {
+            TableName: table_name.into(),
+        }).unwrap();
         debug!("body == {}", body);
         let req = self.request_with_default_header(TABLE_TABLES, Method::Post, Some(body));
 

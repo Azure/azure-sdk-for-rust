@@ -372,8 +372,8 @@ mod test {
         headers.set(ContentType(get_default_json_mime()));
 
 
-        let u: url::Url = url::Url::parse("https://mindrust.table.core.windows.net/TABLES")
-            .unwrap();
+        let u: url::Url =
+            url::Url::parse("https://mindrust.table.core.windows.net/TABLES").unwrap();
         let method: Method = Method::Post;
         let service_type: ServiceType = ServiceType::Table;
 

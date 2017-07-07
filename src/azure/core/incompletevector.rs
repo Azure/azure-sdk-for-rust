@@ -20,7 +20,7 @@ impl<T> IncompleteVector<T> {
         self.token().is_none()
     }
 
-    fn token(&self) -> Option<&str> {
+    pub fn token(&self) -> Option<&str> {
         if let Some(ref t) = self.token {
             Some(t)
         } else {

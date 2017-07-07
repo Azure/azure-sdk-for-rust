@@ -11,12 +11,13 @@ use azure::core::errors::{AzureError, check_status_extract_body,
 use azure::cosmos::request_response::{ListDatabasesResponse, CreateDatabaseRequest,
                                       ListCollectionsResponse, ListDocumentsResponseAttributes,
                                       ListDocumentsResponseEntities, ListDocumentsResponse,
-                                      Document};
+                                      Document, ListDocumentsResponseAdditionalHeaders,
+                                      GetDocumentAdditionalHeaders, GetDocumentResponse};
 use azure::core::COMPLETE_ENCODE_SET;
 
 use azure::cosmos::ConsistencyLevel;
-use azure::cosmos::list_documents::{ListDocumentsOptions, ListDocumentsResponseAdditionalHeaders};
-use azure::cosmos::get_document::{GetDocumentOptions, GetDocumentAdditionalHeaders};
+use azure::cosmos::list_documents::ListDocumentsOptions;
+use azure::cosmos::get_document::GetDocumentOptions;
 use azure::core::incompletevector::ContinuationToken;
 
 use std::str::{FromStr, from_utf8};
@@ -120,6 +121,8 @@ impl<'a> Client {
         Ok(self.hyper_client.request(request))
     }
 
+    /// Returns database list associated to the account
+    /// specified in the  `azure_sdk_for_rust::azure::cosmos::authorization_token::AuthorizationToken`.
     pub fn list_databases(&self) -> impl Future<Item = Vec<Database>, Error = AzureError> {
         trace!("list_databases called");
 
@@ -708,13 +711,7 @@ impl<'a> Client {
         database: S1,
         collection: S2,
         ldo: &ListDocumentsOptions,
-    ) -> impl Future<
-        Item = (
-            ListDocumentsResponse<T>,
-            ListDocumentsResponseAdditionalHeaders,
-        ),
-        Error = AzureError,
-    >
+    ) -> impl Future<Item = ListDocumentsResponse<T>, Error = AzureError>
     where
         S1: AsRef<str>,
         S2: AsRef<str>,
@@ -735,31 +732,8 @@ impl<'a> Client {
         done(req).from_err().and_then(move |future_response| {
             check_status_extract_headers_and_body(future_response, StatusCode::Ok)
                 .and_then(move |(headers, whole_body)| {
-                    debug!("headers == {:?}", headers);
-
-                    let ado = ListDocumentsResponseAdditionalHeaders {
-                        // This match just tries to extract the info and convert it
-                        // into the correct type. It is complicated because headers
-                        // can be missing and also because headers.get<T> will return
-                        // a T reference (&T) so we need to cast it into the
-                        // correct type and clone it (in this case into a &str that will
-                        // become a String using to_owned())
-                        continuation_token: match headers.get::<ContinuationTokenHeader>() {
-                            Some(s) => Some((s as &str).to_owned()),
-                            None => None,
-                        },
-                        // Here we assume the Charge header to always be present.
-                        // If problems arise we
-                        // will change the field to be Option(al).
-                        charge: *(headers.get::<Charge>().unwrap() as &u64),
-                        etag: match headers.get::<Etag>() {
-                            Some(s) => Some((s as &str).to_owned()),
-                            None => None,
-                        },
-                    };
-                    debug!("ado == {:?}", ado);
-                    done(list_documents_extract_result::<T>(&whole_body))
-                        .and_then(move |body| ok((body, ado)))
+                    done(list_documents_extract_result::<T>(&whole_body, headers))
+                        .and_then(move |result| ok(result))
                 })
         })
     }
@@ -819,7 +793,7 @@ impl<'a> Client {
         collection: S2,
         document_id: S3,
         gdo: &GetDocumentOptions,
-    ) -> impl Future<Item = (Option<Document<T>>, GetDocumentAdditionalHeaders), Error = AzureError>
+    ) -> impl Future<Item = GetDocumentResponse<T>, Error = AzureError>
     where
         S1: AsRef<str>,
         S2: AsRef<str>,
@@ -854,7 +828,7 @@ fn get_document_extract_result<'a, T>(
     status: hyper::StatusCode,
     headers: hyper::Headers,
     v_body: &[u8],
-) -> Result<(Option<Document<T>>, GetDocumentAdditionalHeaders), AzureError>
+) -> Result<GetDocumentResponse<T>, AzureError>
 where
     T: DeserializeOwned,
 {
@@ -873,7 +847,10 @@ where
                 entity: serde_json::from_slice::<T>(v_body)?,
             };
 
-            Ok((Some(document), gdah))
+            Ok(GetDocumentResponse {
+                document: Some(document),
+                additional_headers: gdah,
+            })
         }
         // NotFound is not an error so we return None along
         // with the additional headers.
@@ -883,7 +860,10 @@ where
             };
             debug!("gdah == {:?}", gdah);
 
-            Ok((None, gdah))
+            Ok(GetDocumentResponse {
+                document: None,
+                additional_headers: gdah,
+            })
         }
         _ => {
             // We treat everything else as an error. We could
@@ -901,10 +881,35 @@ where
 
 fn list_documents_extract_result<'a, T>(
     v_body: &[u8],
+    headers: Headers,
 ) -> Result<ListDocumentsResponse<T>, AzureError>
 where
     T: DeserializeOwned,
 {
+    debug!("headers == {:?}", headers);
+
+    let ado = ListDocumentsResponseAdditionalHeaders {
+        // This match just tries to extract the info and convert it
+        // into the correct type. It is complicated because headers
+        // can be missing and also because headers.get<T> will return
+        // a T reference (&T) so we need to cast it into the
+        // correct type and clone it (in this case into a &str that will
+        // become a String using to_owned())
+        continuation_token: match headers.get::<ContinuationTokenHeader>() {
+            Some(s) => Some((s as &str).to_owned()),
+            None => None,
+        },
+        // Here we assume the Charge header to always be present.
+        // If problems arise we
+        // will change the field to be Option(al).
+        charge: *(headers.get::<Charge>().unwrap() as &u64),
+        etag: match headers.get::<Etag>() {
+            Some(s) => Some((s as &str).to_owned()),
+            None => None,
+        },
+    };
+    debug!("ado == {:?}", ado);
+
     // we will proceed in three steps:
     // 1- Deserialize the result as DocumentAttributes. The extra field will be ignored.
     // 2- Deserialize the result a type T. The extra fields will be ignored.
@@ -928,6 +933,7 @@ where
     Ok(ListDocumentsResponse {
         rid: document_attributes.rid,
         documents: v,
+        additional_headers: ado,
     })
 }
 
@@ -1098,8 +1104,8 @@ mod tests {
 
     #[test]
     fn string_to_sign_00() {
-        let time = chrono::DateTime::parse_from_rfc3339("1900-01-01T01:00:00.000000000+00:00")
-            .unwrap();
+        let time =
+            chrono::DateTime::parse_from_rfc3339("1900-01-01T01:00:00.000000000+00:00").unwrap();
         let time = time.with_timezone(&chrono::Utc);
         let time = format!("{}", time.format(TIME_FORMAT));
 
@@ -1122,8 +1128,8 @@ mon, 01 jan 1900 01:00:00 gmt
 
     #[test]
     fn generate_authorization_00() {
-        let time = chrono::DateTime::parse_from_rfc3339("1900-01-01T01:00:00.000000000+00:00")
-            .unwrap();
+        let time =
+            chrono::DateTime::parse_from_rfc3339("1900-01-01T01:00:00.000000000+00:00").unwrap();
         let time = time.with_timezone(&chrono::Utc);
         let time = format!("{}", time.format(TIME_FORMAT));
 
@@ -1150,8 +1156,8 @@ mon, 01 jan 1900 01:00:00 gmt
 
     #[test]
     fn generate_authorization_01() {
-        let time = chrono::DateTime::parse_from_rfc3339("2017-04-27T00:51:12.000000000+00:00")
-            .unwrap();
+        let time =
+            chrono::DateTime::parse_from_rfc3339("2017-04-27T00:51:12.000000000+00:00").unwrap();
         let time = time.with_timezone(&chrono::Utc);
         let time = format!("{}", time.format(TIME_FORMAT));
 
