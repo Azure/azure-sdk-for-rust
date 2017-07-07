@@ -1104,8 +1104,8 @@ mod tests {
 
     #[test]
     fn string_to_sign_00() {
-        let time = chrono::DateTime::parse_from_rfc3339("1900-01-01T01:00:00.000000000+00:00")
-            .unwrap();
+        let time =
+            chrono::DateTime::parse_from_rfc3339("1900-01-01T01:00:00.000000000+00:00").unwrap();
         let time = time.with_timezone(&chrono::Utc);
         let time = format!("{}", time.format(TIME_FORMAT));
 
@@ -1128,8 +1128,8 @@ mon, 01 jan 1900 01:00:00 gmt
 
     #[test]
     fn generate_authorization_00() {
-        let time = chrono::DateTime::parse_from_rfc3339("1900-01-01T01:00:00.000000000+00:00")
-            .unwrap();
+        let time =
+            chrono::DateTime::parse_from_rfc3339("1900-01-01T01:00:00.000000000+00:00").unwrap();
         let time = time.with_timezone(&chrono::Utc);
         let time = format!("{}", time.format(TIME_FORMAT));
 
@@ -1156,8 +1156,8 @@ mon, 01 jan 1900 01:00:00 gmt
 
     #[test]
     fn generate_authorization_01() {
-        let time = chrono::DateTime::parse_from_rfc3339("2017-04-27T00:51:12.000000000+00:00")
-            .unwrap();
+        let time =
+            chrono::DateTime::parse_from_rfc3339("2017-04-27T00:51:12.000000000+00:00").unwrap();
         let time = time.with_timezone(&chrono::Utc);
         let time = format!("{}", time.format(TIME_FORMAT));
 

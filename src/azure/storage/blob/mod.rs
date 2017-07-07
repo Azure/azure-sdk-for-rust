@@ -332,11 +332,11 @@ impl Blob {
             lease_status: lease_status,
             lease_state: lease_state,
             lease_duration: lease_duration,
-            copy_id: None, // TODO
-            copy_status: None, // TODO
-            copy_source: None, // TODO
-            copy_progress: None, // TODO
-            copy_completion: None, // TODO
+            copy_id: None,                 // TODO
+            copy_status: None,             // TODO
+            copy_source: None,             // TODO
+            copy_progress: None,           // TODO
+            copy_completion: None,         // TODO
             copy_status_description: None, // TODO
         })
     }

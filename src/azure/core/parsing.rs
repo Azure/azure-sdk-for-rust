@@ -293,8 +293,8 @@ mod test {
         let elem: Element = XML.parse().unwrap();
 
         let res = super::traverse(&elem, &["Containers", "Container"], false).unwrap();
-        let res_final = super::traverse_single_must(res[1], &["Properties", "LeaseStatus"])
-            .unwrap();
+        let res_final =
+            super::traverse_single_must(res[1], &["Properties", "LeaseStatus"]).unwrap();
 
         if let Ok(inner) = super::inner_text(res_final) {
             assert_eq!(inner, "locked");
@@ -308,8 +308,8 @@ mod test {
         let elem: Element = XML.parse().unwrap();
 
         let res = super::traverse(&elem, &["Containers", "Container"], false).unwrap();
-        let res_final = super::traverse_single_optional(res[1], &["Properties", "Pinocchio"])
-            .unwrap();
+        let res_final =
+            super::traverse_single_optional(res[1], &["Properties", "Pinocchio"]).unwrap();
 
         assert_eq!(res_final, None);
     }

@@ -48,8 +48,8 @@ fn main() {
 fn code() -> Result<(), Box<Error>> {
     // Let's get Cosmos account and master key from env variables.
     // This helps automated testing.
-    let master_key = std::env::var("COSMOS_MASTER_KEY")
-        .expect("Set env variable COSMOS_MASTER_KEY first!");
+    let master_key =
+        std::env::var("COSMOS_MASTER_KEY").expect("Set env variable COSMOS_MASTER_KEY first!");
     let account = std::env::var("COSMOS_ACCOUNT").expect("Set env variable COSMOS_ACCOUNT first!");
 
     // First, we create an authorization token. There are two types of tokens, master and resource

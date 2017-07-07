@@ -56,8 +56,8 @@ fn code() -> Result<(), Box<Error>> {
         "please specify collection name as second command line parameter",
     );
 
-    let master_key = std::env::var("COSMOS_MASTER_KEY")
-        .expect("Set env variable COSMOS_MASTER_KEY first!");
+    let master_key =
+        std::env::var("COSMOS_MASTER_KEY").expect("Set env variable COSMOS_MASTER_KEY first!");
     let account = std::env::var("COSMOS_ACCOUNT").expect("Set env variable COSMOS_ACCOUNT first!");
 
     let authorization_token = AuthorizationToken::new(account, TokenType::Master, master_key)?;

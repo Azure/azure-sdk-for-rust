@@ -46,8 +46,8 @@ fn create_client() -> Result<(azure::service_bus::event_hub::Client, Core), Azur
     let policy_name = std::env::var("AZURE_POLICY_NAME")
         .expect("Please set AZURE_POLICY_NAME env variable first!");
 
-    let policy_key = std::env::var("AZURE_POLICY_KEY")
-        .expect("Please set AZURE_POLICY_KEY env variable first!");
+    let policy_key =
+        std::env::var("AZURE_POLICY_KEY").expect("Please set AZURE_POLICY_KEY env variable first!");
 
     let service_bus_namespace = std::env::var("AZURE_SERVICE_BUS_NAMESPACE")
         .expect("Please set AZURE_SERVICE_BUS_NAMESPACE env variable first!");

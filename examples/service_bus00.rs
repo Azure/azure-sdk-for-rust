@@ -29,10 +29,10 @@ fn code() -> Result<(), Box<Error>> {
         .expect("Set env variable AZURE_SERVICE_BUS_NAMESPACE first!");
     let event_hub_name = std::env::var("AZURE_EVENT_HUB_NAME")
         .expect("Set env variable AZURE_EVENT_HUB_NAME first!");
-    let policy_name = std::env::var("AZURE_POLICY_NAME")
-        .expect("Set env variable AZURE_POLICY_NAME first!");
-    let policy_key = std::env::var("AZURE_POLICY_KEY")
-        .expect("Set env variable AZURE_POLICY_KEY first!");
+    let policy_name =
+        std::env::var("AZURE_POLICY_NAME").expect("Set env variable AZURE_POLICY_NAME first!");
+    let policy_key =
+        std::env::var("AZURE_POLICY_KEY").expect("Set env variable AZURE_POLICY_KEY first!");
 
     let mut core = Core::new()?;
 
