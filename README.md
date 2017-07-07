@@ -274,7 +274,7 @@ cargo test --features=test_e2e
 
 ### Windows
 
-```dos
+```bat
 set STORAGE_ACCOUNT=<account>
 set STORAGE_MASTER_KEY=<key>
 
