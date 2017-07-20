@@ -1,3 +1,10 @@
+## [0.4.4](https://github.com/MindFlavor/AzureSDKForRust/releases/tag/0.4.4) (2017-07-20)
+
+**Implemented features:**
+
+* Added Cosmos query document (both a plan ```JSON``` and ```DeserializeOwned``` implementing structs).
+* Added more examples.
+
 ## [0.4.3](https://github.com/MindFlavor/AzureSDKForRust/releases/tag/0.4.3) (2017-07-07)
 
 **Breaking changes:**
