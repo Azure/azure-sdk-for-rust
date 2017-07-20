@@ -14,10 +14,9 @@ use futures::future::*;
 use tokio_core::reactor::Core;
 
 use azure_sdk_for_rust::azure::storage::client::Client;
-use azure_sdk_for_rust::azure::storage::blob::{BlobType, Blob, PUT_OPTIONS_DEFAULT,
-                                               LEASE_BLOB_OPTIONS_DEFAULT,
-                                               LIST_BLOB_OPTIONS_DEFAULT};
-use azure_sdk_for_rust::azure::core::lease::{LeaseState, LeaseStatus, LeaseAction};
+use azure_sdk_for_rust::azure::storage::blob::{Blob, BlobType, LEASE_BLOB_OPTIONS_DEFAULT,
+                                               LIST_BLOB_OPTIONS_DEFAULT, PUT_OPTIONS_DEFAULT};
+use azure_sdk_for_rust::azure::core::lease::{LeaseAction, LeaseState, LeaseStatus};
 
 use azure_sdk_for_rust::azure::core::errors::AzureError;
 

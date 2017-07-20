@@ -1,6 +1,6 @@
 use base64;
 
-use std::fmt::{Debug, Formatter, Error};
+use std::fmt::{Debug, Error, Formatter};
 
 #[derive(Copy, Clone, Debug)]
 pub enum TokenType {

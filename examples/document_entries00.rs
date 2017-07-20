@@ -15,8 +15,8 @@ use azure_sdk_for_rust::azure::cosmos::authorization_token::{AuthorizationToken,
 use azure_sdk_for_rust::azure::cosmos::client::Client;
 use azure_sdk_for_rust::azure::cosmos::list_documents::LIST_DOCUMENTS_OPTIONS_DEFAULT;
 use azure_sdk_for_rust::azure::cosmos::get_document::GET_DOCUMENT_OPTIONS_DEFAULT;
-use azure_sdk_for_rust::azure::cosmos::request_response::{ListDocumentsResponse,
-                                                          GetDocumentResponse};
+use azure_sdk_for_rust::azure::cosmos::request_response::{GetDocumentResponse,
+                                                          ListDocumentsResponse};
 
 #[macro_use]
 extern crate serde_derive;
@@ -66,7 +66,7 @@ fn code() -> Result<(), Box<Error>> {
 
     let client = Client::new(&core.handle(), authorization_token)?;
 
-    for i in 0..5 {
+    for i in 0..50 {
         let doc = MySampleStruct {
             id: &format!("unique_id{}", i),
             a_string: "Something here",
@@ -115,10 +115,10 @@ fn code() -> Result<(), Box<Error>> {
             client.list_documents(&database_name, &collection_name, &ldo),
         ).unwrap();
 
-        assert_eq!(response.documents.len(), 2);
+        assert_eq!(response.documents.len(), 47);
         println!("response == {:?}", response);
 
-        // we got the last 2 entries. Now continuation_token
+        // we got the last 47 entries. Now continuation_token
         // must be absent
         assert_eq!(
             response.additional_headers.continuation_token.is_some(),

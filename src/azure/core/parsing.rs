@@ -1,5 +1,5 @@
 use xml::Element;
-use xml::Xml::{ElementNode, CharacterNode};
+use xml::Xml::{CharacterNode, ElementNode};
 use azure::core::errors::TraversingError;
 use chrono;
 
@@ -152,12 +152,10 @@ where
     T: FromStringOptional<T>,
 {
     match try!(traverse_single_optional(node, path)) {
-        Some(e) => {
-            match inner_text(e) {
-                Ok(txt) => Ok(Some(try!(T::from_str_optional(txt)))),
-                Err(_) => Ok(None),
-            }
-        }
+        Some(e) => match inner_text(e) {
+            Ok(txt) => Ok(Some(try!(T::from_str_optional(txt)))),
+            Err(_) => Ok(None),
+        },
         None => Ok(None),
     }
 }

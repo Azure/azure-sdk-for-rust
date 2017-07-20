@@ -22,13 +22,13 @@ use chrono::Utc;
 
 use futures::future::*;
 
-use azure::core::lease::{LeaseId, LeaseStatus, LeaseState, LeaseDuration, LeaseAction};
+use azure::core::lease::{LeaseAction, LeaseDuration, LeaseId, LeaseState, LeaseStatus};
 use azure::storage::client::Client;
 
-use azure::storage::rest_client::{XMSRange, ContentMD5, XMSLeaseStatus, XMSLeaseDuration,
-                                  XMSLeaseState, XMSLeaseId, XMSRangeGetContentMD5,
-                                  XMSClientRequestId, XMSLeaseAction, XMSLeaseDurationSeconds,
-                                  XMSLeaseBreakPeriod, XMSProposedLeaseId, ETag};
+use azure::storage::rest_client::{ContentMD5, ETag, XMSClientRequestId, XMSLeaseAction,
+                                  XMSLeaseBreakPeriod, XMSLeaseDuration, XMSLeaseDurationSeconds,
+                                  XMSLeaseId, XMSLeaseState, XMSLeaseStatus, XMSProposedLeaseId,
+                                  XMSRange, XMSRangeGetContentMD5};
 
 use azure::core::parsing::{cast_must, cast_optional, from_azure_time, traverse};
 
@@ -38,8 +38,8 @@ use std::str::FromStr;
 use azure::core::enumerations;
 use std::fmt;
 
-use azure::core::errors::{TraversingError, AzureError, check_status_extract_body,
-                          check_status_extract_headers_and_body};
+use azure::core::errors::{check_status_extract_body, check_status_extract_headers_and_body,
+                          AzureError, TraversingError};
 use azure::core::parsing::FromStringOptional;
 
 use azure::core::range::Range;
@@ -51,8 +51,8 @@ use azure::core::incompletevector::IncompleteVector;
 use hyper::mime::Mime;
 
 use hyper::StatusCode;
-use hyper::header::{Headers, ContentType, ContentLength, LastModified, ContentEncoding,
-                    ContentLanguage};
+use hyper::header::{ContentEncoding, ContentLanguage, ContentLength, ContentType, Headers,
+                    LastModified};
 
 use base64;
 
@@ -474,15 +474,13 @@ impl Blob {
 
         // parameter sanity check
         match self.blob_type {
-            BlobType::BlockBlob => {
-                if r.is_none() {
-                    return Box::new(err(AzureError::InputParametersError(
-                        "cannot use put_blob with \
-                         BlockBlob without a Read"
-                            .to_owned(),
-                    )));
-                }
-            }
+            BlobType::BlockBlob => if r.is_none() {
+                return Box::new(err(AzureError::InputParametersError(
+                    "cannot use put_blob with \
+                     BlockBlob without a Read"
+                        .to_owned(),
+                )));
+            },
             BlobType::PageBlob => {
                 if r.is_some() {
                     return Box::new(err(AzureError::InputParametersError(
@@ -500,15 +498,13 @@ impl Blob {
                     )));
                 }
             }
-            BlobType::AppendBlob => {
-                if r.is_some() {
-                    return Box::new(err(AzureError::InputParametersError(
-                        "cannot use put_blob with \
-                         AppendBlob with a Read"
-                            .to_owned(),
-                    )));
-                }
-            }
+            BlobType::AppendBlob => if r.is_some() {
+                return Box::new(err(AzureError::InputParametersError(
+                    "cannot use put_blob with \
+                     AppendBlob with a Read"
+                        .to_owned(),
+                )));
+            },
         }
 
         let ce = if let Some(ref content_encoding) = self.content_encoding {

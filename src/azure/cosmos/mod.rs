@@ -8,6 +8,8 @@ pub mod collection;
 pub mod document;
 pub mod list_documents;
 pub mod get_document;
+pub mod query_document;
+pub mod query;
 
 use std::fmt;
 use azure::core::enumerations;
