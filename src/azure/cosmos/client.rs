@@ -1,28 +1,35 @@
-use azure::cosmos::authorization_token::{TokenType, AuthorizationToken};
+use azure::cosmos::authorization_token::{AuthorizationToken, TokenType};
 
 use azure::cosmos::database::Database;
 use azure::cosmos::collection::Collection;
-use azure::cosmos::document::{IndexingDirective, DocumentAttributes};
+use azure::cosmos::document::{DocumentAttributes, IndexingDirective};
 
-use azure::core::errors::{AzureError, check_status_extract_body,
-                          check_status_extract_headers_and_body, extract_status_headers_and_body,
-                          UnexpectedHTTPResult};
+use azure::core::errors::{check_status_extract_body, check_status_extract_headers_and_body,
+                          extract_status_headers_and_body, AzureError, UnexpectedHTTPResult};
 
-use azure::cosmos::request_response::{ListDatabasesResponse, CreateDatabaseRequest,
-                                      ListCollectionsResponse, ListDocumentsResponseAttributes,
-                                      ListDocumentsResponseEntities, ListDocumentsResponse,
-                                      Document, ListDocumentsResponseAdditionalHeaders,
-                                      GetDocumentAdditionalHeaders, GetDocumentResponse};
+use azure::cosmos::request_response::{CreateDatabaseRequest, Document,
+                                      GetDocumentAdditionalHeaders, GetDocumentResponse,
+                                      ListCollectionsResponse, ListDatabasesResponse,
+                                      ListDocumentsResponse,
+                                      ListDocumentsResponseAdditionalHeaders,
+                                      ListDocumentsResponseAttributes,
+                                      ListDocumentsResponseEntities, QueryDocumentResponse,
+                                      QueryDocumentResponseAdditonalHeaders, QueryResponseMeta,
+                                      QueryResult};
 use azure::core::COMPLETE_ENCODE_SET;
 
 use azure::cosmos::ConsistencyLevel;
 use azure::cosmos::list_documents::ListDocumentsOptions;
 use azure::cosmos::get_document::GetDocumentOptions;
+use azure::cosmos::query_document::QueryDocumentOptions;
 use azure::core::incompletevector::ContinuationToken;
+use azure::cosmos::query::Query;
+
 
 use std::str::{FromStr, from_utf8};
 
 use serde::Serialize;
+use serde_json::Value;
 use serde::de::DeserializeOwned;
 
 use crypto::hmac::Hmac;
@@ -32,10 +39,11 @@ use crypto::sha2::Sha256;
 use base64;
 use hyper;
 use serde_json;
-use hyper::header::{ContentLength, Headers};
+use hyper::header::{ContentLength, ContentType, Headers};
 use hyper::StatusCode;
 
 use chrono;
+use mime::Mime;
 
 use url::percent_encoding::utf8_percent_encode;
 
@@ -62,9 +70,12 @@ header! { (SessionTokenHeader, "x-ms-session-token") => [ContinuationToken] }
 header! { (AIM, "A-IM") => [String] }
 header! { (IfNoneMatch, "If-None-Match") => [String] }
 header! { (PartitionRangeId, "x-ms-documentdb-partitionkeyrangeid") => [String] }
-header! { (Charge, "x-ms-request-charge") => [u64] }
+header! { (Charge, "x-ms-request-charge") => [f64] }
 header! { (Etag, "etag") => [String] }
 header! { (CosmosDBPartitionKey, "x-ms-documentdb-partitionkey") => [String] }
+header! { (DocumentDBIsQuery, "x-ms-documentdb-isquery") => [bool] }
+header! { (DocumentDBQueryEnableCrossPartition,
+    "x-ms-documentdb-query-enablecrosspartition") => [bool] }
 
 #[derive(Clone, Copy)]
 pub enum ResourceType {
@@ -801,6 +812,7 @@ impl<'a> Client {
         T: DeserializeOwned,
     {
         let database = database.as_ref();
+
         let collection = collection.as_ref();
         let document_id = document_id.as_ref();
 
@@ -822,6 +834,105 @@ impl<'a> Client {
             )
         })
     }
+
+    pub fn query_document<'b, S1, S2, T>(
+        &self,
+        database: S1,
+        collection: S2,
+        query: &Query<'b>,
+        options: &QueryDocumentOptions,
+    ) -> impl Future<Item = QueryDocumentResponse<T>, Error = AzureError> + 'b
+    where
+        T: DeserializeOwned + 'b,
+        S1: AsRef<str> + 'b,
+        S2: AsRef<str> + 'b,
+    {
+        self.query_document_json(database, collection, query, options)
+            .and_then(move |qdr_json| done(convert_query_document_type(qdr_json)))
+    }
+
+    pub fn query_document_json<'b, S1, S2>(
+        &self,
+        database: S1,
+        collection: S2,
+        query: &Query<'b>,
+        options: &QueryDocumentOptions,
+    ) -> impl Future<Item = QueryDocumentResponse<String>, Error = AzureError>
+    where
+        S1: AsRef<str>,
+        S2: AsRef<str>,
+    {
+        let database = database.as_ref();
+        let collection = collection.as_ref();
+
+        trace!(
+            "query_document_json called(database == {}, collection == {}, query == {:?}, options = {:?}",
+            database,
+            collection,
+            query,
+            options
+        );
+
+        let req = self.query_document_create_request(database, collection, query, options);
+
+        done(req).from_err().and_then(move |future_response| {
+            check_status_extract_headers_and_body(future_response, StatusCode::Ok)
+                .and_then(move |(headers, v_body)| {
+                    done(query_documents_extract_result_json(&v_body, headers))
+                })
+        })
+    }
+
+    #[inline]
+    fn query_document_create_request<'b>(
+        &self,
+        database: &str,
+        collection: &str,
+        query: &Query<'b>,
+        options: &QueryDocumentOptions,
+    ) -> Result<hyper::client::FutureResponse, AzureError> {
+        let uri = hyper::Uri::from_str(&format!(
+            "https://{}.documents.azure.com/dbs/{}/colls/{}/docs",
+            self.authorization_token.account(),
+            database,
+            collection,
+        ))?;
+
+        let query_json = serde_json::to_string(query)?;
+
+        debug!("query_json == {}", query_json);
+
+        let request = prepare_request(
+                &self.authorization_token,
+                uri,
+                hyper::Method::Post,
+                Some(&query_json),
+                ResourceType::Documents,
+                move |ref mut headers| {
+                    headers.set(DocumentDBIsQuery(true));
+                    headers.set(ContentType(get_query_content_type()));
+
+                    if let Some(val) = options.max_item_count {
+                        headers.set(MaxItemCount(val));
+                    }
+                    if let Some(val) = options.continuation_token {
+                        headers.set(ContinuationTokenHeader(val.to_owned()));
+                    }
+                    if let Some(val) = options.enable_cross_partition {
+                        headers.set(DocumentDBQueryEnableCrossPartition(val));
+                    }
+                    if let Some(val) = options.consistency_level_override {
+                        headers.set(ConsistencyLevelHeader(val));
+                    }
+                    if let Some(val) = options.session_token {
+                        headers.set(SessionTokenHeader(val.to_owned()));
+                    }
+                 });
+
+        trace!("request prepared");
+
+        Ok(self.hyper_client.request(request))
+    }
 }
 
 fn get_document_extract_result<'a, T>(
@@ -835,7 +946,7 @@ where
     match status {
         StatusCode::Ok => {
             let gdah = GetDocumentAdditionalHeaders {
-                charge: *(headers.get::<Charge>().unwrap() as &u64),
+                charge: *(headers.get::<Charge>().unwrap() as &f64),
             };
             debug!("gdah == {:?}", gdah);
 
@@ -856,7 +967,7 @@ where
         // with the additional headers.
         StatusCode::NotFound => {
             let gdah = GetDocumentAdditionalHeaders {
-                charge: *(headers.get::<Charge>().unwrap() as &u64),
+                charge: *(headers.get::<Charge>().unwrap() as &f64),
             };
             debug!("gdah == {:?}", gdah);
 
@@ -877,6 +988,92 @@ where
             )))
         }
     }
+}
+
+fn query_documents_extract_result_json(
+    v_body: &[u8],
+    headers: Headers,
+) -> Result<QueryDocumentResponse<String>, AzureError> {
+    trace!("headers == {:?}", headers);
+
+    let additional_headers = QueryDocumentResponseAdditonalHeaders {
+        // This match just tries to extract the info and convert it
+        // into the correct type. It is complicated because headers
+        // can be missing and also because headers.get<T> will return
+        // a T reference (&T) so we need to cast it into the
+        // correct type and clone it (in this case into a &str that will
+        // become a String using to_owned())
+        continuation_token: match headers.get::<ContinuationTokenHeader>() {
+            Some(s) => Some((s as &str).to_owned()),
+            None => None,
+        },
+        // Here we assume the Charge header to always be present.
+        // If problems arise we
+        // will change the field to be Option(al).
+        charge: *(headers.get::<Charge>().unwrap() as &f64),
+    };
+    debug!("additional_headers == {:?}", additional_headers);
+
+    let query_response_meta = serde_json::from_slice::<QueryResponseMeta>(v_body)?;
+    debug!("query_response_meta == {:?}", &query_response_meta);
+
+    let json = from_utf8(v_body)?;
+    debug!("json == {}", json);
+
+    let v: Value = serde_json::from_slice(v_body)?;
+
+    // Work on Documents section
+    let d = &v["Documents"];
+    debug!("\n\nd == {:?}\n\n", d);
+
+    let mut v_docs = Vec::new();
+
+    for doc in d.as_array().unwrap().iter() {
+        // We could either have a Document or a plain entry.
+        // We will find out here.
+        let doc_json = doc.to_string();
+
+        let document_attributes = match serde_json::from_str::<DocumentAttributes>(&doc_json) {
+            Ok(document_attributes) => Some(document_attributes),
+            Err(_) => None,
+        };
+
+        debug!("\ndocument_attributes == {:?}", document_attributes);
+
+        v_docs.push(QueryResult {
+            document_attributes: document_attributes,
+            result: doc_json,
+        });
+    }
+
+    Ok(QueryDocumentResponse {
+        query_response_meta: query_response_meta,
+        additional_headers: additional_headers,
+        results: v_docs,
+    })
+}
+
+#[inline]
+fn convert_query_document_type<T>(
+    qdr: QueryDocumentResponse<String>,
+) -> Result<QueryDocumentResponse<T>, AzureError>
+where
+    T: DeserializeOwned,
+{
+    let mut qdr_converted: QueryDocumentResponse<T> = QueryDocumentResponse {
+        query_response_meta: qdr.query_response_meta,
+        results: Vec::new(),
+        additional_headers: qdr.additional_headers,
+    };
+
+    for res_json in qdr.results {
+        qdr_converted.results.push(QueryResult {
+            document_attributes: res_json.document_attributes,
+            result: serde_json::from_str(&res_json.result)?,
+        });
+    }
+
+    Ok(qdr_converted)
 }
 
 fn list_documents_extract_result<'a, T>(
@@ -902,7 +1099,7 @@ where
         // Here we assume the Charge header to always be present.
         // If problems arise we
         // will change the field to be Option(al).
-        charge: *(headers.get::<Charge>().unwrap() as &u64),
+        charge: *(headers.get::<Charge>().unwrap() as &f64),
         etag: match headers.get::<Etag>() {
             Some(s) => Some((s as &str).to_owned()),
             None => None,
@@ -1093,6 +1290,11 @@ fn generate_resource_link(u: &hyper::Uri) -> &str {
     }
 
     &p[1..]
+}
+
+#[inline]
+fn get_query_content_type() -> Mime {
+    "application/query+json".parse().unwrap()
 }
 
 

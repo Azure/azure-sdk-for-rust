@@ -4,13 +4,13 @@ pub use self::batch::BatchItem;
 
 use self::batch::generate_batch_payload;
 use mime::Mime;
-use azure::core::errors::{AzureError, check_status_extract_body, extract_status_and_body,
+use azure::core::errors::{check_status_extract_body, extract_status_and_body, AzureError,
                           UnexpectedHTTPResult};
 use azure::storage::client::Client;
 use azure::storage::rest_client::ServiceType;
 use hyper::Method;
 use hyper::client::FutureResponse;
-use hyper::header::{Accept, ContentType, Headers, IfMatch, qitem};
+use hyper::header::{qitem, Accept, ContentType, Headers, IfMatch};
 use hyper::StatusCode;
 use serde::Serialize;
 use serde::de::DeserializeOwned;

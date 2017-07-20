@@ -1,15 +1,15 @@
 use azure::core::range;
 use azure::core::errors::AzureError;
 use hyper::Method;
-use azure::core::lease::{LeaseId, LeaseStatus, LeaseState, LeaseDuration, LeaseAction};
+use azure::core::lease::{LeaseAction, LeaseDuration, LeaseId, LeaseState, LeaseStatus};
 use chrono;
 use crypto::hmac::Hmac;
 use crypto::mac::Mac;
 use crypto::sha2::Sha256;
 use hyper;
 use hyper_tls;
-use hyper::header::{Header, Headers, ContentEncoding, ContentLanguage, ContentLength, ContentType,
-                    Date, IfModifiedSince, IfUnmodifiedSince};
+use hyper::header::{ContentEncoding, ContentLanguage, ContentLength, ContentType, Date, Header,
+                    Headers, IfModifiedSince, IfUnmodifiedSince};
 use base64;
 use std::fmt::Display;
 use url;
@@ -101,13 +101,11 @@ fn string_to_sign(h: &Headers, u: &url::Url, method: Method, service_type: Servi
             // content lenght must only be specified if != 0
             // this is valid from 2015-02-21
             let m = match h.get::<ContentLength>() {
-                Some(ce) => {
-                    if ce.to_be() != 0u64 {
-                        ce.to_string()
-                    } else {
-                        String::default()
-                    }
-                }
+                Some(ce) => if ce.to_be() != 0u64 {
+                    ce.to_string()
+                } else {
+                    String::default()
+                },
                 None => String::default(),
             };
 
@@ -364,8 +362,8 @@ mod test {
     #[test]
     fn str_to_sign_test() {
         use super::*;
-        use hyper::header::{Accept, qitem};
-        use azure::storage::table::{get_json_mime_nometadata, get_default_json_mime};
+        use hyper::header::{qitem, Accept};
+        use azure::storage::table::{get_default_json_mime, get_json_mime_nometadata};
 
         let mut headers: Headers = Headers::new();
         headers.set(Accept(vec![qitem(get_json_mime_nometadata())]));

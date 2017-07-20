@@ -2,7 +2,7 @@ use tokio_core;
 use hyper_tls;
 use futures::future::*;
 
-use azure::core::errors::{AzureError, check_status_extract_body};
+use azure::core::errors::{check_status_extract_body, AzureError};
 use azure::core::COMPLETE_ENCODE_SET;
 
 use std::str::FromStr;

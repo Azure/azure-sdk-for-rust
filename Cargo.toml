@@ -1,6 +1,6 @@
 [package]
 name           = "azure_sdk_for_rust"
-version        = "0.4.3"
+version        = "0.4.4"
 description    = "Rust wrappers around Microsoft Azure REST APIs"
 readme         = "README.md"
 authors        = ["Francesco Cogno <francesco.cogno@outlook.com>", "Dong Liu <doliu@microsoft.com>"]
@@ -10,10 +10,6 @@ documentation  = "http://mindflavor.github.io/AzureSDKForRust/azure_sdk_for_rust
 
 keywords       = ["sdk", "azure", "rest", "iot", "cloud"]
 categories     = ["api-bindings"]
-
-[[bin]]
-name           = "main"
-doc            = false
 
 [dependencies]
 RustyXML       = "0.1.1"
@@ -28,8 +24,8 @@ mime           = "0.3.2"
 native-tls     = "0.1.4"
 quick-error    = "1.2.0"
 rust-crypto    = "0.2.36"
-serde          = "1.0.9"
-serde_derive   = "1.0.9"
+serde          = "1.0.10"
+serde_derive   = "1.0.10"
 serde_json     = "1.0.2"
 time           = "0.1.38"
 tokio          = "0.0.0"

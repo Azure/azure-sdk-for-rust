@@ -49,11 +49,30 @@ pub struct Document<T> {
     pub entity: T,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct QueryResult<T> {
+    pub document_attributes: Option<DocumentAttributes>,
+    pub result: T,
+}
+
 #[derive(Debug, Clone)]
 pub struct ListDocumentsResponseAdditionalHeaders {
     pub continuation_token: Option<String>,
-    pub charge: u64,
+    pub charge: f64,
     pub etag: Option<String>,
+}
+
+#[derive(Debug, Clone)]
+pub struct QueryDocumentResponseAdditonalHeaders {
+    pub continuation_token: Option<String>,
+    pub charge: f64,
+}
+
+#[derive(Debug, Clone)]
+pub struct QueryDocumentResponse<T> {
+    pub query_response_meta: QueryResponseMeta,
+    pub results: Vec<QueryResult<T>>,
+    pub additional_headers: QueryDocumentResponseAdditonalHeaders,
 }
 
 #[derive(Debug, Clone)]
@@ -65,11 +84,19 @@ pub struct ListDocumentsResponse<T> {
 
 #[derive(Debug, Clone)]
 pub struct GetDocumentAdditionalHeaders {
-    pub charge: u64,
+    pub charge: f64,
 }
 
 #[derive(Debug, Clone)]
 pub struct GetDocumentResponse<T> {
     pub document: Option<Document<T>>,
     pub additional_headers: GetDocumentAdditionalHeaders,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct QueryResponseMeta {
+    #[serde(rename = "_rid")]
+    pub rid: String,
+    #[serde(rename = "_count")]
+    pub count: u64,
 }

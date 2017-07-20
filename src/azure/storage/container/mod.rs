@@ -5,10 +5,10 @@ use azure::core;
 use azure::core::errors::AzureError;
 use azure::core::errors::check_status_extract_body;
 use azure::core::enumerations;
-use azure::core::parsing::{traverse, cast_must, cast_optional};
+use azure::core::parsing::{cast_must, cast_optional, traverse};
 use azure::core::incompletevector::IncompleteVector;
 
-use azure::core::lease::{LeaseStatus, LeaseState, LeaseDuration};
+use azure::core::lease::{LeaseDuration, LeaseState, LeaseStatus};
 use azure::storage::client::Client;
 
 use futures::future::*;
