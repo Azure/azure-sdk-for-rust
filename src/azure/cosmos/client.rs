@@ -30,6 +30,7 @@ use std::str::{FromStr, from_utf8};
 
 use serde::Serialize;
 use serde_json::Value;
+use serde_json::map::Map;
 use serde::de::DeserializeOwned;
 
 use crypto::hmac::Hmac;
@@ -76,6 +77,9 @@ header! { (CosmosDBPartitionKey, "x-ms-documentdb-partitionkey") => [String] }
 header! { (DocumentDBIsQuery, "x-ms-documentdb-isquery") => [bool] }
 header! { (DocumentDBQueryEnableCrossPartition,
     "x-ms-documentdb-query-enablecrosspartition") => [bool] }
+
+const AZURE_KEYS: [&'static str; 5] = ["_attachments", "_etag", "_rid", "_self", "_ts"];
+
 
 #[derive(Clone, Copy)]
 pub enum ResourceType {
@@ -1028,21 +1032,38 @@ fn query_documents_extract_result_json(
 
     let mut v_docs = Vec::new();
 
-    for doc in d.as_array().unwrap().iter() {
+    for doc in d.as_array().unwrap().into_iter() {
         // We could either have a Document or a plain entry.
         // We will find out here.
-        let doc_json = doc.to_string();
 
-        let document_attributes = match serde_json::from_str::<DocumentAttributes>(&doc_json) {
+        let document_attributes = match serde_json::from_value::<DocumentAttributes>(doc.clone()) {
             Ok(document_attributes) => Some(document_attributes),
             Err(_) => None,
         };
 
         debug!("\ndocument_attributes == {:?}", document_attributes);
 
+        // Now we are about to create a new Value::Object
+        // without the extra Azure fields.
+        // This involves a lot a copying (unfortunately).
+        let o_new = {
+            let mut o_new = Value::Object(Map::new());
+            {
+                let mut m_new = o_new.as_object_mut().unwrap();
+
+                for (key, val) in doc.as_object().unwrap() {
+                    if AZURE_KEYS.binary_search(&(&key as &str)).is_err() {
+                        m_new.insert(key.clone(), val.clone());
+                    }
+                }
+            }
+
+            o_new
+        };
+
         v_docs.push(QueryResult {
             document_attributes: document_attributes,
-            result: doc_json,
+            result: o_new.to_string(),
         });
     }
 

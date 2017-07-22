@@ -1,3 +1,15 @@
+## [0.4.5](https://github.com/MindFlavor/AzureSDKForRust/releases/tag/0.4.5) (2017-07-22)
+
+**Breaking changes:**
+
+* Removed Azure attributes from returned JSON (field  ```QueryDocumentResponse<String>.results```). 
+
+The removed attributes are in this slice (from [src/azure/cosmos/client.rs](src/azure/cosmos/client.rs)): 
+
+```rust
+const AZURE_KEYS: [&'static str; 5] = ["_attachments", "_etag", "_rid", "_self", "_ts"];
+```
+
 ## [0.4.4](https://github.com/MindFlavor/AzureSDKForRust/releases/tag/0.4.4) (2017-07-20)
 
 **Implemented features:**

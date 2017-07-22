@@ -81,7 +81,7 @@ fn code() -> Result<(), Box<Error>> {
     println!("\nAs entities:\n{:?}", ret);
 
     for doc in ret.results.into_iter() {
-        println!("{:?}", doc.result);
+        println!("{:?}", doc);
     }
 
     // test continuation token
