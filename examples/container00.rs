@@ -1,10 +1,10 @@
 extern crate azure_sdk_for_rust;
 
 extern crate futures;
-extern crate tokio_core;
-extern crate tokio;
 extern crate hyper;
 extern crate hyper_tls;
+extern crate tokio;
+extern crate tokio_core;
 
 use std::error::Error;
 
@@ -31,6 +31,10 @@ fn code() -> Result<(), Box<Error>> {
     let master_key =
         std::env::var("STORAGE_MASTER_KEY").expect("Set env variable STORAGE_MASTER_KEY first!");
 
+    let container = std::env::args()
+        .nth(1)
+        .expect("please specify container name as command line parameter");
+
     let mut core = Core::new()?;
 
     let client = Client::new(&core.handle(), &account, &master_key)?;
@@ -44,7 +48,7 @@ fn code() -> Result<(), Box<Error>> {
 
     core.run(future)?;
 
-    let future = Blob::list(&client, "mindarpa", &LIST_BLOB_OPTIONS_DEFAULT).map(|iv| {
+    let future = Blob::list(&client, &container, &LIST_BLOB_OPTIONS_DEFAULT).map(|iv| {
         println!("List blob returned {} blobs.", iv.len());
         for cont in iv.iter() {
             println!(

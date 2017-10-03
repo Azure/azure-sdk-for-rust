@@ -1,12 +1,12 @@
 extern crate azure_sdk_for_rust;
 
+extern crate chrono;
 extern crate env_logger;
 extern crate futures;
-extern crate tokio_core;
-extern crate tokio;
 extern crate hyper;
 extern crate hyper_tls;
-extern crate chrono;
+extern crate tokio;
+extern crate tokio_core;
 
 use std::error::Error;
 
@@ -42,9 +42,9 @@ fn code() -> Result<(), Box<Error>> {
     let master_key =
         std::env::var("STORAGE_MASTER_KEY").expect("Set env variable STORAGE_MASTER_KEY first!");
 
-    let container_name = std::env::args().nth(1).expect(
-        "please specify container name as first command line parameter",
-    );
+    let container_name = std::env::args()
+        .nth(1)
+        .expect("please specify container name as first command line parameter");
     let file_name = std::env::args()
         .nth(2)
         .expect("please specify file name as second command line parameter");
@@ -112,20 +112,23 @@ fn code() -> Result<(), Box<Error>> {
 
     core.run(future)?;
 
+
+    println!("Leasing the blob...");
+
     let mut lbo = LEASE_BLOB_OPTIONS_DEFAULT.clone();
     lbo.lease_duration = Some(15);
-    let future = new_blob.lease(&client, LeaseAction::Acquire, &lbo).map(
-        |lease_id| {
+    let future = new_blob
+        .lease(&client, LeaseAction::Acquire, &lbo)
+        .map(|lease_id| {
             println!("Blob leased");
             lease_id
-        },
-    );
+        });
 
     let lease_id = core.run(future)?;
     println!("lease id == {:?}", lease_id);
 
-    let future = Blob::list(&client, &container_name, &LIST_BLOB_OPTIONS_DEFAULT)
-        .map(|blobs| match blobs.iter().find(|blob| blob.name == name) {
+    let future = Blob::list(&client, &container_name, &LIST_BLOB_OPTIONS_DEFAULT).map(
+        |blobs| match blobs.iter().find(|blob| blob.name == name) {
             Some(retrieved_blob) => {
                 let sc = (*retrieved_blob).clone();
                 Ok(sc)
@@ -133,7 +136,8 @@ fn code() -> Result<(), Box<Error>> {
             None => Err(AzureError::GenericErrorWithText(
                 "our blob should be here... where is it?".to_owned(),
             )),
-        });
+        },
+    );
 
     let retrieved_blob = core.run(future)??;
     println!("retrieved_blob == {:?}", retrieved_blob);
