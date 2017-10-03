@@ -330,13 +330,15 @@ where
 
     request.headers_mut().set(Authorization(auth));
 
+    println!("{:?}", request.headers());
+
     Ok(client.request(request))
 }
 
 
 mod test {
-    extern crate hyper;
     extern crate chrono;
+    extern crate hyper;
     extern crate url;
 
     #[test]

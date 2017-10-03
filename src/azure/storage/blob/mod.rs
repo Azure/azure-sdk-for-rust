@@ -457,11 +457,12 @@ impl Blob {
         let blob_name = blob_name.to_owned();
 
         done(req).from_err().and_then(move |future_response| {
-            check_status_extract_headers_and_body(future_response, expected_status_code)
-                .and_then(move |(headers, body)| {
+            check_status_extract_headers_and_body(future_response, expected_status_code).and_then(
+                move |(headers, body)| {
                     done(Blob::from_headers(&blob_name, &container_name, &headers))
                         .and_then(move |blob| ok((blob, body)))
-                })
+                },
+            )
         })
     }
 
@@ -471,7 +472,6 @@ impl Blob {
         po: &PutOptions,
         r: Option<&[u8]>,
     ) -> Box<Future<Item = (), Error = AzureError>> {
-
         // parameter sanity check
         match self.blob_type {
             BlobType::BlockBlob => if r.is_none() {
@@ -608,10 +608,10 @@ impl Blob {
                 if let Some(ref request_id) = lbo.request_id {
                     headers.set(XMSClientRequestId(request_id.to_owned()));
                 }
-
             },
             None,
         );
+
 
         let expected_result = match la {
             LeaseAction::Acquire => StatusCode::Created,
@@ -641,7 +641,6 @@ impl Blob {
         ppo: &PutPageOptions,
         content: &[u8],
     ) -> impl Future<Item = (), Error = AzureError> {
-
         let mut uri = format!(
             "https://{}.blob.core.windows.net/{}/{}?comp=page",
             c.account(),
@@ -683,7 +682,6 @@ impl Blob {
         pbo: &PutBlockOptions,
         content: &[u8],
     ) -> impl Future<Item = (), Error = AzureError> {
-
         let encoded_block_id = base64::encode(block_id.as_bytes());
 
         let mut uri = format!(
@@ -710,7 +708,6 @@ impl Blob {
                 if let Some(ref request_id) = pbo.request_id {
                     headers.set(XMSClientRequestId(request_id.to_owned()));
                 }
-
             },
             Some(content),
         );
@@ -729,7 +726,6 @@ impl Blob {
         range: &BA512Range,
         lease_id: Option<&LeaseId>,
     ) -> impl Future<Item = (), Error = AzureError> {
-
         let uri = format!(
             "https://{}.blob.core.windows.net/{}/{}?comp=page",
             c.account(),

@@ -178,6 +178,11 @@ pub fn check_status_extract_headers_and_body(
     expected_status_code: hyper::StatusCode,
 ) -> impl Future<Item = (hyper::Headers, Vec<u8>), Error = AzureError> {
     extract_status_headers_and_body(resp).and_then(move |(status, headers, body)| {
+        println!(
+            "status == {:?}, expected == {:?}",
+            status,
+            expected_status_code
+        );
         if status == expected_status_code {
             ok((headers, body))
         } else {
