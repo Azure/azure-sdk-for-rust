@@ -330,7 +330,7 @@ where
 
     request.headers_mut().set(Authorization(auth));
 
-    println!("{:?}", request.headers());
+    // println!("{:?}", request.headers());
 
     Ok(client.request(request))
 }
