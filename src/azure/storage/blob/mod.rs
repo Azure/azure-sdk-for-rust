@@ -609,7 +609,10 @@ impl Blob {
                     headers.set(XMSClientRequestId(request_id.to_owned()));
                 }
             },
-            None,
+            // this fix is needed to avoid
+            // receiving HTTP Error 411. The request must be chunked or have a content length
+            // This happens since hyper 0.11.2
+            Some("".as_bytes()),
         );
 
 
