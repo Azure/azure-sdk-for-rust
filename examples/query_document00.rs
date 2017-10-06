@@ -1,11 +1,11 @@
 extern crate azure_sdk_for_rust;
 
+extern crate chrono;
 extern crate futures;
-extern crate tokio_core;
-extern crate tokio;
 extern crate hyper;
 extern crate hyper_tls;
-extern crate chrono;
+extern crate tokio;
+extern crate tokio_core;
 
 use std::error::Error;
 
@@ -32,12 +32,12 @@ fn main() {
 }
 
 fn code() -> Result<(), Box<Error>> {
-    let database_name = std::env::args().nth(1).expect(
-        "please specify database name as first command line parameter",
-    );
-    let collection_name = std::env::args().nth(2).expect(
-        "please specify collection name as second command line parameter",
-    );
+    let database_name = std::env::args()
+        .nth(1)
+        .expect("please specify database name as first command line parameter");
+    let collection_name = std::env::args()
+        .nth(2)
+        .expect("please specify collection name as second command line parameter");
     let query = std::env::args()
         .nth(3)
         .expect("please specify requested query");
@@ -52,7 +52,7 @@ fn code() -> Result<(), Box<Error>> {
 
     let client = Client::new(&core.handle(), authorization_token)?;
 
-    let options = QueryDocumentOptions::new();
+    let options = QueryDocumentOptions::default();
 
     let future = client.query_document_json(
         &database_name,
@@ -65,7 +65,7 @@ fn code() -> Result<(), Box<Error>> {
 
     println!("As JSON:\n{:?}", ret);
 
-    for doc in ret.results.into_iter() {
+    for doc in ret.results {
         println!("{}", doc.result);
     }
 
@@ -80,13 +80,13 @@ fn code() -> Result<(), Box<Error>> {
 
     println!("\nAs entities:\n{:?}", ret);
 
-    for doc in ret.results.into_iter() {
+    for doc in ret.results {
         println!("{:?}", doc);
     }
 
     // test continuation token
     // only if we have more than 2 records
-    let mut options = QueryDocumentOptions::new();
+    let mut options = QueryDocumentOptions::default();
     options.max_item_count = Some(2);
 
     let future = client.query_document::<_, _, MySampleStructOwned>(
@@ -107,7 +107,7 @@ fn code() -> Result<(), Box<Error>> {
     if let Some(ct) = ret.additional_headers.continuation_token {
         let ret = {
             // if we have more, let's get them
-            let mut options = QueryDocumentOptions::new();
+            let mut options = QueryDocumentOptions::default();
             options.max_item_count = None;
             options.continuation_token = Some(&ct);
 

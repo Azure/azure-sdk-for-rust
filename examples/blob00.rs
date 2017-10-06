@@ -1,10 +1,10 @@
 extern crate azure_sdk_for_rust;
 
 extern crate futures;
-extern crate tokio_core;
-extern crate tokio;
 extern crate hyper;
 extern crate hyper_tls;
+extern crate tokio;
+extern crate tokio_core;
 
 use std::error::Error;
 
@@ -13,8 +13,6 @@ use tokio_core::reactor::Core;
 
 use azure_sdk_for_rust::azure::storage::client::Client;
 use azure_sdk_for_rust::azure::storage::blob::Blob;
-
-use std::str;
 
 fn main() {
     code().unwrap();
@@ -40,8 +38,8 @@ fn code() -> Result<(), Box<Error>> {
 
     let client = Client::new(&core.handle(), &account, &master_key)?;
 
-    let future = Blob::get(&client, &container, &blob, None, None, None)
-        .and_then(move |(blob, content)| {
+    let future =
+        Blob::get(&client, &container, &blob, None, None, None).and_then(move |(blob, content)| {
             done(String::from_utf8(content))
                 .map(move |s_content| {
                     println!("blob == {:?}", blob);

@@ -39,11 +39,11 @@ impl<'a> Parameter<'a> {
         }
     }
 
-    fn name(&self) -> &'a str {
+    pub fn name(&self) -> &'a str {
         self.name
     }
 
-    fn value(&self) -> &'a str {
+    pub fn value(&self) -> &'a str {
         self.value
     }
 }
@@ -53,7 +53,7 @@ where
     N: Complete,
     V: Complete,
 {
-    fn name(self, name: &'a str) -> IncompleteParameter<'a, True, V> {
+    pub fn name(self, name: &'a str) -> IncompleteParameter<'a, True, V> {
         IncompleteParameter {
             name_completed: PhantomData,
             value_completed: PhantomData,
@@ -64,7 +64,7 @@ where
         }
     }
 
-    fn value(self, value: &'a str) -> IncompleteParameter<'a, N, True> {
+    pub fn value(self, value: &'a str) -> IncompleteParameter<'a, N, True> {
         IncompleteParameter {
             name_completed: PhantomData,
             value_completed: PhantomData,
@@ -77,7 +77,7 @@ where
 }
 
 impl<'a> IncompleteParameter<'a, True, True> {
-    fn build(self) -> Parameter<'a> {
+    pub fn build(self) -> Parameter<'a> {
         self.parameter
     }
 }
@@ -89,26 +89,26 @@ pub struct Query<'a> {
 }
 
 impl<'a> Query<'a> {
-    fn new(query: &'a str) -> Query<'a> {
+    pub fn new(query: &'a str) -> Query<'a> {
         Query {
             query: query,
             parameters: Vec::new(),
         }
     }
 
-    fn set_query(&mut self, query: &'a str) {
+    pub fn set_query(&mut self, query: &'a str) {
         self.query = query;
     }
 
-    fn parameters_mut(&mut self) -> &mut Vec<Parameter<'a>> {
+    pub fn parameters_mut(&mut self) -> &mut Vec<Parameter<'a>> {
         &mut self.parameters
     }
 
-    fn query(&self) -> &'a str {
+    pub fn query(&self) -> &'a str {
         self.query
     }
 
-    fn parameters(&self) -> &[Parameter<'a>] {
+    pub fn parameters(&self) -> &[Parameter<'a>] {
         &self.parameters
     }
 }
@@ -152,6 +152,9 @@ mod tests {
 
         let ser = serde_json::to_string(&query).unwrap();
 
-        assert_eq!(ser, r#"{"query":"SELECT * FROM Table","parameters":[{"name":"p1","value":"string"},{"name":"p2","value":"100"},{"name":"p3","value":"palazzo"}]}"#);
+        assert_eq!(
+            ser,
+            r#"{"query":"SELECT * FROM Table","parameters":[{"name":"p1","value":"string"},{"name":"p2","value":"100"},{"name":"p3","value":"palazzo"}]}"#
+        );
     }
 }

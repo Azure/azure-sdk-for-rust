@@ -76,7 +76,7 @@ header! { (Etag, "etag") => [String] }
 header! { (CosmosDBPartitionKey, "x-ms-documentdb-partitionkey") => [String] }
 header! { (DocumentDBIsQuery, "x-ms-documentdb-isquery") => [bool] }
 header! { (DocumentDBQueryEnableCrossPartition,
-    "x-ms-documentdb-query-enablecrosspartition") => [bool] }
+"x-ms-documentdb-query-enablecrosspartition") => [bool] }
 
 const AZURE_KEYS: [&'static str; 5] = ["_attachments", "_etag", "_rid", "_self", "_ts"];
 
@@ -98,7 +98,6 @@ impl<'a> Client {
         handle: &tokio_core::reactor::Handle,
         authorization_token: AuthorizationToken,
     ) -> Result<Client, native_tls::Error> {
-
         let client = hyper::Client::configure()
             .connector(hyper_tls::HttpsConnector::new(4, handle)?)
             .build(handle);
@@ -403,8 +402,8 @@ impl<'a> Client {
             ResourceType::Collections,
             |ref mut headers| {
                 headers.set(OfferThroughput(required_throughput));
-            }
-            );
+            },
+        );
 
         trace!("request prepared");
 
@@ -456,7 +455,7 @@ impl<'a> Client {
             hyper::Method::Delete,
             None,
             ResourceType::Collections,
-            |_| {}
+            |_| {},
         );
 
         trace!("request prepared");
@@ -552,18 +551,19 @@ impl<'a> Client {
         // Optional headers as per
         // https://docs.microsoft.com/en-us/rest/api/documentdb/create-a-document
         let request = prepare_request(
-                &self.authorization_token,
-                uri,
-                hyper::Method::Post,
-                Some(document_str.as_ref()),
-                ResourceType::Documents,
-                |ref mut headers| {
-                   headers.set(DocumentIsUpsert(is_upsert));
+            &self.authorization_token,
+            uri,
+            hyper::Method::Post,
+            Some(document_str.as_ref()),
+            ResourceType::Documents,
+            |ref mut headers| {
+                headers.set(DocumentIsUpsert(is_upsert));
 
-                    if let Some(id) = indexing_directive {
-                        headers.set(DocumentIndexingDirective(id));
-                    }
-                });
+                if let Some(id) = indexing_directive {
+                    headers.set(DocumentIndexingDirective(id));
+                }
+            },
+        );
 
         trace!("request prepared");
 
@@ -686,34 +686,35 @@ impl<'a> Client {
         ))?;
 
         let request = prepare_request(
-                &self.authorization_token,
-                uri,
-                hyper::Method::Get,
-                None,
-                ResourceType::Documents,
-                |ref mut headers| {
-                    if let Some(val) = ldo.max_item_count {
-                        headers.set(MaxItemCount(val));
-                    }
-                    if let Some(val) = ldo.continuation_token {
-                        headers.set(ContinuationTokenHeader(val.to_owned()));
-                    }
-                    if let Some(val) = ldo.consistency_level_override {
-                        headers.set(ConsistencyLevelHeader(val));
-                    }
-                    if let Some(val) = ldo.session_token {
-                        headers.set(SessionTokenHeader(val.to_owned()));
-                    }
-                    if ldo.incremental_feed {
-                        headers.set(AIM("Incremental feed".to_owned()));
-                    }
-                    if let Some(val) = ldo.if_none_match {
-                        headers.set(IfNoneMatch(val.to_owned()));
-                    }
-                     if let Some(val) = ldo.partition_range_id {
-                        headers.set(PartitionRangeId(val.to_owned()));
-                    }
-                 });
+            &self.authorization_token,
+            uri,
+            hyper::Method::Get,
+            None,
+            ResourceType::Documents,
+            |ref mut headers| {
+                if let Some(val) = ldo.max_item_count {
+                    headers.set(MaxItemCount(val));
+                }
+                if let Some(val) = ldo.continuation_token {
+                    headers.set(ContinuationTokenHeader(val.to_owned()));
+                }
+                if let Some(val) = ldo.consistency_level_override {
+                    headers.set(ConsistencyLevelHeader(val));
+                }
+                if let Some(val) = ldo.session_token {
+                    headers.set(SessionTokenHeader(val.to_owned()));
+                }
+                if ldo.incremental_feed {
+                    headers.set(AIM("Incremental feed".to_owned()));
+                }
+                if let Some(val) = ldo.if_none_match {
+                    headers.set(IfNoneMatch(val.to_owned()));
+                }
+                if let Some(val) = ldo.partition_range_id {
+                    headers.set(PartitionRangeId(val.to_owned()));
+                }
+            },
+        );
 
         trace!("request prepared");
 
@@ -721,7 +722,7 @@ impl<'a> Client {
     }
 
 
-    pub fn list_documents<'b, S1, S2, T>(
+    pub fn list_documents<S1, S2, T>(
         &self,
         database: S1,
         collection: S2,
@@ -745,11 +746,11 @@ impl<'a> Client {
         let req = self.list_documents_create_request(database, collection, ldo);
 
         done(req).from_err().and_then(move |future_response| {
-            check_status_extract_headers_and_body(future_response, StatusCode::Ok)
-                .and_then(move |(headers, whole_body)| {
-                    done(list_documents_extract_result::<T>(&whole_body, headers))
-                        .and_then(move |result| ok(result))
-                })
+            check_status_extract_headers_and_body(future_response, StatusCode::Ok).and_then(
+                move |(headers, whole_body)| {
+                    done(list_documents_extract_result::<T>(&whole_body, &headers))
+                },
+            )
         })
     }
 
@@ -777,25 +778,26 @@ impl<'a> Client {
         };
 
         let request = prepare_request(
-                &self.authorization_token,
-                uri,
-                hyper::Method::Get,
-                None,
-                ResourceType::Documents,
-                move |ref mut headers| {
-                    if let Some(val) = gdo.consistency_level_override {
-                        headers.set(ConsistencyLevelHeader(val));
-                    }
-                    if let Some(val) = gdo.session_token {
-                        headers.set(SessionTokenHeader(val.to_owned()));
-                    }
-                    if let Some(val) = gdo.if_none_match {
-                        headers.set(IfNoneMatch(val.to_owned()));
-                    }
-                    if let Some(val) = serialized_partition_key {
-                        headers.set(CosmosDBPartitionKey(val));
-                    }
-                 });
+            &self.authorization_token,
+            uri,
+            hyper::Method::Get,
+            None,
+            ResourceType::Documents,
+            move |ref mut headers| {
+                if let Some(val) = gdo.consistency_level_override {
+                    headers.set(ConsistencyLevelHeader(val));
+                }
+                if let Some(val) = gdo.session_token {
+                    headers.set(SessionTokenHeader(val.to_owned()));
+                }
+                if let Some(val) = gdo.if_none_match {
+                    headers.set(IfNoneMatch(val.to_owned()));
+                }
+                if let Some(val) = serialized_partition_key {
+                    headers.set(CosmosDBPartitionKey(val));
+                }
+            },
+        );
 
         trace!("request prepared");
 
@@ -833,7 +835,7 @@ impl<'a> Client {
         done(req).from_err().and_then(move |future_response| {
             extract_status_headers_and_body(future_response).and_then(
                 move |(status, headers, v_body)| {
-                    done(get_document_extract_result(status, headers, &v_body))
+                    done(get_document_extract_result(status, &headers, &v_body))
                 },
             )
         })
@@ -880,10 +882,11 @@ impl<'a> Client {
         let req = self.query_document_create_request(database, collection, query, options);
 
         done(req).from_err().and_then(move |future_response| {
-            check_status_extract_headers_and_body(future_response, StatusCode::Ok)
-                .and_then(move |(headers, v_body)| {
-                    done(query_documents_extract_result_json(&v_body, headers))
-                })
+            check_status_extract_headers_and_body(future_response, StatusCode::Ok).and_then(
+                move |(headers, v_body)| {
+                    done(query_documents_extract_result_json(&v_body, &headers))
+                },
+            )
         })
     }
 
@@ -907,31 +910,32 @@ impl<'a> Client {
         debug!("query_json == {}", query_json);
 
         let request = prepare_request(
-                &self.authorization_token,
-                uri,
-                hyper::Method::Post,
-                Some(&query_json),
-                ResourceType::Documents,
-                move |ref mut headers| {
-                    headers.set(DocumentDBIsQuery(true));
-                    headers.set(ContentType(get_query_content_type()));
+            &self.authorization_token,
+            uri,
+            hyper::Method::Post,
+            Some(&query_json),
+            ResourceType::Documents,
+            move |ref mut headers| {
+                headers.set(DocumentDBIsQuery(true));
+                headers.set(ContentType(get_query_content_type()));
 
-                    if let Some(val) = options.max_item_count {
-                        headers.set(MaxItemCount(val));
-                    }
-                    if let Some(val) = options.continuation_token {
-                        headers.set(ContinuationTokenHeader(val.to_owned()));
-                    }
-                    if let Some(val) = options.enable_cross_partition {
-                        headers.set(DocumentDBQueryEnableCrossPartition(val));
-                    }
-                    if let Some(val) = options.consistency_level_override {
-                        headers.set(ConsistencyLevelHeader(val));
-                    }
-                    if let Some(val) = options.session_token {
-                        headers.set(SessionTokenHeader(val.to_owned()));
-                    }
-                 });
+                if let Some(val) = options.max_item_count {
+                    headers.set(MaxItemCount(val));
+                }
+                if let Some(val) = options.continuation_token {
+                    headers.set(ContinuationTokenHeader(val.to_owned()));
+                }
+                if let Some(val) = options.enable_cross_partition {
+                    headers.set(DocumentDBQueryEnableCrossPartition(val));
+                }
+                if let Some(val) = options.consistency_level_override {
+                    headers.set(ConsistencyLevelHeader(val));
+                }
+                if let Some(val) = options.session_token {
+                    headers.set(SessionTokenHeader(val.to_owned()));
+                }
+            },
+        );
 
         trace!("request prepared");
 
@@ -939,9 +943,9 @@ impl<'a> Client {
     }
 }
 
-fn get_document_extract_result<'a, T>(
+fn get_document_extract_result<T>(
     status: hyper::StatusCode,
-    headers: hyper::Headers,
+    headers: &hyper::Headers,
     v_body: &[u8],
 ) -> Result<GetDocumentResponse<T>, AzureError>
 where
@@ -996,7 +1000,7 @@ where
 
 fn query_documents_extract_result_json(
     v_body: &[u8],
-    headers: Headers,
+    headers: &Headers,
 ) -> Result<QueryDocumentResponse<String>, AzureError> {
     trace!("headers == {:?}", headers);
 
@@ -1032,7 +1036,7 @@ fn query_documents_extract_result_json(
 
     let mut v_docs = Vec::new();
 
-    for doc in d.as_array().unwrap().into_iter() {
+    for doc in d.as_array().unwrap() {
         // We could either have a Document or a plain entry.
         // We will find out here.
 
@@ -1049,10 +1053,10 @@ fn query_documents_extract_result_json(
         let o_new = {
             let mut o_new = Value::Object(Map::new());
             {
-                let mut m_new = o_new.as_object_mut().unwrap();
+                let m_new = o_new.as_object_mut().unwrap();
 
                 for (key, val) in doc.as_object().unwrap() {
-                    if AZURE_KEYS.binary_search(&(&key as &str)).is_err() {
+                    if AZURE_KEYS.binary_search(&(key as &str)).is_err() {
                         m_new.insert(key.clone(), val.clone());
                     }
                 }
@@ -1097,9 +1101,9 @@ where
     Ok(qdr_converted)
 }
 
-fn list_documents_extract_result<'a, T>(
+fn list_documents_extract_result<T>(
     v_body: &[u8],
-    headers: Headers,
+    headers: &Headers,
 ) -> Result<ListDocumentsResponse<T>, AzureError>
 where
     T: DeserializeOwned,
@@ -1256,7 +1260,6 @@ fn string_to_sign(
     resource_link: &str,
     time: &str,
 ) -> String {
-
     // From official docs:
     // StringToSign =
     //      Verb.toLowerCase() + "\n" +
@@ -1419,6 +1422,5 @@ mon, 01 jan 1900 01:00:00 gmt
         assert_eq!(generate_resource_link(&u), "colls/second/third");
         let u = Uri::from_str("https://mindflavor.documents.azure.com/dbs/test_db/colls").unwrap();
         assert_eq!(generate_resource_link(&u), "dbs/test_db");
-
     }
 }

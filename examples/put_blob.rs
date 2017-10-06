@@ -20,7 +20,6 @@ use azure_sdk_for_rust::azure::core::lease::{LeaseAction, LeaseState, LeaseStatu
 
 use azure_sdk_for_rust::azure::core::errors::AzureError;
 
-use std::str;
 use std::fs::metadata;
 use std::fs::File;
 use std::path;

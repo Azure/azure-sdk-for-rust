@@ -22,6 +22,7 @@ use chrono::Utc;
 
 use futures::future::*;
 
+use hyper;
 use azure::core::lease::{LeaseAction, LeaseDuration, LeaseId, LeaseState, LeaseStatus};
 use azure::storage::client::Client;
 
@@ -381,7 +382,7 @@ impl Blob {
             uri = format!("{}&include={}", uri, include);
         }
 
-        if let Some(ref nm) = lbo.next_marker {
+        if let Some(nm) = lbo.next_marker {
             uri = format!("{}&marker={}", uri, nm);
         }
 
@@ -466,52 +467,52 @@ impl Blob {
         })
     }
 
-    pub fn put(
+    fn put_create_request(
         &self,
         c: &Client,
         po: &PutOptions,
         r: Option<&[u8]>,
-    ) -> Box<Future<Item = (), Error = AzureError>> {
+    ) -> Result<hyper::client::FutureResponse, AzureError> {
         // parameter sanity check
         match self.blob_type {
             BlobType::BlockBlob => if r.is_none() {
-                return Box::new(err(AzureError::InputParametersError(
+                return Err(AzureError::InputParametersError(
                     "cannot use put_blob with \
                      BlockBlob without a Read"
                         .to_owned(),
-                )));
+                ));
             },
             BlobType::PageBlob => {
                 if r.is_some() {
-                    return Box::new(err(AzureError::InputParametersError(
+                    return Err(AzureError::InputParametersError(
                         "cannot use put_blob with \
                          PageBlob with a Read"
                             .to_owned(),
-                    )));
+                    ));
                 }
 
                 if self.content_length % 512 != 0 {
-                    return Box::new(err(AzureError::InputParametersError(
+                    return Err(AzureError::InputParametersError(
                         "PageBlob size must be aligned \
                          to 512 bytes boundary"
                             .to_owned(),
-                    )));
+                    ));
                 }
             }
             BlobType::AppendBlob => if r.is_some() {
-                return Box::new(err(AzureError::InputParametersError(
+                return Err(AzureError::InputParametersError(
                     "cannot use put_blob with \
                      AppendBlob with a Read"
                         .to_owned(),
-                )));
+                ));
             },
-        }
+        };
 
         let ce = if let Some(ref content_encoding) = self.content_encoding {
             use hyper::header::Encoding;
             match content_encoding.parse::<Encoding>() {
                 Ok(ct) => Some(ct),
-                Err(error) => return Box::new(err(AzureError::HyperError(error))),
+                Err(error) => return Err(AzureError::HyperError(error)),
             }
         } else {
             None
@@ -528,7 +529,7 @@ impl Blob {
             uri = format!("{}&timeout={}", uri, timeout);
         }
 
-        let req = c.perform_request(
+        c.perform_request(
             &uri,
             Method::Put,
             move |ref mut headers| {
@@ -559,16 +560,23 @@ impl Blob {
                 }
             },
             r,
-        );
+        )
+    }
 
-        Box::new(
+    pub fn put<'b>(
+        &self,
+        c: &'b Client,
+        po: &'b PutOptions,
+        r: Option<&[u8]>,
+    ) -> impl Future<Item = (), Error = AzureError> + 'b {
+        ok(self.put_create_request(c, po, r)).and_then(|req| {
             done(req)
                 .from_err()
                 .and_then(move |future_response| {
                     check_status_extract_body(future_response, StatusCode::Created)
                 })
-                .and_then(|_| ok(())),
-        )
+                .and_then(|_| ok(()))
+        })
     }
 
     pub fn lease(
@@ -613,7 +621,7 @@ impl Blob {
             // this fix is needed to avoid
             // receiving HTTP Error 411. The request must be chunked or have a content length
             // This happens since hyper 0.11.2
-            Some("".as_bytes()),
+            Some(b""),
         );
 
 
