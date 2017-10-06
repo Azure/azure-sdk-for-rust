@@ -5,9 +5,9 @@
 
 [![Crate](https://img.shields.io/crates/v/azure_sdk_for_rust.svg)](https://crates.io/crates/azure_sdk_for_rust) [![cratedown](https://img.shields.io/crates/d/azure_sdk_for_rust.svg)](https://crates.io/crates/azure_sdk_for_rust) [![cratelastdown](https://img.shields.io/crates/dv/azure_sdk_for_rust.svg)](https://crates.io/crates/azure_sdk_for_rust)
 
-[![tag](https://img.shields.io/github/tag/mindflavor/AzureSDKForRust.svg)](https://github.com/MindFlavor/AzureSDKForRust/tree/0.4.5)
-[![release](https://img.shields.io/github/release/mindflavor/AzureSDKForRust.svg)](https://github.com/MindFlavor/AzureSDKForRust/tree/0.4.5)
-[![commitssince](https://img.shields.io/github/commits-since/mindflavor/AzureSDKForRust/0.4.5.svg)](https://img.shields.io/github/commits-since/mindflavor/AzureSDKForRust/0.4.5.svg)
+[![tag](https://img.shields.io/github/tag/mindflavor/AzureSDKForRust.svg)](https://github.com/MindFlavor/AzureSDKForRust/tree/0.5.0)
+[![release](https://img.shields.io/github/release/mindflavor/AzureSDKForRust.svg)](https://github.com/MindFlavor/AzureSDKForRust/tree/0.5.0)
+[![commitssince](https://img.shields.io/github/commits-since/mindflavor/AzureSDKForRust/0.5.0.svg)](https://img.shields.io/github/commits-since/mindflavor/AzureSDKForRust/0.5.0.svg)
 
 ## Introduction
 Microsoft Azure expose its technologies via REST API. These APIs are easily consumable from any language (good) but are weakly typed. With this library and its related [crate](https://crates.io/crates/azure_sdk_for_rust/) you can exploit the power of Microsoft Azure from Rust in a idiomatic way.

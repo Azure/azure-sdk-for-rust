@@ -1,11 +1,11 @@
 extern crate azure_sdk_for_rust;
 
+extern crate chrono;
 extern crate futures;
-extern crate tokio_core;
-extern crate tokio;
 extern crate hyper;
 extern crate hyper_tls;
-extern crate chrono;
+extern crate tokio;
+extern crate tokio_core;
 
 use std::error::Error;
 
@@ -38,7 +38,8 @@ fn main() {
 
 // This code will perform these tasks:
 // 1. Find an Azure Cosmos DB called *DATABASE*. If it does not exist, create it.
-// 2. Find an Azure Cosmos collection called *COLLECTION* in *DATABASE*. If it does not exist, create it.
+// 2. Find an Azure Cosmos collection called *COLLECTION* in *DATABASE*.
+//      If it does not exist, create it.
 // 3. Store an entry in collection *COLLECTION* of database *DATABASE*.
 // 4. Delete everything.
 //
@@ -133,9 +134,13 @@ fn code() -> Result<(), Box<Error>> {
     // Notice how easy it is! :)
     // The method create_document will return, upon success,
     // the document attributes.
-    let document_attributes = core.run(
-        client.create_document_as_entity(&database, &collection, false, None, &doc),
-    )?;
+    let document_attributes = core.run(client.create_document_as_entity(
+        &database,
+        &collection,
+        false,
+        None,
+        &doc,
+    ))?;
     println!("document_attributes == {:?}", document_attributes);
 
     // We will perform some cleanup. First we delete the collection...

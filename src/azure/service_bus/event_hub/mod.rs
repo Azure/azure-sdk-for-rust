@@ -39,7 +39,6 @@ fn send_event_prepare(
     event_body: &str,
     duration: Duration,
 ) -> Result<hyper::client::FutureResponse, AzureError> {
-
     // prepare the url to call
     let url = format!(
         "https://{}.servicebus.windows.net/{}/messages",
@@ -79,7 +78,6 @@ fn send_event(
     event_body: &str,
     duration: Duration,
 ) -> impl Future<Item = (), Error = AzureError> {
-
     let req = send_event_prepare(
         handle,
         namespace,

@@ -117,7 +117,9 @@ impl Container {
         let req = c.perform_request(
             &uri,
             Method::Put,
-            |ref mut headers| { headers.set(XMSBlobPublicAccess(pa)); },
+            |ref mut headers| {
+                headers.set(XMSBlobPublicAccess(pa));
+            },
             None,
         );
 
@@ -132,7 +134,7 @@ impl Container {
     pub fn list(
         c: &Client,
         lco: &ListContainerOptions,
-    ) -> Box<Future<Item = IncompleteVector<Container>, Error = AzureError>> {
+    ) -> impl Future<Item = IncompleteVector<Container>, Error = AzureError> {
         let mut uri = format!(
             "https://{}.blob.core.windows.net?comp=list&maxresults={}",
             c.account(),
@@ -157,11 +159,11 @@ impl Container {
 
         let req = c.perform_request(&uri, Method::Get, |_| {}, None);
 
-        Box::new(done(req).from_err().and_then(move |future_response| {
+        done(req).from_err().and_then(move |future_response| {
             check_status_extract_body(future_response, StatusCode::Ok).and_then(|body| {
                 done(incomplete_vector_from_response(&body)).from_err()
             })
-        }))
+        })
     }
 }
 

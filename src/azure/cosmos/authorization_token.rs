@@ -74,6 +74,5 @@ impl Debug for AuthorizationToken {
             so,
             self.binary_form.len()
         )
-
     }
 }

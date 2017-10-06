@@ -86,10 +86,9 @@ impl Client {
 
     /// Uri scheme + authority e.g. http://myaccount.table.core.windows.net/
     pub fn get_uri_prefix(&self, service_type: ServiceType) -> String {
-        "https://".to_owned() + self.account() +
-            match service_type {
-                ServiceType::Blob => SERVICE_SUFFIX_BLOB,
-                ServiceType::Table => SERVICE_SUFFIX_TABLE,
-            } + "/"
+        "https://".to_owned() + self.account() + match service_type {
+            ServiceType::Blob => SERVICE_SUFFIX_BLOB,
+            ServiceType::Table => SERVICE_SUFFIX_TABLE,
+        } + "/"
     }
 }

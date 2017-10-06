@@ -10,8 +10,8 @@ pub struct QueryDocumentOptions<'a> {
     pub session_token: Option<&'a str>,
 }
 
-impl<'a> QueryDocumentOptions<'a> {
-    pub fn new() -> QueryDocumentOptions<'a> {
+impl<'a> Default for QueryDocumentOptions<'a> {
+    fn default() -> QueryDocumentOptions<'a> {
         QUERY_DOCUMENTS_OPTIONS_DEFAULT.clone()
     }
 }
