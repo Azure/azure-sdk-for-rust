@@ -345,7 +345,7 @@ impl Blob {
         c: &Client,
         container_name: &str,
         lbo: &ListBlobOptions,
-    ) -> Box<Future<Item = IncompleteVector<Blob>, Error = AzureError>> {
+    ) -> impl Future<Item = IncompleteVector<Blob>, Error = AzureError> {
         let mut include = String::new();
         if lbo.include_snapshots {
             include += "snapshots";
@@ -400,11 +400,11 @@ impl Blob {
         // 'static lifetimes.
         let container_name = container_name.to_owned();
 
-        Box::new(done(req).from_err().and_then(move |future_response| {
+        done(req).from_err().and_then(move |future_response| {
             check_status_extract_body(future_response, StatusCode::Ok).and_then(move |body| {
                 done(incomplete_vector_from_response(&body, &container_name)).from_err()
             })
-        }))
+        })
     }
 
     pub fn get(
@@ -539,6 +539,7 @@ impl Blob {
                 if let Some(ce) = ce {
                     headers.set(ContentEncoding(vec![ce]));
                 }
+
                 // TODO Content-Language
 
                 if let Some(ref content_md5) = self.content_md5 {
