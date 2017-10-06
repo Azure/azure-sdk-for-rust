@@ -1,12 +1,12 @@
-#![cfg(all(test,feature = "test_e2e"))]
+#![cfg(all(test, feature = "test_e2e"))]
 
 extern crate azure_sdk_for_rust;
 
 extern crate futures;
-extern crate tokio_core;
-extern crate tokio;
 extern crate hyper;
 extern crate hyper_tls;
+extern crate tokio;
+extern crate tokio_core;
 
 use tokio_core::reactor::Core;
 

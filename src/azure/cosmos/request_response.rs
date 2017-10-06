@@ -6,10 +6,8 @@ use azure::cosmos::document::DocumentAttributes;
 #[allow(dead_code)]
 pub struct ListDatabasesResponse {
     _rid: String,
-    #[serde(rename = "Databases")]
-    pub databases: Vec<Database>,
-    #[serde(rename = "_count")]
-    pub count: u32,
+    #[serde(rename = "Databases")] pub databases: Vec<Database>,
+    #[serde(rename = "_count")] pub count: u32,
 }
 
 #[derive(Serialize, Debug)]
@@ -21,26 +19,20 @@ pub struct CreateDatabaseRequest<'a> {
 #[allow(dead_code)]
 pub struct ListCollectionsResponse {
     _rid: String,
-    #[serde(rename = "DocumentCollections")]
-    pub collections: Vec<Collection>,
-    #[serde(rename = "_count")]
-    pub count: u32,
+    #[serde(rename = "DocumentCollections")] pub collections: Vec<Collection>,
+    #[serde(rename = "_count")] pub count: u32,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ListDocumentsResponseAttributes {
-    #[serde(rename = "_rid")]
-    pub rid: String,
-    #[serde(rename = "Documents")]
-    pub documents: Vec<DocumentAttributes>,
+    #[serde(rename = "_rid")] pub rid: String,
+    #[serde(rename = "Documents")] pub documents: Vec<DocumentAttributes>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct ListDocumentsResponseEntities<T> {
-    #[serde(rename = "_rid")]
-    pub rid: String,
-    #[serde(rename = "Documents")]
-    pub entities: Vec<T>,
+    #[serde(rename = "_rid")] pub rid: String,
+    #[serde(rename = "Documents")] pub entities: Vec<T>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -95,8 +87,6 @@ pub struct GetDocumentResponse<T> {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct QueryResponseMeta {
-    #[serde(rename = "_rid")]
-    pub rid: String,
-    #[serde(rename = "_count")]
-    pub count: u64,
+    #[serde(rename = "_rid")] pub rid: String,
+    #[serde(rename = "_count")] pub count: u64,
 }

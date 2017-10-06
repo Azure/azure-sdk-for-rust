@@ -1,11 +1,11 @@
 extern crate azure_sdk_for_rust;
 
+extern crate chrono;
 extern crate futures;
-extern crate tokio_core;
-extern crate tokio;
 extern crate hyper;
 extern crate hyper_tls;
-extern crate chrono;
+extern crate tokio;
+extern crate tokio_core;
 
 use std::error::Error;
 
@@ -49,12 +49,12 @@ fn main() {
 }
 
 fn code() -> Result<(), Box<Error>> {
-    let database_name = std::env::args().nth(1).expect(
-        "please specify database name as first command line parameter",
-    );
-    let collection_name = std::env::args().nth(2).expect(
-        "please specify collection name as second command line parameter",
-    );
+    let database_name = std::env::args()
+        .nth(1)
+        .expect("please specify database name as first command line parameter");
+    let collection_name = std::env::args()
+        .nth(2)
+        .expect("please specify collection name as second command line parameter");
 
     let master_key =
         std::env::var("COSMOS_MASTER_KEY").expect("Set env variable COSMOS_MASTER_KEY first!");
@@ -76,9 +76,13 @@ fn code() -> Result<(), Box<Error>> {
 
         // let's add an entity. we ignore the errors at this point and just
         // notify the user.
-        match core.run(
-            client.create_document_as_entity(&database_name, &collection_name, false, None, &doc),
-        ) {
+        match core.run(client.create_document_as_entity(
+            &database_name,
+            &collection_name,
+            false,
+            None,
+            &doc,
+        )) {
             Ok(_) => {
                 println!("entity added");
             }
@@ -92,9 +96,11 @@ fn code() -> Result<(), Box<Error>> {
     let mut ldo = LIST_DOCUMENTS_OPTIONS_DEFAULT.clone();
     ldo.max_item_count = Some(3);
 
-    let response: ListDocumentsResponse<MySampleStructOwned> = core.run(
-        client.list_documents(&database_name, &collection_name, &ldo),
-    ).unwrap();
+    let response: ListDocumentsResponse<MySampleStructOwned> = core.run(client.list_documents(
+        &database_name,
+        &collection_name,
+        &ldo,
+    )).unwrap();
 
     assert_eq!(response.documents.len(), 3);
     println!("response == {:?}", response);
@@ -111,9 +117,11 @@ fn code() -> Result<(), Box<Error>> {
         let mut ldo = LIST_DOCUMENTS_OPTIONS_DEFAULT.clone();
         ldo.continuation_token = Some(&ct);
 
-        let response: ListDocumentsResponse<MySampleStructOwned> = core.run(
-            client.list_documents(&database_name, &collection_name, &ldo),
-        ).unwrap();
+        let response: ListDocumentsResponse<MySampleStructOwned> = core.run(client.list_documents(
+            &database_name,
+            &collection_name,
+            &ldo,
+        )).unwrap();
 
         assert_eq!(response.documents.len(), 47);
         println!("response == {:?}", response);
@@ -128,9 +136,12 @@ fn code() -> Result<(), Box<Error>> {
         let gdo = GET_DOCUMENT_OPTIONS_DEFAULT.clone();
         let id = format!("unique_id{}", 3);
 
-        let response: GetDocumentResponse<MySampleStructOwned> = core.run(
-            client.get_document(&database_name, &collection_name, &id, &gdo),
-        ).unwrap();
+        let response: GetDocumentResponse<MySampleStructOwned> = core.run(client.get_document(
+            &database_name,
+            &collection_name,
+            &id,
+            &gdo,
+        )).unwrap();
 
         assert_eq!(response.document.is_some(), true);
         println!("response == {:?}", response);
@@ -138,9 +149,12 @@ fn code() -> Result<(), Box<Error>> {
         // This id should not be found. We expect None as result
         let id = format!("unique_id{}", 100);
 
-        let response: GetDocumentResponse<MySampleStructOwned> = core.run(
-            client.get_document(&database_name, &collection_name, &id, &gdo),
-        ).unwrap();
+        let response: GetDocumentResponse<MySampleStructOwned> = core.run(client.get_document(
+            &database_name,
+            &collection_name,
+            &id,
+            &gdo,
+        )).unwrap();
 
         assert_eq!(response.document.is_some(), false);
         println!("response == {:?}", response);

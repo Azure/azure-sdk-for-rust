@@ -30,15 +30,14 @@ impl TableService {
     }
 
     pub fn list_tables(&self) -> impl Future<Item = Vec<String>, Error = AzureError> {
-        self.query_entities(TABLE_TABLES, None).and_then(
-            |entities| {
+        self.query_entities(TABLE_TABLES, None)
+            .and_then(|entities| {
                 let e: Vec<String> = entities
                     .into_iter()
                     .map(|x: TableEntity| x.TableName)
                     .collect();
                 ok(e)
-            },
-        )
+            })
     }
 
     // Create table if not exists.

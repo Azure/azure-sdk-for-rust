@@ -22,6 +22,7 @@ use chrono::Utc;
 
 use futures::future::*;
 
+use hyper;
 use azure::core::lease::{LeaseAction, LeaseDuration, LeaseId, LeaseState, LeaseStatus};
 use azure::storage::client::Client;
 
@@ -345,7 +346,7 @@ impl Blob {
         c: &Client,
         container_name: &str,
         lbo: &ListBlobOptions,
-    ) -> Box<Future<Item = IncompleteVector<Blob>, Error = AzureError>> {
+    ) -> impl Future<Item = IncompleteVector<Blob>, Error = AzureError> {
         let mut include = String::new();
         if lbo.include_snapshots {
             include += "snapshots";
@@ -381,7 +382,7 @@ impl Blob {
             uri = format!("{}&include={}", uri, include);
         }
 
-        if let Some(ref nm) = lbo.next_marker {
+        if let Some(nm) = lbo.next_marker {
             uri = format!("{}&marker={}", uri, nm);
         }
 
@@ -400,11 +401,11 @@ impl Blob {
         // 'static lifetimes.
         let container_name = container_name.to_owned();
 
-        Box::new(done(req).from_err().and_then(move |future_response| {
+        done(req).from_err().and_then(move |future_response| {
             check_status_extract_body(future_response, StatusCode::Ok).and_then(move |body| {
                 done(incomplete_vector_from_response(&body, &container_name)).from_err()
             })
-        }))
+        })
     }
 
     pub fn get(
@@ -457,61 +458,61 @@ impl Blob {
         let blob_name = blob_name.to_owned();
 
         done(req).from_err().and_then(move |future_response| {
-            check_status_extract_headers_and_body(future_response, expected_status_code)
-                .and_then(move |(headers, body)| {
+            check_status_extract_headers_and_body(future_response, expected_status_code).and_then(
+                move |(headers, body)| {
                     done(Blob::from_headers(&blob_name, &container_name, &headers))
                         .and_then(move |blob| ok((blob, body)))
-                })
+                },
+            )
         })
     }
 
-    pub fn put(
+    fn put_create_request(
         &self,
         c: &Client,
         po: &PutOptions,
         r: Option<&[u8]>,
-    ) -> Box<Future<Item = (), Error = AzureError>> {
-
+    ) -> Result<hyper::client::FutureResponse, AzureError> {
         // parameter sanity check
         match self.blob_type {
             BlobType::BlockBlob => if r.is_none() {
-                return Box::new(err(AzureError::InputParametersError(
+                return Err(AzureError::InputParametersError(
                     "cannot use put_blob with \
                      BlockBlob without a Read"
                         .to_owned(),
-                )));
+                ));
             },
             BlobType::PageBlob => {
                 if r.is_some() {
-                    return Box::new(err(AzureError::InputParametersError(
+                    return Err(AzureError::InputParametersError(
                         "cannot use put_blob with \
                          PageBlob with a Read"
                             .to_owned(),
-                    )));
+                    ));
                 }
 
                 if self.content_length % 512 != 0 {
-                    return Box::new(err(AzureError::InputParametersError(
+                    return Err(AzureError::InputParametersError(
                         "PageBlob size must be aligned \
                          to 512 bytes boundary"
                             .to_owned(),
-                    )));
+                    ));
                 }
             }
             BlobType::AppendBlob => if r.is_some() {
-                return Box::new(err(AzureError::InputParametersError(
+                return Err(AzureError::InputParametersError(
                     "cannot use put_blob with \
                      AppendBlob with a Read"
                         .to_owned(),
-                )));
+                ));
             },
-        }
+        };
 
         let ce = if let Some(ref content_encoding) = self.content_encoding {
             use hyper::header::Encoding;
             match content_encoding.parse::<Encoding>() {
                 Ok(ct) => Some(ct),
-                Err(error) => return Box::new(err(AzureError::HyperError(error))),
+                Err(error) => return Err(AzureError::HyperError(error)),
             }
         } else {
             None
@@ -528,7 +529,7 @@ impl Blob {
             uri = format!("{}&timeout={}", uri, timeout);
         }
 
-        let req = c.perform_request(
+        c.perform_request(
             &uri,
             Method::Put,
             move |ref mut headers| {
@@ -539,6 +540,7 @@ impl Blob {
                 if let Some(ce) = ce {
                     headers.set(ContentEncoding(vec![ce]));
                 }
+
                 // TODO Content-Language
 
                 if let Some(ref content_md5) = self.content_md5 {
@@ -558,16 +560,23 @@ impl Blob {
                 }
             },
             r,
-        );
+        )
+    }
 
-        Box::new(
+    pub fn put<'b>(
+        &self,
+        c: &'b Client,
+        po: &'b PutOptions,
+        r: Option<&[u8]>,
+    ) -> impl Future<Item = (), Error = AzureError> + 'b {
+        ok(self.put_create_request(c, po, r)).and_then(|req| {
             done(req)
                 .from_err()
                 .and_then(move |future_response| {
                     check_status_extract_body(future_response, StatusCode::Created)
                 })
-                .and_then(|_| ok(())),
-        )
+                .and_then(|_| ok(()))
+        })
     }
 
     pub fn lease(
@@ -608,10 +617,13 @@ impl Blob {
                 if let Some(ref request_id) = lbo.request_id {
                     headers.set(XMSClientRequestId(request_id.to_owned()));
                 }
-
             },
-            None,
+            // this fix is needed to avoid
+            // receiving HTTP Error 411. The request must be chunked or have a content length
+            // This happens since hyper 0.11.2
+            Some(b""),
         );
+
 
         let expected_result = match la {
             LeaseAction::Acquire => StatusCode::Created,
@@ -641,7 +653,6 @@ impl Blob {
         ppo: &PutPageOptions,
         content: &[u8],
     ) -> impl Future<Item = (), Error = AzureError> {
-
         let mut uri = format!(
             "https://{}.blob.core.windows.net/{}/{}?comp=page",
             c.account(),
@@ -683,7 +694,6 @@ impl Blob {
         pbo: &PutBlockOptions,
         content: &[u8],
     ) -> impl Future<Item = (), Error = AzureError> {
-
         let encoded_block_id = base64::encode(block_id.as_bytes());
 
         let mut uri = format!(
@@ -710,7 +720,6 @@ impl Blob {
                 if let Some(ref request_id) = pbo.request_id {
                     headers.set(XMSClientRequestId(request_id.to_owned()));
                 }
-
             },
             Some(content),
         );
@@ -729,7 +738,6 @@ impl Blob {
         range: &BA512Range,
         lease_id: Option<&LeaseId>,
     ) -> impl Future<Item = (), Error = AzureError> {
-
         let uri = format!(
             "https://{}.blob.core.windows.net/{}/{}?comp=page",
             c.account(),
