@@ -32,14 +32,9 @@ impl FromStr for IndexingDirective {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct DocumentAttributes {
     id: String,
-    #[serde(rename = "_rid")]
-    pub rid: String,
-    #[serde(rename = "_ts")]
-    pub ts: u64,
-    #[serde(rename = "_self")]
-    pub _self: String,
-    #[serde(rename = "_etag")]
-    pub etag: String,
-    #[serde(rename = "_attachments")]
-    pub attachments: String,
+    #[serde(rename = "_rid")] pub rid: String,
+    #[serde(rename = "_ts")] pub ts: u64,
+    #[serde(rename = "_self")] pub _self: String,
+    #[serde(rename = "_etag")] pub etag: String,
+    #[serde(rename = "_attachments")] pub attachments: String,
 }

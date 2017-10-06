@@ -136,7 +136,8 @@ impl<'a> Client {
     }
 
     /// Returns database list associated to the account
-    /// specified in the  `azure_sdk_for_rust::azure::cosmos::authorization_token::AuthorizationToken`.
+    /// specified in the
+    ///     `azure_sdk_for_rust::azure::cosmos::authorization_token::AuthorizationToken`.
     pub fn list_databases(&self) -> impl Future<Item = Vec<Database>, Error = AzureError> {
         trace!("list_databases called");
 
@@ -872,7 +873,8 @@ impl<'a> Client {
         let collection = collection.as_ref();
 
         trace!(
-            "query_document_json called(database == {}, collection == {}, query == {:?}, options = {:?}",
+            "query_document_json called(database == {}, \
+             collection == {}, query == {:?}, options = {:?}",
             database,
             collection,
             query,
