@@ -536,6 +536,7 @@ impl<'a> Client {
         collection: &str,
         is_upsert: bool,
         indexing_directive: Option<IndexingDirective>,
+        partition_key: Option<&str>,
         document_str: S,
     ) -> Result<hyper::client::FutureResponse, AzureError>
     where
@@ -547,6 +548,12 @@ impl<'a> Client {
             database,
             collection
         ))?;
+
+        let serialized_partition_key = match partition_key {
+            // the partition key should be a json formatted string list
+            Some(ref val) => Some(serde_json::to_string(val)?),
+            None => None,
+        };
 
         // Standard headers (auth and version) will be provied by perform_request
         // Optional headers as per
@@ -563,6 +570,10 @@ impl<'a> Client {
                 if let Some(id) = indexing_directive {
                     headers.set(DocumentIndexingDirective(id));
                 }
+
+                if let Some(ref val) = serialized_partition_key {
+                    headers.set(CosmosDBPartitionKey(val.to_owned()));
+                }
             },
         );
 
@@ -578,6 +589,7 @@ impl<'a> Client {
         collection: &str,
         is_upsert: bool,
         indexing_directive: Option<IndexingDirective>,
+        partition_key: Option<&str>,
         document: &T,
     ) -> Result<hyper::client::FutureResponse, AzureError>
     where
@@ -591,6 +603,7 @@ impl<'a> Client {
             collection,
             is_upsert,
             indexing_directive,
+            partition_key,
             &document_serialized,
         )
     }
@@ -601,6 +614,7 @@ impl<'a> Client {
         collection: S2,
         is_upsert: bool,
         indexing_directive: Option<IndexingDirective>,
+        partition_key: Option<&str>,
         document_str: S3,
     ) -> impl Future<Item = DocumentAttributes, Error = AzureError>
     where
@@ -624,6 +638,7 @@ impl<'a> Client {
             collection.as_ref(),
             is_upsert,
             indexing_directive,
+            partition_key,
             document_str,
         );
 
@@ -640,6 +655,7 @@ impl<'a> Client {
         collection: S2,
         is_upsert: bool,
         indexing_directive: Option<IndexingDirective>,
+        partition_key: Option<&str>,
         document: &T,
     ) -> impl Future<Item = DocumentAttributes, Error = AzureError>
     where
@@ -651,7 +667,7 @@ impl<'a> Client {
         let collection = collection.as_ref();
 
         trace!(
-            "create_document called(database == {}, collection == {}, is_upsert == {}",
+            "create_document_as_entity called(database == {}, collection == {}, is_upsert == {}",
             database,
             collection,
             is_upsert
@@ -662,6 +678,7 @@ impl<'a> Client {
             collection,
             is_upsert,
             indexing_directive,
+            partition_key,
             document,
         );
 
@@ -1361,13 +1378,12 @@ mon, 01 jan 1900 01:00:00 gmt
         let time = time.with_timezone(&chrono::Utc);
         let time = format!("{}", time.format(TIME_FORMAT));
 
-        let authorization_token =
-            authorization_token::AuthorizationToken::new(
-                "mindflavor".to_owned(),
-                authorization_token::TokenType::Master,
-                "8F8xXXOptJxkblM1DBXW7a6NMI5oE8NnwPGYBmwxLCKfejOK7B7yhcCHMGvN3PBrlMLIOeol1Hv9RCdzAZR5sg=="
-                    .to_owned())
-            .unwrap();
+        let authorization_token = authorization_token::AuthorizationToken::new(
+            "mindflavor".to_owned(),
+            authorization_token::TokenType::Master,
+            "8F8xXXOptJxkblM1DBXW7a6NMI5oE8NnwPGYBmwxLCKfejOK7B7yhcCHMGvN3PBrlMLIOeol1Hv9RCdzAZR5sg=="
+                .to_owned(),
+        ).unwrap();
 
         let ret = generate_authorization(
             &authorization_token,
