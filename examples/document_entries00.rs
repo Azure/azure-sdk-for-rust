@@ -60,7 +60,9 @@ fn code() -> Result<(), Box<Error>> {
     // to convert from Option<String> to Option<&str>
     // see: https://stackoverflow.com/questions/31233938/converting-from-optionstring-to-optionstr
     let partition_key_str = std::env::args().nth(3);
-    let partition_key = partition_key_str.as_ref().map_or(None, |x| Some(&**x));
+    let partition_key = partition_key_str
+        .as_ref()
+        .map_or(None, |x| Some(vec![&**x]));
 
     let master_key =
         std::env::var("COSMOS_MASTER_KEY").expect("Set env variable COSMOS_MASTER_KEY first!");
@@ -87,7 +89,7 @@ fn code() -> Result<(), Box<Error>> {
             &collection_name,
             false,
             None,
-            partition_key,
+            &partition_key,
             &doc,
         )) {
             Ok(_) => {
