@@ -578,7 +578,6 @@ impl<'a> Client {
                 }
 
                 if let Some(ref val) = serialized_partition_key {
-                    println!("Setting cosmos part to {}", val);
                     headers.set(CosmosDBPartitionKey(val.to_owned()));
                 }
             },

@@ -44,6 +44,10 @@ struct MySampleStructOwned {
     a_timestamp: i64,
 }
 
+// This example expects you to have created a collection
+// with partitionKey on "id". This SDK works with
+// unpartitioned collections too but this example,
+// for semplicity sake, does not :)
 fn main() {
     code().unwrap();
 }
@@ -55,14 +59,6 @@ fn code() -> Result<(), Box<Error>> {
     let collection_name = std::env::args()
         .nth(2)
         .expect("please specify collection name as second command line parameter");
-
-    // this horrible waltzer is required
-    // to convert from Option<String> to Option<&str>
-    // see: https://stackoverflow.com/questions/31233938/converting-from-optionstring-to-optionstr
-    let partition_key_str = std::env::args().nth(3);
-    let partition_key = partition_key_str
-        .as_ref()
-        .map_or(None, |x| Some(vec![&**x]));
 
     let master_key =
         std::env::var("COSMOS_MASTER_KEY").expect("Set env variable COSMOS_MASTER_KEY first!");
@@ -81,6 +77,8 @@ fn code() -> Result<(), Box<Error>> {
             a_number: i,
             a_timestamp: chrono::Utc::now().timestamp(),
         };
+
+        let partition_key = Some(vec![doc.id]);
 
         // let's add an entity. we ignore the errors at this point and just
         // notify the user.
@@ -142,8 +140,11 @@ fn code() -> Result<(), Box<Error>> {
             false
         );
 
-        let gdo = GET_DOCUMENT_OPTIONS_DEFAULT.clone();
+
+        println!("\n\nLooking for a specific item");
         let id = format!("unique_id{}", 3);
+        let mut gdo = GET_DOCUMENT_OPTIONS_DEFAULT.clone();
+        gdo.partition_key = Some(vec![&id]);
 
         let response: GetDocumentResponse<MySampleStructOwned> = core.run(client.get_document(
             &database_name,
@@ -156,7 +157,10 @@ fn code() -> Result<(), Box<Error>> {
         println!("response == {:?}", response);
 
         // This id should not be found. We expect None as result
+        println!("\n\nLooking for non-existing item");
         let id = format!("unique_id{}", 100);
+        let mut gdo = GET_DOCUMENT_OPTIONS_DEFAULT.clone();
+        gdo.partition_key = Some(vec![&id]);
 
         let response: GetDocumentResponse<MySampleStructOwned> = core.run(client.get_document(
             &database_name,
