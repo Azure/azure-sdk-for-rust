@@ -1,6 +1,9 @@
 use std::iter::IntoIterator;
+use serde::{Serialize, Serializer};
+use serde_json;
+use azure::core::errors::AzureError;
 
-#[derive(Serialize, Debug)]
+#[derive(Debug, Clone)]
 pub struct PartitionKey<'a> {
     pk: Option<Vec<&'a str>>,
 }
@@ -16,7 +19,34 @@ impl<'a> PartitionKey<'a> {
             None => self.pk = Some(vec![key]),
         }
     }
+
+    pub fn to_json(&self) -> Result<Option<String>, AzureError> {
+        match self.pk {
+            // the partition key should be a json formatted string list
+            Some(ref val) => Ok(Some(serde_json::to_string(val)?)),
+            None => Ok(None),
+        }
+    }
 }
+
+impl<'a> ::std::default::Default for PartitionKey<'a> {
+    fn default() -> Self {
+        PartitionKey { pk: None }
+    }
+}
+
+//impl<'a> Serialize for PartitionKey<'a> {
+//    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+//    where
+//        S: Serializer,
+//    {
+//        match self.pk {
+//            // the partition key should be a json formatted string list
+//            Some(val) => serializer.serialize_seq(val)?,
+//            None => S::Ok,
+//        }
+//    }
+//}
 
 impl<'a> IntoIterator for PartitionKey<'a> {
     type Item = &'a str;

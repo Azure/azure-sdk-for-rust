@@ -24,6 +24,7 @@ use azure::cosmos::get_document::GetDocumentOptions;
 use azure::cosmos::query_document::QueryDocumentOptions;
 use azure::core::incompletevector::ContinuationToken;
 use azure::cosmos::query::Query;
+use azure::cosmos::partition_key::PartitionKey;
 
 
 use std::str::{FromStr, from_utf8};
@@ -91,16 +92,6 @@ pub enum ResourceType {
 pub struct Client {
     hyper_client: hyper::Client<hyper_tls::HttpsConnector<hyper::client::HttpConnector>>,
     authorization_token: AuthorizationToken,
-}
-
-fn serialize_partition_key(
-    partition_key: &Option<Vec<&str>>,
-) -> Result<Option<String>, AzureError> {
-    match partition_key {
-        // the partition key should be a json formatted string list
-        &Some(ref val) => Ok(Some(serde_json::to_string(val)?)),
-        &None => Ok(None),
-    }
 }
 
 impl<'a> Client {
@@ -546,7 +537,7 @@ impl<'a> Client {
         collection: &str,
         is_upsert: bool,
         indexing_directive: Option<IndexingDirective>,
-        partition_key: &Option<Vec<&str>>,
+        partition_key: &PartitionKey,
         document_str: S,
     ) -> Result<hyper::client::FutureResponse, AzureError>
     where
@@ -559,7 +550,7 @@ impl<'a> Client {
             collection
         ))?;
 
-        let serialized_partition_key = serialize_partition_key(&partition_key)?;
+        let serialized_partition_key = partition_key.to_json()?;
 
         // Standard headers (auth and version) will be provied by perform_request
         // Optional headers as per
@@ -595,7 +586,7 @@ impl<'a> Client {
         collection: &str,
         is_upsert: bool,
         indexing_directive: Option<IndexingDirective>,
-        partition_key: &Option<Vec<&str>>,
+        partition_key: &PartitionKey,
         document: &T,
     ) -> Result<hyper::client::FutureResponse, AzureError>
     where
@@ -620,7 +611,7 @@ impl<'a> Client {
         collection: S2,
         is_upsert: bool,
         indexing_directive: Option<IndexingDirective>,
-        partition_key: &Option<Vec<&str>>,
+        partition_key: &PartitionKey,
         document_str: S3,
     ) -> impl Future<Item = DocumentAttributes, Error = AzureError>
     where
@@ -661,7 +652,7 @@ impl<'a> Client {
         collection: S2,
         is_upsert: bool,
         indexing_directive: Option<IndexingDirective>,
-        partition_key: &Option<Vec<&str>>,
+        partition_key: &PartitionKey,
         document: &T,
     ) -> impl Future<Item = DocumentAttributes, Error = AzureError>
     where
@@ -795,7 +786,7 @@ impl<'a> Client {
             document_id
         ))?;
 
-        let serialized_partition_key = serialize_partition_key(&gdo.partition_key)?;
+        let serialized_partition_key = gdo.partition_key.to_json()?;
 
         let request = prepare_request(
             &self.authorization_token,

@@ -14,7 +14,8 @@ use tokio_core::reactor::Core;
 use azure_sdk_for_rust::azure::cosmos::authorization_token::{AuthorizationToken, TokenType};
 use azure_sdk_for_rust::azure::cosmos::client::Client;
 use azure_sdk_for_rust::azure::cosmos::list_documents::LIST_DOCUMENTS_OPTIONS_DEFAULT;
-use azure_sdk_for_rust::azure::cosmos::get_document::GET_DOCUMENT_OPTIONS_DEFAULT;
+use azure_sdk_for_rust::azure::cosmos::partition_key::PartitionKey;
+use azure_sdk_for_rust::azure::cosmos::get_document::GetDocumentOptions;
 use azure_sdk_for_rust::azure::cosmos::request_response::{GetDocumentResponse,
                                                           ListDocumentsResponse};
 
@@ -78,7 +79,8 @@ fn code() -> Result<(), Box<Error>> {
             a_timestamp: chrono::Utc::now().timestamp(),
         };
 
-        let partition_key = Some(vec![doc.id]);
+        let mut partition_key = PartitionKey::default();
+        partition_key.push(doc.id);
 
         // let's add an entity. we ignore the errors at this point and just
         // notify the user.
@@ -143,8 +145,8 @@ fn code() -> Result<(), Box<Error>> {
 
         println!("\n\nLooking for a specific item");
         let id = format!("unique_id{}", 3);
-        let mut gdo = GET_DOCUMENT_OPTIONS_DEFAULT.clone();
-        gdo.partition_key = Some(vec![&id]);
+        let mut gdo = GetDocumentOptions::default();
+        gdo.partition_key.push(&id);
 
         let response: GetDocumentResponse<MySampleStructOwned> = core.run(client.get_document(
             &database_name,
@@ -159,8 +161,8 @@ fn code() -> Result<(), Box<Error>> {
         // This id should not be found. We expect None as result
         println!("\n\nLooking for non-existing item");
         let id = format!("unique_id{}", 100);
-        let mut gdo = GET_DOCUMENT_OPTIONS_DEFAULT.clone();
-        gdo.partition_key = Some(vec![&id]);
+        let mut gdo = GetDocumentOptions::default();
+        gdo.partition_key.push(&id);
 
         let response: GetDocumentResponse<MySampleStructOwned> = core.run(client.get_document(
             &database_name,
