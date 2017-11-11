@@ -1,3 +1,13 @@
+## [0.6.0](https://github.com/MindFlavor/AzureSDKForRust/releases/tag/0.6.0) (2017-11-11)
+
+**Breaking changes:**
+
+* Changed most Cosmos document functions to accept a `azure_sdk_for_rust::azure::cosmos::partition_key::PartitionKey` instead of `Option<Vec<&str>>`. The former is just a more pleasant way of describing the same thing tough.
+
+**Other changes:**
+
+* Updated dependencies to latest Cargo version.
+
 ## [0.4.5](https://github.com/MindFlavor/AzureSDKForRust/releases/tag/0.4.5) (2017-07-22)
 
 **Breaking changes:**
