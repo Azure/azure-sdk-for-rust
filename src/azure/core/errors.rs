@@ -14,6 +14,7 @@ use futures::Stream;
 use std::str;
 use std::string;
 use futures::future::*;
+use std;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct UnexpectedHTTPResult {
@@ -29,6 +30,27 @@ impl UnexpectedHTTPResult {
             received: received,
             body: body.to_owned(),
         }
+    }
+}
+
+impl std::fmt::Display for UnexpectedHTTPResult {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(
+            f,
+            "Unexpected HTTP result (expected: {}, received: {})",
+            self.expected,
+            self.received
+        )
+    }
+}
+
+impl std::error::Error for UnexpectedHTTPResult {
+    fn description(&self) -> &str {
+        "Unexpected HTTP result"
+    }
+
+    fn cause(&self) -> Option<&std::error::Error> {
+        None
     }
 }
 
@@ -213,8 +235,8 @@ pub fn check_status_extract_body(
     resp: hyper::client::FutureResponse,
     expected_status_code: hyper::StatusCode,
 ) -> impl Future<Item = String, Error = AzureError> {
-    extract_status_and_body(resp).and_then(
-        move |(status, body)| if status == expected_status_code {
+    extract_status_and_body(resp).and_then(move |(status, body)| {
+        if status == expected_status_code {
             ok(body)
         } else {
             err(AzureError::UnexpectedHTTPResult(UnexpectedHTTPResult {
@@ -222,6 +244,6 @@ pub fn check_status_extract_body(
                 received: status,
                 body: body,
             }))
-        },
-    )
+        }
+    })
 }

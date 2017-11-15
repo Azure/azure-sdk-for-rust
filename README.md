@@ -5,9 +5,9 @@
 
 [![Crate](https://img.shields.io/crates/v/azure_sdk_for_rust.svg)](https://crates.io/crates/azure_sdk_for_rust) [![cratedown](https://img.shields.io/crates/d/azure_sdk_for_rust.svg)](https://crates.io/crates/azure_sdk_for_rust) [![cratelastdown](https://img.shields.io/crates/dv/azure_sdk_for_rust.svg)](https://crates.io/crates/azure_sdk_for_rust)
 
-[![tag](https://img.shields.io/github/tag/mindflavor/AzureSDKForRust.svg)](https://github.com/MindFlavor/AzureSDKForRust/tree/0.5.0)
-[![release](https://img.shields.io/github/release/mindflavor/AzureSDKForRust.svg)](https://github.com/MindFlavor/AzureSDKForRust/tree/0.5.0)
-[![commitssince](https://img.shields.io/github/commits-since/mindflavor/AzureSDKForRust/0.5.0.svg)](https://img.shields.io/github/commits-since/mindflavor/AzureSDKForRust/0.5.0.svg)
+[![tag](https://img.shields.io/github/tag/mindflavor/AzureSDKForRust.svg)](https://github.com/MindFlavor/AzureSDKForRust/tree/0.6.0)
+[![release](https://img.shields.io/github/release/mindflavor/AzureSDKForRust.svg)](https://github.com/MindFlavor/AzureSDKForRust/tree/0.6.0)
+[![commitssince](https://img.shields.io/github/commits-since/mindflavor/AzureSDKForRust/0.6.0.svg)](https://img.shields.io/github/commits-since/mindflavor/AzureSDKForRust/0.6.0.svg)
 
 ## Introduction
 Microsoft Azure expose its technologies via REST API. These APIs are easily consumable from any language (good) but are weakly typed. With this library and its related [crate](https://crates.io/crates/azure_sdk_for_rust/) you can exploit the power of Microsoft Azure from Rust in a idiomatic way.
@@ -28,12 +28,12 @@ You can find examples in the [```examples```](https://github.com/MindFlavor/Azur
 ```rust
 extern crate azure_sdk_for_rust;
 
+extern crate chrono;
 extern crate futures;
-extern crate tokio_core;
-extern crate tokio;
 extern crate hyper;
 extern crate hyper_tls;
-extern crate chrono;
+extern crate tokio;
+extern crate tokio_core;
 
 use std::error::Error;
 
@@ -42,6 +42,8 @@ use tokio_core::reactor::Core;
 
 use azure_sdk_for_rust::azure::cosmos::authorization_token::{AuthorizationToken, TokenType};
 use azure_sdk_for_rust::azure::cosmos::client::Client;
+use azure_sdk_for_rust::azure::cosmos::partition_key::PartitionKey;
+
 
 #[macro_use]
 extern crate serde_derive;
@@ -66,7 +68,8 @@ fn main() {
 
 // This code will perform these tasks:
 // 1. Find an Azure Cosmos DB called *DATABASE*. If it does not exist, create it.
-// 2. Find an Azure Cosmos collection called *COLLECTION* in *DATABASE*. If it does not exist, create it.
+// 2. Find an Azure Cosmos collection called *COLLECTION* in *DATABASE*.
+//      If it does not exist, create it.
 // 3. Store an entry in collection *COLLECTION* of database *DATABASE*.
 // 4. Delete everything.
 //
@@ -76,8 +79,8 @@ fn main() {
 fn code() -> Result<(), Box<Error>> {
     // Let's get Cosmos account and master key from env variables.
     // This helps automated testing.
-    let master_key = std::env::var("COSMOS_MASTER_KEY")
-        .expect("Set env variable COSMOS_MASTER_KEY first!");
+    let master_key =
+        std::env::var("COSMOS_MASTER_KEY").expect("Set env variable COSMOS_MASTER_KEY first!");
     let account = std::env::var("COSMOS_ACCOUNT").expect("Set env variable COSMOS_ACCOUNT first!");
 
     // First, we create an authorization token. There are two types of tokens, master and resource
@@ -161,9 +164,14 @@ fn code() -> Result<(), Box<Error>> {
     // Notice how easy it is! :)
     // The method create_document will return, upon success,
     // the document attributes.
-    let document_attributes = core.run(
-        client.create_document_as_entity(&database, &collection, false, None, &doc),
-    )?;
+    let document_attributes = core.run(client.create_document_as_entity(
+        &database,
+        &collection,
+        false,
+        None,
+        &PartitionKey::default(),
+        &doc,
+    ))?;
     println!("document_attributes == {:?}", document_attributes);
 
     // We will perform some cleanup. First we delete the collection...

@@ -22,7 +22,7 @@ pub enum ServiceType {
     Table,
 }
 
-const AZURE_VERSION: &'static str = "2016-05-31";
+const AZURE_VERSION: &str = "2016-05-31";
 
 header! { (XMSVersion, "x-ms-version") => [String] }
 header! { (XMSDate, "x-ms-date") => [String] }

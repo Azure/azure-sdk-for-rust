@@ -14,6 +14,8 @@ use tokio_core::reactor::Core;
 
 use azure_sdk_for_rust::azure::cosmos::authorization_token::{AuthorizationToken, TokenType};
 use azure_sdk_for_rust::azure::cosmos::client::Client;
+use azure_sdk_for_rust::azure::cosmos::partition_key::PartitionKey;
+
 
 #[macro_use]
 extern crate serde_derive;
@@ -28,8 +30,8 @@ struct MySampleStruct<'a> {
 }
 
 
-const DATABASE: &'static str = "azuresdktestdb";
-const COLLECTION: &'static str = "azuresdktc";
+const DATABASE: &str = "azuresdktestdb";
+const COLLECTION: &str = "azuresdktc";
 
 
 fn main() {
@@ -139,6 +141,7 @@ fn code() -> Result<(), Box<Error>> {
         &collection,
         false,
         None,
+        &PartitionKey::default(),
         &doc,
     ))?;
     println!("document_attributes == {:?}", document_attributes);

@@ -14,7 +14,8 @@ use tokio_core::reactor::Core;
 use azure_sdk_for_rust::azure::cosmos::authorization_token::{AuthorizationToken, TokenType};
 use azure_sdk_for_rust::azure::cosmos::client::Client;
 use azure_sdk_for_rust::azure::cosmos::list_documents::LIST_DOCUMENTS_OPTIONS_DEFAULT;
-use azure_sdk_for_rust::azure::cosmos::get_document::GET_DOCUMENT_OPTIONS_DEFAULT;
+use azure_sdk_for_rust::azure::cosmos::partition_key::PartitionKey;
+use azure_sdk_for_rust::azure::cosmos::get_document::GetDocumentOptions;
 use azure_sdk_for_rust::azure::cosmos::request_response::{GetDocumentResponse,
                                                           ListDocumentsResponse};
 
@@ -44,6 +45,10 @@ struct MySampleStructOwned {
     a_timestamp: i64,
 }
 
+// This example expects you to have created a collection
+// with partitionKey on "id". This SDK works with
+// unpartitioned collections too but this example,
+// for semplicity sake, does not :)
 fn main() {
     code().unwrap();
 }
@@ -74,6 +79,9 @@ fn code() -> Result<(), Box<Error>> {
             a_timestamp: chrono::Utc::now().timestamp(),
         };
 
+        let mut partition_key = PartitionKey::default();
+        partition_key.push(doc.id);
+
         // let's add an entity. we ignore the errors at this point and just
         // notify the user.
         match core.run(client.create_document_as_entity(
@@ -81,6 +89,7 @@ fn code() -> Result<(), Box<Error>> {
             &collection_name,
             false,
             None,
+            &partition_key,
             &doc,
         )) {
             Ok(_) => {
@@ -133,8 +142,11 @@ fn code() -> Result<(), Box<Error>> {
             false
         );
 
-        let gdo = GET_DOCUMENT_OPTIONS_DEFAULT.clone();
+
+        println!("\n\nLooking for a specific item");
         let id = format!("unique_id{}", 3);
+        let mut gdo = GetDocumentOptions::default();
+        gdo.partition_key.push(&id);
 
         let response: GetDocumentResponse<MySampleStructOwned> = core.run(client.get_document(
             &database_name,
@@ -147,7 +159,10 @@ fn code() -> Result<(), Box<Error>> {
         println!("response == {:?}", response);
 
         // This id should not be found. We expect None as result
+        println!("\n\nLooking for non-existing item");
         let id = format!("unique_id{}", 100);
+        let mut gdo = GetDocumentOptions::default();
+        gdo.partition_key.push(&id);
 
         let response: GetDocumentResponse<MySampleStructOwned> = core.run(client.get_document(
             &database_name,

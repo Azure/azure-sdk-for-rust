@@ -10,6 +10,7 @@ pub mod list_documents;
 pub mod get_document;
 pub mod query_document;
 pub mod query;
+pub mod partition_key;
 
 use std::fmt;
 use azure::core::enumerations;
