@@ -1,4 +1,4 @@
-## [0.6.0](https://github.com/MindFlavor/AzureSDKForRust/releases/tag/0.6.0) (2017-11-11)
+## [0.6.0](https://github.com/MindFlavor/AzureSDKForRust/releases/tag/0.6.0) (2017-11-15)
 
 **Breaking changes:**
 
@@ -7,6 +7,21 @@
 **Other changes:**
 
 * Updated dependencies to latest Cargo version.
+
+## [0.5.0](https://github.com/MindFlavor/AzureSDKForRust/releases/tag/0.5.0) (2017-10-06)
+
+**Breaking changes:**
+
+* Changed all the remaining `Box<Future>` in `impl Future`
+
+**Bugfix:**
+
+* Corrected a bug in lease blob: now we will pass 0 as `Content-Length` as required
+
+**Other changes:**
+
+* Rustformatted all the code
+* Clipped code (many minor changes, mostly cosmetic ones)
 
 ## [0.4.5](https://github.com/MindFlavor/AzureSDKForRust/releases/tag/0.4.5) (2017-07-22)
 

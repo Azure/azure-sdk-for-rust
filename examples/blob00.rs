@@ -1,8 +1,11 @@
 extern crate azure_sdk_for_rust;
 
+extern crate env_logger;
 extern crate futures;
 extern crate hyper;
 extern crate hyper_tls;
+#[macro_use]
+extern crate log;
 extern crate tokio;
 extern crate tokio_core;
 
@@ -15,6 +18,7 @@ use azure_sdk_for_rust::azure::storage::client::Client;
 use azure_sdk_for_rust::azure::storage::blob::Blob;
 
 fn main() {
+    env_logger::init().unwrap();
     code().unwrap();
 }
 
@@ -37,6 +41,8 @@ fn code() -> Result<(), Box<Error>> {
     let mut core = Core::new()?;
 
     let client = Client::new(&core.handle(), &account, &master_key)?;
+
+    trace!("Requesting blog");
 
     let future =
         Blob::get(&client, &container, &blob, None, None, None).and_then(move |(blob, content)| {
