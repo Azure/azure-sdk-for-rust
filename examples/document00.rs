@@ -30,8 +30,8 @@ struct MySampleStruct<'a> {
 }
 
 
-const DATABASE: &'static str = "azuresdktestdb";
-const COLLECTION: &'static str = "azuresdktc";
+const DATABASE: &str = "azuresdktestdb";
+const COLLECTION: &str = "azuresdktc";
 
 
 fn main() {

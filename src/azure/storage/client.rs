@@ -9,8 +9,8 @@ use azure::core::errors::AzureError;
 use tokio_core::reactor::Handle;
 
 // Can be variant for different cloud environment
-const SERVICE_SUFFIX_BLOB: &'static str = ".blob.core.windows.net";
-const SERVICE_SUFFIX_TABLE: &'static str = ".table.core.windows.net";
+const SERVICE_SUFFIX_BLOB: &str = ".blob.core.windows.net";
+const SERVICE_SUFFIX_TABLE: &str = ".table.core.windows.net";
 
 pub struct Client {
     account: String,
@@ -75,7 +75,7 @@ impl Client {
         debug!("segment: {}, method: {:?}", segment, method,);
         perform_request(
             &self.hc,
-            (self.get_uri_prefix(ServiceType::Table) + segment).as_str(),
+            (self.get_uri_prefix(&ServiceType::Table) + segment).as_str(),
             method,
             &self.key,
             headers_func,
@@ -85,8 +85,8 @@ impl Client {
     }
 
     /// Uri scheme + authority e.g. http://myaccount.table.core.windows.net/
-    pub fn get_uri_prefix(&self, service_type: ServiceType) -> String {
-        "https://".to_owned() + self.account() + match service_type {
+    pub fn get_uri_prefix(&self, service_type: &ServiceType) -> String {
+        "https://".to_owned() + self.account() + match *service_type {
             ServiceType::Blob => SERVICE_SUFFIX_BLOB,
             ServiceType::Table => SERVICE_SUFFIX_TABLE,
         } + "/"

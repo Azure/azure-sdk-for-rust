@@ -1,5 +1,4 @@
 use std::iter::IntoIterator;
-use serde::{Serialize, Serializer};
 use serde_json;
 use azure::core::errors::AzureError;
 

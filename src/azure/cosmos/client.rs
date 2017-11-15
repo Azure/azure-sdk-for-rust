@@ -55,9 +55,9 @@ use native_tls;
 
 use futures::future::*;
 
-const AZURE_VERSION: &'static str = "2017-02-22";
-const VERSION: &'static str = "1.0";
-const TIME_FORMAT: &'static str = "%a, %d %h %Y %T GMT";
+const AZURE_VERSION: &str = "2017-02-22";
+const VERSION: &str = "1.0";
+const TIME_FORMAT: &str = "%a, %d %h %Y %T GMT";
 
 header! { (XMSVersion, "x-ms-version") => [String] }
 header! { (XMSDate, "x-ms-date") => [String] }
@@ -79,7 +79,7 @@ header! { (DocumentDBIsQuery, "x-ms-documentdb-isquery") => [bool] }
 header! { (DocumentDBQueryEnableCrossPartition,
 "x-ms-documentdb-query-enablecrosspartition") => [bool] }
 
-const AZURE_KEYS: [&'static str; 5] = ["_attachments", "_etag", "_rid", "_self", "_ts"];
+const AZURE_KEYS: [&str; 5] = ["_attachments", "_etag", "_rid", "_self", "_ts"];
 
 
 #[derive(Clone, Copy)]
@@ -125,7 +125,7 @@ impl<'a> Client {
         let request = prepare_request(
             &self.authorization_token,
             uri,
-            hyper::Method::Get,
+            &hyper::Method::Get,
             None,
             ResourceType::Databases,
             |_| {},
@@ -170,7 +170,7 @@ impl<'a> Client {
         let request = prepare_request(
             &self.authorization_token,
             uri,
-            hyper::Method::Get,
+            &hyper::Method::Get,
             None,
             ResourceType::Collections,
             |_| {},
@@ -214,7 +214,7 @@ impl<'a> Client {
         let request = prepare_request(
             &self.authorization_token,
             uri,
-            hyper::Method::Post,
+            &hyper::Method::Post,
             Some(&req),
             ResourceType::Databases,
             |_| {},
@@ -259,7 +259,7 @@ impl<'a> Client {
         let request = prepare_request(
             &self.authorization_token,
             uri,
-            hyper::Method::Get,
+            &hyper::Method::Get,
             None,
             ResourceType::Databases,
             |_| {},
@@ -301,7 +301,7 @@ impl<'a> Client {
         let request = prepare_request(
             &self.authorization_token,
             uri,
-            hyper::Method::Delete,
+            &hyper::Method::Delete,
             None,
             ResourceType::Databases,
             |_| {},
@@ -346,7 +346,7 @@ impl<'a> Client {
         let request = prepare_request(
             &self.authorization_token,
             uri,
-            hyper::Method::Get,
+            &hyper::Method::Get,
             None,
             ResourceType::Collections,
             |_| {},
@@ -399,7 +399,7 @@ impl<'a> Client {
         let request = prepare_request(
             &self.authorization_token,
             uri,
-            hyper::Method::Post,
+            &hyper::Method::Post,
             Some(&collection_serialized),
             ResourceType::Collections,
             |ref mut headers| {
@@ -454,7 +454,7 @@ impl<'a> Client {
         let request = prepare_request(
             &self.authorization_token,
             uri,
-            hyper::Method::Delete,
+            &hyper::Method::Delete,
             None,
             ResourceType::Collections,
             |_| {},
@@ -503,7 +503,7 @@ impl<'a> Client {
         let request = prepare_request(
             &self.authorization_token,
             uri,
-            hyper::Method::Put,
+            &hyper::Method::Put,
             Some(&collection_serialized),
             ResourceType::Collections,
             |_| {},
@@ -558,7 +558,7 @@ impl<'a> Client {
         let request = prepare_request(
             &self.authorization_token,
             uri,
-            hyper::Method::Post,
+            &hyper::Method::Post,
             Some(document_str.as_ref()),
             ResourceType::Documents,
             |ref mut headers| {
@@ -631,8 +631,8 @@ impl<'a> Client {
         );
 
         let req = self.create_document_as_str_create_request(
-            database.as_ref(),
-            collection.as_ref(),
+            database,
+            collection,
             is_upsert,
             indexing_directive,
             partition_key,
@@ -703,7 +703,7 @@ impl<'a> Client {
         let request = prepare_request(
             &self.authorization_token,
             uri,
-            hyper::Method::Get,
+            &hyper::Method::Get,
             None,
             ResourceType::Documents,
             |ref mut headers| {
@@ -791,7 +791,7 @@ impl<'a> Client {
         let request = prepare_request(
             &self.authorization_token,
             uri,
-            hyper::Method::Get,
+            &hyper::Method::Get,
             None,
             ResourceType::Documents,
             move |ref mut headers| {
@@ -924,7 +924,7 @@ impl<'a> Client {
         let request = prepare_request(
             &self.authorization_token,
             uri,
-            hyper::Method::Post,
+            &hyper::Method::Post,
             Some(&query_json),
             ResourceType::Documents,
             move |ref mut headers| {
@@ -1175,7 +1175,7 @@ where
 fn prepare_request<F>(
     authorization_token: &AuthorizationToken,
     uri: hyper::Uri,
-    http_method: hyper::Method,
+    http_method: &hyper::Method,
     request_body: Option<&str>,
     resource_type: ResourceType,
     headers_func: F,
@@ -1197,14 +1197,14 @@ where
 
         generate_authorization(
             authorization_token,
-            http_method.clone(),
+            http_method,
             resource_type,
             resource_link,
             &time,
         )
     };
     trace!("prepare_request::auth == {:?}", auth);
-    let mut request = hyper::Request::new(http_method, uri);
+    let mut request = hyper::Request::new(http_method.clone(), uri);
 
     // This will give the caller the ability to add custom headers.
     // The closure is needed to because request.headers_mut().set_raw(...) requires
@@ -1230,7 +1230,7 @@ where
 
 fn generate_authorization(
     authorization_token: &AuthorizationToken,
-    http_method: hyper::Method,
+    http_method: &hyper::Method,
     resource_type: ResourceType,
     resource_link: &str,
     time: &str,
@@ -1267,7 +1267,7 @@ fn encode_str_to_sign(str_to_sign: &str, authorization_token: &AuthorizationToke
 }
 
 fn string_to_sign(
-    http_method: hyper::Method,
+    http_method: &hyper::Method,
     rt: ResourceType,
     resource_link: &str,
     time: &str,
@@ -1283,7 +1283,7 @@ fn string_to_sign(
 
     format!(
         "{}\n{}\n{}\n{}\n\n",
-        match http_method {
+        match *http_method {
             hyper::Method::Get => "get",
             hyper::Method::Put => "put",
             hyper::Method::Post => "post",

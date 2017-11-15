@@ -7,20 +7,20 @@ use serde::Serialize;
 use super::entity_path;
 use serde_json;
 
-const BATCH_BEGIN: &'static str = r#"--batch_a1e9d677-b28b-435e-a89e-87e6a768a431
+const BATCH_BEGIN: &str = r#"--batch_a1e9d677-b28b-435e-a89e-87e6a768a431
 Content-Type: multipart/mixed; boundary=changeset_8a28b620-b4bb-458c-a177-0959fb14c977
 
 "#;
-const BATCH_END: &'static str = "--batch_a1e9d677-b28b-435e-a89e-87e6a768a431\n";
-const CHANGESET_BEGIN: &'static str = r#"--changeset_8a28b620-b4bb-458c-a177-0959fb14c977
+const BATCH_END: &str = "--batch_a1e9d677-b28b-435e-a89e-87e6a768a431\n";
+const CHANGESET_BEGIN: &str = r#"--changeset_8a28b620-b4bb-458c-a177-0959fb14c977
 Content-Type: application/http
 Content-Transfer-Encoding: binary
 
 "#;
-const CHANGESET_END: &'static str = "--changeset_8a28b620-b4bb-458c-a177-0959fb14c977--\n";
-const UPDATE_HEADER: &'static str = "Content-Type: application/json\n";
-const ACCEPT_HEADER: &'static str = "Accept: application/json;odata=nometadata\n";
-const IF_MATCH_HEADER: &'static str = "If-Match: *\n";
+const CHANGESET_END: &str = "--changeset_8a28b620-b4bb-458c-a177-0959fb14c977--\n";
+const UPDATE_HEADER: &str = "Content-Type: application/json\n";
+const ACCEPT_HEADER: &str = "Accept: application/json;odata=nometadata\n";
+const IF_MATCH_HEADER: &str = "If-Match: *\n";
 
 // RowKey, Payload. Payload None for deletion
 pub struct BatchItem<T: Serialize>(String, Option<T>);
