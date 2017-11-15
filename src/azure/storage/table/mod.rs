@@ -18,7 +18,7 @@ use serde_json;
 
 use futures::future::*;
 
-const TABLE_TABLES: &'static str = "TABLES";
+const TABLE_TABLES: &str = "TABLES";
 
 pub struct TableService {
     client: Client,
@@ -66,8 +66,8 @@ impl TableService {
         let path = &entity_path(table_name, partition_key, row_key);
         let req = self.request_with_default_header(path, Method::Get, None);
         done(req).from_err().and_then(move |future_response| {
-            extract_status_and_body(future_response).and_then(
-                move |(status, body)| if status == StatusCode::NotFound {
+            extract_status_and_body(future_response).and_then(move |(status, body)| {
+                if status == StatusCode::NotFound {
                     ok(None)
                 } else if status != StatusCode::Ok {
                     err(AzureError::UnexpectedHTTPResult(
@@ -78,8 +78,8 @@ impl TableService {
                         Ok(item) => ok(Some(item)),
                         Err(error) => err(error.into()),
                     }
-                },
-            )
+                }
+            })
         })
     }
 
@@ -185,7 +185,7 @@ impl TableService {
         batch_items: &[BatchItem<T>],
     ) -> impl Future<Item = (), Error = AzureError> {
         let payload = &generate_batch_payload(
-            self.client.get_uri_prefix(ServiceType::Table).as_str(),
+            self.client.get_uri_prefix(&ServiceType::Table).as_str(),
             table_name,
             partition_key,
             batch_items,
