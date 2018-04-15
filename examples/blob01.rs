@@ -41,7 +41,7 @@ fn code() -> Result<(), Box<Error>> {
         .nth(2)
         .expect("please specify blob name as command line parameter");
 
-    let mut core = Core::new()?;
+    let core = Core::new()?;
 
     let client = Client::new(&core.handle(), &account, &master_key)?;
 
@@ -79,7 +79,6 @@ fn code() -> Result<(), Box<Error>> {
             ok(())
         });
 
-    //    core.run(future)?;
     let handle = core.handle();
     handle.spawn(future);
 
