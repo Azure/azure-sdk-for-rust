@@ -1337,7 +1337,7 @@ mod tests {
         let time = format!("{}", time.format(TIME_FORMAT));
 
         let ret = string_to_sign(
-            hyper::Method::Get,
+            &hyper::Method::Get,
             ResourceType::Databases,
             "dbs/MyDatabase/colls/MyCollection",
             &time,
@@ -1369,7 +1369,7 @@ mon, 01 jan 1900 01:00:00 gmt
 
         let ret = generate_authorization(
             &authorization_token,
-            hyper::Method::Get,
+            &hyper::Method::Get,
             ResourceType::Databases,
             "dbs/MyDatabase/colls/MyCollection",
             &time,
@@ -1395,7 +1395,7 @@ mon, 01 jan 1900 01:00:00 gmt
 
         let ret = generate_authorization(
             &authorization_token,
-            hyper::Method::Get,
+            &hyper::Method::Get,
             ResourceType::Databases,
             "dbs/ToDoList",
             &time,
