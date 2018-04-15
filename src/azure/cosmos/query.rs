@@ -8,7 +8,6 @@ pub struct False;
 impl Complete for True {}
 impl Complete for False {}
 
-
 #[derive(Debug, Serialize, Clone)]
 pub struct Parameter<'a> {
     name: &'a str,

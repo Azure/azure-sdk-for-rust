@@ -10,8 +10,8 @@ pub mod enumerations;
 pub mod incompletevector;
 pub mod lease;
 
-pub mod range;
 pub mod ba512_range;
+pub mod range;
 
 use url::percent_encoding;
 define_encode_set! {

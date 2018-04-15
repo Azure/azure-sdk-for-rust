@@ -1,8 +1,8 @@
-use std::str::FromStr;
-use std::fmt;
 use azure::core::enumerations;
 use azure::core::errors::TraversingError;
 use azure::core::parsing::FromStringOptional;
+use std::fmt;
+use std::str::FromStr;
 use uuid::Uuid;
 
 create_enum!(LeaseStatus, (Locked, "locked"), (Unlocked, "unlocked"));

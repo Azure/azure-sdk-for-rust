@@ -1,20 +1,20 @@
-use hyper;
-use native_tls;
-use hyper::StatusCode;
-use chrono;
-use std::io::Error as IOError;
-use std::num;
-use xml::BuilderError as XMLError;
-use url::ParseError as URLParseError;
 use azure::core::enumerations::ParsingError;
 use azure::core::range::ParseError;
-use serde_json;
+use chrono;
+use futures::future::*;
 use futures::Future;
 use futures::Stream;
+use hyper;
+use hyper::StatusCode;
+use native_tls;
+use serde_json;
+use std;
+use std::io::Error as IOError;
+use std::num;
 use std::str;
 use std::string;
-use futures::future::*;
-use std;
+use url::ParseError as URLParseError;
+use xml::BuilderError as XMLError;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct UnexpectedHTTPResult {
@@ -38,8 +38,7 @@ impl std::fmt::Display for UnexpectedHTTPResult {
         write!(
             f,
             "Unexpected HTTP result (expected: {}, received: {})",
-            self.expected,
-            self.received
+            self.expected, self.received
         )
     }
 }
@@ -188,9 +187,10 @@ pub fn extract_status_headers_and_body(
     resp.from_err().and_then(|res| {
         let status = res.status();
         let headers = res.headers().clone();
-        res.body().concat2().from_err().and_then(move |whole_body| {
-            ok((status, headers, Vec::from(&whole_body as &[u8])))
-        })
+        res.body()
+            .concat2()
+            .from_err()
+            .and_then(move |whole_body| ok((status, headers, Vec::from(&whole_body as &[u8]))))
     })
 }
 
@@ -221,12 +221,12 @@ pub fn extract_status_and_body(
 ) -> impl Future<Item = (hyper::StatusCode, String), Error = AzureError> {
     resp.from_err().and_then(|res| {
         let status = res.status();
-        res.body().concat2().from_err().and_then(
-            move |whole_body| match str::from_utf8(&whole_body) {
+        res.body().concat2().from_err().and_then(move |whole_body| {
+            match str::from_utf8(&whole_body) {
                 Ok(s_body) => ok((status, s_body.to_owned())),
                 Err(error) => err(AzureError::UTF8Error(error)),
-            },
-        )
+            }
+        })
     })
 }
 

@@ -1,8 +1,8 @@
-use std::str::FromStr;
-use std::fmt;
-use std::num::ParseIntError;
 use azure::core::range::Range;
 use std::convert::Into;
+use std::fmt;
+use std::num::ParseIntError;
+use std::str::FromStr;
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct BA512Range {
@@ -80,12 +80,10 @@ impl FromStr for BA512Range {
             return Err(ParseError::SplitNotFound);
         }
 
-        let cp_start = try!(v[0].parse::<u64>());
-        let cp_end = try!(v[1].parse::<u64>());
+        let cp_start = v[0].parse::<u64>()?;
+        let cp_end = v[1].parse::<u64>()?;
 
-
-
-        Ok(try!(BA512Range::new(cp_start, cp_end)))
+        Ok(BA512Range::new(cp_start, cp_end)?)
     }
 }
 

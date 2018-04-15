@@ -1,6 +1,6 @@
-use tokio_core;
-use hyper_tls;
 use futures::future::*;
+use hyper_tls;
+use tokio_core;
 
 use azure::core::errors::{check_status_extract_body, AzureError};
 use azure::core::COMPLETE_ENCODE_SET;
@@ -14,15 +14,15 @@ use hyper::StatusCode;
 use chrono;
 use time::Duration;
 
-use std::ops::Add;
 use base64;
+use std::ops::Add;
 
-use url::percent_encoding::utf8_percent_encode;
 use url::form_urlencoded::Serializer;
+use url::percent_encoding::utf8_percent_encode;
 
-use crypto::sha2::Sha256;
 use crypto::hmac::Hmac;
 use crypto::mac::Mac;
+use crypto::sha2::Sha256;
 
 mod client;
 pub use self::client::Client;
@@ -42,8 +42,7 @@ fn send_event_prepare(
     // prepare the url to call
     let url = format!(
         "https://{}.servicebus.windows.net/{}/messages",
-        namespace,
-        event_hub
+        namespace, event_hub
     );
     let url = hyper::Uri::from_str(&url)?;
     debug!("url == {:?}", url);
@@ -124,9 +123,6 @@ fn generate_signature(
 
     format!(
         "SharedAccessSignature sr={}&{}&se={}&skn={}",
-        &url_encoded,
-        sig,
-        expiry,
-        policy_name
+        &url_encoded, sig, expiry, policy_name
     )
 }

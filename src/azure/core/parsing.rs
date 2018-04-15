@@ -1,7 +1,7 @@
-use xml::Element;
-use xml::Xml::{CharacterNode, ElementNode};
 use azure::core::errors::TraversingError;
 use chrono;
+use xml::Element;
+use xml::Xml::{CharacterNode, ElementNode};
 
 pub trait FromStringOptional<T> {
     fn from_str_optional(s: &str) -> Result<T, TraversingError>;
@@ -9,7 +9,7 @@ pub trait FromStringOptional<T> {
 
 impl FromStringOptional<u64> for u64 {
     fn from_str_optional(s: &str) -> Result<u64, TraversingError> {
-        Ok(try!(s.parse::<u64>()))
+        Ok(s.parse::<u64>()?)
     }
 }
 
@@ -30,7 +30,7 @@ impl FromStringOptional<chrono::DateTime<chrono::Utc>> for chrono::DateTime<chro
 
 #[inline]
 pub fn from_azure_time(s: &str) -> Result<chrono::DateTime<chrono::Utc>, chrono::ParseError> {
-    let dt = try!(chrono::DateTime::parse_from_rfc2822(s));
+    let dt = chrono::DateTime::parse_from_rfc2822(s)?;
     let dt_utc: chrono::DateTime<chrono::Utc> = dt.with_timezone(&chrono::Utc);
     Ok(dt_utc)
 }
@@ -40,7 +40,7 @@ pub fn traverse_single_must<'a>(
     node: &'a Element,
     path: &[&str],
 ) -> Result<&'a Element, TraversingError> {
-    let vec = try!(traverse(node, path, false));
+    let vec = traverse(node, path, false)?;
     if vec.len() > 1 {
         return Err(TraversingError::MultipleNode(
             path[path.len() - 1].to_owned(),
@@ -54,7 +54,7 @@ pub fn traverse_single_optional<'a>(
     node: &'a Element,
     path: &[&str],
 ) -> Result<Option<&'a Element>, TraversingError> {
-    let vec = try!(traverse(node, path, true));
+    let vec = traverse(node, path, true)?;
     if vec.len() > 1 {
         return Err(TraversingError::MultipleNode(
             path[path.len() - 1].to_owned(),
@@ -151,9 +151,9 @@ pub fn cast_optional<'a, T>(node: &'a Element, path: &[&str]) -> Result<Option<T
 where
     T: FromStringOptional<T>,
 {
-    match try!(traverse_single_optional(node, path)) {
+    match traverse_single_optional(node, path)? {
         Some(e) => match inner_text(e) {
-            Ok(txt) => Ok(Some(try!(T::from_str_optional(txt)))),
+            Ok(txt) => Ok(Some(T::from_str_optional(txt)?)),
             Err(_) => Ok(None),
         },
         None => Ok(None),
@@ -165,15 +165,15 @@ pub fn cast_must<'a, T>(node: &'a Element, path: &[&str]) -> Result<T, Traversin
 where
     T: FromStringOptional<T>,
 {
-    let node = try!(traverse_single_must(node, path));
-    let itxt = try!(inner_text(node));
-    Ok(try!(T::from_str_optional(itxt)))
+    let node = traverse_single_must(node, path)?;
+    let itxt = inner_text(node)?;
+    Ok(T::from_str_optional(itxt)?)
 }
 
 #[cfg(test)]
 mod test {
-    use xml::Element;
     use chrono::{Datelike, Timelike};
+    use xml::Element;
 
     const XML: &'static str = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
 <EnumerationResults \

@@ -2,11 +2,11 @@ mod list_container_options;
 pub use self::list_container_options::{ListContainerOptions, LIST_CONTAINER_OPTIONS_DEFAULT};
 
 use azure::core;
-use azure::core::errors::AzureError;
-use azure::core::errors::check_status_extract_body;
 use azure::core::enumerations;
-use azure::core::parsing::{cast_must, cast_optional, traverse};
+use azure::core::errors::check_status_extract_body;
+use azure::core::errors::AzureError;
 use azure::core::incompletevector::IncompleteVector;
+use azure::core::parsing::{cast_must, cast_optional, traverse};
 
 use azure::core::lease::{LeaseDuration, LeaseState, LeaseStatus};
 use azure::storage::client::Client;
@@ -16,9 +16,9 @@ use futures::future::*;
 use hyper::Method;
 use hyper::StatusCode;
 
-use std::str::FromStr;
 use chrono::DateTime;
 use chrono::Utc;
+use std::str::FromStr;
 
 use std::fmt;
 
@@ -35,7 +35,6 @@ create_enum!(
     (Container, "container"),
     (Blob, "blob")
 );
-
 
 #[derive(Debug, Clone)]
 pub struct Container {
@@ -60,24 +59,16 @@ impl Container {
     }
 
     pub fn parse(elem: &Element) -> Result<Container, core::errors::AzureError> {
-        let name = try!(cast_must::<String>(elem, &["Name"]));
-        let last_modified = try!(cast_must::<DateTime<Utc>>(
-            elem,
-            &["Properties", "Last-Modified"]
-        ));
-        let e_tag = try!(cast_must::<String>(elem, &["Properties", "Etag"]));
+        let name = cast_must::<String>(elem, &["Name"])?;
+        let last_modified = cast_must::<DateTime<Utc>>(elem, &["Properties", "Last-Modified"])?;
+        let e_tag = cast_must::<String>(elem, &["Properties", "Etag"])?;
 
-        let lease_state = try!(cast_must::<LeaseState>(elem, &["Properties", "LeaseState"]));
+        let lease_state = cast_must::<LeaseState>(elem, &["Properties", "LeaseState"])?;
 
-        let lease_duration = try!(cast_optional::<LeaseDuration>(
-            elem,
-            &["Properties", "LeaseDuration"]
-        ));
+        let lease_duration =
+            cast_optional::<LeaseDuration>(elem, &["Properties", "LeaseDuration"])?;
 
-        let lease_status = try!(cast_must::<LeaseStatus>(
-            elem,
-            &["Properties", "LeaseStatus"]
-        ));
+        let lease_status = cast_must::<LeaseStatus>(elem, &["Properties", "LeaseStatus"])?;
 
         Ok(Container {
             name: name,
@@ -160,9 +151,8 @@ impl Container {
         let req = c.perform_request(&uri, Method::Get, |_| {}, None);
 
         done(req).from_err().and_then(move |future_response| {
-            check_status_extract_body(future_response, StatusCode::Ok).and_then(|body| {
-                done(incomplete_vector_from_response(&body)).from_err()
-            })
+            check_status_extract_body(future_response, StatusCode::Ok)
+                .and_then(|body| done(incomplete_vector_from_response(&body)).from_err())
         })
     }
 }
@@ -171,9 +161,6 @@ fn incomplete_vector_from_response(body: &str) -> Result<IncompleteVector<Contai
     let elem: Element = body.parse()?;
 
     let mut v = Vec::new();
-
-    // let containers = try!(traverse(&elem, &["Containers", "Container"]));
-    // println!("containers == {:?}", containers);
 
     for container in traverse(&elem, &["Containers", "Container"], true)? {
         v.push(Container::parse(container)?);
