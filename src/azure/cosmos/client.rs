@@ -1,12 +1,13 @@
 use azure::cosmos::authorization_token::{AuthorizationToken, TokenType};
 
-use azure::cosmos::database::Database;
 use azure::cosmos::collection::Collection;
+use azure::cosmos::database::Database;
 use azure::cosmos::document::{DocumentAttributes, IndexingDirective};
 
 use azure::core::errors::{check_status_extract_body, check_status_extract_headers_and_body,
                           extract_status_headers_and_body, AzureError, UnexpectedHTTPResult};
 
+use azure::core::COMPLETE_ENCODE_SET;
 use azure::cosmos::request_response::{CreateDatabaseRequest, Document,
                                       GetDocumentAdditionalHeaders, GetDocumentResponse,
                                       ListCollectionsResponse, ListDatabasesResponse,
@@ -16,23 +17,21 @@ use azure::cosmos::request_response::{CreateDatabaseRequest, Document,
                                       ListDocumentsResponseEntities, QueryDocumentResponse,
                                       QueryDocumentResponseAdditonalHeaders, QueryResponseMeta,
                                       QueryResult};
-use azure::core::COMPLETE_ENCODE_SET;
 
-use azure::cosmos::ConsistencyLevel;
-use azure::cosmos::list_documents::ListDocumentsOptions;
-use azure::cosmos::get_document::GetDocumentOptions;
-use azure::cosmos::query_document::QueryDocumentOptions;
 use azure::core::incompletevector::ContinuationToken;
-use azure::cosmos::query::Query;
+use azure::cosmos::get_document::GetDocumentOptions;
+use azure::cosmos::list_documents::ListDocumentsOptions;
 use azure::cosmos::partition_key::PartitionKey;
+use azure::cosmos::query::Query;
+use azure::cosmos::query_document::QueryDocumentOptions;
+use azure::cosmos::ConsistencyLevel;
 
+use std::str::{from_utf8, FromStr};
 
-use std::str::{FromStr, from_utf8};
-
-use serde::Serialize;
-use serde_json::Value;
-use serde_json::map::Map;
 use serde::de::DeserializeOwned;
+use serde::Serialize;
+use serde_json::map::Map;
+use serde_json::Value;
 
 use crypto::hmac::Hmac;
 use crypto::mac::Mac;
@@ -40,18 +39,18 @@ use crypto::sha2::Sha256;
 
 use base64;
 use hyper;
-use serde_json;
 use hyper::header::{ContentLength, ContentType, Headers};
 use hyper::StatusCode;
+use serde_json;
 
 use chrono;
 use mime::Mime;
 
 use url::percent_encoding::utf8_percent_encode;
 
-use tokio_core;
 use hyper_tls;
 use native_tls;
+use tokio_core;
 
 use futures::future::*;
 
@@ -80,7 +79,6 @@ header! { (DocumentDBQueryEnableCrossPartition,
 "x-ms-documentdb-query-enablecrosspartition") => [bool] }
 
 const AZURE_KEYS: [&str; 5] = ["_attachments", "_etag", "_rid", "_self", "_ts"];
-
 
 #[derive(Clone, Copy)]
 pub enum ResourceType {
@@ -237,9 +235,8 @@ impl<'a> Client {
         let req = self.create_database_create_request(database_name);
 
         done(req).from_err().and_then(move |future_response| {
-            check_status_extract_body(future_response, StatusCode::Created).and_then(move |body| {
-                done(serde_json::from_str::<Database>(&body)).from_err()
-            })
+            check_status_extract_body(future_response, StatusCode::Created)
+                .and_then(move |body| done(serde_json::from_str::<Database>(&body)).from_err())
         })
     }
 
@@ -279,9 +276,8 @@ impl<'a> Client {
         let req = self.get_database_create_request(database_name);
 
         done(req).from_err().and_then(move |future_response| {
-            check_status_extract_body(future_response, StatusCode::Ok).and_then(move |body| {
-                done(serde_json::from_str::<Database>(&body)).from_err()
-            })
+            check_status_extract_body(future_response, StatusCode::Ok)
+                .and_then(move |body| done(serde_json::from_str::<Database>(&body)).from_err())
         })
     }
 
@@ -371,9 +367,8 @@ impl<'a> Client {
         let req = self.get_collection_create_request(database_name, collection_name);
 
         done(req).from_err().and_then(move |future_response| {
-            check_status_extract_body(future_response, StatusCode::Ok).and_then(move |body| {
-                done(serde_json::from_str::<Collection>(&body)).from_err()
-            })
+            check_status_extract_body(future_response, StatusCode::Ok)
+                .and_then(move |body| done(serde_json::from_str::<Collection>(&body)).from_err())
         })
     }
 
@@ -430,9 +425,8 @@ impl<'a> Client {
             self.create_collection_create_request(database_name, required_throughput, collection);
 
         done(req).from_err().and_then(move |future_response| {
-            check_status_extract_body(future_response, StatusCode::Created).and_then(move |body| {
-                done(serde_json::from_str::<Collection>(&body)).from_err()
-            })
+            check_status_extract_body(future_response, StatusCode::Created)
+                .and_then(move |body| done(serde_json::from_str::<Collection>(&body)).from_err())
         })
     }
 
@@ -524,9 +518,8 @@ impl<'a> Client {
         let req = self.replace_collection_prepare_request(database_name, collection);
 
         done(req).from_err().and_then(move |future_response| {
-            check_status_extract_body(future_response, StatusCode::Created).and_then(move |body| {
-                done(serde_json::from_str::<Collection>(&body)).from_err()
-            })
+            check_status_extract_body(future_response, StatusCode::Created)
+                .and_then(move |body| done(serde_json::from_str::<Collection>(&body)).from_err())
         })
     }
 
@@ -736,7 +729,6 @@ impl<'a> Client {
         Ok(self.hyper_client.request(request))
     }
 
-
     pub fn list_documents<S1, S2, T>(
         &self,
         database: S1,
@@ -768,7 +760,6 @@ impl<'a> Client {
             )
         })
     }
-
 
     #[inline]
     fn get_document_create_request(
@@ -1227,7 +1218,6 @@ where
     request
 }
 
-
 fn generate_authorization(
     authorization_token: &AuthorizationToken,
     http_method: &hyper::Method,
@@ -1333,11 +1323,10 @@ fn get_query_content_type() -> Mime {
     "application/query+json".parse().unwrap()
 }
 
-
 #[cfg(test)]
 mod tests {
-    use azure::cosmos::client::*;
     use azure::cosmos::authorization_token;
+    use azure::cosmos::client::*;
     use hyper::Uri;
 
     #[test]
@@ -1348,7 +1337,7 @@ mod tests {
         let time = format!("{}", time.format(TIME_FORMAT));
 
         let ret = string_to_sign(
-            hyper::Method::Get,
+            &hyper::Method::Get,
             ResourceType::Databases,
             "dbs/MyDatabase/colls/MyCollection",
             &time,
@@ -1380,7 +1369,7 @@ mon, 01 jan 1900 01:00:00 gmt
 
         let ret = generate_authorization(
             &authorization_token,
-            hyper::Method::Get,
+            &hyper::Method::Get,
             ResourceType::Databases,
             "dbs/MyDatabase/colls/MyCollection",
             &time,
@@ -1406,7 +1395,7 @@ mon, 01 jan 1900 01:00:00 gmt
 
         let ret = generate_authorization(
             &authorization_token,
-            hyper::Method::Get,
+            &hyper::Method::Get,
             ResourceType::Databases,
             "dbs/ToDoList",
             &time,

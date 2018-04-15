@@ -1,13 +1,13 @@
-use tokio_core;
 use futures::future::*;
+use tokio_core;
 
-use azure::service_bus::event_hub::send_event;
 use azure::core::errors::AzureError;
+use azure::service_bus::event_hub::send_event;
 
 use time::Duration;
 
-use crypto::sha2::Sha256;
 use crypto::hmac::Hmac;
+use crypto::sha2::Sha256;
 
 pub struct Client {
     handle: tokio_core::reactor::Handle,
@@ -64,8 +64,8 @@ mod test {
 
     #[test]
     pub fn client_enc() {
-        use crypto::mac::Mac;
         use base64;
+        use crypto::mac::Mac;
         use tokio_core::reactor::Core;
 
         let str_to_sign = "This must be secret!";

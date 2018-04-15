@@ -51,10 +51,10 @@ macro_rules! create_enum {
 #[cfg(test)]
 mod test {
     use azure::core::enumerations;
-    use std::str::FromStr;
-    use std::fmt;
     use azure::core::errors::TraversingError;
     use azure::core::parsing::FromStringOptional;
+    use std::fmt;
+    use std::str::FromStr;
 
     create_enum!(Colors, (Black, "Black"), (White, "White"), (Red, "Red"));
     create_enum!(ColorsMonochrome, (Black, "Black"), (White, "White"));

@@ -3,8 +3,8 @@
 1. Only support single changeset in a batch request
 2. Only allow PUT and GET in changeset
 */
-use serde::Serialize;
 use super::entity_path;
+use serde::Serialize;
 use serde_json;
 
 const BATCH_BEGIN: &str = r#"--batch_a1e9d677-b28b-435e-a89e-87e6a768a431

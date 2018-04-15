@@ -1,8 +1,4 @@
 #![recursion_limit = "128"]
-// this will force us on nightly. The alternative is to
-// Box everything which is annoying. This will *eventually* become
-// stable so we will support stable too.
-#![feature(conservative_impl_trait)]
 
 extern crate chrono;
 #[macro_use]
@@ -31,7 +27,6 @@ extern crate serde;
 #[macro_use]
 extern crate serde_derive;
 extern crate serde_json;
-
 
 #[macro_use]
 pub mod azure;

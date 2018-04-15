@@ -1,8 +1,8 @@
+use super::rest_client::{perform_request, ServiceType};
 use hyper;
-use hyper_tls;
 use hyper::header::Headers;
 use hyper::Method;
-use super::rest_client::{perform_request, ServiceType};
+use hyper_tls;
 
 use azure::core::errors::AzureError;
 

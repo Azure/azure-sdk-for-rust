@@ -43,8 +43,6 @@ impl<T> Deref for IncompleteVector<T> {
     }
 }
 
-
-
 #[cfg(test)]
 mod test {
     #[allow(unused_imports)]

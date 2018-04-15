@@ -1,16 +1,16 @@
-use azure::core::range;
 use azure::core::errors::AzureError;
-use hyper::Method;
 use azure::core::lease::{LeaseAction, LeaseDuration, LeaseId, LeaseState, LeaseStatus};
+use azure::core::range;
+use base64;
 use chrono;
 use crypto::hmac::Hmac;
 use crypto::mac::Mac;
 use crypto::sha2::Sha256;
 use hyper;
-use hyper_tls;
 use hyper::header::{ContentEncoding, ContentLanguage, ContentLength, ContentType, Date, Header,
                     Headers, IfModifiedSince, IfUnmodifiedSince};
-use base64;
+use hyper::Method;
+use hyper_tls;
 use std::fmt::Display;
 use url;
 
@@ -132,8 +132,6 @@ fn string_to_sign(h: &Headers, u: &url::Url, method: Method, service_type: Servi
             str_to_sign = str_to_sign + &canonicalized_resource(u);
         }
     }
-
-
 
     // expected
     // GET\n /*HTTP Verb*/
@@ -335,7 +333,6 @@ where
     Ok(client.request(request))
 }
 
-
 mod test {
     extern crate chrono;
     extern crate hyper;
@@ -364,13 +361,12 @@ mod test {
     #[test]
     fn str_to_sign_test() {
         use super::*;
-        use hyper::header::{qitem, Accept};
         use azure::storage::table::{get_default_json_mime, get_json_mime_nometadata};
+        use hyper::header::{qitem, Accept};
 
         let mut headers: Headers = Headers::new();
         headers.set(Accept(vec![qitem(get_json_mime_nometadata())]));
         headers.set(ContentType(get_default_json_mime()));
-
 
         let u: url::Url =
             url::Url::parse("https://mindrust.table.core.windows.net/TABLES").unwrap();

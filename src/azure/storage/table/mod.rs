@@ -3,17 +3,17 @@ mod batch;
 pub use self::batch::BatchItem;
 
 use self::batch::generate_batch_payload;
-use mime::Mime;
 use azure::core::errors::{check_status_extract_body, extract_status_and_body, AzureError,
                           UnexpectedHTTPResult};
 use azure::storage::client::Client;
 use azure::storage::rest_client::ServiceType;
-use hyper::Method;
 use hyper::client::FutureResponse;
 use hyper::header::{qitem, Accept, ContentType, Headers, IfMatch};
+use hyper::Method;
 use hyper::StatusCode;
-use serde::Serialize;
+use mime::Mime;
 use serde::de::DeserializeOwned;
+use serde::Serialize;
 use serde_json;
 
 use futures::future::*;
@@ -70,9 +70,11 @@ impl TableService {
                 if status == StatusCode::NotFound {
                     ok(None)
                 } else if status != StatusCode::Ok {
-                    err(AzureError::UnexpectedHTTPResult(
-                        UnexpectedHTTPResult::new(StatusCode::Ok, status, &body),
-                    ))
+                    err(AzureError::UnexpectedHTTPResult(UnexpectedHTTPResult::new(
+                        StatusCode::Ok,
+                        status,
+                        &body,
+                    )))
                 } else {
                     match serde_json::from_str(&body) {
                         Ok(item) => ok(Some(item)),
@@ -129,7 +131,6 @@ impl TableService {
                 .and_then(move |_| ok(()))
         })
     }
-
 
     fn _prepare_update_entity<T>(
         &self,
@@ -197,7 +198,7 @@ impl TableService {
         done(req).from_err().and_then(move |future_response| {
             check_status_extract_body(future_response, StatusCode::Accepted).and_then(move |_| {
                 // TODO deal with body response, handle batch failure.
-                // let ref body = try!(get_response_body(&mut response));
+                // let ref body = get_response_body(&mut response)?;
                 // info!("{}", body);
                 ok(())
             })
@@ -242,7 +243,6 @@ impl TableService {
             .perform_table_request(segment, method, headers_func, request_vec)
     }
 }
-
 
 #[allow(non_snake_case)]
 #[derive(Serialize, Deserialize)]

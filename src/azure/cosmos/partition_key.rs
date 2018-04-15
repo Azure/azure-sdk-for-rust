@@ -1,6 +1,6 @@
-use std::iter::IntoIterator;
-use serde_json;
 use azure::core::errors::AzureError;
+use serde_json;
+use std::iter::IntoIterator;
 
 #[derive(Debug, Clone)]
 pub struct PartitionKey<'a> {

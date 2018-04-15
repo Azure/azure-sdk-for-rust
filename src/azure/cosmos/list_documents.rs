@@ -1,5 +1,5 @@
-use azure::cosmos::ConsistencyLevel;
 use azure::core::incompletevector::ContinuationToken;
+use azure::cosmos::ConsistencyLevel;
 
 #[derive(Debug, Clone)]
 pub struct ListDocumentsOptions<'a> {

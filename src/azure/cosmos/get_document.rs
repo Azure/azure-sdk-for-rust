@@ -1,5 +1,5 @@
-use azure::cosmos::ConsistencyLevel;
 use azure::cosmos::partition_key::PartitionKey;
+use azure::cosmos::ConsistencyLevel;
 
 #[derive(Debug, Clone)]
 pub struct GetDocumentOptions<'a> {
