@@ -529,12 +529,12 @@ impl Blob {
         )
     }
 
-    pub fn put<'b>(
+    pub fn put(
         &self,
-        c: &'b Client,
-        po: &'b PutOptions,
+        c: &Client,
+        po: &PutOptions,
         r: Option<&[u8]>,
-    ) -> impl Future<Item = (), Error = AzureError> + 'b {
+    ) -> impl Future<Item = (), Error = AzureError> {
         ok(self.put_create_request(c, po, r)).and_then(|req| {
             done(req)
                 .from_err()

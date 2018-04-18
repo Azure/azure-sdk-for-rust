@@ -847,13 +847,13 @@ impl<'a> Client {
         &self,
         database: S1,
         collection: S2,
-        query: &Query<'b>,
+        query: &Query,
         options: &QueryDocumentOptions,
-    ) -> impl Future<Item = QueryDocumentResponse<T>, Error = AzureError> + 'b
+    ) -> impl Future<Item = QueryDocumentResponse<T>, Error = AzureError>
     where
-        T: DeserializeOwned + 'b,
-        S1: AsRef<str> + 'b,
-        S2: AsRef<str> + 'b,
+        T: DeserializeOwned,
+        S1: AsRef<str>,
+        S2: AsRef<str>,
     {
         self.query_document_json(database, collection, query, options)
             .and_then(move |qdr_json| done(convert_query_document_type(qdr_json)))
