@@ -1,5 +1,3 @@
-use std::ops::Deref;
-
 #[derive(Serialize, Deserialize, Debug)]
 pub enum KeyKind {
     Hash,
@@ -110,19 +108,5 @@ impl Collection {
             udfs: "".to_owned(),
             conflicts: "".to_owned(),
         }
-    }
-}
-
-impl Deref for Collection {
-    type Target = str;
-
-    fn deref(&self) -> &str {
-        &self.id
-    }
-}
-
-impl AsRef<str> for Collection {
-    fn as_ref(&self) -> &str {
-        &self.id
     }
 }
