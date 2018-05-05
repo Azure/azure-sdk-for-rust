@@ -20,9 +20,7 @@ use std::ops::Add;
 use url::form_urlencoded::Serializer;
 use url::percent_encoding::utf8_percent_encode;
 
-use crypto::hmac::Hmac;
-use crypto::mac::Mac;
-use crypto::sha2::Sha256;
+use ring::hmac;
 
 mod client;
 pub use self::client::Client;
@@ -35,7 +33,7 @@ fn send_event_prepare(
     namespace: &str,
     event_hub: &str,
     policy_name: &str,
-    hmac: &mut Hmac<Sha256>,
+    signing_key: &hmac::SigningKey,
     event_body: &str,
     duration: Duration,
 ) -> Result<hyper::client::FutureResponse, AzureError> {
@@ -48,7 +46,7 @@ fn send_event_prepare(
     debug!("url == {:?}", url);
 
     // generate sas signature based on key name, key value, url and duration.
-    let sas = generate_signature(policy_name, hmac, &url.to_string(), duration);
+    let sas = generate_signature(policy_name, signing_key, &url.to_string(), duration);
     debug!("sas == {}", sas);
 
     let client = hyper::Client::configure()
@@ -73,7 +71,7 @@ fn send_event(
     namespace: &str,
     event_hub: &str,
     policy_name: &str,
-    hmac: &mut Hmac<Sha256>,
+    hmac: &hmac::SigningKey,
     event_body: &str,
     duration: Duration,
 ) -> impl Future<Item = (), Error = AzureError> {
@@ -94,7 +92,7 @@ fn send_event(
 
 fn generate_signature(
     policy_name: &str,
-    hmac: &mut Hmac<Sha256>,
+    signing_key: &hmac::SigningKey,
     url: &str,
     ttl: Duration,
 ) -> String {
@@ -107,10 +105,9 @@ fn generate_signature(
     let str_to_sign = format!("{}\n{}", url_encoded, expiry);
     debug!("str_to_sign == {:?}", str_to_sign);
 
-    hmac.reset();
-    hmac.input(str_to_sign.as_bytes());
+    let sig = hmac::sign(signing_key, str_to_sign.as_bytes());
     let sig = {
-        let sig = base64::encode(hmac.result().code());
+        let sig = base64::encode(sig.as_ref());
         debug!("sig == {}", sig);
         let mut ser = Serializer::new(String::new());
         ser.append_pair("sig", &sig);

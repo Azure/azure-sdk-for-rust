@@ -1,4 +1,4 @@
-extern crate crypto;
+extern crate ring;
 extern crate hyper;
 extern crate url;
 
