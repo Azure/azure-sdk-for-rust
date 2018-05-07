@@ -6,7 +6,6 @@ extern crate hyper;
 extern crate hyper_tls;
 #[macro_use]
 extern crate log;
-extern crate tokio;
 extern crate tokio_core;
 
 use std::error::Error;
