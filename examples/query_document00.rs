@@ -4,7 +4,6 @@ extern crate chrono;
 extern crate futures;
 extern crate hyper;
 extern crate hyper_tls;
-extern crate tokio;
 extern crate tokio_core;
 
 use std::error::Error;
