@@ -12,10 +12,11 @@ use std::error::Error;
 use futures::future::*;
 use tokio_core::reactor::Core;
 
-use azure_sdk_for_rust::azure::storage::client::Client;
-use azure_sdk_for_rust::azure::storage::blob::{Blob, BlobType, LEASE_BLOB_OPTIONS_DEFAULT,
-                                               LIST_BLOB_OPTIONS_DEFAULT, PUT_OPTIONS_DEFAULT};
 use azure_sdk_for_rust::azure::core::lease::{LeaseAction, LeaseState, LeaseStatus};
+use azure_sdk_for_rust::azure::storage::blob::{
+    Blob, BlobType, LEASE_BLOB_OPTIONS_DEFAULT, LIST_BLOB_OPTIONS_DEFAULT, PUT_OPTIONS_DEFAULT,
+};
+use azure_sdk_for_rust::azure::storage::client::Client;
 
 use azure_sdk_for_rust::azure::core::errors::AzureError;
 
@@ -27,7 +28,7 @@ use hyper::mime::Mime;
 use std::io::Read;
 
 fn main() {
-    env_logger::init().unwrap();
+    env_logger::init();
     code().unwrap();
 }
 
@@ -110,7 +111,6 @@ fn code() -> Result<(), Box<Error>> {
 
     core.run(future)?;
 
-
     println!("Leasing the blob...");
 
     let mut lbo = LEASE_BLOB_OPTIONS_DEFAULT.clone();
@@ -125,8 +125,8 @@ fn code() -> Result<(), Box<Error>> {
     let lease_id = core.run(future)?;
     println!("lease id == {:?}", lease_id);
 
-    let future = Blob::list(&client, &container_name, &LIST_BLOB_OPTIONS_DEFAULT).map(
-        |blobs| match blobs.iter().find(|blob| blob.name == name) {
+    let future = Blob::list(&client, &container_name, &LIST_BLOB_OPTIONS_DEFAULT).map(|blobs| {
+        match blobs.iter().find(|blob| blob.name == name) {
             Some(retrieved_blob) => {
                 let sc = (*retrieved_blob).clone();
                 Ok(sc)
@@ -134,8 +134,8 @@ fn code() -> Result<(), Box<Error>> {
             None => Err(AzureError::GenericErrorWithText(
                 "our blob should be here... where is it?".to_owned(),
             )),
-        },
-    );
+        }
+    });
 
     let retrieved_blob = core.run(future)??;
     println!("retrieved_blob == {:?}", retrieved_blob);
