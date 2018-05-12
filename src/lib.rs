@@ -11,7 +11,7 @@ extern crate native_tls;
 extern crate tokio_core;
 
 extern crate base64;
-extern crate crypto;
+extern crate ring;
 extern crate time;
 #[macro_use]
 extern crate url;

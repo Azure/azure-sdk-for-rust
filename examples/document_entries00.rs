@@ -47,7 +47,7 @@ struct MySampleStructOwned {
 // This example expects you to have created a collection
 // with partitionKey on "id". This SDK works with
 // unpartitioned collections too but this example,
-// for semplicity sake, does not :)
+// for simplicity sake, does not :)
 fn main() {
     code().unwrap();
 }
@@ -70,7 +70,7 @@ fn code() -> Result<(), Box<Error>> {
 
     let client = Client::new(&core.handle(), authorization_token)?;
 
-    for i in 0..50 {
+    for i in 0..5 {
         let doc = MySampleStruct {
             id: &format!("unique_id{}", i),
             a_string: "Something here",

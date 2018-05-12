@@ -3,9 +3,7 @@ use azure::core::lease::{LeaseAction, LeaseDuration, LeaseId, LeaseState, LeaseS
 use azure::core::range;
 use base64;
 use chrono;
-use crypto::hmac::Hmac;
-use crypto::mac::Mac;
-use crypto::sha2::Sha256;
+use ring::{hmac, digest::SHA256};
 use hyper;
 use hyper::header::{
     ContentEncoding, ContentLanguage, ContentLength, ContentType, Date, Header, Headers,
@@ -65,17 +63,13 @@ fn generate_authorization(
 }
 
 fn encode_str_to_sign(str_to_sign: &str, hmac_key: &str) -> String {
-    let mut v_hmac_key: Vec<u8> = Vec::new();
-
-    v_hmac_key.extend(base64::decode(hmac_key).unwrap());
-
-    let mut hmac = Hmac::new(Sha256::new(), &v_hmac_key);
-    hmac.input(str_to_sign.as_bytes());
+    let key = hmac::SigningKey::new(&SHA256, &base64::decode(hmac_key).unwrap());
+    let sig = hmac::sign(&key, str_to_sign.as_bytes());
 
     // let res = hmac.result();
     // println!("{:?}", res.code());
 
-    base64::encode(hmac.result().code())
+    base64::encode(sig.as_ref())
 }
 
 #[inline]

@@ -33,9 +33,7 @@ use serde::Serialize;
 use serde_json::map::Map;
 use serde_json::Value;
 
-use crypto::hmac::Hmac;
-use crypto::mac::Mac;
-use crypto::sha2::Sha256;
+use ring::{hmac, digest::SHA256};
 
 use base64;
 use hyper;
@@ -1250,10 +1248,9 @@ fn generate_authorization(
 }
 
 fn encode_str_to_sign(str_to_sign: &str, authorization_token: &AuthorizationToken) -> String {
-    let mut hmac = Hmac::new(Sha256::new(), authorization_token.binary_form());
-    hmac.input(str_to_sign.as_bytes());
-
-    base64::encode(hmac.result().code())
+    let key = hmac::SigningKey::new(&SHA256, authorization_token.binary_form());
+    let sig = hmac::sign(&key, str_to_sign.as_bytes());
+    base64::encode(sig.as_ref())
 }
 
 fn string_to_sign(

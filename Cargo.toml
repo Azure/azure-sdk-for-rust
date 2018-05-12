@@ -13,6 +13,7 @@ keywords       = ["sdk", "azure", "rest", "iot", "cloud"]
 categories     = ["api-bindings"]
 
 [dependencies]
+ring         = "0.12.1"
 RustyXML     = "0.1.1"
 base64       = "0.9.1"
 chrono       = "0.4.2"
