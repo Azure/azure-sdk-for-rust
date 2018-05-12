@@ -7,8 +7,10 @@ use crypto::hmac::Hmac;
 use crypto::mac::Mac;
 use crypto::sha2::Sha256;
 use hyper;
-use hyper::header::{ContentEncoding, ContentLanguage, ContentLength, ContentType, Date, Header,
-                    Headers, IfModifiedSince, IfUnmodifiedSince};
+use hyper::header::{
+    ContentEncoding, ContentLanguage, ContentLength, ContentType, Date, Header, Headers,
+    IfModifiedSince, IfUnmodifiedSince,
+};
 use hyper::Method;
 use hyper_tls;
 use std::fmt::Display;

@@ -20,7 +20,7 @@ use azure_sdk_for_rust::azure::storage::blob::{Blob, BlobType, PUT_OPTIONS_DEFAU
 use azure_sdk_for_rust::azure::storage::client::Client;
 
 fn main() {
-    env_logger::init().unwrap();
+    env_logger::init();
     code().unwrap();
 }
 
