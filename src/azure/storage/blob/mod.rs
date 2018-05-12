@@ -26,10 +26,11 @@ use azure::core::lease::{LeaseAction, LeaseDuration, LeaseId, LeaseState, LeaseS
 use azure::storage::client::Client;
 use hyper;
 
-use azure::storage::rest_client::{ContentMD5, ETag, XMSClientRequestId, XMSLeaseAction,
-                                  XMSLeaseBreakPeriod, XMSLeaseDuration, XMSLeaseDurationSeconds,
-                                  XMSLeaseId, XMSLeaseState, XMSLeaseStatus, XMSProposedLeaseId,
-                                  XMSRange, XMSRangeGetContentMD5};
+use azure::storage::rest_client::{
+    ContentMD5, ETag, XMSClientRequestId, XMSLeaseAction, XMSLeaseBreakPeriod, XMSLeaseDuration,
+    XMSLeaseDurationSeconds, XMSLeaseId, XMSLeaseState, XMSLeaseStatus, XMSProposedLeaseId,
+    XMSRange, XMSRangeGetContentMD5,
+};
 
 use azure::core::parsing::{cast_must, cast_optional, from_azure_time, traverse};
 
@@ -39,8 +40,9 @@ use azure::core::enumerations;
 use std::fmt;
 use std::str::FromStr;
 
-use azure::core::errors::{check_status_extract_body, check_status_extract_headers_and_body,
-                          AzureError, TraversingError};
+use azure::core::errors::{
+    check_status_extract_body, check_status_extract_headers_and_body, AzureError, TraversingError,
+};
 use azure::core::parsing::FromStringOptional;
 
 use azure::core::ba512_range::BA512Range;
@@ -51,8 +53,9 @@ use azure::core::range::Range;
 
 use hyper::mime::Mime;
 
-use hyper::header::{ContentEncoding, ContentLanguage, ContentLength, ContentType, Headers,
-                    LastModified};
+use hyper::header::{
+    ContentEncoding, ContentLanguage, ContentLength, ContentType, Headers, LastModified,
+};
 use hyper::StatusCode;
 
 use base64;

@@ -4,19 +4,19 @@ use azure::cosmos::collection::Collection;
 use azure::cosmos::database::Database;
 use azure::cosmos::document::{DocumentAttributes, IndexingDirective};
 
-use azure::core::errors::{check_status_extract_body, check_status_extract_headers_and_body,
-                          extract_status_headers_and_body, AzureError, UnexpectedHTTPResult};
+use azure::core::errors::{
+    check_status_extract_body, check_status_extract_headers_and_body,
+    extract_status_headers_and_body, AzureError, UnexpectedHTTPResult,
+};
 
 use azure::core::COMPLETE_ENCODE_SET;
-use azure::cosmos::request_response::{CreateDatabaseRequest, Document,
-                                      GetDocumentAdditionalHeaders, GetDocumentResponse,
-                                      ListCollectionsResponse, ListDatabasesResponse,
-                                      ListDocumentsResponse,
-                                      ListDocumentsResponseAdditionalHeaders,
-                                      ListDocumentsResponseAttributes,
-                                      ListDocumentsResponseEntities, QueryDocumentResponse,
-                                      QueryDocumentResponseAdditonalHeaders, QueryResponseMeta,
-                                      QueryResult};
+use azure::cosmos::request_response::{
+    CreateDatabaseRequest, Document, GetDocumentAdditionalHeaders, GetDocumentResponse,
+    ListCollectionsResponse, ListDatabasesResponse, ListDocumentsResponse,
+    ListDocumentsResponseAdditionalHeaders, ListDocumentsResponseAttributes,
+    ListDocumentsResponseEntities, QueryDocumentResponse, QueryDocumentResponseAdditonalHeaders,
+    QueryResponseMeta, QueryResult,
+};
 
 use azure::core::incompletevector::ContinuationToken;
 use azure::cosmos::get_document::GetDocumentOptions;
