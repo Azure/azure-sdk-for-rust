@@ -1,16 +1,20 @@
-pub mod authorization_token;
-pub mod client;
+mod authorization_token;
+mod client;
 pub mod database;
 
 pub mod request_response;
 
 pub mod collection;
 pub mod document;
-pub mod get_document;
-pub mod list_documents;
-pub mod partition_key;
+mod document_options;
+mod partition_key;
 pub mod query;
 pub mod query_document;
+
+pub use self::authorization_token::*;
+pub use self::client::*;
+pub use self::document_options::*;
+pub use self::partition_key::*;
 
 use azure::core::enumerations;
 use azure::core::errors::TraversingError;

@@ -10,8 +10,8 @@ extern crate tokio_core;
 
 use tokio_core::reactor::Core;
 
-use azure_sdk_for_rust::azure::service_bus::event_hub::Client;
-use azure_sdk_for_rust::azure::core::errors::AzureError;
+use azure_sdk_for_rust::service_bus::event_hub::Client;
+use azure_sdk_for_rust::core::errors::AzureError;
 
 extern crate chrono;
 extern crate env_logger;
@@ -21,7 +21,7 @@ extern crate serde;
 extern crate time;
 
 use time::Duration;
-use azure_sdk_for_rust::azure;
+use azure_sdk_for_rust;
 
 #[test]
 fn send_events_to_event_hub() {

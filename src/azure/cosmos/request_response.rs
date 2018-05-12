@@ -1,6 +1,6 @@
-use azure::cosmos::collection::Collection;
-use azure::cosmos::database::Database;
-use azure::cosmos::document::DocumentAttributes;
+use serde::de::DeserializeOwned;
+use azure::core::errors::AzureError;
+use azure::cosmos::{self, collection::Collection, database::Database, document::DocumentAttributes};
 
 #[derive(Deserialize, Debug)]
 #[allow(dead_code)]
@@ -49,6 +49,15 @@ pub struct Document<T> {
     pub entity: T,
 }
 
+impl<T: DeserializeOwned> Document<T> {
+    pub(crate) fn from_json(json: &[u8]) -> Result<Document<T>, AzureError> {
+        Ok(Document {
+            document_attributes: ::serde_json::from_slice::<DocumentAttributes>(json)?,
+            entity: ::serde_json::from_slice::<T>(json)?,
+        })
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct QueryResult<T> {
     pub document_attributes: Option<DocumentAttributes>,
@@ -83,14 +92,28 @@ pub struct ListDocumentsResponse<T> {
 }
 
 #[derive(Debug, Clone)]
-pub struct GetDocumentAdditionalHeaders {
+pub struct DocumentAdditionalHeaders {
     pub charge: f64,
+}
+
+impl DocumentAdditionalHeaders {
+    pub(crate) fn derive_from(headers: &::hyper::Headers) -> DocumentAdditionalHeaders {
+        DocumentAdditionalHeaders {
+            charge: *(headers.get::<cosmos::client::headers::Charge>().unwrap() as &f64),
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
 pub struct GetDocumentResponse<T> {
     pub document: Option<Document<T>>,
-    pub additional_headers: GetDocumentAdditionalHeaders,
+    pub additional_headers: DocumentAdditionalHeaders,
+}
+
+#[derive(Debug, Clone)]
+pub struct ReplaceDocumentResponse<T> {
+    pub document: Document<T>,
+    pub additional_headers: DocumentAdditionalHeaders,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]

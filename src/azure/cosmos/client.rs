@@ -2,7 +2,7 @@ use azure::cosmos::authorization_token::{AuthorizationToken, TokenType};
 
 use azure::cosmos::collection::Collection;
 use azure::cosmos::database::Database;
-use azure::cosmos::document::{DocumentAttributes, IndexingDirective};
+use azure::cosmos::document::DocumentAttributes;
 
 use azure::core::errors::{
     check_status_extract_body, check_status_extract_headers_and_body,
@@ -11,20 +11,16 @@ use azure::core::errors::{
 
 use azure::core::COMPLETE_ENCODE_SET;
 use azure::cosmos::request_response::{
-    CreateDatabaseRequest, Document, GetDocumentAdditionalHeaders, GetDocumentResponse,
+    CreateDatabaseRequest, Document, DocumentAdditionalHeaders, GetDocumentResponse, ReplaceDocumentResponse,
     ListCollectionsResponse, ListDatabasesResponse, ListDocumentsResponse,
     ListDocumentsResponseAdditionalHeaders, ListDocumentsResponseAttributes,
     ListDocumentsResponseEntities, QueryDocumentResponse, QueryDocumentResponseAdditonalHeaders,
     QueryResponseMeta, QueryResult,
 };
 
-use azure::core::incompletevector::ContinuationToken;
-use azure::cosmos::get_document::GetDocumentOptions;
-use azure::cosmos::list_documents::ListDocumentsOptions;
-use azure::cosmos::partition_key::PartitionKey;
+use azure::cosmos::document_options::{CreateDocumentOptions, GetDocumentOptions, ListDocumentsOptions, DeleteDocumentOptions, ReplaceDocumentOptions};
 use azure::cosmos::query::Query;
 use azure::cosmos::query_document::QueryDocumentOptions;
-use azure::cosmos::ConsistencyLevel;
 
 use std::str::{from_utf8, FromStr};
 
@@ -56,30 +52,37 @@ const AZURE_VERSION: &str = "2017-02-22";
 const VERSION: &str = "1.0";
 const TIME_FORMAT: &str = "%a, %d %h %Y %T GMT";
 
-header! { (XMSVersion, "x-ms-version") => [String] }
-header! { (XMSDate, "x-ms-date") => [String] }
-header! { (Authorization, "Authorization") => [String] }
-header! { (OfferThroughput, "x-ms-offer-throughput") => [u64] }
-header! { (DocumentIsUpsert, "x-ms-documentdb-is-upsert") => [bool] }
-header! { (DocumentIndexingDirective, "x-ms-indexing-directive	") => [IndexingDirective] }
-header! { (MaxItemCount, "x-ms-max-item-count") => [u64] }
-header! { (ContinuationTokenHeader, "x-ms-continuation") => [ContinuationToken] }
-header! { (ConsistencyLevelHeader, "x-ms-consistency-level") => [ConsistencyLevel] }
-header! { (SessionTokenHeader, "x-ms-session-token") => [ContinuationToken] }
-header! { (AIM, "A-IM") => [String] }
-header! { (IfNoneMatch, "If-None-Match") => [String] }
-header! { (PartitionRangeId, "x-ms-documentdb-partitionkeyrangeid") => [String] }
-header! { (Charge, "x-ms-request-charge") => [f64] }
-header! { (Etag, "etag") => [String] }
-header! { (CosmosDBPartitionKey, "x-ms-documentdb-partitionkey") => [String] }
-header! { (DocumentDBIsQuery, "x-ms-documentdb-isquery") => [bool] }
-header! { (DocumentDBQueryEnableCrossPartition,
-"x-ms-documentdb-query-enablecrosspartition") => [bool] }
+pub(crate) mod headers {
+    use azure::core::incompletevector::ContinuationToken;
+    use azure::cosmos::ConsistencyLevel;
+    use azure::cosmos::document::IndexingDirective;
+    
+    header! { (XMSVersion, "x-ms-version") => [String] }
+    header! { (XMSDate, "x-ms-date") => [String] }
+    header! { (Authorization, "Authorization") => [String] }
+    header! { (OfferThroughput, "x-ms-offer-throughput") => [u64] }
+    header! { (DocumentIsUpsert, "x-ms-documentdb-is-upsert") => [bool] }
+    header! { (DocumentIndexingDirective, "x-ms-indexing-directive	") => [IndexingDirective] }
+    header! { (MaxItemCount, "x-ms-max-item-count") => [u64] }
+    header! { (ContinuationTokenHeader, "x-ms-continuation") => [ContinuationToken] }
+    header! { (ConsistencyLevelHeader, "x-ms-consistency-level") => [ConsistencyLevel] }
+    header! { (SessionTokenHeader, "x-ms-session-token") => [ContinuationToken] }
+    header! { (AIM, "A-IM") => [String] }
+    header! { (IfNoneMatch, "If-None-Match") => [String] }
+    header! { (IfMatch, "If-Match") => [String] }
+    header! { (PartitionRangeId, "x-ms-documentdb-partitionkeyrangeid") => [String] }
+    header! { (Charge, "x-ms-request-charge") => [f64] }
+    header! { (Etag, "etag") => [String] }
+    header! { (CosmosDBPartitionKey, "x-ms-documentdb-partitionkey") => [String] }
+    header! { (DocumentDBIsQuery, "x-ms-documentdb-isquery") => [bool] }
+    header! { (DocumentDBQueryEnableCrossPartition, "x-ms-documentdb-query-enablecrosspartition") => [bool] }
+}
+use self::headers::*;
 
 const AZURE_KEYS: [&str; 5] = ["_attachments", "_etag", "_rid", "_self", "_ts"];
 
 #[derive(Clone, Copy)]
-pub enum ResourceType {
+enum ResourceType {
     Databases,
     Collections,
     Documents,
@@ -134,7 +137,7 @@ impl<'a> Client {
 
     /// Returns database list associated to the account
     /// specified in the
-    ///     `azure_sdk_for_rust::azure::cosmos::authorization_token::AuthorizationToken`.
+    ///     `azure_sdk_for_rust::cosmos::authorization_token::AuthorizationToken`.
     pub fn list_databases(&self) -> impl Future<Item = Vec<Database>, Error = AzureError> {
         trace!("list_databases called");
 
@@ -526,9 +529,7 @@ impl<'a> Client {
         &self,
         database: &str,
         collection: &str,
-        is_upsert: bool,
-        indexing_directive: Option<IndexingDirective>,
-        partition_key: &PartitionKey,
+        options: &CreateDocumentOptions,
         document_str: S,
     ) -> Result<hyper::client::FutureResponse, AzureError>
     where
@@ -541,7 +542,7 @@ impl<'a> Client {
             collection
         ))?;
 
-        let serialized_partition_key = partition_key.to_json()?;
+        let serialized_partition_key = options.partition_key.to_json()?;
 
         // Standard headers (auth and version) will be provied by perform_request
         // Optional headers as per
@@ -553,12 +554,10 @@ impl<'a> Client {
             Some(document_str.as_ref()),
             ResourceType::Documents,
             |ref mut headers| {
-                headers.set(DocumentIsUpsert(is_upsert));
-
-                if let Some(id) = indexing_directive {
+                headers.set(DocumentIsUpsert(options.is_upsert));
+                if let Some(id) = options.indexing_directive {
                     headers.set(DocumentIndexingDirective(id));
                 }
-
                 if let Some(ref val) = serialized_partition_key {
                     headers.set(CosmosDBPartitionKey(val.to_owned()));
                 }
@@ -575,9 +574,7 @@ impl<'a> Client {
         &self,
         database: &str,
         collection: &str,
-        is_upsert: bool,
-        indexing_directive: Option<IndexingDirective>,
-        partition_key: &PartitionKey,
+        options: &CreateDocumentOptions,
         document: &T,
     ) -> Result<hyper::client::FutureResponse, AzureError>
     where
@@ -589,9 +586,7 @@ impl<'a> Client {
         self.create_document_as_str_create_request(
             database,
             collection,
-            is_upsert,
-            indexing_directive,
-            partition_key,
+            options,
             &document_serialized,
         )
     }
@@ -600,9 +595,7 @@ impl<'a> Client {
         &self,
         database: S1,
         collection: S2,
-        is_upsert: bool,
-        indexing_directive: Option<IndexingDirective>,
-        partition_key: &PartitionKey,
+        options: &CreateDocumentOptions,
         document_str: S3,
     ) -> impl Future<Item = DocumentAttributes, Error = AzureError>
     where
@@ -615,18 +608,16 @@ impl<'a> Client {
         let collection = collection.as_ref();
 
         trace!(
-            "create_document_as_str called(database == {}, collection == {}, is_upsert == {}",
+            "create_document_as_str called(database == {}, collection == {}, options == {:?}",
             database,
             collection,
-            is_upsert
+            options
         );
 
         let req = self.create_document_as_str_create_request(
             database,
             collection,
-            is_upsert,
-            indexing_directive,
-            partition_key,
+            options,
             document_str,
         );
 
@@ -637,14 +628,12 @@ impl<'a> Client {
         })
     }
 
-    pub fn create_document_as_entity<T, S1, S2>(
+    pub fn create_document_as_entity<'c, T, S1, S2>(
         &self,
-        database: S1,
-        collection: S2,
-        is_upsert: bool,
-        indexing_directive: Option<IndexingDirective>,
-        partition_key: &PartitionKey,
-        document: &T,
+        database: &S1,
+        collection: &S2,
+        options: &CreateDocumentOptions,
+        document: &'c T,
     ) -> impl Future<Item = DocumentAttributes, Error = AzureError>
     where
         T: Serialize,
@@ -655,25 +644,154 @@ impl<'a> Client {
         let collection = collection.as_ref();
 
         trace!(
-            "create_document_as_entity called(database == {}, collection == {}, is_upsert == {}",
+            "create_document_as_entity called(database == {}, collection == {}, options == {:?}",
             database,
             collection,
-            is_upsert
+            options
         );
 
         let req = self.create_document_as_entity_create_request(
             database,
             collection,
-            is_upsert,
-            indexing_directive,
-            partition_key,
-            document,
+            options,
+            document
         );
 
         done(req).from_err().and_then(move |future_response| {
             check_status_extract_body(future_response, StatusCode::Created).and_then(move |body| {
                 done(serde_json::from_str::<DocumentAttributes>(&body)).from_err()
             })
+        })
+    }
+
+    #[inline]
+    fn delete_document_create_request(
+        &self,
+        database_id: &str,
+        collection_id: &str,
+        document_id: &str,
+        options: &DeleteDocumentOptions
+    ) -> Result<hyper::client::FutureResponse, AzureError> {
+        let uri = format!(
+            "https://{}.documents.azure.com/dbs/{}/colls/{}/docs/{}",
+            self.authorization_token.account(),
+            database_id,
+            collection_id,
+            document_id)
+            .parse()?;
+
+        let serialized_partition_key = options.partition_key.to_json()?;
+
+        // No specific headers are required.
+        // Standard headers (auth and version) will be provied by perform_request
+        let request = prepare_request(
+            &self.authorization_token,
+            uri,
+            &hyper::Method::Delete,
+            None,
+            ResourceType::Documents,
+            |ref mut headers| {
+                if let Some(val) = options.if_match {
+                    headers.set(IfMatch(val.to_owned()));
+                }
+                if let Some(val) = serialized_partition_key {
+                    headers.set(CosmosDBPartitionKey(val));
+                }
+            },
+        );
+
+        trace!("request prepared");
+
+        Ok(self.hyper_client.request(request))
+    }
+
+    pub fn delete_document<D: AsRef<str>, C: AsRef<str>, Dc: AsRef<str>>(
+        &self,
+        database_id: &D,
+        collection_id: &C,
+        document_id: &Dc,
+        options: &DeleteDocumentOptions
+    ) -> impl Future<Item = (), Error = AzureError> {
+        trace!("delete_document called (db_id == {}, collection_id == {}, doc_id = {}",
+            database_id.as_ref(), collection_id.as_ref(), document_id.as_ref());
+
+        let req = self.delete_document_create_request(database_id.as_ref(), collection_id.as_ref(), document_id.as_ref(), options);
+
+        done(req).from_err().and_then(move |future_response| {
+            check_status_extract_body(future_response, StatusCode::NoContent).and_then(|_| ok(()))
+        })
+    }
+
+    #[inline]
+    fn replace_document_prepare_request<T: Serialize>(
+        &self,
+        database_id: &str,
+        collection_id: &str,
+        options: &ReplaceDocumentOptions,
+        document: &Document<T>
+    ) -> Result<hyper::client::FutureResponse, AzureError> {
+        let document_serialized = serde_json::to_string(&document.entity)?;
+
+        let uri = hyper::Uri::from_str(&format!(
+            "https://{}.documents.azure.com/{}",
+            self.authorization_token.account(),
+            document.document_attributes._self
+        ))?;
+
+        let serialized_partition_key = options.partition_key.to_json()?;
+
+        // No specific headers are required.
+        // Standard headers (auth and version) will be provied by perform_request
+        trace!(
+            "replace_document called(db_id == {}, collection == {}, document == {}, options == {:?}",
+            database_id,
+            collection_id,
+            document_serialized,
+            options
+        );
+
+        let request = prepare_request_with_resource_link(
+            &self.authorization_token,
+            uri,
+            &hyper::Method::Put,
+            Some(&document_serialized),
+            ResourceType::Documents,
+            &document.document_attributes.rid.to_lowercase(),
+            |ref mut headers| {
+                if let Some(val) = options.if_match {
+                    headers.set(IfMatch(val.to_owned()));
+                }
+                if let Some(val) = serialized_partition_key {
+                    headers.set(CosmosDBPartitionKey(val));
+                }
+                if let Some(id) = options.indexing_directive {
+                    headers.set(DocumentIndexingDirective(id));
+                }
+            },
+        );
+
+        trace!("request prepared");
+
+        Ok(self.hyper_client.request(request))
+    }
+
+    pub fn replace_document<D: AsRef<str>, C: AsRef<str>, T: Serialize + DeserializeOwned>(
+        &self,
+        database_id: D,
+        collection_id: C,
+        options: &ReplaceDocumentOptions,
+        document: &Document<T>
+    ) -> impl Future<Item = ReplaceDocumentResponse<T>, Error = AzureError> {
+        trace!("replace_collection called");
+
+        let req = self.replace_document_prepare_request(database_id.as_ref(), collection_id.as_ref(), options, document);
+
+        done(req).from_err().and_then(move |future_response| {
+            extract_status_headers_and_body(future_response).and_then(
+                move |(status, headers, v_body)| {
+                    done(replace_document_extract_result(status, &headers, &v_body))
+                }
+            )
         })
     }
 
@@ -752,7 +870,7 @@ impl<'a> Client {
 
         done(req).from_err().and_then(move |future_response| {
             check_status_extract_headers_and_body(future_response, StatusCode::Ok).and_then(
-                move |(headers, whole_body)| {
+                |(headers, whole_body)| {
                     done(list_documents_extract_result::<T>(&whole_body, &headers))
                 },
             )
@@ -783,7 +901,7 @@ impl<'a> Client {
             &hyper::Method::Get,
             None,
             ResourceType::Documents,
-            move |ref mut headers| {
+            |ref mut headers| {
                 if let Some(val) = gdo.consistency_level_override {
                     headers.set(ConsistencyLevelHeader(val));
                 }
@@ -916,7 +1034,7 @@ impl<'a> Client {
             &hyper::Method::Post,
             Some(&query_json),
             ResourceType::Documents,
-            move |ref mut headers| {
+            |ref mut headers| {
                 headers.set(DocumentDBIsQuery(true));
                 headers.set(ContentType(get_query_content_type()));
 
@@ -944,46 +1062,46 @@ impl<'a> Client {
     }
 }
 
-fn get_document_extract_result<T>(
+fn replace_document_extract_result<T: DeserializeOwned>(
+    status: hyper::StatusCode,
+    headers: &hyper::Headers,
+    v_body: &[u8],
+) -> Result<ReplaceDocumentResponse<T>, AzureError>
+{
+    match status {
+        StatusCode::Ok => {
+            let additional_headers = DocumentAdditionalHeaders::derive_from(headers);
+            let document = Document::from_json(v_body)?;
+            Ok(ReplaceDocumentResponse { document, additional_headers })
+        }
+        _ => {
+            let error_text = from_utf8(v_body)?;
+            Err(AzureError::UnexpectedHTTPResult(UnexpectedHTTPResult::new(
+                StatusCode::Ok,
+                status,
+                error_text,
+            )))
+        }
+    }
+}
+
+fn get_document_extract_result<T: DeserializeOwned>(
     status: hyper::StatusCode,
     headers: &hyper::Headers,
     v_body: &[u8],
 ) -> Result<GetDocumentResponse<T>, AzureError>
-where
-    T: DeserializeOwned,
 {
     match status {
         StatusCode::Ok => {
-            let gdah = GetDocumentAdditionalHeaders {
-                charge: *(headers.get::<Charge>().unwrap() as &f64),
-            };
-            debug!("gdah == {:?}", gdah);
-
-            // we will proceed in two steps:
-            // 1- Deserialize the result as DocumentAttributes. The extra field will be ignored.
-            // 2- Deserialize the result a type T. The extra fields will be ignored.
-            let document = Document {
-                document_attributes: serde_json::from_slice::<DocumentAttributes>(v_body)?,
-                entity: serde_json::from_slice::<T>(v_body)?,
-            };
-
-            Ok(GetDocumentResponse {
-                document: Some(document),
-                additional_headers: gdah,
-            })
+            let additional_headers = DocumentAdditionalHeaders::derive_from(headers);
+            let document = Document::from_json(v_body)?;
+            Ok(GetDocumentResponse { document: Some(document), additional_headers })
         }
         // NotFound is not an error so we return None along
         // with the additional headers.
         StatusCode::NotFound => {
-            let gdah = GetDocumentAdditionalHeaders {
-                charge: *(headers.get::<Charge>().unwrap() as &f64),
-            };
-            debug!("gdah == {:?}", gdah);
-
-            Ok(GetDocumentResponse {
-                document: None,
-                additional_headers: gdah,
-            })
+            let additional_headers = DocumentAdditionalHeaders::derive_from(headers);
+            Ok(GetDocumentResponse { document: None, additional_headers })
         }
         _ => {
             // We treat everything else as an error. We could
@@ -1161,7 +1279,7 @@ where
 }
 
 #[inline]
-fn prepare_request<F>(
+fn prepare_request<F: FnOnce(&mut Headers)>(
     authorization_token: &AuthorizationToken,
     uri: hyper::Uri,
     http_method: &hyper::Method,
@@ -1169,42 +1287,71 @@ fn prepare_request<F>(
     resource_type: ResourceType,
     headers_func: F,
 ) -> hyper::client::Request
-where
-    F: FnOnce(&mut Headers),
 {
-    let dt = chrono::Utc::now();
-    let time = format!("{}", dt.format(TIME_FORMAT));
+    let time = format!("{}", chrono::Utc::now().format(TIME_FORMAT));
 
-    // we surround this two statements with a scope so the borrow
-    // on uri owned by generate_resource_link is released
-    // as soon as generate_authorization ends. This is needed
-    // because hyper::Request::new takes ownership of uri. And
-    // the borrow checked won't allow ownership move of a borrowed
-    // item. This way we save a useless clone.
     let auth = {
         let resource_link = generate_resource_link(&uri);
-
         generate_authorization(
             authorization_token,
             http_method,
             resource_type,
             resource_link,
-            &time,
+            &time
         )
     };
-    trace!("prepare_request::auth == {:?}", auth);
+    prepare_request_with_signature(uri, http_method, request_body, time, auth, headers_func)
+}
+
+#[inline]
+fn prepare_request_with_resource_link<F: FnOnce(&mut Headers)>(
+    authorization_token: &AuthorizationToken,
+    uri: hyper::Uri,
+    http_method: &hyper::Method,
+    request_body: Option<&str>,
+    resource_type: ResourceType,
+    resource_link: &str,
+    headers_func: F,
+) -> hyper::client::Request
+{
+    let time = format!("{}", chrono::Utc::now().format(TIME_FORMAT));
+
+    let sig = {
+        generate_authorization(
+            authorization_token,
+            http_method,
+            resource_type,
+            resource_link,
+            &time
+        )
+    };
+    prepare_request_with_signature(uri, http_method, request_body, time, sig, headers_func)
+}
+
+#[inline]
+fn prepare_request_with_signature<F: FnOnce(&mut Headers)>(
+    uri: hyper::Uri,
+    http_method: &hyper::Method,
+    request_body: Option<&str>,
+    time: String,
+    signature: String,
+    headers_func: F,
+) -> hyper::client::Request
+{
+    trace!("prepare_request::auth == {:?}", signature);
     let mut request = hyper::Request::new(http_method.clone(), uri);
 
     // This will give the caller the ability to add custom headers.
     // The closure is needed to because request.headers_mut().set_raw(...) requires
     // a Cow with 'static lifetime...
-    headers_func(request.headers_mut());
+    {
+        let headers = request.headers_mut();
+        headers_func(headers);
 
-    request.headers_mut().set(XMSDate(time));
-    request
-        .headers_mut()
-        .set(XMSVersion(AZURE_VERSION.to_owned()));
-    request.headers_mut().set(Authorization(auth));
+        headers.set(XMSDate(time));
+        headers.set(XMSVersion(AZURE_VERSION.to_owned()));
+        headers.set(Authorization(signature));
+    }
 
     trace!("prepare_request::headers == {:?}", request.headers());
 
@@ -1311,7 +1458,6 @@ fn generate_resource_link(u: &hyper::Uri) -> &str {
             }
         }
     }
-
     &p[1..]
 }
 

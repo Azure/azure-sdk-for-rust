@@ -10,10 +10,11 @@ use std::error::Error;
 
 use tokio_core::reactor::Core;
 
-use azure_sdk_for_rust::azure::cosmos::authorization_token::{AuthorizationToken, TokenType};
-use azure_sdk_for_rust::azure::cosmos::client::Client;
-use azure_sdk_for_rust::azure::cosmos::query_document::QueryDocumentOptions;
-use azure_sdk_for_rust::azure::cosmos::query::Query;
+use azure_sdk_for_rust::cosmos::{
+    AuthorizationToken, TokenType, Client,
+    query_document::QueryDocumentOptions,
+    query::Query
+};
 
 #[macro_use]
 extern crate serde_derive;

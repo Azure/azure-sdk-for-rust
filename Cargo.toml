@@ -25,7 +25,6 @@ log          = "0.4.1"
 mime         = "0.3.7"
 native-tls   = "0.1.5"
 quick-error  = "1.2.1"
-rust-crypto  = "0.2.36"
 serde        = "1.0.54"
 serde_derive = "1.0.54"
 serde_json   = "1.0.17"
@@ -33,6 +32,7 @@ time         = "0.1.40"
 tokio-core   = "0.1.17"
 url          = "1.7.0"
 uuid         = "0.6.3"
+smallvec     = { version = "0.6", features = ["serde"] }
 
 [features]
 test_e2e       = []
