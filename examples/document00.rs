@@ -86,7 +86,7 @@ fn code() -> Result<(), Box<Error>> {
     // we will create it. The collection creation is more complex and
     // has many options (such as indexing and so on).
     let collection = {
-        let collections = core.run(client.list_collections(&database))?;
+        let collections = core.run(client.list_collections(&database.id))?;
 
         if let Some(collection) = collections.into_iter().find(|coll| coll.id == COLLECTION) {
             collection
@@ -115,7 +115,7 @@ fn code() -> Result<(), Box<Error>> {
             // Performance levels have price impact. Also, higher
             // performance levels force you to specify an indexing
             // strategy. Consult the documentation for more details.
-            core.run(client.create_collection(&database, 400, &coll))?
+            core.run(client.create_collection(&database.id, 400, &coll))?
         }
     };
 
@@ -136,8 +136,8 @@ fn code() -> Result<(), Box<Error>> {
     // The method create_document will return, upon success,
     // the document attributes.
     let document_attributes = core.run(client.create_document_as_entity(
-        &database,
-        &collection,
+        &database.id,
+        &collection.id,
         false,
         None,
         &PartitionKey::default(),

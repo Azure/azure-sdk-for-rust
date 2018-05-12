@@ -3,8 +3,9 @@ mod batch;
 pub use self::batch::BatchItem;
 
 use self::batch::generate_batch_payload;
-use azure::core::errors::{check_status_extract_body, extract_status_and_body, AzureError,
-                          UnexpectedHTTPResult};
+use azure::core::errors::{
+    check_status_extract_body, extract_status_and_body, AzureError, UnexpectedHTTPResult,
+};
 use azure::storage::client::Client;
 use azure::storage::rest_client::ServiceType;
 use hyper::client::FutureResponse;

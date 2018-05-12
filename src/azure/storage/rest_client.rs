@@ -5,8 +5,10 @@ use base64;
 use chrono;
 use ring::{hmac, digest::SHA256};
 use hyper;
-use hyper::header::{ContentEncoding, ContentLanguage, ContentLength, ContentType, Date, Header,
-                    Headers, IfModifiedSince, IfUnmodifiedSince};
+use hyper::header::{
+    ContentEncoding, ContentLanguage, ContentLength, ContentType, Date, Header, Headers,
+    IfModifiedSince, IfUnmodifiedSince,
+};
 use hyper::Method;
 use hyper_tls;
 use std::fmt::Display;
