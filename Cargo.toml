@@ -1,6 +1,6 @@
 [package]
 name           = "azure_sdk_for_rust"
-version        = "0.6.0"
+version        = "0.6.1"
 description    = "Rust wrappers around Microsoft Azure REST APIs"
 readme         = "README.md"
 authors        = ["Francesco Cogno <francesco.cogno@outlook.com>", "Dong Liu <doliu@microsoft.com>"]
