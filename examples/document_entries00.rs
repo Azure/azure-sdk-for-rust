@@ -13,7 +13,7 @@ use tokio_core::reactor::Core;
 use azure_sdk_for_rust::cosmos::{
     AuthorizationToken, TokenType, Client,
     PartitionKey, GetDocumentOptions, CreateDocumentOptions, ReplaceDocumentOptions, ListDocumentsOptions, DeleteDocumentOptions,
-    request_response::{GetDocumentResponse, ReplaceDocumentResponse, ListDocumentsResponse}
+    request_response::{GetDocumentResponse, ListDocumentsResponse}
 };
 
 #[macro_use]
@@ -168,7 +168,7 @@ fn code() -> Result<(), Box<Error>> {
     rdo.if_match = Some(&doc.document_attributes.etag); // use optimistic concurrency check
     rdo.partition_key.push(&id);
 
-    let response: ReplaceDocumentResponse<MySampleStructOwned> = core.run(client.replace_document(
+    let _response = core.run(client.replace_document(
         &database_name,
         &collection_name,
         &rdo,

@@ -32,7 +32,7 @@ impl UnexpectedHTTPResult {
         }
     }
 
-    fn status_code(&self) -> StatusCode { self.received }
+    pub fn status_code(&self) -> StatusCode { self.received }
 }
 
 impl std::fmt::Display for UnexpectedHTTPResult {
