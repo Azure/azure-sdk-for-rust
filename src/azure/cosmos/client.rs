@@ -570,7 +570,7 @@ impl<'a> Client {
     }
 
     #[inline]
-    fn create_document_as_entity_create_request<T>(
+    fn create_document_create_request<T>(
         &self,
         database: &str,
         collection: &str,
@@ -628,7 +628,7 @@ impl<'a> Client {
         })
     }
 
-    pub fn create_document_as_entity<'c, T, S1, S2>(
+    pub fn create_document<'c, T, S1, S2>(
         &self,
         database: &S1,
         collection: &S2,
@@ -644,13 +644,13 @@ impl<'a> Client {
         let collection = collection.as_ref();
 
         trace!(
-            "create_document_as_entity called(database == {}, collection == {}, options == {:?}",
+            "create_document_as called(database == {}, collection == {}, options == {:?}",
             database,
             collection,
             options
         );
 
-        let req = self.create_document_as_entity_create_request(
+        let req = self.create_document_create_request(
             database,
             collection,
             options,

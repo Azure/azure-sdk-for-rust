@@ -81,7 +81,7 @@ fn code() -> Result<(), Box<Error>> {
 
         // let's add an entity. we ignore the errors at this point and just
         // notify the user.
-        core.run(client.create_document_as_entity(
+        core.run(client.create_document(
             &database_name,
             &collection_name,
             &CreateDocumentOptions { partition_key, ..Default::default() },
@@ -102,7 +102,7 @@ fn code() -> Result<(), Box<Error>> {
 
     //         // let's add an entity. we ignore the errors at this point and just
     //         // notify the user.
-    //         client.create_document_as_entity(
+    //         client.create_document(
     //             &database_name,
     //             &collection_name,
     //             &cdo,

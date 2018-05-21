@@ -163,12 +163,10 @@ fn code() -> Result<(), Box<Error>> {
     // Notice how easy it is! :)
     // The method create_document will return, upon success,
     // the document attributes.
-    let document_attributes = core.run(client.create_document_as_entity(
+    let document_attributes = core.run(client.create_document(
         &database,
         &collection,
-        false,
-        None,
-        &PartitionKey::default(),
+        &CreateDocumentOptions::default(),
         &doc,
     ))?;
     println!("document_attributes == {:?}", document_attributes);
