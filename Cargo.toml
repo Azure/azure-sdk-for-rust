@@ -1,9 +1,9 @@
 [package]
 name           = "azure_sdk_for_rust"
-version        = "0.6.1"
+version        = "0.7.0"
 description    = "Rust wrappers around Microsoft Azure REST APIs"
 readme         = "README.md"
-authors        = ["Francesco Cogno <francesco.cogno@outlook.com>", "Dong Liu <doliu@microsoft.com>"]
+authors        = ["Francesco Cogno <francesco.cogno@outlook.com>", "Max Gortman <mgortman@microsoft.com>", "Dong Liu <doliu@microsoft.com>"]
 license        = "Apache-2.0"
 repository     = "https://github.com/MindFlavor/AzureSDKForRust"
 documentation  = "http://mindflavor.github.io/AzureSDKForRust/azure_sdk_for_rust/index.html"
