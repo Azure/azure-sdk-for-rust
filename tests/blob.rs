@@ -18,12 +18,15 @@ use std::ops::Deref;
 
 use tokio_core::reactor::Core;
 
-use azure_sdk_for_rust::azure::core::errors::AzureError;
-use azure_sdk_for_rust::azure::core::lease::{LeaseState, LeaseStatus};
-use azure_sdk_for_rust::azure::storage::blob::{Blob, BlobType, PUT_OPTIONS_DEFAULT};
-use azure_sdk_for_rust::azure::storage::client::Client;
-use azure_sdk_for_rust::azure::storage::container::{Container, PublicAccess,
-                                                    LIST_CONTAINER_OPTIONS_DEFAULT};
+use azure_sdk_for_rust::core::{
+    errors::AzureError,
+    lease::{LeaseState, LeaseStatus}
+};
+use azure_sdk_for_rust::storage::{
+    blob::{Blob, BlobType, PUT_OPTIONS_DEFAULT},
+    client::Client,
+    container::{Container, PublicAccess, LIST_CONTAINER_OPTIONS_DEFAULT}
+};
 use chrono::Utc;
 use hyper::mime::Mime;
 

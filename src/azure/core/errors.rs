@@ -31,6 +31,8 @@ impl UnexpectedHTTPResult {
             body: body.to_owned(),
         }
     }
+
+    pub fn status_code(&self) -> StatusCode { self.received }
 }
 
 impl std::fmt::Display for UnexpectedHTTPResult {

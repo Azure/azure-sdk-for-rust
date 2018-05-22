@@ -41,14 +41,12 @@ use std::error::Error;
 use futures::future::*;
 use tokio_core::reactor::Core;
 
-use azure_sdk_for_rust::azure::cosmos::authorization_token::{AuthorizationToken, TokenType};
-use azure_sdk_for_rust::azure::cosmos::client::Client;
-use azure_sdk_for_rust::azure::cosmos::partition_key::PartitionKey;
+use azure_sdk_for_rust::cosmos::{AuthorizationToken, TokenType, Client, PartitionKey};
 
 
 #[macro_use]
 extern crate serde_derive;
-use azure_sdk_for_rust::azure::cosmos;
+use azure_sdk_for_rust::cosmos;
 
 #[derive(Serialize, Deserialize, Debug)]
 struct MySampleStruct<'a> {
@@ -165,12 +163,10 @@ fn code() -> Result<(), Box<Error>> {
     // Notice how easy it is! :)
     // The method create_document will return, upon success,
     // the document attributes.
-    let document_attributes = core.run(client.create_document_as_entity(
+    let document_attributes = core.run(client.create_document(
         &database,
         &collection,
-        false,
-        None,
-        &PartitionKey::default(),
+        &CreateDocumentOptions::default(),
         &doc,
     ))?;
     println!("document_attributes == {:?}", document_attributes);

@@ -1,27 +1,26 @@
 #![cfg(all(test, feature = "test_e2e"))]
 
-extern crate azure_sdk_for_rust;
-
 extern crate futures;
 extern crate hyper;
 extern crate hyper_tls;
 extern crate tokio;
 extern crate tokio_core;
-
-use tokio_core::reactor::Core;
-
-use azure_sdk_for_rust::azure::service_bus::event_hub::Client;
-use azure_sdk_for_rust::azure::core::errors::AzureError;
-
 extern crate chrono;
 extern crate env_logger;
 #[macro_use]
 extern crate log;
 extern crate serde;
 extern crate time;
+extern crate azure_sdk_for_rust;
 
 use time::Duration;
-use azure_sdk_for_rust::azure;
+use tokio_core::reactor::Core;
+use azure_sdk_for_rust::{
+    self,
+    service_bus::event_hub::Client,
+    core::errors::AzureError
+};
+
 
 #[test]
 fn send_events_to_event_hub() {
@@ -32,7 +31,6 @@ fn send_events_to_event_hub() {
         send_event(&mut eh_client, &mut core);
     }
 }
-
 
 fn send_event(cli: &mut azure::service_bus::event_hub::Client, core: &mut Core) {
     debug!("running send_event");

@@ -10,8 +10,7 @@ use std::error::Error;
 use futures::future::*;
 use tokio_core::reactor::Core;
 
-use azure_sdk_for_rust::azure::cosmos::authorization_token::{AuthorizationToken, TokenType};
-use azure_sdk_for_rust::azure::cosmos::client::Client;
+use azure_sdk_for_rust::cosmos::{AuthorizationToken, TokenType, Client};
 
 
 fn main() {

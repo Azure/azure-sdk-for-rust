@@ -10,13 +10,11 @@ use std::error::Error;
 
 use tokio_core::reactor::Core;
 
-use azure_sdk_for_rust::azure::cosmos::authorization_token::{AuthorizationToken, TokenType};
-use azure_sdk_for_rust::azure::cosmos::client::Client;
-use azure_sdk_for_rust::azure::cosmos::list_documents::LIST_DOCUMENTS_OPTIONS_DEFAULT;
-use azure_sdk_for_rust::azure::cosmos::partition_key::PartitionKey;
-use azure_sdk_for_rust::azure::cosmos::get_document::GetDocumentOptions;
-use azure_sdk_for_rust::azure::cosmos::request_response::{GetDocumentResponse,
-                                                          ListDocumentsResponse};
+use azure_sdk_for_rust::cosmos::{
+    AuthorizationToken, TokenType, Client,
+    PartitionKey, GetDocumentOptions, CreateDocumentOptions, ReplaceDocumentOptions, ListDocumentsOptions, DeleteDocumentOptions,
+    request_response::{GetDocumentResponse, ListDocumentsResponse}
+};
 
 #[macro_use]
 extern crate serde_derive;
@@ -83,35 +81,46 @@ fn code() -> Result<(), Box<Error>> {
 
         // let's add an entity. we ignore the errors at this point and just
         // notify the user.
-        match core.run(client.create_document_as_entity(
+        core.run(client.create_document(
             &database_name,
             &collection_name,
-            false,
-            None,
-            &partition_key,
+            &CreateDocumentOptions { partition_key, ..Default::default() },
             &doc,
-        )) {
-            Ok(_) => {
-                println!("entity added");
-            }
-            Err(error) => {
-                println!("entity add failed (maybe already there?) {:?}", error);
-            }
-        };
+        )).expect("entity creation failed");
     }
+    // core.run(
+    //     futures::future::join_all((0..5).map(|i| {
+    //         let doc = MySampleStruct {
+    //             id: &format!("unique_id{}", i),
+    //             a_string: "Something here",
+    //             a_number: i,
+    //             a_timestamp: chrono::Utc::now().timestamp(),
+    //         };
+
+    //         let mut cdo = CreateDocumentOptions::default();
+    //         cdo.partition_key.push(doc.id);
+
+    //         // let's add an entity. we ignore the errors at this point and just
+    //         // notify the user.
+    //         client.create_document(
+    //             &database_name,
+    //             &collection_name,
+    //             &cdo,
+    //             &doc
+    //         )
+    //     }))
+    // ).unwrap();
+    println!("Created 5 documents.");
 
     // let's get 3 entries at a time
-    let mut ldo = LIST_DOCUMENTS_OPTIONS_DEFAULT.clone();
-    ldo.max_item_count = Some(3);
-
     let response: ListDocumentsResponse<MySampleStructOwned> = core.run(client.list_documents(
         &database_name,
         &collection_name,
-        &ldo,
+        &ListDocumentsOptions { max_item_count: Some(3), ..Default::default() },
     )).unwrap();
 
     assert_eq!(response.documents.len(), 3);
-    println!("response == {:?}", response);
+    println!("response == {:#?}", response);
 
     // we inserted 5 documents and retrieved the first 3.
     // continuation_token must be present
@@ -119,60 +128,84 @@ fn code() -> Result<(), Box<Error>> {
         response.additional_headers.continuation_token.is_some(),
         true
     );
-    if let Some(ct) = response.additional_headers.continuation_token {
-        println!("ct == {}", ct);
+    
+    let ct = response.additional_headers.continuation_token.unwrap();
+    println!("ct == {}", ct);
 
-        let mut ldo = LIST_DOCUMENTS_OPTIONS_DEFAULT.clone();
-        ldo.continuation_token = Some(&ct);
+    let response: ListDocumentsResponse<MySampleStructOwned> = core.run(client.list_documents(
+        &database_name,
+        &collection_name,
+        &ListDocumentsOptions { continuation_token: Some(&ct), ..Default::default() },
+    )).unwrap();
 
-        let response: ListDocumentsResponse<MySampleStructOwned> = core.run(client.list_documents(
-            &database_name,
-            &collection_name,
-            &ldo,
-        )).unwrap();
+    assert_eq!(response.documents.len(), 2);
+    println!("response == {:#?}", response);
 
-        assert_eq!(response.documents.len(), 47);
-        println!("response == {:?}", response);
+    // we got the last 2 entries. Now continuation_token
+    // must be absent
+    assert_eq!(
+        response.additional_headers.continuation_token.is_some(),
+        false
+    );
 
-        // we got the last 47 entries. Now continuation_token
-        // must be absent
-        assert_eq!(
-            response.additional_headers.continuation_token.is_some(),
-            false
-        );
+    println!("\n\nLooking for a specific item");
+    let id = format!("unique_id{}", 3);
+    let mut gdo = GetDocumentOptions::default();
+    gdo.partition_key.push(&id);
 
+    let response: GetDocumentResponse<MySampleStructOwned> = core.run(client.get_document(
+        &database_name,
+        &collection_name,
+        &id,
+        &gdo,
+    )).unwrap();
 
-        println!("\n\nLooking for a specific item");
-        let id = format!("unique_id{}", 3);
-        let mut gdo = GetDocumentOptions::default();
-        gdo.partition_key.push(&id);
+    assert_eq!(response.document.is_some(), true);
+    println!("response == {:#?}", response);
+    let mut doc = response.document.unwrap();
+    doc.entity.a_string = "Something else here".into();
+    let mut rdo = ReplaceDocumentOptions::default();
+    rdo.if_match = Some(&doc.document_attributes.etag); // use optimistic concurrency check
+    rdo.partition_key.push(&id);
 
-        let response: GetDocumentResponse<MySampleStructOwned> = core.run(client.get_document(
-            &database_name,
-            &collection_name,
-            &id,
-            &gdo,
-        )).unwrap();
+    let _response = core.run(client.replace_document(
+        &database_name,
+        &collection_name,
+        &rdo,
+        &doc
+    )).unwrap();
 
-        assert_eq!(response.document.is_some(), true);
-        println!("response == {:?}", response);
+    // This id should not be found. We expect None as result
+    println!("\n\nLooking for non-existing item");
+    let id = format!("unique_id{}", 100);
+    let mut gdo = GetDocumentOptions::default();
+    gdo.partition_key.push(&id);
 
-        // This id should not be found. We expect None as result
-        println!("\n\nLooking for non-existing item");
-        let id = format!("unique_id{}", 100);
-        let mut gdo = GetDocumentOptions::default();
-        gdo.partition_key.push(&id);
+    let response: GetDocumentResponse<MySampleStructOwned> = core.run(client.get_document(
+        &database_name,
+        &collection_name,
+        &id,
+        &gdo,
+    )).unwrap();
 
-        let response: GetDocumentResponse<MySampleStructOwned> = core.run(client.get_document(
-            &database_name,
-            &collection_name,
-            &id,
-            &gdo,
-        )).unwrap();
+    assert_eq!(response.document.is_some(), false);
+    println!("response == {:#?}", response);
 
-        assert_eq!(response.document.is_some(), false);
-        println!("response == {:?}", response);
+    for i in 0..5 {
+        let id = format!("unique_id{}", i);
+        let mut ddo = DeleteDocumentOptions::default();
+        ddo.partition_key.push(&id);
+        core.run(
+            client.delete_document(
+                &database_name,
+                &collection_name,
+                &id,
+                &ddo
+            )
+        ).unwrap();
     }
+
+    println!("Cleaned up");
 
     Ok(())
 }

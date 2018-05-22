@@ -1,10 +1,11 @@
 use azure::core::errors::AzureError;
 use serde_json;
 use std::iter::IntoIterator;
+use smallvec::{SmallVec, IntoIter};
 
 #[derive(Debug, Clone)]
 pub struct PartitionKey<'a> {
-    pk: Option<Vec<&'a str>>,
+    pk: Option<SmallVec<[&'a str; 2]>>,
 }
 
 impl<'a> PartitionKey<'a> {
@@ -15,7 +16,7 @@ impl<'a> PartitionKey<'a> {
     pub fn push(&mut self, key: &'a str) {
         match self.pk {
             Some(ref mut p) => p.push(key),
-            None => self.pk = Some(vec![key]),
+            None => self.pk = Some(smallvec![key]),
         }
     }
 
@@ -49,12 +50,12 @@ impl<'a> ::std::default::Default for PartitionKey<'a> {
 
 impl<'a> IntoIterator for PartitionKey<'a> {
     type Item = &'a str;
-    type IntoIter = ::std::vec::IntoIter<&'a str>;
+    type IntoIter = IntoIter<[&'a str; 2]>;
 
     fn into_iter(self) -> Self::IntoIter {
         match self.pk {
             Some(p) => p.into_iter(),
-            None => ::std::vec::Vec::<&str>::new().into_iter(),
+            None => SmallVec::new().into_iter(),
         }
     }
 }

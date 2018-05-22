@@ -10,12 +10,11 @@ use std::error::Error;
 use futures::future::*;
 use tokio_core::reactor::Core;
 
-use azure_sdk_for_rust::azure::storage::client::Client;
-
-use azure_sdk_for_rust::azure::storage::container::Container;
-use azure_sdk_for_rust::azure::storage::container::LIST_CONTAINER_OPTIONS_DEFAULT;
-
-use azure_sdk_for_rust::azure::storage::blob::{Blob, LIST_BLOB_OPTIONS_DEFAULT};
+use azure_sdk_for_rust::storage::{
+    client::Client,
+    container::{Container, LIST_CONTAINER_OPTIONS_DEFAULT},
+    blob::{Blob, LIST_BLOB_OPTIONS_DEFAULT}
+};
 
 fn main() {
     code().unwrap();

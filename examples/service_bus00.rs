@@ -10,7 +10,7 @@ use std::error::Error;
 use tokio_core::reactor::Core;
 use futures::Future;
 
-use azure_sdk_for_rust::azure::service_bus::event_hub::Client;
+use azure_sdk_for_rust::service_bus::event_hub::Client;
 
 extern crate time;
 
