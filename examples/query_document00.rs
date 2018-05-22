@@ -10,9 +10,7 @@ use std::error::Error;
 
 use tokio_core::reactor::Core;
 
-use azure_sdk_for_rust::cosmos::{
-    query::Query, query_document::QueryDocumentOptions, AuthorizationToken, Client, TokenType,
-};
+use azure_sdk_for_rust::cosmos::{AuthorizationToken, TokenType, Client, query::Query};
 
 #[macro_use]
 extern crate serde_derive;
@@ -44,20 +42,17 @@ fn code() -> Result<(), Box<Error>> {
     let master_key =
         std::env::var("COSMOS_MASTER_KEY").expect("Set env variable COSMOS_MASTER_KEY first!");
 
-    let authorization_token = AuthorizationToken::new(account, TokenType::Master, master_key)?;
+    let authorization_token = AuthorizationToken::new(account, TokenType::Master, &master_key)?;
 
     let mut core = Core::new()?;
 
     let client = Client::new(&core.handle(), authorization_token)?;
 
-    let options = QueryDocumentOptions::default();
-
-    let future = client.query_document_json(
+    let future = client.query_document(
         &database_name,
         &collection_name,
-        &Query::from(&query as &str),
-        &options,
-    );
+        &Query::from(&query as &str)).unwrap()
+        .execute_json();
 
     let ret = core.run(future)?;
 
@@ -67,12 +62,11 @@ fn code() -> Result<(), Box<Error>> {
         println!("{}", doc.result);
     }
 
-    let future = client.query_document::<_, _, MySampleStructOwned>(
+    let future = client.query_document(
         &database_name,
         &collection_name,
-        &Query::from(&query as &str),
-        &options,
-    );
+        &Query::from(&query as &str)).unwrap()
+        .execute::<MySampleStructOwned>();
 
     let ret = core.run(future)?;
 
@@ -84,15 +78,12 @@ fn code() -> Result<(), Box<Error>> {
 
     // test continuation token
     // only if we have more than 2 records
-    let mut options = QueryDocumentOptions::default();
-    options.max_item_count = Some(2);
-
-    let future = client.query_document::<_, _, MySampleStructOwned>(
+    let future = client.query_document(
         &database_name,
         &collection_name,
-        &Query::from(&query as &str),
-        &options,
-    );
+        &Query::from(&query as &str)).unwrap()
+        .max_item_count(2u64)
+        .execute::<MySampleStructOwned>();
 
     let ret = core.run(future)?;
 
@@ -105,16 +96,12 @@ fn code() -> Result<(), Box<Error>> {
     if let Some(ct) = ret.additional_headers.continuation_token {
         let ret = {
             // if we have more, let's get them
-            let mut options = QueryDocumentOptions::default();
-            options.max_item_count = None;
-            options.continuation_token = Some(&ct);
-
-            let future = client.query_document::<_, _, MySampleStructOwned>(
+            let future = client.query_document(
                 &database_name,
                 &collection_name,
-                &Query::from(&query as &str),
-                &options,
-            );
+                &Query::from(&query as &str)).unwrap()
+                .continuation_token(ct)
+                .execute::<MySampleStructOwned>();
             core.run(future)?
         };
         println!(

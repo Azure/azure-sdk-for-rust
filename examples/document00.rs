@@ -11,7 +11,8 @@ use std::error::Error;
 use futures::future::*;
 use tokio_core::reactor::Core;
 
-use azure_sdk_for_rust::cosmos::{AuthorizationToken, Client, CreateDocumentOptions, TokenType};
+use azure_sdk_for_rust::cosmos::{AuthorizationToken, TokenType, Client};
+
 
 #[macro_use]
 extern crate serde_derive;
@@ -52,7 +53,7 @@ fn code() -> Result<(), Box<Error>> {
     // First, we create an authorization token. There are two types of tokens, master and resource
     // constrained. Please check the Azure documentation for details. You can change tokens
     // at will and it's a good practice to raise your privileges only when needed.
-    let authorization_token = AuthorizationToken::new(account, TokenType::Master, master_key)?;
+    let authorization_token = AuthorizationToken::new(account, TokenType::Master, &master_key)?;
 
     // We will create a tokio-core reactor which will drive our futures.
     let mut core = Core::new()?;
@@ -129,12 +130,11 @@ fn code() -> Result<(), Box<Error>> {
     // Notice how easy it is! :)
     // The method create_document will return, upon success,
     // the document attributes.
-    let document_attributes = core.run(client.create_document(
-        &database.id,
-        &collection.id,
-        &CreateDocumentOptions::default(),
-        &doc,
-    ))?;
+    let document_attributes = core.run(
+        client.create_document(&database.id, &collection.id, &doc)
+            .unwrap()
+            .execute()
+    )?;
     println!("document_attributes == {:?}", document_attributes);
 
     // We will perform some cleanup. First we delete the collection...

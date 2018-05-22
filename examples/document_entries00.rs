@@ -10,11 +10,7 @@ use std::error::Error;
 
 use tokio_core::reactor::Core;
 
-use azure_sdk_for_rust::cosmos::{
-    request_response::{GetDocumentResponse, ListDocumentsResponse}, AuthorizationToken, Client,
-    CreateDocumentOptions, DeleteDocumentOptions, GetDocumentOptions, ListDocumentsOptions,
-    PartitionKey, ReplaceDocumentOptions, TokenType,
-};
+use azure_sdk_for_rust::cosmos::{AuthorizationToken, TokenType, Client, DocumentRequestExt};
 
 #[macro_use]
 extern crate serde_derive;
@@ -62,69 +58,38 @@ fn code() -> Result<(), Box<Error>> {
         std::env::var("COSMOS_MASTER_KEY").expect("Set env variable COSMOS_MASTER_KEY first!");
     let account = std::env::var("COSMOS_ACCOUNT").expect("Set env variable COSMOS_ACCOUNT first!");
 
-    let authorization_token = AuthorizationToken::new(account, TokenType::Master, master_key)?;
+    let authorization_token = AuthorizationToken::new(account, TokenType::Master, &master_key)?;
 
     let mut core = Core::new()?;
 
     let client = Client::new(&core.handle(), authorization_token)?;
 
-    for i in 0..5 {
-        let doc = MySampleStruct {
-            id: &format!("unique_id{}", i),
-            a_string: "Something here",
-            a_number: i,
-            a_timestamp: chrono::Utc::now().timestamp(),
-        };
+    core.run(
+        futures::future::join_all((0..5).map(|i| {
+            let doc = MySampleStruct {
+                id: &format!("unique_id{}", i),
+                a_string: "Something here",
+                a_number: i,
+                a_timestamp: chrono::Utc::now().timestamp(),
+            };
 
-        let mut partition_key = PartitionKey::default();
-        partition_key.push(doc.id);
-
-        // let's add an entity. we ignore the errors at this point and just
-        // notify the user.
-        core.run(client.create_document(
-            &database_name,
-            &collection_name,
-            &CreateDocumentOptions {
-                partition_key,
-                ..Default::default()
-            },
-            &doc,
-        )).expect("entity creation failed");
-    }
-    // core.run(
-    //     futures::future::join_all((0..5).map(|i| {
-    //         let doc = MySampleStruct {
-    //             id: &format!("unique_id{}", i),
-    //             a_string: "Something here",
-    //             a_number: i,
-    //             a_timestamp: chrono::Utc::now().timestamp(),
-    //         };
-
-    //         let mut cdo = CreateDocumentOptions::default();
-    //         cdo.partition_key.push(doc.id);
-
-    //         // let's add an entity. we ignore the errors at this point and just
-    //         // notify the user.
-    //         client.create_document(
-    //             &database_name,
-    //             &collection_name,
-    //             &cdo,
-    //             &doc
-    //         )
-    //     }))
-    // ).unwrap();
+            // let's add an entity. we ignore the errors at this point and just
+            // notify the user.
+            client.create_document(&database_name, &collection_name, &doc)
+                .unwrap()
+                .partition_key(doc.id)
+                .execute()
+        }))
+    ).unwrap();
     println!("Created 5 documents.");
 
     // let's get 3 entries at a time
-    let response: ListDocumentsResponse<MySampleStructOwned> =
-        core.run(client.list_documents(
-            &database_name,
-            &collection_name,
-            &ListDocumentsOptions {
-                max_item_count: Some(3),
-                ..Default::default()
-            },
-        )).unwrap();
+    let response = core.run(
+        client.list_documents(&database_name, &collection_name)
+            .unwrap()
+            .max_item_count(3)
+            .execute::<MySampleStructOwned>()
+    ).unwrap();
 
     assert_eq!(response.documents.len(), 3);
     println!("response == {:#?}", response);
@@ -139,15 +104,12 @@ fn code() -> Result<(), Box<Error>> {
     let ct = response.additional_headers.continuation_token.unwrap();
     println!("ct == {}", ct);
 
-    let response: ListDocumentsResponse<MySampleStructOwned> =
-        core.run(client.list_documents(
-            &database_name,
-            &collection_name,
-            &ListDocumentsOptions {
-                continuation_token: Some(&ct),
-                ..Default::default()
-            },
-        )).unwrap();
+    let response = core.run(
+        client.list_documents(&database_name, &collection_name)
+            .unwrap()
+            .continuation_token(ct)
+            .execute::<MySampleStructOwned>()
+    ).unwrap();
 
     assert_eq!(response.documents.len(), 2);
     println!("response == {:#?}", response);
@@ -161,46 +123,50 @@ fn code() -> Result<(), Box<Error>> {
 
     println!("\n\nLooking for a specific item");
     let id = format!("unique_id{}", 3);
-    let mut gdo = GetDocumentOptions::default();
-    gdo.partition_key.push(&id);
 
-    let response: GetDocumentResponse<MySampleStructOwned> = core
-        .run(client.get_document(&database_name, &collection_name, &id, &gdo))
-        .unwrap();
+    let response = core.run(
+        client.get_document(&database_name, &collection_name, &id)
+            .unwrap()
+            .partition_key(&id)
+            .execute::<MySampleStructOwned>()
+    ).unwrap();
 
     assert_eq!(response.document.is_some(), true);
     println!("response == {:#?}", response);
     let mut doc = response.document.unwrap();
     doc.entity.a_string = "Something else here".into();
-    let mut rdo = ReplaceDocumentOptions::default();
-    rdo.if_match = Some(&doc.document_attributes.etag); // use optimistic concurrency check
-    rdo.partition_key.push(&id);
 
-    let _response = core
-        .run(client.replace_document(&database_name, &collection_name, &rdo, &doc))
-        .unwrap();
+    let _response = core.run(
+        client.replace_document(&database_name, &collection_name, &doc)
+            .unwrap()
+            .partition_key(&id)
+            .if_match(doc.document_attributes.etag) // use optimistic concurrency check
+            .execute()
+        ).unwrap();
 
     // This id should not be found. We expect None as result
     println!("\n\nLooking for non-existing item");
     let id = format!("unique_id{}", 100);
-    let mut gdo = GetDocumentOptions::default();
-    gdo.partition_key.push(&id);
 
-    let response: GetDocumentResponse<MySampleStructOwned> = core
-        .run(client.get_document(&database_name, &collection_name, &id, &gdo))
-        .unwrap();
+    let response = core.run(
+        client.get_document(&database_name, &collection_name, &id)
+            .unwrap()
+            .partition_key(&id)
+            .execute::<MySampleStructOwned>()
+    ).unwrap();
 
     assert_eq!(response.document.is_some(), false);
     println!("response == {:#?}", response);
 
-    for i in 0..5 {
-        let id = format!("unique_id{}", i);
-        let mut ddo = DeleteDocumentOptions::default();
-        ddo.partition_key.push(&id);
-        core.run(client.delete_document(&database_name, &collection_name, &id, &ddo))
-            .unwrap();
-    }
-
+    core.run(
+        futures::future::join_all((0..5).map(|i| {
+            let id = format!("unique_id{}", i);
+            client.delete_document(&database_name, &collection_name, &id)
+                .unwrap()
+                .partition_key(&id)
+                .execute()
+        }))
+    ).unwrap();
     println!("Cleaned up");
 
     Ok(())
