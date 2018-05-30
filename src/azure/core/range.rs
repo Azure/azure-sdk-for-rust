@@ -10,6 +10,15 @@ pub struct Range {
     pub end: u64,
 }
 
+impl Range {
+    pub fn new(start: u64, end: u64) -> Range {
+        Range {
+            start: start,
+            end: end,
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum ParseError {
     SplitNotFound,

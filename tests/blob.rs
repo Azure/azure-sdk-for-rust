@@ -4,9 +4,7 @@ extern crate azure_sdk_for_rust;
 extern crate futures;
 extern crate hyper;
 extern crate hyper_tls;
-extern crate tokio;
 extern crate tokio_core;
-
 
 extern crate chrono;
 extern crate env_logger;
@@ -19,13 +17,11 @@ use std::ops::Deref;
 use tokio_core::reactor::Core;
 
 use azure_sdk_for_rust::core::{
-    errors::AzureError,
-    lease::{LeaseState, LeaseStatus}
+    errors::AzureError, lease::{LeaseState, LeaseStatus},
 };
 use azure_sdk_for_rust::storage::{
-    blob::{Blob, BlobType, PUT_OPTIONS_DEFAULT},
-    client::Client,
-    container::{Container, PublicAccess, LIST_CONTAINER_OPTIONS_DEFAULT}
+    blob::{Blob, BlobType, PUT_OPTIONS_DEFAULT}, client::Client,
+    container::{Container, PublicAccess, LIST_CONTAINER_OPTIONS_DEFAULT},
 };
 use chrono::Utc;
 use hyper::mime::Mime;
@@ -42,7 +38,8 @@ fn create_and_delete_container() {
     lco.prefix = Some(name.to_owned());
 
     let list = core.run(Container::list(&client, &lco)).unwrap();
-    let cont_list: Vec<&Container> = list.deref()
+    let cont_list: Vec<&Container> = list
+        .deref()
         .into_iter()
         .filter(|e| e.name == name)
         .collect();
@@ -84,7 +81,8 @@ fn put_blob() {
     let container_name: &'static str = "rust-upload-test";
     let value = "abcdef";
 
-    if core.run(Container::list(&client, &LIST_CONTAINER_OPTIONS_DEFAULT))
+    if core
+        .run(Container::list(&client, &LIST_CONTAINER_OPTIONS_DEFAULT))
         .unwrap()
         .iter()
         .find(|x| x.name == container_name)
@@ -122,11 +120,8 @@ fn put_blob() {
         copy_status_description: None,
     };
 
-    core.run(new_blob.put(
-        &client,
-        &PUT_OPTIONS_DEFAULT,
-        Some(&value.as_bytes()),
-    )).unwrap();
+    core.run(new_blob.put(&client, &PUT_OPTIONS_DEFAULT, Some(&value.as_bytes())))
+        .unwrap();
 
     trace!("created {:?}", new_blob);
 }

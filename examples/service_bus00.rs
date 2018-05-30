@@ -7,8 +7,8 @@ extern crate tokio_core;
 
 use std::error::Error;
 
-use tokio_core::reactor::Core;
 use futures::Future;
+use tokio_core::reactor::Core;
 
 use azure_sdk_for_rust::service_bus::event_hub::Client;
 
@@ -17,7 +17,6 @@ extern crate time;
 fn main() {
     code().unwrap();
 }
-
 
 // We run a separate method to use the elegant quotation mark operator.
 // A series of unwrap(), unwrap() would have achieved the same result.
@@ -44,15 +43,7 @@ fn code() -> Result<(), Box<Error>> {
     );
 
     let messages = vec![
-        "These",
-        "are",
-        "useless",
-        "messages",
-        "provided",
-        "for",
-        "free",
-        "with",
-        "love",
+        "These", "are", "useless", "messages", "provided", "for", "free", "with", "love",
     ];
     println!(
         "Sending the following messages: {:?}. \
@@ -62,11 +53,9 @@ fn code() -> Result<(), Box<Error>> {
 
     let mut v = Vec::new();
     for s in messages {
-        v.push(client.send_event(s, time::Duration::days(1)).map(
-            move |_| {
-                println!("{:?} event sent!", s);
-            },
-        ))
+        v.push(client.send_event(s, time::Duration::days(1)).map(move |_| {
+            println!("{:?} event sent!", s);
+        }))
     }
 
     let future = futures::future::join_all(v);

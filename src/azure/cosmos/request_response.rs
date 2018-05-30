@@ -1,6 +1,8 @@
-use serde::de::DeserializeOwned;
 use azure::core::errors::AzureError;
-use azure::cosmos::{self, collection::Collection, database::Database, document::DocumentAttributes};
+use azure::cosmos::{
+    self, collection::Collection, database::Database, document::DocumentAttributes,
+};
+use serde::de::DeserializeOwned;
 
 #[derive(Deserialize, Debug)]
 #[allow(dead_code)]

@@ -11,14 +11,17 @@ use azure::core::errors::{
 
 use azure::core::COMPLETE_ENCODE_SET;
 use azure::cosmos::request_response::{
-    CreateDatabaseRequest, Document, DocumentAdditionalHeaders, GetDocumentResponse, ReplaceDocumentResponse,
+    CreateDatabaseRequest, Document, DocumentAdditionalHeaders, GetDocumentResponse,
     ListCollectionsResponse, ListDatabasesResponse, ListDocumentsResponse,
     ListDocumentsResponseAdditionalHeaders, ListDocumentsResponseAttributes,
     ListDocumentsResponseEntities, QueryDocumentResponse, QueryDocumentResponseAdditonalHeaders,
-    QueryResponseMeta, QueryResult,
+    QueryResponseMeta, QueryResult, ReplaceDocumentResponse,
 };
 
-use azure::cosmos::document_options::{CreateDocumentOptions, GetDocumentOptions, ListDocumentsOptions, DeleteDocumentOptions, ReplaceDocumentOptions};
+use azure::cosmos::document_options::{
+    CreateDocumentOptions, DeleteDocumentOptions, GetDocumentOptions, ListDocumentsOptions,
+    ReplaceDocumentOptions,
+};
 use azure::cosmos::query::Query;
 use azure::cosmos::query_document::QueryDocumentOptions;
 
@@ -29,7 +32,7 @@ use serde::Serialize;
 use serde_json::map::Map;
 use serde_json::Value;
 
-use ring::{hmac, digest::SHA256};
+use ring::{digest::SHA256, hmac};
 
 use base64;
 use hyper;
@@ -54,9 +57,9 @@ const TIME_FORMAT: &str = "%a, %d %h %Y %T GMT";
 
 pub(crate) mod headers {
     use azure::core::incompletevector::ContinuationToken;
-    use azure::cosmos::ConsistencyLevel;
     use azure::cosmos::document::IndexingDirective;
-    
+    use azure::cosmos::ConsistencyLevel;
+
     header! { (XMSVersion, "x-ms-version") => [String] }
     header! { (XMSDate, "x-ms-date") => [String] }
     header! { (Authorization, "Authorization") => [String] }
@@ -614,12 +617,8 @@ impl<'a> Client {
             options
         );
 
-        let req = self.create_document_as_str_create_request(
-            database,
-            collection,
-            options,
-            document_str,
-        );
+        let req =
+            self.create_document_as_str_create_request(database, collection, options, document_str);
 
         done(req).from_err().and_then(move |future_response| {
             check_status_extract_body(future_response, StatusCode::Created).and_then(move |body| {
@@ -650,12 +649,7 @@ impl<'a> Client {
             options
         );
 
-        let req = self.create_document_create_request(
-            database,
-            collection,
-            options,
-            document
-        );
+        let req = self.create_document_create_request(database, collection, options, document);
 
         done(req).from_err().and_then(move |future_response| {
             check_status_extract_body(future_response, StatusCode::Created).and_then(move |body| {
@@ -670,15 +664,15 @@ impl<'a> Client {
         database_id: &str,
         collection_id: &str,
         document_id: &str,
-        options: &DeleteDocumentOptions
+        options: &DeleteDocumentOptions,
     ) -> Result<hyper::client::FutureResponse, AzureError> {
         let uri = format!(
             "https://{}.documents.azure.com/dbs/{}/colls/{}/docs/{}",
             self.authorization_token.account(),
             database_id,
             collection_id,
-            document_id)
-            .parse()?;
+            document_id
+        ).parse()?;
 
         let serialized_partition_key = options.partition_key.to_json()?;
 
@@ -710,12 +704,21 @@ impl<'a> Client {
         database_id: &D,
         collection_id: &C,
         document_id: &Dc,
-        options: &DeleteDocumentOptions
+        options: &DeleteDocumentOptions,
     ) -> impl Future<Item = (), Error = AzureError> {
-        trace!("delete_document called (db_id == {}, collection_id == {}, doc_id = {}",
-            database_id.as_ref(), collection_id.as_ref(), document_id.as_ref());
+        trace!(
+            "delete_document called (db_id == {}, collection_id == {}, doc_id = {}",
+            database_id.as_ref(),
+            collection_id.as_ref(),
+            document_id.as_ref()
+        );
 
-        let req = self.delete_document_create_request(database_id.as_ref(), collection_id.as_ref(), document_id.as_ref(), options);
+        let req = self.delete_document_create_request(
+            database_id.as_ref(),
+            collection_id.as_ref(),
+            document_id.as_ref(),
+            options,
+        );
 
         done(req).from_err().and_then(move |future_response| {
             check_status_extract_body(future_response, StatusCode::NoContent).and_then(|_| ok(()))
@@ -728,7 +731,7 @@ impl<'a> Client {
         database_id: &str,
         collection_id: &str,
         options: &ReplaceDocumentOptions,
-        document: &Document<T>
+        document: &Document<T>,
     ) -> Result<hyper::client::FutureResponse, AzureError> {
         let document_serialized = serde_json::to_string(&document.entity)?;
 
@@ -780,17 +783,22 @@ impl<'a> Client {
         database_id: D,
         collection_id: C,
         options: &ReplaceDocumentOptions,
-        document: &Document<T>
+        document: &Document<T>,
     ) -> impl Future<Item = ReplaceDocumentResponse<T>, Error = AzureError> {
         trace!("replace_collection called");
 
-        let req = self.replace_document_prepare_request(database_id.as_ref(), collection_id.as_ref(), options, document);
+        let req = self.replace_document_prepare_request(
+            database_id.as_ref(),
+            collection_id.as_ref(),
+            options,
+            document,
+        );
 
         done(req).from_err().and_then(move |future_response| {
             extract_status_headers_and_body(future_response).and_then(
                 move |(status, headers, v_body)| {
                     done(replace_document_extract_result(status, &headers, &v_body))
-                }
+                },
             )
         })
     }
@@ -1066,13 +1074,15 @@ fn replace_document_extract_result<T: DeserializeOwned>(
     status: hyper::StatusCode,
     headers: &hyper::Headers,
     v_body: &[u8],
-) -> Result<ReplaceDocumentResponse<T>, AzureError>
-{
+) -> Result<ReplaceDocumentResponse<T>, AzureError> {
     match status {
         StatusCode::Ok => {
             let additional_headers = DocumentAdditionalHeaders::derive_from(headers);
             let document = Document::from_json(v_body)?;
-            Ok(ReplaceDocumentResponse { document, additional_headers })
+            Ok(ReplaceDocumentResponse {
+                document,
+                additional_headers,
+            })
         }
         _ => {
             let error_text = from_utf8(v_body)?;
@@ -1089,19 +1099,24 @@ fn get_document_extract_result<T: DeserializeOwned>(
     status: hyper::StatusCode,
     headers: &hyper::Headers,
     v_body: &[u8],
-) -> Result<GetDocumentResponse<T>, AzureError>
-{
+) -> Result<GetDocumentResponse<T>, AzureError> {
     match status {
         StatusCode::Ok => {
             let additional_headers = DocumentAdditionalHeaders::derive_from(headers);
             let document = Document::from_json(v_body)?;
-            Ok(GetDocumentResponse { document: Some(document), additional_headers })
+            Ok(GetDocumentResponse {
+                document: Some(document),
+                additional_headers,
+            })
         }
         // NotFound is not an error so we return None along
         // with the additional headers.
         StatusCode::NotFound => {
             let additional_headers = DocumentAdditionalHeaders::derive_from(headers);
-            Ok(GetDocumentResponse { document: None, additional_headers })
+            Ok(GetDocumentResponse {
+                document: None,
+                additional_headers,
+            })
         }
         _ => {
             // We treat everything else as an error. We could
@@ -1286,8 +1301,7 @@ fn prepare_request<F: FnOnce(&mut Headers)>(
     request_body: Option<&str>,
     resource_type: ResourceType,
     headers_func: F,
-) -> hyper::client::Request
-{
+) -> hyper::client::Request {
     let time = format!("{}", chrono::Utc::now().format(TIME_FORMAT));
 
     let auth = {
@@ -1297,7 +1311,7 @@ fn prepare_request<F: FnOnce(&mut Headers)>(
             http_method,
             resource_type,
             resource_link,
-            &time
+            &time,
         )
     };
     prepare_request_with_signature(uri, http_method, request_body, time, auth, headers_func)
@@ -1312,8 +1326,7 @@ fn prepare_request_with_resource_link<F: FnOnce(&mut Headers)>(
     resource_type: ResourceType,
     resource_link: &str,
     headers_func: F,
-) -> hyper::client::Request
-{
+) -> hyper::client::Request {
     let time = format!("{}", chrono::Utc::now().format(TIME_FORMAT));
 
     let sig = {
@@ -1322,7 +1335,7 @@ fn prepare_request_with_resource_link<F: FnOnce(&mut Headers)>(
             http_method,
             resource_type,
             resource_link,
-            &time
+            &time,
         )
     };
     prepare_request_with_signature(uri, http_method, request_body, time, sig, headers_func)
@@ -1336,8 +1349,7 @@ fn prepare_request_with_signature<F: FnOnce(&mut Headers)>(
     time: String,
     signature: String,
     headers_func: F,
-) -> hyper::client::Request
-{
+) -> hyper::client::Request {
     trace!("prepare_request::auth == {:?}", signature);
     let mut request = hyper::Request::new(http_method.clone(), uri);
 

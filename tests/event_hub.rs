@@ -1,26 +1,20 @@
 #![cfg(all(test, feature = "test_e2e"))]
 
+extern crate chrono;
+extern crate env_logger;
 extern crate futures;
 extern crate hyper;
 extern crate hyper_tls;
-extern crate tokio;
-extern crate tokio_core;
-extern crate chrono;
-extern crate env_logger;
 #[macro_use]
 extern crate log;
+extern crate azure_sdk_for_rust;
 extern crate serde;
 extern crate time;
-extern crate azure_sdk_for_rust;
+extern crate tokio_core;
 
+use azure_sdk_for_rust::{core::errors::AzureError, service_bus::event_hub::Client};
 use time::Duration;
 use tokio_core::reactor::Core;
-use azure_sdk_for_rust::{
-    self,
-    service_bus::event_hub::Client,
-    core::errors::AzureError
-};
-
 
 #[test]
 fn send_events_to_event_hub() {
@@ -32,7 +26,7 @@ fn send_events_to_event_hub() {
     }
 }
 
-fn send_event(cli: &mut azure::service_bus::event_hub::Client, core: &mut Core) {
+fn send_event(cli: &mut Client, core: &mut Core) {
     debug!("running send_event");
 
     let text_to_send = "{ numero: 100, testo: \"sample\" }";
@@ -40,7 +34,7 @@ fn send_event(cli: &mut azure::service_bus::event_hub::Client, core: &mut Core) 
         .unwrap()
 }
 
-fn create_client() -> Result<(azure::service_bus::event_hub::Client, Core), AzureError> {
+fn create_client() -> Result<(Client, Core), AzureError> {
     let policy_name = std::env::var("AZURE_POLICY_NAME")
         .expect("Please set AZURE_POLICY_NAME env variable first!");
 

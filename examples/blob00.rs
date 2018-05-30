@@ -13,10 +13,7 @@ use std::error::Error;
 use futures::future::*;
 use tokio_core::reactor::Core;
 
-use azure_sdk_for_rust::storage::{
-    blob::Blob,
-    client::Client
-};
+use azure_sdk_for_rust::storage::{blob::Blob, client::Client};
 
 fn main() {
     env_logger::init();

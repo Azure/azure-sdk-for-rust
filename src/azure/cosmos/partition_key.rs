@@ -1,7 +1,7 @@
 use azure::core::errors::AzureError;
 use serde_json;
+use smallvec::{IntoIter, SmallVec};
 use std::iter::IntoIterator;
-use smallvec::{SmallVec, IntoIter};
 
 #[derive(Debug, Clone)]
 pub struct PartitionKey<'a> {

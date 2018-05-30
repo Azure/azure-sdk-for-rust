@@ -3,7 +3,6 @@ use azure::core::lease::{LeaseAction, LeaseDuration, LeaseId, LeaseState, LeaseS
 use azure::core::range;
 use base64;
 use chrono;
-use ring::{hmac, digest::SHA256};
 use hyper;
 use hyper::header::{
     ContentEncoding, ContentLanguage, ContentLength, ContentType, Date, Header, Headers,
@@ -11,6 +10,7 @@ use hyper::header::{
 };
 use hyper::Method;
 use hyper_tls;
+use ring::{digest::SHA256, hmac};
 use std::fmt::Display;
 use url;
 

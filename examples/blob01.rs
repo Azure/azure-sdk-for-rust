@@ -16,9 +16,8 @@ use futures::future::*;
 use tokio_core::reactor::Core;
 
 use azure_sdk_for_rust::{
-    core::lease::{LeaseState, LeaseStatus},
-    storage::blob::{Blob, BlobType, PUT_OPTIONS_DEFAULT},
-    storage::client::Client
+    core::lease::{LeaseState, LeaseStatus}, storage::blob::{Blob, BlobType, PUT_OPTIONS_DEFAULT},
+    storage::client::Client,
 };
 
 fn main() {
@@ -74,7 +73,8 @@ fn code() -> Result<(), Box<Error>> {
 
     trace!("before put");
 
-    let future = b.put(&client, &PUT_OPTIONS_DEFAULT, Some(&data[..]))
+    let future = b
+        .put(&client, &PUT_OPTIONS_DEFAULT, Some(&data[..]))
         .then(move |res| {
             println!("{:?}", res);
             ok(())

@@ -11,8 +11,7 @@ use std::error::Error;
 use futures::future::*;
 use tokio_core::reactor::Core;
 
-use azure_sdk_for_rust::cosmos::{AuthorizationToken, TokenType, Client, CreateDocumentOptions};
-
+use azure_sdk_for_rust::cosmos::{AuthorizationToken, Client, CreateDocumentOptions, TokenType};
 
 #[macro_use]
 extern crate serde_derive;
@@ -26,10 +25,8 @@ struct MySampleStruct<'a> {
     a_timestamp: i64,
 }
 
-
 const DATABASE: &str = "azuresdktestdb";
 const COLLECTION: &str = "azuresdktc";
-
 
 fn main() {
     code().unwrap();
@@ -68,9 +65,9 @@ fn code() -> Result<(), Box<Error>> {
     // an error (for example, the given key is not valid) you will receive a
     // specific AzureError. In this example we will look for a specific database
     // so we chain a filter operation.
-    let future = client.list_databases().and_then(|databases| {
-        ok(databases.into_iter().find(|db| db.id == DATABASE))
-    });
+    let future = client
+        .list_databases()
+        .and_then(|databases| ok(databases.into_iter().find(|db| db.id == DATABASE)));
 
     // Now we run the future and check the answer. If the requested database
     // is not found we create it.
@@ -99,7 +96,6 @@ fn code() -> Result<(), Box<Error>> {
                 path: "/*".to_owned(),
                 indexes: vec![indexes],
             };
-
 
             let ip = cosmos::collection::IndexingPolicy {
                 automatic: true,
