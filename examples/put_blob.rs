@@ -13,10 +13,11 @@ use futures::future::*;
 use tokio_core::reactor::Core;
 
 use azure_sdk_for_rust::{
-    core::lease::{LeaseAction, LeaseState, LeaseStatus},
-    core::errors::AzureError,
-    storage::blob::{Blob, BlobType, LEASE_BLOB_OPTIONS_DEFAULT, LIST_BLOB_OPTIONS_DEFAULT, PUT_OPTIONS_DEFAULT},
-    storage::client::Client
+    core::errors::AzureError, core::lease::{LeaseAction, LeaseState, LeaseStatus},
+    storage::blob::{
+        Blob, BlobType, LEASE_BLOB_OPTIONS_DEFAULT, LIST_BLOB_OPTIONS_DEFAULT, PUT_OPTIONS_DEFAULT,
+    },
+    storage::client::Client,
 };
 
 use std::fs::metadata;

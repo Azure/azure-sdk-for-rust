@@ -11,9 +11,8 @@ use futures::future::*;
 use tokio_core::reactor::Core;
 
 use azure_sdk_for_rust::storage::{
-    client::Client,
+    blob::{Blob, LIST_BLOB_OPTIONS_DEFAULT}, client::Client,
     container::{Container, LIST_CONTAINER_OPTIONS_DEFAULT},
-    blob::{Blob, LIST_BLOB_OPTIONS_DEFAULT}
 };
 
 fn main() {

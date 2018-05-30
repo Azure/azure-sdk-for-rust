@@ -1,11 +1,11 @@
-use azure::cosmos::{partition_key::PartitionKey, ConsistencyLevel, document::IndexingDirective};
 use azure::core::incompletevector::ContinuationToken;
+use azure::cosmos::{document::IndexingDirective, partition_key::PartitionKey, ConsistencyLevel};
 
 #[derive(Debug, Clone)]
 pub struct CreateDocumentOptions<'a> {
     pub indexing_directive: Option<IndexingDirective>,
     pub partition_key: PartitionKey<'a>,
-    pub is_upsert: bool
+    pub is_upsert: bool,
 }
 
 impl<'a> ::std::default::Default for CreateDocumentOptions<'a> {
@@ -13,7 +13,7 @@ impl<'a> ::std::default::Default for CreateDocumentOptions<'a> {
         CreateDocumentOptions {
             indexing_directive: None,
             partition_key: PartitionKey::new(),
-            is_upsert: false
+            is_upsert: false,
         }
     }
 }

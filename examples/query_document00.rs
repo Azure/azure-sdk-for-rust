@@ -11,9 +11,7 @@ use std::error::Error;
 use tokio_core::reactor::Core;
 
 use azure_sdk_for_rust::cosmos::{
-    AuthorizationToken, TokenType, Client,
-    query_document::QueryDocumentOptions,
-    query::Query
+    query::Query, query_document::QueryDocumentOptions, AuthorizationToken, Client, TokenType,
 };
 
 #[macro_use]

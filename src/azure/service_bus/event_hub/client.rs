@@ -6,7 +6,7 @@ use azure::service_bus::event_hub::send_event;
 
 use time::Duration;
 
-use ring::{hmac::SigningKey, digest::SHA256};
+use ring::{digest::SHA256, hmac::SigningKey};
 
 pub struct Client {
     handle: tokio_core::reactor::Handle,

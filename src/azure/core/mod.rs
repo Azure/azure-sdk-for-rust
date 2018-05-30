@@ -1,5 +1,5 @@
-extern crate ring;
 extern crate hyper;
+extern crate ring;
 extern crate url;
 
 #[macro_use]

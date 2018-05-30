@@ -10,13 +10,11 @@ use std::error::Error;
 use futures::future::*;
 use tokio_core::reactor::Core;
 
-use azure_sdk_for_rust::cosmos::{AuthorizationToken, TokenType, Client};
-
+use azure_sdk_for_rust::cosmos::{AuthorizationToken, Client, TokenType};
 
 fn main() {
     code().unwrap();
 }
-
 
 // We run a separate method to use the elegant quotation mark operator.
 // A series of unwrap(), unwrap() would have achieved the same result.
@@ -36,7 +34,6 @@ fn code() -> Result<(), Box<Error>> {
     // attacks) so make sure to execute the Future as soon as possible after having it created.
     // * This is something worth discussing *
     let mut core = Core::new()?;
-
 
     // This is how you construct an authorization token.
     // Remember to pick the correct token type.

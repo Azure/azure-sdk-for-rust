@@ -111,7 +111,7 @@ impl Container {
             |ref mut headers| {
                 headers.set(XMSBlobPublicAccess(pa));
             },
-            None,
+            Some(&vec![]),
         );
 
         done(req).from_err().and_then(move |future_response| {

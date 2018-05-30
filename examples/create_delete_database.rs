@@ -10,13 +10,11 @@ use std::error::Error;
 use futures::future::*;
 use tokio_core::reactor::Core;
 
-use azure_sdk_for_rust::cosmos::{AuthorizationToken, TokenType, Client};
-
+use azure_sdk_for_rust::cosmos::{AuthorizationToken, Client, TokenType};
 
 fn main() {
     code().unwrap();
 }
-
 
 // We run a separate method to use the elegant quotation mark operator.
 // A series of unwrap(), unwrap() would have achieved the same result.

@@ -15,12 +15,15 @@ pub use self::put_page_options::{PutPageOptions, PUT_PAGE_OPTIONS_DEFAULT};
 mod lease_blob_options;
 pub use self::lease_blob_options::{LeaseBlobOptions, LEASE_BLOB_OPTIONS_DEFAULT};
 
+mod blob_stream;
+
 use hyper::Method;
 
 use chrono::DateTime;
 use chrono::Utc;
 
 use futures::future::*;
+use futures::prelude::*;
 
 use azure::core::lease::{LeaseAction, LeaseDuration, LeaseId, LeaseState, LeaseStatus};
 use azure::storage::client::Client;
@@ -375,6 +378,26 @@ impl Blob {
                 done(incomplete_vector_from_response(&body, &container_name)).from_err()
             })
         })
+    }
+
+    pub fn stream<'a>(
+        c: &'a Client,
+        container_name: &'a str,
+        blob_name: &'a str,
+        snapshot: Option<&'a DateTime<Utc>>,
+        range: &Range,
+        lease_id: Option<&'a LeaseId>,
+        increment: u64,
+    ) -> impl Stream<Item = Vec<u8>, Error = AzureError> + 'a {
+        blob_stream::BlobStream::new(
+            c,
+            container_name,
+            blob_name,
+            snapshot,
+            range,
+            lease_id,
+            increment,
+        )
     }
 
     pub fn get(
