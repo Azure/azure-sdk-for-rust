@@ -1,4 +1,7 @@
 # Microsoft Azure SDK for Rust
+
+[![docs](https://docs.rs/azure_sdk_for_rust/badge.svg)](docs.rs)
+
 [![legal](https://img.shields.io/github/license/mindflavor/AzureSDKForRust.svg)](LICENSE) 
 
 [![Build Status](https://travis-ci.org/MindFlavor/AzureSDKForRust.svg?branch=master)](https://travis-ci.org/MindFlavor/AzureSDKForRust) [![Coverage Status](https://coveralls.io/repos/MindFlavor/AzureSDKForRust/badge.svg?branch=master&service=github)](https://coveralls.io/github/MindFlavor/AzureSDKForRust?branch=master) [![alpha](https://img.shields.io/badge/stability-alpha-yellow.svg)](https://img.shields.io/badge/stability-alpha-yellow.svg)
