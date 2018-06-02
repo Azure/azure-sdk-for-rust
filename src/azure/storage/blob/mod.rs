@@ -16,6 +16,7 @@ mod lease_blob_options;
 pub use self::lease_blob_options::{LeaseBlobOptions, LEASE_BLOB_OPTIONS_DEFAULT};
 
 mod blob_stream;
+mod block_type;
 
 use hyper::Method;
 
@@ -722,6 +723,29 @@ impl Blob {
             })
             .and_then(|_| ok(()))
     }
+
+    pub fn put_block_list(
+        &self,
+        c: &Client,
+        timeout: Option<u64>,
+        blockIds: &[&str]) -> impl Future<Item = (), Error=AzureError> {
+        let mut uri = format!(
+            "https://{}.blob.core.windows.net/{}/{}?comp=blocklist",
+            c.account(),
+            self.container_name,
+            self.name,
+        );
+
+        if let Some(ref timeout) = timeout {
+            uri = format!("{}&timeout={}", uri, timeout);
+        }
+
+        // create the blocklist XML
+        
+
+
+    }
+
 
     pub fn clear_page(
         &self,
