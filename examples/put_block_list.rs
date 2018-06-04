@@ -81,6 +81,8 @@ fn code() -> Result<(), Box<Error>> {
         copy_status_description: None,
     };
 
+    let mut block_list = BlockList::new();
+
     let future = new_blob
         .put_block(
             &client,
@@ -90,9 +92,10 @@ fn code() -> Result<(), Box<Error>> {
         )
         .map(|encoded_block_id| {
             println!("block1 blob for blob {} created", name);
-            encoded_block_id
+            block_list.blocks.push(BlobBlockType::Uncommitted(encoded_block_id));
+            block_list
         })
-        .and_then(|encoded_block_id| {
+        .and_then(|mut block_list| {
             new_blob
                 .put_block(
                     &client,
@@ -100,12 +103,13 @@ fn code() -> Result<(), Box<Error>> {
                     &PUT_BLOCK_OPTIONS_DEFAULT,
                     &contents2.as_bytes(),
                 )
-                .map(|encoded_block_id2| {
+                .map(|encoded_block_id| {
                     println!("block2 blob for blob {} created", name);
-                    (encoded_block_id, encoded_block_id2)
+                    block_list.blocks.push(BlobBlockType::Uncommitted(encoded_block_id));
+                    block_list
                 })
         })
-        .and_then(|(encoded_block_id, encoded_block_id2)| {
+        .and_then(|mut block_list| {
             new_blob
                 .put_block(
                     &client,
@@ -113,17 +117,14 @@ fn code() -> Result<(), Box<Error>> {
                     &PUT_BLOCK_OPTIONS_DEFAULT,
                     &contents3.as_bytes(),
                 )
-                .map(|encoded_block_id3| {
+                .map(|encoded_block_id| {
                     println!("block3 blob for blob {} created", name);
-                    (encoded_block_id, encoded_block_id2, encoded_block_id3)
+                    block_list.blocks.push(BlobBlockType::Uncommitted(encoded_block_id));
+                    block_list
                 })
         })
-        .map(|(encoded_block_id, encoded_block_id2, encoded_block_id3)| {
-            let mut bl = BlockList::new();
-            bl.blocks.push(BlobBlockType::Uncommitted(encoded_block_id));
-            bl.blocks.push(BlobBlockType::Uncommitted(encoded_block_id2));
-            bl.blocks.push(BlobBlockType::Uncommitted(encoded_block_id3));
-            println!("{:?}", bl);
+        .map(|block_list| {
+            println!("{:?}", block_list);
         });
 
     core.run(future)?;
