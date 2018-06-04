@@ -1,6 +1,6 @@
-use std::convert::TryFrom;
-use azure::storage::blob::BlobBlockType;
 use azure::core::errors::BlockListParseError;
+use azure::storage::blob::BlobBlockType;
+use std::convert::TryFrom;
 
 #[derive(Debug, Clone)]
 pub struct BlockList<T> {
@@ -10,37 +10,14 @@ pub struct BlockList<T> {
 impl<'a> TryFrom<&'a str> for BlockList<&'a str> {
     type Error = BlockListParseError;
 
-    fn try_from(value: &'a str) -> Result<Self, Self::Error> {
-        BlockList::from_xml(value)
-    }   
-}
-
-impl<'a> BlockList<&'a str> {
-    pub fn to_owned(&self) -> BlockList<String> {
-        let mut bl: BlockList<String> = BlockList {
-            bls: Vec::with_capacity(self.bls.len()),
-        };
-
-        for entry in self.bls.iter() {
-            bl.bls.push(match entry {
-                BlobBlockType::Committed(id) => BlobBlockType::Committed(id.to_string()),
-                BlobBlockType::Uncommitted(id) => BlobBlockType::Uncommitted(id.to_string()),
-                BlobBlockType::Latest(id) => BlobBlockType::Latest(id.to_string()),
-            });
-        }
-
-        bl
-    }
-
-
-   pub fn from_xml(xml: &'a str) -> Result<BlockList<&'a str>, BlockListParseError> {
+    fn try_from(xml: &'a str) -> Result<Self, Self::Error> {
         // this is terrible XML parsing but will do temporarily.
         // at least we are not copying strings around.
         // we assume here the XML is composed by
         // single byte chars. It should (base64 encoding should
         // comply) but if we get unpleasant errors
         // this can be a place to start looking
-        trace!("BlockList::from_xml called with xml == \"{}\"", xml);
+        trace!("BlockList::try_from called with xml == \"{}\"", xml);
 
         let mut bl = BlockList { bls: Vec::new() };
 
@@ -61,6 +38,9 @@ impl<'a> BlockList<&'a str> {
             let node_type = &xml[tagbegin..tagend];
 
             debug!("{}", node_type);
+            if node_type == "/BlockList" {
+                break;
+            }
 
             cur = tagend + 1;
 
@@ -86,6 +66,24 @@ impl<'a> BlockList<&'a str> {
 
         Ok(bl)
     }
+}
+
+impl<'a> BlockList<&'a str> {
+    pub fn to_owned(&self) -> BlockList<String> {
+        let mut bl: BlockList<String> = BlockList {
+            bls: Vec::with_capacity(self.bls.len()),
+        };
+
+        for entry in self.bls.iter() {
+            bl.bls.push(match entry {
+                BlobBlockType::Committed(id) => BlobBlockType::Committed(id.to_string()),
+                BlobBlockType::Uncommitted(id) => BlobBlockType::Uncommitted(id.to_string()),
+                BlobBlockType::Latest(id) => BlobBlockType::Latest(id.to_string()),
+            });
+        }
+
+        bl
+    }
 
     pub fn to_xml(&self) -> String {
         let mut s = String::new();
@@ -109,3 +107,20 @@ impl<'a> BlockList<&'a str> {
     }
 }
 
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn block_list_parse() {
+        let range = "<?xml version=\"1.0\" encoding=\"utf-8\"?>
+        <BlockList>
+                <Committed>numero1</Committed>
+                <Uncommitted>numero2</Uncommitted>
+                <Uncommitted>numero3</Uncommitted>
+                <Latest>numero4</Latest>
+        </BlockList>";
+
+        let bl = BlockList::try_from(range).unwrap();
+    }
+}

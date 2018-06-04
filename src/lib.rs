@@ -1,3 +1,4 @@
+#![feature(try_from)]
 #![feature(try_trait)]
 #![recursion_limit = "128"]
 
@@ -33,6 +34,8 @@ extern crate smallvec;
 
 #[macro_use]
 extern crate failure;
+
+extern crate crypto;
 
 #[macro_use]
 mod azure;

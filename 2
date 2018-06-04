@@ -15,8 +15,8 @@ pub use self::put_page_options::{PutPageOptions, PUT_PAGE_OPTIONS_DEFAULT};
 mod lease_blob_options;
 pub use self::lease_blob_options::{LeaseBlobOptions, LEASE_BLOB_OPTIONS_DEFAULT};
 
-mod blob_block_type;
 mod blob_stream;
+mod blob_block_type;
 pub use self::blob_block_type::BlobBlockType;
 
 mod block_list;
@@ -734,9 +734,7 @@ impl Blob {
         &self,
         c: &Client,
         timeout: Option<u64>,
-        lease_id: Option<&LeaseId>,
-        block_ids: &BlockList<&'a str>,
-    ) -> impl Future<Item = (), Error = AzureError> {
+        block_ids: &BlockList<&'a str> ) -> impl Future<Item = (), Error=AzureError> {
         let mut uri = format!(
             "https://{}.blob.core.windows.net/{}/{}?comp=blocklist",
             c.account(),
@@ -750,39 +748,23 @@ impl Blob {
 
         // create the blocklist XML
         let xml = block_ids.to_xml();
-        let xml_bytes = xml.as_bytes();
 
         // calculate the xml MD5. This can be made optional
         // in a future version.
-        let md5 = {
-            use crypto::digest::Digest;
-            let mut hash = Md5::new();
-            hash.input(xml_bytes);
-
-            let mut buf = Vec::new();
-            hash.result(&mut buf);
-
-            base64::encode(&buf)
-        };
+        let mut hash = Md5::new();
 
         // now create the request
-        let req = c.perform_request(
-            &uri,
-            Method::Put,
-            move |ref mut headers| {
-                headers.set(ContentLength(xml_bytes.len() as u64));
-                headers.set(ContentMD5(md5));
-                if let Some(lease_id) = lease_id {
-                    headers.set(XMSLeaseId(*lease_id));
-                }
-            },
-            Some(xml_bytes),
-        );
+       let req = c.perform_request(&uri,
+                                   Method::Put,
+                                   move | ref mut headers| {
+                                       header.set(ContentLength(xml.as_bytes().len()),
 
-        done(req).from_err().and_then(move |future_response| {
-            check_status_extract_body(future_response, StatusCode::Created)
-        }).and_then(|_| ok(()))
+
+                                   }
+
+
     }
+
 
     pub fn clear_page(
         &self,
