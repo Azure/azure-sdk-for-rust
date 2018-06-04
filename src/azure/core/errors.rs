@@ -175,12 +175,34 @@ quick_error! {
             from()
             display("Parsing error: {:?}", err)
         }
+        BlockListParseError(err: BlockListParseError){
+            from()
+            display("Block list XML parsing error: {:?}", err)
+        }
    }
 }
 
 impl From<()> for AzureError {
     fn from(_: ()) -> AzureError {
         AzureError::GenericError
+    }
+}
+
+#[derive(Debug, Fail)]
+pub enum BlockListParseError {
+    #[fail(display = "invalid BlockList XML")]
+    InvalidBlockListXML,
+    #[fail(display = "Invalid Block type: {}", name)]
+    InvalidBlockType { name: String },
+    #[fail(display = "Token not found: {}", token)]
+    TokemNotFound { token: String },
+    #[fail(display = "Gneric parse error")]
+    GenericParseError,
+}
+
+impl std::convert::From<std::option::NoneError> for BlockListParseError {
+    fn from(_: std::option::NoneError) -> Self {
+        BlockListParseError::GenericParseError
     }
 }
 

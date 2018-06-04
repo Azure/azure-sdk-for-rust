@@ -32,6 +32,7 @@ time         = "0.1.40"
 tokio-core   = "0.1.17"
 url          = "1.7.0"
 uuid         = "0.6.5"
+failure      = "*"
 smallvec     = { version = "0.6", features = ["serde"] }
 
 [features]

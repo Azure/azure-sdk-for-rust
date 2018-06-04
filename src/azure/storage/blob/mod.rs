@@ -15,8 +15,9 @@ pub use self::put_page_options::{PutPageOptions, PUT_PAGE_OPTIONS_DEFAULT};
 mod lease_blob_options;
 pub use self::lease_blob_options::{LeaseBlobOptions, LEASE_BLOB_OPTIONS_DEFAULT};
 
+mod blob_block_type;
 mod blob_stream;
-mod block_type;
+pub use self::blob_block_type::BlobBlockType;
 
 use hyper::Method;
 
@@ -728,7 +729,8 @@ impl Blob {
         &self,
         c: &Client,
         timeout: Option<u64>,
-        blockIds: &[&str]) -> impl Future<Item = (), Error=AzureError> {
+        blockIds: &[BlobBlockType],
+    ) -> impl Future<Item = (), Error = AzureError> {
         let mut uri = format!(
             "https://{}.blob.core.windows.net/{}/{}?comp=blocklist",
             c.account(),
@@ -741,11 +743,7 @@ impl Blob {
         }
 
         // create the blocklist XML
-        
-
-
     }
-
 
     pub fn clear_page(
         &self,

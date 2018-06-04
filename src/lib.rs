@@ -1,3 +1,4 @@
+#![feature(try_trait)]
 #![recursion_limit = "128"]
 
 extern crate chrono;
@@ -29,6 +30,9 @@ extern crate serde_derive;
 extern crate serde_json;
 #[macro_use]
 extern crate smallvec;
+
+#[macro_use]
+extern crate failure;
 
 #[macro_use]
 mod azure;
