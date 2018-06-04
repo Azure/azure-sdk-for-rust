@@ -2,7 +2,7 @@ use azure::core::errors::BlockListParseError;
 use azure::storage::blob::BlobBlockType;
 use std::convert::TryFrom;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct BlockList<T> {
     pub bls: Vec<BlobBlockType<T>>,
 }
@@ -112,7 +112,7 @@ mod test {
     use super::*;
 
     #[test]
-    fn block_list_parse() {
+    fn try_parse() {
         let range = "<?xml version=\"1.0\" encoding=\"utf-8\"?>
         <BlockList>
                 <Committed>numero1</Committed>
@@ -122,5 +122,32 @@ mod test {
         </BlockList>";
 
         let bl = BlockList::try_from(range).unwrap();
+        assert!(bl.bls.len() == 4);
+        assert!(bl.bls[0] == BlobBlockType::Committed("numero1"));
+        assert!(bl.bls[1] == BlobBlockType::Uncommitted("numero2"));
+        assert!(bl.bls[2] == BlobBlockType::Uncommitted("numero3"));
+        assert!(bl.bls[3] == BlobBlockType::Latest("numero4"));
     }
+
+    #[test]
+    fn to_xml_and_then_parse() {
+        let mut bls = BlockList { bls: Vec::new() };
+        bls.bls.push(BlobBlockType::Committed("numero1"));
+        bls.bls.push(BlobBlockType::Uncommitted("numero2"));
+        bls.bls.push(BlobBlockType::Uncommitted("numero3"));
+        bls.bls.push(BlobBlockType::Latest("numero4"));
+
+        let retu: &str = &bls.to_xml();
+
+        let bl2 = BlockList::try_from(retu).unwrap();
+        assert!(bl2.bls.len() == 4);
+        assert!(bls == bl2);
+
+        let bl_owned = bl2.to_owned();
+        assert!(bl_owned.bls[0] == BlobBlockType::Committed(String::from("numero1")));
+        assert!(bl_owned.bls[1] == BlobBlockType::Uncommitted(String::from("numero2")));
+        assert!(bl_owned.bls[2] == BlobBlockType::Uncommitted(String::from("numero3")));
+        assert!(bl_owned.bls[3] == BlobBlockType::Latest(String::from("numero4")));
+    }
+
 }

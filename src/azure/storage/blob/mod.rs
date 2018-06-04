@@ -779,9 +779,12 @@ impl Blob {
             Some(xml_bytes),
         );
 
-        done(req).from_err().and_then(move |future_response| {
-            check_status_extract_body(future_response, StatusCode::Created)
-        }).and_then(|_| ok(()))
+        done(req)
+            .from_err()
+            .and_then(move |future_response| {
+                check_status_extract_body(future_response, StatusCode::Created)
+            })
+            .and_then(|_| ok(()))
     }
 
     pub fn clear_page(
