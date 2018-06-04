@@ -685,14 +685,37 @@ impl Blob {
             .and_then(|_| ok(()))
     }
 
-    pub fn put_block(
+    fn put_block_create_request(
         &self,
         c: &Client,
-        block_id: &str,
+        encoded_block_id: &str,
         pbo: &PutBlockOptions,
         content: &[u8],
-    ) -> impl Future<Item = (), Error = AzureError> {
-        let encoded_block_id = base64::encode(block_id.as_bytes());
+    ) -> Result<hyper::client::FutureResponse, AzureError> {
+        // parameter sanity check
+        match self.blob_type {
+            BlobType::BlockBlob => {}
+            BlobType::PageBlob => {
+                return Err(AzureError::InputParametersError(String::from(
+                    "cannot use put_block_blob with a page blob",
+                )));
+            }
+            BlobType::AppendBlob => {
+                return Err(AzureError::InputParametersError(String::from(
+                    "cannot use put_block_blob with an AppendBlob",
+                )));
+            }
+        };
+
+        let ce = if let Some(ref content_encoding) = self.content_encoding {
+            use hyper::header::Encoding;
+            match content_encoding.parse::<Encoding>() {
+                Ok(ct) => Some(ct),
+                Err(error) => return Err(AzureError::HyperError(error)),
+            }
+        } else {
+            None
+        };
 
         let mut uri = format!(
             "https://{}.blob.core.windows.net/{}/{}?comp=block&blockid={}",
@@ -706,28 +729,60 @@ impl Blob {
             uri = format!("{}&timeout={}", uri, timeout);
         }
 
-        let req = c.perform_request(
+        c.perform_request(
             &uri,
             Method::Put,
             move |ref mut headers| {
-                headers.set(XMSBlobContentLength(content.len() as u64));
+                if let Some(ct) = self.content_type.clone() {
+                    headers.set(ContentType(ct));
+                }
+
+                if let Some(ce) = ce {
+                    headers.set(ContentEncoding(vec![ce]));
+                }
+
+                // TODO Content-Language
+
+                if let Some(ref content_md5) = self.content_md5 {
+                    headers.set(ContentMD5(content_md5.to_owned()));
+                };
+
+                headers.set(XMSBlobType(self.blob_type));
 
                 if let Some(ref lease_id) = pbo.lease_id {
                     headers.set(XMSLeaseId(*lease_id));
                 }
+
+                // TODO x-ms-blob-content-disposition
+
+                if self.blob_type == BlobType::PageBlob {
+                    headers.set(XMSBlobContentLength(self.content_length));
+                }
+
                 if let Some(ref request_id) = pbo.request_id {
                     headers.set(XMSClientRequestId(request_id.to_owned()));
                 }
             },
             Some(content),
-        );
+        )
+    }
 
-        done(req)
-            .from_err()
-            .and_then(move |future_response| {
-                check_status_extract_body(future_response, StatusCode::Created)
-            })
-            .and_then(|_| ok(()))
+    pub fn put_block(
+        &self,
+        c: &Client,
+        block_id: &str,
+        pbo: &PutBlockOptions,
+        content: &[u8],
+    ) -> impl Future<Item = String, Error = AzureError> {
+        let encoded_block_id = base64::encode(block_id.as_bytes());
+        ok(self.put_block_create_request(c, &encoded_block_id, pbo, content)).and_then(|req| {
+            done(req)
+                .from_err()
+                .and_then(move |future_response| {
+                    check_status_extract_body(future_response, StatusCode::Created)
+                })
+                .and_then(|_| ok(encoded_block_id))
+        })
     }
 
     pub fn put_block_list<'a>(

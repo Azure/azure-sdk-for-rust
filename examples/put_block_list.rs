@@ -23,12 +23,7 @@ use azure_sdk_for_rust::{
 
 use azure_sdk_for_rust::storage::blob::{BlobBlockType, BlockList};
 
-use std::fs::metadata;
-use std::fs::File;
-use std::path;
-
 use hyper::mime::Mime;
-use std::io::Read;
 
 fn main() {
     env_logger::init();
@@ -93,10 +88,11 @@ fn code() -> Result<(), Box<Error>> {
             &PUT_BLOCK_OPTIONS_DEFAULT,
             &contents1.as_bytes(),
         )
-        .map(|_| {
+        .map(|encoded_block_id| {
             println!("block1 blob for blob {} created", name);
+            encoded_block_id
         })
-        .and_then(|_| {
+        .and_then(|encoded_block_id| {
             new_blob
                 .put_block(
                     &client,
@@ -104,9 +100,12 @@ fn code() -> Result<(), Box<Error>> {
                     &PUT_BLOCK_OPTIONS_DEFAULT,
                     &contents2.as_bytes(),
                 )
-                .map(|_| println!("block2 blob for blob {} created", name))
+                .map(|encoded_block_id2| {
+                    println!("block2 blob for blob {} created", name);
+                    (encoded_block_id, encoded_block_id2)
+                })
         })
-        .and_then(|_| {
+        .and_then(|(encoded_block_id, encoded_block_id2)| {
             new_blob
                 .put_block(
                     &client,
@@ -114,12 +113,21 @@ fn code() -> Result<(), Box<Error>> {
                     &PUT_BLOCK_OPTIONS_DEFAULT,
                     &contents3.as_bytes(),
                 )
-                .map(|_| println!("block3 blob for blob {} created", name))
+                .map(|encoded_block_id3| {
+                    println!("block3 blob for blob {} created", name);
+                    (encoded_block_id, encoded_block_id2, encoded_block_id3)
+                })
+        })
+        .map(|(encoded_block_id, encoded_block_id2, encoded_block_id3)| {
+            let mut bl = BlockList::new();
+            bl.blocks.push(BlobBlockType::Uncommitted(encoded_block_id));
+            bl.blocks.push(BlobBlockType::Uncommitted(encoded_block_id2));
+            bl.blocks.push(BlobBlockType::Uncommitted(encoded_block_id3));
+            println!("{:?}", bl);
         });
 
     core.run(future)?;
 
-    // this will fail because we did not specify a valid leaseID.
     let future =
         Blob::delete(&client, &container_name, &name, None).map(|_| println!("Blob deleted!"));
 

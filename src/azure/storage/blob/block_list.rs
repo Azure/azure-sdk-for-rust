@@ -4,7 +4,13 @@ use std::convert::TryFrom;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct BlockList<T> {
-    pub bls: Vec<BlobBlockType<T>>,
+    pub blocks: Vec<BlobBlockType<T>>,
+}
+
+impl<T> BlockList<T> {
+    pub fn new() -> BlockList<T> {
+        BlockList { blocks: Vec::new() }
+    }
 }
 
 impl<'a> TryFrom<&'a str> for BlockList<&'a str> {
@@ -19,7 +25,7 @@ impl<'a> TryFrom<&'a str> for BlockList<&'a str> {
         // this can be a place to start looking
         trace!("BlockList::try_from called with xml == \"{}\"", xml);
 
-        let mut bl = BlockList { bls: Vec::new() };
+        let mut bl = BlockList { blocks: Vec::new() };
 
         let begin = xml[..].find("<BlockList>")? + "<BlockList>".len();
         let end = xml[begin..].find("</BlockList>")? + begin;
@@ -52,7 +58,7 @@ impl<'a> TryFrom<&'a str> for BlockList<&'a str> {
 
             cur = close_pos + close_tag.len() + 1;
 
-            bl.bls.push(match node_type {
+            bl.blocks.push(match node_type {
                 "Committed" => BlobBlockType::Committed(id),
                 "Uncommitted" => BlobBlockType::Uncommitted(id),
                 "Latest" => BlobBlockType::Latest(id),
@@ -71,11 +77,11 @@ impl<'a> TryFrom<&'a str> for BlockList<&'a str> {
 impl<'a> BlockList<&'a str> {
     pub fn to_owned(&self) -> BlockList<String> {
         let mut bl: BlockList<String> = BlockList {
-            bls: Vec::with_capacity(self.bls.len()),
+            blocks: Vec::with_capacity(self.blocks.len()),
         };
 
-        for entry in self.bls.iter() {
-            bl.bls.push(match entry {
+        for entry in self.blocks.iter() {
+            bl.blocks.push(match entry {
                 BlobBlockType::Committed(id) => BlobBlockType::Committed(id.to_string()),
                 BlobBlockType::Uncommitted(id) => BlobBlockType::Uncommitted(id.to_string()),
                 BlobBlockType::Latest(id) => BlobBlockType::Latest(id.to_string()),
@@ -88,7 +94,7 @@ impl<'a> BlockList<&'a str> {
     pub fn to_xml(&self) -> String {
         let mut s = String::new();
         s.extend("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<BlockList>\n".chars());
-        for bl in self.bls.iter() {
+        for bl in self.blocks.iter() {
             let node = match bl {
                 BlobBlockType::Committed(ref content) => {
                     format!("\t<Committed>{}</Committed>\n", content)
@@ -122,32 +128,32 @@ mod test {
         </BlockList>";
 
         let bl = BlockList::try_from(range).unwrap();
-        assert!(bl.bls.len() == 4);
-        assert!(bl.bls[0] == BlobBlockType::Committed("numero1"));
-        assert!(bl.bls[1] == BlobBlockType::Uncommitted("numero2"));
-        assert!(bl.bls[2] == BlobBlockType::Uncommitted("numero3"));
-        assert!(bl.bls[3] == BlobBlockType::Latest("numero4"));
+        assert!(bl.blocks.len() == 4);
+        assert!(bl.blocks[0] == BlobBlockType::Committed("numero1"));
+        assert!(bl.blocks[1] == BlobBlockType::Uncommitted("numero2"));
+        assert!(bl.blocks[2] == BlobBlockType::Uncommitted("numero3"));
+        assert!(bl.blocks[3] == BlobBlockType::Latest("numero4"));
     }
 
     #[test]
     fn to_xml_and_then_parse() {
-        let mut bls = BlockList { bls: Vec::new() };
-        bls.bls.push(BlobBlockType::Committed("numero1"));
-        bls.bls.push(BlobBlockType::Uncommitted("numero2"));
-        bls.bls.push(BlobBlockType::Uncommitted("numero3"));
-        bls.bls.push(BlobBlockType::Latest("numero4"));
+        let mut blocks = BlockList { blocks: Vec::new() };
+        blocks.blocks.push(BlobBlockType::Committed("numero1"));
+        blocks.blocks.push(BlobBlockType::Uncommitted("numero2"));
+        blocks.blocks.push(BlobBlockType::Uncommitted("numero3"));
+        blocks.blocks.push(BlobBlockType::Latest("numero4"));
 
-        let retu: &str = &bls.to_xml();
+        let retu: &str = &blocks.to_xml();
 
         let bl2 = BlockList::try_from(retu).unwrap();
-        assert!(bl2.bls.len() == 4);
-        assert!(bls == bl2);
+        assert!(bl2.blocks.len() == 4);
+        assert!(blocks == bl2);
 
         let bl_owned = bl2.to_owned();
-        assert!(bl_owned.bls[0] == BlobBlockType::Committed(String::from("numero1")));
-        assert!(bl_owned.bls[1] == BlobBlockType::Uncommitted(String::from("numero2")));
-        assert!(bl_owned.bls[2] == BlobBlockType::Uncommitted(String::from("numero3")));
-        assert!(bl_owned.bls[3] == BlobBlockType::Latest(String::from("numero4")));
+        assert!(bl_owned.blocks[0] == BlobBlockType::Committed(String::from("numero1")));
+        assert!(bl_owned.blocks[1] == BlobBlockType::Uncommitted(String::from("numero2")));
+        assert!(bl_owned.blocks[2] == BlobBlockType::Uncommitted(String::from("numero3")));
+        assert!(bl_owned.blocks[3] == BlobBlockType::Latest(String::from("numero4")));
     }
 
 }
