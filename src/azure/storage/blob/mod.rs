@@ -1,5 +1,7 @@
 extern crate uuid;
 
+use std::borrow::Borrow;
+
 mod put_options;
 pub use self::put_options::{PutOptions, PUT_OPTIONS_DEFAULT};
 
@@ -860,10 +862,11 @@ pub fn put_block_list<'a, P, T>(
     path: P,
     timeout: Option<u64>,
     lease_id: Option<&LeaseId>,
-    block_ids: &BlockList<&'a str>,
+    block_ids: &BlockList<T>,
 ) -> impl Future<Item = (), Error = AzureError>
 where
     P: Into<(&'a str, &'a str)>,
+    T: Borrow<str>,
 {
     let (container_name, blob_name) = path.into();
 

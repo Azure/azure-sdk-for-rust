@@ -1,13 +1,20 @@
 use azure::core::errors::BlockListParseError;
 use azure::storage::blob::BlobBlockType;
+use std::borrow::Borrow;
 use std::convert::TryFrom;
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct BlockList<T> {
+pub struct BlockList<T>
+where
+    T: Borrow<str>,
+{
     pub blocks: Vec<BlobBlockType<T>>,
 }
 
-impl<T> BlockList<T> {
+impl<T> BlockList<T>
+where
+    T: Borrow<str>,
+{
     pub fn new() -> BlockList<T> {
         BlockList { blocks: Vec::new() }
     }
@@ -92,7 +99,9 @@ impl<'a> BlockList<&'a str> {
     }
 }
 
-impl<'a> BlockList<&'a str>
+impl<T> BlockList<T>
+where
+    T: Borrow<str>,
 {
     pub fn to_xml(&self) -> String {
         let mut s = String::new();
@@ -100,13 +109,13 @@ impl<'a> BlockList<&'a str>
         for bl in self.blocks.iter() {
             let node = match bl {
                 BlobBlockType::Committed(content) => {
-                    format!("\t<Committed>{}</Committed>\n", content)
+                    format!("\t<Committed>{}</Committed>\n", content.borrow())
                 }
                 BlobBlockType::Uncommitted(content) => {
-                    format!("\t<Uncommitted>{}</Uncommitted>\n", content)
+                    format!("\t<Uncommitted>{}</Uncommitted>\n", content.borrow())
                 }
                 BlobBlockType::Latest(content) => {
-                    format!("\t<Latest>{}</Latest>\n", content)
+                    format!("\t<Latest>{}</Latest>\n", content.borrow())
                 }
             };
 

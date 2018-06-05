@@ -125,13 +125,14 @@ fn code() -> Result<(), Box<Error>> {
         })
         .map(|block_list| {
             println!("{:?}", block_list);
+            block_list
         });
 
-    core.run(future)?;
+    let block_list = core.run(future)?;
 
     // now we can finalize the blob with put_block_list
     let future = put_block_list(&client, (&container_name as &str, name),  None, None, &block_list);
-     
+    core.run(future)?;
 
     let future =
         Blob::delete(&client, &container_name, &name, None).map(|_| println!("Blob deleted!"));
