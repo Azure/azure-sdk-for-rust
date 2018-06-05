@@ -21,7 +21,7 @@ use azure_sdk_for_rust::{
     storage::client::Client,
 };
 
-use azure_sdk_for_rust::storage::blob::{BlobBlockType, BlockList};
+use azure_sdk_for_rust::storage::blob::{BlobBlockType, BlockList, put_block_list};
 
 use hyper::mime::Mime;
 
@@ -128,6 +128,10 @@ fn code() -> Result<(), Box<Error>> {
         });
 
     core.run(future)?;
+
+    // now we can finalize the blob with put_block_list
+    let future = put_block_list(&client, (&container_name as &str, name),  None, None, &block_list);
+     
 
     let future =
         Blob::delete(&client, &container_name, &name, None).map(|_| println!("Blob deleted!"));

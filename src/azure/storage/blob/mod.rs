@@ -19,6 +19,8 @@ mod blob_block_type;
 mod blob_stream;
 pub use self::blob_block_type::BlobBlockType;
 
+use azure::storage::IntoAzurePath;
+
 mod block_list;
 pub use self::block_list::BlockList;
 
@@ -785,63 +787,6 @@ impl Blob {
         })
     }
 
-    pub fn put_block_list<'a>(
-        &self,
-        c: &Client,
-        timeout: Option<u64>,
-        lease_id: Option<&LeaseId>,
-        block_ids: &BlockList<&'a str>,
-    ) -> impl Future<Item = (), Error = AzureError> {
-        let mut uri = format!(
-            "https://{}.blob.core.windows.net/{}/{}?comp=blocklist",
-            c.account(),
-            self.container_name,
-            self.name,
-        );
-
-        if let Some(ref timeout) = timeout {
-            uri = format!("{}&timeout={}", uri, timeout);
-        }
-
-        // create the blocklist XML
-        let xml = block_ids.to_xml();
-        let xml_bytes = xml.as_bytes();
-
-        // calculate the xml MD5. This can be made optional
-        // in a future version.
-        let md5 = {
-            use crypto::digest::Digest;
-            let mut hash = Md5::new();
-            hash.input(xml_bytes);
-
-            let mut buf = Vec::new();
-            hash.result(&mut buf);
-
-            base64::encode(&buf)
-        };
-
-        // now create the request
-        let req = c.perform_request(
-            &uri,
-            Method::Put,
-            move |ref mut headers| {
-                headers.set(ContentLength(xml_bytes.len() as u64));
-                headers.set(ContentMD5(md5));
-                if let Some(lease_id) = lease_id {
-                    headers.set(XMSLeaseId(*lease_id));
-                }
-            },
-            Some(xml_bytes),
-        );
-
-        done(req)
-            .from_err()
-            .and_then(move |future_response| {
-                check_status_extract_body(future_response, StatusCode::Created)
-            })
-            .and_then(|_| ok(()))
-    }
-
     pub fn clear_page(
         &self,
         c: &Client,
@@ -908,6 +853,68 @@ impl Blob {
             })
             .and_then(|_| ok(()))
     }
+}
+
+pub fn put_block_list<'a, P, T>(
+    c: &Client,
+    path: P,
+    timeout: Option<u64>,
+    lease_id: Option<&LeaseId>,
+    block_ids: &BlockList<&'a str>,
+) -> impl Future<Item = (), Error = AzureError>
+where
+    P: Into<(&'a str, &'a str)>,
+{
+    let (container_name, blob_name) = path.into();
+
+    let mut uri = format!(
+        "https://{}.blob.core.windows.net/{}/{}?comp=blocklist",
+        c.account(),
+        container_name,
+        blob_name,
+    );
+
+    if let Some(ref timeout) = timeout {
+        uri = format!("{}&timeout={}", uri, timeout);
+    }
+
+    // create the blocklist XML
+    let xml = block_ids.to_xml();
+    let xml_bytes = xml.as_bytes();
+
+    // calculate the xml MD5. This can be made optional
+    // in a future version.
+    let md5 = {
+        use crypto::digest::Digest;
+        let mut hash = Md5::new();
+        hash.input(xml_bytes);
+
+        let mut buf = Vec::new();
+        hash.result(&mut buf);
+
+        base64::encode(&buf)
+    };
+
+    // now create the request
+    let req = c.perform_request(
+        &uri,
+        Method::Put,
+        move |ref mut headers| {
+            headers.set(ContentLength(xml_bytes.len() as u64));
+            headers.set(ContentMD5(md5));
+            if let Some(lease_id) = lease_id {
+                headers.set(XMSLeaseId(*lease_id));
+            }
+        },
+        Some(xml_bytes),
+    );
+
+    done(req)
+        .from_err()
+        .and_then(move |future_response| {
+            check_status_extract_body(future_response, StatusCode::Created)
+        })
+        .and_then(|_| ok(()))
 }
 
 #[inline]

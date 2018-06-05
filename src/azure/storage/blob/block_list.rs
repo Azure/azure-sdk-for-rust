@@ -90,19 +90,24 @@ impl<'a> BlockList<&'a str> {
 
         bl
     }
+}
 
+impl<'a> BlockList<&'a str>
+{
     pub fn to_xml(&self) -> String {
         let mut s = String::new();
         s.extend("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<BlockList>\n".chars());
         for bl in self.blocks.iter() {
             let node = match bl {
-                BlobBlockType::Committed(ref content) => {
+                BlobBlockType::Committed(content) => {
                     format!("\t<Committed>{}</Committed>\n", content)
                 }
-                BlobBlockType::Uncommitted(ref content) => {
+                BlobBlockType::Uncommitted(content) => {
                     format!("\t<Uncommitted>{}</Uncommitted>\n", content)
                 }
-                BlobBlockType::Latest(ref content) => format!("\t<Latest>{}</Latest>\n", content),
+                BlobBlockType::Latest(content) => {
+                    format!("\t<Latest>{}</Latest>\n", content)
+                }
             };
 
             s.extend(node.chars());
