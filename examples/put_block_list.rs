@@ -21,7 +21,7 @@ use azure_sdk_for_rust::{
     storage::client::Client,
 };
 
-use azure_sdk_for_rust::storage::blob::{BlobBlockType, BlockList, put_block_list};
+use azure_sdk_for_rust::storage::blob::{put_block_list, BlobBlockType, BlockList};
 
 use hyper::mime::Mime;
 
@@ -92,7 +92,9 @@ fn code() -> Result<(), Box<Error>> {
         )
         .map(|encoded_block_id| {
             println!("block1 blob for blob {} created", name);
-            block_list.blocks.push(BlobBlockType::Uncommitted(encoded_block_id));
+            block_list
+                .blocks
+                .push(BlobBlockType::Uncommitted(encoded_block_id));
             block_list
         })
         .and_then(|mut block_list| {
@@ -105,7 +107,9 @@ fn code() -> Result<(), Box<Error>> {
                 )
                 .map(|encoded_block_id| {
                     println!("block2 blob for blob {} created", name);
-                    block_list.blocks.push(BlobBlockType::Uncommitted(encoded_block_id));
+                    block_list
+                        .blocks
+                        .push(BlobBlockType::Uncommitted(encoded_block_id));
                     block_list
                 })
         })
@@ -119,7 +123,9 @@ fn code() -> Result<(), Box<Error>> {
                 )
                 .map(|encoded_block_id| {
                     println!("block3 blob for blob {} created", name);
-                    block_list.blocks.push(BlobBlockType::Uncommitted(encoded_block_id));
+                    block_list
+                        .blocks
+                        .push(BlobBlockType::Uncommitted(encoded_block_id));
                     block_list
                 })
         })
@@ -131,7 +137,15 @@ fn code() -> Result<(), Box<Error>> {
     let block_list = core.run(future)?;
 
     // now we can finalize the blob with put_block_list
-    let future = put_block_list(&client, (&container_name as &str, name),  None, None, &block_list);
+    let future = put_block_list(
+        &client,
+        (&container_name as &str, name),
+        None,
+        None,
+        &block_list,
+    ).map(|_| {
+        println!("blob finalized!");
+    });
     core.run(future)?;
 
     let future =

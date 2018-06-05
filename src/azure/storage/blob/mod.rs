@@ -892,8 +892,10 @@ where
         let mut hash = Md5::new();
         hash.input(xml_bytes);
 
-        let mut buf = Vec::new();
+        let mut buf: [u8; 16] = [0; 16];
+        debug!("before hash.result. output bits {}", hash.output_bits());
         hash.result(&mut buf);
+        debug!("after hash.result");
 
         base64::encode(&buf)
     };
