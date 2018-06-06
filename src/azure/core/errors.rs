@@ -16,6 +16,18 @@ use std::string;
 use url::ParseError as URLParseError;
 use xml::BuilderError as XMLError;
 
+quick_error! {
+    #[derive(Debug)]
+     pub enum AzurePathParseError {
+        PathSeparatorNotFoundError {
+            display("Path separator not found")
+        }
+        MultiplePathSeparatorsFoundError {
+            display("Multiple path separators found")
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct UnexpectedHTTPResult {
     expected: StatusCode,
@@ -80,7 +92,12 @@ quick_error! {
             display("XML error: {}", err)
             cause(err)
         }
-        UnexpectedHTTPResult(err: UnexpectedHTTPResult){
+        AzurePathParseError(err: AzurePathParseError){
+            from()
+            display("Azure Path parse error: {}", err)
+            cause(err)
+        }
+         UnexpectedHTTPResult(err: UnexpectedHTTPResult){
             from()
             display("UnexpectedHTTPResult error")
         }

@@ -857,19 +857,19 @@ impl Blob {
     }
 }
 
-pub fn put_block_list<'a, P, T>(
+fn put_block_list_prepare_request<P, T>(
     c: &Client,
     path: P,
     timeout: Option<u64>,
     lease_id: Option<&LeaseId>,
     block_ids: &BlockList<T>,
-) -> impl Future<Item = (), Error = AzureError>
+) -> Result<hyper::client::FutureResponse, AzureError>
 where
     P: IntoAzurePath,
     T: Borrow<str>,
 {
-    let container_name = path.container_name();
-    let blob_name = path.blob_name();
+    let container_name = path.container_name()?;
+    let blob_name = path.blob_name()?;
 
     let mut uri = format!(
         "https://{}.blob.core.windows.net/{}/{}?comp=blocklist",
@@ -902,7 +902,7 @@ where
     };
 
     // now create the request
-    let req = c.perform_request(
+    c.perform_request(
         &uri,
         Method::Put,
         move |ref mut headers| {
@@ -913,10 +913,23 @@ where
             }
         },
         Some(xml_bytes),
-    );
+    )
+}
 
-    done(req)
-        .from_err()
+pub fn put_block_list<'a, P, T>(
+    c: &Client,
+    path: P,
+    timeout: Option<u64>,
+    lease_id: Option<&LeaseId>,
+    block_ids: &BlockList<T>,
+) -> impl Future<Item = (), Error = AzureError>
+where
+    P: IntoAzurePath,
+    T: Borrow<str>,
+{
+    done(put_block_list_prepare_request(
+        c, path, timeout, lease_id, block_ids,
+    )).from_err()
         .and_then(move |future_response| {
             check_status_extract_body(future_response, StatusCode::Created)
         })
