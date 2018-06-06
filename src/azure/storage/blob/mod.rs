@@ -865,10 +865,11 @@ pub fn put_block_list<'a, P, T>(
     block_ids: &BlockList<T>,
 ) -> impl Future<Item = (), Error = AzureError>
 where
-    P: Into<(&'a str, &'a str)>,
+    P: IntoAzurePath,
     T: Borrow<str>,
 {
-    let (container_name, blob_name) = path.into();
+    let container_name = path.container_name();
+    let blob_name = path.blob_name();
 
     let mut uri = format!(
         "https://{}.blob.core.windows.net/{}/{}?comp=blocklist",
