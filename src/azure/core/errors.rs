@@ -25,6 +25,12 @@ quick_error! {
         MultiplePathSeparatorsFoundError {
             display("Multiple path separators found")
         }
+        MissingContainerError {
+            display("Missing container name")
+        }
+        MissingBlobError {
+            display("Missing blob name")
+        }
     }
 }
 
