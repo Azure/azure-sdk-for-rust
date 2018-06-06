@@ -27,7 +27,7 @@ impl Client {
         let signing_key = SigningKey::new(&SHA256, key.as_bytes());
 
         Client {
-            handle: handle,
+            handle,
             namespace: namespace.to_owned(),
             event_hub: event_hub.to_owned(),
             policy_name: policy_name.to_owned(),

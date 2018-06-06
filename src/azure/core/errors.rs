@@ -44,8 +44,8 @@ pub struct UnexpectedHTTPResult {
 impl UnexpectedHTTPResult {
     pub fn new(expected: StatusCode, received: StatusCode, body: &str) -> UnexpectedHTTPResult {
         UnexpectedHTTPResult {
-            expected: expected,
-            received: received,
+            expected,
+            received,
             body: body.to_owned(),
         }
     }
@@ -291,7 +291,7 @@ pub fn check_status_extract_body(
             err(AzureError::UnexpectedHTTPResult(UnexpectedHTTPResult {
                 expected: expected_status_code,
                 received: status,
-                body: body,
+                body,
             }))
         }
     })

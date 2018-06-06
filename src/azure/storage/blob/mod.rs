@@ -176,28 +176,28 @@ impl Blob {
         };
 
         Ok(Blob {
-            name: name,
+            name,
             container_name: container_name.to_owned(),
-            snapshot_time: snapshot_time,
-            last_modified: last_modified,
-            etag: etag,
-            content_length: content_length,
+            snapshot_time,
+            last_modified,
+            etag,
+            content_length,
             content_type: ctype,
-            content_encoding: content_encoding,
-            content_language: content_language,
-            content_md5: content_md5,
-            cache_control: cache_control,
-            x_ms_blob_sequence_number: x_ms_blob_sequence_number,
-            blob_type: blob_type,
-            lease_status: lease_status,
-            lease_state: lease_state,
-            lease_duration: lease_duration,
-            copy_id: copy_id,
-            copy_status: copy_status,
-            copy_source: copy_source,
+            content_encoding,
+            content_language,
+            content_md5,
+            cache_control,
+            x_ms_blob_sequence_number,
+            blob_type,
+            lease_status,
+            lease_state,
+            lease_duration,
+            copy_id,
+            copy_status,
+            copy_source,
             copy_progress: cp_bytes,
-            copy_completion: copy_completion,
-            copy_status_description: copy_status_description,
+            copy_completion,
+            copy_status_description,
         })
     }
 
@@ -303,19 +303,19 @@ impl Blob {
             name: blob_name.to_owned(),
             container_name: container_name.to_owned(),
             snapshot_time: None,
-            last_modified: last_modified,
-            etag: etag,
-            content_length: content_length,
+            last_modified,
+            etag,
+            content_length,
             content_type: Some(content_type),
-            content_encoding: content_encoding,
-            content_language: content_language,
-            content_md5: content_md5,
+            content_encoding,
+            content_language,
+            content_md5,
             cache_control: None, // TODO
-            x_ms_blob_sequence_number: x_ms_blob_sequence_number,
-            blob_type: blob_type,
-            lease_status: lease_status,
-            lease_state: lease_state,
-            lease_duration: lease_duration,
+            x_ms_blob_sequence_number,
+            blob_type,
+            lease_status,
+            lease_state,
+            lease_duration,
             copy_id: None,                 // TODO
             copy_status: None,             // TODO
             copy_source: None,             // TODO
@@ -859,7 +859,7 @@ impl Blob {
 
 fn put_block_list_prepare_request<P, T>(
     c: &Client,
-    path: P,
+    path: &P,
     timeout: Option<u64>,
     lease_id: Option<&LeaseId>,
     block_ids: &BlockList<T>,
@@ -916,9 +916,9 @@ where
     )
 }
 
-pub fn put_block_list<'a, P, T>(
+pub fn put_block_list<P, T>(
     c: &Client,
-    path: P,
+    path: &P,
     timeout: Option<u64>,
     lease_id: Option<&LeaseId>,
     block_ids: &BlockList<T>,

@@ -27,9 +27,9 @@ impl AuthorizationToken {
         v_hmac_key.extend(base64::decode(&base64_encoded)?);
 
         Ok(AuthorizationToken {
-            account: account,
-            token_type: token_type,
-            base64_encoded: base64_encoded,
+            account,
+            token_type,
+            base64_encoded,
             binary_form: v_hmac_key,
         })
     }

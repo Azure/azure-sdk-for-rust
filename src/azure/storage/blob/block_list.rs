@@ -3,21 +3,12 @@ use azure::storage::blob::BlobBlockType;
 use std::borrow::Borrow;
 use std::convert::TryFrom;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Default, Debug, Clone, PartialEq)]
 pub struct BlockList<T>
 where
     T: Borrow<str>,
 {
     pub blocks: Vec<BlobBlockType<T>>,
-}
-
-impl<T> BlockList<T>
-where
-    T: Borrow<str>,
-{
-    pub fn new() -> BlockList<T> {
-        BlockList { blocks: Vec::new() }
-    }
 }
 
 impl<'a> TryFrom<&'a str> for BlockList<&'a str> {
@@ -44,8 +35,8 @@ impl<'a> TryFrom<&'a str> for BlockList<&'a str> {
         while cur < end {
             debug!("cur == {}", cur);
 
-            let tagbegin = xml[cur..].find("<")? + cur + 1;
-            let tagend = xml[cur..].find(">")? + cur;
+            let tagbegin = xml[cur..].find('<')? + cur + 1;
+            let tagend = xml[cur..].find('>')? + cur;
 
             debug!("tagbegin == {}, tagend == {}", tagbegin, tagend);
             let node_type = &xml[tagbegin..tagend];
@@ -87,7 +78,7 @@ impl<'a> BlockList<&'a str> {
             blocks: Vec::with_capacity(self.blocks.len()),
         };
 
-        for entry in self.blocks.iter() {
+        for entry in &self.blocks {
             bl.blocks.push(match entry {
                 BlobBlockType::Committed(id) => BlobBlockType::Committed(id.to_string()),
                 BlobBlockType::Uncommitted(id) => BlobBlockType::Uncommitted(id.to_string()),
@@ -105,8 +96,8 @@ where
 {
     pub fn to_xml(&self) -> String {
         let mut s = String::new();
-        s.extend("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<BlockList>\n".chars());
-        for bl in self.blocks.iter() {
+        s.push_str("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<BlockList>\n");
+        for bl in &self.blocks {
             let node = match bl {
                 BlobBlockType::Committed(content) => {
                     format!("\t<Committed>{}</Committed>\n", content.borrow())
@@ -119,10 +110,10 @@ where
                 }
             };
 
-            s.extend(node.chars());
+            s.push_str(&node);
         }
 
-        s.extend("</BlockList>".chars());
+        s.push_str("</BlockList>");
         s
     }
 }

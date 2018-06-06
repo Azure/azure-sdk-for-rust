@@ -96,7 +96,7 @@ impl Collection {
     pub fn new(id: &str, indexing_policy: IndexingPolicy) -> Collection {
         Collection {
             id: id.to_owned(),
-            indexing_policy: indexing_policy,
+            indexing_policy,
             parition_key: None,
             rid: "".to_owned(),
             ts: 0,

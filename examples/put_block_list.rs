@@ -77,7 +77,7 @@ fn code() -> Result<(), Box<Error>> {
         copy_status_description: None,
     };
 
-    let mut block_list = BlockList::new();
+    let mut block_list = BlockList::default();
 
     let future = new_blob
         .put_block(
@@ -135,7 +135,7 @@ fn code() -> Result<(), Box<Error>> {
     // now we can finalize the blob with put_block_list
     let future = put_block_list(
         &client,
-        (&container_name as &str, name),
+        &(&container_name as &str, name),
         None,
         None,
         &block_list,
