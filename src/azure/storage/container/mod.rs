@@ -1,5 +1,3 @@
-#![allow(write_literal)]
-
 mod list_container_options;
 pub use self::list_container_options::{ListContainerOptions, LIST_CONTAINER_OPTIONS_DEFAULT};
 

@@ -1,5 +1,3 @@
-#![allow(write_literal)]
-
 use azure::core::enumerations;
 use azure::core::errors::TraversingError;
 use azure::core::parsing::FromStringOptional;

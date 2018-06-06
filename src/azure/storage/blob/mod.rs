@@ -1,5 +1,3 @@
-#![allow(write_literal)]
-
 extern crate uuid;
 
 use std::borrow::Borrow;

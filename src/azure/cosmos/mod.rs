@@ -1,5 +1,3 @@
-#![allow(write_literal)]
-
 mod authorization_token;
 mod client;
 pub mod database;

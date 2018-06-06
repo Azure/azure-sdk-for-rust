@@ -6,7 +6,6 @@ use futures::prelude::*;
 use storage::blob::Blob;
 use storage::client::Client;
 
-#[allow(type_complexity)]
 pub struct BlobStream<'a> {
     client: &'a Client,
     container_name: &'a str,
