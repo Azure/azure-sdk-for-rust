@@ -57,7 +57,7 @@ where
             name_completed: PhantomData,
             value_completed: PhantomData,
             parameter: Parameter {
-                name: name,
+                name,
                 value: self.parameter.value,
             },
         }
@@ -69,7 +69,7 @@ where
             value_completed: PhantomData,
             parameter: Parameter {
                 name: self.parameter.name,
-                value: value,
+                value,
             },
         }
     }
@@ -90,7 +90,7 @@ pub struct Query<'a> {
 impl<'a> Query<'a> {
     pub fn new(query: &'a str) -> Query<'a> {
         Query {
-            query: query,
+            query,
             parameters: Vec::new(),
         }
     }

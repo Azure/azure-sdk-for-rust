@@ -16,6 +16,24 @@ use std::string;
 use url::ParseError as URLParseError;
 use xml::BuilderError as XMLError;
 
+quick_error! {
+    #[derive(Debug)]
+     pub enum AzurePathParseError {
+        PathSeparatorNotFoundError {
+            display("Path separator not found")
+        }
+        MultiplePathSeparatorsFoundError {
+            display("Multiple path separators found")
+        }
+        MissingContainerError {
+            display("Missing container name")
+        }
+        MissingBlobError {
+            display("Missing blob name")
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct UnexpectedHTTPResult {
     expected: StatusCode,
@@ -26,8 +44,8 @@ pub struct UnexpectedHTTPResult {
 impl UnexpectedHTTPResult {
     pub fn new(expected: StatusCode, received: StatusCode, body: &str) -> UnexpectedHTTPResult {
         UnexpectedHTTPResult {
-            expected: expected,
-            received: received,
+            expected,
+            received,
             body: body.to_owned(),
         }
     }
@@ -80,7 +98,12 @@ quick_error! {
             display("XML error: {}", err)
             cause(err)
         }
-        UnexpectedHTTPResult(err: UnexpectedHTTPResult){
+        AzurePathParseError(err: AzurePathParseError){
+            from()
+            display("Azure Path parse error: {}", err)
+            cause(err)
+        }
+         UnexpectedHTTPResult(err: UnexpectedHTTPResult){
             from()
             display("UnexpectedHTTPResult error")
         }
@@ -175,12 +198,34 @@ quick_error! {
             from()
             display("Parsing error: {:?}", err)
         }
+        BlockListParseError(err: BlockListParseError){
+            from()
+            display("Block list XML parsing error: {:?}", err)
+        }
    }
 }
 
 impl From<()> for AzureError {
     fn from(_: ()) -> AzureError {
         AzureError::GenericError
+    }
+}
+
+#[derive(Debug, Fail)]
+pub enum BlockListParseError {
+    #[fail(display = "invalid BlockList XML")]
+    InvalidBlockListXML,
+    #[fail(display = "Invalid Block type: {}", name)]
+    InvalidBlockType { name: String },
+    #[fail(display = "Token not found: {}", token)]
+    TokemNotFound { token: String },
+    #[fail(display = "Gneric parse error")]
+    GenericParseError,
+}
+
+impl std::convert::From<std::option::NoneError> for BlockListParseError {
+    fn from(_: std::option::NoneError) -> Self {
+        BlockListParseError::GenericParseError
     }
 }
 
@@ -246,7 +291,7 @@ pub fn check_status_extract_body(
             err(AzureError::UnexpectedHTTPResult(UnexpectedHTTPResult {
                 expected: expected_status_code,
                 received: status,
-                body: body,
+                body,
             }))
         }
     })

@@ -71,12 +71,12 @@ impl Container {
         let lease_status = cast_must::<LeaseStatus>(elem, &["Properties", "LeaseStatus"])?;
 
         Ok(Container {
-            name: name,
-            last_modified: last_modified,
-            e_tag: e_tag,
-            lease_status: lease_status,
-            lease_state: lease_state,
-            lease_duration: lease_duration,
+            name,
+            last_modified,
+            e_tag,
+            lease_status,
+            lease_state,
+            lease_duration,
         })
     }
 
@@ -111,7 +111,7 @@ impl Container {
             |ref mut headers| {
                 headers.set(XMSBlobPublicAccess(pa));
             },
-            Some(&vec![]),
+            Some(&[]),
         );
 
         done(req).from_err().and_then(move |future_response| {

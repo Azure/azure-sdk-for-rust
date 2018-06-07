@@ -1,5 +1,7 @@
 extern crate uuid;
 
+use std::borrow::Borrow;
+
 mod put_options;
 pub use self::put_options::{PutOptions, PUT_OPTIONS_DEFAULT};
 
@@ -15,7 +17,14 @@ pub use self::put_page_options::{PutPageOptions, PUT_PAGE_OPTIONS_DEFAULT};
 mod lease_blob_options;
 pub use self::lease_blob_options::{LeaseBlobOptions, LEASE_BLOB_OPTIONS_DEFAULT};
 
+mod blob_block_type;
 mod blob_stream;
+pub use self::blob_block_type::BlobBlockType;
+
+use azure::storage::IntoAzurePath;
+
+mod block_list;
+pub use self::block_list::BlockList;
 
 use hyper::Method;
 
@@ -28,6 +37,8 @@ use futures::prelude::*;
 use azure::core::lease::{LeaseAction, LeaseDuration, LeaseId, LeaseState, LeaseStatus};
 use azure::storage::client::Client;
 use hyper;
+
+use crypto::md5::Md5;
 
 use azure::storage::rest_client::{
     ContentMD5, ETag, XMSClientRequestId, XMSLeaseAction, XMSLeaseBreakPeriod, XMSLeaseDuration,
@@ -165,28 +176,28 @@ impl Blob {
         };
 
         Ok(Blob {
-            name: name,
+            name,
             container_name: container_name.to_owned(),
-            snapshot_time: snapshot_time,
-            last_modified: last_modified,
-            etag: etag,
-            content_length: content_length,
+            snapshot_time,
+            last_modified,
+            etag,
+            content_length,
             content_type: ctype,
-            content_encoding: content_encoding,
-            content_language: content_language,
-            content_md5: content_md5,
-            cache_control: cache_control,
-            x_ms_blob_sequence_number: x_ms_blob_sequence_number,
-            blob_type: blob_type,
-            lease_status: lease_status,
-            lease_state: lease_state,
-            lease_duration: lease_duration,
-            copy_id: copy_id,
-            copy_status: copy_status,
-            copy_source: copy_source,
+            content_encoding,
+            content_language,
+            content_md5,
+            cache_control,
+            x_ms_blob_sequence_number,
+            blob_type,
+            lease_status,
+            lease_state,
+            lease_duration,
+            copy_id,
+            copy_status,
+            copy_source,
             copy_progress: cp_bytes,
-            copy_completion: copy_completion,
-            copy_status_description: copy_status_description,
+            copy_completion,
+            copy_status_description,
         })
     }
 
@@ -292,19 +303,19 @@ impl Blob {
             name: blob_name.to_owned(),
             container_name: container_name.to_owned(),
             snapshot_time: None,
-            last_modified: last_modified,
-            etag: etag,
-            content_length: content_length,
+            last_modified,
+            etag,
+            content_length,
             content_type: Some(content_type),
-            content_encoding: content_encoding,
-            content_language: content_language,
-            content_md5: content_md5,
+            content_encoding,
+            content_language,
+            content_md5,
             cache_control: None, // TODO
-            x_ms_blob_sequence_number: x_ms_blob_sequence_number,
-            blob_type: blob_type,
-            lease_status: lease_status,
-            lease_state: lease_state,
-            lease_duration: lease_duration,
+            x_ms_blob_sequence_number,
+            blob_type,
+            lease_status,
+            lease_state,
+            lease_duration,
             copy_id: None,                 // TODO
             copy_status: None,             // TODO
             copy_source: None,             // TODO
@@ -678,14 +689,37 @@ impl Blob {
             .and_then(|_| ok(()))
     }
 
-    pub fn put_block(
+    fn put_block_create_request(
         &self,
         c: &Client,
-        block_id: &str,
+        encoded_block_id: &str,
         pbo: &PutBlockOptions,
         content: &[u8],
-    ) -> impl Future<Item = (), Error = AzureError> {
-        let encoded_block_id = base64::encode(block_id.as_bytes());
+    ) -> Result<hyper::client::FutureResponse, AzureError> {
+        // parameter sanity check
+        match self.blob_type {
+            BlobType::BlockBlob => {}
+            BlobType::PageBlob => {
+                return Err(AzureError::InputParametersError(String::from(
+                    "cannot use put_block_blob with a page blob",
+                )));
+            }
+            BlobType::AppendBlob => {
+                return Err(AzureError::InputParametersError(String::from(
+                    "cannot use put_block_blob with an AppendBlob",
+                )));
+            }
+        };
+
+        let ce = if let Some(ref content_encoding) = self.content_encoding {
+            use hyper::header::Encoding;
+            match content_encoding.parse::<Encoding>() {
+                Ok(ct) => Some(ct),
+                Err(error) => return Err(AzureError::HyperError(error)),
+            }
+        } else {
+            None
+        };
 
         let mut uri = format!(
             "https://{}.blob.core.windows.net/{}/{}?comp=block&blockid={}",
@@ -699,28 +733,60 @@ impl Blob {
             uri = format!("{}&timeout={}", uri, timeout);
         }
 
-        let req = c.perform_request(
+        c.perform_request(
             &uri,
             Method::Put,
             move |ref mut headers| {
-                headers.set(XMSBlobContentLength(content.len() as u64));
+                if let Some(ct) = self.content_type.clone() {
+                    headers.set(ContentType(ct));
+                }
+
+                if let Some(ce) = ce {
+                    headers.set(ContentEncoding(vec![ce]));
+                }
+
+                // TODO Content-Language
+
+                if let Some(ref content_md5) = self.content_md5 {
+                    headers.set(ContentMD5(content_md5.to_owned()));
+                };
+
+                headers.set(XMSBlobType(self.blob_type));
 
                 if let Some(ref lease_id) = pbo.lease_id {
                     headers.set(XMSLeaseId(*lease_id));
                 }
+
+                // TODO x-ms-blob-content-disposition
+
+                if self.blob_type == BlobType::PageBlob {
+                    headers.set(XMSBlobContentLength(self.content_length));
+                }
+
                 if let Some(ref request_id) = pbo.request_id {
                     headers.set(XMSClientRequestId(request_id.to_owned()));
                 }
             },
             Some(content),
-        );
+        )
+    }
 
-        done(req)
-            .from_err()
-            .and_then(move |future_response| {
-                check_status_extract_body(future_response, StatusCode::Created)
-            })
-            .and_then(|_| ok(()))
+    pub fn put_block(
+        &self,
+        c: &Client,
+        block_id: &str,
+        pbo: &PutBlockOptions,
+        content: &[u8],
+    ) -> impl Future<Item = String, Error = AzureError> {
+        let encoded_block_id = base64::encode(block_id.as_bytes());
+        ok(self.put_block_create_request(c, &encoded_block_id, pbo, content)).and_then(|req| {
+            done(req)
+                .from_err()
+                .and_then(move |future_response| {
+                    check_status_extract_body(future_response, StatusCode::Created)
+                })
+                .and_then(|_| ok(encoded_block_id))
+        })
     }
 
     pub fn clear_page(
@@ -789,6 +855,85 @@ impl Blob {
             })
             .and_then(|_| ok(()))
     }
+}
+
+fn put_block_list_prepare_request<P, T>(
+    c: &Client,
+    path: &P,
+    timeout: Option<u64>,
+    lease_id: Option<&LeaseId>,
+    block_ids: &BlockList<T>,
+) -> Result<hyper::client::FutureResponse, AzureError>
+where
+    P: IntoAzurePath,
+    T: Borrow<str>,
+{
+    let container_name = path.container_name()?;
+    let blob_name = path.blob_name()?;
+
+    let mut uri = format!(
+        "https://{}.blob.core.windows.net/{}/{}?comp=blocklist",
+        c.account(),
+        container_name,
+        blob_name,
+    );
+
+    if let Some(ref timeout) = timeout {
+        uri = format!("{}&timeout={}", uri, timeout);
+    }
+
+    // create the blocklist XML
+    let xml = block_ids.to_xml();
+    let xml_bytes = xml.as_bytes();
+
+    // calculate the xml MD5. This can be made optional
+    // in a future version.
+    let md5 = {
+        use crypto::digest::Digest;
+        let mut hash = Md5::new();
+        hash.input(xml_bytes);
+
+        let mut buf: [u8; 16] = [0; 16];
+        debug!("before hash.result. output bits {}", hash.output_bits());
+        hash.result(&mut buf);
+        debug!("after hash.result");
+
+        base64::encode(&buf)
+    };
+
+    // now create the request
+    c.perform_request(
+        &uri,
+        Method::Put,
+        move |ref mut headers| {
+            headers.set(ContentLength(xml_bytes.len() as u64));
+            headers.set(ContentMD5(md5));
+            if let Some(lease_id) = lease_id {
+                headers.set(XMSLeaseId(*lease_id));
+            }
+        },
+        Some(xml_bytes),
+    )
+}
+
+pub fn put_block_list<P, T>(
+    c: &Client,
+    path: &P,
+    timeout: Option<u64>,
+    lease_id: Option<&LeaseId>,
+    block_ids: &BlockList<T>,
+) -> impl Future<Item = (), Error = AzureError>
+where
+    P: IntoAzurePath,
+    T: Borrow<str>,
+{
+    done(put_block_list_prepare_request(
+        c, path, timeout, lease_id, block_ids,
+    )).from_err()
+        .and_then(move |future_response| {
+            check_status_extract_body(future_response, StatusCode::Created)
+        })
+        .and_then(|_| ok(()))
 }
 
 #[inline]

@@ -10,10 +10,7 @@ pub struct IncompleteVector<T> {
 
 impl<T> IncompleteVector<T> {
     pub fn new(token: Option<String>, vector: Vec<T>) -> IncompleteVector<T> {
-        IncompleteVector {
-            token: token,
-            vector: vector,
-        }
+        IncompleteVector { token, vector }
     }
 
     pub fn is_complete(&self) -> bool {

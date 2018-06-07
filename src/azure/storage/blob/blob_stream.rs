@@ -29,14 +29,14 @@ impl<'a> BlobStream<'a> {
         increment: u64,
     ) -> BlobStream<'a> {
         BlobStream {
-            client: client,
-            container_name: container_name,
-            blob_name: blob_name,
-            snapshot: snapshot,
-            lease_id: lease_id,
+            client,
+            container_name,
+            blob_name,
+            snapshot,
+            lease_id,
             cur_pos: range.start,
             ending_pos: range.end,
-            increment: increment,
+            increment,
             future: None,
         }
     }
@@ -92,14 +92,11 @@ impl<'a> Stream for BlobStream<'a> {
         // now if the previous future has completed
         // reset self.future so at the next iteration
         // we will perform the following request
-
-        match retval {
-            Ok(Async::Ready(Some(_))) => {
-                self.future = None;
-                self.cur_pos += self.increment;
-            }
-            _ => {}
+        if let Ok(Async::Ready(Some(_))) = retval {
+            self.future = None;
+            self.cur_pos += self.increment;
         }
+
         retval
     }
 }

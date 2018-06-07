@@ -26,10 +26,7 @@ impl BA512Range {
             return Err(Not512ByteAlignedError::EndRange(end));
         }
 
-        Ok(BA512Range {
-            start: start,
-            end: end,
-        })
+        Ok(BA512Range { start, end })
     }
 
     #[inline]

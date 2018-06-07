@@ -12,10 +12,7 @@ pub struct Range {
 
 impl Range {
     pub fn new(start: u64, end: u64) -> Range {
-        Range {
-            start: start,
-            end: end,
-        }
+        Range { start, end }
     }
 }
 

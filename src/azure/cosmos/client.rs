@@ -107,7 +107,7 @@ impl<'a> Client {
 
         Ok(Client {
             hyper_client: client,
-            authorization_token: authorization_token,
+            authorization_token,
         })
     }
 
@@ -967,7 +967,7 @@ impl<'a> Client {
         })
     }
 
-    pub fn query_document<'b, S1, S2, T>(
+    pub fn query_document<S1, S2, T>(
         &self,
         database: S1,
         collection: S2,
@@ -1200,14 +1200,14 @@ fn query_documents_extract_result_json(
         };
 
         v_docs.push(QueryResult {
-            document_attributes: document_attributes,
+            document_attributes,
             result: o_new.to_string(),
         });
     }
 
     Ok(QueryDocumentResponse {
-        query_response_meta: query_response_meta,
-        additional_headers: additional_headers,
+        query_response_meta,
+        additional_headers,
         results: v_docs,
     })
 }

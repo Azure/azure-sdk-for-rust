@@ -27,7 +27,7 @@ pub struct TableService {
 
 impl TableService {
     pub fn new(client: Client) -> Self {
-        TableService { client: client }
+        TableService { client }
     }
 
     pub fn list_tables(&self) -> impl Future<Item = Vec<String>, Error = AzureError> {
