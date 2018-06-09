@@ -19,3 +19,6 @@ define_encode_set! {
         '+', '-', '&'
     }
 }
+
+use uuid::Uuid;
+pub type RequestId = Uuid;

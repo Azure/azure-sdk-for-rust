@@ -21,10 +21,22 @@ mod blob_block_type;
 mod blob_stream;
 pub use self::blob_block_type::BlobBlockType;
 
+mod block_list_type;
+pub use self::block_list_type::BlockListType;
+
+mod blob_block_with_size;
+pub use self::blob_block_with_size::BlobBlockWithSize;
+
+mod block_with_size_list;
+pub use self::block_with_size_list::BlockWithSizeList;
+
 use azure::storage::IntoAzurePath;
 
 mod block_list;
 pub use self::block_list::BlockList;
+
+mod get_block_list_response;
+pub use self::get_block_list_response::GetBlockListResponse;
 
 use hyper::Method;
 
@@ -43,7 +55,7 @@ use crypto::md5::Md5;
 use azure::storage::rest_client::{
     ContentMD5, ETag, XMSClientRequestId, XMSLeaseAction, XMSLeaseBreakPeriod, XMSLeaseDuration,
     XMSLeaseDurationSeconds, XMSLeaseId, XMSLeaseState, XMSLeaseStatus, XMSProposedLeaseId,
-    XMSRange, XMSRangeGetContentMD5,
+    XMSRange, XMSRangeGetContentMD5, XMSRequestId,
 };
 
 use azure::core::parsing::{cast_must, cast_optional, from_azure_time, traverse};
@@ -68,7 +80,8 @@ use azure::core::range::Range;
 use hyper::mime::Mime;
 
 use hyper::header::{
-    ContentEncoding, ContentLanguage, ContentLength, ContentType, Headers, LastModified,
+    ContentEncoding, ContentLanguage, ContentLength, ContentType, Date, Headers, HttpDate,
+    LastModified,
 };
 use hyper::StatusCode;
 
@@ -934,6 +947,130 @@ where
             check_status_extract_body(future_response, StatusCode::Created)
         })
         .and_then(|_| ok(()))
+}
+
+fn get_block_list_create_request<P>(
+    c: &Client,
+    path: &P,
+    bl: &BlockListType,
+    timeout: Option<u64>,
+    lease_id: Option<&LeaseId>,
+    request_id: Option<String>,
+    snapshot: Option<&DateTime<Utc>>,
+) -> Result<hyper::client::FutureResponse, AzureError>
+where
+    P: IntoAzurePath,
+{
+    let container_name = path.container_name()?;
+    let blob_name = path.blob_name()?;
+
+    let mut uri = format!(
+        "https://{}.blob.core.windows.net/{}/{}?comp=blocklist&blocklisttype={}",
+        c.account(),
+        container_name,
+        blob_name,
+        match bl {
+            BlockListType::Committed => "committed",
+            BlockListType::Uncommitted => "uncommitted",
+            BlockListType::All => "all",
+        }
+    );
+
+    if let Some(ref timeout) = timeout {
+        uri = format!("{}&timeout={}", uri, timeout);
+    }
+
+    if let Some(snapshot) = snapshot {
+        uri = format!("{}&snapshot={}", uri, snapshot.to_rfc2822());
+    }
+
+    c.perform_request(
+        &uri,
+        Method::Get,
+        move |ref mut headers| {
+            if let Some(lease_id) = lease_id {
+                headers.set(XMSLeaseId(*lease_id));
+            };
+            if let Some(request_id) = request_id {
+                headers.set(XMSClientRequestId(request_id.to_owned()));
+            };
+        },
+        None,
+    )
+}
+
+pub fn get_block_list<P>(
+    c: &Client,
+    path: &P,
+    bl: &BlockListType,
+    timeout: Option<u64>,
+    lease_id: Option<&LeaseId>,
+    request_id: Option<String>,
+    snapshot: Option<&DateTime<Utc>>,
+) -> impl Future<Item = GetBlockListResponse, Error = AzureError>
+where
+    P: IntoAzurePath,
+{
+    use std::convert::TryFrom;
+
+    done(get_block_list_create_request(
+        c, path, bl, timeout, lease_id, request_id, snapshot,
+    )).from_err()
+        .and_then(move |future_response| {
+            check_status_extract_headers_and_body(future_response, StatusCode::Ok)
+        })
+        .and_then(move |(headers, body)| {
+            done(match String::from_utf8(body) {
+                Ok(body) => Ok((headers, body)),
+                Err(err) => Err(AzureError::FromUtf8Error(err)),
+            })
+        })
+        .and_then(move |(headers, body)| {
+            debug!("response headers == {:?}", headers);
+
+            // extract headers
+            let etag = match headers.get::<ETag>() {
+                Some(etag) => Some(etag.as_str().to_owned()),
+                None => None,
+            };
+            debug!("etag == {:?}", etag);
+
+            let content_type = headers.get::<ContentType>().unwrap();
+            debug!("content_type == {:?}", content_type);
+
+            let request_id =
+                Uuid::parse_str(headers.get::<XMSRequestId>().unwrap().as_str()).unwrap();
+
+            debug!("request_id == {}", request_id);
+
+            let last_modified = match headers.get::<LastModified>() {
+                Some(last_modified) => {
+                    let last_modified: &HttpDate = &last_modified;
+                    let last_modified = format!("{}", last_modified);
+                    Some(DateTime::parse_from_rfc2822(&last_modified).unwrap())
+                }
+                None => None,
+            };
+
+            let date: &HttpDate = headers.get::<Date>().unwrap();
+            let date = format!("{}", date);
+            debug!("date == {}", date);
+            let date = DateTime::parse_from_rfc2822(&date).unwrap();
+
+            debug!("body == {:?}", body);
+
+            done(match BlockWithSizeList::try_from(&body[3..] as &str) {
+                Ok(block_list) => Ok(GetBlockListResponse {
+                    block_list,
+                    last_modified,
+                    etag,
+                    content_type: content_type.clone(),
+                    request_id,
+                    date,
+                }),
+                Err(error) => Err(AzureError::SerdeXMLDeserializationError(error)),
+            })
+        })
 }
 
 #[inline]
