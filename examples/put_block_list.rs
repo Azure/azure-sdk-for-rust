@@ -17,7 +17,9 @@ use azure_sdk_for_rust::{
     storage::blob::{Blob, BlobType, PUT_BLOCK_OPTIONS_DEFAULT}, storage::client::Client,
 };
 
-use azure_sdk_for_rust::storage::blob::{put_block_list, BlobBlockType, BlockList};
+use azure_sdk_for_rust::storage::blob::{
+    get_block_list, put_block_list, BlobBlockType, BlockList, BlockListType,
+};
 
 use hyper::mime::Mime;
 
@@ -131,6 +133,20 @@ fn code() -> Result<(), Box<Error>> {
         });
 
     let block_list = core.run(future)?;
+    println!("computed block list == {:?}", block_list);
+
+    let future = get_block_list(
+        &client,
+        &(&container_name as &str, name),
+        &BlockListType::All,
+        None,
+        None,
+        None,
+        None,
+    );
+
+    let received_block_list = core.run(future)?;
+    println!("current block list: {:?}", received_block_list);
 
     // now we can finalize the blob with put_block_list
     let future = put_block_list(
@@ -138,7 +154,7 @@ fn code() -> Result<(), Box<Error>> {
         &(&container_name as &str, name),
         None,
         None,
-        &block_list,
+        &received_block_list.block_list.into(),
     ).map(|_| {
         println!("blob finalized!");
     });

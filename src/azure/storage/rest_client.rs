@@ -22,7 +22,7 @@ pub enum ServiceType {
     Table,
 }
 
-const AZURE_VERSION: &str = "2016-05-31";
+const AZURE_VERSION: &str = "2017-11-09";
 
 header! { (XMSVersion, "x-ms-version") => [String] }
 header! { (XMSDate, "x-ms-date") => [String] }
@@ -43,6 +43,7 @@ header! { (XMSProposedLeaseId, "x-ms-proposed-lease-id") => [LeaseId] }
 header! { (ETag, "ETag") => [String] }
 header! { (XMSRangeGetContentMD5, "x-ms-range-get-content-md5") => [bool] }
 header! { (XMSClientRequestId, "x-ms-client-request-id") => [String] }
+header! { (XMSRequestId, "x-ms-request-id") => [String] }
 
 fn generate_authorization(
     h: &Headers,
@@ -312,6 +313,8 @@ where
         let b = Vec::from(body);
         request.headers_mut().set(ContentLength(body.len() as u64));
         request.set_body(b);
+    } else {
+        request.headers_mut().set(ContentLength(0));
     }
 
     let auth = generate_authorization(
