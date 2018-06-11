@@ -316,12 +316,7 @@ pub struct ListDocumentsRequest {
 }
 
 impl ListDocumentsRequest {
-    pub(crate) fn new(hyper_client: HyperClient, mut request: Request) -> ListDocumentsRequest {
-        {
-            let headers = request.headers_mut();
-            headers.set(DocumentDBIsQuery(true));
-            headers.set(QUERY_CONTENT_TYPE.clone());
-        }
+    pub(crate) fn new(hyper_client: HyperClient, request: Request) -> ListDocumentsRequest {
         ListDocumentsRequest {
             hyper_client,
             request,
@@ -333,7 +328,7 @@ impl ListDocumentsRequest {
     request_option!(consistency_level, ConsistencyLevel, ConsistencyLevelHeader);
     request_option!(session_token, String, SessionTokenHeader);
     request_option!(if_none_match, String, IfNoneMatch);
-    request_option!(partition_range_id, String, IfNoneMatch);
+    request_option!(partition_range_id, String, PartitionRangeId);
 
     pub fn incremental_feed(mut self, value: bool) -> Self {
         if value {
