@@ -1,12 +1,9 @@
-use azure::core::enumerations::ParsingError;
-use azure::core::range::ParseError;
+use azure::core::{enumerations::ParsingError, range::ParseError};
 use chrono;
-use futures::future::*;
-use futures::Future;
-use futures::Stream;
-use hyper;
-use hyper::StatusCode;
-use native_tls;
+use futures::{Future, Stream};
+use http;
+use hyper::{self, StatusCode};
+use hyper_tls;
 use serde_json;
 use serde_xml_rs;
 use std;
@@ -141,11 +138,16 @@ quick_error! {
             display("URL parse error: {}", err)
             cause(err)
         }
-        URIParseError(err: hyper::error::UriError) {
+        HttpPrepareError(err: http::Error) {
             from()
-            display("URI parse error: {}", err)
+            display("Error preparing HTTP request: {}", err) // todo: revisit usages / message here
             cause(err)
         }
+        // URIParseError(err: hyper::error::UriError) {
+        //     from()
+        //     display("URI parse error: {}", err)
+        //     cause(err)
+        // }
         ChronoParserError(err: chrono::ParseError) {
             from()
             display("Chrono parser error: {}", err)
@@ -161,7 +163,7 @@ quick_error! {
             display("FromUTF8 error: {}", err)
             cause(err)
         }
-        NativeTLSError(err: native_tls::Error) {
+        TLSError(err: hyper_tls::Error) {
             from()
             display("Native TLS error: {}", err)
             cause(err)
@@ -215,64 +217,57 @@ impl From<()> for AzureError {
 
 #[inline]
 pub fn extract_status_headers_and_body(
-    resp: hyper::client::FutureResponse,
-) -> impl Future<Item = (hyper::StatusCode, hyper::Headers, Vec<u8>), Error = AzureError> {
+    resp: hyper::client::ResponseFuture,
+) -> impl Future<Item = (hyper::StatusCode, hyper::HeaderMap, Vec<u8>), Error = AzureError> {
     resp.from_err().and_then(|res| {
         let status = res.status();
         let headers = res.headers().clone();
-        res.body()
+        res.into_body()
             .concat2()
             .from_err()
-            .and_then(move |whole_body| ok((status, headers, Vec::from(&whole_body as &[u8]))))
+            .and_then(move |body| Ok((status, headers, body.to_owned())))
     })
 }
 
 #[inline]
 pub fn check_status_extract_headers_and_body(
-    resp: hyper::client::FutureResponse,
+    resp: hyper::client::ResponseFuture,
     expected_status_code: hyper::StatusCode,
-) -> impl Future<Item = (hyper::Headers, Vec<u8>), Error = AzureError> {
+) -> impl Future<Item = (hyper::HeaderMap, Vec<u8>), Error = AzureError> {
     extract_status_headers_and_body(resp).and_then(move |(status, headers, body)| {
         if status == expected_status_code {
-            ok((headers, body))
+            Ok((headers, body))
         } else {
-            match str::from_utf8(&body) {
-                Ok(s_body) => err(AzureError::UnexpectedHTTPResult(UnexpectedHTTPResult {
-                    expected: expected_status_code,
-                    received: status,
-                    body: s_body.to_owned(),
-                })),
-                Err(error) => err(AzureError::UTF8Error(error)),
-            }
+            Err(AzureError::UnexpectedHTTPResult(UnexpectedHTTPResult {
+                expected: expected_status_code,
+                received: status,
+                body: str::from_utf8(&body)?.to_owned(),
+            }))
         }
     })
 }
 
 #[inline]
-pub fn extract_status_and_body(
-    resp: hyper::client::FutureResponse,
-) -> impl Future<Item = (hyper::StatusCode, String), Error = AzureError> {
+pub fn extract_status_and_body(resp: hyper::client::ResponseFuture) -> impl Future<Item = (StatusCode, String), Error = AzureError> {
     resp.from_err().and_then(|res| {
         let status = res.status();
-        res.body().concat2().from_err().and_then(move |whole_body| {
-            match str::from_utf8(&whole_body) {
-                Ok(s_body) => ok((status, s_body.to_owned())),
-                Err(error) => err(AzureError::UTF8Error(error)),
-            }
-        })
+        res.into_body()
+            .concat2()
+            .from_err()
+            .and_then(move |body| Ok((status, str::from_utf8(&body)?.to_owned())))
     })
 }
 
 #[inline]
 pub fn check_status_extract_body(
-    resp: hyper::client::FutureResponse,
+    resp: hyper::client::ResponseFuture,
     expected_status_code: hyper::StatusCode,
 ) -> impl Future<Item = String, Error = AzureError> {
     extract_status_and_body(resp).and_then(move |(status, body)| {
         if status == expected_status_code {
-            ok(body)
+            Ok(body)
         } else {
-            err(AzureError::UnexpectedHTTPResult(UnexpectedHTTPResult {
+            Err(AzureError::UnexpectedHTTPResult(UnexpectedHTTPResult {
                 expected: expected_status_code,
                 received: status,
                 body,

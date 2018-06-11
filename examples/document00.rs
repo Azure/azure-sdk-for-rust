@@ -60,7 +60,7 @@ fn code() -> Result<(), Box<Error>> {
 
     // Next we will create a Cosmos client. You need an authorization_token but you can later
     // change it if needed. Notice the client will be tied to your reactor.
-    let client = Client::new(&core.handle(), authorization_token)?;
+    let client = Client::new(authorization_token)?;
 
     // list_databases will give us the databases available in our account. If there is
     // an error (for example, the given key is not valid) you will receive a
@@ -132,7 +132,6 @@ fn code() -> Result<(), Box<Error>> {
     // the document attributes.
     let document_attributes = core.run(
         client.create_document(&database.id, &collection.id, &doc)
-            .unwrap()
             .execute()
     )?;
     println!("document_attributes == {:?}", document_attributes);

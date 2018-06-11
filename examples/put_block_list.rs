@@ -21,8 +21,6 @@ use azure_sdk_for_rust::storage::blob::{
     get_block_list, put_block_list, BlobBlockType, BlockList, BlockListType,
 };
 
-use hyper::mime::Mime;
-
 fn main() {
     env_logger::init();
     code().unwrap();
@@ -43,7 +41,7 @@ fn code() -> Result<(), Box<Error>> {
 
     let mut core = Core::new()?;
 
-    let client = Client::new(&core.handle(), &account, &master_key)?;
+    let client = Client::new(&account, &master_key)?;
 
     let name = "asdkrustputblock.txt";
 
@@ -61,7 +59,7 @@ fn code() -> Result<(), Box<Error>> {
         // here we pass text/plain as content_type. This means your browser will
         // try to show you the file if you click on it in the Azure portal.
         // Make sure to send a text file :)
-        content_type: Some("text/plain".parse::<Mime>().unwrap()),
+        content_type: Some("text/plain".to_owned()),
         content_encoding: None,
         content_language: None,
         content_md5: None,

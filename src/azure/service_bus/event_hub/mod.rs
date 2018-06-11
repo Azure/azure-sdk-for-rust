@@ -1,73 +1,45 @@
-use futures::future::*;
-use hyper_tls;
-use tokio_core;
-
-use azure::core::errors::{check_status_extract_body, AzureError};
-use azure::core::COMPLETE_ENCODE_SET;
-
-use std::str::FromStr;
-
-use hyper;
-use hyper::header::ContentLength;
-use hyper::StatusCode;
-
-use chrono;
-use time::Duration;
-
-use base64;
-use std::ops::Add;
-
-use url::form_urlencoded::Serializer;
-use url::percent_encoding::utf8_percent_encode;
-
+use azure::core::{
+    errors::{check_status_extract_body, AzureError}, COMPLETE_ENCODE_SET,
+};
+use futures::future::{self, Future};
+use hyper::{self, header, StatusCode};
 use ring::hmac;
+use std::ops::Add;
+use time::Duration;
 
 mod client;
 pub use self::client::Client;
 
-header! { (Authorization, "Authorization") => [String] }
+type HttpClient = hyper::Client<::hyper_tls::HttpsConnector<hyper::client::HttpConnector>>;
 
 #[inline]
-fn send_event_prepare(
-    handle: &tokio_core::reactor::Handle,
+fn send_event_prepare<B: Into<String>>(
+    http_client: &HttpClient,
     namespace: &str,
     event_hub: &str,
     policy_name: &str,
     signing_key: &hmac::SigningKey,
-    event_body: &str,
+    event_body: B,
     duration: Duration,
-) -> Result<hyper::client::FutureResponse, AzureError> {
+) -> Result<hyper::client::ResponseFuture, AzureError> {
     // prepare the url to call
-    let url = format!(
-        "https://{}.servicebus.windows.net/{}/messages",
-        namespace, event_hub
-    );
-    let url = hyper::Uri::from_str(&url)?;
+    let url = format!("https://{}.servicebus.windows.net/{}/messages", namespace, event_hub);
     debug!("url == {:?}", url);
 
     // generate sas signature based on key name, key value, url and duration.
-    let sas = generate_signature(policy_name, signing_key, &url.to_string(), duration);
+    let sas = generate_signature(policy_name, signing_key, &url, duration);
     debug!("sas == {}", sas);
 
-    let client = hyper::Client::configure()
-        .connector(hyper_tls::HttpsConnector::new(4, handle)?)
-        .build(handle);
+    let event_body = event_body.into();
+    let request = hyper::Request::post(url)
+        .header(header::AUTHORIZATION, ::bytes::Bytes::from(sas))
+        .body(event_body.into())?;
 
-    let mut request = hyper::Request::new(hyper::Method::Post, url);
-
-    request.headers_mut().set(Authorization(sas));
-    request
-        .headers_mut()
-        .set(ContentLength(event_body.len() as u64));
-    debug!("request.headers() == {:?}", request.headers());
-
-    request.set_body(event_body.to_string());
-
-    Ok(client.request(request))
+    Ok(http_client.request(request))
 }
 
 fn send_event(
-    handle: &tokio_core::reactor::Handle,
+    http_client: &HttpClient,
     namespace: &str,
     event_hub: &str,
     policy_name: &str,
@@ -75,28 +47,18 @@ fn send_event(
     event_body: &str,
     duration: Duration,
 ) -> impl Future<Item = (), Error = AzureError> {
-    let req = send_event_prepare(
-        handle,
-        namespace,
-        event_hub,
-        policy_name,
-        hmac,
-        event_body,
-        duration,
-    );
+    let req = send_event_prepare(http_client, namespace, event_hub, policy_name, hmac, event_body, duration);
 
-    done(req).from_err().and_then(move |future_response| {
-        check_status_extract_body(future_response, StatusCode::Created).and_then(|_| ok(()))
-    })
+    future::result(req)
+        .from_err()
+        .and_then(move |future_response| check_status_extract_body(future_response, StatusCode::CREATED))
+        .and_then(|_| Ok(()))
 }
 
-fn generate_signature(
-    policy_name: &str,
-    signing_key: &hmac::SigningKey,
-    url: &str,
-    ttl: Duration,
-) -> String {
-    let expiry = chrono::Utc::now().add(ttl).timestamp();
+fn generate_signature(policy_name: &str, signing_key: &hmac::SigningKey, url: &str, ttl: Duration) -> String {
+    use url::{form_urlencoded::Serializer, percent_encoding::utf8_percent_encode};
+
+    let expiry = ::chrono::Utc::now().add(ttl).timestamp();
     debug!("expiry == {:?}", expiry);
 
     let url_encoded = utf8_percent_encode(url, COMPLETE_ENCODE_SET);
@@ -107,7 +69,7 @@ fn generate_signature(
 
     let sig = hmac::sign(signing_key, str_to_sign.as_bytes());
     let sig = {
-        let sig = base64::encode(sig.as_ref());
+        let sig = ::base64::encode(sig.as_ref());
         debug!("sig == {}", sig);
         let mut ser = Serializer::new(String::new());
         ser.append_pair("sig", &sig);

@@ -9,7 +9,6 @@ extern crate hyper_tls;
 extern crate log;
 extern crate tokio_core;
 
-use hyper::mime::Mime;
 use std::error::Error;
 
 use futures::future::*;
@@ -43,7 +42,7 @@ fn code() -> Result<(), Box<Error>> {
 
     let core = Core::new()?;
 
-    let client = Client::new(&core.handle(), &account, &master_key)?;
+    let client = Client::new(&account, &master_key)?;
 
     let data = b"something";
     let b = Blob {
@@ -53,7 +52,7 @@ fn code() -> Result<(), Box<Error>> {
         last_modified: chrono::Utc::now(),
         etag: "".to_owned(),
         content_length: data.len() as u64,
-        content_type: Some("text/plain".parse::<Mime>().unwrap()),
+        content_type: Some("text/plain".to_owned()),
         content_encoding: None,
         content_language: None,
         content_md5: None,
