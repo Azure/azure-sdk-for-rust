@@ -50,7 +50,7 @@ use azure::core::lease::{LeaseAction, LeaseDuration, LeaseId, LeaseState, LeaseS
 use azure::storage::client::Client;
 use hyper;
 
-use crypto::md5::Md5;
+use md5;
 
 use azure::storage::rest_client::{
     ContentMD5, ETag, XMSClientRequestId, XMSLeaseAction, XMSLeaseBreakPeriod, XMSLeaseDuration,
@@ -902,16 +902,9 @@ where
     // calculate the xml MD5. This can be made optional
     // in a future version.
     let md5 = {
-        use crypto::digest::Digest;
-        let mut hash = Md5::new();
-        hash.input(xml_bytes);
-
-        let mut buf: [u8; 16] = [0; 16];
-        debug!("before hash.result. output bits {}", hash.output_bits());
-        hash.result(&mut buf);
-        debug!("after hash.result");
-
-        base64::encode(&buf)
+        let hash = md5::compute(xml_bytes);
+        debug!("md5 hash: {:02X}", hash);
+        base64::encode(&*hash)
     };
 
     // now create the request

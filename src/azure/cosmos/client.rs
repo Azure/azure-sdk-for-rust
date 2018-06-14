@@ -1,53 +1,28 @@
-use azure::cosmos::authorization_token::{AuthorizationToken, TokenType};
-
-use azure::cosmos::collection::Collection;
-use azure::cosmos::database::Database;
-use azure::cosmos::document::DocumentAttributes;
-
-use azure::core::errors::{
-    check_status_extract_body, check_status_extract_headers_and_body,
-    extract_status_headers_and_body, AzureError, UnexpectedHTTPResult,
+use azure::core::{
+    errors::{check_status_extract_body, AzureError}, COMPLETE_ENCODE_SET,
 };
 
-use azure::core::COMPLETE_ENCODE_SET;
-use azure::cosmos::request_response::{
-    CreateDatabaseRequest, Document, DocumentAdditionalHeaders, GetDocumentResponse,
-    ListCollectionsResponse, ListDatabasesResponse, ListDocumentsResponse,
-    ListDocumentsResponseAdditionalHeaders, ListDocumentsResponseAttributes,
-    ListDocumentsResponseEntities, QueryDocumentResponse, QueryDocumentResponseAdditonalHeaders,
-    QueryResponseMeta, QueryResult, ReplaceDocumentResponse,
+use super::{
+    collection::Collection, database::Database, query::Query,
+    request_response::{
+        CreateDatabaseRequest, Document, ListCollectionsResponse, ListDatabasesResponse,
+    },
+    AuthorizationToken, CreateDocumentRequest, DeleteDocumentRequest, GetDocumentRequest,
+    ListDocumentsRequest, QueryDocumentRequest, ReplaceDocumentRequest, TokenType,
 };
-
-use azure::cosmos::document_options::{
-    CreateDocumentOptions, DeleteDocumentOptions, GetDocumentOptions, ListDocumentsOptions,
-    ReplaceDocumentOptions,
-};
-use azure::cosmos::query::Query;
-use azure::cosmos::query_document::QueryDocumentOptions;
-
-use std::str::{from_utf8, FromStr};
-
-use serde::de::DeserializeOwned;
-use serde::Serialize;
-use serde_json::map::Map;
-use serde_json::Value;
-
-use ring::{digest::SHA256, hmac};
 
 use base64;
-use hyper;
-use hyper::header::{ContentLength, ContentType, Headers};
-use hyper::StatusCode;
+use hyper::{self, StatusCode};
+use ring::{digest::SHA256, hmac};
+use serde::{de::DeserializeOwned, Serialize};
 use serde_json;
+use std::{rc::Rc, str::FromStr};
 
 use chrono;
-use mime::Mime;
-
-use url::percent_encoding::utf8_percent_encode;
-
-use hyper_tls;
+use hyper_tls::HttpsConnector;
 use native_tls;
 use tokio_core;
+use url::percent_encoding::utf8_percent_encode;
 
 use futures::future::*;
 
@@ -57,10 +32,9 @@ const TIME_FORMAT: &str = "%a, %d %h %Y %T GMT";
 
 pub(crate) mod headers {
     use azure::core::incompletevector::ContinuationToken;
-    use azure::cosmos::document::IndexingDirective;
-    use azure::cosmos::ConsistencyLevel;
+    use azure::cosmos::{ConsistencyLevel, document::IndexingDirective};
 
-    header! { (XMSVersion, "x-ms-version") => [String] }
+    header! { (XMSVersion, "x-ms-version") => Cow[str] }
     header! { (XMSDate, "x-ms-date") => [String] }
     header! { (Authorization, "Authorization") => [String] }
     header! { (OfferThroughput, "x-ms-offer-throughput") => [u64] }
@@ -70,7 +44,7 @@ pub(crate) mod headers {
     header! { (ContinuationTokenHeader, "x-ms-continuation") => [ContinuationToken] }
     header! { (ConsistencyLevelHeader, "x-ms-consistency-level") => [ConsistencyLevel] }
     header! { (SessionTokenHeader, "x-ms-session-token") => [ContinuationToken] }
-    header! { (AIM, "A-IM") => [String] }
+    header! { (AIM, "A-IM") => Cow[str] }
     header! { (IfNoneMatch, "If-None-Match") => [String] }
     header! { (IfMatch, "If-Match") => [String] }
     header! { (PartitionRangeId, "x-ms-documentdb-partitionkeyrangeid") => [String] }
@@ -82,8 +56,6 @@ pub(crate) mod headers {
 }
 use self::headers::*;
 
-const AZURE_KEYS: [&str; 5] = ["_attachments", "_etag", "_rid", "_self", "_ts"];
-
 #[derive(Clone, Copy)]
 enum ResourceType {
     Databases,
@@ -92,45 +64,44 @@ enum ResourceType {
 }
 
 pub struct Client {
-    hyper_client: hyper::Client<hyper_tls::HttpsConnector<hyper::client::HttpConnector>>,
-    authorization_token: AuthorizationToken,
+    hyper_client: Rc<hyper::Client<HttpsConnector<hyper::client::HttpConnector>>>,
+    auth_token: AuthorizationToken,
 }
 
-impl<'a> Client {
+impl Client {
     pub fn new(
         handle: &tokio_core::reactor::Handle,
-        authorization_token: AuthorizationToken,
+        auth_token: AuthorizationToken,
     ) -> Result<Client, native_tls::Error> {
         let client = hyper::Client::configure()
-            .connector(hyper_tls::HttpsConnector::new(4, handle)?)
+            .connector(HttpsConnector::new(4, handle)?)
             .build(handle);
 
         Ok(Client {
-            hyper_client: client,
-            authorization_token,
+            hyper_client: Rc::new(client),
+            auth_token,
         })
     }
 
-    pub fn set_authorization_token(&mut self, at: AuthorizationToken) {
-        self.authorization_token = at;
+    pub fn set_auth_token(&mut self, at: AuthorizationToken) {
+        self.auth_token = at;
     }
 
     fn list_databases_create_request(&self) -> Result<hyper::client::FutureResponse, AzureError> {
         let uri = hyper::Uri::from_str(&format!(
             "https://{}.documents.azure.com/dbs",
-            &self.authorization_token.account()
+            &self.auth_token.account()
         ))?;
 
         // No specific headers are required, list databases only needs standard headers
         // which will be provied by perform_request. This is handled by passing an
         // empty closure.
         let request = prepare_request(
-            &self.authorization_token,
+            &self.auth_token,
             uri,
             &hyper::Method::Get,
             None,
             ResourceType::Databases,
-            |_| {},
         );
 
         trace!("request prepared");
@@ -140,7 +111,7 @@ impl<'a> Client {
 
     /// Returns database list associated to the account
     /// specified in the
-    ///     `azure_sdk_for_rust::cosmos::authorization_token::AuthorizationToken`.
+    ///     `azure_sdk_for_rust::cosmos::auth_token::AuthorizationToken`.
     pub fn list_databases(&self) -> impl Future<Item = Vec<Database>, Error = AzureError> {
         trace!("list_databases called");
 
@@ -162,7 +133,7 @@ impl<'a> Client {
     ) -> Result<hyper::client::FutureResponse, AzureError> {
         let uri = hyper::Uri::from_str(&format!(
             "https://{}.documents.azure.com/dbs/{}/colls",
-            self.authorization_token.account(),
+            self.auth_token.account(),
             database_name
         ))?;
 
@@ -170,12 +141,11 @@ impl<'a> Client {
         // which will be provied by perform_request. This is handled by passing an
         // empty closure.
         let request = prepare_request(
-            &self.authorization_token,
+            &self.auth_token,
             uri,
             &hyper::Method::Get,
             None,
             ResourceType::Collections,
-            |_| {},
         );
 
         trace!("request prepared");
@@ -207,19 +177,18 @@ impl<'a> Client {
     ) -> Result<hyper::client::FutureResponse, AzureError> {
         let uri = hyper::Uri::from_str(&format!(
             "https://{}.documents.azure.com/dbs",
-            self.authorization_token.account()
+            self.auth_token.account()
         ))?;
 
         let req = CreateDatabaseRequest { id: database_name };
         let req = serde_json::to_string(&req)?;
 
         let request = prepare_request(
-            &self.authorization_token,
+            &self.auth_token,
             uri,
             &hyper::Method::Post,
             Some(&req),
             ResourceType::Databases,
-            |_| {},
         );
 
         trace!("request prepared");
@@ -251,19 +220,18 @@ impl<'a> Client {
     ) -> Result<hyper::client::FutureResponse, AzureError> {
         let uri = hyper::Uri::from_str(&format!(
             "https://{}.documents.azure.com/dbs/{}",
-            self.authorization_token.account(),
+            self.auth_token.account(),
             database_name
         ))?;
 
         // No specific headers are required, get database only needs standard headers
         // which will be provied by perform_request
         let request = prepare_request(
-            &self.authorization_token,
+            &self.auth_token,
             uri,
             &hyper::Method::Get,
             None,
             ResourceType::Databases,
-            |_| {},
         );
 
         trace!("request prepared");
@@ -292,19 +260,18 @@ impl<'a> Client {
     ) -> Result<hyper::client::FutureResponse, AzureError> {
         let uri = hyper::Uri::from_str(&format!(
             "https://{}.documents.azure.com/dbs/{}",
-            self.authorization_token.account(),
+            self.auth_token.account(),
             database_name
         ))?;
 
         // No specific headers are required, delete database only needs standard headers
         // which will be provied by perform_request
         let request = prepare_request(
-            &self.authorization_token,
+            &self.auth_token,
             uri,
             &hyper::Method::Delete,
             None,
             ResourceType::Databases,
-            |_| {},
         );
 
         trace!("request prepared");
@@ -336,7 +303,7 @@ impl<'a> Client {
     ) -> Result<hyper::client::FutureResponse, AzureError> {
         let uri = hyper::Uri::from_str(&format!(
             "https://{}.documents.azure.com/dbs/{}/colls/{}",
-            self.authorization_token.account(),
+            self.auth_token.account(),
             database_name,
             collection_name
         ))?;
@@ -344,12 +311,11 @@ impl<'a> Client {
         // No specific headers are required, get database only needs standard headers
         // which will be provied by perform_request
         let request = prepare_request(
-            &self.authorization_token,
+            &self.auth_token,
             uri,
             &hyper::Method::Get,
             None,
             ResourceType::Collections,
-            |_| {},
         );
 
         trace!("request prepared");
@@ -385,7 +351,7 @@ impl<'a> Client {
     ) -> Result<hyper::client::FutureResponse, AzureError> {
         let uri = hyper::Uri::from_str(&format!(
             "https://{}.documents.azure.com/dbs/{}/colls",
-            self.authorization_token.account(),
+            self.auth_token.account(),
             database_name
         ))?;
 
@@ -395,16 +361,16 @@ impl<'a> Client {
         let collection_serialized = serde_json::to_string(collection)?;
         trace!("collection_serialized == {}", collection_serialized);
 
-        let request = prepare_request(
-            &self.authorization_token,
+        let mut request = prepare_request(
+            &self.auth_token,
             uri,
             &hyper::Method::Post,
             Some(&collection_serialized),
             ResourceType::Collections,
-            |ref mut headers| {
-                headers.set(OfferThroughput(required_throughput));
-            },
         );
+        request
+            .headers_mut()
+            .set(OfferThroughput(required_throughput));
 
         trace!("request prepared");
 
@@ -442,7 +408,7 @@ impl<'a> Client {
     ) -> Result<hyper::client::FutureResponse, AzureError> {
         let uri = hyper::Uri::from_str(&format!(
             "https://{}.documents.azure.com/dbs/{}/colls/{}",
-            self.authorization_token.account(),
+            self.auth_token.account(),
             database_name,
             collection_name
         ))?;
@@ -450,12 +416,11 @@ impl<'a> Client {
         // No specific headers are required.
         // Standard headers (auth and version) will be provied by perform_request
         let request = prepare_request(
-            &self.authorization_token,
+            &self.auth_token,
             uri,
             &hyper::Method::Delete,
             None,
             ResourceType::Collections,
-            |_| {},
         );
 
         trace!("request prepared");
@@ -489,7 +454,7 @@ impl<'a> Client {
     ) -> Result<hyper::client::FutureResponse, AzureError> {
         let uri = hyper::Uri::from_str(&format!(
             "https://{}.documents.azure.com/dbs/{}/colls",
-            self.authorization_token.account(),
+            self.auth_token.account(),
             database_name
         ))?;
 
@@ -499,12 +464,11 @@ impl<'a> Client {
         trace!("collection_serialized == {}", collection_serialized);
 
         let request = prepare_request(
-            &self.authorization_token,
+            &self.auth_token,
             uri,
             &hyper::Method::Put,
             Some(&collection_serialized),
             ResourceType::Collections,
-            |_| {},
         );
 
         trace!("request prepared");
@@ -528,79 +492,38 @@ impl<'a> Client {
     }
 
     #[inline]
-    fn create_document_as_str_create_request<S>(
+    fn create_document_as_str_create_request<S: AsRef<str>>(
         &self,
         database: &str,
         collection: &str,
-        options: &CreateDocumentOptions,
         document_str: S,
-    ) -> Result<hyper::client::FutureResponse, AzureError>
-    where
-        S: AsRef<str>,
-    {
+    ) -> Result<hyper::Request, AzureError> {
         let uri = hyper::Uri::from_str(&format!(
             "https://{}.documents.azure.com/dbs/{}/colls/{}/docs",
-            self.authorization_token.account(),
+            self.auth_token.account(),
             database,
             collection
         ))?;
 
-        let serialized_partition_key = options.partition_key.to_json()?;
-
-        // Standard headers (auth and version) will be provied by perform_request
-        // Optional headers as per
-        // https://docs.microsoft.com/en-us/rest/api/documentdb/create-a-document
         let request = prepare_request(
-            &self.authorization_token,
+            &self.auth_token,
             uri,
             &hyper::Method::Post,
             Some(document_str.as_ref()),
             ResourceType::Documents,
-            |ref mut headers| {
-                headers.set(DocumentIsUpsert(options.is_upsert));
-                if let Some(id) = options.indexing_directive {
-                    headers.set(DocumentIndexingDirective(id));
-                }
-                if let Some(ref val) = serialized_partition_key {
-                    headers.set(CosmosDBPartitionKey(val.to_owned()));
-                }
-            },
         );
 
         trace!("request prepared");
 
-        Ok(self.hyper_client.request(request))
-    }
-
-    #[inline]
-    fn create_document_create_request<T>(
-        &self,
-        database: &str,
-        collection: &str,
-        options: &CreateDocumentOptions,
-        document: &T,
-    ) -> Result<hyper::client::FutureResponse, AzureError>
-    where
-        T: Serialize,
-    {
-        let document_serialized = serde_json::to_string(document)?;
-        trace!("document_serialized == {}", document_serialized);
-
-        self.create_document_as_str_create_request(
-            database,
-            collection,
-            options,
-            &document_serialized,
-        )
+        Ok(request)
     }
 
     pub fn create_document_as_str<T, S1, S2, S3>(
         &self,
         database: S1,
         collection: S2,
-        options: &CreateDocumentOptions,
-        document_str: S3,
-    ) -> impl Future<Item = DocumentAttributes, Error = AzureError>
+        document: S3,
+    ) -> Result<CreateDocumentRequest, AzureError>
     where
         T: Serialize,
         S1: AsRef<str>,
@@ -611,92 +534,38 @@ impl<'a> Client {
         let collection = collection.as_ref();
 
         trace!(
-            "create_document_as_str called(database == {}, collection == {}, options == {:?}",
+            "create_document_as_str called(database == {}, collection == {}, document = {}",
             database,
             collection,
-            options
+            document.as_ref()
         );
 
-        let req =
-            self.create_document_as_str_create_request(database, collection, options, document_str);
-
-        done(req).from_err().and_then(move |future_response| {
-            check_status_extract_body(future_response, StatusCode::Created).and_then(move |body| {
-                done(serde_json::from_str::<DocumentAttributes>(&body)).from_err()
-            })
-        })
+        let req = self.create_document_as_str_create_request(database, collection, document)?;
+        Ok(CreateDocumentRequest::new(self.hyper_client.clone(), req))
     }
 
-    pub fn create_document<'c, T, S1, S2>(
+    pub fn create_document<T, S1, S2>(
         &self,
         database: &S1,
         collection: &S2,
-        options: &CreateDocumentOptions,
-        document: &'c T,
-    ) -> impl Future<Item = DocumentAttributes, Error = AzureError>
+        document: &T,
+    ) -> Result<CreateDocumentRequest, AzureError>
     where
         T: Serialize,
         S1: AsRef<str>,
         S2: AsRef<str>,
     {
-        let database = database.as_ref();
-        let collection = collection.as_ref();
-
+        let db = database.as_ref();
+        let coll = collection.as_ref();
+        let document_serialized = serde_json::to_string(document)?;
         trace!(
-            "create_document_as called(database == {}, collection == {}, options == {:?}",
-            database,
-            collection,
-            options
+            "create_document_as called(database == {}, collection == {}, document = {}",
+            db,
+            coll,
+            document_serialized
         );
-
-        let req = self.create_document_create_request(database, collection, options, document);
-
-        done(req).from_err().and_then(move |future_response| {
-            check_status_extract_body(future_response, StatusCode::Created).and_then(move |body| {
-                done(serde_json::from_str::<DocumentAttributes>(&body)).from_err()
-            })
-        })
-    }
-
-    #[inline]
-    fn delete_document_create_request(
-        &self,
-        database_id: &str,
-        collection_id: &str,
-        document_id: &str,
-        options: &DeleteDocumentOptions,
-    ) -> Result<hyper::client::FutureResponse, AzureError> {
-        let uri = format!(
-            "https://{}.documents.azure.com/dbs/{}/colls/{}/docs/{}",
-            self.authorization_token.account(),
-            database_id,
-            collection_id,
-            document_id
-        ).parse()?;
-
-        let serialized_partition_key = options.partition_key.to_json()?;
-
-        // No specific headers are required.
-        // Standard headers (auth and version) will be provied by perform_request
-        let request = prepare_request(
-            &self.authorization_token,
-            uri,
-            &hyper::Method::Delete,
-            None,
-            ResourceType::Documents,
-            |ref mut headers| {
-                if let Some(val) = options.if_match {
-                    headers.set(IfMatch(val.to_owned()));
-                }
-                if let Some(val) = serialized_partition_key {
-                    headers.set(CosmosDBPartitionKey(val));
-                }
-            },
-        );
-
-        trace!("request prepared");
-
-        Ok(self.hyper_client.request(request))
+        let req = self.create_document_as_str_create_request(db, coll, &document_serialized)?;
+        Ok(CreateDocumentRequest::new(self.hyper_client.clone(), req))
     }
 
     pub fn delete_document<D: AsRef<str>, C: AsRef<str>, Dc: AsRef<str>>(
@@ -704,8 +573,7 @@ impl<'a> Client {
         database_id: &D,
         collection_id: &C,
         document_id: &Dc,
-        options: &DeleteDocumentOptions,
-    ) -> impl Future<Item = (), Error = AzureError> {
+    ) -> Result<DeleteDocumentRequest, AzureError> {
         trace!(
             "delete_document called (db_id == {}, collection_id == {}, doc_id = {}",
             database_id.as_ref(),
@@ -713,662 +581,207 @@ impl<'a> Client {
             document_id.as_ref()
         );
 
-        let req = self.delete_document_create_request(
+        let uri = format!(
+            "https://{}.documents.azure.com/dbs/{}/colls/{}/docs/{}",
+            self.auth_token.account(),
             database_id.as_ref(),
             collection_id.as_ref(),
-            document_id.as_ref(),
-            options,
-        );
+            document_id.as_ref()
+        ).parse()?;
 
-        done(req).from_err().and_then(move |future_response| {
-            check_status_extract_body(future_response, StatusCode::NoContent).and_then(|_| ok(()))
-        })
-    }
-
-    #[inline]
-    fn replace_document_prepare_request<T: Serialize>(
-        &self,
-        database_id: &str,
-        collection_id: &str,
-        options: &ReplaceDocumentOptions,
-        document: &Document<T>,
-    ) -> Result<hyper::client::FutureResponse, AzureError> {
-        let document_serialized = serde_json::to_string(&document.entity)?;
-
-        let uri = hyper::Uri::from_str(&format!(
-            "https://{}.documents.azure.com/{}",
-            self.authorization_token.account(),
-            document.document_attributes._self
-        ))?;
-
-        let serialized_partition_key = options.partition_key.to_json()?;
-
-        // No specific headers are required.
-        // Standard headers (auth and version) will be provied by perform_request
-        trace!(
-            "replace_document called(db_id == {}, collection == {}, document == {}, options == {:?}",
-            database_id,
-            collection_id,
-            document_serialized,
-            options
-        );
-
-        let request = prepare_request_with_resource_link(
-            &self.authorization_token,
+        let req = prepare_request(
+            &self.auth_token,
             uri,
-            &hyper::Method::Put,
-            Some(&document_serialized),
+            &hyper::Method::Delete,
+            None,
             ResourceType::Documents,
-            &document.document_attributes.rid.to_lowercase(),
-            |ref mut headers| {
-                if let Some(val) = options.if_match {
-                    headers.set(IfMatch(val.to_owned()));
-                }
-                if let Some(val) = serialized_partition_key {
-                    headers.set(CosmosDBPartitionKey(val));
-                }
-                if let Some(id) = options.indexing_directive {
-                    headers.set(DocumentIndexingDirective(id));
-                }
-            },
         );
-
-        trace!("request prepared");
-
-        Ok(self.hyper_client.request(request))
+        Ok(DeleteDocumentRequest::new(self.hyper_client.clone(), req))
     }
 
     pub fn replace_document<D: AsRef<str>, C: AsRef<str>, T: Serialize + DeserializeOwned>(
         &self,
         database_id: D,
         collection_id: C,
-        options: &ReplaceDocumentOptions,
         document: &Document<T>,
-    ) -> impl Future<Item = ReplaceDocumentResponse<T>, Error = AzureError> {
-        trace!("replace_collection called");
+    ) -> Result<ReplaceDocumentRequest<T>, AzureError> {
+        let document_serialized = serde_json::to_string(&document.entity)?;
 
-        let req = self.replace_document_prepare_request(
+        trace!(
+            "replace_document called(db_id == {}, collection == {}, document == {}",
             database_id.as_ref(),
             collection_id.as_ref(),
-            options,
-            document,
+            document_serialized,
         );
 
-        done(req).from_err().and_then(move |future_response| {
-            extract_status_headers_and_body(future_response).and_then(
-                move |(status, headers, v_body)| {
-                    done(replace_document_extract_result(status, &headers, &v_body))
-                },
-            )
-        })
+        let uri = hyper::Uri::from_str(&format!(
+            "https://{}.documents.azure.com/{}",
+            self.auth_token.account(),
+            document.document_attributes._self
+        ))?;
+
+        let req = prepare_request_with_resource_link(
+            &self.auth_token,
+            uri,
+            &hyper::Method::Put,
+            Some(&document_serialized),
+            ResourceType::Documents,
+            &document.document_attributes.rid.to_lowercase(),
+        );
+
+        Ok(ReplaceDocumentRequest::new(self.hyper_client.clone(), req))
     }
 
-    #[inline]
-    fn list_documents_create_request(
+    pub fn list_documents<S1: AsRef<str>, S2: AsRef<str>>(
         &self,
-        database: &str,
-        collection: &str,
-        ldo: &ListDocumentsOptions,
-    ) -> Result<hyper::client::FutureResponse, AzureError> {
+        database: &S1,
+        collection: &S2,
+    ) -> Result<ListDocumentsRequest, AzureError> {
+        let database = database.as_ref();
+        let collection = collection.as_ref();
+
+        trace!(
+            "list-_documents called(database == {}, collection == {}",
+            database,
+            collection
+        );
+
         let uri = hyper::Uri::from_str(&format!(
             "https://{}.documents.azure.com/dbs/{}/colls/{}/docs",
-            self.authorization_token.account(),
+            self.auth_token.account(),
             database,
             collection
         ))?;
 
-        let request = prepare_request(
-            &self.authorization_token,
+        let req = prepare_request(
+            &self.auth_token,
             uri,
             &hyper::Method::Get,
             None,
             ResourceType::Documents,
-            |ref mut headers| {
-                if let Some(val) = ldo.max_item_count {
-                    headers.set(MaxItemCount(val));
-                }
-                if let Some(val) = ldo.continuation_token {
-                    headers.set(ContinuationTokenHeader(val.to_owned()));
-                }
-                if let Some(val) = ldo.consistency_level_override {
-                    headers.set(ConsistencyLevelHeader(val));
-                }
-                if let Some(val) = ldo.session_token {
-                    headers.set(SessionTokenHeader(val.to_owned()));
-                }
-                if ldo.incremental_feed {
-                    headers.set(AIM("Incremental feed".to_owned()));
-                }
-                if let Some(val) = ldo.if_none_match {
-                    headers.set(IfNoneMatch(val.to_owned()));
-                }
-                if let Some(val) = ldo.partition_range_id {
-                    headers.set(PartitionRangeId(val.to_owned()));
-                }
-            },
         );
 
-        trace!("request prepared");
-
-        Ok(self.hyper_client.request(request))
+        Ok(ListDocumentsRequest::new(self.hyper_client.clone(), req))
     }
 
-    pub fn list_documents<S1, S2, T>(
+    pub fn get_document<S1, S2, S3>(
         &self,
-        database: S1,
-        collection: S2,
-        ldo: &ListDocumentsOptions,
-    ) -> impl Future<Item = ListDocumentsResponse<T>, Error = AzureError>
-    where
-        S1: AsRef<str>,
-        S2: AsRef<str>,
-        T: DeserializeOwned,
-    {
-        let database = database.as_ref();
-        let collection = collection.as_ref();
-
-        trace!(
-            "list-_documents called(database == {}, collection == {}, ldo == {:?}",
-            database,
-            collection,
-            ldo
-        );
-
-        let req = self.list_documents_create_request(database, collection, ldo);
-
-        done(req).from_err().and_then(move |future_response| {
-            check_status_extract_headers_and_body(future_response, StatusCode::Ok).and_then(
-                |(headers, whole_body)| {
-                    done(list_documents_extract_result::<T>(&whole_body, &headers))
-                },
-            )
-        })
-    }
-
-    #[inline]
-    fn get_document_create_request(
-        &self,
-        database: &str,
-        collection: &str,
-        document_id: &str,
-        gdo: &GetDocumentOptions,
-    ) -> Result<hyper::client::FutureResponse, AzureError> {
-        let uri = hyper::Uri::from_str(&format!(
-            "https://{}.documents.azure.com/dbs/{}/colls/{}/docs/{}",
-            self.authorization_token.account(),
-            database,
-            collection,
-            document_id
-        ))?;
-
-        let serialized_partition_key = gdo.partition_key.to_json()?;
-
-        let request = prepare_request(
-            &self.authorization_token,
-            uri,
-            &hyper::Method::Get,
-            None,
-            ResourceType::Documents,
-            |ref mut headers| {
-                if let Some(val) = gdo.consistency_level_override {
-                    headers.set(ConsistencyLevelHeader(val));
-                }
-                if let Some(val) = gdo.session_token {
-                    headers.set(SessionTokenHeader(val.to_owned()));
-                }
-                if let Some(val) = gdo.if_none_match {
-                    headers.set(IfNoneMatch(val.to_owned()));
-                }
-                if let Some(val) = serialized_partition_key {
-                    headers.set(CosmosDBPartitionKey(val));
-                }
-            },
-        );
-
-        trace!("request prepared");
-
-        Ok(self.hyper_client.request(request))
-    }
-
-    pub fn get_document<S1, S2, S3, T>(
-        &self,
-        database: S1,
-        collection: S2,
-        document_id: S3,
-        gdo: &GetDocumentOptions,
-    ) -> impl Future<Item = GetDocumentResponse<T>, Error = AzureError>
+        database: &S1,
+        collection: &S2,
+        document_id: &S3,
+    ) -> Result<GetDocumentRequest, AzureError>
     where
         S1: AsRef<str>,
         S2: AsRef<str>,
         S3: AsRef<str>,
-        T: DeserializeOwned,
     {
-        let database = database.as_ref();
+        let db = database.as_ref();
+        let coll = collection.as_ref();
+        let doc_id = document_id.as_ref();
 
-        let collection = collection.as_ref();
-        let document_id = document_id.as_ref();
+        let uri = hyper::Uri::from_str(&format!(
+            "https://{}.documents.azure.com/dbs/{}/colls/{}/docs/{}",
+            self.auth_token.account(),
+            db,
+            coll,
+            doc_id
+        ))?;
 
-        trace!(
-            "get_document called(database == {}, collection == {}, document_id == {} gdo == {:?}",
-            database,
-            collection,
-            document_id,
-            gdo
+        let req = prepare_request(
+            &self.auth_token,
+            uri,
+            &hyper::Method::Get,
+            None,
+            ResourceType::Documents,
         );
 
-        let req = self.get_document_create_request(database, collection, document_id, gdo);
-
-        done(req).from_err().and_then(move |future_response| {
-            extract_status_headers_and_body(future_response).and_then(
-                move |(status, headers, v_body)| {
-                    done(get_document_extract_result(status, &headers, &v_body))
-                },
-            )
-        })
+        Ok(GetDocumentRequest::new(self.hyper_client.clone(), req))
     }
 
-    pub fn query_document<S1, S2, T>(
+    pub fn query_document<'b, S1: AsRef<str>, S2: AsRef<str>>(
         &self,
-        database: S1,
-        collection: S2,
-        query: &Query,
-        options: &QueryDocumentOptions,
-    ) -> impl Future<Item = QueryDocumentResponse<T>, Error = AzureError>
-    where
-        T: DeserializeOwned,
-        S1: AsRef<str>,
-        S2: AsRef<str>,
-    {
-        self.query_document_json(database, collection, query, options)
-            .and_then(move |qdr_json| done(convert_query_document_type(qdr_json)))
-    }
-
-    pub fn query_document_json<'b, S1, S2>(
-        &self,
-        database: S1,
-        collection: S2,
+        database: &S1,
+        collection: &S2,
         query: &Query<'b>,
-        options: &QueryDocumentOptions,
-    ) -> impl Future<Item = QueryDocumentResponse<String>, Error = AzureError>
-    where
-        S1: AsRef<str>,
-        S2: AsRef<str>,
-    {
+    ) -> Result<QueryDocumentRequest, AzureError> {
         let database = database.as_ref();
         let collection = collection.as_ref();
 
-        trace!(
-            "query_document_json called(database == {}, \
-             collection == {}, query == {:?}, options = {:?}",
-            database,
-            collection,
-            query,
-            options
-        );
-
-        let req = self.query_document_create_request(database, collection, query, options);
-
-        done(req).from_err().and_then(move |future_response| {
-            check_status_extract_headers_and_body(future_response, StatusCode::Ok).and_then(
-                move |(headers, v_body)| {
-                    done(query_documents_extract_result_json(&v_body, &headers))
-                },
-            )
-        })
-    }
-
-    #[inline]
-    fn query_document_create_request<'b>(
-        &self,
-        database: &str,
-        collection: &str,
-        query: &Query<'b>,
-        options: &QueryDocumentOptions,
-    ) -> Result<hyper::client::FutureResponse, AzureError> {
         let uri = hyper::Uri::from_str(&format!(
             "https://{}.documents.azure.com/dbs/{}/colls/{}/docs",
-            self.authorization_token.account(),
+            self.auth_token.account(),
             database,
             collection,
         ))?;
 
         let query_json = serde_json::to_string(query)?;
 
-        debug!("query_json == {}", query_json);
-
-        let request = prepare_request(
-            &self.authorization_token,
+        let req = prepare_request(
+            &self.auth_token,
             uri,
             &hyper::Method::Post,
             Some(&query_json),
             ResourceType::Documents,
-            |ref mut headers| {
-                headers.set(DocumentDBIsQuery(true));
-                headers.set(ContentType(get_query_content_type()));
-
-                if let Some(val) = options.max_item_count {
-                    headers.set(MaxItemCount(val));
-                }
-                if let Some(val) = options.continuation_token {
-                    headers.set(ContinuationTokenHeader(val.to_owned()));
-                }
-                if let Some(val) = options.enable_cross_partition {
-                    headers.set(DocumentDBQueryEnableCrossPartition(val));
-                }
-                if let Some(val) = options.consistency_level_override {
-                    headers.set(ConsistencyLevelHeader(val));
-                }
-                if let Some(val) = options.session_token {
-                    headers.set(SessionTokenHeader(val.to_owned()));
-                }
-            },
         );
-
-        trace!("request prepared");
-
-        Ok(self.hyper_client.request(request))
+        Ok(QueryDocumentRequest::new(self.hyper_client.clone(), req))
     }
-}
-
-fn replace_document_extract_result<T: DeserializeOwned>(
-    status: hyper::StatusCode,
-    headers: &hyper::Headers,
-    v_body: &[u8],
-) -> Result<ReplaceDocumentResponse<T>, AzureError> {
-    match status {
-        StatusCode::Ok => {
-            let additional_headers = DocumentAdditionalHeaders::derive_from(headers);
-            let document = Document::from_json(v_body)?;
-            Ok(ReplaceDocumentResponse {
-                document,
-                additional_headers,
-            })
-        }
-        _ => {
-            let error_text = from_utf8(v_body)?;
-            Err(AzureError::UnexpectedHTTPResult(UnexpectedHTTPResult::new(
-                StatusCode::Ok,
-                status,
-                error_text,
-            )))
-        }
-    }
-}
-
-fn get_document_extract_result<T: DeserializeOwned>(
-    status: hyper::StatusCode,
-    headers: &hyper::Headers,
-    v_body: &[u8],
-) -> Result<GetDocumentResponse<T>, AzureError> {
-    match status {
-        StatusCode::Ok => {
-            let additional_headers = DocumentAdditionalHeaders::derive_from(headers);
-            let document = Document::from_json(v_body)?;
-            Ok(GetDocumentResponse {
-                document: Some(document),
-                additional_headers,
-            })
-        }
-        // NotFound is not an error so we return None along
-        // with the additional headers.
-        StatusCode::NotFound => {
-            let additional_headers = DocumentAdditionalHeaders::derive_from(headers);
-            Ok(GetDocumentResponse {
-                document: None,
-                additional_headers,
-            })
-        }
-        _ => {
-            // We treat everything else as an error. We could
-            // handle 304 (Not modified) in a specific way but
-            // for now we do not.
-            let error_text = from_utf8(v_body)?;
-            Err(AzureError::UnexpectedHTTPResult(UnexpectedHTTPResult::new(
-                StatusCode::Ok,
-                status,
-                error_text,
-            )))
-        }
-    }
-}
-
-fn query_documents_extract_result_json(
-    v_body: &[u8],
-    headers: &Headers,
-) -> Result<QueryDocumentResponse<String>, AzureError> {
-    trace!("headers == {:?}", headers);
-
-    let additional_headers = QueryDocumentResponseAdditonalHeaders {
-        // This match just tries to extract the info and convert it
-        // into the correct type. It is complicated because headers
-        // can be missing and also because headers.get<T> will return
-        // a T reference (&T) so we need to cast it into the
-        // correct type and clone it (in this case into a &str that will
-        // become a String using to_owned())
-        continuation_token: match headers.get::<ContinuationTokenHeader>() {
-            Some(s) => Some((s as &str).to_owned()),
-            None => None,
-        },
-        // Here we assume the Charge header to always be present.
-        // If problems arise we
-        // will change the field to be Option(al).
-        charge: *(headers.get::<Charge>().unwrap() as &f64),
-    };
-    debug!("additional_headers == {:?}", additional_headers);
-
-    let query_response_meta = serde_json::from_slice::<QueryResponseMeta>(v_body)?;
-    debug!("query_response_meta == {:?}", &query_response_meta);
-
-    let json = from_utf8(v_body)?;
-    debug!("json == {}", json);
-
-    let v: Value = serde_json::from_slice(v_body)?;
-
-    // Work on Documents section
-    let d = &v["Documents"];
-    debug!("\n\nd == {:?}\n\n", d);
-
-    let mut v_docs = Vec::new();
-
-    for doc in d.as_array().unwrap() {
-        // We could either have a Document or a plain entry.
-        // We will find out here.
-
-        let document_attributes = match serde_json::from_value::<DocumentAttributes>(doc.clone()) {
-            Ok(document_attributes) => Some(document_attributes),
-            Err(_) => None,
-        };
-
-        debug!("\ndocument_attributes == {:?}", document_attributes);
-
-        // Now we are about to create a new Value::Object
-        // without the extra Azure fields.
-        // This involves a lot a copying (unfortunately).
-        let o_new = {
-            let mut o_new = Value::Object(Map::new());
-            {
-                let m_new = o_new.as_object_mut().unwrap();
-
-                for (key, val) in doc.as_object().unwrap() {
-                    if AZURE_KEYS.binary_search(&(key as &str)).is_err() {
-                        m_new.insert(key.clone(), val.clone());
-                    }
-                }
-            }
-
-            o_new
-        };
-
-        v_docs.push(QueryResult {
-            document_attributes,
-            result: o_new.to_string(),
-        });
-    }
-
-    Ok(QueryDocumentResponse {
-        query_response_meta,
-        additional_headers,
-        results: v_docs,
-    })
 }
 
 #[inline]
-fn convert_query_document_type<T>(
-    qdr: QueryDocumentResponse<String>,
-) -> Result<QueryDocumentResponse<T>, AzureError>
-where
-    T: DeserializeOwned,
-{
-    let mut qdr_converted: QueryDocumentResponse<T> = QueryDocumentResponse {
-        query_response_meta: qdr.query_response_meta,
-        results: Vec::new(),
-        additional_headers: qdr.additional_headers,
-    };
-
-    for res_json in qdr.results {
-        qdr_converted.results.push(QueryResult {
-            document_attributes: res_json.document_attributes,
-            result: serde_json::from_str(&res_json.result)?,
-        });
-    }
-
-    Ok(qdr_converted)
-}
-
-fn list_documents_extract_result<T>(
-    v_body: &[u8],
-    headers: &Headers,
-) -> Result<ListDocumentsResponse<T>, AzureError>
-where
-    T: DeserializeOwned,
-{
-    debug!("headers == {:?}", headers);
-
-    let ado = ListDocumentsResponseAdditionalHeaders {
-        // This match just tries to extract the info and convert it
-        // into the correct type. It is complicated because headers
-        // can be missing and also because headers.get<T> will return
-        // a T reference (&T) so we need to cast it into the
-        // correct type and clone it (in this case into a &str that will
-        // become a String using to_owned())
-        continuation_token: match headers.get::<ContinuationTokenHeader>() {
-            Some(s) => Some((s as &str).to_owned()),
-            None => None,
-        },
-        // Here we assume the Charge header to always be present.
-        // If problems arise we
-        // will change the field to be Option(al).
-        charge: *(headers.get::<Charge>().unwrap() as &f64),
-        etag: match headers.get::<Etag>() {
-            Some(s) => Some((s as &str).to_owned()),
-            None => None,
-        },
-    };
-    debug!("ado == {:?}", ado);
-
-    // we will proceed in three steps:
-    // 1- Deserialize the result as DocumentAttributes. The extra field will be ignored.
-    // 2- Deserialize the result a type T. The extra fields will be ignored.
-    // 3- Zip 1 and 2 in the resulting structure.
-    // There is a lot of data movement here, let's hope the compiler is smarter than me :)
-    let document_attributes = serde_json::from_slice::<ListDocumentsResponseAttributes>(v_body)?;
-    let entries = serde_json::from_slice::<ListDocumentsResponseEntities<T>>(v_body)?;
-
-    let mut v = Vec::with_capacity(document_attributes.documents.len());
-    for (da, e) in document_attributes
-        .documents
-        .into_iter()
-        .zip(entries.entities.into_iter())
-    {
-        v.push(Document {
-            document_attributes: da,
-            entity: e,
-        });
-    }
-
-    Ok(ListDocumentsResponse {
-        rid: document_attributes.rid,
-        documents: v,
-        additional_headers: ado,
-    })
-}
-
-#[inline]
-fn prepare_request<F: FnOnce(&mut Headers)>(
-    authorization_token: &AuthorizationToken,
+fn prepare_request(
+    auth_token: &AuthorizationToken,
     uri: hyper::Uri,
     http_method: &hyper::Method,
     request_body: Option<&str>,
     resource_type: ResourceType,
-    headers_func: F,
 ) -> hyper::client::Request {
     let time = format!("{}", chrono::Utc::now().format(TIME_FORMAT));
 
     let auth = {
         let resource_link = generate_resource_link(&uri);
-        generate_authorization(
-            authorization_token,
-            http_method,
-            resource_type,
-            resource_link,
-            &time,
-        )
+        generate_authorization(auth_token, http_method, resource_type, resource_link, &time)
     };
-    prepare_request_with_signature(uri, http_method, request_body, time, auth, headers_func)
+    prepare_request_with_signature(uri, http_method, request_body, time, auth)
 }
 
 #[inline]
-fn prepare_request_with_resource_link<F: FnOnce(&mut Headers)>(
-    authorization_token: &AuthorizationToken,
+fn prepare_request_with_resource_link(
+    auth_token: &AuthorizationToken,
     uri: hyper::Uri,
     http_method: &hyper::Method,
     request_body: Option<&str>,
     resource_type: ResourceType,
     resource_link: &str,
-    headers_func: F,
 ) -> hyper::client::Request {
     let time = format!("{}", chrono::Utc::now().format(TIME_FORMAT));
 
-    let sig = {
-        generate_authorization(
-            authorization_token,
-            http_method,
-            resource_type,
-            resource_link,
-            &time,
-        )
-    };
-    prepare_request_with_signature(uri, http_method, request_body, time, sig, headers_func)
+    let sig =
+        { generate_authorization(auth_token, http_method, resource_type, resource_link, &time) };
+    prepare_request_with_signature(uri, http_method, request_body, time, sig)
 }
 
 #[inline]
-fn prepare_request_with_signature<F: FnOnce(&mut Headers)>(
+fn prepare_request_with_signature(
     uri: hyper::Uri,
     http_method: &hyper::Method,
     request_body: Option<&str>,
     time: String,
     signature: String,
-    headers_func: F,
 ) -> hyper::client::Request {
     trace!("prepare_request::auth == {:?}", signature);
     let mut request = hyper::Request::new(http_method.clone(), uri);
-
-    // This will give the caller the ability to add custom headers.
-    // The closure is needed to because request.headers_mut().set_raw(...) requires
-    // a Cow with 'static lifetime...
     {
         let headers = request.headers_mut();
-        headers_func(headers);
-
         headers.set(XMSDate(time));
-        headers.set(XMSVersion(AZURE_VERSION.to_owned()));
+        headers.set(XMSVersion::new(AZURE_VERSION));
         headers.set(Authorization(signature));
     }
-
     trace!("prepare_request::headers == {:?}", request.headers());
 
     if let Some(body) = request_body {
-        request.headers_mut().set(ContentLength(body.len() as u64));
+        request
+            .headers_mut()
+            .set(hyper::header::ContentLength(body.len() as u64));
         request.set_body(body.to_string());
     }
 
@@ -1376,7 +789,7 @@ fn prepare_request_with_signature<F: FnOnce(&mut Headers)>(
 }
 
 fn generate_authorization(
-    authorization_token: &AuthorizationToken,
+    auth_token: &AuthorizationToken,
     http_method: &hyper::Method,
     resource_type: ResourceType,
     resource_link: &str,
@@ -1390,12 +803,12 @@ fn generate_authorization(
 
     let str_unencoded = format!(
         "type={}&ver={}&sig={}",
-        match authorization_token.token_type() {
+        match auth_token.token_type() {
             TokenType::Master => "master",
             TokenType::Resource => "resource",
         },
         VERSION,
-        encode_str_to_sign(&string_to_sign, authorization_token)
+        encode_str_to_sign(&string_to_sign, auth_token)
     );
 
     trace!(
@@ -1406,8 +819,8 @@ fn generate_authorization(
     utf8_percent_encode(&str_unencoded, COMPLETE_ENCODE_SET).collect::<String>()
 }
 
-fn encode_str_to_sign(str_to_sign: &str, authorization_token: &AuthorizationToken) -> String {
-    let key = hmac::SigningKey::new(&SHA256, authorization_token.binary_form());
+fn encode_str_to_sign(str_to_sign: &str, auth_token: &AuthorizationToken) -> String {
+    let key = hmac::SigningKey::new(&SHA256, auth_token.key());
     let sig = hmac::sign(&key, str_to_sign.as_bytes());
     base64::encode(sig.as_ref())
 }
@@ -1473,14 +886,8 @@ fn generate_resource_link(u: &hyper::Uri) -> &str {
     &p[1..]
 }
 
-#[inline]
-fn get_query_content_type() -> Mime {
-    "application/query+json".parse().unwrap()
-}
-
 #[cfg(test)]
 mod tests {
-    use azure::cosmos::authorization_token;
     use azure::cosmos::client::*;
     use hyper::Uri;
 
@@ -1515,15 +922,14 @@ mon, 01 jan 1900 01:00:00 gmt
         let time = time.with_timezone(&chrono::Utc);
         let time = format!("{}", time.format(TIME_FORMAT));
 
-        let authorization_token = authorization_token::AuthorizationToken::new(
+        let auth_token = AuthorizationToken::new(
             "mindflavor".to_owned(),
-            authorization_token::TokenType::Master,
-            "8F8xXXOptJxkblM1DBXW7a6NMI5oE8NnwPGYBmwxLCKfejOK7B7yhcCHMGvN3PBrlMLIOeol1Hv9RCdzAZR5sg=="
-                .to_owned(),
+            TokenType::Master,
+            "8F8xXXOptJxkblM1DBXW7a6NMI5oE8NnwPGYBmwxLCKfejOK7B7yhcCHMGvN3PBrlMLIOeol1Hv9RCdzAZR5sg==",
         ).unwrap();
 
         let ret = generate_authorization(
-            &authorization_token,
+            &auth_token,
             &hyper::Method::Get,
             ResourceType::Databases,
             "dbs/MyDatabase/colls/MyCollection",
@@ -1542,14 +948,14 @@ mon, 01 jan 1900 01:00:00 gmt
         let time = time.with_timezone(&chrono::Utc);
         let time = format!("{}", time.format(TIME_FORMAT));
 
-        let authorization_token = authorization_token::AuthorizationToken::new(
+        let auth_token = AuthorizationToken::new(
             "mindflavor".to_owned(),
-            authorization_token::TokenType::Master,
-            "dsZQi3KtZmCv1ljt3VNWNm7sQUF1y5rJfC6kv5JiwvW0EndXdDku/dkKBp8/ufDToSxL".to_owned(),
+            TokenType::Master,
+            "dsZQi3KtZmCv1ljt3VNWNm7sQUF1y5rJfC6kv5JiwvW0EndXdDku/dkKBp8/ufDToSxL",
         ).unwrap();
 
         let ret = generate_authorization(
-            &authorization_token,
+            &auth_token,
             &hyper::Method::Get,
             ResourceType::Databases,
             "dbs/ToDoList",

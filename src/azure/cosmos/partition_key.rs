@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use azure::core::errors::AzureError;
 use serde_json;
 use smallvec::{IntoIter, SmallVec};
@@ -5,7 +6,7 @@ use std::iter::IntoIterator;
 
 #[derive(Debug, Clone)]
 pub struct PartitionKey<'a> {
-    pk: Option<SmallVec<[&'a str; 2]>>,
+    pk: Option<SmallVec<[Cow<'a, str>; 2]>>,
 }
 
 impl<'a> PartitionKey<'a> {
@@ -13,10 +14,14 @@ impl<'a> PartitionKey<'a> {
         PartitionKey { pk: None }
     }
 
-    pub fn push(&mut self, key: &'a str) {
+    pub fn push<S: Into<Cow<'a, str>>>(&mut self, key: S) {
         match self.pk {
-            Some(ref mut p) => p.push(key),
-            None => self.pk = Some(smallvec![key]),
+            Some(ref mut p) => p.push(key.into()),
+            None => self.pk = {
+                let mut vec = SmallVec::new();
+                vec.push(key.into());
+                Some(vec)
+            }
         }
     }
 
@@ -35,27 +40,36 @@ impl<'a> ::std::default::Default for PartitionKey<'a> {
     }
 }
 
-//impl<'a> Serialize for PartitionKey<'a> {
-//    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-//    where
-//        S: Serializer,
-//    {
-//        match self.pk {
-//            // the partition key should be a json formatted string list
-//            Some(val) => serializer.serialize_seq(val)?,
-//            None => S::Ok,
-//        }
-//    }
-//}
-
 impl<'a> IntoIterator for PartitionKey<'a> {
-    type Item = &'a str;
-    type IntoIter = IntoIter<[&'a str; 2]>;
+    type Item = Cow<'a, str>;
+    type IntoIter = IntoIter<[Cow<'a, str>; 2]>;
 
     fn into_iter(self) -> Self::IntoIter {
         match self.pk {
             Some(p) => p.into_iter(),
             None => SmallVec::new().into_iter(),
         }
+    }
+}
+
+impl<'a> From<&'a str> for PartitionKey<'a> {
+    fn from(v: &'a str) -> PartitionKey<'a> {
+        let mut key = PartitionKey::new();
+        key.push(v);
+        key
+    }
+}
+
+impl<'a> From<&'a String> for PartitionKey<'a> {
+    fn from(v: &'a String) -> PartitionKey<'a> {
+        v.as_str().into()
+    }
+}
+
+impl<'a> From<String> for PartitionKey<'a> {
+    fn from(v: String) -> PartitionKey<'a> {
+        let mut key = PartitionKey::new();
+        key.push(v);
+        key
     }
 }

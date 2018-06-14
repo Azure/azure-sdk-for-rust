@@ -168,12 +168,9 @@ fn code() -> Result<(), Box<Error>> {
     // Notice how easy it is! :)
     // The method create_document will return, upon success,
     // the document attributes.
-    let document_attributes = core.run(client.create_document(
-        &database,
-        &collection,
-        &CreateDocumentOptions::default(),
-        &doc,
-    ))?;
+    let document_attributes = core.run(
+        client.create_document(&database, &collection, &doc).unwrap()
+    )?;
     println!("document_attributes == {:?}", document_attributes);
 
     // We will perform some cleanup. First we delete the collection...
@@ -256,6 +253,8 @@ If you want to contribute please do! No formality required! :wink:. Please note 
 | List documents     | [https://docs.microsoft.com/en-us/rest/api/documentdb/list-documents](https://docs.microsoft.com/en-us/rest/api/documentdb/list-documents)             |
 | Get document       | [https://docs.microsoft.com/en-us/rest/api/documentdb/get-a-document](https://docs.microsoft.com/en-us/rest/api/documentdb/get-a-document)             |
 | Query documents    | [https://docs.microsoft.com/en-us/rest/api/documentdb/query-documents](https://docs.microsoft.com/en-us/rest/api/documentdb/query-documents)	      |
+| Replace document   | [https://docs.microsoft.com/en-us/rest/api/cosmos-db/replace-a-document](https://docs.microsoft.com/en-us/rest/api/cosmos-db/replace-a-document)	      |
+| Delete document    | [https://docs.microsoft.com/en-us/rest/api/cosmos-db/delete-a-document](https://docs.microsoft.com/en-us/rest/api/cosmos-db/delete-a-document)	      |
 
 #### Azure tables
 

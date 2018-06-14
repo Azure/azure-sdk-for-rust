@@ -44,7 +44,7 @@ fn code() -> Result<(), Box<Error>> {
     // unexpected result (ie NotFound instead of Ok) we return an Err telling
     // you that.
     let authorization_token =
-        AuthorizationToken::new(account.clone(), TokenType::Master, master_key)?;
+        AuthorizationToken::new(account.clone(), TokenType::Master, &master_key)?;
 
     // Once we have an authorization token you can create a client instance. You can change the
     // authorization token at later time if you need, for example, to escalate the privileges for a
