@@ -35,12 +35,11 @@ fn code() -> Result<(), Box<Error>> {
     let mut core = Core::new()?;
 
     let mut client = Client::new(
-        core.handle(),
-        &service_bus_namespace,
-        &event_hub_name,
-        &policy_name,
-        &policy_key,
-    );
+        service_bus_namespace,
+        event_hub_name,
+        policy_name,
+        policy_key,
+    ).unwrap();
 
     let messages = vec![
         "These", "are", "useless", "messages", "provided", "for", "free", "with", "love",

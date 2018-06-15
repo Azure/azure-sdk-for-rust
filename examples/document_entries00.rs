@@ -62,7 +62,7 @@ fn code() -> Result<(), Box<Error>> {
 
     let mut core = Core::new()?;
 
-    let client = Client::new(&core.handle(), authorization_token)?;
+    let client = Client::new(authorization_token)?;
 
     core.run(
         futures::future::join_all((0..5).map(|i| {
@@ -76,7 +76,6 @@ fn code() -> Result<(), Box<Error>> {
             // let's add an entity. we ignore the errors at this point and just
             // notify the user.
             client.create_document(&database_name, &collection_name, &doc)
-                .unwrap()
                 .partition_key(doc.id)
                 .execute()
         }))
@@ -86,8 +85,7 @@ fn code() -> Result<(), Box<Error>> {
     // let's get 3 entries at a time
     let response = core.run(
         client.list_documents(&database_name, &collection_name)
-            .unwrap()
-            .max_item_count(3)
+            .max_item_count(3u64)
             .execute::<MySampleStructOwned>()
     ).unwrap();
 
@@ -106,7 +104,6 @@ fn code() -> Result<(), Box<Error>> {
 
     let response = core.run(
         client.list_documents(&database_name, &collection_name)
-            .unwrap()
             .continuation_token(ct)
             .execute::<MySampleStructOwned>()
     ).unwrap();
@@ -126,7 +123,6 @@ fn code() -> Result<(), Box<Error>> {
 
     let response = core.run(
         client.get_document(&database_name, &collection_name, &id)
-            .unwrap()
             .partition_key(&id)
             .execute::<MySampleStructOwned>()
     ).unwrap();
@@ -138,7 +134,6 @@ fn code() -> Result<(), Box<Error>> {
 
     let _response = core.run(
         client.replace_document(&database_name, &collection_name, &doc)
-            .unwrap()
             .partition_key(&id)
             .if_match(doc.document_attributes.etag) // use optimistic concurrency check
             .execute()
@@ -150,7 +145,6 @@ fn code() -> Result<(), Box<Error>> {
 
     let response = core.run(
         client.get_document(&database_name, &collection_name, &id)
-            .unwrap()
             .partition_key(&id)
             .execute::<MySampleStructOwned>()
     ).unwrap();
@@ -162,7 +156,6 @@ fn code() -> Result<(), Box<Error>> {
         futures::future::join_all((0..5).map(|i| {
             let id = format!("unique_id{}", i);
             client.delete_document(&database_name, &collection_name, &id)
-                .unwrap()
                 .partition_key(&id)
                 .execute()
         }))

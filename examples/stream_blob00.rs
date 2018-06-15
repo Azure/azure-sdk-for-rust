@@ -10,7 +10,6 @@ use azure_sdk_for_rust::storage::blob::{Blob, BlobType, PUT_OPTIONS_DEFAULT};
 use azure_sdk_for_rust::storage::client::Client;
 use futures::future::ok;
 use futures::prelude::*;
-use hyper::mime::Mime;
 use tokio_core::reactor::Core;
 
 // This example shows how to stream data from a blob. We will create a simple blob first, the we
@@ -37,7 +36,7 @@ fn code() -> Result<(), Box<std::error::Error>> {
         .expect("please specify container name as first command line parameter");
 
     let mut reactor = Core::new()?;
-    let client = Client::new(&reactor.handle(), &account, &master_key)?;
+    let client = Client::new(&account, &master_key)?;
 
     let string = "0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF";
 
@@ -48,7 +47,7 @@ fn code() -> Result<(), Box<std::error::Error>> {
         last_modified: chrono::Utc::now(),
         etag: "".to_owned(),
         content_length: string.len() as u64,
-        content_type: Some("text/plain".parse::<Mime>().unwrap()),
+        content_type: Some("text/plain".to_owned()),
         content_encoding: None,
         content_language: None,
         content_md5: None,

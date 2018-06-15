@@ -1,5 +1,7 @@
 use azure::core::{
-    errors::{check_status_extract_body, AzureError}, COMPLETE_ENCODE_SET,
+    errors::{check_status_extract_body, AzureError},
+    COMPLETE_ENCODE_SET,
+    util::RequestBuilderExt
 };
 
 use super::{
@@ -12,16 +14,15 @@ use super::{
 };
 
 use base64;
-use hyper::{self, StatusCode};
+use http::request::Builder as RequestBuilder;
+use hyper::{self, StatusCode, header::{self, HeaderValue}};
 use ring::{digest::SHA256, hmac};
 use serde::{de::DeserializeOwned, Serialize};
 use serde_json;
-use std::{rc::Rc, str::FromStr};
+use std::sync::Arc;
 
 use chrono;
 use hyper_tls::HttpsConnector;
-use native_tls;
-use tokio_core;
 use url::percent_encoding::utf8_percent_encode;
 
 use futures::future::*;
@@ -31,28 +32,21 @@ const VERSION: &str = "1.0";
 const TIME_FORMAT: &str = "%a, %d %h %Y %T GMT";
 
 pub(crate) mod headers {
-    use azure::core::incompletevector::ContinuationToken;
-    use azure::cosmos::{ConsistencyLevel, document::IndexingDirective};
-
-    header! { (XMSVersion, "x-ms-version") => Cow[str] }
-    header! { (XMSDate, "x-ms-date") => [String] }
-    header! { (Authorization, "Authorization") => [String] }
-    header! { (OfferThroughput, "x-ms-offer-throughput") => [u64] }
-    header! { (DocumentIsUpsert, "x-ms-documentdb-is-upsert") => [bool] }
-    header! { (DocumentIndexingDirective, "x-ms-indexing-directive	") => [IndexingDirective] }
-    header! { (MaxItemCount, "x-ms-max-item-count") => [u64] }
-    header! { (ContinuationTokenHeader, "x-ms-continuation") => [ContinuationToken] }
-    header! { (ConsistencyLevelHeader, "x-ms-consistency-level") => [ConsistencyLevel] }
-    header! { (SessionTokenHeader, "x-ms-session-token") => [ContinuationToken] }
-    header! { (AIM, "A-IM") => Cow[str] }
-    header! { (IfNoneMatch, "If-None-Match") => [String] }
-    header! { (IfMatch, "If-Match") => [String] }
-    header! { (PartitionRangeId, "x-ms-documentdb-partitionkeyrangeid") => [String] }
-    header! { (Charge, "x-ms-request-charge") => [f64] }
-    header! { (Etag, "etag") => [String] }
-    header! { (CosmosDBPartitionKey, "x-ms-documentdb-partitionkey") => [String] }
-    header! { (DocumentDBIsQuery, "x-ms-documentdb-isquery") => [bool] }
-    header! { (DocumentDBQueryEnableCrossPartition, "x-ms-documentdb-query-enablecrosspartition") => [bool] }
+    pub const HEADER_VERSION: &str = "x-ms-version"; // Cow[str]
+    pub const HEADER_DATE: &str = "x-ms-date"; // [String]
+    pub const HEADER_OFFER_THROUGHPUT: &str = "x-ms-offer-throughput"; // [u64]
+    pub const HEADER_DOCUMENTDB_IS_UPSERT: &str = "x-ms-documentdb-is-upsert"; // [bool]
+    pub const HEADER_INDEXING_DIRECTIVE: &str = "x-ms-indexing-directive"; // [IndexingDirective]
+    pub const HEADER_MAX_ITEM_COUNT: &str = "x-ms-max-item-count"; // [u64]
+    pub const HEADER_CONTINUATION: &str = "x-ms-continuation"; // [ContinuationToken]
+    pub const HEADER_CONSISTENCY_LEVEL: &str = "x-ms-consistency-level"; // [ConsistencyLevel]
+    pub const HEADER_SESSION_TOKEN: &str = "x-ms-session-token"; // [ContinuationToken]
+    pub const HEADER_A_IM: &str = "A-IM"; // Cow[str]
+    pub const HEADER_DOCUMENTDB_PARTITIONRANGEID: &str = "x-ms-documentdb-partitionkeyrangeid"; // [String]
+    pub const HEADER_REQUEST_CHARGE: &str = "x-ms-request-charge"; // [f64]
+    pub const HEADER_DOCUMENTDB_PARTITIONKEY: &str = "x-ms-documentdb-partitionkey"; // [String]
+    pub const HEADER_DOCUMENTDB_ISQUERY: &str = "x-ms-documentdb-isquery"; // [bool]
+    pub const HEADER_DOCUMENTDB_QUERY_ENABLECROSSPARTITION: &str = "x-ms-documentdb-query-enablecrosspartition"; // [bool]
 }
 use self::headers::*;
 
@@ -64,21 +58,19 @@ enum ResourceType {
 }
 
 pub struct Client {
-    hyper_client: Rc<hyper::Client<HttpsConnector<hyper::client::HttpConnector>>>,
+    hyper_client: Arc<hyper::Client<HttpsConnector<hyper::client::HttpConnector>>>,
     auth_token: AuthorizationToken,
 }
 
 impl Client {
     pub fn new(
-        handle: &tokio_core::reactor::Handle,
         auth_token: AuthorizationToken,
-    ) -> Result<Client, native_tls::Error> {
-        let client = hyper::Client::configure()
-            .connector(HttpsConnector::new(4, handle)?)
-            .build(handle);
+    ) -> Result<Client, AzureError> {
+        let client = hyper::Client::builder()
+            .build(HttpsConnector::new(4)?);
 
         Ok(Client {
-            hyper_client: Rc::new(client),
+            hyper_client: Arc::new(client),
             auth_token,
         })
     }
@@ -87,22 +79,16 @@ impl Client {
         self.auth_token = at;
     }
 
-    fn list_databases_create_request(&self) -> Result<hyper::client::FutureResponse, AzureError> {
-        let uri = hyper::Uri::from_str(&format!(
-            "https://{}.documents.azure.com/dbs",
-            &self.auth_token.account()
-        ))?;
-
+    fn list_databases_create_request(&self) -> Result<hyper::client::ResponseFuture, AzureError> {
         // No specific headers are required, list databases only needs standard headers
         // which will be provied by perform_request. This is handled by passing an
         // empty closure.
-        let request = prepare_request(
-            &self.auth_token,
-            uri,
-            &hyper::Method::Get,
-            None,
+        let request = self.prepare_request(
+            "dbs",
+            hyper::Method::GET,
             ResourceType::Databases,
-        );
+        )
+        .body(hyper::Body::empty())?;
 
         trace!("request prepared");
 
@@ -118,7 +104,7 @@ impl Client {
         let req = self.list_databases_create_request();
 
         done(req).from_err().and_then(move |future_response| {
-            check_status_extract_body(future_response, StatusCode::Ok).and_then(move |body| {
+            check_status_extract_body(future_response, StatusCode::OK).and_then(move |body| {
                 done(serde_json::from_str::<ListDatabasesResponse>(&body))
                     .from_err()
                     .and_then(move |response| ok(response.databases))
@@ -130,23 +116,16 @@ impl Client {
     fn list_collections_create_request(
         &self,
         database_name: &str,
-    ) -> Result<hyper::client::FutureResponse, AzureError> {
-        let uri = hyper::Uri::from_str(&format!(
-            "https://{}.documents.azure.com/dbs/{}/colls",
-            self.auth_token.account(),
-            database_name
-        ))?;
-
+    ) -> Result<hyper::client::ResponseFuture, AzureError> {
         // No specific headers are required, list collections only needs standard headers
         // which will be provied by perform_request. This is handled by passing an
         // empty closure.
-        let request = prepare_request(
-            &self.auth_token,
-            uri,
-            &hyper::Method::Get,
-            None,
+        let request = self.prepare_request(
+            &format!("dbs/{}/colls", database_name),
+            hyper::Method::GET,
             ResourceType::Collections,
-        );
+        )
+        .body(hyper::Body::empty())?;
 
         trace!("request prepared");
 
@@ -162,7 +141,7 @@ impl Client {
         let req = self.list_collections_create_request(database_name);
 
         done(req).from_err().and_then(move |future_response| {
-            check_status_extract_body(future_response, StatusCode::Ok).and_then(move |body| {
+            check_status_extract_body(future_response, StatusCode::OK).and_then(move |body| {
                 done(serde_json::from_str::<ListCollectionsResponse>(&body))
                     .from_err()
                     .and_then(|database_response| ok(database_response.collections))
@@ -174,22 +153,16 @@ impl Client {
     fn create_database_create_request(
         &self,
         database_name: &str,
-    ) -> Result<hyper::client::FutureResponse, AzureError> {
-        let uri = hyper::Uri::from_str(&format!(
-            "https://{}.documents.azure.com/dbs",
-            self.auth_token.account()
-        ))?;
-
+    ) -> Result<hyper::client::ResponseFuture, AzureError> {
         let req = CreateDatabaseRequest { id: database_name };
         let req = serde_json::to_string(&req)?;
 
-        let request = prepare_request(
-            &self.auth_token,
-            uri,
-            &hyper::Method::Post,
-            Some(&req),
+        let request = self.prepare_request(
+            "dbs",
+            hyper::Method::POST,
             ResourceType::Databases,
-        );
+        )
+        .body(req.into())?; // todo: set content-length here and elsewhere without builders
 
         trace!("request prepared");
 
@@ -208,7 +181,7 @@ impl Client {
         let req = self.create_database_create_request(database_name);
 
         done(req).from_err().and_then(move |future_response| {
-            check_status_extract_body(future_response, StatusCode::Created)
+            check_status_extract_body(future_response, StatusCode::CREATED)
                 .and_then(move |body| done(serde_json::from_str::<Database>(&body)).from_err())
         })
     }
@@ -217,22 +190,14 @@ impl Client {
     fn get_database_create_request(
         &self,
         database_name: &str,
-    ) -> Result<hyper::client::FutureResponse, AzureError> {
-        let uri = hyper::Uri::from_str(&format!(
-            "https://{}.documents.azure.com/dbs/{}",
-            self.auth_token.account(),
-            database_name
-        ))?;
-
+    ) -> Result<hyper::client::ResponseFuture, AzureError> {
         // No specific headers are required, get database only needs standard headers
         // which will be provied by perform_request
-        let request = prepare_request(
-            &self.auth_token,
-            uri,
-            &hyper::Method::Get,
-            None,
+        let request = self.prepare_request(
+            &format!("dbs/{}", database_name),
+            hyper::Method::GET,
             ResourceType::Databases,
-        );
+        ).body(hyper::Body::empty())?;
 
         trace!("request prepared");
 
@@ -248,7 +213,7 @@ impl Client {
         let req = self.get_database_create_request(database_name);
 
         done(req).from_err().and_then(move |future_response| {
-            check_status_extract_body(future_response, StatusCode::Ok)
+            check_status_extract_body(future_response, StatusCode::OK)
                 .and_then(move |body| done(serde_json::from_str::<Database>(&body)).from_err())
         })
     }
@@ -257,22 +222,14 @@ impl Client {
     fn delete_database_create_request(
         &self,
         database_name: &str,
-    ) -> Result<hyper::client::FutureResponse, AzureError> {
-        let uri = hyper::Uri::from_str(&format!(
-            "https://{}.documents.azure.com/dbs/{}",
-            self.auth_token.account(),
-            database_name
-        ))?;
-
+    ) -> Result<hyper::client::ResponseFuture, AzureError> {
         // No specific headers are required, delete database only needs standard headers
         // which will be provied by perform_request
-        let request = prepare_request(
-            &self.auth_token,
-            uri,
-            &hyper::Method::Delete,
-            None,
+        let request = self.prepare_request(
+            &format!("dbs/{}", database_name),
+            hyper::Method::DELETE,
             ResourceType::Databases,
-        );
+        ).body(hyper::Body::empty())?;
 
         trace!("request prepared");
 
@@ -291,7 +248,7 @@ impl Client {
         let req = self.delete_database_create_request(database_name);
 
         done(req).from_err().and_then(move |future_response| {
-            check_status_extract_body(future_response, StatusCode::NoContent).and_then(|_| ok(()))
+            check_status_extract_body(future_response, StatusCode::NO_CONTENT).and_then(|_| ok(()))
         })
     }
 
@@ -300,23 +257,14 @@ impl Client {
         &self,
         database_name: &str,
         collection_name: &str,
-    ) -> Result<hyper::client::FutureResponse, AzureError> {
-        let uri = hyper::Uri::from_str(&format!(
-            "https://{}.documents.azure.com/dbs/{}/colls/{}",
-            self.auth_token.account(),
-            database_name,
-            collection_name
-        ))?;
-
+    ) -> Result<hyper::client::ResponseFuture, AzureError> {
         // No specific headers are required, get database only needs standard headers
         // which will be provied by perform_request
-        let request = prepare_request(
-            &self.auth_token,
-            uri,
-            &hyper::Method::Get,
-            None,
+        let request = self.prepare_request(
+            &format!("dbs/{}/colls/{}", database_name, collection_name),
+            hyper::Method::GET,
             ResourceType::Collections,
-        );
+        ).body(hyper::Body::empty())?;
 
         trace!("request prepared");
 
@@ -337,7 +285,7 @@ impl Client {
         let req = self.get_collection_create_request(database_name, collection_name);
 
         done(req).from_err().and_then(move |future_response| {
-            check_status_extract_body(future_response, StatusCode::Ok)
+            check_status_extract_body(future_response, StatusCode::OK)
                 .and_then(move |body| done(serde_json::from_str::<Collection>(&body)).from_err())
         })
     }
@@ -348,29 +296,20 @@ impl Client {
         database_name: &str,
         required_throughput: u64,
         collection: &Collection,
-    ) -> Result<hyper::client::FutureResponse, AzureError> {
-        let uri = hyper::Uri::from_str(&format!(
-            "https://{}.documents.azure.com/dbs/{}/colls",
-            self.auth_token.account(),
-            database_name
-        ))?;
-
+    ) -> Result<hyper::client::ResponseFuture, AzureError> {
         // Headers added as per
         // https://docs.microsoft.com/en-us/rest/api/documentdb/create-a-collection
         // Standard headers (auth and version) will be provied by perform_request
         let collection_serialized = serde_json::to_string(collection)?;
         trace!("collection_serialized == {}", collection_serialized);
 
-        let mut request = prepare_request(
-            &self.auth_token,
-            uri,
-            &hyper::Method::Post,
-            Some(&collection_serialized),
+        let mut request = self.prepare_request(
+            &format!("dbs/{}/colls", database_name),
+            hyper::Method::POST,
             ResourceType::Collections,
         );
-        request
-            .headers_mut()
-            .set(OfferThroughput(required_throughput));
+        request.header_formatted(HEADER_OFFER_THROUGHPUT, required_throughput);
+        let request = request.body(collection_serialized.into())?;
 
         trace!("request prepared");
 
@@ -395,7 +334,7 @@ impl Client {
             self.create_collection_create_request(database_name, required_throughput, collection);
 
         done(req).from_err().and_then(move |future_response| {
-            check_status_extract_body(future_response, StatusCode::Created)
+            check_status_extract_body(future_response, StatusCode::CREATED)
                 .and_then(move |body| done(serde_json::from_str::<Collection>(&body)).from_err())
         })
     }
@@ -405,23 +344,15 @@ impl Client {
         &self,
         database_name: &str,
         collection_name: &str,
-    ) -> Result<hyper::client::FutureResponse, AzureError> {
-        let uri = hyper::Uri::from_str(&format!(
-            "https://{}.documents.azure.com/dbs/{}/colls/{}",
-            self.auth_token.account(),
-            database_name,
-            collection_name
-        ))?;
-
+    ) -> Result<hyper::client::ResponseFuture, AzureError> {
         // No specific headers are required.
         // Standard headers (auth and version) will be provied by perform_request
-        let request = prepare_request(
-            &self.auth_token,
-            uri,
-            &hyper::Method::Delete,
-            None,
+        let request = self.prepare_request(
+            &format!("dbs/{}/colls/{}", database_name, collection_name),
+            hyper::Method::DELETE,
             ResourceType::Collections,
-        );
+        )
+        .body(hyper::Body::empty())?;
 
         trace!("request prepared");
 
@@ -442,7 +373,7 @@ impl Client {
         let req = self.delete_collection_create_request(database_name, collection_name);
 
         done(req).from_err().and_then(move |future_response| {
-            check_status_extract_body(future_response, StatusCode::NoContent).and_then(|_| ok(()))
+            check_status_extract_body(future_response, StatusCode::NO_CONTENT).and_then(|_| ok(()))
         })
     }
 
@@ -451,25 +382,18 @@ impl Client {
         &self,
         database_name: &str,
         collection: &str,
-    ) -> Result<hyper::client::FutureResponse, AzureError> {
-        let uri = hyper::Uri::from_str(&format!(
-            "https://{}.documents.azure.com/dbs/{}/colls",
-            self.auth_token.account(),
-            database_name
-        ))?;
-
+    ) -> Result<hyper::client::ResponseFuture, AzureError> {
         // No specific headers are required.
         // Standard headers (auth and version) will be provied by perform_request
         let collection_serialized = serde_json::to_string(collection)?;
         trace!("collection_serialized == {}", collection_serialized);
 
-        let request = prepare_request(
-            &self.auth_token,
-            uri,
-            &hyper::Method::Put,
-            Some(&collection_serialized),
+        let request = self.prepare_request(
+            &format!("dbs/{}/colls", database_name),
+            hyper::Method::PUT,
             ResourceType::Collections,
-        );
+        )
+        .body(collection_serialized.into())?;
 
         trace!("request prepared");
 
@@ -486,36 +410,32 @@ impl Client {
         let req = self.replace_collection_prepare_request(database_name, collection);
 
         done(req).from_err().and_then(move |future_response| {
-            check_status_extract_body(future_response, StatusCode::Created)
+            check_status_extract_body(future_response, StatusCode::CREATED)
                 .and_then(move |body| done(serde_json::from_str::<Collection>(&body)).from_err())
         })
     }
 
     #[inline]
-    fn create_document_as_str_create_request<S: AsRef<str>>(
+    fn create_document_as_str_create_request(
         &self,
         database: &str,
         collection: &str,
-        document_str: S,
-    ) -> Result<hyper::Request, AzureError> {
-        let uri = hyper::Uri::from_str(&format!(
-            "https://{}.documents.azure.com/dbs/{}/colls/{}/docs",
-            self.auth_token.account(),
+    ) -> RequestBuilder {
+        let uri = format!(
+            "dbs/{}/colls/{}/docs",
             database,
             collection
-        ))?;
+        );
 
-        let request = prepare_request(
-            &self.auth_token,
-            uri,
-            &hyper::Method::Post,
-            Some(document_str.as_ref()),
+        let request = self.prepare_request(
+            &uri,
+            hyper::Method::POST,
             ResourceType::Documents,
         );
 
         trace!("request prepared");
 
-        Ok(request)
+        request
     }
 
     pub fn create_document_as_str<T, S1, S2, S3>(
@@ -523,33 +443,34 @@ impl Client {
         database: S1,
         collection: S2,
         document: S3,
-    ) -> Result<CreateDocumentRequest, AzureError>
+    ) -> CreateDocumentRequest
     where
         T: Serialize,
         S1: AsRef<str>,
         S2: AsRef<str>,
-        S3: AsRef<str>,
+        S3: Into<String>,
     {
         let database = database.as_ref();
         let collection = collection.as_ref();
+        let document = document.into();
 
         trace!(
             "create_document_as_str called(database == {}, collection == {}, document = {}",
             database,
             collection,
-            document.as_ref()
+            document,
         );
 
-        let req = self.create_document_as_str_create_request(database, collection, document)?;
-        Ok(CreateDocumentRequest::new(self.hyper_client.clone(), req))
+        let req = self.create_document_as_str_create_request(database, collection);
+        CreateDocumentRequest::new(self.hyper_client.clone(), req, Ok(document))
     }
 
     pub fn create_document<T, S1, S2>(
         &self,
-        database: &S1,
-        collection: &S2,
+        database: S1,
+        collection: S2,
         document: &T,
-    ) -> Result<CreateDocumentRequest, AzureError>
+    ) -> CreateDocumentRequest
     where
         T: Serialize,
         S1: AsRef<str>,
@@ -557,23 +478,23 @@ impl Client {
     {
         let db = database.as_ref();
         let coll = collection.as_ref();
-        let document_serialized = serde_json::to_string(document)?;
+        let document_serialized = serde_json::to_string(document);
         trace!(
-            "create_document_as called(database == {}, collection == {}, document = {}",
+            "create_document_as called(database == {}, collection == {}, document = {:?}",
             db,
             coll,
             document_serialized
         );
-        let req = self.create_document_as_str_create_request(db, coll, &document_serialized)?;
-        Ok(CreateDocumentRequest::new(self.hyper_client.clone(), req))
+        let req = self.create_document_as_str_create_request(db, coll);
+        CreateDocumentRequest::new(self.hyper_client.clone(), req, document_serialized)
     }
 
     pub fn delete_document<D: AsRef<str>, C: AsRef<str>, Dc: AsRef<str>>(
         &self,
-        database_id: &D,
-        collection_id: &C,
-        document_id: &Dc,
-    ) -> Result<DeleteDocumentRequest, AzureError> {
+        database_id: D,
+        collection_id: C,
+        document_id: Dc,
+    ) -> DeleteDocumentRequest {
         trace!(
             "delete_document called (db_id == {}, collection_id == {}, doc_id = {}",
             database_id.as_ref(),
@@ -582,21 +503,18 @@ impl Client {
         );
 
         let uri = format!(
-            "https://{}.documents.azure.com/dbs/{}/colls/{}/docs/{}",
-            self.auth_token.account(),
+            "dbs/{}/colls/{}/docs/{}",
             database_id.as_ref(),
             collection_id.as_ref(),
             document_id.as_ref()
-        ).parse()?;
+        );
 
-        let req = prepare_request(
-            &self.auth_token,
-            uri,
-            &hyper::Method::Delete,
-            None,
+        let req = self.prepare_request(
+            &uri,
+            hyper::Method::DELETE,
             ResourceType::Documents,
         );
-        Ok(DeleteDocumentRequest::new(self.hyper_client.clone(), req))
+        DeleteDocumentRequest::new(self.hyper_client.clone(), req)
     }
 
     pub fn replace_document<D: AsRef<str>, C: AsRef<str>, T: Serialize + DeserializeOwned>(
@@ -604,72 +522,55 @@ impl Client {
         database_id: D,
         collection_id: C,
         document: &Document<T>,
-    ) -> Result<ReplaceDocumentRequest<T>, AzureError> {
-        let document_serialized = serde_json::to_string(&document.entity)?;
+    ) -> ReplaceDocumentRequest<T> {
+        let document_serialized = serde_json::to_string(&document.entity);
 
         trace!(
-            "replace_document called(db_id == {}, collection == {}, document == {}",
+            "replace_document called(db_id == {}, collection == {}, document == {:?}",
             database_id.as_ref(),
             collection_id.as_ref(),
             document_serialized,
         );
 
-        let uri = hyper::Uri::from_str(&format!(
-            "https://{}.documents.azure.com/{}",
-            self.auth_token.account(),
-            document.document_attributes._self
-        ))?;
-
-        let req = prepare_request_with_resource_link(
-            &self.auth_token,
-            uri,
-            &hyper::Method::Put,
-            Some(&document_serialized),
+        let req = self.prepare_request_with_resource_link(
+            &document.document_attributes._self,
+            hyper::Method::PUT,
             ResourceType::Documents,
             &document.document_attributes.rid.to_lowercase(),
         );
 
-        Ok(ReplaceDocumentRequest::new(self.hyper_client.clone(), req))
+        ReplaceDocumentRequest::new(self.hyper_client.clone(), req, document_serialized)
     }
 
     pub fn list_documents<S1: AsRef<str>, S2: AsRef<str>>(
         &self,
-        database: &S1,
-        collection: &S2,
-    ) -> Result<ListDocumentsRequest, AzureError> {
+        database: S1,
+        collection: S2,
+    ) -> ListDocumentsRequest {
         let database = database.as_ref();
         let collection = collection.as_ref();
 
         trace!(
-            "list-_documents called(database == {}, collection == {}",
+            "list_documents called(database == {}, collection == {}",
             database,
             collection
         );
 
-        let uri = hyper::Uri::from_str(&format!(
-            "https://{}.documents.azure.com/dbs/{}/colls/{}/docs",
-            self.auth_token.account(),
-            database,
-            collection
-        ))?;
-
-        let req = prepare_request(
-            &self.auth_token,
-            uri,
-            &hyper::Method::Get,
-            None,
+        let req = self.prepare_request(
+            &format!("dbs/{}/colls/{}/docs", database, collection),
+            hyper::Method::GET,
             ResourceType::Documents,
         );
 
-        Ok(ListDocumentsRequest::new(self.hyper_client.clone(), req))
+        ListDocumentsRequest::new(self.hyper_client.clone(), req)
     }
 
     pub fn get_document<S1, S2, S3>(
         &self,
-        database: &S1,
-        collection: &S2,
-        document_id: &S3,
-    ) -> Result<GetDocumentRequest, AzureError>
+        database: S1,
+        collection: S2,
+        document_id: S3,
+    ) -> GetDocumentRequest
     where
         S1: AsRef<str>,
         S2: AsRef<str>,
@@ -679,113 +580,83 @@ impl Client {
         let coll = collection.as_ref();
         let doc_id = document_id.as_ref();
 
-        let uri = hyper::Uri::from_str(&format!(
-            "https://{}.documents.azure.com/dbs/{}/colls/{}/docs/{}",
-            self.auth_token.account(),
-            db,
-            coll,
-            doc_id
-        ))?;
-
-        let req = prepare_request(
-            &self.auth_token,
-            uri,
-            &hyper::Method::Get,
-            None,
+        let req = self.prepare_request(
+            &format!("dbs/{}/colls/{}/docs/{}", db, coll, doc_id),
+            hyper::Method::GET,
             ResourceType::Documents,
         );
 
-        Ok(GetDocumentRequest::new(self.hyper_client.clone(), req))
+        GetDocumentRequest::new(self.hyper_client.clone(), req)
     }
 
     pub fn query_document<'b, S1: AsRef<str>, S2: AsRef<str>>(
         &self,
-        database: &S1,
-        collection: &S2,
+        database: S1,
+        collection: S2,
         query: &Query<'b>,
-    ) -> Result<QueryDocumentRequest, AzureError> {
+    ) -> QueryDocumentRequest {
         let database = database.as_ref();
         let collection = collection.as_ref();
 
-        let uri = hyper::Uri::from_str(&format!(
-            "https://{}.documents.azure.com/dbs/{}/colls/{}/docs",
-            self.auth_token.account(),
-            database,
-            collection,
-        ))?;
-
-        let query_json = serde_json::to_string(query)?;
-
-        let req = prepare_request(
-            &self.auth_token,
-            uri,
-            &hyper::Method::Post,
-            Some(&query_json),
+        let req = self.prepare_request(
+            &format!("dbs/{}/colls/{}/docs", database, collection),
+            hyper::Method::POST,
             ResourceType::Documents,
         );
-        Ok(QueryDocumentRequest::new(self.hyper_client.clone(), req))
+        let query_json = serde_json::to_string(query);
+        QueryDocumentRequest::new(self.hyper_client.clone(), req, query_json)
     }
-}
 
-#[inline]
-fn prepare_request(
-    auth_token: &AuthorizationToken,
-    uri: hyper::Uri,
-    http_method: &hyper::Method,
-    request_body: Option<&str>,
-    resource_type: ResourceType,
-) -> hyper::client::Request {
-    let time = format!("{}", chrono::Utc::now().format(TIME_FORMAT));
+    #[inline]
+    fn prepare_request(
+        &self,
+        uri_path: &str,
+        http_method: hyper::Method,
+        resource_type: ResourceType,
+    ) -> RequestBuilder {
+        let time = format!("{}", chrono::Utc::now().format(TIME_FORMAT));
 
-    let auth = {
-        let resource_link = generate_resource_link(&uri);
-        generate_authorization(auth_token, http_method, resource_type, resource_link, &time)
-    };
-    prepare_request_with_signature(uri, http_method, request_body, time, auth)
-}
-
-#[inline]
-fn prepare_request_with_resource_link(
-    auth_token: &AuthorizationToken,
-    uri: hyper::Uri,
-    http_method: &hyper::Method,
-    request_body: Option<&str>,
-    resource_type: ResourceType,
-    resource_link: &str,
-) -> hyper::client::Request {
-    let time = format!("{}", chrono::Utc::now().format(TIME_FORMAT));
-
-    let sig =
-        { generate_authorization(auth_token, http_method, resource_type, resource_link, &time) };
-    prepare_request_with_signature(uri, http_method, request_body, time, sig)
-}
-
-#[inline]
-fn prepare_request_with_signature(
-    uri: hyper::Uri,
-    http_method: &hyper::Method,
-    request_body: Option<&str>,
-    time: String,
-    signature: String,
-) -> hyper::client::Request {
-    trace!("prepare_request::auth == {:?}", signature);
-    let mut request = hyper::Request::new(http_method.clone(), uri);
-    {
-        let headers = request.headers_mut();
-        headers.set(XMSDate(time));
-        headers.set(XMSVersion::new(AZURE_VERSION));
-        headers.set(Authorization(signature));
+        let auth = {
+            let resource_link = generate_resource_link(&uri_path);
+            generate_authorization(&self.auth_token, &http_method, resource_type, resource_link, &time)
+        };
+        self.prepare_request_with_signature(uri_path, http_method, time, auth)
     }
-    trace!("prepare_request::headers == {:?}", request.headers());
 
-    if let Some(body) = request_body {
+    #[inline]
+    fn prepare_request_with_resource_link(
+        &self,
+        uri_path: &str,
+        http_method: hyper::Method,
+        resource_type: ResourceType,
+        resource_link: &str,
+    ) -> RequestBuilder {
+        let time = format!("{}", chrono::Utc::now().format(TIME_FORMAT));
+
+        let sig =
+            { generate_authorization(&self.auth_token, &http_method, resource_type, resource_link, &time) };
+        self.prepare_request_with_signature(uri_path, http_method, time, sig)
+    }
+
+    #[inline]
+    fn prepare_request_with_signature(
+        &self,
+        uri_path: &str,
+        http_method: hyper::Method,
+        time: String,
+        signature: String,
+    ) -> RequestBuilder {
+        trace!("prepare_request::auth == {:?}", signature);
+        let uri = format!("https://{}.documents.azure.com/{}", self.auth_token.account(), uri_path);
+        let mut request = hyper::Request::builder();
         request
-            .headers_mut()
-            .set(hyper::header::ContentLength(body.len() as u64));
-        request.set_body(body.to_string());
+            .method(http_method)
+            .uri(uri)
+            .header(HEADER_DATE, time.as_str())
+            .header(HEADER_VERSION, HeaderValue::from_static(AZURE_VERSION))
+            .header(header::AUTHORIZATION, signature.as_str());
+        request
     }
-
-    request
 }
 
 fn generate_authorization(
@@ -843,16 +714,16 @@ fn string_to_sign(
     format!(
         "{}\n{}\n{}\n{}\n\n",
         match *http_method {
-            hyper::Method::Get => "get",
-            hyper::Method::Put => "put",
-            hyper::Method::Post => "post",
-            hyper::Method::Delete => "delete",
-            hyper::Method::Head => "head",
-            hyper::Method::Trace => "trace",
-            hyper::Method::Options => "options",
-            hyper::Method::Connect => "connect",
-            hyper::Method::Patch => "patch",
-            hyper::Method::Extension(_) => "extension",
+            hyper::Method::GET => "get",
+            hyper::Method::PUT => "put",
+            hyper::Method::POST => "post",
+            hyper::Method::DELETE => "delete",
+            hyper::Method::HEAD => "head",
+            hyper::Method::TRACE => "trace",
+            hyper::Method::OPTIONS => "options",
+            hyper::Method::CONNECT => "connect",
+            hyper::Method::PATCH => "patch",
+            _ => "extension",
         },
         match rt {
             ResourceType::Databases => "dbs",
@@ -864,32 +735,36 @@ fn string_to_sign(
     )
 }
 
-fn generate_resource_link(u: &hyper::Uri) -> &str {
-    static ENDING_STRINGS: &'static [&str] = &["/dbs", "/colls", "/docs"];
+fn generate_resource_link(u: &str) -> &str {
+    static ENDING_STRINGS: &'static [&str] = &["dbs", "colls", "docs"];
 
     // store the element only if it does not end with dbs, colls or docs
-    let p = u.path();
-
+    let p = u;
+    let len = p.len();
     for str_to_match in ENDING_STRINGS {
-        if str_to_match.len() <= p.len() {
-            let sm = &p[p.len() - str_to_match.len()..];
-            if &sm == str_to_match {
-                if p.len() == str_to_match.len() {
+        let end_len = str_to_match.len();
+
+        if end_len <= len {
+            let end_offset = len - end_len;
+            let sm = &p[end_offset..];
+            if sm == *str_to_match {
+                if len == end_len {
                     return "";
                 }
-
-                let ret = &p[1..p.len() - str_to_match.len()];
-                return ret;
+                
+                if &p[end_offset - 1..end_offset] == "/" {
+                    let ret = &p[0..len - end_len - 1];
+                    return ret;
+                }
             }
         }
     }
-    &p[1..]
+    p
 }
 
 #[cfg(test)]
 mod tests {
     use azure::cosmos::client::*;
-    use hyper::Uri;
 
     #[test]
     fn string_to_sign_00() {
@@ -899,7 +774,7 @@ mod tests {
         let time = format!("{}", time.format(TIME_FORMAT));
 
         let ret = string_to_sign(
-            &hyper::Method::Get,
+            &hyper::Method::GET,
             ResourceType::Databases,
             "dbs/MyDatabase/colls/MyCollection",
             &time,
@@ -930,7 +805,7 @@ mon, 01 jan 1900 01:00:00 gmt
 
         let ret = generate_authorization(
             &auth_token,
-            &hyper::Method::Get,
+            &hyper::Method::GET,
             ResourceType::Databases,
             "dbs/MyDatabase/colls/MyCollection",
             &time,
@@ -956,7 +831,7 @@ mon, 01 jan 1900 01:00:00 gmt
 
         let ret = generate_authorization(
             &auth_token,
-            &hyper::Method::Get,
+            &hyper::Method::GET,
             ResourceType::Databases,
             "dbs/ToDoList",
             &time,
@@ -975,13 +850,9 @@ mon, 01 jan 1900 01:00:00 gmt
 
     #[test]
     fn generate_resource_link_00() {
-        let u = Uri::from_str("https://mindflavor.raldld.r4eee.sss/dbs/second").unwrap();
-        assert_eq!(generate_resource_link(&u), "dbs/second");
-        let u = Uri::from_str("https://mindflavor.raldld.r4eee.sss/dbs").unwrap();
-        assert_eq!(generate_resource_link(&u), "");
-        let u = Uri::from_str("https://mindflavor.raldld.r4eee.sss/colls/second/third").unwrap();
-        assert_eq!(generate_resource_link(&u), "colls/second/third");
-        let u = Uri::from_str("https://mindflavor.documents.azure.com/dbs/test_db/colls").unwrap();
-        assert_eq!(generate_resource_link(&u), "dbs/test_db");
+        assert_eq!(generate_resource_link("dbs/second"), "dbs/second");
+        assert_eq!(generate_resource_link("dbs"), "");
+        assert_eq!(generate_resource_link("colls/second/third"), "colls/second/third");
+        assert_eq!(generate_resource_link("dbs/test_db/colls"), "dbs/test_db");
     }
 }

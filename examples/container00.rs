@@ -34,7 +34,7 @@ fn code() -> Result<(), Box<Error>> {
 
     let mut core = Core::new()?;
 
-    let client = Client::new(&core.handle(), &account, &master_key)?;
+    let client = Client::new(&account, &master_key)?;
 
     let future = Container::list(&client, &LIST_CONTAINER_OPTIONS_DEFAULT).map(|iv| {
         println!("List containers returned {} containers.", iv.len());

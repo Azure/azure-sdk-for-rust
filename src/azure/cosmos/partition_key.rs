@@ -10,11 +10,7 @@ pub struct PartitionKey<'a> {
 }
 
 impl<'a> PartitionKey<'a> {
-    pub fn new() -> PartitionKey<'a> {
-        PartitionKey { pk: None }
-    }
-
-    pub fn push<S: Into<Cow<'a, str>>>(&mut self, key: S) {
+    pub fn chain<S: Into<Cow<'a, str>>>(mut self, key: S) -> Self {
         match self.pk {
             Some(ref mut p) => p.push(key.into()),
             None => self.pk = {
@@ -23,6 +19,7 @@ impl<'a> PartitionKey<'a> {
                 Some(vec)
             }
         }
+        self
     }
 
     pub fn to_json(&self) -> Result<Option<String>, AzureError> {
@@ -52,24 +49,8 @@ impl<'a> IntoIterator for PartitionKey<'a> {
     }
 }
 
-impl<'a> From<&'a str> for PartitionKey<'a> {
-    fn from(v: &'a str) -> PartitionKey<'a> {
-        let mut key = PartitionKey::new();
-        key.push(v);
-        key
-    }
-}
-
-impl<'a> From<&'a String> for PartitionKey<'a> {
-    fn from(v: &'a String) -> PartitionKey<'a> {
-        v.as_str().into()
-    }
-}
-
-impl<'a> From<String> for PartitionKey<'a> {
-    fn from(v: String) -> PartitionKey<'a> {
-        let mut key = PartitionKey::new();
-        key.push(v);
-        key
+impl<'a, S: Into<Cow<'a, str>>> From<S> for PartitionKey<'a> {
+    fn from(v: S) -> PartitionKey<'a> {
+        PartitionKey::default().chain(v)
     }
 }

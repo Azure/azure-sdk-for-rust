@@ -46,12 +46,12 @@ fn code() -> Result<(), Box<Error>> {
 
     let mut core = Core::new()?;
 
-    let client = Client::new(&core.handle(), authorization_token)?;
+    let client = Client::new(authorization_token)?;
 
     let future = client.query_document(
         &database_name,
         &collection_name,
-        &Query::from(&query as &str)).unwrap()
+        &Query::from(&query as &str))
         .execute_json();
 
     let ret = core.run(future)?;
@@ -65,7 +65,7 @@ fn code() -> Result<(), Box<Error>> {
     let future = client.query_document(
         &database_name,
         &collection_name,
-        &Query::from(&query as &str)).unwrap()
+        &Query::from(&query as &str))
         .execute::<MySampleStructOwned>();
 
     let ret = core.run(future)?;
@@ -81,7 +81,7 @@ fn code() -> Result<(), Box<Error>> {
     let future = client.query_document(
         &database_name,
         &collection_name,
-        &Query::from(&query as &str)).unwrap()
+        &Query::from(&query as &str))
         .max_item_count(2u64)
         .execute::<MySampleStructOwned>();
 
@@ -99,7 +99,7 @@ fn code() -> Result<(), Box<Error>> {
             let future = client.query_document(
                 &database_name,
                 &collection_name,
-                &Query::from(&query as &str)).unwrap()
+                &Query::from(&query as &str))
                 .continuation_token(ct)
                 .execute::<MySampleStructOwned>();
             core.run(future)?

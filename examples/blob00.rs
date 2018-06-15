@@ -38,7 +38,7 @@ fn code() -> Result<(), Box<Error>> {
 
     let mut core = Core::new()?;
 
-    let client = Client::new(&core.handle(), &account, &master_key)?;
+    let client = Client::new(&account, &master_key)?;
 
     trace!("Requesting blog");
 

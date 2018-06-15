@@ -1,12 +1,7 @@
-use super::rest_client::{perform_request, ServiceType};
-use hyper;
-use hyper::header::Headers;
-use hyper::Method;
+use hyper::{self, Method};
 use hyper_tls;
-
+use super::rest_client::{perform_request, ServiceType};
 use azure::core::errors::AzureError;
-
-use tokio_core::reactor::Handle;
 
 // Can be variant for different cloud environment
 const SERVICE_SUFFIX_BLOB: &str = ".blob.core.windows.net";
@@ -19,12 +14,11 @@ pub struct Client {
 }
 
 impl Client {
-    pub fn new(handle: &Handle, account: &str, key: &str) -> Result<Client, AzureError> {
+    pub fn new(account: &str, key: &str) -> Result<Client, AzureError> {
         use hyper;
 
-        let client = hyper::Client::configure()
-            .connector(hyper_tls::HttpsConnector::new(4, handle)?)
-            .build(handle);
+        let client = hyper::Client::builder()
+            .build(hyper_tls::HttpsConnector::new(4)?);
 
         Ok(Client {
             account: account.to_owned(),
@@ -47,9 +41,9 @@ impl Client {
         method: Method,
         headers_func: F,
         request_body: Option<&[u8]>,
-    ) -> Result<hyper::client::FutureResponse, AzureError>
+    ) -> Result<hyper::client::ResponseFuture, AzureError>
     where
-        F: FnOnce(&mut Headers),
+        F: FnOnce(&mut ::http::request::Builder),
     {
         perform_request(
             &self.hc,
@@ -68,9 +62,9 @@ impl Client {
         method: Method,
         headers_func: F,
         request_str: Option<&[u8]>,
-    ) -> Result<hyper::client::FutureResponse, AzureError>
+    ) -> Result<hyper::client::ResponseFuture, AzureError>
     where
-        F: FnOnce(&mut Headers),
+        F: FnOnce(&mut ::http::request::Builder),
     {
         debug!("segment: {}, method: {:?}", segment, method,);
         perform_request(

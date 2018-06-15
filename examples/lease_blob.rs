@@ -17,8 +17,6 @@ use azure_sdk_for_rust::{
     storage::blob::{Blob, BlobType, LEASE_BLOB_OPTIONS_DEFAULT}, storage::client::Client,
 };
 
-use hyper::mime::Mime;
-
 fn main() {
     env_logger::init();
     code().unwrap();
@@ -42,7 +40,7 @@ fn code() -> Result<(), Box<Error>> {
 
     let mut core = Core::new()?;
 
-    let client = Client::new(&core.handle(), &account, &master_key)?;
+    let client = Client::new(&account, &master_key)?;
 
     let new_blob = Blob {
         name: blob_name,
@@ -51,7 +49,7 @@ fn code() -> Result<(), Box<Error>> {
         last_modified: chrono::Utc::now(),
         etag: "".to_owned(),
         content_length: 0,
-        content_type: Some("text/plain".parse::<Mime>().unwrap()),
+        content_type: Some("text/plain".to_owned()),
         content_encoding: None,
         content_language: None,
         content_md5: None,

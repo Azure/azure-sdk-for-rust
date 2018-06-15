@@ -1,6 +1,6 @@
 use futures::future::*;
-use tokio_core;
 
+use hyper;
 use azure::core::errors::AzureError;
 use azure::service_bus::event_hub::send_event;
 
@@ -8,31 +8,35 @@ use time::Duration;
 
 use ring::{digest::SHA256, hmac::SigningKey};
 
+type HttpClient = hyper::Client<::hyper_tls::HttpsConnector<hyper::client::HttpConnector>>;
+
 pub struct Client {
-    handle: tokio_core::reactor::Handle,
     namespace: String,
     event_hub: String,
     policy_name: String,
     signing_key: SigningKey,
+    http_client: HttpClient
 }
 
 impl Client {
-    pub fn new(
-        handle: tokio_core::reactor::Handle,
-        namespace: &str,
-        event_hub: &str,
-        policy_name: &str,
-        key: &str,
-    ) -> Client {
-        let signing_key = SigningKey::new(&SHA256, key.as_bytes());
+    pub fn new<N, E, P, K>(
+        namespace: N,
+        event_hub: E,
+        policy_name: P,
+        key: K,
+    ) -> Result<Client, AzureError>
+    where N: Into<String>, E: Into<String>, P: Into<String>, K: AsRef<str>
+    {
+        let signing_key = SigningKey::new(&SHA256, key.as_ref().as_bytes());
+        let http_client = hyper::Client::builder().build(::hyper_tls::HttpsConnector::new(4)?);
 
-        Client {
-            handle,
-            namespace: namespace.to_owned(),
-            event_hub: event_hub.to_owned(),
-            policy_name: policy_name.to_owned(),
+        Ok(Client {
+            namespace: namespace.into(),
+            event_hub: event_hub.into(),
+            policy_name: policy_name.into(),
             signing_key,
-        }
+            http_client
+        })
     }
 
     pub fn send_event(
@@ -42,7 +46,7 @@ impl Client {
     ) -> impl Future<Item = (), Error = AzureError> {
         {
             send_event(
-                &self.handle.clone(),
+                &self.http_client,
                 &self.namespace,
                 &self.event_hub,
                 &self.policy_name,
@@ -62,16 +66,12 @@ mod test {
 
     #[test]
     pub fn client_enc() {
-        use base64;
-        use tokio_core::reactor::Core;
-
         let str_to_sign = "This must be secret!";
 
-        let core = Core::new().unwrap();
-        let c = Client::new(core.handle(), "namespace", "event_hub", "policy", "key");
+        let c = Client::new("namespace", "event_hub", "policy", "key").unwrap();
 
         let sig = hmac::sign(&c.signing_key, str_to_sign.as_bytes());
-        let sig = base64::encode(sig.as_ref());
+        let sig = ::base64::encode(sig.as_ref());
 
         assert_eq!(sig, "2UNXaoPpeJBAhh6qxmTqXyNzTpOflGO6IhxegeUQBcU=");
     }

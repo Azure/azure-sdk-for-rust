@@ -1,33 +1,23 @@
 mod list_container_options;
 pub use self::list_container_options::{ListContainerOptions, LIST_CONTAINER_OPTIONS_DEFAULT};
 
-use azure::core;
-use azure::core::enumerations;
-use azure::core::errors::check_status_extract_body;
-use azure::core::errors::AzureError;
-use azure::core::incompletevector::IncompleteVector;
-use azure::core::parsing::{cast_must, cast_optional, traverse};
-
-use azure::core::lease::{LeaseDuration, LeaseState, LeaseStatus};
-use azure::storage::client::Client;
-
+use std::{fmt, str::FromStr};
+use chrono::{DateTime, Utc};
 use futures::future::*;
-
-use hyper::Method;
-use hyper::StatusCode;
-
-use chrono::DateTime;
-use chrono::Utc;
-use std::str::FromStr;
-
-use std::fmt;
-
+use hyper::{Method, StatusCode};
 use xml::Element;
 
-use azure::core::errors::TraversingError;
-use azure::core::parsing::FromStringOptional;
+use azure::core::{
+    enumerations,
+    errors::{check_status_extract_body, AzureError, TraversingError},
+    incompletevector::IncompleteVector,
+    lease::{LeaseDuration, LeaseState, LeaseStatus},
+    parsing::{cast_must, cast_optional, traverse, FromStringOptional},
+    util::format_header_value
+};
+use azure::storage::client::Client;
 
-header! { (XMSBlobPublicAccess, "x-ms-blob-public-access") => [PublicAccess] }
+const HEADER_BLOB_PUBLIC_ACCESS: &str = "x-ms-blob-public-access"; // [PublicAccess]
 
 create_enum!(
     PublicAccess,
@@ -58,7 +48,7 @@ impl Container {
         }
     }
 
-    pub fn parse(elem: &Element) -> Result<Container, core::errors::AzureError> {
+    pub fn parse(elem: &Element) -> Result<Container, AzureError> {
         let name = cast_must::<String>(elem, &["Name"])?;
         let last_modified = cast_must::<DateTime<Utc>>(elem, &["Properties", "Last-Modified"])?;
         let e_tag = cast_must::<String>(elem, &["Properties", "Etag"])?;
@@ -87,10 +77,10 @@ impl Container {
             self.name
         );
 
-        let req = c.perform_request(&uri, Method::Delete, |_| {}, None);
+        let req = c.perform_request(&uri, Method::DELETE, |_| {}, None);
 
         done(req).from_err().and_then(move |future_response| {
-            check_status_extract_body(future_response, StatusCode::Accepted).and_then(|_| ok(()))
+            check_status_extract_body(future_response, StatusCode::ACCEPTED).and_then(|_| ok(()))
         })
     }
 
@@ -107,15 +97,15 @@ impl Container {
 
         let req = c.perform_request(
             &uri,
-            Method::Put,
-            |ref mut headers| {
-                headers.set(XMSBlobPublicAccess(pa));
+            Method::PUT,
+            |ref mut request| {
+                request.header(HEADER_BLOB_PUBLIC_ACCESS, format_header_value(pa).unwrap());
             },
             Some(&[]),
         );
 
         done(req).from_err().and_then(move |future_response| {
-            check_status_extract_body(future_response, StatusCode::Created).and_then(|_| ok(()))
+            check_status_extract_body(future_response, StatusCode::CREATED).and_then(|_| ok(()))
         })
     }
 
@@ -148,10 +138,10 @@ impl Container {
             uri = format!("{}&timeout={}", uri, timeout);
         }
 
-        let req = c.perform_request(&uri, Method::Get, |_| {}, None);
+        let req = c.perform_request(&uri, Method::GET, |_| {}, None);
 
         done(req).from_err().and_then(move |future_response| {
-            check_status_extract_body(future_response, StatusCode::Ok)
+            check_status_extract_body(future_response, StatusCode::OK)
                 .and_then(|body| done(incomplete_vector_from_response(&body)).from_err())
         })
     }

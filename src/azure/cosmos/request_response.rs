@@ -1,6 +1,10 @@
-use azure::core::errors::AzureError;
+use azure::core::{
+    errors::AzureError,
+    util::HeaderMapExt
+};
 use azure::cosmos::{
-    self, collection::Collection, database::Database, document::DocumentAttributes,
+    collection::Collection, database::Database, document::DocumentAttributes,
+    client::headers::HEADER_REQUEST_CHARGE
 };
 use serde::de::DeserializeOwned;
 
@@ -99,9 +103,9 @@ pub struct DocumentAdditionalHeaders {
 }
 
 impl DocumentAdditionalHeaders {
-    pub(crate) fn derive_from(headers: &::hyper::Headers) -> DocumentAdditionalHeaders {
+    pub(crate) fn derive_from(headers: &::hyper::HeaderMap) -> DocumentAdditionalHeaders {
         DocumentAdditionalHeaders {
-            charge: *(headers.get::<cosmos::client::headers::Charge>().unwrap() as &f64),
+            charge: headers.get_as_str(HEADER_REQUEST_CHARGE).unwrap().parse::<f64>().unwrap(),
         }
     }
 }

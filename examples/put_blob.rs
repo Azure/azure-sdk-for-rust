@@ -24,7 +24,6 @@ use std::fs::metadata;
 use std::fs::File;
 use std::path;
 
-use hyper::mime::Mime;
 use std::io::Read;
 
 fn main() {
@@ -50,7 +49,7 @@ fn code() -> Result<(), Box<Error>> {
 
     let mut core = Core::new()?;
 
-    let client = Client::new(&core.handle(), &account, &master_key)?;
+    let client = Client::new(&account, &master_key)?;
 
     let metadata = metadata(&file_name)?;
 
@@ -85,7 +84,7 @@ fn code() -> Result<(), Box<Error>> {
         // here we pass text/plain as content_type. This means your browser will
         // try to show you the file if you click on it in the Azure portal.
         // Make sure to send a text file :)
-        content_type: Some("text/plain".parse::<Mime>().unwrap()),
+        content_type: Some("text/plain".to_owned()),
         content_encoding: None,
         content_language: None,
         content_md5: None,

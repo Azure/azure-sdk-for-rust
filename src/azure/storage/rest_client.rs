@@ -1,20 +1,13 @@
-use azure::core::errors::AzureError;
-use azure::core::lease::{LeaseAction, LeaseDuration, LeaseId, LeaseState, LeaseStatus};
-use azure::core::range;
+use azure::core::{
+    errors::AzureError, util::{format_header_value, HeaderMapExt, RequestBuilderExt},
+};
 use base64;
 use chrono;
-use hyper;
-use hyper::header::{
-    ContentEncoding, ContentLanguage, ContentLength, ContentType, Date, Header, Headers,
-    IfModifiedSince, IfUnmodifiedSince,
-};
-use hyper::Method;
+use hyper::{self, header, HeaderMap, Method};
 use hyper_tls;
 use ring::{digest::SHA256, hmac};
-use std::fmt::Display;
+use std::fmt::Write;
 use url;
-
-use std::str::FromStr;
 
 pub enum ServiceType {
     Blob,
@@ -24,34 +17,22 @@ pub enum ServiceType {
 
 const AZURE_VERSION: &str = "2017-11-09";
 
-header! { (XMSVersion, "x-ms-version") => [String] }
-header! { (XMSDate, "x-ms-date") => [String] }
-header! { (Authorization, "Authorization") => [String] }
-header! { (ContentMD5, "Content-MD5") => [String] }
-header! { (IfMatch, "If-Match") => [String] }
-header! { (IfNoneMatch, "If-None-Match") => [String] }
-header! { (Range, "Range") => [String] }
-header! { (XMSRange, "x-ms-range") => [range::Range] }
-header! { (XMSLeaseId, "x-ms-lease-id") => [LeaseId] }
-header! { (XMSLeaseStatus, "x-ms-lease-status") => [LeaseStatus] }
-header! { (XMSLeaseState, "x-ms-lease-state") => [LeaseState] }
-header! { (XMSLeaseAction, "x-ms-lease-action") => [LeaseAction] }
-header! { (XMSLeaseDuration, "x-ms-lease-duration") => [LeaseDuration] }
-header! { (XMSLeaseDurationSeconds, "x-ms-lease-duration") => [u32] }
-header! { (XMSLeaseBreakPeriod, "x-ms-lease-break-period") => [u32] }
-header! { (XMSProposedLeaseId, "x-ms-proposed-lease-id") => [LeaseId] }
-header! { (ETag, "ETag") => [String] }
-header! { (XMSRangeGetContentMD5, "x-ms-range-get-content-md5") => [bool] }
-header! { (XMSClientRequestId, "x-ms-client-request-id") => [String] }
-header! { (XMSRequestId, "x-ms-request-id") => [String] }
+pub const HEADER_VERSION: &str = "x-ms-version"; //=> [String] }
+pub const HEADER_DATE: &str = "x-ms-date"; //=> [String] }
+pub const HEADER_CONTENT_MD5: &str = "Content-MD5"; //=> [String] }
+pub const HEADER_RANGE: &str = "x-ms-range"; // => [range::Range] }
+pub const HEADER_LEASE_ID: &str = "x-ms-lease-id"; //=> [LeaseId] }
+pub const HEADER_LEASE_STATUS: &str = "x-ms-lease-status"; //=> [LeaseStatus] }
+pub const HEADER_LEASE_STATE: &str = "x-ms-lease-state"; //=> [LeaseState] }
+pub const HEADER_LEASE_ACTION: &str = "x-ms-lease-action"; //=> [LeaseAction] }
+pub const HEADER_LEASE_DURATION: &str = "x-ms-lease-duration"; //=> [LeaseDuration] }
+pub const HEADER_LEASE_BREAK_PERIOD: &str = "x-ms-lease-break-period"; //=> [u32] }
+pub const HEADER_PROPOSED_LEASE_ID: &str = "x-ms-proposed-lease-id"; //=> [LeaseId] }
+pub const HEADER_RANGE_GET_CONTENT_MD5: &str = "x-ms-range-get-content-md5"; //=> [bool] }
+pub const HEADER_CLIENT_REQUEST_ID: &str = "x-ms-client-request-id"; //=> [String] }
+pub const HEADER_REQUEST_ID: &str = "x-ms-request-id"; //=> [String] }
 
-fn generate_authorization(
-    h: &Headers,
-    u: &url::Url,
-    method: Method,
-    hmac_key: &str,
-    service_type: ServiceType,
-) -> String {
+fn generate_authorization(h: &HeaderMap, u: &url::Url, method: Method, hmac_key: &str, service_type: ServiceType) -> String {
     let str_to_sign = string_to_sign(h, u, method, service_type);
 
     // println!("\nstr_to_sign == {:?}\n", str_to_sign);
@@ -74,59 +55,57 @@ fn encode_str_to_sign(str_to_sign: &str, hmac_key: &str) -> String {
 }
 
 #[inline]
-fn add_if_exists<H: Header + Display>(h: &Headers) -> String {
-    let m = match h.get::<H>() {
-        Some(ce) => ce.to_string(),
-        None => String::default(),
-    };
-
-    m + "\n"
+fn add_if_exists<K: header::AsHeaderName>(h: &HeaderMap, key: K) -> &str {
+    match h.get(key) {
+        Some(ce) => ce.to_str().unwrap(),
+        None => "",
+    }
 }
 
 #[allow(unknown_lints)]
 #[allow(needless_pass_by_value)]
-fn string_to_sign(h: &Headers, u: &url::Url, method: Method, service_type: ServiceType) -> String {
-    let mut str_to_sign = String::new();
-    let verb = format!("{:?}", method);
-    str_to_sign = str_to_sign + &verb.to_uppercase() + "\n";
-
-    match service_type {
-        ServiceType::Table => {}
-        _ => {
-            str_to_sign = str_to_sign + &add_if_exists::<ContentEncoding>(h);
-            str_to_sign = str_to_sign + &add_if_exists::<ContentLanguage>(h);
-            // content lenght must only be specified if != 0
-            // this is valid from 2015-02-21
-            let m = match h.get::<ContentLength>() {
-                Some(ce) => if ce.to_be() != 0u64 {
-                    ce.to_string()
-                } else {
-                    String::default()
-                },
-                None => String::default(),
-            };
-
-            str_to_sign = str_to_sign + &m + "\n";
-        }
-    }
-
-    str_to_sign = str_to_sign + &add_if_exists::<ContentMD5>(h);
-    str_to_sign = str_to_sign + &add_if_exists::<ContentType>(h);
-
+fn string_to_sign(h: &HeaderMap, u: &url::Url, method: Method, service_type: ServiceType) -> String {
     match service_type {
         ServiceType::Table => {
-            str_to_sign = str_to_sign + &add_if_exists::<XMSDate>(h);
-            str_to_sign = str_to_sign + &canonicalized_resource_table(u);
+            let mut s = String::new();
+            write!(
+                s,
+                "{}\n{}\n{}\n{}\n{}",
+                method.as_str(),
+                add_if_exists(h, HEADER_CONTENT_MD5),
+                add_if_exists(h, header::CONTENT_TYPE),
+                add_if_exists(h, HEADER_DATE),
+                canonicalized_resource_table(u)
+            ).unwrap();
+            s
         }
         _ => {
-            str_to_sign = str_to_sign + &add_if_exists::<Date>(h);
-            str_to_sign = str_to_sign + &add_if_exists::<IfModifiedSince>(h);
-            str_to_sign = str_to_sign + &add_if_exists::<IfMatch>(h);
-            str_to_sign = str_to_sign + &add_if_exists::<IfNoneMatch>(h);
-            str_to_sign = str_to_sign + &add_if_exists::<IfUnmodifiedSince>(h);
-            str_to_sign = str_to_sign + &add_if_exists::<Range>(h);
-            str_to_sign = str_to_sign + &canonicalize_header(h);
-            str_to_sign = str_to_sign + &canonicalized_resource(u);
+            // content lenght must only be specified if != 0
+            // this is valid from 2015-02-21
+            let cl = h
+                .get_as_str(header::CONTENT_LENGTH)
+                .map(|s| if s == "0" { "" } else { s })
+                .unwrap_or("");
+            let mut s = String::new();
+            write!(
+                s,
+                "{:?}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}",
+                method.as_str(),
+                add_if_exists(h, header::CONTENT_ENCODING),
+                add_if_exists(h, header::CONTENT_LANGUAGE),
+                cl,
+                add_if_exists(h, HEADER_CONTENT_MD5),
+                add_if_exists(h, header::CONTENT_TYPE),
+                add_if_exists(h, header::DATE),
+                add_if_exists(h, header::IF_MODIFIED_SINCE),
+                add_if_exists(h, header::IF_MATCH),
+                add_if_exists(h, header::IF_NONE_MATCH),
+                add_if_exists(h, header::IF_UNMODIFIED_SINCE),
+                add_if_exists(h, header::RANGE),
+                canonicalize_header(h),
+                canonicalized_resource(u)
+            ).unwrap();
+            s
         }
     }
 
@@ -149,39 +128,22 @@ fn string_to_sign(h: &Headers, u: &url::Url, method: Method, service_type: Servi
     //                                  /*CanonicalizedResource*/
     //
     //
-
-    str_to_sign
 }
 
-fn canonicalize_header(h: &Headers) -> String {
-    // println!("{:?}", h);
-
-    let mut v_headers = Vec::new();
-
-    for header in h.iter().filter(|h| h.name().starts_with("x-ms")) {
-        let s: String = header.name().to_owned().trim().to_lowercase();
-
-        v_headers.push(s);
-    }
-
-    // println!("{:?}", v_headers);
-
+fn canonicalize_header(h: &HeaderMap) -> String {
+    let mut v_headers = h
+        .iter()
+        .filter(|(k, _v)| k.as_str().starts_with("x-ms"))
+        .map(|(k, _)| k.as_str())
+        .collect::<Vec<_>>();
     v_headers.sort();
 
     let mut can = String::new();
 
     for header_name in v_headers {
-        let h = h.iter().find(|x| x.name() == header_name).unwrap();
-        // println!("looking for {} => {:?}", header_name, h);
-
-        let s = h.value_string();
-        // println!("h.to_string() == {:?}", s);
-
-        can = can + &header_name + ":" + &s + "\n";
+        let s = h.get_as_str(header_name).unwrap();
+        can = can + header_name + ":" + s + "\n";
     }
-
-    // println!("{:?}", can);
-
     can
 }
 
@@ -283,51 +245,35 @@ pub fn perform_request<F>(
     headers_func: F,
     request_body: Option<&[u8]>,
     service_type: ServiceType,
-) -> Result<hyper::client::FutureResponse, AzureError>
+) -> Result<hyper::client::ResponseFuture, AzureError>
 where
-    F: FnOnce(&mut Headers),
+    F: FnOnce(&mut ::http::request::Builder),
 {
     let dt = chrono::Utc::now();
     let time = format!("{}", dt.format("%a, %d %h %Y %T GMT"));
 
     let url = url::Url::parse(uri)?;
-    let uri = hyper::Uri::from_str(uri)?;
 
     // for header in additional_headers.iter() {
     //     println!("{:?}", header.value_string());
     //     h.set();
     // }
-    let mut request = hyper::Request::new(http_method.clone(), uri);
+    let mut request = hyper::Request::builder();
+    request.method(http_method.clone()).uri(uri);
 
     // This will give the caller the ability to add custom headers.
     // The closure is needed to because request.headers_mut().set_raw(...) requires
     // a Cow with 'static lifetime...
-    headers_func(request.headers_mut());
+    headers_func(&mut request);
 
-    request.headers_mut().set(XMSDate(time));
-    request
-        .headers_mut()
-        .set(XMSVersion(AZURE_VERSION.to_owned()));
+    request.header_bytes(HEADER_DATE, time)
+        .header_static(HEADER_VERSION, AZURE_VERSION);
 
-    if let Some(body) = request_body {
-        let b = Vec::from(body);
-        request.headers_mut().set(ContentLength(body.len() as u64));
-        request.set_body(b);
-    } else {
-        request.headers_mut().set(ContentLength(0));
-    }
+    let b = request_body.map(|v| Vec::from(v).into()).unwrap_or_else(|| hyper::Body::empty());
+    let mut request = request.body(b)?;
 
-    let auth = generate_authorization(
-        request.headers(),
-        &url,
-        http_method,
-        azure_key,
-        service_type,
-    );
-
-    request.headers_mut().set(Authorization(auth));
-
-    // println!("{:?}", request.headers());
+    let auth = generate_authorization(request.headers(), &url, http_method, azure_key, service_type);
+    request.headers_mut().insert(header::AUTHORIZATION, format_header_value(auth)?);
 
     Ok(client.request(request))
 }
@@ -346,10 +292,10 @@ mod test {
 
         println!("time == {}", time);
 
-        let mut h = hyper::header::Headers::new();
+        let mut h = hyper::header::HeaderMap::new();
 
-        h.set(XMSDate(time));
-        h.set(XMSVersion("2015-04-05".to_owned()));
+        h.insert(HEADER_DATE, format_header_value(time).unwrap());
+        h.insert(HEADER_VERSION, header::HeaderValue::from_static("2015-04-05"));
 
         assert_eq!(
             super::canonicalize_header(&h),
@@ -361,22 +307,20 @@ mod test {
     fn str_to_sign_test() {
         use super::*;
         use azure::storage::table::{get_default_json_mime, get_json_mime_nometadata};
-        use hyper::header::{qitem, Accept};
 
-        let mut headers: Headers = Headers::new();
-        headers.set(Accept(vec![qitem(get_json_mime_nometadata())]));
-        headers.set(ContentType(get_default_json_mime()));
+        let mut headers: HeaderMap = HeaderMap::new();
+        headers.insert(header::ACCEPT, header::HeaderValue::from_static(get_json_mime_nometadata()));
+        headers.insert(header::CONTENT_TYPE, header::HeaderValue::from_static(get_default_json_mime()));
 
-        let u: url::Url =
-            url::Url::parse("https://mindrust.table.core.windows.net/TABLES").unwrap();
-        let method: Method = Method::Post;
+        let u: url::Url = url::Url::parse("https://mindrust.table.core.windows.net/TABLES").unwrap();
+        let method: Method = Method::POST;
         let service_type: ServiceType = ServiceType::Table;
 
         let dt = chrono::DateTime::parse_from_rfc2822("Wed,  3 May 2017 14:04:56 +0000").unwrap();
         let time = format!("{}", dt.format("%a, %d %h %Y %T GMT"));
 
-        headers.set(XMSDate(time));
-        headers.set(XMSVersion(AZURE_VERSION.to_owned()));
+        headers.insert(HEADER_DATE, format_header_value(time).unwrap());
+        headers.insert(HEADER_VERSION, header::HeaderValue::from_static(AZURE_VERSION));
 
         let s = string_to_sign(&headers, &u, method, service_type);
 
@@ -428,10 +372,7 @@ Wed, 03 May 2017 14:04:56 GMT
             "https://myaccount-secondary.blob.core.windows.\
              net/mycontainer/myblob",
         ).unwrap();
-        assert_eq!(
-            super::canonicalized_resource(&url),
-            "/myaccount-secondary/mycontainer/myblob"
-        );
+        assert_eq!(super::canonicalized_resource(&url), "/myaccount-secondary/mycontainer/myblob");
     }
 
     #[test]

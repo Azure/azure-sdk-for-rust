@@ -22,3 +22,5 @@ define_encode_set! {
 
 use uuid::Uuid;
 pub type RequestId = Uuid;
+
+pub(crate) mod util;
