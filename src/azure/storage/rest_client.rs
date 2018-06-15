@@ -1,5 +1,6 @@
 use azure::core::{
-    errors::AzureError, util::{format_header_value, HeaderMapExt, RequestBuilderExt},
+    errors::AzureError,
+    util::{format_header_value, HeaderMapExt, RequestBuilderExt},
 };
 use base64;
 use chrono;
@@ -89,7 +90,7 @@ fn string_to_sign(h: &HeaderMap, u: &url::Url, method: Method, service_type: Ser
             let mut s = String::new();
             write!(
                 s,
-                "{:?}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}",
+                "{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}{}",
                 method.as_str(),
                 add_if_exists(h, header::CONTENT_ENCODING),
                 add_if_exists(h, header::CONTENT_LANGUAGE),
@@ -261,13 +262,18 @@ where
     let mut request = hyper::Request::builder();
     request.method(http_method.clone()).uri(uri);
 
+    // let's add content length to avoid "chunking" errors.
+    match request_body {
+        Some(ref b) => request.header(header::CONTENT_LENGTH, &b.len().to_string() as &str),
+        None => request.header_static(header::CONTENT_LENGTH, "0"),
+    };
+
     // This will give the caller the ability to add custom headers.
     // The closure is needed to because request.headers_mut().set_raw(...) requires
     // a Cow with 'static lifetime...
     headers_func(&mut request);
 
-    request.header_bytes(HEADER_DATE, time)
-        .header_static(HEADER_VERSION, AZURE_VERSION);
+    request.header_bytes(HEADER_DATE, time).header_static(HEADER_VERSION, AZURE_VERSION);
 
     let b = request_body.map(|v| Vec::from(v).into()).unwrap_or_else(|| hyper::Body::empty());
     let mut request = request.body(b)?;
