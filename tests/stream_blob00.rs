@@ -10,9 +10,7 @@ use azure_sdk_for_rust::core::lease::{LeaseState, LeaseStatus};
 use azure_sdk_for_rust::core::range::Range;
 use azure_sdk_for_rust::storage::blob::{Blob, BlobType, PUT_OPTIONS_DEFAULT};
 use azure_sdk_for_rust::storage::client::Client;
-use azure_sdk_for_rust::storage::container::{
-    Container, PublicAccess, LIST_CONTAINER_OPTIONS_DEFAULT,
-};
+use azure_sdk_for_rust::storage::container::{Container, PublicAccess, LIST_CONTAINER_OPTIONS_DEFAULT};
 use futures::future::ok;
 use futures::prelude::*;
 use hyper::mime::Mime;
@@ -28,10 +26,8 @@ fn code() -> Result<(), Box<std::error::Error>> {
     let file_name = "azure_sdk_for_rust_stream_test.txt";
 
     // First we retrieve the account name and master key from environment variables.
-    let account =
-        std::env::var("STORAGE_ACCOUNT").expect("Set env variable STORAGE_ACCOUNT first!");
-    let master_key =
-        std::env::var("STORAGE_MASTER_KEY").expect("Set env variable STORAGE_MASTER_KEY first!");
+    let account = std::env::var("STORAGE_ACCOUNT").expect("Set env variable STORAGE_ACCOUNT first!");
+    let master_key = std::env::var("STORAGE_MASTER_KEY").expect("Set env variable STORAGE_MASTER_KEY first!");
 
     let mut reactor = Core::new()?;
     let client = Client::new(&reactor.handle(), &account, &master_key)?;
@@ -42,11 +38,7 @@ fn code() -> Result<(), Box<std::error::Error>> {
         .find(|x| x.name == container_name)
         .is_none()
     {
-        reactor.run(Container::create(
-            &client,
-            container_name,
-            PublicAccess::Blob,
-        ))?;
+        reactor.run(Container::create(&client, container_name, PublicAccess::Blob))?;
     }
 
     let string = "0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF";
@@ -76,11 +68,9 @@ fn code() -> Result<(), Box<std::error::Error>> {
         copy_status_description: None,
     };
 
-    let fut = new_blob
-        .put(&client, &PUT_OPTIONS_DEFAULT, Some(string.as_ref()))
-        .map(|_| {
-            println!("{}/{} blob created!", container_name, file_name);
-        });
+    let fut = new_blob.put(&client, &PUT_OPTIONS_DEFAULT, Some(string.as_ref())).map(|_| {
+        println!("{}/{} blob created!", container_name, file_name);
+    });
     reactor.run(fut)?;
 
     // this is how you stream data from azure blob. Notice that you have

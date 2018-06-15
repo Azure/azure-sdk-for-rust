@@ -26,10 +26,8 @@ fn code() -> Result<(), Box<std::error::Error>> {
     let file_name = "azure_sdk_for_rust_stream_test.txt";
 
     // First we retrieve the account name and master key from environment variables.
-    let account =
-        std::env::var("STORAGE_ACCOUNT").expect("Set env variable STORAGE_ACCOUNT first!");
-    let master_key =
-        std::env::var("STORAGE_MASTER_KEY").expect("Set env variable STORAGE_MASTER_KEY first!");
+    let account = std::env::var("STORAGE_ACCOUNT").expect("Set env variable STORAGE_ACCOUNT first!");
+    let master_key = std::env::var("STORAGE_MASTER_KEY").expect("Set env variable STORAGE_MASTER_KEY first!");
 
     let container_name = std::env::args()
         .nth(1)
@@ -65,11 +63,9 @@ fn code() -> Result<(), Box<std::error::Error>> {
         copy_status_description: None,
     };
 
-    let fut = new_blob
-        .put(&client, &PUT_OPTIONS_DEFAULT, Some(string.as_ref()))
-        .map(|_| {
-            println!("{}/{} blob created!", container_name, file_name);
-        });
+    let fut = new_blob.put(&client, &PUT_OPTIONS_DEFAULT, Some(string.as_ref())).map(|_| {
+        println!("{}/{} blob created!", container_name, file_name);
+    });
     reactor.run(fut)?;
 
     // this is how you stream data from azure blob. Notice that you have

@@ -13,10 +13,9 @@ use futures::future::*;
 use tokio_core::reactor::Core;
 
 use azure_sdk_for_rust::{
-    core::errors::AzureError, core::lease::{LeaseAction, LeaseState, LeaseStatus},
-    storage::blob::{
-        Blob, BlobType, LEASE_BLOB_OPTIONS_DEFAULT, LIST_BLOB_OPTIONS_DEFAULT, PUT_OPTIONS_DEFAULT,
-    },
+    core::errors::AzureError,
+    core::lease::{LeaseAction, LeaseState, LeaseStatus},
+    storage::blob::{Blob, BlobType, LEASE_BLOB_OPTIONS_DEFAULT, LIST_BLOB_OPTIONS_DEFAULT, PUT_OPTIONS_DEFAULT},
     storage::client::Client,
 };
 
@@ -35,10 +34,8 @@ fn main() {
 // A series of unwrap(), unwrap() would have achieved the same result.
 fn code() -> Result<(), Box<Error>> {
     // First we retrieve the account name and master key from environment variables.
-    let account =
-        std::env::var("STORAGE_ACCOUNT").expect("Set env variable STORAGE_ACCOUNT first!");
-    let master_key =
-        std::env::var("STORAGE_MASTER_KEY").expect("Set env variable STORAGE_MASTER_KEY first!");
+    let account = std::env::var("STORAGE_ACCOUNT").expect("Set env variable STORAGE_ACCOUNT first!");
+    let master_key = std::env::var("STORAGE_MASTER_KEY").expect("Set env variable STORAGE_MASTER_KEY first!");
 
     let container_name = std::env::args()
         .nth(1)
@@ -102,11 +99,9 @@ fn code() -> Result<(), Box<Error>> {
         copy_status_description: None,
     };
 
-    let future = new_blob
-        .put(&client, &PUT_OPTIONS_DEFAULT, Some(&contents))
-        .map(|_| {
-            println!("{} uploaded", name);
-        });
+    let future = new_blob.put(&client, &PUT_OPTIONS_DEFAULT, Some(&contents)).map(|_| {
+        println!("{} uploaded", name);
+    });
 
     core.run(future)?;
 
@@ -114,18 +109,16 @@ fn code() -> Result<(), Box<Error>> {
 
     let mut lbo = LEASE_BLOB_OPTIONS_DEFAULT.clone();
     lbo.lease_duration = Some(15);
-    let future = new_blob
-        .lease(&client, LeaseAction::Acquire, &lbo)
-        .map(|lease_id| {
-            println!("Blob leased");
-            lease_id
-        });
+    let future = new_blob.lease(&client, LeaseAction::Acquire, &lbo).map(|lease_id| {
+        println!("Blob leased");
+        lease_id
+    });
 
     let lease_id = core.run(future)?;
     println!("lease id == {:?}", lease_id);
 
-    let future = Blob::list(&client, &container_name, &LIST_BLOB_OPTIONS_DEFAULT).map(|blobs| {
-        match blobs.iter().find(|blob| blob.name == name) {
+    let future =
+        Blob::list(&client, &container_name, &LIST_BLOB_OPTIONS_DEFAULT).map(|blobs| match blobs.iter().find(|blob| blob.name == name) {
             Some(retrieved_blob) => {
                 let sc = (*retrieved_blob).clone();
                 Ok(sc)
@@ -133,34 +126,21 @@ fn code() -> Result<(), Box<Error>> {
             None => Err(AzureError::GenericErrorWithText(
                 "our blob should be here... where is it?".to_owned(),
             )),
-        }
-    });
+        });
 
     let retrieved_blob = core.run(future)??;
     println!("retrieved_blob == {:?}", retrieved_blob);
 
     // this will fail because we did not specify a valid leaseID.
-    let future = Blob::delete(
-        &client,
-        &retrieved_blob.container_name,
-        &retrieved_blob.name,
-        None,
-    );
+    let future = Blob::delete(&client, &retrieved_blob.container_name, &retrieved_blob.name, None);
 
     core.run(future).unwrap_or_else(|err| {
-        println!(
-            "Failed to delete a locked blob without specifying a lease: {:?}",
-            err
-        );
+        println!("Failed to delete a locked blob without specifying a lease: {:?}", err);
     });
 
     // this will work because we did specify the valid leaseID.
-    let future = Blob::delete(
-        &client,
-        &retrieved_blob.container_name,
-        &retrieved_blob.name,
-        Some(&lease_id),
-    ).map(|_| println!("Blob deleted!"));
+    let future =
+        Blob::delete(&client, &retrieved_blob.container_name, &retrieved_blob.name, Some(&lease_id)).map(|_| println!("Blob deleted!"));
 
     core.run(future)?;
 

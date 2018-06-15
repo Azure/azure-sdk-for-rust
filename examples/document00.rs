@@ -11,8 +11,7 @@ use std::error::Error;
 use futures::future::*;
 use tokio_core::reactor::Core;
 
-use azure_sdk_for_rust::cosmos::{AuthorizationToken, TokenType, Client};
-
+use azure_sdk_for_rust::cosmos::{AuthorizationToken, Client, TokenType};
 
 #[macro_use]
 extern crate serde_derive;
@@ -46,8 +45,7 @@ fn main() {
 fn code() -> Result<(), Box<Error>> {
     // Let's get Cosmos account and master key from env variables.
     // This helps automated testing.
-    let master_key =
-        std::env::var("COSMOS_MASTER_KEY").expect("Set env variable COSMOS_MASTER_KEY first!");
+    let master_key = std::env::var("COSMOS_MASTER_KEY").expect("Set env variable COSMOS_MASTER_KEY first!");
     let account = std::env::var("COSMOS_ACCOUNT").expect("Set env variable COSMOS_ACCOUNT first!");
 
     // First, we create an authorization token. There are two types of tokens, master and resource
@@ -130,10 +128,7 @@ fn code() -> Result<(), Box<Error>> {
     // Notice how easy it is! :)
     // The method create_document will return, upon success,
     // the document attributes.
-    let document_attributes = core.run(
-        client.create_document(&database.id, &collection.id, &doc)
-            .execute()
-    )?;
+    let document_attributes = core.run(client.create_document(&database.id, &collection.id, &doc).execute())?;
     println!("document_attributes == {:?}", document_attributes);
 
     // We will perform some cleanup. First we delete the collection...

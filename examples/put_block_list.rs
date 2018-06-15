@@ -14,12 +14,11 @@ use tokio_core::reactor::Core;
 
 use azure_sdk_for_rust::{
     core::lease::{LeaseState, LeaseStatus},
-    storage::blob::{Blob, BlobType, PUT_BLOCK_OPTIONS_DEFAULT}, storage::client::Client,
+    storage::blob::{Blob, BlobType, PUT_BLOCK_OPTIONS_DEFAULT},
+    storage::client::Client,
 };
 
-use azure_sdk_for_rust::storage::blob::{
-    get_block_list, put_block_list, BlobBlockType, BlockList, BlockListType,
-};
+use azure_sdk_for_rust::storage::blob::{get_block_list, put_block_list, BlobBlockType, BlockList, BlockListType};
 
 fn main() {
     env_logger::init();
@@ -30,10 +29,8 @@ fn main() {
 // A series of unwrap(), unwrap() would have achieved the same result.
 fn code() -> Result<(), Box<Error>> {
     // First we retrieve the account name and master key from environment variables.
-    let account =
-        std::env::var("STORAGE_ACCOUNT").expect("Set env variable STORAGE_ACCOUNT first!");
-    let master_key =
-        std::env::var("STORAGE_MASTER_KEY").expect("Set env variable STORAGE_MASTER_KEY first!");
+    let account = std::env::var("STORAGE_ACCOUNT").expect("Set env variable STORAGE_ACCOUNT first!");
+    let master_key = std::env::var("STORAGE_MASTER_KEY").expect("Set env variable STORAGE_MASTER_KEY first!");
 
     let container_name = std::env::args()
         .nth(1)
@@ -80,48 +77,27 @@ fn code() -> Result<(), Box<Error>> {
     let mut block_list = BlockList::default();
 
     let future = new_blob
-        .put_block(
-            &client,
-            "block1",
-            &PUT_BLOCK_OPTIONS_DEFAULT,
-            &contents1.as_bytes(),
-        )
+        .put_block(&client, "block1", &PUT_BLOCK_OPTIONS_DEFAULT, &contents1.as_bytes())
         .map(|encoded_block_id| {
             println!("block1 blob for blob {} created", name);
-            block_list
-                .blocks
-                .push(BlobBlockType::Uncommitted(encoded_block_id));
+            block_list.blocks.push(BlobBlockType::Uncommitted(encoded_block_id));
             block_list
         })
         .and_then(|mut block_list| {
             new_blob
-                .put_block(
-                    &client,
-                    "block2",
-                    &PUT_BLOCK_OPTIONS_DEFAULT,
-                    &contents2.as_bytes(),
-                )
+                .put_block(&client, "block2", &PUT_BLOCK_OPTIONS_DEFAULT, &contents2.as_bytes())
                 .map(|encoded_block_id| {
                     println!("block2 blob for blob {} created", name);
-                    block_list
-                        .blocks
-                        .push(BlobBlockType::Uncommitted(encoded_block_id));
+                    block_list.blocks.push(BlobBlockType::Uncommitted(encoded_block_id));
                     block_list
                 })
         })
         .and_then(|mut block_list| {
             new_blob
-                .put_block(
-                    &client,
-                    "block3",
-                    &PUT_BLOCK_OPTIONS_DEFAULT,
-                    &contents3.as_bytes(),
-                )
+                .put_block(&client, "block3", &PUT_BLOCK_OPTIONS_DEFAULT, &contents3.as_bytes())
                 .map(|encoded_block_id| {
                     println!("block3 blob for blob {} created", name);
-                    block_list
-                        .blocks
-                        .push(BlobBlockType::Uncommitted(encoded_block_id));
+                    block_list.blocks.push(BlobBlockType::Uncommitted(encoded_block_id));
                     block_list
                 })
         })
@@ -158,8 +134,7 @@ fn code() -> Result<(), Box<Error>> {
     });
     core.run(future)?;
 
-    let future =
-        Blob::delete(&client, &container_name, &name, None).map(|_| println!("Blob deleted!"));
+    let future = Blob::delete(&client, &container_name, &name, None).map(|_| println!("Blob deleted!"));
 
     core.run(future)?;
 

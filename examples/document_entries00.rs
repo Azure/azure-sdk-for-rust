@@ -10,7 +10,7 @@ use std::error::Error;
 
 use tokio_core::reactor::Core;
 
-use azure_sdk_for_rust::cosmos::{AuthorizationToken, TokenType, Client, DocumentRequestExt};
+use azure_sdk_for_rust::cosmos::{AuthorizationToken, Client, DocumentRequestExt, TokenType};
 
 #[macro_use]
 extern crate serde_derive;
@@ -54,8 +54,7 @@ fn code() -> Result<(), Box<Error>> {
         .nth(2)
         .expect("please specify collection name as second command line parameter");
 
-    let master_key =
-        std::env::var("COSMOS_MASTER_KEY").expect("Set env variable COSMOS_MASTER_KEY first!");
+    let master_key = std::env::var("COSMOS_MASTER_KEY").expect("Set env variable COSMOS_MASTER_KEY first!");
     let account = std::env::var("COSMOS_ACCOUNT").expect("Set env variable COSMOS_ACCOUNT first!");
 
     let authorization_token = AuthorizationToken::new(account, TokenType::Master, &master_key)?;
@@ -64,102 +63,103 @@ fn code() -> Result<(), Box<Error>> {
 
     let client = Client::new(authorization_token)?;
 
-    core.run(
-        futures::future::join_all((0..5).map(|i| {
-            let doc = MySampleStruct {
-                id: &format!("unique_id{}", i),
-                a_string: "Something here",
-                a_number: i,
-                a_timestamp: chrono::Utc::now().timestamp(),
-            };
+    core.run(futures::future::join_all((0..5).map(|i| {
+        let doc = MySampleStruct {
+            id: &format!("unique_id{}", i),
+            a_string: "Something here",
+            a_number: i,
+            a_timestamp: chrono::Utc::now().timestamp(),
+        };
 
-            // let's add an entity. we ignore the errors at this point and just
-            // notify the user.
-            client.create_document(&database_name, &collection_name, &doc)
-                .partition_key(doc.id)
-                .execute()
-        }))
-    ).unwrap();
+        // let's add an entity. we ignore the errors at this point and just
+        // notify the user.
+        client
+            .create_document(&database_name, &collection_name, &doc)
+            .partition_key(doc.id)
+            .execute()
+    }))).unwrap();
     println!("Created 5 documents.");
 
     // let's get 3 entries at a time
-    let response = core.run(
-        client.list_documents(&database_name, &collection_name)
-            .max_item_count(3u64)
-            .execute::<MySampleStructOwned>()
-    ).unwrap();
+    let response =
+        core.run(
+            client
+                .list_documents(&database_name, &collection_name)
+                .max_item_count(3u64)
+                .execute::<MySampleStructOwned>(),
+        ).unwrap();
 
     assert_eq!(response.documents.len(), 3);
     println!("response == {:#?}", response);
 
     // we inserted 5 documents and retrieved the first 3.
     // continuation_token must be present
-    assert_eq!(
-        response.additional_headers.continuation_token.is_some(),
-        true
-    );
+    assert_eq!(response.additional_headers.continuation_token.is_some(), true);
 
     let ct = response.additional_headers.continuation_token.unwrap();
     println!("ct == {}", ct);
 
-    let response = core.run(
-        client.list_documents(&database_name, &collection_name)
-            .continuation_token(ct)
-            .execute::<MySampleStructOwned>()
-    ).unwrap();
+    let response =
+        core.run(
+            client
+                .list_documents(&database_name, &collection_name)
+                .continuation_token(ct)
+                .execute::<MySampleStructOwned>(),
+        ).unwrap();
 
     assert_eq!(response.documents.len(), 2);
     println!("response == {:#?}", response);
 
     // we got the last 2 entries. Now continuation_token
     // must be absent
-    assert_eq!(
-        response.additional_headers.continuation_token.is_some(),
-        false
-    );
+    assert_eq!(response.additional_headers.continuation_token.is_some(), false);
 
     println!("\n\nLooking for a specific item");
     let id = format!("unique_id{}", 3);
 
-    let response = core.run(
-        client.get_document(&database_name, &collection_name, &id)
-            .partition_key(&id)
-            .execute::<MySampleStructOwned>()
-    ).unwrap();
+    let response =
+        core.run(
+            client
+                .get_document(&database_name, &collection_name, &id)
+                .partition_key(&id)
+                .execute::<MySampleStructOwned>(),
+        ).unwrap();
 
     assert_eq!(response.document.is_some(), true);
     println!("response == {:#?}", response);
     let mut doc = response.document.unwrap();
     doc.entity.a_string = "Something else here".into();
 
-    let _response = core.run(
-        client.replace_document(&database_name, &collection_name, &doc)
+    let _response =
+        core.run(
+            client.replace_document(&database_name, &collection_name, &doc)
             .partition_key(&id)
             .if_match(doc.document_attributes.etag) // use optimistic concurrency check
-            .execute()
+            .execute(),
         ).unwrap();
 
     // This id should not be found. We expect None as result
     println!("\n\nLooking for non-existing item");
     let id = format!("unique_id{}", 100);
 
-    let response = core.run(
-        client.get_document(&database_name, &collection_name, &id)
-            .partition_key(&id)
-            .execute::<MySampleStructOwned>()
-    ).unwrap();
+    let response =
+        core.run(
+            client
+                .get_document(&database_name, &collection_name, &id)
+                .partition_key(&id)
+                .execute::<MySampleStructOwned>(),
+        ).unwrap();
 
     assert_eq!(response.document.is_some(), false);
     println!("response == {:#?}", response);
 
-    core.run(
-        futures::future::join_all((0..5).map(|i| {
-            let id = format!("unique_id{}", i);
-            client.delete_document(&database_name, &collection_name, &id)
-                .partition_key(&id)
-                .execute()
-        }))
-    ).unwrap();
+    core.run(futures::future::join_all((0..5).map(|i| {
+        let id = format!("unique_id{}", i);
+        client
+            .delete_document(&database_name, &collection_name, &id)
+            .partition_key(&id)
+            .execute()
+    }))).unwrap();
     println!("Cleaned up");
 
     Ok(())

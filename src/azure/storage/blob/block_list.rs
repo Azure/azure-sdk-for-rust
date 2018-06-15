@@ -49,15 +49,9 @@ where
         s.push_str("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<BlockList>\n");
         for bl in &self.blocks {
             let node = match bl {
-                BlobBlockType::Committed(content) => {
-                    format!("\t<Committed>{}</Committed>\n", content.borrow())
-                }
-                BlobBlockType::Uncommitted(content) => {
-                    format!("\t<Uncommitted>{}</Uncommitted>\n", content.borrow())
-                }
-                BlobBlockType::Latest(content) => {
-                    format!("\t<Latest>{}</Latest>\n", content.borrow())
-                }
+                BlobBlockType::Committed(content) => format!("\t<Committed>{}</Committed>\n", content.borrow()),
+                BlobBlockType::Uncommitted(content) => format!("\t<Uncommitted>{}</Uncommitted>\n", content.borrow()),
+                BlobBlockType::Latest(content) => format!("\t<Latest>{}</Latest>\n", content.borrow()),
             };
 
             s.push_str(&node);

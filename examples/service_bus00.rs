@@ -23,27 +23,16 @@ fn main() {
 fn code() -> Result<(), Box<Error>> {
     // First we retrieve the account name and master key from environment variables.
     // We expect master keys (ie, not resource constrained)
-    let service_bus_namespace = std::env::var("AZURE_SERVICE_BUS_NAMESPACE")
-        .expect("Set env variable AZURE_SERVICE_BUS_NAMESPACE first!");
-    let event_hub_name = std::env::var("AZURE_EVENT_HUB_NAME")
-        .expect("Set env variable AZURE_EVENT_HUB_NAME first!");
-    let policy_name =
-        std::env::var("AZURE_POLICY_NAME").expect("Set env variable AZURE_POLICY_NAME first!");
-    let policy_key =
-        std::env::var("AZURE_POLICY_KEY").expect("Set env variable AZURE_POLICY_KEY first!");
+    let service_bus_namespace = std::env::var("AZURE_SERVICE_BUS_NAMESPACE").expect("Set env variable AZURE_SERVICE_BUS_NAMESPACE first!");
+    let event_hub_name = std::env::var("AZURE_EVENT_HUB_NAME").expect("Set env variable AZURE_EVENT_HUB_NAME first!");
+    let policy_name = std::env::var("AZURE_POLICY_NAME").expect("Set env variable AZURE_POLICY_NAME first!");
+    let policy_key = std::env::var("AZURE_POLICY_KEY").expect("Set env variable AZURE_POLICY_KEY first!");
 
     let mut core = Core::new()?;
 
-    let mut client = Client::new(
-        service_bus_namespace,
-        event_hub_name,
-        policy_name,
-        policy_key,
-    ).unwrap();
+    let mut client = Client::new(service_bus_namespace, event_hub_name, policy_name, policy_key).unwrap();
 
-    let messages = vec![
-        "These", "are", "useless", "messages", "provided", "for", "free", "with", "love",
-    ];
+    let messages = vec!["These", "are", "useless", "messages", "provided", "for", "free", "with", "love"];
     println!(
         "Sending the following messages: {:?}. \
          Please note they will be sent out of order!",

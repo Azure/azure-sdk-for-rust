@@ -14,7 +14,8 @@ use tokio_core::reactor::Core;
 
 use azure_sdk_for_rust::{
     core::lease::{LeaseAction, LeaseState, LeaseStatus},
-    storage::blob::{Blob, BlobType, LEASE_BLOB_OPTIONS_DEFAULT}, storage::client::Client,
+    storage::blob::{Blob, BlobType, LEASE_BLOB_OPTIONS_DEFAULT},
+    storage::client::Client,
 };
 
 fn main() {
@@ -26,10 +27,8 @@ fn main() {
 // A series of unwrap(), unwrap() would have achieved the same result.
 fn code() -> Result<(), Box<Error>> {
     // First we retrieve the account name and master key from environment variables.
-    let account =
-        std::env::var("STORAGE_ACCOUNT").expect("Set env variable STORAGE_ACCOUNT first!");
-    let master_key =
-        std::env::var("STORAGE_MASTER_KEY").expect("Set env variable STORAGE_MASTER_KEY first!");
+    let account = std::env::var("STORAGE_ACCOUNT").expect("Set env variable STORAGE_ACCOUNT first!");
+    let master_key = std::env::var("STORAGE_MASTER_KEY").expect("Set env variable STORAGE_MASTER_KEY first!");
 
     let container_name = std::env::args()
         .nth(1)
@@ -71,12 +70,10 @@ fn code() -> Result<(), Box<Error>> {
 
     let mut lbo = LEASE_BLOB_OPTIONS_DEFAULT.clone();
     lbo.lease_duration = Some(15);
-    let future = new_blob
-        .lease(&client, LeaseAction::Acquire, &lbo)
-        .map(|lease_id| {
-            println!("Blob leased");
-            lease_id
-        });
+    let future = new_blob.lease(&client, LeaseAction::Acquire, &lbo).map(|lease_id| {
+        println!("Blob leased");
+        lease_id
+    });
 
     let lease_id = core.run(future)?;
     println!("lease id == {:?}", lease_id);

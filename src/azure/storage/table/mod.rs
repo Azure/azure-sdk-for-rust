@@ -3,12 +3,14 @@ mod batch;
 pub use self::batch::BatchItem;
 
 use self::batch::generate_batch_payload;
-use azure::core::errors::{
-    check_status_extract_body, extract_status_and_body, AzureError, UnexpectedHTTPResult,
-};
+use azure::core::errors::{check_status_extract_body, extract_status_and_body, AzureError, UnexpectedHTTPResult};
 use azure::storage::client::Client;
 use azure::storage::rest_client::ServiceType;
-use hyper::{header::{self, HeaderValue}, Method, StatusCode, client::ResponseFuture};
+use hyper::{
+    client::ResponseFuture,
+    header::{self, HeaderValue},
+    Method, StatusCode,
+};
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 use serde_json;
@@ -27,31 +29,23 @@ impl TableService {
     }
 
     pub fn list_tables(&self) -> impl Future<Item = Vec<String>, Error = AzureError> {
-        self.query_entities(TABLE_TABLES, None)
-            .and_then(|entities| {
-                let e: Vec<String> = entities
-                    .into_iter()
-                    .map(|x: TableEntity| x.TableName)
-                    .collect();
-                ok(e)
-            })
+        self.query_entities(TABLE_TABLES, None).and_then(|entities| {
+            let e: Vec<String> = entities.into_iter().map(|x: TableEntity| x.TableName).collect();
+            ok(e)
+        })
     }
 
     // Create table if not exists.
-    pub fn create_table<T: Into<String>>(
-        &self,
-        table_name: T,
-    ) -> impl Future<Item = (), Error = AzureError> {
+    pub fn create_table<T: Into<String>>(&self, table_name: T) -> impl Future<Item = (), Error = AzureError> {
         let body = &serde_json::to_string(&TableEntity {
             TableName: table_name.into(),
         }).unwrap();
         debug!("body == {}", body);
         let req = self.request_with_default_header(TABLE_TABLES, Method::POST, Some(body));
 
-        done(req).from_err().and_then(move |future_response| {
-            check_status_extract_body(future_response, StatusCode::CREATED)
-                .and_then(move |_| ok(()))
-        })
+        done(req)
+            .from_err()
+            .and_then(move |future_response| check_status_extract_body(future_response, StatusCode::CREATED).and_then(move |_| ok(())))
     }
 
     pub fn get_entity<T: DeserializeOwned>(
@@ -104,11 +98,7 @@ impl TableService {
         })
     }
 
-    fn _prepare_insert_entity<T>(
-        &self,
-        table_name: &str,
-        entity: &T,
-    ) -> Result<ResponseFuture, AzureError>
+    fn _prepare_insert_entity<T>(&self, table_name: &str, entity: &T) -> Result<ResponseFuture, AzureError>
     where
         T: Serialize,
     {
@@ -116,17 +106,12 @@ impl TableService {
         self.request_with_default_header(table_name, Method::POST, Some(&obj_ser))
     }
 
-    pub fn insert_entity<T: Serialize>(
-        &self,
-        table_name: &str,
-        entity: &T,
-    ) -> impl Future<Item = (), Error = AzureError> {
+    pub fn insert_entity<T: Serialize>(&self, table_name: &str, entity: &T) -> impl Future<Item = (), Error = AzureError> {
         let req = self._prepare_insert_entity(table_name, entity);
 
-        done(req).from_err().and_then(move |future_response| {
-            check_status_extract_body(future_response, StatusCode::CREATED)
-                .and_then(move |_| ok(()))
-        })
+        done(req)
+            .from_err()
+            .and_then(move |future_response| check_status_extract_body(future_response, StatusCode::CREATED).and_then(move |_| ok(())))
     }
 
     fn _prepare_update_entity<T>(
@@ -152,28 +137,21 @@ impl TableService {
         entity: &T,
     ) -> impl Future<Item = (), Error = AzureError> {
         let req = self._prepare_update_entity(table_name, partition_key, row_key, entity);
-        done(req).from_err().and_then(move |future_response| {
-            check_status_extract_body(future_response, StatusCode::NO_CONTENT)
-                .and_then(move |_| ok(()))
-        })
+        done(req)
+            .from_err()
+            .and_then(move |future_response| check_status_extract_body(future_response, StatusCode::NO_CONTENT).and_then(move |_| ok(())))
     }
 
-    pub fn delete_entity(
-        &self,
-        table_name: &str,
-        partition_key: &str,
-        row_key: &str,
-    ) -> impl Future<Item = (), Error = AzureError> {
+    pub fn delete_entity(&self, table_name: &str, partition_key: &str, row_key: &str) -> impl Future<Item = (), Error = AzureError> {
         let path = &entity_path(table_name, partition_key, row_key);
 
         let req = self.request(path, Method::DELETE, None, |ref mut request| {
             request.header(header::ACCEPT, HeaderValue::from_static(get_json_mime_nometadata()));
             request.header(header::IF_MATCH, header::HeaderValue::from_static("*"));
         });
-        done(req).from_err().and_then(move |future_response| {
-            check_status_extract_body(future_response, StatusCode::NO_CONTENT)
-                .and_then(move |_| ok(()))
-        })
+        done(req)
+            .from_err()
+            .and_then(move |future_response| check_status_extract_body(future_response, StatusCode::NO_CONTENT).and_then(move |_| ok(())))
     }
 
     pub fn batch<T: Serialize>(
@@ -202,12 +180,7 @@ impl TableService {
         })
     }
 
-    fn request_with_default_header(
-        &self,
-        segment: &str,
-        method: Method,
-        request_str: Option<&str>,
-    ) -> Result<ResponseFuture, AzureError> {
+    fn request_with_default_header(&self, segment: &str, method: Method, request_str: Option<&str>) -> Result<ResponseFuture, AzureError> {
         self.request(segment, method, request_str, |ref mut request| {
             request.header(header::ACCEPT, HeaderValue::from_static(get_json_mime_nometadata()));
             if request_str.is_some() {
@@ -216,13 +189,7 @@ impl TableService {
         })
     }
 
-    fn request<F>(
-        &self,
-        segment: &str,
-        method: Method,
-        request_str: Option<&str>,
-        headers_func: F,
-    ) -> Result<ResponseFuture, AzureError>
+    fn request<F>(&self, segment: &str, method: Method, request_str: Option<&str>, headers_func: F) -> Result<ResponseFuture, AzureError>
     where
         F: FnOnce(&mut ::http::request::Builder),
     {
@@ -236,8 +203,7 @@ impl TableService {
             None => None,
         };
 
-        self.client
-            .perform_table_request(segment, method, headers_func, request_vec)
+        self.client.perform_table_request(segment, method, headers_func, request_vec)
     }
 }
 

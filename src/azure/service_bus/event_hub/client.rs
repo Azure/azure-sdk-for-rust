@@ -1,8 +1,8 @@
 use futures::future::*;
 
-use hyper;
 use azure::core::errors::AzureError;
 use azure::service_bus::event_hub::send_event;
+use hyper;
 
 use time::Duration;
 
@@ -15,17 +15,16 @@ pub struct Client {
     event_hub: String,
     policy_name: String,
     signing_key: SigningKey,
-    http_client: HttpClient
+    http_client: HttpClient,
 }
 
 impl Client {
-    pub fn new<N, E, P, K>(
-        namespace: N,
-        event_hub: E,
-        policy_name: P,
-        key: K,
-    ) -> Result<Client, AzureError>
-    where N: Into<String>, E: Into<String>, P: Into<String>, K: AsRef<str>
+    pub fn new<N, E, P, K>(namespace: N, event_hub: E, policy_name: P, key: K) -> Result<Client, AzureError>
+    where
+        N: Into<String>,
+        E: Into<String>,
+        P: Into<String>,
+        K: AsRef<str>,
     {
         let signing_key = SigningKey::new(&SHA256, key.as_ref().as_bytes());
         let http_client = hyper::Client::builder().build(::hyper_tls::HttpsConnector::new(4)?);
@@ -35,15 +34,11 @@ impl Client {
             event_hub: event_hub.into(),
             policy_name: policy_name.into(),
             signing_key,
-            http_client
+            http_client,
         })
     }
 
-    pub fn send_event(
-        &mut self,
-        event_body: &str,
-        duration: Duration,
-    ) -> impl Future<Item = (), Error = AzureError> {
+    pub fn send_event(&mut self, event_body: &str, duration: Duration) -> impl Future<Item = (), Error = AzureError> {
         {
             send_event(
                 &self.http_client,

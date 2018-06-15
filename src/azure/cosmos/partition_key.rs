@@ -1,7 +1,7 @@
-use std::borrow::Cow;
 use azure::core::errors::AzureError;
 use serde_json;
 use smallvec::{IntoIter, SmallVec};
+use std::borrow::Cow;
 use std::iter::IntoIterator;
 
 #[derive(Debug, Clone)]
@@ -13,10 +13,12 @@ impl<'a> PartitionKey<'a> {
     pub fn chain<S: Into<Cow<'a, str>>>(mut self, key: S) -> Self {
         match self.pk {
             Some(ref mut p) => p.push(key.into()),
-            None => self.pk = {
-                let mut vec = SmallVec::new();
-                vec.push(key.into());
-                Some(vec)
+            None => {
+                self.pk = {
+                    let mut vec = SmallVec::new();
+                    vec.push(key.into());
+                    Some(vec)
+                }
             }
         }
         self

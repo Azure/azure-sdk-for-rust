@@ -31,10 +31,7 @@ impl<'a> Parameter<'a> {
         IncompleteParameter {
             name_completed: PhantomData,
             value_completed: PhantomData,
-            parameter: Parameter {
-                name: "",
-                value: "",
-            },
+            parameter: Parameter { name: "", value: "" },
         }
     }
 

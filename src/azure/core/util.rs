@@ -2,7 +2,9 @@ use bytes::{Bytes, BytesMut};
 use http::{self, request::Builder, HttpTryFrom};
 use hyper::header::{AsHeaderName, HeaderMap, HeaderName, HeaderValue};
 use std::{
-    fmt::Display, io::{self, Write}, str::FromStr,
+    fmt::Display,
+    io::{self, Write},
+    str::FromStr,
 };
 
 struct Writer(BytesMut);

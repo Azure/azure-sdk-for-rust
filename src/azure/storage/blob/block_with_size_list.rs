@@ -2,7 +2,6 @@ use azure::storage::blob::BlobBlockType;
 use azure::storage::blob::BlobBlockWithSize;
 use serde_xml_rs::{deserialize, Error};
 use std::borrow::Borrow;
-use std::convert::TryFrom;
 
 #[derive(Debug, Deserialize)]
 struct Name {
@@ -46,10 +45,8 @@ where
     pub blocks: Vec<BlobBlockWithSize<T>>,
 }
 
-impl<'a> TryFrom<&'a str> for BlockWithSizeList<String> {
-    type Error = Error;
-
-    fn try_from(xml: &'a str) -> Result<Self, Self::Error> {
+impl BlockWithSizeList<String> {
+    pub fn try_from<'a>(xml: &'a str) -> Result<BlockWithSizeList<String>, Error> {
         let bl: BlockList = deserialize(xml.as_bytes())?;
         debug!("bl == {:?}", bl);
 
@@ -104,10 +101,7 @@ mod test {
         assert!(bl.blocks[0].size_in_bytes == 200);
         assert!(bl.blocks[1].size_in_bytes == 4096);
 
-        assert!(
-            bl.blocks[0].block_list_type
-                == BlobBlockType::Committed(String::from("base64-encoded-block-id"))
-        );
+        assert!(bl.blocks[0].block_list_type == BlobBlockType::Committed(String::from("base64-encoded-block-id")));
         let b2 = BlobBlockType::Uncommitted(String::from("base64-encoded-block-id-number2"));
         assert!(
             bl.blocks[1].block_list_type == b2,

@@ -1,10 +1,10 @@
 mod list_container_options;
 pub use self::list_container_options::{ListContainerOptions, LIST_CONTAINER_OPTIONS_DEFAULT};
 
-use std::{fmt, str::FromStr};
 use chrono::{DateTime, Utc};
 use futures::future::*;
 use hyper::{Method, StatusCode};
+use std::{fmt, str::FromStr};
 use xml::Element;
 
 use azure::core::{
@@ -13,18 +13,13 @@ use azure::core::{
     incompletevector::IncompleteVector,
     lease::{LeaseDuration, LeaseState, LeaseStatus},
     parsing::{cast_must, cast_optional, traverse, FromStringOptional},
-    util::format_header_value
+    util::format_header_value,
 };
 use azure::storage::client::Client;
 
 const HEADER_BLOB_PUBLIC_ACCESS: &str = "x-ms-blob-public-access"; // [PublicAccess]
 
-create_enum!(
-    PublicAccess,
-    (None, "none"),
-    (Container, "container"),
-    (Blob, "blob")
-);
+create_enum!(PublicAccess, (None, "none"), (Container, "container"), (Blob, "blob"));
 
 #[derive(Debug, Clone)]
 pub struct Container {
@@ -55,8 +50,7 @@ impl Container {
 
         let lease_state = cast_must::<LeaseState>(elem, &["Properties", "LeaseState"])?;
 
-        let lease_duration =
-            cast_optional::<LeaseDuration>(elem, &["Properties", "LeaseDuration"])?;
+        let lease_duration = cast_optional::<LeaseDuration>(elem, &["Properties", "LeaseDuration"])?;
 
         let lease_status = cast_must::<LeaseStatus>(elem, &["Properties", "LeaseStatus"])?;
 
@@ -71,29 +65,17 @@ impl Container {
     }
 
     pub fn delete(&mut self, c: &Client) -> impl Future<Item = (), Error = AzureError> {
-        let uri = format!(
-            "https://{}.blob.core.windows.net/{}?restype=container",
-            c.account(),
-            self.name
-        );
+        let uri = format!("https://{}.blob.core.windows.net/{}?restype=container", c.account(), self.name);
 
         let req = c.perform_request(&uri, Method::DELETE, |_| {}, None);
 
-        done(req).from_err().and_then(move |future_response| {
-            check_status_extract_body(future_response, StatusCode::ACCEPTED).and_then(|_| ok(()))
-        })
+        done(req)
+            .from_err()
+            .and_then(move |future_response| check_status_extract_body(future_response, StatusCode::ACCEPTED).and_then(|_| ok(())))
     }
 
-    pub fn create(
-        c: &Client,
-        container_name: &str,
-        pa: PublicAccess,
-    ) -> impl Future<Item = (), Error = AzureError> {
-        let uri = format!(
-            "https://{}.blob.core.windows.net/{}?restype=container",
-            c.account(),
-            container_name
-        );
+    pub fn create(c: &Client, container_name: &str, pa: PublicAccess) -> impl Future<Item = (), Error = AzureError> {
+        let uri = format!("https://{}.blob.core.windows.net/{}?restype=container", c.account(), container_name);
 
         let req = c.perform_request(
             &uri,
@@ -104,18 +86,15 @@ impl Container {
             Some(&[]),
         );
 
-        done(req).from_err().and_then(move |future_response| {
-            check_status_extract_body(future_response, StatusCode::CREATED).and_then(|_| ok(()))
-        })
+        done(req)
+            .from_err()
+            .and_then(move |future_response| check_status_extract_body(future_response, StatusCode::CREATED).and_then(|_| ok(())))
     }
 
     // TODO
     // pub fn get_acl(c : &Client, gao : &GetAclOptions)
 
-    pub fn list(
-        c: &Client,
-        lco: &ListContainerOptions,
-    ) -> impl Future<Item = IncompleteVector<Container>, Error = AzureError> {
+    pub fn list(c: &Client, lco: &ListContainerOptions) -> impl Future<Item = IncompleteVector<Container>, Error = AzureError> {
         let mut uri = format!(
             "https://{}.blob.core.windows.net?comp=list&maxresults={}",
             c.account(),

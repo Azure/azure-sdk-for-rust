@@ -2,16 +2,23 @@ use azure::core::{
     errors::{
         check_status_extract_body, check_status_extract_headers_and_body, extract_status_headers_and_body, AzureError, UnexpectedHTTPResult,
     },
-    incompletevector::ContinuationToken, util::RequestBuilderExt,
+    incompletevector::ContinuationToken,
+    util::RequestBuilderExt,
 };
 use azure::cosmos::{
-    client::headers::*, document::{DocumentAttributes, IndexingDirective}, partition_key::PartitionKey, request_response::*,
+    client::headers::*,
+    document::{DocumentAttributes, IndexingDirective},
+    partition_key::PartitionKey,
+    request_response::*,
     ConsistencyLevel,
 };
 use futures::{future, prelude::*};
 use http::request::Builder as RequestBuilder;
 use hyper::{
-    self, client::HttpConnector, header::{self, HeaderMap, HeaderValue}, Client, StatusCode,
+    self,
+    client::HttpConnector,
+    header::{self, HeaderMap, HeaderValue},
+    Client, StatusCode,
 };
 use hyper_tls::HttpsConnector;
 use serde::de::DeserializeOwned;

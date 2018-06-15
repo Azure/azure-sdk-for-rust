@@ -19,7 +19,9 @@ Microsoft Azure expose its technologies via REST API. These APIs are easily cons
 
 This crate relies heavily on the excellent crate called [Hyper](https://github.com/hyperium/hyper). As of this library version [0.4.0](https://github.com/MindFlavor/AzureSDKForRust/releases/tag/0.4.0) all the methods are future-aware.
 
-From version [0.7.2](https://github.com/MindFlavor/AzureSDKForRust/releases/tag/0.7.2) I've used the TryFrom and TryTrait options. This means the library is once again nightly only (until those lints are stabilized). The relative issue is: [https://github.com/rust-lang/rust/issues/33417](https://github.com/rust-lang/rust/issues/33417). 
+~~From version [0.7.2](https://github.com/MindFlavor/AzureSDKForRust/releases/tag/0.7.2) I've used the TryFrom and TryTrait options. This means the library is once again nightly only (until those lints are stabilized). The relative issue is: [https://github.com/rust-lang/rust/issues/33417](https://github.com/rust-lang/rust/issues/33417).~~
+This is addressed in the upcoming version. The crate no longer uses TryFrom so it can be compiled with the stable compiler.
+
 
 > **NOTE:** This repository is under heavy development and is likely to break over time. The current releases will probabily contain bugs. As usual open issues if you find any.
 

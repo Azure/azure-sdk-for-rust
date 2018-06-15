@@ -1,11 +1,5 @@
-use azure::core::{
-    errors::AzureError,
-    util::HeaderMapExt
-};
-use azure::cosmos::{
-    collection::Collection, database::Database, document::DocumentAttributes,
-    client::headers::HEADER_REQUEST_CHARGE
-};
+use azure::core::{errors::AzureError, util::HeaderMapExt};
+use azure::cosmos::{client::headers::HEADER_REQUEST_CHARGE, collection::Collection, database::Database, document::DocumentAttributes};
 use serde::de::DeserializeOwned;
 
 #[derive(Deserialize, Debug)]

@@ -61,15 +61,14 @@ impl<'a> Stream for BlobStream<'a> {
         let item_to_add = match self.future {
             None => {
                 println!("range == {:?}", range);
-                let f: Box<Future<Item = (Blob, Vec<u8>), Error = AzureError>> =
-                    Box::new(Blob::get(
-                        self.client,
-                        &self.container_name,
-                        &self.blob_name,
-                        self.snapshot,
-                        Some(&range),
-                        self.lease_id,
-                    ));
+                let f: Box<Future<Item = (Blob, Vec<u8>), Error = AzureError>> = Box::new(Blob::get(
+                    self.client,
+                    &self.container_name,
+                    &self.blob_name,
+                    self.snapshot,
+                    Some(&range),
+                    self.lease_id,
+                ));
                 Some(f)
             }
             Some(_) => None,

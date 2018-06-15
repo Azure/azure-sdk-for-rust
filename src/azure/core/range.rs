@@ -87,10 +87,7 @@ mod test {
 
     #[test]
     fn test_range_display() {
-        let range = Range {
-            start: 100,
-            end: 500,
-        };
+        let range = Range { start: 100, end: 500 };
 
         let txt = format!("{}", range);
 

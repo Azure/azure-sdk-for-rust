@@ -1,7 +1,7 @@
-use hyper::{self, Method};
-use hyper_tls;
 use super::rest_client::{perform_request, ServiceType};
 use azure::core::errors::AzureError;
+use hyper::{self, Method};
+use hyper_tls;
 
 // Can be variant for different cloud environment
 const SERVICE_SUFFIX_BLOB: &str = ".blob.core.windows.net";
@@ -17,8 +17,7 @@ impl Client {
     pub fn new(account: &str, key: &str) -> Result<Client, AzureError> {
         use hyper;
 
-        let client = hyper::Client::builder()
-            .build(hyper_tls::HttpsConnector::new(4)?);
+        let client = hyper::Client::builder().build(hyper_tls::HttpsConnector::new(4)?);
 
         Ok(Client {
             account: account.to_owned(),
@@ -45,15 +44,7 @@ impl Client {
     where
         F: FnOnce(&mut ::http::request::Builder),
     {
-        perform_request(
-            &self.hc,
-            uri,
-            method,
-            &self.key,
-            headers_func,
-            request_body,
-            ServiceType::Blob,
-        )
+        perform_request(&self.hc, uri, method, &self.key, headers_func, request_body, ServiceType::Blob)
     }
 
     pub fn perform_table_request<F>(

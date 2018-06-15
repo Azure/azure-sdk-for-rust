@@ -20,14 +20,13 @@ use std::ops::Deref;
 use tokio_core::reactor::Core;
 
 use azure_sdk_for_rust::core::{
-    errors::AzureError, lease::{LeaseState, LeaseStatus},
+    errors::AzureError,
+    lease::{LeaseState, LeaseStatus},
 };
 use azure_sdk_for_rust::storage::{
-    blob::{
-        get_block_list, put_block_list, Blob, BlobType, BlockListType, PUT_BLOCK_OPTIONS_DEFAULT,
-        PUT_OPTIONS_DEFAULT,
-    },
-    client::Client, container::{Container, PublicAccess, LIST_CONTAINER_OPTIONS_DEFAULT},
+    blob::{get_block_list, put_block_list, Blob, BlobType, BlockListType, PUT_BLOCK_OPTIONS_DEFAULT, PUT_OPTIONS_DEFAULT},
+    client::Client,
+    container::{Container, PublicAccess, LIST_CONTAINER_OPTIONS_DEFAULT},
 };
 use chrono::Utc;
 use futures::Future;
@@ -38,18 +37,13 @@ fn create_and_delete_container() {
     let name: &'static str = "azuresdkrustetoets";
 
     let (client, mut core) = initialize().unwrap();
-    core.run(Container::create(&client, name, PublicAccess::Container))
-        .unwrap();
+    core.run(Container::create(&client, name, PublicAccess::Container)).unwrap();
 
     let mut lco = LIST_CONTAINER_OPTIONS_DEFAULT.clone();
     lco.prefix = Some(name.to_owned());
 
     let list = core.run(Container::list(&client, &lco)).unwrap();
-    let cont_list: Vec<&Container> = list
-        .deref()
-        .into_iter()
-        .filter(|e| e.name == name)
-        .collect();
+    let cont_list: Vec<&Container> = list.deref().into_iter().filter(|e| e.name == name).collect();
 
     if cont_list.len() != 1 {
         panic!("More than 1 container returned with the same name!");
@@ -68,11 +62,8 @@ fn put_and_get_block_list() {
 
     let (client, mut core) = initialize().unwrap();
 
-    core.run(Container::create(
-        &client,
-        &container.name,
-        PublicAccess::Container,
-    )).expect("container already present");
+    core.run(Container::create(&client, &container.name, PublicAccess::Container))
+        .expect("container already present");
 
     let contents1 = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
     let contents2 = "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB";
@@ -104,28 +95,9 @@ fn put_and_get_block_list() {
     };
 
     let future = new_blob
-        .put_block(
-            &client,
-            "block1",
-            &PUT_BLOCK_OPTIONS_DEFAULT,
-            &contents1.as_bytes(),
-        )
-        .and_then(|_| {
-            new_blob.put_block(
-                &client,
-                "block2",
-                &PUT_BLOCK_OPTIONS_DEFAULT,
-                &contents2.as_bytes(),
-            )
-        })
-        .and_then(|_| {
-            new_blob.put_block(
-                &client,
-                "block3",
-                &PUT_BLOCK_OPTIONS_DEFAULT,
-                &contents3.as_bytes(),
-            )
-        });
+        .put_block(&client, "block1", &PUT_BLOCK_OPTIONS_DEFAULT, &contents1.as_bytes())
+        .and_then(|_| new_blob.put_block(&client, "block2", &PUT_BLOCK_OPTIONS_DEFAULT, &contents2.as_bytes()))
+        .and_then(|_| new_blob.put_block(&client, "block3", &PUT_BLOCK_OPTIONS_DEFAULT, &contents3.as_bytes()));
 
     core.run(future).unwrap();
 
@@ -151,15 +123,11 @@ fn put_and_get_block_list() {
     );
     core.run(future).unwrap();
 
-    let future =
-        Blob::delete(&client, &container.name, &name, None).map(|_| println!("Blob deleted!"));
+    let future = Blob::delete(&client, &container.name, &name, None).map(|_| println!("Blob deleted!"));
     core.run(future).unwrap();
 
-    core.run(
-        container
-            .delete(&client)
-            .map(|_| println!("container {} deleted!", container.name)),
-    ).unwrap();
+    core.run(container.delete(&client).map(|_| println!("container {} deleted!", container.name)))
+        .unwrap();
 }
 
 #[test]
@@ -197,11 +165,7 @@ fn put_blob() {
         .find(|x| x.name == container_name)
         .is_none()
     {
-        core.run(Container::create(
-            &client,
-            container_name,
-            PublicAccess::Blob,
-        )).unwrap();
+        core.run(Container::create(&client, container_name, PublicAccess::Blob)).unwrap();
     }
 
     let new_blob = Blob {
@@ -236,10 +200,8 @@ fn put_blob() {
 }
 
 fn initialize() -> Result<(Client, Core), AzureError> {
-    let account =
-        std::env::var("STORAGE_ACCOUNT").expect("Set env variable STORAGE_ACCOUNT first!");
-    let master_key =
-        std::env::var("STORAGE_MASTER_KEY").expect("Set env variable STORAGE_MASTER_KEY first!");
+    let account = std::env::var("STORAGE_ACCOUNT").expect("Set env variable STORAGE_ACCOUNT first!");
+    let master_key = std::env::var("STORAGE_MASTER_KEY").expect("Set env variable STORAGE_MASTER_KEY first!");
     let core = Core::new()?;
 
     Ok((Client::new(&core.handle(), &account, &master_key)?, core))

@@ -10,7 +10,7 @@ use std::error::Error;
 
 use tokio_core::reactor::Core;
 
-use azure_sdk_for_rust::cosmos::{AuthorizationToken, TokenType, Client, query::Query};
+use azure_sdk_for_rust::cosmos::{query::Query, AuthorizationToken, Client, TokenType};
 
 #[macro_use]
 extern crate serde_derive;
@@ -34,13 +34,10 @@ fn code() -> Result<(), Box<Error>> {
     let collection_name = std::env::args()
         .nth(2)
         .expect("please specify collection name as second command line parameter");
-    let query = std::env::args()
-        .nth(3)
-        .expect("please specify requested query");
+    let query = std::env::args().nth(3).expect("please specify requested query");
 
     let account = std::env::var("COSMOS_ACCOUNT").expect("Set env variable COSMOS_ACCOUNT first!");
-    let master_key =
-        std::env::var("COSMOS_MASTER_KEY").expect("Set env variable COSMOS_MASTER_KEY first!");
+    let master_key = std::env::var("COSMOS_MASTER_KEY").expect("Set env variable COSMOS_MASTER_KEY first!");
 
     let authorization_token = AuthorizationToken::new(account, TokenType::Master, &master_key)?;
 
@@ -48,10 +45,8 @@ fn code() -> Result<(), Box<Error>> {
 
     let client = Client::new(authorization_token)?;
 
-    let future = client.query_document(
-        &database_name,
-        &collection_name,
-        &Query::from(&query as &str))
+    let future = client
+        .query_document(&database_name, &collection_name, &Query::from(&query as &str))
         .execute_json();
 
     let ret = core.run(future)?;
@@ -62,10 +57,8 @@ fn code() -> Result<(), Box<Error>> {
         println!("{}", doc.result);
     }
 
-    let future = client.query_document(
-        &database_name,
-        &collection_name,
-        &Query::from(&query as &str))
+    let future = client
+        .query_document(&database_name, &collection_name, &Query::from(&query as &str))
         .execute::<MySampleStructOwned>();
 
     let ret = core.run(future)?;
@@ -78,10 +71,8 @@ fn code() -> Result<(), Box<Error>> {
 
     // test continuation token
     // only if we have more than 2 records
-    let future = client.query_document(
-        &database_name,
-        &collection_name,
-        &Query::from(&query as &str))
+    let future = client
+        .query_document(&database_name, &collection_name, &Query::from(&query as &str))
         .max_item_count(2u64)
         .execute::<MySampleStructOwned>();
 
@@ -96,10 +87,8 @@ fn code() -> Result<(), Box<Error>> {
     if let Some(ct) = ret.additional_headers.continuation_token {
         let ret = {
             // if we have more, let's get them
-            let future = client.query_document(
-                &database_name,
-                &collection_name,
-                &Query::from(&query as &str))
+            let future = client
+                .query_document(&database_name, &collection_name, &Query::from(&query as &str))
                 .continuation_token(ct)
                 .execute::<MySampleStructOwned>();
             core.run(future)?

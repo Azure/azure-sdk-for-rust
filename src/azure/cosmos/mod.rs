@@ -1,7 +1,7 @@
 mod authorization_token;
 mod client;
-mod document_requests;
 pub mod database;
+mod document_requests;
 
 pub mod request_response;
 
