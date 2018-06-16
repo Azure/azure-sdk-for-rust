@@ -1,57 +1,4 @@
-use azure::core::{
-    errors::{
-        check_status_extract_body, check_status_extract_headers_and_body, extract_status_headers_and_body, AzureError, UnexpectedHTTPResult,
-    },
-    incompletevector::ContinuationToken,
-    util::RequestBuilderExt,
-};
-use azure::cosmos::{
-    client::headers::*,
-    document::{DocumentAttributes, IndexingDirective},
-    partition_key::PartitionKey,
-    request_response::*,
-    ConsistencyLevel,
-};
-use futures::{future, prelude::*};
-use http::request::Builder as RequestBuilder;
-use hyper::{
-    self,
-    client::HttpConnector,
-    header::{self, HeaderMap, HeaderValue},
-    Client, StatusCode,
-};
-use hyper_tls::HttpsConnector;
-use serde::de::DeserializeOwned;
-use serde_json;
-use std::sync::Arc;
-use std::{marker::PhantomData, str};
-
-type HyperClient = Arc<Client<HttpsConnector<HttpConnector>>>;
-
-macro_rules! request_bytes_option {
-    ($name:ident, $ty:ty, $h:path) => {
-        pub fn $name<V: Into<$ty>>(mut self, value: V) -> Self {
-            self.request.header_bytes($h, value.into());
-            self
-        }
-    };
-}
-
-macro_rules! request_option {
-    ($name:ident, bool, $h:path) => {
-        pub fn $name<V: Into<bool>>(mut self, value: V) -> Self {
-            self.request.header($h, ::http::header::HeaderValue::from_static(
-                if value.into() { "true" } else { "false" }));
-            self
-        }
-    };
-    ($name:ident, $ty:ty, $h:path) => {
-        pub fn $name<V: Into<$ty>>(mut self, value: V) -> Self {
-            self.request.header_formatted($h, value.into());
-            self
-        }
-    };
-}
+use super::*;
 
 pub struct CreateDocumentRequest {
     hyper_client: HyperClient,
@@ -87,9 +34,9 @@ impl CreateDocumentRequest {
         let mut req = self.request;
         future::result(self.payload)
             .from_err()
-            .and_then(move |payload| future::result(req.body(payload.into())).from_err())
+            .and_then(move |payload| Ok(req.body(payload.into())?))
             .and_then(move |r| check_status_extract_body(hc.request(r), StatusCode::CREATED))
-            .and_then(move |body| future::result(serde_json::from_str::<DocumentAttributes>(&body)).from_err())
+            .and_then(move |body| Ok(serde_json::from_str::<DocumentAttributes>(&body)?))
     }
 }
 
@@ -115,22 +62,20 @@ impl GetDocumentRequest {
         trace!("get_document called(request == {:?}", self.request);
 
         future::result(self.request.body(hyper::Body::empty()))
-            .from_err::<AzureError>()
-            .and_then(move |r| {
-                extract_status_headers_and_body(self.hyper_client.request(r))
-                    .and_then(move |(status, headers, v_body)| future::result(Self::extract_result(status, &headers, &v_body)))
-            })
+            .from_err()
+            .and_then(move |r| extract_status_headers_and_body(self.hyper_client.request(r)))
+            .and_then(move |(status, headers, body)| Self::extract_result(status, &headers, &body))
     }
 
     fn extract_result<R: DeserializeOwned>(
         status: hyper::StatusCode,
         headers: &HeaderMap,
-        v_body: &[u8],
+        body: &[u8],
     ) -> Result<GetDocumentResponse<R>, AzureError> {
         match status {
             StatusCode::OK => {
                 let additional_headers = DocumentAdditionalHeaders::derive_from(headers);
-                let document = Document::from_json(v_body)?;
+                let document = Document::from_json(body)?;
                 Ok(GetDocumentResponse {
                     document: Some(document),
                     additional_headers,
@@ -149,7 +94,7 @@ impl GetDocumentRequest {
                 // We treat everything else as an error. We could
                 // handle 304 (Not modified) in a specific way but
                 // for now we do not.
-                let error_text = str::from_utf8(v_body)?;
+                let error_text = str::from_utf8(body)?;
                 Err(AzureError::UnexpectedHTTPResult(UnexpectedHTTPResult::new(
                     StatusCode::OK,
                     status,
@@ -198,25 +143,21 @@ impl QueryDocumentRequest {
     pub fn execute<T: DeserializeOwned>(self) -> impl Future<Item = QueryDocumentResponse<T>, Error = AzureError> {
         trace!("get_document called(request == {:?}", self.request);
         self.execute_json()
-            .and_then(move |qdr_json| future::result(Self::convert_query_document_type(qdr_json)))
+            .and_then(move |qdr_json| Self::convert_query_document_type(qdr_json))
     }
 
-    pub fn execute_json(self) -> impl Future<Item = QueryDocumentResponse<String>, Error = AzureError> {
+    pub fn execute_json(self) -> impl Future<Item = QueryDocumentResponse<serde_json::Value>, Error = AzureError> {
         trace!("query_document called(request == {:?}", self.request);
         let hc = self.hyper_client;
         let mut req = self.request;
         future::result(self.payload)
-            .from_err::<AzureError>()
-            .and_then(move |payload| future::result(req.body(payload.into())).from_err())
-            .and_then(move |r| {
-                check_status_extract_headers_and_body(hc.request(r), StatusCode::OK)
-                    .and_then(move |(headers, v_body)| future::result(Self::extract_result_json(&v_body, &headers)))
-            })
+            .from_err()
+            .and_then(move |payload| Ok(req.body(payload.into())?))
+            .and_then(move |r| check_status_extract_headers_and_body(hc.request(r), StatusCode::OK))
+            .and_then(move |(headers, body)| Self::extract_result_json(&body, &headers))
     }
 
-    const AZURE_KEYS: [&'static str; 5] = ["_attachments", "_etag", "_rid", "_self", "_ts"];
-
-    fn extract_result_json(v_body: &[u8], headers: &HeaderMap) -> Result<QueryDocumentResponse<String>, AzureError> {
+    fn extract_result_json(body: &[u8], headers: &HeaderMap) -> Result<QueryDocumentResponse<serde_json::Value>, AzureError> {
         trace!("headers == {:?}", headers);
 
         let additional_headers = QueryDocumentResponseAdditonalHeaders {
@@ -234,64 +175,45 @@ impl QueryDocumentRequest {
         };
         debug!("additional_headers == {:?}", additional_headers);
 
-        let query_response_meta = serde_json::from_slice::<QueryResponseMeta>(v_body)?;
+        let query_response_meta = serde_json::from_slice::<QueryResponseMeta>(body)?;
         debug!("query_response_meta == {:?}", &query_response_meta);
 
-        let json = str::from_utf8(v_body)?;
+        let json = str::from_utf8(body)?;
         debug!("json == {}", json);
 
-        let v: serde_json::Value = serde_json::from_slice(v_body)?;
+        let mut v: serde_json::Value = serde_json::from_slice(body)?;
 
         // Work on Documents section
-        let d = &v["Documents"];
+        let mut d = v.get_mut("Documents").unwrap().take();
         debug!("\n\nd == {:?}\n\n", d);
 
-        let mut v_docs = Vec::new();
-
-        for doc in d.as_array().unwrap() {
+        let docs = d.as_array_mut().unwrap().into_iter().map(|doc| {
             // We could either have a Document or a plain entry.
             // We will find out here.
+            let mut doc = doc.take();
 
-            let document_attributes = match serde_json::from_value::<DocumentAttributes>(doc.clone()) {
-                Ok(document_attributes) => Some(document_attributes),
-                Err(_) => None,
+            let attrs = {
+                let map = doc.as_object_mut().unwrap();
+                DocumentAttributes::try_extract(map)
             };
 
-            debug!("\ndocument_attributes == {:?}", document_attributes);
+            // debug!("\ndocument_attributes == {:?}", document_attributes);
 
-            // Now we are about to create a new Value::Object
-            // without the extra Azure fields.
-            // This involves a lot a copying (unfortunately).
-            let o_new = {
-                let mut o_new = serde_json::Value::Object(serde_json::map::Map::new());
-                {
-                    let m_new = o_new.as_object_mut().unwrap();
-
-                    for (key, val) in doc.as_object().unwrap() {
-                        if Self::AZURE_KEYS.binary_search(&(key as &str)).is_err() {
-                            m_new.insert(key.clone(), val.clone());
-                        }
-                    }
-                }
-
-                o_new
-            };
-
-            v_docs.push(QueryResult {
-                document_attributes: document_attributes,
-                result: o_new.to_string(),
-            });
-        }
+            QueryResult {
+                document_attributes: attrs,
+                result: doc,
+            }
+        });
 
         Ok(QueryDocumentResponse {
             query_response_meta: query_response_meta,
             additional_headers: additional_headers,
-            results: v_docs,
+            results: docs.collect(),
         })
     }
 
     #[inline]
-    fn convert_query_document_type<T>(qdr: QueryDocumentResponse<String>) -> Result<QueryDocumentResponse<T>, AzureError>
+    fn convert_query_document_type<T>(qdr: QueryDocumentResponse<serde_json::Value>) -> Result<QueryDocumentResponse<T>, AzureError>
     where
         T: DeserializeOwned,
     {
@@ -304,7 +226,7 @@ impl QueryDocumentRequest {
         for res_json in qdr.results {
             qdr_converted.results.push(QueryResult {
                 document_attributes: res_json.document_attributes,
-                result: serde_json::from_str(&res_json.result)?,
+                result: serde_json::from_value(res_json.result)?,
             });
         }
 
@@ -338,10 +260,10 @@ impl ListDocumentsRequest {
         future::result(self.request.body(hyper::Body::empty()))
             .from_err()
             .and_then(move |r| check_status_extract_headers_and_body(self.hyper_client.request(r), StatusCode::OK))
-            .and_then(|(headers, whole_body)| future::result(Self::extract_result::<T>(&whole_body, &headers)))
+            .and_then(|(headers, whole_body)| Self::extract_result::<T>(&whole_body, &headers))
     }
 
-    fn extract_result<T>(v_body: &[u8], headers: &HeaderMap) -> Result<ListDocumentsResponse<T>, AzureError>
+    fn extract_result<T>(body: &[u8], headers: &HeaderMap) -> Result<ListDocumentsResponse<T>, AzureError>
     where
         T: DeserializeOwned,
     {
@@ -368,20 +290,22 @@ impl ListDocumentsRequest {
         // 2- Deserialize the result a type T. The extra fields will be ignored.
         // 3- Zip 1 and 2 in the resulting structure.
         // There is a lot of data movement here, let's hope the compiler is smarter than me :)
-        let document_attributes = serde_json::from_slice::<ListDocumentsResponseAttributes>(v_body)?;
-        let entries = serde_json::from_slice::<ListDocumentsResponseEntities<T>>(v_body)?;
+        let document_attributes = serde_json::from_slice::<ListDocumentsResponseAttributes>(body)?;
+        let entries = serde_json::from_slice::<ListDocumentsResponseEntities<T>>(body)?;
 
-        let mut v = Vec::with_capacity(document_attributes.documents.len());
-        for (da, e) in document_attributes.documents.into_iter().zip(entries.entities.into_iter()) {
-            v.push(Document {
+        let documents = document_attributes
+            .documents
+            .into_iter()
+            .zip(entries.entities.into_iter())
+            .map(|(da, e)| Document {
                 document_attributes: da,
                 entity: e,
-            });
-        }
+            })
+            .collect();
 
         Ok(ListDocumentsResponse {
             rid: document_attributes.rid,
-            documents: v,
+            documents,
             additional_headers: ado,
         })
     }
@@ -423,34 +347,18 @@ impl<T: DeserializeOwned> ReplaceDocumentRequest<T> {
         let mut req = self.request;
         future::result(self.payload)
             .from_err()
-            .and_then(move |payload| future::result(req.body(payload.into())).from_err())
-            .and_then(move |r| extract_status_headers_and_body(hc.request(r)))
-            .and_then(move |(status, headers, v_body)| future::result(Self::extract_result(status, &headers, &v_body)))
+            .and_then(move |payload| Ok(req.body(payload.into())?))
+            .and_then(move |r| check_status_extract_headers_and_body(hc.request(r), StatusCode::OK))
+            .and_then(move |(headers, body)| Self::extract_result(&headers, &body))
     }
 
-    fn extract_result<R: DeserializeOwned>(
-        status: hyper::StatusCode,
-        headers: &HeaderMap,
-        v_body: &[u8],
-    ) -> Result<ReplaceDocumentResponse<R>, AzureError> {
-        match status {
-            StatusCode::OK => {
-                let additional_headers = DocumentAdditionalHeaders::derive_from(headers);
-                let document = Document::from_json(v_body)?;
-                Ok(ReplaceDocumentResponse {
-                    document,
-                    additional_headers,
-                })
-            }
-            _ => {
-                let error_text = str::from_utf8(v_body)?;
-                Err(AzureError::UnexpectedHTTPResult(UnexpectedHTTPResult::new(
-                    StatusCode::OK,
-                    status,
-                    error_text,
-                )))
-            }
-        }
+    fn extract_result<R: DeserializeOwned>(headers: &HeaderMap, body: &[u8]) -> Result<ReplaceDocumentResponse<R>, AzureError> {
+        let additional_headers = DocumentAdditionalHeaders::derive_from(headers);
+        let document = Document::from_json(body)?;
+        Ok(ReplaceDocumentResponse {
+            document,
+            additional_headers,
+        })
     }
 }
 

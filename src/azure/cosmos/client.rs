@@ -1,24 +1,17 @@
 use azure::core::{
-    errors::{check_status_extract_body, AzureError},
-    util::RequestBuilderExt,
-    COMPLETE_ENCODE_SET,
+    errors::{check_status_extract_body, AzureError}, util::RequestBuilderExt, COMPLETE_ENCODE_SET,
 };
 
 use super::{
-    collection::Collection,
-    database::Database,
-    query::Query,
-    request_response::{CreateDatabaseRequest, Document, ListCollectionsResponse, ListDatabasesResponse},
-    AuthorizationToken, CreateDocumentRequest, DeleteDocumentRequest, GetDocumentRequest, ListDocumentsRequest, QueryDocumentRequest,
-    ReplaceDocumentRequest, TokenType,
+    collection::Collection, database::Database, query::Query,
+    request_response::{CreateDatabaseRequest, Document, ListCollectionsResponse, ListDatabasesResponse}, requests::*, AuthorizationToken,
+    TokenType,
 };
 
 use base64;
 use http::request::Builder as RequestBuilder;
 use hyper::{
-    self,
-    header::{self, HeaderValue},
-    StatusCode,
+    self, header::{self, HeaderValue}, StatusCode,
 };
 use ring::{digest::SHA256, hmac};
 use serde::{de::DeserializeOwned, Serialize};
@@ -59,6 +52,7 @@ enum ResourceType {
     Databases,
     Collections,
     Documents,
+    StoredProcedures,
 }
 
 pub struct Client {
@@ -517,6 +511,33 @@ impl Client {
         QueryDocumentRequest::new(self.hyper_client.clone(), req, query_json)
     }
 
+    pub fn execute_stored_procedure<S1, S2, S3, I>(
+        &self,
+        database: S1,
+        collection: S2,
+        sproc_name: S3,
+        input: I,
+    ) -> ExecuteStoredProcedureRequest
+    where
+        S1: AsRef<str>,
+        S2: AsRef<str>,
+        S3: AsRef<str>,
+        I: Serialize,
+    {
+        let req = self.prepare_request(
+            &format!(
+                "dbs/{}/colls/{}/sprocs/{}",
+                database.as_ref(),
+                collection.as_ref(),
+                sproc_name.as_ref()
+            ),
+            hyper::Method::POST,
+            ResourceType::StoredProcedures,
+        );
+        let input_json = serde_json::to_string(&input);
+        ExecuteStoredProcedureRequest::new(self.hyper_client.clone(), req, input_json)
+    }
+
     #[inline]
     fn prepare_request(&self, uri_path: &str, http_method: hyper::Method, resource_type: ResourceType) -> RequestBuilder {
         let time = format!("{}", chrono::Utc::now().format(TIME_FORMAT));
@@ -622,6 +643,7 @@ fn string_to_sign(http_method: &hyper::Method, rt: ResourceType, resource_link: 
             ResourceType::Databases => "dbs",
             ResourceType::Collections => "colls",
             ResourceType::Documents => "docs",
+            ResourceType::StoredProcedures => "sprocs",
         },
         resource_link,
         time.to_lowercase()

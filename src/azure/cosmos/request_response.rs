@@ -123,3 +123,9 @@ pub struct QueryResponseMeta {
     #[serde(rename = "_count")]
     pub count: u64,
 }
+
+#[derive(Debug, Clone)]
+pub struct ExecuteStoredProcedureResponse<T> {
+    pub result: T,
+    pub additional_headers: DocumentAdditionalHeaders,
+}
