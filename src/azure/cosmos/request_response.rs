@@ -12,11 +12,6 @@ pub struct ListDatabasesResponse {
     pub count: u32,
 }
 
-#[derive(Serialize, Debug)]
-pub struct CreateDatabaseRequest<'a> {
-    pub id: &'a str,
-}
-
 #[derive(Deserialize, Debug)]
 #[allow(dead_code)]
 pub struct ListCollectionsResponse {

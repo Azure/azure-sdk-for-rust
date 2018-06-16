@@ -3,9 +3,8 @@ use azure::core::{
 };
 
 use super::{
-    collection::Collection, database::Database, query::Query,
-    request_response::{CreateDatabaseRequest, Document, ListCollectionsResponse, ListDatabasesResponse}, requests::*, AuthorizationToken,
-    TokenType,
+    collection::Collection, database::Database, query::Query, request_response::{Document, ListCollectionsResponse, ListDatabasesResponse},
+    requests::*, AuthorizationToken, TokenType,
 };
 
 use base64;
@@ -137,8 +136,12 @@ impl Client {
 
     #[inline]
     fn create_database_create_request(&self, database_name: &str) -> Result<hyper::client::ResponseFuture, AzureError> {
-        let req = CreateDatabaseRequest { id: database_name };
-        let req = serde_json::to_string(&req)?;
+        #[derive(Serialize, Debug)]
+        pub struct CreateDatabaseRequest<'a> {
+            pub id: &'a str,
+        }
+
+        let req = serde_json::to_string(&CreateDatabaseRequest { id: database_name })?;
 
         let request = self
             .prepare_request("dbs", hyper::Method::POST, ResourceType::Databases)

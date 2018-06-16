@@ -220,9 +220,10 @@ pub fn extract_status_headers_and_body(
     resp: hyper::client::ResponseFuture,
 ) -> impl Future<Item = (hyper::StatusCode, hyper::HeaderMap, Vec<u8>), Error = AzureError> {
     resp.from_err().and_then(|res| {
-        let status = res.status();
-        let headers = res.headers().clone();
-        res.into_body()
+        let (head, body) = res.into_parts();
+        let status = head.status;
+        let headers = head.headers;
+        body
             .concat2()
             .from_err()
             .and_then(move |body| Ok((status, headers, body.to_owned())))
