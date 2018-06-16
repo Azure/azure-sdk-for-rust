@@ -25,9 +25,6 @@ impl ExecuteStoredProcedureRequest {
         }
     }
 
-    request_bytes_option!(if_match, String, header::IF_MATCH);
-    request_option!(indexing_directive, IndexingDirective, HEADER_INDEXING_DIRECTIVE);
-
     pub fn execute<R: DeserializeOwned>(self) -> impl Future<Item = ExecuteStoredProcedureResponse<R>, Error = AzureError> {
         trace!("execute_stored_procedure called(request == {:?}", self.request);
         let hc = self.hyper_client;

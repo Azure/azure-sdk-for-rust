@@ -376,11 +376,11 @@ impl Blob {
         let container_name = container_name.to_owned();
         let blob_name = blob_name.to_owned();
 
-        done(req).from_err().and_then(move |future_response| {
-            check_status_extract_headers_and_body(future_response, expected_status_code).and_then(move |(headers, body)| {
-                done(Blob::from_headers(&blob_name, &container_name, &headers)).and_then(move |blob| ok((blob, body)))
-            })
-        })
+        done(req)
+            .from_err()
+            .and_then(move |future_response| check_status_extract_headers_and_body(future_response, expected_status_code))
+            .and_then(move |(headers, body)| done(Blob::from_headers(&blob_name, &container_name, &headers))
+                .and_then(move |blob| ok((blob, body.to_owned()))))
     }
 
     fn put_create_request(&self, c: &Client, po: &PutOptions, r: Option<&[u8]>) -> Result<hyper::client::ResponseFuture, AzureError> {
@@ -847,7 +847,7 @@ where
         .from_err()
         .and_then(move |future_response| check_status_extract_headers_and_body(future_response, StatusCode::OK))
         .and_then(move |(headers, body)| {
-            done(match String::from_utf8(body) {
+            done(match String::from_utf8(body.to_owned()) {
                 Ok(body) => Ok((headers, body)),
                 Err(err) => Err(AzureError::FromUtf8Error(err)),
             })
