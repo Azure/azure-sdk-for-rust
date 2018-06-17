@@ -1,25 +1,33 @@
-mod list_container_options;
-pub use self::list_container_options::{ListContainerOptions, LIST_CONTAINER_OPTIONS_DEFAULT};
-
-use chrono::{DateTime, Utc};
-use futures::future::*;
-use hyper::{Method, StatusCode};
-use std::{fmt, str::FromStr};
-use xml::Element;
-
+pub mod requests;
 use azure::core::{
     enumerations,
-    errors::{check_status_extract_body, AzureError, TraversingError},
-    incompletevector::IncompleteVector,
+    errors::{AzureError, TraversingError},
+    headers::BLOB_PUBLIC_ACCESS,
     lease::{LeaseDuration, LeaseState, LeaseStatus},
     parsing::{cast_must, cast_optional, traverse, FromStringOptional},
-    util::format_header_value,
 };
-use azure::storage::client::Client;
-
-const HEADER_BLOB_PUBLIC_ACCESS: &str = "x-ms-blob-public-access"; // [PublicAccess]
+use chrono::{DateTime, Utc};
+use http::request::Builder;
+use std::collections::HashMap;
+use std::{fmt, str::FromStr};
+use xml::{Element, Xml};
 
 create_enum!(PublicAccess, (None, "none"), (Container, "container"), (Blob, "blob"));
+
+pub trait PublicAccessSupport {
+    type O;
+    fn with_public_access(self, pa: PublicAccess) -> Self::O;
+}
+
+pub trait PublicAccessRequired {
+    fn public_access(&self) -> PublicAccess;
+
+    fn add_header(&self, builder: &mut Builder) {
+        if self.public_access() != PublicAccess::None {
+            builder.header(BLOB_PUBLIC_ACCESS, self.public_access().as_ref());
+        }
+    }
+}
 
 #[derive(Debug, Clone)]
 pub struct Container {
@@ -29,6 +37,16 @@ pub struct Container {
     pub lease_status: LeaseStatus,
     pub lease_state: LeaseState,
     pub lease_duration: Option<LeaseDuration>,
+    pub public_access: PublicAccess,
+    pub has_immutability_policy: bool,
+    pub has_legal_hold: bool,
+    pub metadata: HashMap<String, String>,
+}
+
+impl AsRef<str> for Container {
+    fn as_ref(&self) -> &str {
+        &self.name
+    }
 }
 
 impl Container {
@@ -40,10 +58,14 @@ impl Container {
             lease_status: LeaseStatus::Unlocked,
             lease_state: LeaseState::Available,
             lease_duration: None,
+            public_access: PublicAccess::None,
+            has_immutability_policy: false,
+            has_legal_hold: false,
+            metadata: HashMap::new(),
         }
     }
 
-    pub fn parse(elem: &Element) -> Result<Container, AzureError> {
+    fn parse(elem: &Element) -> Result<Container, AzureError> {
         let name = cast_must::<String>(elem, &["Name"])?;
         let last_modified = cast_must::<DateTime<Utc>>(elem, &["Properties", "Last-Modified"])?;
         let e_tag = cast_must::<String>(elem, &["Properties", "Etag"])?;
@@ -54,6 +76,53 @@ impl Container {
 
         let lease_status = cast_must::<LeaseStatus>(elem, &["Properties", "LeaseStatus"])?;
 
+        let public_access = match cast_optional::<PublicAccess>(elem, &["Properties", "PublicAccess"])? {
+            Some(pa) => pa,
+            None => PublicAccess::None,
+        };
+
+        let has_immutability_policy = cast_must::<bool>(elem, &["Properties", "HasImmutabilityPolicy"])?;
+        let has_legal_hold = cast_must::<bool>(elem, &["Properties", "HasLegalHold"])?;
+
+        let metadata = {
+            let mut hm = HashMap::new();
+            let metadata = traverse(elem, &["Metadata"], true)?;
+
+            for m in metadata {
+                for key in &m.children {
+                    let elem = match key {
+                        Xml::ElementNode(elem) => elem,
+                        _ => {
+                            return Err(AzureError::UnexpectedXMLError(String::from(
+                                "Metadata should contain an ElementNode",
+                            )))
+                        }
+                    };
+
+                    let key = elem.name.to_owned();
+
+                    if elem.children.is_empty() {
+                        return Err(AzureError::UnexpectedXMLError(String::from("Metadata node should not be empty")));
+                    }
+
+                    let content = {
+                        match elem.children[0] {
+                            Xml::CharacterNode(ref content) => content.to_owned(),
+                            _ => {
+                                return Err(AzureError::UnexpectedXMLError(String::from(
+                                    "Metadata node should contain a CharacterNode with metadata value",
+                                )))
+                            }
+                        }
+                    };
+
+                    hm.insert(key, content);
+                }
+            }
+
+            hm
+        };
+
         Ok(Container {
             name,
             last_modified,
@@ -61,85 +130,13 @@ impl Container {
             lease_status,
             lease_state,
             lease_duration,
+            public_access,
+            has_immutability_policy,
+            has_legal_hold,
+            metadata,
         })
-    }
-
-    pub fn delete(&mut self, c: &Client) -> impl Future<Item = (), Error = AzureError> {
-        let uri = format!("https://{}.blob.core.windows.net/{}?restype=container", c.account(), self.name);
-
-        let req = c.perform_request(&uri, Method::DELETE, |_| {}, None);
-
-        done(req)
-            .from_err()
-            .and_then(move |future_response| check_status_extract_body(future_response, StatusCode::ACCEPTED).and_then(|_| ok(())))
-    }
-
-    pub fn create(c: &Client, container_name: &str, pa: PublicAccess) -> impl Future<Item = (), Error = AzureError> {
-        let uri = format!("https://{}.blob.core.windows.net/{}?restype=container", c.account(), container_name);
-
-        let req = c.perform_request(
-            &uri,
-            Method::PUT,
-            |ref mut request| {
-                request.header(HEADER_BLOB_PUBLIC_ACCESS, format_header_value(pa).unwrap());
-            },
-            Some(&[]),
-        );
-
-        done(req)
-            .from_err()
-            .and_then(move |future_response| check_status_extract_body(future_response, StatusCode::CREATED).and_then(|_| ok(())))
     }
 
     // TODO
     // pub fn get_acl(c : &Client, gao : &GetAclOptions)
-
-    pub fn list(c: &Client, lco: &ListContainerOptions) -> impl Future<Item = IncompleteVector<Container>, Error = AzureError> {
-        let mut uri = format!(
-            "https://{}.blob.core.windows.net?comp=list&maxresults={}",
-            c.account(),
-            lco.max_results
-        );
-
-        if !lco.include_metadata {
-            uri = format!("{}&include=metadata", uri);
-        }
-
-        if let Some(ref prefix) = lco.prefix {
-            uri = format!("{}&prefix={}", uri, prefix);
-        }
-
-        if let Some(ref nm) = lco.next_marker {
-            uri = format!("{}&marker={}", uri, nm);
-        }
-
-        if let Some(ref timeout) = lco.timeout {
-            uri = format!("{}&timeout={}", uri, timeout);
-        }
-
-        let req = c.perform_request(&uri, Method::GET, |_| {}, None);
-
-        done(req).from_err().and_then(move |future_response| {
-            check_status_extract_body(future_response, StatusCode::OK)
-                .and_then(|body| done(incomplete_vector_from_response(&body)).from_err())
-        })
-    }
-}
-
-fn incomplete_vector_from_response(body: &str) -> Result<IncompleteVector<Container>, AzureError> {
-    let elem: Element = body.parse()?;
-
-    let mut v = Vec::new();
-
-    for container in traverse(&elem, &["Containers", "Container"], true)? {
-        v.push(Container::parse(container)?);
-    }
-
-    let next_marker = match cast_optional::<String>(&elem, &["NextMarker"])? {
-        Some(ref nm) if nm == "" => None,
-        Some(nm) => Some(nm),
-        None => None,
-    };
-
-    Ok(IncompleteVector::new(next_marker, v))
 }

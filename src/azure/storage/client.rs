@@ -1,5 +1,7 @@
 use super::rest_client::{perform_request, ServiceType};
 use azure::core::errors::AzureError;
+use azure::core::No;
+use azure::storage::container;
 use hyper::{self, Method};
 use hyper_tls;
 
@@ -7,10 +9,31 @@ use hyper_tls;
 const SERVICE_SUFFIX_BLOB: &str = ".blob.core.windows.net";
 const SERVICE_SUFFIX_TABLE: &str = ".table.core.windows.net";
 
+pub trait Container {
+    fn create<'a>(&'a self) -> container::requests::CreateBuilder<'a, No, No>;
+    fn delete<'a>(&'a self) -> container::requests::DeleteBuilder<'a, No>;
+    fn list<'a>(&'a self) -> container::requests::ListBuilder<'a>;
+}
+
+#[derive(Debug)]
 pub struct Client {
     account: String,
     key: String,
     hc: hyper::Client<hyper_tls::HttpsConnector<hyper::client::HttpConnector>>,
+}
+
+impl Container for Client {
+    fn create<'a>(&'a self) -> container::requests::CreateBuilder<'a, No, No> {
+        container::requests::CreateBuilder::new(self)
+    }
+
+    fn delete<'a>(&'a self) -> container::requests::DeleteBuilder<'a, No> {
+        container::requests::DeleteBuilder::new(self)
+    }
+
+    fn list<'a>(&'a self) -> container::requests::ListBuilder<'a> {
+        container::requests::ListBuilder::new(self)
+    }
 }
 
 impl Client {

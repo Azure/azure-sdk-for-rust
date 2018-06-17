@@ -19,6 +19,16 @@ impl FromStringOptional<String> for String {
     }
 }
 
+impl FromStringOptional<bool> for bool {
+    fn from_str_optional(s: &str) -> Result<bool, TraversingError> {
+        match s {
+            "true" => Ok(true),
+            "false" => Ok(false),
+            _ => Err(TraversingError::BooleanNotMatched(String::from(s))),
+        }
+    }
+}
+
 impl FromStringOptional<chrono::DateTime<chrono::Utc>> for chrono::DateTime<chrono::Utc> {
     fn from_str_optional(s: &str) -> Result<chrono::DateTime<chrono::Utc>, TraversingError> {
         match from_azure_time(s) {

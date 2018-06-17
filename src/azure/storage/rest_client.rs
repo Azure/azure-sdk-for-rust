@@ -22,7 +22,6 @@ pub const HEADER_VERSION: &str = "x-ms-version"; //=> [String] }
 pub const HEADER_DATE: &str = "x-ms-date"; //=> [String] }
 pub const HEADER_CONTENT_MD5: &str = "Content-MD5"; //=> [String] }
 pub const HEADER_RANGE: &str = "x-ms-range"; // => [range::Range] }
-pub const HEADER_LEASE_ID: &str = "x-ms-lease-id"; //=> [LeaseId] }
 pub const HEADER_LEASE_STATUS: &str = "x-ms-lease-status"; //=> [LeaseStatus] }
 pub const HEADER_LEASE_STATE: &str = "x-ms-lease-state"; //=> [LeaseState] }
 pub const HEADER_LEASE_ACTION: &str = "x-ms-lease-action"; //=> [LeaseAction] }
@@ -30,7 +29,6 @@ pub const HEADER_LEASE_DURATION: &str = "x-ms-lease-duration"; //=> [LeaseDurati
 pub const HEADER_LEASE_BREAK_PERIOD: &str = "x-ms-lease-break-period"; //=> [u32] }
 pub const HEADER_PROPOSED_LEASE_ID: &str = "x-ms-proposed-lease-id"; //=> [LeaseId] }
 pub const HEADER_RANGE_GET_CONTENT_MD5: &str = "x-ms-range-get-content-md5"; //=> [bool] }
-pub const HEADER_CLIENT_REQUEST_ID: &str = "x-ms-client-request-id"; //=> [String] }
 pub const HEADER_REQUEST_ID: &str = "x-ms-request-id"; //=> [String] }
 
 fn generate_authorization(h: &HeaderMap, u: &url::Url, method: Method, hmac_key: &str, service_type: ServiceType) -> String {

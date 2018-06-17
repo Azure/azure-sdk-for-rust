@@ -25,6 +25,7 @@ fn format_as_bytes<D: Display>(value: D) -> Bytes {
     wrt.0.freeze()
 }
 
+#[allow(dead_code)]
 pub fn into_header_value<B: Into<Bytes>>(value: B) -> Result<HeaderValue, http::Error> {
     let value = value.into();
     Ok(HeaderValue::try_from(value)?)

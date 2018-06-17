@@ -36,6 +36,16 @@ macro_rules! create_enum {
             }
         }
 
+        impl AsRef<str> for $en {
+            fn as_ref(&self) -> &str {
+                 match *self {
+                    $(
+                        $en::$na => $x,
+                    )*
+                }
+            }
+        }
+
         impl fmt::Display for $en {
             fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
                 match *self {

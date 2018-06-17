@@ -10,10 +10,10 @@ use azure_sdk_for_rust::core::lease::{LeaseState, LeaseStatus};
 use azure_sdk_for_rust::core::range::Range;
 use azure_sdk_for_rust::storage::blob::{Blob, BlobType, PUT_OPTIONS_DEFAULT};
 use azure_sdk_for_rust::storage::client::Client;
-use azure_sdk_for_rust::storage::container::{Container, PublicAccess, LIST_CONTAINER_OPTIONS_DEFAULT};
+use azure_sdk_for_rust::storage::client::Container as ContainerTrait;
+use azure_sdk_for_rust::storage::container::{PublicAccess, PublicAccessSupport};
 use futures::future::ok;
 use futures::prelude::*;
-use hyper::mime::Mime;
 use tokio_core::reactor::Core;
 
 #[test]
@@ -30,15 +30,21 @@ fn code() -> Result<(), Box<std::error::Error>> {
     let master_key = std::env::var("STORAGE_MASTER_KEY").expect("Set env variable STORAGE_MASTER_KEY first!");
 
     let mut reactor = Core::new()?;
-    let client = Client::new(&reactor.handle(), &account, &master_key)?;
+    let client = Client::new(&account, &master_key)?;
 
     if reactor
-        .run(Container::list(&client, &LIST_CONTAINER_OPTIONS_DEFAULT))?
+        .run(client.list().finalize())?
         .iter()
         .find(|x| x.name == container_name)
         .is_none()
     {
-        reactor.run(Container::create(&client, container_name, PublicAccess::Blob))?;
+        reactor.run(
+            client
+                .create()
+                .with_container_name(container_name)
+                .with_public_access(PublicAccess::Blob)
+                .finalize(),
+        )?;
     }
 
     let string = "0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF";
@@ -50,7 +56,7 @@ fn code() -> Result<(), Box<std::error::Error>> {
         last_modified: chrono::Utc::now(),
         etag: "".to_owned(),
         content_length: string.len() as u64,
-        content_type: Some("text/plain".parse::<Mime>().unwrap()),
+        content_type: Some("text/plain".to_owned()),
         content_encoding: None,
         content_language: None,
         content_md5: None,

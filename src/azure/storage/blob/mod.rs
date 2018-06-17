@@ -34,6 +34,7 @@ pub use self::block_list::BlockList;
 mod get_block_list_response;
 pub use self::get_block_list_response::GetBlockListResponse;
 
+use azure::core::headers::{CLIENT_REQUEST_ID, LEASE_ID};
 use base64;
 use chrono::{DateTime, Utc};
 use futures::{future::*, prelude::*};
@@ -75,6 +76,7 @@ create_enum!(PageWriteType, (Update, "update"), (Clear, "clear"));
 const HEADER_BLOB_CONTENT_LENGTH: &str = "x-ms-blob-content-length";
 const HEADER_BLOB_SEQUENCE_NUMBER: &str = "x-ms-blob-sequence-number";
 const HEADER_BLOB_TYPE: &str = "x-ms-blob-type";
+#[allow(dead_code)]
 const HEADER_BLOB_CONTENT_DISPOSITION: &str = "x-ms-blob-content-disposition";
 const HEADER_PAGE_WRITE: &str = "x-ms-blob-page-write";
 
@@ -361,7 +363,7 @@ impl Blob {
                     }
                 }
                 if let Some(l) = lease_id {
-                    request.header_formatted(HEADER_LEASE_ID, l);
+                    request.header_formatted(LEASE_ID, l);
                 }
             },
             None,
@@ -451,7 +453,7 @@ impl Blob {
                 request.header_formatted(HEADER_BLOB_TYPE, self.blob_type);
 
                 if let Some(ref lease_id) = po.lease_id {
-                    request.header_formatted(HEADER_LEASE_ID, lease_id);
+                    request.header_formatted(LEASE_ID, lease_id);
                 }
 
                 // TODO x-ms-blob-content-disposition
@@ -489,7 +491,7 @@ impl Blob {
             Method::PUT,
             move |ref mut request| {
                 if let Some(ref lease_id) = lbo.lease_id {
-                    request.header_formatted(HEADER_LEASE_ID, lease_id);
+                    request.header_formatted(LEASE_ID, lease_id);
                 }
 
                 request.header_formatted(HEADER_LEASE_ACTION, la);
@@ -504,7 +506,7 @@ impl Blob {
                     request.header_formatted(HEADER_PROPOSED_LEASE_ID, proposed_lease_id);
                 }
                 if let Some(ref request_id) = lbo.request_id {
-                    request.header_formatted(HEADER_CLIENT_REQUEST_ID, request_id);
+                    request.header_formatted(CLIENT_REQUEST_ID, request_id);
                 }
             },
             // this fix is needed to avoid
@@ -524,7 +526,7 @@ impl Blob {
             .and_then(move |future_response| check_status_extract_headers_and_body(future_response, expected_result))
             .and_then(|(headers, _)| {
                 headers
-                    .get_as_str(HEADER_LEASE_ID)
+                    .get_as_str(LEASE_ID)
                     .and_then(|s| s.parse::<Uuid>().ok())
                     .ok_or_else(|| AzureError::HeaderNotFound("x-ms-lease-id".to_owned()))
             })
@@ -556,7 +558,7 @@ impl Blob {
                 request.header_formatted(HEADER_RANGE, range);
                 request.header_formatted(HEADER_BLOB_CONTENT_LENGTH, content.len());
                 if let Some(lease_id) = ppo.lease_id {
-                    request.header_formatted(HEADER_LEASE_ID, lease_id);
+                    request.header_formatted(LEASE_ID, lease_id);
                 }
 
                 request.header_formatted(HEADER_PAGE_WRITE, PageWriteType::Update);
@@ -625,7 +627,7 @@ impl Blob {
                 request.header_formatted(HEADER_BLOB_TYPE, self.blob_type);
 
                 if let Some(ref lease_id) = pbo.lease_id {
-                    request.header_formatted(HEADER_LEASE_ID, lease_id);
+                    request.header_formatted(LEASE_ID, lease_id);
                 }
 
                 // TODO x-ms-blob-content-disposition
@@ -635,7 +637,7 @@ impl Blob {
                 }
 
                 if let Some(ref request_id) = pbo.request_id {
-                    request.header_formatted(HEADER_CLIENT_REQUEST_ID, request_id.to_owned());
+                    request.header_formatted(CLIENT_REQUEST_ID, request_id.to_owned());
                 }
             },
             Some(content),
@@ -672,7 +674,7 @@ impl Blob {
                 request.header_formatted(HEADER_RANGE, Range::from(range));
                 request.header_static(HEADER_BLOB_CONTENT_LENGTH, "0");
                 if let Some(lease_id) = lease_id {
-                    request.header_formatted(HEADER_LEASE_ID, lease_id);
+                    request.header_formatted(LEASE_ID, lease_id);
                 }
 
                 request.header_formatted(HEADER_PAGE_WRITE, PageWriteType::Clear);
@@ -699,7 +701,7 @@ impl Blob {
             Method::DELETE,
             |ref mut request| {
                 if let Some(lease_id) = lease_id {
-                    request.header_formatted(HEADER_LEASE_ID, lease_id);
+                    request.header_formatted(LEASE_ID, lease_id);
                 }
             },
             None,
@@ -757,7 +759,7 @@ where
             request.header_formatted(header::CONTENT_LENGTH, xml_bytes.len());
             request.header_formatted(HEADER_CONTENT_MD5, md5);
             if let Some(lease_id) = lease_id {
-                request.header_formatted(HEADER_LEASE_ID, *lease_id);
+                request.header_formatted(LEASE_ID, *lease_id);
             }
         },
         Some(xml_bytes),
@@ -821,10 +823,10 @@ where
         Method::GET,
         move |ref mut request| {
             if let Some(lease_id) = lease_id {
-                request.header_formatted(HEADER_LEASE_ID, lease_id);
+                request.header_formatted(LEASE_ID, lease_id);
             };
             if let Some(request_id) = request_id {
-                request.header_bytes(HEADER_CLIENT_REQUEST_ID, request_id);
+                request.header_bytes(CLIENT_REQUEST_ID, request_id);
             };
         },
         None,
