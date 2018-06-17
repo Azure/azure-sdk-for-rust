@@ -8,6 +8,7 @@ extern crate tokio_core;
 
 use azure_sdk_for_rust::core::lease::{LeaseState, LeaseStatus};
 use azure_sdk_for_rust::core::range::Range;
+use azure_sdk_for_rust::core::ContainerNameSupport;
 use azure_sdk_for_rust::storage::blob::{Blob, BlobType, PUT_OPTIONS_DEFAULT};
 use azure_sdk_for_rust::storage::client::Client;
 use azure_sdk_for_rust::storage::client::Container as ContainerTrait;

@@ -1,16 +1,24 @@
 use azure::core::{
-    errors::{check_status_extract_body, AzureError}, util::RequestBuilderExt, COMPLETE_ENCODE_SET,
+    errors::{check_status_extract_body, AzureError},
+    util::RequestBuilderExt,
+    COMPLETE_ENCODE_SET,
 };
 
 use super::{
-    collection::Collection, database::Database, query::Query, request_response::{Document, ListCollectionsResponse, ListDatabasesResponse},
-    requests::*, AuthorizationToken, TokenType,
+    collection::Collection,
+    database::Database,
+    query::Query,
+    request_response::{Document, ListCollectionsResponse, ListDatabasesResponse},
+    requests::*,
+    AuthorizationToken, TokenType,
 };
 
 use base64;
 use http::request::Builder as RequestBuilder;
 use hyper::{
-    self, header::{self, HeaderValue}, StatusCode,
+    self,
+    header::{self, HeaderValue},
+    StatusCode,
 };
 use ring::{digest::SHA256, hmac};
 use serde::{de::DeserializeOwned, Serialize};

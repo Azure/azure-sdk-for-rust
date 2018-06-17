@@ -15,7 +15,7 @@ use azure_sdk_for_rust::core::{
     errors::AzureError,
     lease::{LeaseState, LeaseStatus},
 };
-use azure_sdk_for_rust::core::{NextMarkerSupport, PrefixSupport};
+use azure_sdk_for_rust::core::{ContainerNameSupport, NextMarkerSupport, PrefixSupport};
 use azure_sdk_for_rust::storage::{
     blob::{get_block_list, put_block_list, Blob, BlobType, BlockListType, PUT_BLOCK_OPTIONS_DEFAULT, PUT_OPTIONS_DEFAULT},
     client::Client,
@@ -48,6 +48,10 @@ fn create_and_delete_container() {
     if cont_list.len() != 1 {
         panic!("More than 1 container returned with the same name!");
     }
+
+    // get acls
+    let acl = core.run(client.get_acl().with_container_name(name).finalize()).unwrap();
+    assert!(acl == PublicAccess::Container);
 
     let cont_delete = client.delete().with_container_name(&cont_list[0].name).finalize();
 

@@ -126,3 +126,12 @@ pub trait LeaseIdOption<'a> {
         }
     }
 }
+
+pub trait ContainerNameSupport<'a> {
+    type O;
+    fn with_container_name(self, container_name: &'a str) -> Self::O;
+}
+
+pub trait ContainerNameRequired<'a> {
+    fn container_name(&self) -> &'a str;
+}

@@ -381,8 +381,9 @@ impl Blob {
         done(req)
             .from_err()
             .and_then(move |future_response| check_status_extract_headers_and_body(future_response, expected_status_code))
-            .and_then(move |(headers, body)| done(Blob::from_headers(&blob_name, &container_name, &headers))
-                .and_then(move |blob| ok((blob, body.to_owned()))))
+            .and_then(move |(headers, body)| {
+                done(Blob::from_headers(&blob_name, &container_name, &headers)).and_then(move |blob| ok((blob, body.to_owned())))
+            })
     }
 
     fn put_create_request(&self, c: &Client, po: &PutOptions, r: Option<&[u8]>) -> Result<hyper::client::ResponseFuture, AzureError> {

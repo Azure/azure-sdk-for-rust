@@ -36,10 +36,7 @@ impl ExecuteStoredProcedureRequest {
             .and_then(move |(headers, v_body)| Self::extract_result(&headers, &v_body))
     }
 
-    fn extract_result<R: DeserializeOwned>(
-        headers: &HeaderMap,
-        v_body: &[u8],
-    ) -> Result<ExecuteStoredProcedureResponse<R>, AzureError> {
+    fn extract_result<R: DeserializeOwned>(headers: &HeaderMap, v_body: &[u8]) -> Result<ExecuteStoredProcedureResponse<R>, AzureError> {
         let additional_headers = DocumentAdditionalHeaders::derive_from(headers);
         let result = serde_json::from_slice(v_body)?;
         Ok(ExecuteStoredProcedureResponse {

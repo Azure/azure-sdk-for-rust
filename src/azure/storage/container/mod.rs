@@ -8,11 +8,20 @@ use azure::core::{
 };
 use chrono::{DateTime, Utc};
 use http::request::Builder;
+use http::HeaderMap;
 use std::collections::HashMap;
 use std::{fmt, str::FromStr};
 use xml::{Element, Xml};
 
 create_enum!(PublicAccess, (None, "none"), (Container, "container"), (Blob, "blob"));
+
+pub(crate) fn public_access_from_header(header_map: &HeaderMap) -> Result<PublicAccess, AzureError> {
+    let pa = match header_map.get(BLOB_PUBLIC_ACCESS) {
+        Some(pa) => PublicAccess::from_str(pa.to_str()?)?,
+        None => PublicAccess::None,
+    };
+    Ok(pa)
+}
 
 pub trait PublicAccessSupport {
     type O;
@@ -136,7 +145,4 @@ impl Container {
             metadata,
         })
     }
-
-    // TODO
-    // pub fn get_acl(c : &Client, gao : &GetAclOptions)
 }
