@@ -1,7 +1,7 @@
 mod authorization_token;
 mod client;
 pub mod database;
-mod document_requests;
+mod requests;
 
 pub mod request_response;
 
@@ -12,8 +12,8 @@ pub mod query;
 
 pub use self::authorization_token::*;
 pub use self::client::*;
-pub use self::document_requests::*;
 pub use self::partition_key::*;
+pub use self::requests::*;
 
 use azure::core::enumerations;
 use azure::core::errors::TraversingError;

@@ -43,3 +43,16 @@ pub struct DocumentAttributes {
     #[serde(rename = "_attachments")]
     pub attachments: String,
 }
+
+impl DocumentAttributes {
+    pub(crate) fn try_extract(from: &mut ::serde_json::Map<String, ::serde_json::Value>) -> Option<DocumentAttributes> {
+        let id = from.get("id")?.as_str()?.to_owned();
+        let rid = from.remove("_rid")?.as_str()?.to_owned();
+        let ts = from.remove("_ts")?.as_u64()?;
+        let _self = from.remove("_self")?.as_str()?.to_owned();
+        let etag = from.remove("_etag")?.as_str()?.to_owned();
+        let attachments = from.remove("_attachments")?.as_str()?.to_owned();
+
+        Some(DocumentAttributes { id, rid, ts, _self, etag, attachments })
+    }
+}

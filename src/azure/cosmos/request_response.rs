@@ -12,11 +12,6 @@ pub struct ListDatabasesResponse {
     pub count: u32,
 }
 
-#[derive(Serialize, Debug)]
-pub struct CreateDatabaseRequest<'a> {
-    pub id: &'a str,
-}
-
 #[derive(Deserialize, Debug)]
 #[allow(dead_code)]
 pub struct ListCollectionsResponse {
@@ -122,4 +117,10 @@ pub struct QueryResponseMeta {
     pub rid: String,
     #[serde(rename = "_count")]
     pub count: u64,
+}
+
+#[derive(Debug, Clone)]
+pub struct ExecuteStoredProcedureResponse<T> {
+    pub result: T,
+    pub additional_headers: DocumentAdditionalHeaders,
 }

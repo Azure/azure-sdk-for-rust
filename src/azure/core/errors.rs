@@ -216,24 +216,25 @@ impl From<()> for AzureError {
 }
 
 #[inline]
-pub fn extract_status_headers_and_body(
+pub(crate) fn extract_status_headers_and_body(
     resp: hyper::client::ResponseFuture,
-) -> impl Future<Item = (hyper::StatusCode, hyper::HeaderMap, Vec<u8>), Error = AzureError> {
+) -> impl Future<Item = (hyper::StatusCode, hyper::HeaderMap, hyper::Chunk), Error = AzureError> {
     resp.from_err().and_then(|res| {
-        let status = res.status();
-        let headers = res.headers().clone();
-        res.into_body()
+        let (head, body) = res.into_parts();
+        let status = head.status;
+        let headers = head.headers;
+        body
             .concat2()
             .from_err()
-            .and_then(move |body| Ok((status, headers, body.to_owned())))
+            .and_then(move |body| Ok((status, headers, body)))
     })
 }
 
 #[inline]
-pub fn check_status_extract_headers_and_body(
+pub(crate) fn check_status_extract_headers_and_body(
     resp: hyper::client::ResponseFuture,
     expected_status_code: hyper::StatusCode,
-) -> impl Future<Item = (hyper::HeaderMap, Vec<u8>), Error = AzureError> {
+) -> impl Future<Item = (hyper::HeaderMap, hyper::Chunk), Error = AzureError> {
     extract_status_headers_and_body(resp).and_then(move |(status, headers, body)| {
         if status == expected_status_code {
             Ok((headers, body))
@@ -248,7 +249,7 @@ pub fn check_status_extract_headers_and_body(
 }
 
 #[inline]
-pub fn extract_status_and_body(resp: hyper::client::ResponseFuture) -> impl Future<Item = (StatusCode, String), Error = AzureError> {
+pub(crate) fn extract_status_and_body(resp: hyper::client::ResponseFuture) -> impl Future<Item = (StatusCode, String), Error = AzureError> {
     resp.from_err().and_then(|res| {
         let status = res.status();
         res.into_body()
@@ -259,7 +260,7 @@ pub fn extract_status_and_body(resp: hyper::client::ResponseFuture) -> impl Futu
 }
 
 #[inline]
-pub fn check_status_extract_body(
+pub(crate) fn check_status_extract_body(
     resp: hyper::client::ResponseFuture,
     expected_status_code: hyper::StatusCode,
 ) -> impl Future<Item = String, Error = AzureError> {
