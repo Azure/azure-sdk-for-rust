@@ -1,20 +1,16 @@
 extern crate azure_sdk_for_rust;
-
 extern crate futures;
 extern crate hyper;
 extern crate hyper_tls;
 extern crate tokio_core;
 
-use std::error::Error;
-
-use futures::future::*;
-use tokio_core::reactor::Core;
-
 use azure_sdk_for_rust::storage::{
     blob::{Blob, LIST_BLOB_OPTIONS_DEFAULT},
     client::Client,
-    container::{Container, LIST_CONTAINER_OPTIONS_DEFAULT},
 };
+use futures::future::*;
+use std::error::Error;
+use tokio_core::reactor::Core;
 
 fn main() {
     code().unwrap();
@@ -35,12 +31,15 @@ fn code() -> Result<(), Box<Error>> {
 
     let client = Client::new(&account, &master_key)?;
 
-    let future = Container::list(&client, &LIST_CONTAINER_OPTIONS_DEFAULT).map(|iv| {
-        println!("List containers returned {} containers.", iv.len());
-        for cont in iv.iter() {
-            println!("\t{}", cont.name);
-        }
-    });
+    let future = {
+        use azure_sdk_for_rust::storage::client::Container;
+        client.list().finalize().map(|iv| {
+            println!("List containers returned {} containers.", iv.len());
+            for cont in iv.iter() {
+                println!("\t{}", cont.name);
+            }
+        })
+    };
 
     core.run(future)?;
 

@@ -96,12 +96,15 @@ quick_error! {
             display("XML error: {}", err)
             cause(err)
         }
+        UnexpectedXMLError(err: String) {
+            display("UnexpectedXMLError: {}", err)
+        }
         AzurePathParseError(err: AzurePathParseError){
             from()
             display("Azure Path parse error: {}", err)
             cause(err)
         }
-         UnexpectedHTTPResult(err: UnexpectedHTTPResult){
+        UnexpectedHTTPResult(err: UnexpectedHTTPResult){
             from()
             display("UnexpectedHTTPResult error")
         }
@@ -187,6 +190,9 @@ quick_error! {
         }
         EnumerationNotMatched(msg: String) {
             display("Enumeration not matched: {}", msg)
+        }
+        BooleanNotMatched(s: String) {
+            display("Input string cannot be converted in boolean: {}", s)
         }
         DateTimeParseError(err: chrono::format::ParseError){
             from()

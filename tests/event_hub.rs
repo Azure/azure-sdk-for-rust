@@ -45,8 +45,5 @@ fn create_client() -> Result<(Client, Core), AzureError> {
 
     let core = Core::new()?;
 
-    Ok((
-        Client::new(core.handle(), &service_bus_namespace, &event_hub_name, &policy_name, &policy_key),
-        core,
-    ))
+    Ok((Client::new(service_bus_namespace, event_hub_name, policy_name, policy_key)?, core))
 }
