@@ -1,7 +1,8 @@
-use azure::core::errors::{check_status_extract_body, AzureError};
+use azure::core::errors::{check_status_extract_headers_and_body, AzureError};
 use azure::core::lease::LeaseId;
 use azure::core::{
-    ClientRequestIdOption, ClientRequestIdSupport, ClientRequired, LeaseIdOption, LeaseIdSupport, TimeoutOption, TimeoutSupport,
+    ClientRequestIdOption, ClientRequestIdSupport, ClientRequired, ContainerNameRequired, ContainerNameSupport, LeaseIdOption,
+    LeaseIdSupport, TimeoutOption, TimeoutSupport,
 };
 use azure::core::{No, ToAssign, Yes};
 use azure::storage::client::Client;
@@ -106,12 +107,13 @@ where
     }
 }
 
-// methods callable regardless
-impl<'a, ContainerNameSet> DeleteBuilder<'a, ContainerNameSet>
+impl<'a, ContainerNameSet> ContainerNameSupport<'a> for DeleteBuilder<'a, ContainerNameSet>
 where
     ContainerNameSet: ToAssign,
 {
-    pub fn with_container_name(self, t: &'a str) -> DeleteBuilder<'a, Yes> {
+    type O = DeleteBuilder<'a, Yes>;
+
+    fn with_container_name(self, t: &'a str) -> Self::O {
         DeleteBuilder {
             p_container_name: PhantomData {},
             client: self.client,
@@ -123,8 +125,8 @@ where
     }
 }
 
-impl<'a> DeleteBuilder<'a, Yes> {
-    pub fn container_name(&self) -> &'a str {
+impl<'a> ContainerNameRequired<'a> for DeleteBuilder<'a, Yes> {
+    fn container_name(&self) -> &'a str {
         self.container_name.unwrap()
     }
 }
@@ -164,9 +166,9 @@ impl<'a> DeleteBuilder<'a, Yes> {
             Some(&[]),
         );
 
-        done(req)
-            .from_err()
-            .and_then(move |future_response| check_status_extract_body(future_response, StatusCode::ACCEPTED).and_then(|_| ok(())))
+        done(req).from_err().and_then(move |future_response| {
+            check_status_extract_headers_and_body(future_response, StatusCode::ACCEPTED).and_then(|_| ok(()))
+        })
     }
 }
 

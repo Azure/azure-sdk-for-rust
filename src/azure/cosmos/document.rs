@@ -53,6 +53,13 @@ impl DocumentAttributes {
         let etag = from.remove("_etag")?.as_str()?.to_owned();
         let attachments = from.remove("_attachments")?.as_str()?.to_owned();
 
-        Some(DocumentAttributes { id, rid, ts, _self, etag, attachments })
+        Some(DocumentAttributes {
+            id,
+            rid,
+            ts,
+            _self,
+            etag,
+            attachments,
+        })
     }
 }

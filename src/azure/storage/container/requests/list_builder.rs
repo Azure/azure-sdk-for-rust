@@ -28,14 +28,8 @@ impl<'a> ClientRequired<'a> for ListBuilder<'a> {
     }
 }
 
-//impl<'a> Default for ListBuilder<'a, No> {
-//    fn default() -> ListBuilder<'a, No> {
-//        ListBuilder::new()
-//    }
-//}
-
 impl<'a> ListBuilder<'a> {
-    pub fn new(client: &'a Client) -> ListBuilder<'a> {
+    pub(crate) fn new(client: &'a Client) -> ListBuilder<'a> {
         ListBuilder {
             client,
             max_results: 5000,

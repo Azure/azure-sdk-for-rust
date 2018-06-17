@@ -2,6 +2,7 @@ use azure::core::{enumerations::ParsingError, range::ParseError};
 use chrono;
 use futures::{Future, Stream};
 use http;
+use http::header::ToStrError;
 use hyper::{self, StatusCode};
 use hyper_tls;
 use serde_json;
@@ -76,7 +77,12 @@ impl std::error::Error for UnexpectedHTTPResult {
 quick_error! {
     #[derive(Debug)]
     pub enum AzureError {
-        JSONError(err: serde_json::Error) {
+        ToStrError(err: ToStrError) {
+            from()
+            display("to str error: {}", err)
+            cause(err)
+        }
+         JSONError(err: serde_json::Error) {
             from()
             display("json error: {}", err)
             cause(err)
@@ -229,10 +235,7 @@ pub(crate) fn extract_status_headers_and_body(
         let (head, body) = res.into_parts();
         let status = head.status;
         let headers = head.headers;
-        body
-            .concat2()
-            .from_err()
-            .and_then(move |body| Ok((status, headers, body)))
+        body.concat2().from_err().and_then(move |body| Ok((status, headers, body)))
     })
 }
 

@@ -1,17 +1,24 @@
+#[allow(unused_imports)]
 use azure::core::{
     errors::{
         check_status_extract_body, check_status_extract_headers_and_body, extract_status_headers_and_body, AzureError, UnexpectedHTTPResult,
     },
-    incompletevector::ContinuationToken, util::RequestBuilderExt,
+    incompletevector::ContinuationToken,
+    util::RequestBuilderExt,
 };
 use azure::cosmos::{
-    client::headers::*, document::{DocumentAttributes, IndexingDirective}, partition_key::PartitionKey, request_response::*,
+    client::headers::*,
+    document::{DocumentAttributes, IndexingDirective},
+    partition_key::PartitionKey,
+    request_response::*,
     ConsistencyLevel,
 };
 use futures::{future, prelude::*};
 use http::request::Builder as RequestBuilder;
 use hyper::{
-    self, header::{self, HeaderMap, HeaderValue}, StatusCode,
+    self,
+    header::{self, HeaderMap, HeaderValue},
+    StatusCode,
 };
 use serde::de::DeserializeOwned;
 use serde_json;

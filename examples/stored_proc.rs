@@ -5,7 +5,6 @@
 ///     var response = context.getResponse();
 ///     response.setBody("Hello, " + personToGreet);
 /// }
-
 extern crate azure_sdk_for_rust;
 extern crate chrono;
 extern crate futures;
@@ -15,9 +14,9 @@ extern crate serde_derive;
 #[macro_use]
 extern crate serde_json;
 
+use azure_sdk_for_rust::cosmos::{AuthorizationToken, Client, TokenType};
 use std::error::Error;
 use tokio_core::reactor::Core;
-use azure_sdk_for_rust::cosmos::{AuthorizationToken, Client, TokenType};
 
 fn main() {
     code().unwrap();

@@ -5,7 +5,7 @@ extern crate hyper;
 extern crate hyper_tls;
 extern crate tokio_core;
 
-use azure_sdk_for_rust::core::{ClientRequestIdSupport, TimeoutSupport};
+use azure_sdk_for_rust::core::{ClientRequestIdSupport, ContainerNameSupport, TimeoutSupport};
 use azure_sdk_for_rust::storage::{
     client::Client,
     container::{PublicAccess, PublicAccessSupport},
@@ -53,12 +53,17 @@ fn code() -> Result<(), Box<Error>> {
     let future = client
         .create()
         .with_container_name(&container_name)
-        .with_public_access(PublicAccess::None)
+        .with_public_access(PublicAccess::Container)
         .with_metadata(metadata)
         .with_timeout(100)
         .finalize();
 
     core.run(future)?;
+
+    let future = client.get_acl().with_container_name(&container_name).finalize();
+
+    let result = core.run(future)?;
+    assert!(result == PublicAccess::Container);
 
     let future = client.delete().with_container_name(&container_name).finalize();
     core.run(future).map(|_| {

@@ -1,5 +1,8 @@
 use azure::core::errors::{check_status_extract_body, AzureError};
-use azure::core::{ClientRequestIdOption, ClientRequestIdSupport, ClientRequired, TimeoutOption, TimeoutSupport};
+use azure::core::{
+    ClientRequestIdOption, ClientRequestIdSupport, ClientRequired, ContainerNameRequired, ContainerNameSupport, TimeoutOption,
+    TimeoutSupport,
+};
 use azure::core::{No, ToAssign, Yes};
 use azure::storage::client::Client;
 use azure::storage::container::{PublicAccess, PublicAccessRequired, PublicAccessSupport};
@@ -20,17 +23,15 @@ pub struct CreateBuilder<'a, ContainerNameSet, PublicAccessSet> {
     metadata: HashMap<&'a str, &'a str>,
 }
 
-impl<'a, ContainerNameSet, PublicAccessSet> ClientRequired<'a> for CreateBuilder<'a, ContainerNameSet, PublicAccessSet> {
+impl<'a, ContainerNameSet, PublicAccessSet> ClientRequired<'a> for CreateBuilder<'a, ContainerNameSet, PublicAccessSet>
+where
+    ContainerNameSet: ToAssign,
+    PublicAccessSet: ToAssign,
+{
     fn client(&self) -> &'a Client {
         self.client
     }
 }
-
-//impl<'a> Default for CreateBuilder<'a, No, No, No> {
-//    fn default() -> Self {
-//        Self::new()
-//    }
-//}
 
 impl<'a, ContainerNameSet, PublicAccessSet> PublicAccessSupport for CreateBuilder<'a, ContainerNameSet, PublicAccessSet>
 where
@@ -146,8 +147,16 @@ where
             metadata,
         }
     }
+}
 
-    pub fn with_container_name(self, t: &'a str) -> CreateBuilder<'a, Yes, PublicAccessSet> {
+impl<'a, ContainerNameSet, PublicAccessSet> ContainerNameSupport<'a> for CreateBuilder<'a, ContainerNameSet, PublicAccessSet>
+where
+    ContainerNameSet: ToAssign,
+    PublicAccessSet: ToAssign,
+{
+    type O = CreateBuilder<'a, Yes, PublicAccessSet>;
+
+    fn with_container_name(self, t: &'a str) -> Self::O {
         CreateBuilder {
             p_container_name: PhantomData {},
             p_public_access: PhantomData {},
@@ -161,11 +170,11 @@ where
     }
 }
 
-impl<'a, PublicAccessSet> CreateBuilder<'a, Yes, PublicAccessSet>
+impl<'a, PublicAccessSet> ContainerNameRequired<'a> for CreateBuilder<'a, Yes, PublicAccessSet>
 where
     PublicAccessSet: ToAssign,
 {
-    pub fn container_name(&self) -> &'a str {
+    fn container_name(&self) -> &'a str {
         self.container_name.unwrap()
     }
 }
