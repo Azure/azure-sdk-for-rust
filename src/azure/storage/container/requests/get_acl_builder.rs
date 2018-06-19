@@ -6,7 +6,7 @@ use azure::core::{
 };
 use azure::core::{No, ToAssign, Yes};
 use azure::storage::client::Client;
-use azure::storage::container::{public_access_from_header, PublicAccess};
+use azure::storage::container::responses::GetACLResponse;
 use futures::future::{done, Future};
 use hyper::{Method, StatusCode};
 use std::marker::PhantomData;
@@ -71,7 +71,7 @@ where
 }
 
 impl<'a> GetACLBuilder<'a, Yes> {
-    pub fn finalize(self) -> impl Future<Item = PublicAccess, Error = AzureError> {
+    pub fn finalize(self) -> impl Future<Item = GetACLResponse, Error = AzureError> {
         let mut uri = format!(
             "https://{}.blob.core.windows.net/{}?restype=container&comp=acl",
             self.client().account(),
@@ -95,9 +95,9 @@ impl<'a> GetACLBuilder<'a, Yes> {
         done(req)
             .from_err()
             .and_then(move |future_response| check_status_extract_headers_and_body(future_response, StatusCode::OK))
-            .and_then(|(headers, _body)| {
+            .and_then(|(headers, body)| {
                 // todo: parse SAS policies
-                done(public_access_from_header(&headers))
+                done(GetACLResponse::from_response(body, headers))
             })
     }
 }

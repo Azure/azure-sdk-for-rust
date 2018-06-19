@@ -25,7 +25,9 @@ use uuid::Uuid;
 pub type RequestId = Uuid;
 use azure::core::lease::LeaseId;
 use http::request::Builder;
+mod stored_access_policy;
 pub(crate) mod util;
+pub use self::stored_access_policy::{StoredAccessPolicy, StoredAccessPolicyList};
 
 #[derive(Debug)]
 pub struct Yes;

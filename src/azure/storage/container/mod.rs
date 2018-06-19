@@ -1,4 +1,6 @@
 pub mod requests;
+pub mod responses;
+
 use azure::core::{
     enumerations,
     errors::{AzureError, TraversingError},
@@ -25,7 +27,7 @@ pub(crate) fn public_access_from_header(header_map: &HeaderMap) -> Result<Public
 
 pub trait PublicAccessSupport {
     type O;
-    fn with_public_access(self, pa: PublicAccess) -> Self::O;
+    fn with_public_access(self, public_access: PublicAccess) -> Self::O;
 }
 
 pub trait PublicAccessRequired {
