@@ -29,7 +29,6 @@ pub const HEADER_LEASE_DURATION: &str = "x-ms-lease-duration"; //=> [LeaseDurati
 pub const HEADER_LEASE_BREAK_PERIOD: &str = "x-ms-lease-break-period"; //=> [u32] }
 pub const HEADER_PROPOSED_LEASE_ID: &str = "x-ms-proposed-lease-id"; //=> [LeaseId] }
 pub const HEADER_RANGE_GET_CONTENT_MD5: &str = "x-ms-range-get-content-md5"; //=> [bool] }
-pub const HEADER_REQUEST_ID: &str = "x-ms-request-id"; //=> [String] }
 
 fn generate_authorization(h: &HeaderMap, u: &url::Url, method: Method, hmac_key: &str, service_type: ServiceType) -> String {
     let str_to_sign = string_to_sign(h, u, method, service_type);

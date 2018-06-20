@@ -1,18 +1,20 @@
 extern crate azure_sdk_for_rust;
-
+extern crate chrono;
 extern crate futures;
 extern crate hyper;
 extern crate hyper_tls;
 extern crate tokio_core;
 
-use azure_sdk_for_rust::core::{ClientRequestIdSupport, ContainerNameSupport, TimeoutSupport};
+use azure_sdk_for_rust::core::{ClientRequestIdSupport, ContainerNameSupport, StoredAccessPolicy, StoredAccessPolicyList, TimeoutSupport};
 use azure_sdk_for_rust::storage::{
     client::Client,
     container::{PublicAccess, PublicAccessSupport},
 };
+use chrono::{Duration, FixedOffset, Utc};
 use futures::Future;
 use std::collections::HashMap;
 use std::error::Error;
+use std::ops::Add;
 use tokio_core::reactor::Core;
 
 fn main() {
@@ -60,10 +62,45 @@ fn code() -> Result<(), Box<Error>> {
 
     core.run(future)?;
 
+    // get acl without stored access policy list
     let future = client.get_acl().with_container_name(&container_name).finalize();
-
     let result = core.run(future)?;
-    assert!(result == PublicAccess::Container);
+    println!("\nget_acl() == {:?}", result);
+
+    // set stored acess policy list
+    let dt_start = Utc::now().with_timezone(&FixedOffset::east(0));
+    let dt_end = dt_start.add(Duration::days(7));
+
+    let mut sapl = StoredAccessPolicyList::default();
+    sapl.stored_access.push(StoredAccessPolicy::new("pollo", dt_start, dt_end, "rwd"));
+
+    let future = client
+        .set_acl()
+        .with_container_name(&container_name)
+        .with_public_access(PublicAccess::Blob)
+        .with_stored_access_policy_list(&sapl)
+        .finalize();
+
+    let _result = core.run(future)?;
+
+    // now we get back the acess policy list and compare to the one created
+    let future = client.get_acl().with_container_name(&container_name).finalize();
+    let result = core.run(future)?;
+
+    println!("\nget_acl() == {:?}", result);
+
+    println!("\n\nsapl() == {:?}", sapl);
+    println!("\nresult.stored_access_policy_list  == {:?}", result.stored_access_policy_list);
+
+    assert!(result.public_access == PublicAccess::Blob);
+    // we cannot compare the returned result because Azure will
+    // trim the milliseconds
+    // assert!(sapl == result.stored_access_policy_list);
+    assert!(sapl.stored_access.len() == result.stored_access_policy_list.stored_access.len());
+    for (i1, i2) in sapl.stored_access.iter().zip(result.stored_access_policy_list.stored_access.iter()) {
+        assert!(i1.id == i2.id);
+        assert!(i1.permission == i2.permission);
+    }
 
     let future = client.delete().with_container_name(&container_name).finalize();
     core.run(future).map(|_| {

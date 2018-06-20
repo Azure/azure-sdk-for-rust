@@ -34,7 +34,7 @@ pub use self::block_list::BlockList;
 mod get_block_list_response;
 pub use self::get_block_list_response::GetBlockListResponse;
 
-use azure::core::headers::{CLIENT_REQUEST_ID, LEASE_ID};
+use azure::core::headers::{CLIENT_REQUEST_ID, LEASE_ID, REQUEST_ID};
 use base64;
 use chrono::{DateTime, Utc};
 use futures::{future::*, prelude::*};
@@ -865,7 +865,7 @@ where
             let content_type = headers.get_as_string(header::CONTENT_TYPE).unwrap();
             debug!("content_type == {:?}", content_type);
 
-            let request_id = Uuid::parse_str(headers.get_as_str(HEADER_REQUEST_ID).unwrap()).unwrap();
+            let request_id = Uuid::parse_str(headers.get_as_str(REQUEST_ID).unwrap()).unwrap();
 
             debug!("request_id == {}", request_id);
 

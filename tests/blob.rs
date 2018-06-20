@@ -15,14 +15,15 @@ use azure_sdk_for_rust::core::{
     errors::AzureError,
     lease::{LeaseState, LeaseStatus},
 };
-use azure_sdk_for_rust::core::{ContainerNameSupport, NextMarkerSupport, PrefixSupport};
+use azure_sdk_for_rust::core::{ContainerNameSupport, NextMarkerSupport, PrefixSupport, StoredAccessPolicy, StoredAccessPolicyList};
 use azure_sdk_for_rust::storage::{
     blob::{get_block_list, put_block_list, Blob, BlobType, BlockListType, PUT_BLOCK_OPTIONS_DEFAULT, PUT_OPTIONS_DEFAULT},
     client::Client,
     container::{Container, PublicAccess, PublicAccessSupport},
 };
-use chrono::Utc;
+use chrono::{Duration, FixedOffset, Utc};
 use futures::Future;
+use std::ops::Add;
 use std::ops::Deref;
 use tokio_core::reactor::Core;
 use uuid::Uuid;
@@ -42,16 +43,46 @@ fn create_and_delete_container() {
             .finalize(),
     ).unwrap();
 
+    // get acl without stored access policy list
+    let future = client.get_acl().with_container_name(name).finalize();
+    let _result = core.run(future).unwrap();
+
+    // set stored acess policy list
+    let dt_start = Utc::now().with_timezone(&FixedOffset::east(0));
+    let dt_end = dt_start.add(Duration::days(7));
+
+    let mut sapl = StoredAccessPolicyList::default();
+    sapl.stored_access.push(StoredAccessPolicy::new("pollo", dt_start, dt_end, "rwd"));
+
+    let future = client
+        .set_acl()
+        .with_container_name(name)
+        .with_public_access(PublicAccess::Blob)
+        .with_stored_access_policy_list(&sapl)
+        .finalize();
+
+    let _result = core.run(future).unwrap();
+
+    // now we get back the acess policy list and compare to the one created
+    let future = client.get_acl().with_container_name(name).finalize();
+    let result = core.run(future).unwrap();
+
+    assert!(result.public_access == PublicAccess::Blob);
+    // we cannot compare the returned result because Azure will
+    // trim the milliseconds
+    // assert!(sapl == result.stored_access_policy_list);
+    assert!(sapl.stored_access.len() == result.stored_access_policy_list.stored_access.len());
+    for (i1, i2) in sapl.stored_access.iter().zip(result.stored_access_policy_list.stored_access.iter()) {
+        assert!(i1.id == i2.id);
+        assert!(i1.permission == i2.permission);
+    }
+
     let list = core.run(client.list().with_prefix(name).finalize()).unwrap();
     let cont_list: Vec<&azure_sdk_for_rust::storage::container::Container> = list.deref().into_iter().filter(|e| e.name == name).collect();
 
     if cont_list.len() != 1 {
         panic!("More than 1 container returned with the same name!");
     }
-
-    // get acls
-    let acl = core.run(client.get_acl().with_container_name(name).finalize()).unwrap();
-    assert!(acl == PublicAccess::Container);
 
     let cont_delete = client.delete().with_container_name(&cont_list[0].name).finalize();
 

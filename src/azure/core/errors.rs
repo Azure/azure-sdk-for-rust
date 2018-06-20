@@ -13,6 +13,7 @@ use std::num;
 use std::str;
 use std::string;
 use url::ParseError as URLParseError;
+use uuid;
 use xml::BuilderError as XMLError;
 
 quick_error! {
@@ -152,6 +153,11 @@ quick_error! {
             display("Error preparing HTTP request: {}", err) // todo: revisit usages / message here
             cause(err)
         }
+        ParseUuidError(err: uuid::ParseError){
+            from()
+            display("Parse uuid error: {}", err)
+            cause(err)
+        }
         // URIParseError(err: hyper::error::UriError) {
         //     from()
         //     display("URI parse error: {}", err)
@@ -181,6 +187,9 @@ quick_error! {
             from()
             display("XML deserialization error: {}", err)
             cause(err)
+        }
+        MissingHeaderError(header: String) {
+            display("A required header is missing: {}", header)
         }
     }
 }

@@ -12,7 +12,11 @@ use std::collections::HashMap;
 use std::marker::PhantomData;
 
 #[derive(Debug, Clone)]
-pub struct CreateBuilder<'a, ContainerNameSet, PublicAccessSet> {
+pub struct CreateBuilder<'a, ContainerNameSet, PublicAccessSet>
+where
+    ContainerNameSet: ToAssign,
+    PublicAccessSet: ToAssign,
+{
     p_container_name: PhantomData<ContainerNameSet>,
     p_public_access: PhantomData<PublicAccessSet>,
     client: &'a Client,

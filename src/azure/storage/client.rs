@@ -14,6 +14,7 @@ pub trait Container {
     fn delete<'a>(&'a self) -> container::requests::DeleteBuilder<'a, No>;
     fn list<'a>(&'a self) -> container::requests::ListBuilder<'a>;
     fn get_acl<'a>(&'a self) -> container::requests::GetACLBuilder<'a, No>;
+    fn set_acl<'a>(&'a self) -> container::requests::SetACLBuilder<'a, No, No>;
 }
 
 #[derive(Debug)]
@@ -38,6 +39,10 @@ impl Container for Client {
 
     fn get_acl<'a>(&'a self) -> container::requests::GetACLBuilder<'a, No> {
         container::requests::GetACLBuilder::new(self)
+    }
+
+    fn set_acl<'a>(&'a self) -> container::requests::SetACLBuilder<'a, No, No> {
+        container::requests::SetACLBuilder::new(self)
     }
 }
 
