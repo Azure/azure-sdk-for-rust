@@ -34,7 +34,7 @@ pub use self::block_list::BlockList;
 mod get_block_list_response;
 pub use self::get_block_list_response::GetBlockListResponse;
 
-use azure::core::headers::{CLIENT_REQUEST_ID, LEASE_ID, REQUEST_ID};
+use azure::core::headers::{CLIENT_REQUEST_ID, LEASE_DURATION, LEASE_ID, LEASE_STATE, LEASE_STATUS, REQUEST_ID};
 use base64;
 use chrono::{DateTime, Utc};
 use futures::{future::*, prelude::*};
@@ -220,16 +220,16 @@ impl Blob {
         //);
 
         let lease_status = h
-            .get_as_enum(HEADER_LEASE_STATUS)?
+            .get_as_enum(LEASE_STATUS)?
             .ok_or_else(|| AzureError::HeaderNotFound("x-ms-lease-status".to_owned()))?;
         trace!("lease_status == {:?}", lease_status);
 
         let lease_state = h
-            .get_as_enum(HEADER_LEASE_STATE)?
+            .get_as_enum(LEASE_STATE)?
             .ok_or_else(|| AzureError::HeaderNotFound("x-ms-lease-state".to_owned()))?;
         trace!("lease_state == {:?}", lease_state);
 
-        let lease_duration = h.get_as_enum(HEADER_LEASE_DURATION)?;
+        let lease_duration = h.get_as_enum(LEASE_DURATION)?;
         trace!("lease_duration == {:?}", lease_duration);
 
         // TODO: get the remaining headers
@@ -501,7 +501,7 @@ impl Blob {
                     request.header_formatted(HEADER_LEASE_BREAK_PERIOD, lease_break_period);
                 }
                 if let Some(lease_duration) = lbo.lease_duration {
-                    request.header_formatted(HEADER_LEASE_DURATION, lease_duration);
+                    request.header_formatted(LEASE_DURATION, lease_duration);
                 }
                 if let Some(ref proposed_lease_id) = lbo.proposed_lease_id {
                     request.header_formatted(HEADER_PROPOSED_LEASE_ID, proposed_lease_id);

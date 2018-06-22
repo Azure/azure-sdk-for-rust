@@ -46,7 +46,7 @@ where
 }
 
 impl BlockWithSizeList<String> {
-    pub fn try_from<'a>(xml: &'a str) -> Result<BlockWithSizeList<String>, Error> {
+    pub fn try_from(xml: &str) -> Result<BlockWithSizeList<String>, Error> {
         let bl: BlockList = deserialize(xml.as_bytes())?;
         debug!("bl == {:?}", bl);
 

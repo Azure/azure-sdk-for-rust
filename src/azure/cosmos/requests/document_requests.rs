@@ -142,8 +142,7 @@ impl QueryDocumentRequest {
 
     pub fn execute<T: DeserializeOwned>(self) -> impl Future<Item = QueryDocumentResponse<T>, Error = AzureError> {
         trace!("get_document called(request == {:?}", self.request);
-        self.execute_json()
-            .and_then(move |qdr_json| Self::convert_query_document_type(qdr_json))
+        self.execute_json().and_then(Self::convert_query_document_type)
     }
 
     pub fn execute_json(self) -> impl Future<Item = QueryDocumentResponse<serde_json::Value>, Error = AzureError> {
@@ -206,8 +205,8 @@ impl QueryDocumentRequest {
         });
 
         Ok(QueryDocumentResponse {
-            query_response_meta: query_response_meta,
-            additional_headers: additional_headers,
+            query_response_meta,
+            additional_headers,
             results: docs.collect(),
         })
     }

@@ -22,10 +22,7 @@ pub const HEADER_VERSION: &str = "x-ms-version"; //=> [String] }
 pub const HEADER_DATE: &str = "x-ms-date"; //=> [String] }
 pub const HEADER_CONTENT_MD5: &str = "Content-MD5"; //=> [String] }
 pub const HEADER_RANGE: &str = "x-ms-range"; // => [range::Range] }
-pub const HEADER_LEASE_STATUS: &str = "x-ms-lease-status"; //=> [LeaseStatus] }
-pub const HEADER_LEASE_STATE: &str = "x-ms-lease-state"; //=> [LeaseState] }
 pub const HEADER_LEASE_ACTION: &str = "x-ms-lease-action"; //=> [LeaseAction] }
-pub const HEADER_LEASE_DURATION: &str = "x-ms-lease-duration"; //=> [LeaseDuration] }
 pub const HEADER_LEASE_BREAK_PERIOD: &str = "x-ms-lease-break-period"; //=> [u32] }
 pub const HEADER_PROPOSED_LEASE_ID: &str = "x-ms-proposed-lease-id"; //=> [LeaseId] }
 pub const HEADER_RANGE_GET_CONTENT_MD5: &str = "x-ms-range-get-content-md5"; //=> [bool] }
@@ -272,7 +269,7 @@ where
 
     request.header_bytes(HEADER_DATE, time).header_static(HEADER_VERSION, AZURE_VERSION);
 
-    let b = request_body.map(|v| Vec::from(v).into()).unwrap_or_else(|| hyper::Body::empty());
+    let b = request_body.map(|v| Vec::from(v).into()).unwrap_or_else(hyper::Body::empty);
     let mut request = request.body(b)?;
 
     let auth = generate_authorization(request.headers(), &url, http_method, azure_key, service_type);

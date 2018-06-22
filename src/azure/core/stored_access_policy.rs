@@ -40,7 +40,7 @@ impl StoredAccessPolicyList {
         let sis: SignedIdentifiers = deserialize(xml.as_bytes())?;
 
         if let Some(sis) = sis.signed_identifiers {
-            for si in sis.into_iter() {
+            for si in sis {
                 let sa = StoredAccessPolicy {
                     id: si.id,
                     start: DateTime::parse_from_rfc3339(&si.access_policy.start)?,

@@ -259,7 +259,7 @@ where
             p_public_access: PhantomData {},
             client: self.client,
             container_name: self.container_name,
-            public_access: public_access,
+            public_access,
             timeout: self.timeout,
             client_request_id: self.client_request_id,
             lease_id: self.lease_id,

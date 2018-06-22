@@ -4,13 +4,14 @@ pub mod responses;
 use azure::core::{
     enumerations,
     errors::{AzureError, TraversingError},
-    headers::BLOB_PUBLIC_ACCESS,
+    headers::{BLOB_PUBLIC_ACCESS, HAS_IMMUTABILITY_POLICY, HAS_LEGAL_HOLD, LEASE_DURATION, LEASE_STATE, LEASE_STATUS, META_PREFIX},
     lease::{LeaseDuration, LeaseState, LeaseStatus},
     parsing::{cast_must, cast_optional, traverse, FromStringOptional},
 };
 use chrono::{DateTime, Utc};
 use http::request::Builder;
 use http::HeaderMap;
+use hyper::header;
 use std::collections::HashMap;
 use std::{fmt, str::FromStr};
 use xml::{Element, Xml};
@@ -74,6 +75,69 @@ impl Container {
             has_legal_hold: false,
             metadata: HashMap::new(),
         }
+    }
+
+    pub fn from_response(name: String, headers: &HeaderMap) -> Result<Container, AzureError> {
+        let last_modified = match headers.get(header::LAST_MODIFIED) {
+            Some(last_modified) => last_modified.to_str()?,
+            None => return Err(AzureError::MissingHeaderError(header::LAST_MODIFIED.as_str().to_owned())),
+        };
+        let last_modified = DateTime::parse_from_rfc2822(last_modified)?;
+        let last_modified = DateTime::from_utc(last_modified.naive_utc(), Utc);
+
+        let e_tag = match headers.get(header::ETAG) {
+            Some(e_tag) => e_tag.to_str()?.to_owned(),
+            None => return Err(AzureError::MissingHeaderError(header::ETAG.as_str().to_owned())),
+        };
+
+        let lease_status = match headers.get(LEASE_STATUS) {
+            Some(lease_status) => lease_status.to_str()?,
+            None => return Err(AzureError::MissingHeaderError(LEASE_STATUS.to_owned())),
+        };
+        let lease_status = LeaseStatus::from_str(lease_status)?;
+
+        let lease_state = match headers.get(LEASE_STATE) {
+            Some(lease_state) => lease_state.to_str()?,
+            None => return Err(AzureError::MissingHeaderError(LEASE_STATE.to_owned())),
+        };
+        let lease_state = LeaseState::from_str(lease_state)?;
+
+        let lease_duration = match headers.get(LEASE_DURATION) {
+            Some(lease_duration) => Some(LeaseDuration::from_str(lease_duration.to_str()?)?),
+            None => None,
+        };
+
+        let public_access = public_access_from_header(&headers)?;
+
+        let has_immutability_policy = match headers.get(HAS_IMMUTABILITY_POLICY) {
+            Some(has_immutability_policy) => bool::from_str(has_immutability_policy.to_str()?)?,
+            None => return Err(AzureError::MissingHeaderError(HAS_IMMUTABILITY_POLICY.to_owned())),
+        };
+
+        let has_legal_hold = match headers.get(HAS_LEGAL_HOLD) {
+            Some(has_legal_hold) => bool::from_str(has_legal_hold.to_str()?)?,
+            None => return Err(AzureError::MissingHeaderError(HAS_LEGAL_HOLD.to_owned())),
+        };
+
+        let mut metadata: HashMap<String, String> = HashMap::new();
+        for (key, value) in headers {
+            if key.as_str().starts_with(META_PREFIX) {
+                metadata.insert(key.as_str().to_owned(), value.to_str()?.to_owned());
+            }
+        }
+
+        Ok(Container {
+            name,
+            last_modified,
+            e_tag,
+            lease_status,
+            lease_state,
+            lease_duration,
+            public_access,
+            has_immutability_policy,
+            has_legal_hold,
+            metadata,
+        })
     }
 
     fn parse(elem: &Element) -> Result<Container, AzureError> {

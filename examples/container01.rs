@@ -102,6 +102,11 @@ fn code() -> Result<(), Box<Error>> {
         assert!(i1.permission == i2.permission);
     }
 
+    let future = client.get_properties().with_container_name(&container_name).finalize();
+    let res = core.run(future)?;
+
+    println!("\nget_properties() == {:?}", res);
+
     let future = client.delete().with_container_name(&container_name).finalize();
     core.run(future).map(|_| {
         println!("container {} deleted!", container_name);

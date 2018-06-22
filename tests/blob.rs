@@ -77,6 +77,10 @@ fn create_and_delete_container() {
         assert!(i1.permission == i2.permission);
     }
 
+    let future = client.get_properties().with_container_name(name).finalize();
+    let res = core.run(future).unwrap();
+    assert!(res.container.public_access == PublicAccess::Blob);
+
     let list = core.run(client.list().with_prefix(name).finalize()).unwrap();
     let cont_list: Vec<&azure_sdk_for_rust::storage::container::Container> = list.deref().into_iter().filter(|e| e.name == name).collect();
 
