@@ -11,6 +11,7 @@ use std;
 use std::io::Error as IOError;
 use std::num;
 use std::str;
+use std::str::ParseBoolError;
 use std::string;
 use url::ParseError as URLParseError;
 use uuid;
@@ -78,6 +79,11 @@ impl std::error::Error for UnexpectedHTTPResult {
 quick_error! {
     #[derive(Debug)]
     pub enum AzureError {
+        ParseBoolError(err: ParseBoolError) {
+            from()
+            display("parse bool error: {}", err)
+            cause(err)
+        }
         ToStrError(err: ToStrError) {
             from()
             display("to str error: {}", err)

@@ -6,13 +6,13 @@ use azure::core::{
 };
 use azure::core::{No, ToAssign, Yes};
 use azure::storage::client::Client;
-use azure::storage::container::responses::GetACLResponse;
+use azure::storage::container::responses::GetPropertiesResponse;
 use futures::future::{done, Future};
 use hyper::{Method, StatusCode};
 use std::marker::PhantomData;
 
 #[derive(Debug, Clone)]
-pub struct GetACLBuilder<'a, ContainerNameSet>
+pub struct GetPropertiesBuilder<'a, ContainerNameSet>
 where
     ContainerNameSet: ToAssign,
 {
@@ -24,7 +24,7 @@ where
     lease_id: Option<&'a LeaseId>,
 }
 
-impl<'a, ContainerNameSet> ClientRequired<'a> for GetACLBuilder<'a, ContainerNameSet>
+impl<'a, ContainerNameSet> ClientRequired<'a> for GetPropertiesBuilder<'a, ContainerNameSet>
 where
     ContainerNameSet: ToAssign,
 {
@@ -33,9 +33,9 @@ where
     }
 }
 
-impl<'a> GetACLBuilder<'a, No> {
-    pub(crate) fn new(client: &'a Client) -> GetACLBuilder<'a, No> {
-        GetACLBuilder {
+impl<'a> GetPropertiesBuilder<'a, No> {
+    pub(crate) fn new(client: &'a Client) -> GetPropertiesBuilder<'a, No> {
+        GetPropertiesBuilder {
             p_container_name: PhantomData {},
             client,
             container_name: None,
@@ -46,20 +46,20 @@ impl<'a> GetACLBuilder<'a, No> {
     }
 }
 
-impl<'a> ContainerNameRequired<'a> for GetACLBuilder<'a, Yes> {
+impl<'a> ContainerNameRequired<'a> for GetPropertiesBuilder<'a, Yes> {
     fn container_name(&self) -> &'a str {
         self.container_name.unwrap()
     }
 }
 
-impl<'a, ContainerNameSet> ContainerNameSupport<'a> for GetACLBuilder<'a, ContainerNameSet>
+impl<'a, ContainerNameSet> ContainerNameSupport<'a> for GetPropertiesBuilder<'a, ContainerNameSet>
 where
     ContainerNameSet: ToAssign,
 {
-    type O = GetACLBuilder<'a, Yes>;
+    type O = GetPropertiesBuilder<'a, Yes>;
 
     fn with_container_name(self, container_name: &'a str) -> Self::O {
-        GetACLBuilder {
+        GetPropertiesBuilder {
             p_container_name: PhantomData {},
             client: self.client,
             container_name: Some(container_name),
@@ -70,10 +70,10 @@ where
     }
 }
 
-impl<'a> GetACLBuilder<'a, Yes> {
-    pub fn finalize(self) -> impl Future<Item = GetACLResponse, Error = AzureError> {
+impl<'a> GetPropertiesBuilder<'a, Yes> {
+    pub fn finalize(self) -> impl Future<Item = GetPropertiesResponse, Error = AzureError> {
         let mut uri = format!(
-            "https://{}.blob.core.windows.net/{}?restype=container&comp=acl",
+            "https://{}.blob.core.windows.net/{}?restype=container",
             self.client().account(),
             self.container_name()
         );
@@ -84,7 +84,7 @@ impl<'a> GetACLBuilder<'a, Yes> {
 
         let req = self.client().perform_request(
             &uri,
-            Method::GET,
+            Method::HEAD,
             |ref mut request| {
                 ClientRequestIdOption::add_header(&self, request);
                 LeaseIdOption::add_header(&self, request);
@@ -92,17 +92,16 @@ impl<'a> GetACLBuilder<'a, Yes> {
             None,
         );
 
+        let container_name = self.container_name().to_owned();
+
         done(req)
             .from_err()
             .and_then(move |future_response| check_status_extract_headers_and_body(future_response, StatusCode::OK))
-            .and_then(|(headers, body)| {
-                // todo: parse SAS policies
-                done(GetACLResponse::from_response(&body, &headers))
-            })
+            .and_then(|(headers, _body)| done(GetPropertiesResponse::from_response(container_name, &headers)))
     }
 }
 
-impl<'a, ContainerNameSet> TimeoutOption for GetACLBuilder<'a, ContainerNameSet>
+impl<'a, ContainerNameSet> TimeoutOption for GetPropertiesBuilder<'a, ContainerNameSet>
 where
     ContainerNameSet: ToAssign,
 {
@@ -111,14 +110,14 @@ where
     }
 }
 
-impl<'a, ContainerNameSet> TimeoutSupport for GetACLBuilder<'a, ContainerNameSet>
+impl<'a, ContainerNameSet> TimeoutSupport for GetPropertiesBuilder<'a, ContainerNameSet>
 where
     ContainerNameSet: ToAssign,
 {
-    type O = GetACLBuilder<'a, ContainerNameSet>;
+    type O = GetPropertiesBuilder<'a, ContainerNameSet>;
 
     fn with_timeout(self, timeout: u64) -> Self::O {
-        GetACLBuilder {
+        GetPropertiesBuilder {
             p_container_name: PhantomData {},
             client: self.client,
             container_name: self.container_name,
@@ -129,7 +128,7 @@ where
     }
 }
 
-impl<'a, ContainerNameSet> ClientRequestIdOption<'a> for GetACLBuilder<'a, ContainerNameSet>
+impl<'a, ContainerNameSet> ClientRequestIdOption<'a> for GetPropertiesBuilder<'a, ContainerNameSet>
 where
     ContainerNameSet: ToAssign,
 {
@@ -138,14 +137,14 @@ where
     }
 }
 
-impl<'a, ContainerNameSet> ClientRequestIdSupport<'a> for GetACLBuilder<'a, ContainerNameSet>
+impl<'a, ContainerNameSet> ClientRequestIdSupport<'a> for GetPropertiesBuilder<'a, ContainerNameSet>
 where
     ContainerNameSet: ToAssign,
 {
-    type O = GetACLBuilder<'a, ContainerNameSet>;
+    type O = GetPropertiesBuilder<'a, ContainerNameSet>;
 
     fn with_client_request_id(self, client_request_id: &'a str) -> Self::O {
-        GetACLBuilder {
+        GetPropertiesBuilder {
             p_container_name: PhantomData {},
             client: self.client,
             container_name: self.container_name,
@@ -156,7 +155,7 @@ where
     }
 }
 
-impl<'a, ContainerNameSet> LeaseIdOption<'a> for GetACLBuilder<'a, ContainerNameSet>
+impl<'a, ContainerNameSet> LeaseIdOption<'a> for GetPropertiesBuilder<'a, ContainerNameSet>
 where
     ContainerNameSet: ToAssign,
 {
@@ -165,14 +164,14 @@ where
     }
 }
 
-impl<'a, ContainerNameSet> LeaseIdSupport<'a> for GetACLBuilder<'a, ContainerNameSet>
+impl<'a, ContainerNameSet> LeaseIdSupport<'a> for GetPropertiesBuilder<'a, ContainerNameSet>
 where
     ContainerNameSet: ToAssign,
 {
-    type O = GetACLBuilder<'a, ContainerNameSet>;
+    type O = GetPropertiesBuilder<'a, ContainerNameSet>;
 
     fn with_lease_id(self, lease_id: &'a LeaseId) -> Self::O {
-        GetACLBuilder {
+        GetPropertiesBuilder {
             p_container_name: PhantomData {},
             client: self.client,
             container_name: self.container_name,
