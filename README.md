@@ -200,11 +200,14 @@ If you want to contribute please do! No formality required! :wink:. Please note 
 
 #### Storage Container
 
-| Method           | URL                                                                                                                          |
-| ----             | ---                                                                                                                          |
-| Create container | [https://msdn.microsoft.com/en-us/library/azure/dd179468.aspx](https://msdn.microsoft.com/en-us/library/azure/dd179468.aspx) |
-| List containers  | [https://msdn.microsoft.com/en-us/library/azure/dd179352.aspx](https://msdn.microsoft.com/en-us/library/azure/dd179352.aspx) |
-| Delete container | [https://msdn.microsoft.com/en-us/library/azure/dd179408.aspx](https://msdn.microsoft.com/en-us/library/azure/dd179408.aspx) |
+| Method           | URL                                                                                                                                                                      | Builder pattern
+| ----             | ---                                                                                                                                                                      | ---
+| Create container | [https://msdn.microsoft.com/en-us/library/azure/dd179468.aspx](https://msdn.microsoft.com/en-us/library/azure/dd179468.aspx)                                             | yes
+| List containers  | [https://msdn.microsoft.com/en-us/library/azure/dd179352.aspx](https://msdn.microsoft.com/en-us/library/azure/dd179352.aspx)                                             | yes
+| Delete container | [https://msdn.microsoft.com/en-us/library/azure/dd179408.aspx](https://msdn.microsoft.com/en-us/library/azure/dd179408.aspx)                                             | yes
+| Get ACLs         | [https://docs.microsoft.com/en-us/rest/api/storageservices/get-container-acl](https://docs.microsoft.com/en-us/rest/api/storageservices/get-container-acl)               | yes
+| Set ACLs         | [https://docs.microsoft.com/en-us/rest/api/storageservices/set-container-acl](https://docs.microsoft.com/en-us/rest/api/storageservices/set-container-acl)               | yes
+| Get properties   | [https://docs.microsoft.com/en-us/rest/api/storageservices/get-container-properties](https://docs.microsoft.com/en-us/rest/api/storageservices/get-container-properties) | yes
 
 #### Storage blobs
 
