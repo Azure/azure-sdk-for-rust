@@ -15,7 +15,10 @@ use azure_sdk_for_rust::core::{
     errors::AzureError,
     lease::{LeaseState, LeaseStatus},
 };
-use azure_sdk_for_rust::core::{ContainerNameSupport, NextMarkerSupport, PrefixSupport, StoredAccessPolicy, StoredAccessPolicyList};
+use azure_sdk_for_rust::core::{
+    ContainerNameSupport, LeaseDurationSupport, LeaseIdSupport, NextMarkerSupport, PrefixSupport, StoredAccessPolicy,
+    StoredAccessPolicyList,
+};
 use azure_sdk_for_rust::storage::{
     blob::{get_block_list, put_block_list, Blob, BlobType, BlockListType, PUT_BLOCK_OPTIONS_DEFAULT, PUT_OPTIONS_DEFAULT},
     client::Client,
@@ -88,7 +91,18 @@ fn create_and_delete_container() {
         panic!("More than 1 container returned with the same name!");
     }
 
-    let cont_delete = client.delete().with_container_name(&cont_list[0].name).finalize();
+    let future = client
+        .acquire_lease()
+        .with_container_name(&cont_list[0].name)
+        .with_lease_duration(30)
+        .finalize();
+    let res = core.run(future).unwrap();
+
+    let cont_delete = client
+        .delete()
+        .with_container_name(&cont_list[0].name)
+        .with_lease_id(&res.lease_id) // must pass the lease here too
+        .finalize();
 
     core.run(cont_delete).unwrap();
 }

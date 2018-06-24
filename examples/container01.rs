@@ -5,7 +5,10 @@ extern crate hyper;
 extern crate hyper_tls;
 extern crate tokio_core;
 
-use azure_sdk_for_rust::core::{ClientRequestIdSupport, ContainerNameSupport, StoredAccessPolicy, StoredAccessPolicyList, TimeoutSupport};
+use azure_sdk_for_rust::core::{
+    ClientRequestIdSupport, ContainerNameSupport, LeaseDurationSupport, LeaseIdSupport, StoredAccessPolicy, StoredAccessPolicyList,
+    TimeoutSupport,
+};
 use azure_sdk_for_rust::storage::{
     client::Client,
     container::{PublicAccess, PublicAccessSupport},
@@ -104,10 +107,21 @@ fn code() -> Result<(), Box<Error>> {
 
     let future = client.get_properties().with_container_name(&container_name).finalize();
     let res = core.run(future)?;
-
     println!("\nget_properties() == {:?}", res);
 
-    let future = client.delete().with_container_name(&container_name).finalize();
+    let future = client
+        .acquire_lease()
+        .with_container_name(&container_name)
+        .with_lease_duration(15)
+        .finalize();
+    let res = core.run(future)?;
+    println!("\nacquire_lease() == {:?}", res);
+
+    let future = client
+        .delete()
+        .with_container_name(&container_name)
+        .with_lease_id(&res.lease_id) // we need to specify the lease or it won't work!
+        .finalize();
     core.run(future).map(|_| {
         println!("container {} deleted!", container_name);
     })?;

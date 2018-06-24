@@ -1,9 +1,11 @@
+mod acquire_lease_builder;
 mod create_builder;
 mod delete_builder;
 mod get_acl_builder;
 mod get_properties_builder;
 mod list_builder;
 mod set_acl_builder;
+pub use self::acquire_lease_builder::AcquireLeaseBuilder;
 pub use self::create_builder::CreateBuilder;
 pub use self::delete_builder::DeleteBuilder;
 pub use self::get_acl_builder::GetACLBuilder;

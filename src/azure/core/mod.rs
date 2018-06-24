@@ -20,7 +20,7 @@ define_encode_set! {
     }
 }
 pub mod headers;
-use self::headers::{CLIENT_REQUEST_ID, LEASE_ID};
+use self::headers::{CLIENT_REQUEST_ID, LEASE_DURATION, LEASE_ID, PROPOSED_LEASE_ID};
 use uuid::Uuid;
 pub type RequestId = Uuid;
 use azure::core::lease::LeaseId;
@@ -126,6 +126,42 @@ pub trait LeaseIdOption<'a> {
         if let Some(lease_id) = self.lease_id() {
             builder.header(LEASE_ID, &lease_id.to_string() as &str);
         }
+    }
+}
+
+pub trait LeaseDurationSupport {
+    type O;
+    fn with_lease_duration(self, i8) -> Self::O;
+}
+
+pub trait LeaseDurationRequired {
+    fn lease_duration(&self) -> i8;
+
+    fn add_header(&self, builder: &mut Builder) {
+        builder.header(LEASE_DURATION, &self.lease_duration().to_string() as &str);
+    }
+}
+
+pub trait ProposedLeaseIdSupport<'a> {
+    type O;
+    fn with_proposed_lease_id(self, &'a LeaseId) -> Self::O;
+}
+
+pub trait ProposedLeaseIdOption<'a> {
+    fn proposed_lease_id(&self) -> Option<&'a LeaseId>;
+
+    fn add_header(&self, builder: &mut Builder) {
+        if let Some(pld) = self.proposed_lease_id() {
+            builder.header(PROPOSED_LEASE_ID, &pld.to_string() as &str);
+        }
+    }
+}
+
+pub trait ProposedLeaseIdRequired<'a> {
+    fn proposed_lease_id(&self) -> &'a LeaseId;
+
+    fn add_header(&self, builder: &mut Builder) {
+        builder.header(PROPOSED_LEASE_ID, &self.proposed_lease_id().to_string() as &str);
     }
 }
 
