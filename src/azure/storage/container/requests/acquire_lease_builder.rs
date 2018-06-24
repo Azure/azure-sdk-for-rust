@@ -12,6 +12,7 @@ use futures::future::{done, Future};
 use hyper::{Method, StatusCode};
 use std::marker::PhantomData;
 
+#[derive(Debug, Clone)]
 pub struct AcquireLeaseBuilder<'a, ContainerNameSet, LeaseDurationSet>
 where
     ContainerNameSet: ToAssign,

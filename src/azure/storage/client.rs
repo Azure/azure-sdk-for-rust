@@ -17,6 +17,7 @@ pub trait Container {
     fn set_acl<'a>(&'a self) -> container::requests::SetACLBuilder<'a, No, No>;
     fn get_properties<'a>(&'a self) -> container::requests::GetPropertiesBuilder<'a, No>;
     fn acquire_lease<'a>(&'a self) -> container::requests::AcquireLeaseBuilder<'a, No, No>;
+    fn renew_lease<'a>(&'a self) -> container::requests::RenewLeaseBuilder<'a, No, No>;
 }
 
 #[derive(Debug)]
@@ -53,6 +54,10 @@ impl Container for Client {
 
     fn acquire_lease<'a>(&'a self) -> container::requests::AcquireLeaseBuilder<'a, No, No> {
         container::requests::AcquireLeaseBuilder::new(self)
+    }
+
+    fn renew_lease<'a>(&'a self) -> container::requests::RenewLeaseBuilder<'a, No, No> {
+        container::requests::RenewLeaseBuilder::new(self)
     }
 }
 
