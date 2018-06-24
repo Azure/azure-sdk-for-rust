@@ -8,3 +8,5 @@ pub const LEASE_DURATION: &str = "x-ms-lease-duration"; //=> [LeaseDuration] }
 pub const HAS_IMMUTABILITY_POLICY: &str = "x-ms-has-immutability-policy";
 pub const HAS_LEGAL_HOLD: &str = "x-ms-has-legal-hold";
 pub const META_PREFIX: &str = "x-ms-meta-";
+pub const LEASE_ACTION: &str = "x-ms-lease-action"; //=> [LeaseAction] }
+pub const PROPOSED_LEASE_ID: &str = "x-ms-proposed-lease-id"; //=> [LeaseId] }

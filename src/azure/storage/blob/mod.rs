@@ -34,7 +34,9 @@ pub use self::block_list::BlockList;
 mod get_block_list_response;
 pub use self::get_block_list_response::GetBlockListResponse;
 
-use azure::core::headers::{CLIENT_REQUEST_ID, LEASE_DURATION, LEASE_ID, LEASE_STATE, LEASE_STATUS, REQUEST_ID};
+use azure::core::headers::{
+    CLIENT_REQUEST_ID, LEASE_ACTION, LEASE_DURATION, LEASE_ID, LEASE_STATE, LEASE_STATUS, PROPOSED_LEASE_ID, REQUEST_ID,
+};
 use base64;
 use chrono::{DateTime, Utc};
 use futures::{future::*, prelude::*};
@@ -495,7 +497,7 @@ impl Blob {
                     request.header_formatted(LEASE_ID, lease_id);
                 }
 
-                request.header_formatted(HEADER_LEASE_ACTION, la);
+                request.header_formatted(LEASE_ACTION, la);
 
                 if let Some(lease_break_period) = lbo.lease_break_period {
                     request.header_formatted(HEADER_LEASE_BREAK_PERIOD, lease_break_period);
@@ -504,7 +506,7 @@ impl Blob {
                     request.header_formatted(LEASE_DURATION, lease_duration);
                 }
                 if let Some(ref proposed_lease_id) = lbo.proposed_lease_id {
-                    request.header_formatted(HEADER_PROPOSED_LEASE_ID, proposed_lease_id);
+                    request.header_formatted(PROPOSED_LEASE_ID, proposed_lease_id);
                 }
                 if let Some(ref request_id) = lbo.request_id {
                     request.header_formatted(CLIENT_REQUEST_ID, request_id);

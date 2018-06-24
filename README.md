@@ -189,7 +189,7 @@ fn code() -> Result<(), Box<Error>> {
 
 ## State of the art
 Right now the key framework is in place (authentication, enumerations, parsing and so on). If you want to contribute please do!
-Methods are added daily so please check the [CHANGELOG.md](CHANGELOG.md) for updates on the progress.
+Methods are added daily so please check the [release page](https://github.com/MindFlavor/AzureSDKForRust/releases) for updates on the progress.
 Also note that the project is in early stages so the APIs are bound to change at any moment. I will strive to keep things steady but since I'm new to Rust I'm sure I'll have to correct some serious mistake before too long :smile:.
 I generally build for the latest nightly and leave to Travis to check the retrocompatibility.
 
