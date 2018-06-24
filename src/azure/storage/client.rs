@@ -18,6 +18,7 @@ pub trait Container {
     fn get_properties<'a>(&'a self) -> container::requests::GetPropertiesBuilder<'a, No>;
     fn acquire_lease<'a>(&'a self) -> container::requests::AcquireLeaseBuilder<'a, No, No>;
     fn renew_lease<'a>(&'a self) -> container::requests::RenewLeaseBuilder<'a, No, No>;
+    fn release_lease<'a>(&'a self) -> container::requests::ReleaseLeaseBuilder<'a, No, No>;
 }
 
 #[derive(Debug)]
@@ -58,6 +59,10 @@ impl Container for Client {
 
     fn renew_lease<'a>(&'a self) -> container::requests::RenewLeaseBuilder<'a, No, No> {
         container::requests::RenewLeaseBuilder::new(self)
+    }
+
+    fn release_lease<'a>(&'a self) -> container::requests::ReleaseLeaseBuilder<'a, No, No> {
+        container::requests::ReleaseLeaseBuilder::new(self)
     }
 }
 
