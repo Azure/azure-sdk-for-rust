@@ -97,11 +97,19 @@ fn create_and_delete_container() {
         .with_lease_duration(30)
         .finalize();
     let res = core.run(future).unwrap();
+    let lease_id = res.lease_id;
+
+    let future = client
+        .renew_lease()
+        .with_container_name(&cont_list[0].name)
+        .with_lease_id(&lease_id)
+        .finalize();
+    let _res = core.run(future).unwrap();
 
     let cont_delete = client
         .delete()
         .with_container_name(&cont_list[0].name)
-        .with_lease_id(&res.lease_id) // must pass the lease here too
+        .with_lease_id(&lease_id) // must pass the lease here too
         .finalize();
 
     core.run(cont_delete).unwrap();

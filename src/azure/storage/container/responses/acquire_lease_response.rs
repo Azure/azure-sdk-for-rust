@@ -7,7 +7,7 @@ use http::header;
 use http::HeaderMap;
 use uuid::Uuid;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct AcquireLeaseResponse {
     pub etag: String,
     pub last_modified: DateTime<FixedOffset>,

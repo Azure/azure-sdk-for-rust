@@ -129,6 +129,14 @@ pub trait LeaseIdOption<'a> {
     }
 }
 
+pub trait LeaseIdRequired<'a> {
+    fn lease_id(&self) -> &'a LeaseId;
+
+    fn add_header(&self, builder: &mut Builder) {
+        builder.header(LEASE_ID, &self.lease_id().to_string() as &str);
+    }
+}
+
 pub trait LeaseDurationSupport {
     type O;
     fn with_lease_duration(self, i8) -> Self::O;
