@@ -11,7 +11,7 @@ extern crate tokio_core;
 extern crate uuid;
 
 use azure_sdk_for_rust::core::errors::AzureError;
-use azure_sdk_for_rust::core::{ContainerNameSupport, LeaseDurationSupport, LeaseIdSupport};
+use azure_sdk_for_rust::core::{ContainerNameSupport, LeaseDurationSupport, LeaseIdSupport, LeaseBreakPeriodSupport};
 use azure_sdk_for_rust::storage::{
     client::Client,
     container::{PublicAccess, PublicAccessSupport},
@@ -19,7 +19,7 @@ use azure_sdk_for_rust::storage::{
 use tokio_core::reactor::Core;
 
 #[test]
-fn lease_container() {
+fn lease() {
     use azure_sdk_for_rust::storage::client::Container;
 
     let container_name: &'static str = "azuresdkrustetoets2";
@@ -58,8 +58,42 @@ fn lease_container() {
     let cont_delete = client
         .delete()
         .with_container_name(container_name)
-        .with_lease_id(&lease_id) // must pass the lease here too
         .finalize();
+
+    core.run(cont_delete).unwrap();
+}
+
+#[test]
+fn break_lease() {
+    use azure_sdk_for_rust::storage::client::Container;
+
+    let container_name: &'static str = "azuresdkrustetoets3";
+
+    let (client, mut core) = initialize().unwrap();
+    core.run(
+        client
+            .create()
+            .with_container_name(container_name)
+            .with_public_access(PublicAccess::Container)
+            .finalize(),
+    ).unwrap();
+
+    let future = client
+        .acquire_lease()
+        .with_container_name(container_name)
+        .with_lease_duration(30)
+        .finalize();
+    let _res = core.run(future).unwrap();
+
+    let future = client
+        .break_lease()
+        .with_container_name(container_name)
+        .with_lease_break_period(0)
+        .finalize();
+    let res = core.run(future).unwrap();
+    assert!(res.lease_time == 0);
+
+    let cont_delete = client.delete().with_container_name(container_name).finalize();
 
     core.run(cont_delete).unwrap();
 }

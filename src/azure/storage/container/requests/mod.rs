@@ -1,4 +1,5 @@
 mod acquire_lease_builder;
+mod break_lease_builder;
 mod create_builder;
 mod delete_builder;
 mod get_acl_builder;
@@ -16,3 +17,4 @@ pub use self::list_builder::ListBuilder;
 pub use self::release_lease_builder::ReleaseLeaseBuilder;
 pub use self::renew_lease_builder::RenewLeaseBuilder;
 pub use self::set_acl_builder::SetACLBuilder;
+pub use self::break_lease_builder::BreakLeaseBuilder;

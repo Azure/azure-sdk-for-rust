@@ -9,4 +9,6 @@ pub const HAS_IMMUTABILITY_POLICY: &str = "x-ms-has-immutability-policy";
 pub const HAS_LEGAL_HOLD: &str = "x-ms-has-legal-hold";
 pub const META_PREFIX: &str = "x-ms-meta-";
 pub const LEASE_ACTION: &str = "x-ms-lease-action"; //=> [LeaseAction] }
+pub const LEASE_BREAK_PERIOD: &str = "x-ms-lease-break-period"; //=> [u32] }
 pub const PROPOSED_LEASE_ID: &str = "x-ms-proposed-lease-id"; //=> [LeaseId] }
+pub const LEASE_TIME: &str = "x-ms-lease-time";

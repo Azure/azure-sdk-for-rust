@@ -194,7 +194,7 @@ impl<'a> ReleaseLeaseBuilder<'a, Yes, Yes> {
             |ref mut request| {
                 ClientRequestIdOption::add_header(&self, request);
                 LeaseIdRequired::add_header(&self, request);
-                request.header(LEASE_ACTION, "renew");
+                request.header(LEASE_ACTION, "release");
             },
             Some(&[]),
         );
