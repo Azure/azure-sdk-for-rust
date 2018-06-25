@@ -8,9 +8,9 @@
 
 [![Crate](https://img.shields.io/crates/v/azure_sdk_for_rust.svg)](https://crates.io/crates/azure_sdk_for_rust) [![cratedown](https://img.shields.io/crates/d/azure_sdk_for_rust.svg)](https://crates.io/crates/azure_sdk_for_rust) [![cratelastdown](https://img.shields.io/crates/dv/azure_sdk_for_rust.svg)](https://crates.io/crates/azure_sdk_for_rust)
 
-[![tag](https://img.shields.io/github/tag/mindflavor/AzureSDKForRust.svg)](https://github.com/MindFlavor/AzureSDKForRust/tree/0.8.0)
-[![release](https://img.shields.io/github/release/mindflavor/AzureSDKForRust.svg)](https://github.com/MindFlavor/AzureSDKForRust/tree/0.8.0)
-[![commitssince](https://img.shields.io/github/commits-since/mindflavor/AzureSDKForRust/0.8.0.svg)](https://img.shields.io/github/commits-since/mindflavor/AzureSDKForRust/0.8.0.svg)
+[![tag](https://img.shields.io/github/tag/mindflavor/AzureSDKForRust.svg)](https://github.com/MindFlavor/AzureSDKForRust/tree/0.9.0)
+[![release](https://img.shields.io/github/release/mindflavor/AzureSDKForRust.svg)](https://github.com/MindFlavor/AzureSDKForRust/tree/0.9.0)
+[![commitssince](https://img.shields.io/github/commits-since/mindflavor/AzureSDKForRust/0.9.0.svg)](https://img.shields.io/github/commits-since/mindflavor/AzureSDKForRust/0.9.0.svg)
 
 ![GitHub contributors](https://img.shields.io/github/contributors/mindflavor/AzureSDKForRust.svg)
 
@@ -19,9 +19,7 @@ Microsoft Azure expose its technologies via REST API. These APIs are easily cons
 
 This crate relies heavily on the excellent crate called [Hyper](https://github.com/hyperium/hyper). As of this library version [0.4.0](https://github.com/MindFlavor/AzureSDKForRust/releases/tag/0.4.0) all the methods are future-aware.
 
-~~From version [0.7.2](https://github.com/MindFlavor/AzureSDKForRust/releases/tag/0.7.2) I've used the TryFrom and TryTrait options. This means the library is once again nightly only (until those lints are stabilized). The relative issue is: [https://github.com/rust-lang/rust/issues/33417](https://github.com/rust-lang/rust/issues/33417).~~
-This is addressed in the upcoming version. The crate no longer uses TryFrom so it can be compiled with the stable compiler.
-
+From version 0.8.0 for Cosmos and 0.9.0 for Storage the repo is embracing the builder pattern. This is still an in-progress transition but the resulting API is much more easy to use. Also most checks have been moved to compile-time. Unfortunately the changes are not backward-compatibile. As soon as am I able I will try and blog on the approach taken here.
 
 > **NOTE:** This repository is under heavy development and is likely to break over time. The current releases will probabily contain bugs. As usual open issues if you find any.
 
