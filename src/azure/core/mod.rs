@@ -20,7 +20,7 @@ define_encode_set! {
     }
 }
 pub mod headers;
-use self::headers::{CLIENT_REQUEST_ID, LEASE_DURATION, LEASE_ID, PROPOSED_LEASE_ID};
+use self::headers::{CLIENT_REQUEST_ID, LEASE_BREAK_PERIOD, LEASE_DURATION, LEASE_ID, PROPOSED_LEASE_ID};
 use uuid::Uuid;
 pub type RequestId = Uuid;
 use azure::core::lease::LeaseId;
@@ -170,6 +170,21 @@ pub trait ProposedLeaseIdRequired<'a> {
 
     fn add_header(&self, builder: &mut Builder) {
         builder.header(PROPOSED_LEASE_ID, &self.proposed_lease_id().to_string() as &str);
+    }
+}
+
+pub trait LeaseBreakPeriodSupport {
+    type O;
+    fn with_lease_break_period(self, lease_break_period: u8) -> Self::O;
+}
+
+pub trait LeaseBreakPeriodOption {
+    fn lease_break_period(&self) -> Option<u8>;
+
+    fn add_header(&self, builder: &mut Builder) {
+        if let Some(lease_break_period) = self.lease_break_period() {
+            builder.header(LEASE_BREAK_PERIOD, &lease_break_period.to_string() as &str);
+        }
     }
 }
 

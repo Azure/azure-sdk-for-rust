@@ -7,15 +7,16 @@ use http::HeaderMap;
 use uuid::Uuid;
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct ReleaseLeaseResponse{
+pub struct BreakLeaseResponse {
     pub etag: String,
     pub last_modified: DateTime<FixedOffset>,
     pub request_id: RequestId,
+    pub lease_time: u8,
     pub date: DateTime<FixedOffset>,
 }
 
-impl ReleaseLeaseResponse {
-    pub(crate) fn from_response(headers: &HeaderMap) -> Result<ReleaseLeaseResponse, AzureError> {
+impl BreakLeaseResponse {
+    pub(crate) fn from_response(headers: &HeaderMap) -> Result<BreakLeaseResponse, AzureError> {
         let etag = match headers.get(header::ETAG) {
             Some(etag) => etag.to_str()?.to_owned(),
             None => return Err(AzureError::MissingHeaderError(header::ETAG.as_str().to_owned())),
@@ -39,12 +40,17 @@ impl ReleaseLeaseResponse {
         };
         let date = DateTime::parse_from_rfc2822(date)?;
 
-        Ok(ReleaseLeaseResponse {
+        let lease_time =match headers.get(headers::LEASE_TIME) {
+            Some(lease_time) => lease_time.to_str()?.parse()?,
+            None => return Err(AzureError::MissingHeaderError(headers::LEASE_TIME.to_owned())),
+        };
+
+        Ok(BreakLeaseResponse {
             etag,
             last_modified,
             request_id,
+            lease_time,
             date,
         })
     }
 }
-

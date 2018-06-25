@@ -1,3 +1,4 @@
+mod break_lease_response;
 mod acquire_lease_response;
 mod get_acl_response;
 mod get_properties_response;
@@ -8,3 +9,4 @@ pub use self::get_acl_response::GetACLResponse;
 pub use self::get_properties_response::GetPropertiesResponse;
 pub use self::release_lease_response::ReleaseLeaseResponse;
 pub use self::renew_lease_response::RenewLeaseResponse;
+pub use self::break_lease_response::BreakLeaseResponse;
