@@ -192,11 +192,14 @@ impl QueryDocumentRequest {
             let mut doc = doc.take();
 
             let attrs = {
-                let map = doc.as_object_mut().unwrap();
-                DocumentAttributes::try_extract(map)
+                if let Some(map) = doc.as_object_mut() {
+                    DocumentAttributes::try_extract(map)
+                } else {
+                    None
+                }
             };
 
-            // debug!("\ndocument_attributes == {:?}", document_attributes);
+            debug!("attrs == {:?}", attrs);
 
             QueryResult {
                 document_attributes: attrs,
