@@ -1,3 +1,4 @@
+pub const RANGE_GET_CONTENT_MD5: &str = "x-ms-range-get-content-md5"; //=> [bool] }
 pub const LEASE_ID: &str = "x-ms-lease-id"; //=> [LeaseId] }
 pub const CLIENT_REQUEST_ID: &str = "x-ms-client-request-id"; //=> [String] }
 pub const BLOB_PUBLIC_ACCESS: &str = "x-ms-blob-public-access"; // [PublicAccess]
@@ -12,3 +13,11 @@ pub const LEASE_ACTION: &str = "x-ms-lease-action"; //=> [LeaseAction] }
 pub const LEASE_BREAK_PERIOD: &str = "x-ms-lease-break-period"; //=> [u32] }
 pub const PROPOSED_LEASE_ID: &str = "x-ms-proposed-lease-id"; //=> [LeaseId] }
 pub const LEASE_TIME: &str = "x-ms-lease-time";
+pub const CREATION_TIME: &str = "x-ms-creation-time";
+pub const COPY_ID: &str = "x-ms-copy-id";
+pub const COPY_STATUS_DESCRIPTION: &str = "x-ms-copy-status-description";
+pub const COPY_COMPLETION_TIME: &str = "x-ms-copy-completion-time";
+pub const COPY_PROGRESS: &str = "x-ms-copy-progress";
+pub const COPY_SOURCE: &str = "x-ms-copy-source";
+pub const COPY_STATUS: &str = "x-ms-copy-status";
+pub const SERVER_ENCRYPTED: &str = "x-ms-server-encrypted";

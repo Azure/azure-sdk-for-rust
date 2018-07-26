@@ -41,7 +41,11 @@ fn code() -> Result<(), Box<Error>> {
 
     use azure_sdk_for_rust::storage::client::Container;
 
-    let future = client.list().with_client_request_id("ciccio").include_metadata().finalize();
+    let future = client
+        .list_containers()
+        .with_client_request_id("ciccio")
+        .include_metadata()
+        .finalize();
 
     core.run(future.map(|res| {
         println!("{:?}", res);
@@ -56,7 +60,7 @@ fn code() -> Result<(), Box<Error>> {
     // 2 - If you forget a mandatory parameter the code won't compile. Type checking at compile
     //   time is waaay better than doing it at runtime!
     let future = client
-        .create()
+        .create_container()
         .with_container_name(&container_name)
         .with_public_access(PublicAccess::Container)
         .with_metadata(metadata)
@@ -66,7 +70,7 @@ fn code() -> Result<(), Box<Error>> {
     core.run(future)?;
 
     // get acl without stored access policy list
-    let future = client.get_acl().with_container_name(&container_name).finalize();
+    let future = client.get_container_acl().with_container_name(&container_name).finalize();
     let result = core.run(future)?;
     println!("\nget_acl() == {:?}", result);
 
@@ -78,7 +82,7 @@ fn code() -> Result<(), Box<Error>> {
     sapl.stored_access.push(StoredAccessPolicy::new("pollo", dt_start, dt_end, "rwd"));
 
     let future = client
-        .set_acl()
+        .set_container_acl()
         .with_container_name(&container_name)
         .with_public_access(PublicAccess::Blob)
         .with_stored_access_policy_list(&sapl)
@@ -87,7 +91,7 @@ fn code() -> Result<(), Box<Error>> {
     let _result = core.run(future)?;
 
     // now we get back the acess policy list and compare to the one created
-    let future = client.get_acl().with_container_name(&container_name).finalize();
+    let future = client.get_container_acl().with_container_name(&container_name).finalize();
     let result = core.run(future)?;
 
     println!("\nget_acl() == {:?}", result);
@@ -105,12 +109,12 @@ fn code() -> Result<(), Box<Error>> {
         assert!(i1.permission == i2.permission);
     }
 
-    let future = client.get_properties().with_container_name(&container_name).finalize();
+    let future = client.get_container_properties().with_container_name(&container_name).finalize();
     let res = core.run(future)?;
     println!("\nget_properties() == {:?}", res);
 
     let future = client
-        .acquire_lease()
+        .acquire_container_lease()
         .with_container_name(&container_name)
         .with_lease_duration(15)
         .finalize();
@@ -118,7 +122,7 @@ fn code() -> Result<(), Box<Error>> {
     println!("\nacquire_lease() == {:?}", res);
 
     let future = client
-        .delete()
+        .delete_container()
         .with_container_name(&container_name)
         .with_lease_id(&res.lease_id) // we need to specify the lease or it won't work!
         .finalize();

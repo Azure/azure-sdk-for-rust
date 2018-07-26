@@ -15,6 +15,7 @@ use azure_sdk_for_rust::storage::client::Container as ContainerTrait;
 use azure_sdk_for_rust::storage::container::{PublicAccess, PublicAccessSupport};
 use futures::future::ok;
 use futures::prelude::*;
+use std::collections::HashMap;
 use tokio_core::reactor::Core;
 
 #[test]
@@ -34,14 +35,15 @@ fn code() -> Result<(), Box<std::error::Error>> {
     let client = Client::new(&account, &master_key)?;
 
     if reactor
-        .run(client.list().finalize())?
+        .run(client.list_containers().finalize())?
+        .incomplete_vector
         .iter()
         .find(|x| x.name == container_name)
         .is_none()
     {
         reactor.run(
             client
-                .create()
+                .create_container()
                 .with_container_name(container_name)
                 .with_public_access(PublicAccess::Blob)
                 .finalize(),
@@ -54,8 +56,8 @@ fn code() -> Result<(), Box<std::error::Error>> {
         name: file_name.to_owned(),
         container_name: container_name.to_owned(),
         snapshot_time: None,
-        last_modified: chrono::Utc::now(),
-        etag: "".to_owned(),
+        last_modified: None,
+        etag: None,
         content_length: string.len() as u64,
         content_type: Some("text/plain".to_owned()),
         content_encoding: None,
@@ -64,15 +66,25 @@ fn code() -> Result<(), Box<std::error::Error>> {
         cache_control: None,
         x_ms_blob_sequence_number: None,
         blob_type: BlobType::BlockBlob,
-        lease_status: LeaseStatus::Unlocked,
+        lease_status: Some(LeaseStatus::Unlocked),
         lease_state: LeaseState::Available,
         lease_duration: None,
         copy_id: None,
         copy_status: None,
         copy_source: None,
         copy_progress: None,
-        copy_completion: None,
+        copy_completion_time: None,
         copy_status_description: None,
+        access_tier: String::from(""),
+        access_tier_change_time: None,
+        access_tier_inferred: None,
+        content_disposition: None,
+        creation_time: chrono::Utc::now(),
+        deleted_time: None,
+        incremental_copy: None,
+        metadata: HashMap::new(),
+        remaining_retention_days: None,
+        server_encrypted: false,
     };
 
     let fut = new_blob.put(&client, &PUT_OPTIONS_DEFAULT, Some(string.as_ref())).map(|_| {

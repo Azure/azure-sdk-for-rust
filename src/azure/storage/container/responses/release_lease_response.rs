@@ -7,7 +7,7 @@ use http::HeaderMap;
 use uuid::Uuid;
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct ReleaseLeaseResponse{
+pub struct ReleaseLeaseResponse {
     pub etag: String,
     pub last_modified: DateTime<FixedOffset>,
     pub request_id: RequestId,
@@ -47,4 +47,3 @@ impl ReleaseLeaseResponse {
         })
     }
 }
-

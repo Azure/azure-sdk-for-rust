@@ -19,6 +19,7 @@ use azure_sdk_for_rust::{
     storage::blob::{Blob, BlobType, PUT_OPTIONS_DEFAULT},
     storage::client::Client,
 };
+use std::collections::HashMap;
 
 fn main() {
     env_logger::init();
@@ -46,8 +47,8 @@ fn code() -> Result<(), Box<Error>> {
         name: blob_name,
         container_name: container,
         snapshot_time: None,
-        last_modified: chrono::Utc::now(),
-        etag: "".to_owned(),
+        last_modified: None,
+        etag: None,
         content_length: data.len() as u64,
         content_type: Some("text/plain".to_owned()),
         content_encoding: None,
@@ -56,15 +57,25 @@ fn code() -> Result<(), Box<Error>> {
         cache_control: None,
         x_ms_blob_sequence_number: None,
         blob_type: BlobType::BlockBlob,
-        lease_status: LeaseStatus::Unlocked,
+        lease_status: Some(LeaseStatus::Unlocked),
         lease_state: LeaseState::Available,
         lease_duration: None,
         copy_id: None,
         copy_status: None,
         copy_source: None,
         copy_progress: None,
-        copy_completion: None,
+        copy_completion_time: None,
         copy_status_description: None,
+        access_tier: String::from(""),
+        access_tier_change_time: None,
+        access_tier_inferred: None,
+        content_disposition: None,
+        creation_time: chrono::Utc::now(),
+        deleted_time: None,
+        incremental_copy: None,
+        metadata: HashMap::new(),
+        remaining_retention_days: None,
+        server_encrypted: false,
     };
 
     trace!("before put");

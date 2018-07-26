@@ -14,6 +14,10 @@ impl Range {
     pub fn new(start: u64, end: u64) -> Range {
         Range { start, end }
     }
+
+    pub fn len(&self) -> u64 {
+        self.end - self.start
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]

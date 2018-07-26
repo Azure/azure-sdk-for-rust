@@ -1,11 +1,12 @@
-use azure::core::errors::{check_status_extract_body, AzureError};
+use azure::core::errors::{check_status_extract_headers_and_body_as_string, AzureError};
 use azure::core::incompletevector::IncompleteVector;
 use azure::core::parsing::{cast_optional, traverse};
 use azure::core::{
-    ClientRequestIdOption, ClientRequestIdSupport, ClientRequired, NextMarkerOption, NextMarkerSupport, PrefixOption, PrefixSupport,
-    TimeoutOption, TimeoutSupport,
+    request_id_from_headers, ClientRequestIdOption, ClientRequestIdSupport, ClientRequired, NextMarkerOption, NextMarkerSupport,
+    PrefixOption, PrefixSupport, TimeoutOption, TimeoutSupport,
 };
 use azure::storage::client::Client;
+use azure::storage::container::responses::ListContainersResponse;
 use azure::storage::container::Container;
 use futures::future::{done, Future};
 use hyper::{Method, StatusCode};
@@ -76,7 +77,7 @@ impl<'a> ListBuilder<'a> {
         }
     }
 
-    pub fn finalize(self) -> impl Future<Item = IncompleteVector<Container>, Error = AzureError> {
+    pub fn finalize(self) -> impl Future<Item = ListContainersResponse, Error = AzureError> {
         let mut uri = format!(
             "https://{}.blob.core.windows.net?comp=list&maxresults={}",
             self.client().account(),
@@ -109,8 +110,14 @@ impl<'a> ListBuilder<'a> {
         );
 
         done(req).from_err().and_then(move |future_response| {
-            check_status_extract_body(future_response, StatusCode::OK)
-                .and_then(|body| done(incomplete_vector_from_response(&body)).from_err())
+            check_status_extract_headers_and_body_as_string(future_response, StatusCode::OK).and_then(move |(headers, body)| {
+                done(incomplete_vector_from_response(&body)).and_then(move |incomplete_vector| {
+                    done(request_id_from_headers(&headers)).map(|request_id| ListContainersResponse {
+                        incomplete_vector,
+                        request_id,
+                    })
+                })
+            })
         })
     }
 }

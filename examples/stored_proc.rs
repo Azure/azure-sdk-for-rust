@@ -8,9 +8,8 @@
 extern crate azure_sdk_for_rust;
 extern crate chrono;
 extern crate futures;
-extern crate tokio_core;
-#[macro_use]
 extern crate serde_derive;
+extern crate tokio_core;
 #[macro_use]
 extern crate serde_json;
 
