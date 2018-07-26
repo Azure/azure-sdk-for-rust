@@ -89,7 +89,7 @@ quick_error! {
             display("to str error: {}", err)
             cause(err)
         }
-         JSONError(err: serde_json::Error) {
+        JSONError(err: serde_json::Error) {
             from()
             display("json error: {}", err)
             cause(err)
@@ -215,6 +215,9 @@ quick_error! {
         BooleanNotMatched(s: String) {
             display("Input string cannot be converted in boolean: {}", s)
         }
+        UnexpectedNodeTypeError(expected: String) {
+            display("Unexpected node type received: expected {}", expected)
+        }
         DateTimeParseError(err: chrono::format::ParseError){
             from()
             display("DateTime parse error: {}", err)
@@ -269,6 +272,17 @@ pub(crate) fn check_status_extract_headers_and_body(
                 body: str::from_utf8(&body)?.to_owned(),
             }))
         }
+    })
+}
+
+#[inline]
+pub(crate) fn check_status_extract_headers_and_body_as_string(
+    resp: hyper::client::ResponseFuture,
+    expected_status_code: hyper::StatusCode,
+) -> impl Future<Item = (hyper::HeaderMap, String), Error = AzureError> {
+    check_status_extract_headers_and_body(resp, expected_status_code).and_then(move |(headers, body)| {
+        let body = str::from_utf8(&body)?.to_owned();
+        Ok((headers, body))
     })
 }
 

@@ -40,7 +40,7 @@ impl BreakLeaseResponse {
         };
         let date = DateTime::parse_from_rfc2822(date)?;
 
-        let lease_time =match headers.get(headers::LEASE_TIME) {
+        let lease_time = match headers.get(headers::LEASE_TIME) {
             Some(lease_time) => lease_time.to_str()?.parse()?,
             None => return Err(AzureError::MissingHeaderError(headers::LEASE_TIME.to_owned())),
         };

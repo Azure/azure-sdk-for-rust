@@ -26,6 +26,7 @@ use azure_sdk_for_rust::storage::{
 };
 use chrono::{Duration, FixedOffset, Utc};
 use futures::Future;
+use std::collections::HashMap;
 use std::ops::Add;
 use std::ops::Deref;
 use tokio_core::reactor::Core;
@@ -40,14 +41,14 @@ fn create_and_delete_container() {
     let (client, mut core) = initialize().unwrap();
     core.run(
         client
-            .create()
+            .create_container()
             .with_container_name(name)
             .with_public_access(PublicAccess::Container)
             .finalize(),
     ).unwrap();
 
     // get acl without stored access policy list
-    let future = client.get_acl().with_container_name(name).finalize();
+    let future = client.get_container_acl().with_container_name(name).finalize();
     let _result = core.run(future).unwrap();
 
     // set stored acess policy list
@@ -58,7 +59,7 @@ fn create_and_delete_container() {
     sapl.stored_access.push(StoredAccessPolicy::new("pollo", dt_start, dt_end, "rwd"));
 
     let future = client
-        .set_acl()
+        .set_container_acl()
         .with_container_name(name)
         .with_public_access(PublicAccess::Blob)
         .with_stored_access_policy_list(&sapl)
@@ -67,7 +68,7 @@ fn create_and_delete_container() {
     let _result = core.run(future).unwrap();
 
     // now we get back the acess policy list and compare to the one created
-    let future = client.get_acl().with_container_name(name).finalize();
+    let future = client.get_container_acl().with_container_name(name).finalize();
     let result = core.run(future).unwrap();
 
     assert!(result.public_access == PublicAccess::Blob);
@@ -80,19 +81,20 @@ fn create_and_delete_container() {
         assert!(i1.permission == i2.permission);
     }
 
-    let future = client.get_properties().with_container_name(name).finalize();
+    let future = client.get_container_properties().with_container_name(name).finalize();
     let res = core.run(future).unwrap();
     assert!(res.container.public_access == PublicAccess::Blob);
 
-    let list = core.run(client.list().with_prefix(name).finalize()).unwrap();
-    let cont_list: Vec<&azure_sdk_for_rust::storage::container::Container> = list.deref().into_iter().filter(|e| e.name == name).collect();
+    let list = core.run(client.list_containers().with_prefix(name).finalize()).unwrap();
+    let cont_list: Vec<&azure_sdk_for_rust::storage::container::Container> =
+        list.incomplete_vector.deref().into_iter().filter(|e| e.name == name).collect();
 
     if cont_list.len() != 1 {
         panic!("More than 1 container returned with the same name!");
     }
 
     let future = client
-        .acquire_lease()
+        .acquire_container_lease()
         .with_container_name(&cont_list[0].name)
         .with_lease_duration(30)
         .finalize();
@@ -100,14 +102,14 @@ fn create_and_delete_container() {
     let lease_id = res.lease_id;
 
     let future = client
-        .renew_lease()
+        .renew_container_lease()
         .with_container_name(&cont_list[0].name)
         .with_lease_id(&lease_id)
         .finalize();
     let _res = core.run(future).unwrap();
 
     let cont_delete = client
-        .delete()
+        .delete_container()
         .with_container_name(&cont_list[0].name)
         .with_lease_id(&lease_id) // must pass the lease here too
         .finalize();
@@ -127,7 +129,7 @@ fn put_and_get_block_list() {
 
     core.run(
         client
-            .create()
+            .create_container()
             .with_container_name(&container.name)
             .with_public_access(PublicAccess::Container)
             .finalize(),
@@ -141,8 +143,8 @@ fn put_and_get_block_list() {
         name: name.to_owned(),
         container_name: container.name.to_owned(),
         snapshot_time: None,
-        last_modified: chrono::Utc::now(),
-        etag: "".to_owned(),
+        last_modified: Some(chrono::Utc::now()),
+        etag: Some("".to_owned()),
         content_length: 0,
         content_type: Some("text/plain".to_owned()),
         content_encoding: None,
@@ -151,15 +153,25 @@ fn put_and_get_block_list() {
         cache_control: None,
         x_ms_blob_sequence_number: None,
         blob_type: BlobType::BlockBlob,
-        lease_status: LeaseStatus::Unlocked,
+        lease_status: Some(LeaseStatus::Unlocked),
         lease_state: LeaseState::Available,
         lease_duration: None,
         copy_id: None,
         copy_status: None,
         copy_source: None,
         copy_progress: None,
-        copy_completion: None,
+        copy_completion_time: None,
         copy_status_description: None,
+        access_tier: String::from(""),
+        access_tier_change_time: None,
+        access_tier_inferred: None,
+        content_disposition: None,
+        creation_time: chrono::Utc::now(),
+        deleted_time: None,
+        incremental_copy: None,
+        metadata: HashMap::new(),
+        remaining_retention_days: None,
+        server_encrypted: false,
     };
 
     let future = new_blob
@@ -196,7 +208,7 @@ fn put_and_get_block_list() {
 
     core.run(
         client
-            .delete()
+            .delete_container()
             .with_container_name(container.as_ref())
             .finalize()
             .map(|_| println!("container {} deleted!", container.name)),
@@ -215,7 +227,7 @@ fn list_containers() {
 
     loop {
         let ret = {
-            let builder = client.list().with_max_results(2);
+            let builder = client.list_containers().with_max_results(2);
             if let Some(nm) = next_marker {
                 core.run(builder.with_next_marker(&nm).finalize()).unwrap()
             } else {
@@ -225,7 +237,7 @@ fn list_containers() {
 
         trace!("ret {:?}\n\n", ret);
         if !ret.is_complete() {
-            next_marker = Some(ret.token().unwrap().to_owned());
+            next_marker = Some(ret.incomplete_vector.token().unwrap().to_owned());
         } else {
             break;
         }
@@ -243,15 +255,16 @@ fn put_blob() {
     let value = "abcdef";
 
     if core
-        .run(client.list().finalize())
+        .run(client.list_containers().finalize())
         .unwrap()
+        .incomplete_vector
         .iter()
         .find(|x| x.name == container_name)
         .is_none()
     {
         core.run(
             client
-                .create()
+                .create_container()
                 .with_container_name(container_name)
                 .with_public_access(PublicAccess::Blob)
                 .finalize(),
@@ -262,8 +275,8 @@ fn put_blob() {
         name: blob_name.to_owned(),
         container_name: container_name.to_owned(),
         snapshot_time: None,
-        last_modified: Utc::now(),
-        etag: "".to_owned(),
+        last_modified: Some(Utc::now()),
+        etag: Some("".to_owned()),
         content_length: value.as_bytes().len() as u64,
         content_type: Some("application/octet-stream".to_owned()),
         content_encoding: None,
@@ -272,15 +285,25 @@ fn put_blob() {
         cache_control: None,
         x_ms_blob_sequence_number: None,
         blob_type: BlobType::BlockBlob,
-        lease_status: LeaseStatus::Unlocked,
+        lease_status: Some(LeaseStatus::Unlocked),
         lease_state: LeaseState::Available,
         lease_duration: None,
         copy_id: None,
         copy_status: None,
         copy_source: None,
         copy_progress: None,
-        copy_completion: None,
+        copy_completion_time: None,
         copy_status_description: None,
+        access_tier: String::from(""),
+        access_tier_change_time: None,
+        access_tier_inferred: None,
+        content_disposition: None,
+        creation_time: chrono::Utc::now(),
+        deleted_time: None,
+        incremental_copy: None,
+        metadata: HashMap::new(),
+        remaining_retention_days: None,
+        server_encrypted: false,
     };
 
     core.run(new_blob.put(&client, &PUT_OPTIONS_DEFAULT, Some(&value.as_bytes())))

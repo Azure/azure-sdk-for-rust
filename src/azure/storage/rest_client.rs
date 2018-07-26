@@ -22,7 +22,6 @@ pub const HEADER_VERSION: &str = "x-ms-version"; //=> [String] }
 pub const HEADER_DATE: &str = "x-ms-date"; //=> [String] }
 pub const HEADER_CONTENT_MD5: &str = "Content-MD5"; //=> [String] }
 pub const HEADER_RANGE: &str = "x-ms-range"; // => [range::Range] }
-pub const HEADER_RANGE_GET_CONTENT_MD5: &str = "x-ms-range-get-content-md5"; //=> [bool] }
 
 fn generate_authorization(h: &HeaderMap, u: &url::Url, method: Method, hmac_key: &str, service_type: ServiceType) -> String {
     let str_to_sign = string_to_sign(h, u, method, service_type);

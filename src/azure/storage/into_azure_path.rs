@@ -4,11 +4,15 @@ use std::borrow::Borrow;
 pub trait IntoAzurePath {
     fn container_name(&self) -> Result<&str, AzurePathParseError>;
     fn blob_name(&self) -> Result<&str, AzurePathParseError>;
+
+    fn components(&self) -> Result<(&str, &str), AzurePathParseError> {
+        Ok((self.container_name()?, self.blob_name()?))
+    }
 }
 
 impl<T> IntoAzurePath for (T, T)
 where
-    T: Borrow<str>,
+    T: Borrow<str> + Clone,
 {
     fn container_name(&self) -> Result<&str, AzurePathParseError> {
         Ok(self.0.borrow())

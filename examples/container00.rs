@@ -33,9 +33,9 @@ fn code() -> Result<(), Box<Error>> {
 
     let future = {
         use azure_sdk_for_rust::storage::client::Container;
-        client.list().finalize().map(|iv| {
-            println!("List containers returned {} containers.", iv.len());
-            for cont in iv.iter() {
+        client.list_containers().finalize().map(|iv| {
+            println!("List containers returned {} containers.", iv.incomplete_vector.len());
+            for cont in iv.incomplete_vector.iter() {
                 println!("\t{}", cont.name);
             }
         })
