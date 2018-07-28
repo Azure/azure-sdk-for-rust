@@ -2,9 +2,10 @@ use chrono::{DateTime, Utc};
 use core::errors::AzureError;
 use core::lease::LeaseId;
 use core::range::Range;
+use core::{BlobNameSupport, ContainerNameSupport, LeaseIdSupport, RangeSupport, SnapshotSupport};
 use futures::prelude::*;
-use storage::blob::Blob;
-use storage::client::Client;
+use storage::blob::responses::GetBlobResponse;
+use storage::client::{Blob as BlobTrait, Client};
 
 pub struct BlobStream<'a> {
     client: &'a Client,
@@ -15,7 +16,7 @@ pub struct BlobStream<'a> {
     cur_pos: u64,
     ending_pos: u64,
     increment: u64,
-    future: Option<Box<Future<Item = (Blob, Vec<u8>), Error = AzureError>>>,
+    future: Option<Box<Future<Item = GetBlobResponse, Error = AzureError>>>,
 }
 
 impl<'a> BlobStream<'a> {
@@ -61,15 +62,24 @@ impl<'a> Stream for BlobStream<'a> {
         let item_to_add = match self.future {
             None => {
                 println!("range == {:?}", range);
-                let f: Box<Future<Item = (Blob, Vec<u8>), Error = AzureError>> = Box::new(Blob::get(
-                    self.client,
-                    &self.container_name,
-                    &self.blob_name,
-                    self.snapshot,
-                    Some(&range),
-                    self.lease_id,
-                ));
-                Some(f)
+                let mut f = self
+                    .client
+                    .get_blob()
+                    .with_container_name(&self.container_name)
+                    .with_blob_name(&self.blob_name)
+                    .with_range(&range);
+
+                if let Some(l) = self.lease_id {
+                    f = f.with_lease_id(l);
+                }
+
+                if let Some(sn) = self.snapshot {
+                    f = f.with_snapshot(*sn);
+                }
+
+                let f = f.finalize();
+
+                Some(Box::new(f))
             }
             Some(_) => None,
         };
@@ -80,7 +90,7 @@ impl<'a> Stream for BlobStream<'a> {
 
         let retval = if let Some(ref mut future) = self.future {
             match future.poll() {
-                Ok(Async::Ready(t)) => Ok(Async::Ready(Some(t.1))),
+                Ok(Async::Ready(t)) => Ok(Async::Ready(Some(t.data))),
                 Ok(Async::NotReady) => Ok(Async::NotReady),
                 Err(e) => Err(e),
             }
