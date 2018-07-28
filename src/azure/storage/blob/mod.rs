@@ -1,9 +1,6 @@
 mod put_options;
 pub use self::put_options::{PutOptions, PUT_OPTIONS_DEFAULT};
 
-mod list_blob_options;
-pub use self::list_blob_options::{ListBlobOptions, LIST_BLOB_OPTIONS_DEFAULT};
-
 mod put_block_options;
 pub use self::put_block_options::{PutBlockOptions, PUT_BLOCK_OPTIONS_DEFAULT};
 
@@ -38,9 +35,8 @@ mod get_block_list_response;
 pub use self::get_block_list_response::GetBlockListResponse;
 
 use azure::core::headers::{
-    RANGE_GET_CONTENT_MD5, CLIENT_REQUEST_ID, COPY_COMPLETION_TIME, COPY_ID, COPY_PROGRESS, COPY_SOURCE, COPY_STATUS,
-    COPY_STATUS_DESCRIPTION, CREATION_TIME, LEASE_ACTION, LEASE_BREAK_PERIOD, LEASE_DURATION, LEASE_ID, LEASE_STATE, LEASE_STATUS,
-    PROPOSED_LEASE_ID, REQUEST_ID, SERVER_ENCRYPTED,
+    CLIENT_REQUEST_ID, COPY_COMPLETION_TIME, COPY_ID, COPY_PROGRESS, COPY_SOURCE, COPY_STATUS, COPY_STATUS_DESCRIPTION, CREATION_TIME,
+    LEASE_ACTION, LEASE_BREAK_PERIOD, LEASE_DURATION, LEASE_ID, LEASE_STATE, LEASE_STATUS, PROPOSED_LEASE_ID, REQUEST_ID, SERVER_ENCRYPTED,
 };
 use base64;
 use chrono::{DateTime, Utc};
@@ -369,67 +365,6 @@ impl Blob {
         })
     }
 
-    pub fn list(c: &Client, container_name: &str, lbo: &ListBlobOptions) -> impl Future<Item = IncompleteVector<Blob>, Error = AzureError> {
-        let mut include = String::new();
-        if lbo.include_snapshots {
-            include += "snapshots";
-        }
-        if lbo.include_metadata {
-            if include.is_empty() {
-                include += ",";
-            }
-            include += "metadata";
-        }
-        if lbo.include_uncommittedblobs {
-            if include.is_empty() {
-                include += ",";
-            }
-            include += "uncommittedblobs";
-        }
-        if lbo.include_copy {
-            if include.is_empty() {
-                include += ",";
-            }
-            include += "copy";
-        }
-
-        let mut uri = format!(
-            "https://{}.blob.core.windows.\
-             net/{}?restype=container&comp=list&maxresults={}",
-            c.account(),
-            container_name,
-            lbo.max_results
-        );
-
-        if !include.is_empty() {
-            uri = format!("{}&include={}", uri, include);
-        }
-
-        if let Some(nm) = lbo.next_marker {
-            uri = format!("{}&marker={}", uri, nm);
-        }
-
-        if let Some(ref pref) = lbo.prefix {
-            uri = format!("{}&prefix={}", uri, pref);
-        }
-
-        if let Some(ref timeout) = lbo.timeout {
-            uri = format!("{}&timeout={}", uri, timeout);
-        }
-
-        let req = c.perform_request(&uri, Method::GET, |_| {}, None);
-
-        // we create a copy to move into the future's closure.
-        // We need to do this since the closure only accepts
-        // 'static lifetimes.
-        let container_name = container_name.to_owned();
-
-        done(req).from_err().and_then(move |future_response| {
-            check_status_extract_body(future_response, StatusCode::OK)
-                .and_then(move |body| done(incomplete_vector_from_response(&body, &container_name)).from_err())
-        })
-    }
-
     pub fn stream<'a>(
         c: &'a Client,
         container_name: &'a str,
@@ -440,58 +375,6 @@ impl Blob {
         increment: u64,
     ) -> impl Stream<Item = Vec<u8>, Error = AzureError> + 'a {
         blob_stream::BlobStream::new(c, container_name, blob_name, snapshot, range, lease_id, increment)
-    }
-
-    pub fn get(
-        c: &Client,
-        container_name: &str,
-        blob_name: &str,
-        snapshot: Option<&DateTime<Utc>>,
-        range: Option<&Range>,
-        lease_id: Option<&LeaseId>,
-    ) -> impl Future<Item = (Blob, Vec<u8>), Error = AzureError> {
-        let mut uri = format!("https://{}.blob.core.windows.net/{}/{}", c.account(), container_name, blob_name);
-
-        if let Some(snapshot) = snapshot {
-            uri = format!("{}?snapshot={}", uri, snapshot.to_rfc2822());
-        }
-
-        trace!("uri == {:?}", uri);
-
-        let req = c.perform_request(
-            &uri,
-            Method::GET,
-            |ref mut request| {
-                if let Some(r) = range {
-                    request.header_formatted(HEADER_RANGE, r);
-
-                    // if range is < 4MB request md5
-                    if r.end - r.start <= 1024 * 1024 * 4 {
-                        request.header_static(RANGE_GET_CONTENT_MD5, "true");
-                    }
-                }
-                if let Some(l) = lease_id {
-                    request.header_formatted(LEASE_ID, l);
-                }
-            },
-            None,
-        );
-
-        let expected_status_code = if range.is_some() {
-            StatusCode::PARTIAL_CONTENT
-        } else {
-            StatusCode::OK
-        };
-
-        let container_name = container_name.to_owned();
-        let blob_name = blob_name.to_owned();
-
-        done(req)
-            .from_err()
-            .and_then(move |future_response| check_status_extract_headers_and_body(future_response, expected_status_code))
-            .and_then(move |(headers, body)| {
-                done(Blob::from_headers(&blob_name, &container_name, None, &headers)).and_then(move |blob| ok((blob, body.to_owned())))
-            })
     }
 
     fn put_create_request(&self, c: &Client, po: &PutOptions, r: Option<&[u8]>) -> Result<hyper::client::ResponseFuture, AzureError> {

@@ -4,10 +4,8 @@ extern crate hyper;
 extern crate hyper_tls;
 extern crate tokio_core;
 
-use azure_sdk_for_rust::storage::{
-    blob::{Blob, LIST_BLOB_OPTIONS_DEFAULT},
-    client::Client,
-};
+use azure_sdk_for_rust::core::ContainerNameSupport;
+use azure_sdk_for_rust::storage::{client::Blob as BlobTrait, client::Client};
 use futures::future::*;
 use std::error::Error;
 use tokio_core::reactor::Core;
@@ -43,9 +41,9 @@ fn code() -> Result<(), Box<Error>> {
 
     core.run(future)?;
 
-    let future = Blob::list(&client, &container, &LIST_BLOB_OPTIONS_DEFAULT).map(|iv| {
-        println!("List blob returned {} blobs.", iv.len());
-        for cont in iv.iter() {
+    let future = client.list_blobs().with_container_name(&container).finalize().map(|iv| {
+        println!("List blob returned {} blobs.", iv.incomplete_vector.len());
+        for cont in iv.incomplete_vector.iter() {
             println!("\t{}\t{} MB", cont.name, cont.content_length / (1024 * 1024));
         }
     });

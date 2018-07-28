@@ -13,7 +13,8 @@ use std::error::Error;
 use futures::future::*;
 use tokio_core::reactor::Core;
 
-use azure_sdk_for_rust::storage::{blob::Blob, client::Client};
+use azure_sdk_for_rust::core::{BlobNameSupport, ContainerNameSupport};
+use azure_sdk_for_rust::storage::client::{Blob as BlobTrait, Client};
 
 fn main() {
     env_logger::init();
@@ -38,14 +39,19 @@ fn code() -> Result<(), Box<Error>> {
 
     trace!("Requesting blog");
 
-    let future = Blob::get(&client, &container, &blob, None, None, None).and_then(move |(blob, content)| {
-        done(String::from_utf8(content))
-            .map(move |s_content| {
-                println!("blob == {:?}", blob);
-                println!("s_content == {}", s_content);
-            })
-            .from_err()
-    });
+    let future = client
+        .get_blob()
+        .with_container_name(&container)
+        .with_blob_name(&blob)
+        .finalize()
+        .and_then(move |response| {
+            done(String::from_utf8(response.data))
+                .map(move |s_content| {
+                    println!("blob == {:?}", blob);
+                    println!("s_content == {}", s_content);
+                })
+                .from_err()
+        });
     core.run(future)?;
 
     Ok(())

@@ -15,7 +15,9 @@ use tokio_core::reactor::Core;
 use azure_sdk_for_rust::{
     core::errors::AzureError,
     core::lease::{LeaseAction, LeaseState, LeaseStatus},
-    storage::blob::{Blob, BlobType, LEASE_BLOB_OPTIONS_DEFAULT, LIST_BLOB_OPTIONS_DEFAULT, PUT_OPTIONS_DEFAULT},
+    core::ContainerNameSupport,
+    storage::blob::{Blob, BlobType, LEASE_BLOB_OPTIONS_DEFAULT, PUT_OPTIONS_DEFAULT},
+    storage::client::Blob as BlobTrait,
     storage::client::Client,
 };
 use std::collections::HashMap;
@@ -128,16 +130,21 @@ fn code() -> Result<(), Box<Error>> {
     let lease_id = core.run(future)?;
     println!("lease id == {:?}", lease_id);
 
-    let future =
-        Blob::list(&client, &container_name, &LIST_BLOB_OPTIONS_DEFAULT).map(|blobs| match blobs.iter().find(|blob| blob.name == name) {
-            Some(retrieved_blob) => {
-                let sc = (*retrieved_blob).clone();
-                Ok(sc)
-            }
-            None => Err(AzureError::GenericErrorWithText(
-                "our blob should be here... where is it?".to_owned(),
-            )),
-        });
+    let future = client
+        .list_blobs()
+        .with_container_name(&container_name)
+        .finalize()
+        .map(
+            |blobs_response| match blobs_response.incomplete_vector.iter().find(|blob| blob.name == name) {
+                Some(retrieved_blob) => {
+                    let sc = (*retrieved_blob).clone();
+                    Ok(sc)
+                }
+                None => Err(AzureError::GenericErrorWithText(
+                    "our blob should be here... where is it?".to_owned(),
+                )),
+            },
+        );
 
     let retrieved_blob = core.run(future)??;
     println!("retrieved_blob == {:?}", retrieved_blob);
