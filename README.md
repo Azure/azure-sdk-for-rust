@@ -213,10 +213,10 @@ If you want to contribute please do! No formality required! :wink:. Please note 
 
 #### Storage blobs
 
-| Method          | URL                                                                                                                                                  |
-| ----            | ---                                                                                                                                                  |
-| List blobs      | [https://msdn.microsoft.com/en-us/library/azure/dd135734.aspx](https://msdn.microsoft.com/en-us/library/azure/dd135734.aspx)                         |
-| Get blob        | [https://msdn.microsoft.com/en-us/library/azure/dd179440.aspx](https://msdn.microsoft.com/en-us/library/azure/dd179440.aspx)                         |
+| Method          | URL                                                                                                                                                  | Builder pattern
+| ----            | ---                                                                                                                                                  | ---
+| List blobs      | [https://msdn.microsoft.com/en-us/library/azure/dd135734.aspx](https://msdn.microsoft.com/en-us/library/azure/dd135734.aspx)                         | yes
+| Get blob        | [https://msdn.microsoft.com/en-us/library/azure/dd179440.aspx](https://msdn.microsoft.com/en-us/library/azure/dd179440.aspx)                         | yes
 | Put blob        | [https://msdn.microsoft.com/en-us/library/azure/dd179451.aspx](https://msdn.microsoft.com/en-us/library/azure/dd179451.aspx)                         |
 | Put blob page   | [https://msdn.microsoft.com/en-us/library/azure/dd179451.aspx](https://msdn.microsoft.com/en-us/library/azure/dd179451.aspx)                         |
 | Clear blob page | [https://msdn.microsoft.com/en-us/library/azure/dd179451.aspx](https://msdn.microsoft.com/en-us/library/azure/dd179451.aspx)                         |
