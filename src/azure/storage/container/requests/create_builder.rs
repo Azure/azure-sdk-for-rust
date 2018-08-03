@@ -1,7 +1,7 @@
 use azure::core::errors::{check_status_extract_body, AzureError};
 use azure::core::{
-    ClientRequestIdOption, ClientRequestIdSupport, ClientRequired, ContainerNameRequired, ContainerNameSupport, TimeoutOption,
-    TimeoutSupport,
+    ClientRequestIdOption, ClientRequestIdSupport, ClientRequired, ContainerNameRequired, ContainerNameSupport, MetadataOption,
+    MetadataSupport, TimeoutOption, TimeoutSupport,
 };
 use azure::core::{No, ToAssign, Yes};
 use azure::storage::client::Client;
@@ -24,7 +24,7 @@ where
     public_access: PublicAccess,
     timeout: Option<u64>,
     client_request_id: Option<&'a str>,
-    metadata: HashMap<&'a str, &'a str>,
+    metadata: Option<&'a HashMap<&'a str, &'a str>>,
 }
 
 impl<'a, ContainerNameSet, PublicAccessSet> ClientRequired<'a> for CreateBuilder<'a, ContainerNameSet, PublicAccessSet>
@@ -34,6 +34,37 @@ where
 {
     fn client(&self) -> &'a Client {
         self.client
+    }
+}
+
+impl<'a, ContainerNameSet, PublicAccessSet> MetadataOption<'a> for CreateBuilder<'a, ContainerNameSet, PublicAccessSet>
+where
+    ContainerNameSet: ToAssign,
+    PublicAccessSet: ToAssign,
+{
+    fn metadata(&self) -> Option<&'a HashMap<&'a str, &'a str>> {
+        self.metadata
+    }
+}
+
+impl<'a, ContainerNameSet, PublicAccessSet> MetadataSupport<'a> for CreateBuilder<'a, ContainerNameSet, PublicAccessSet>
+where
+    ContainerNameSet: ToAssign,
+    PublicAccessSet: ToAssign,
+{
+    type O = CreateBuilder<'a, ContainerNameSet, PublicAccessSet>;
+
+    fn with_metadata(self, metadata: &'a HashMap<&'a str, &'a str>) -> Self::O {
+        CreateBuilder {
+            p_container_name: PhantomData {},
+            p_public_access: PhantomData {},
+            client: self.client,
+            container_name: self.container_name,
+            public_access: self.public_access,
+            timeout: self.timeout,
+            client_request_id: self.client_request_id,
+            metadata: Some(metadata),
+        }
     }
 }
 
@@ -134,24 +165,7 @@ impl<'a, ContainerNameSet, PublicAccessSet> CreateBuilder<'a, ContainerNameSet, 
 where
     ContainerNameSet: ToAssign,
     PublicAccessSet: ToAssign,
-{
-    pub fn metadata(&self) -> &HashMap<&'a str, &'a str> {
-        &self.metadata
-    }
-
-    pub fn with_metadata(self, metadata: HashMap<&'a str, &'a str>) -> CreateBuilder<'a, ContainerNameSet, PublicAccessSet> {
-        CreateBuilder {
-            p_container_name: PhantomData {},
-            p_public_access: PhantomData {},
-            client: self.client,
-            container_name: self.container_name,
-            public_access: self.public_access,
-            timeout: self.timeout,
-            client_request_id: self.client_request_id,
-            metadata,
-        }
-    }
-}
+{}
 
 impl<'a, ContainerNameSet, PublicAccessSet> ContainerNameSupport<'a> for CreateBuilder<'a, ContainerNameSet, PublicAccessSet>
 where
@@ -193,7 +207,7 @@ impl<'a> CreateBuilder<'a, No, No> {
             public_access: PublicAccess::None,
             timeout: None,
             client_request_id: None,
-            metadata: HashMap::new(),
+            metadata: None,
         }
     }
 }
@@ -216,10 +230,7 @@ impl<'a> CreateBuilder<'a, Yes, Yes> {
             |ref mut request| {
                 ClientRequestIdOption::add_header(&self, request);
                 PublicAccessRequired::add_header(&self, request);
-
-                for (key, val) in self.metadata().iter() {
-                    request.header(&format!("x-ms-meta-{}", key) as &str, val as &str);
-                }
+                MetadataOption::add_header(&self, request);
             },
             Some(&[]),
         );

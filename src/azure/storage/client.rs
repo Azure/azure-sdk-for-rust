@@ -12,6 +12,7 @@ const SERVICE_SUFFIX_TABLE: &str = ".table.core.windows.net";
 pub trait Blob {
     fn list_blobs<'a>(&'a self) -> blob::requests::ListBlobBuilder<'a, No>;
     fn get_blob<'a>(&'a self) -> blob::requests::GetBlobBuilder<'a, No, No>;
+    fn put_block_blob<'a>(&'a self) -> blob::requests::PutBlockBlobBuilder<'a, No, No, No>;
 }
 
 pub trait Container {
@@ -41,6 +42,10 @@ impl Blob for Client {
 
     fn get_blob<'a>(&'a self) -> blob::requests::GetBlobBuilder<'a, No, No> {
         blob::requests::GetBlobBuilder::new(self)
+    }
+
+    fn put_block_blob<'a>(&'a self) -> blob::requests::PutBlockBlobBuilder<'a, No, No, No> {
+        blob::requests::PutBlockBlobBuilder::new(self)
     }
 }
 

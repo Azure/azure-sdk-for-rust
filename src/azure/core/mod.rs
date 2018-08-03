@@ -13,6 +13,7 @@ use azure::core::util::HeaderMapExt;
 use azure::storage::client::Client;
 use std::fmt::Debug;
 pub mod ba512_range;
+use base64::encode;
 pub mod range;
 use url::percent_encoding;
 define_encode_set! {
@@ -21,14 +22,15 @@ define_encode_set! {
     }
 }
 pub mod headers;
-use self::headers::{CLIENT_REQUEST_ID, LEASE_BREAK_PERIOD, LEASE_DURATION, LEASE_ID, PROPOSED_LEASE_ID, REQUEST_ID};
-use hyper::header::RANGE;
+use self::headers::{CONTENT_MD5, CLIENT_REQUEST_ID, LEASE_BREAK_PERIOD, LEASE_DURATION, LEASE_ID, PROPOSED_LEASE_ID, REQUEST_ID};
+use hyper::header::{CACHE_CONTROL, CONTENT_ENCODING, CONTENT_LANGUAGE, CONTENT_TYPE, RANGE};
 use uuid::Uuid;
 pub type RequestId = Uuid;
 use azure::core::errors::AzureError;
 use azure::core::lease::LeaseId;
 use http::request::Builder;
 use http::HeaderMap;
+use std::collections::HashMap;
 mod stored_access_policy;
 pub(crate) mod util;
 pub use self::stored_access_policy::{StoredAccessPolicy, StoredAccessPolicyList};
@@ -81,6 +83,98 @@ pub trait ClientRequestIdOption<'a> {
     fn add_header(&self, builder: &mut Builder) {
         if let Some(client_request_id) = self.client_request_id() {
             builder.header(CLIENT_REQUEST_ID, client_request_id);
+        }
+    }
+}
+
+pub trait ContentDispositionSupport<'a> {
+    type O;
+    fn with_content_disposition(self, content_disposition: &'a str) -> Self::O;
+}
+
+pub trait ContentDispositionOption<'a> {
+    fn content_disposition(&self) -> Option<&'a str>;
+
+    fn add_header(&self, builder: &mut Builder) {
+        if let Some(content_disposition) = self.content_disposition() {
+            builder.header(CACHE_CONTROL, content_disposition);
+        }
+    }
+}
+
+pub trait MetadataSupport<'a> {
+    type O;
+    fn with_metadata(self, metadata: &'a HashMap<&'a str, &'a str>) -> Self::O;
+}
+
+pub trait MetadataOption<'a> {
+    fn metadata(&self) -> Option<&'a HashMap<&'a str, &'a str>>;
+
+    fn add_header(&self, builder: &mut Builder) {
+        if let Some(metadata) = self.metadata() {
+            for (key, val) in metadata.iter() {
+                builder.header(&format!("x-ms-meta-{}", key) as &str, val as &str);
+            }
+        }
+    }
+}
+
+pub trait CacheControlSupport<'a> {
+    type O;
+    fn with_cache_control(self, cache_control: &'a str) -> Self::O;
+}
+
+pub trait CacheControlOption<'a> {
+    fn cache_control(&self) -> Option<&'a str>;
+
+    fn add_header(&self, builder: &mut Builder) {
+        if let Some(cache_control) = self.cache_control() {
+            builder.header(CACHE_CONTROL, cache_control);
+        }
+    }
+}
+
+pub trait ContentEncodingSupport<'a> {
+    type O;
+    fn with_content_encoding(self, content_encoding: &'a str) -> Self::O;
+}
+
+pub trait ContentEncodingOption<'a> {
+    fn content_encoding(&self) -> Option<&'a str>;
+
+    fn add_header(&self, builder: &mut Builder) {
+        if let Some(content_encoding) = self.content_encoding() {
+            builder.header(CONTENT_ENCODING, content_encoding);
+        }
+    }
+}
+
+pub trait ContentTypeSupport<'a> {
+    type O;
+    fn with_content_type(self, content_type: &'a str) -> Self::O;
+}
+
+pub trait ContentTypeOption<'a> {
+    fn content_type(&self) -> Option<&'a str>;
+
+    fn add_header(&self, builder: &mut Builder) {
+        if let Some(content_type) = self.content_type() {
+            builder.header(CONTENT_TYPE, content_type);
+        }
+    }
+}
+
+pub trait ContentLanguageSupport<'a> {
+    type O;
+    fn with_content_language(self, content_language: &'a str) -> Self::O;
+}
+
+pub trait ContentLanguageOption<'a> {
+    fn content_language(&self) -> Option<&'a str>;
+
+    fn add_header(&self, builder: &mut Builder) {
+        if let Some(content_language) = self.content_language() {
+            builder.header(CONTENT_LANGUAGE, content_language);
         }
     }
 }
@@ -281,6 +375,39 @@ pub trait LeaseIdOption<'a> {
     }
 }
 
+pub trait LeaseIdRequired<'a> {
+    fn lease_id(&self) -> &'a LeaseId;
+
+    fn add_header(&self, builder: &mut Builder) {
+        builder.header(LEASE_ID, &self.lease_id().to_string() as &str);
+    }
+}
+
+pub trait BodySupport<'a> {
+    type O;
+    fn with_body(self, &'a [u8]) -> Self::O;
+}
+
+pub trait BodyRequired<'a> {
+    fn body(&self) -> &'a [u8];
+}
+
+pub trait ContentMD5Support<'a> {
+    type O;
+    fn with_content_md5(self, &'a [u8]) -> Self::O;
+}
+
+pub trait ContentMD5Option<'a> {
+    fn content_md5(&self) -> Option<&'a [u8]>;
+
+    fn add_header(&self, builder: &mut Builder) {
+        if let Some(content_md5) = self.content_md5() {
+            let s = encode(content_md5);
+            builder.header(CONTENT_MD5, &s as &str);
+        }
+    }
+}
+
 pub trait RangeSupport<'a> {
     type O;
     fn with_range(self, &'a range::Range) -> Self::O;
@@ -293,14 +420,6 @@ pub trait RangeOption<'a> {
         if let Some(range) = self.range() {
             builder.header(RANGE, &range.to_string() as &str);
         }
-    }
-}
-
-pub trait LeaseIdRequired<'a> {
-    fn lease_id(&self) -> &'a LeaseId;
-
-    fn add_header(&self, builder: &mut Builder) {
-        builder.header(LEASE_ID, &self.lease_id().to_string() as &str);
     }
 }
 

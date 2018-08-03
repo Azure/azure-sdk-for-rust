@@ -8,6 +8,7 @@ extern crate hyper_tls;
 extern crate tokio_core;
 #[macro_use]
 extern crate log;
+extern crate md5;
 extern crate serde;
 extern crate uuid;
 
@@ -16,11 +17,11 @@ use azure_sdk_for_rust::core::{
     lease::{LeaseState, LeaseStatus},
 };
 use azure_sdk_for_rust::core::{
-    ContainerNameSupport, LeaseDurationSupport, LeaseIdSupport, NextMarkerSupport, PrefixSupport, StoredAccessPolicy,
-    StoredAccessPolicyList,
+    BlobNameSupport, BodySupport, ContainerNameSupport, ContentMD5Support, ContentTypeSupport, LeaseDurationSupport, LeaseIdSupport,
+    NextMarkerSupport, PrefixSupport, StoredAccessPolicy, StoredAccessPolicyList,
 };
 use azure_sdk_for_rust::storage::{
-    blob::{get_block_list, put_block_list, Blob, BlobType, BlockListType, PUT_BLOCK_OPTIONS_DEFAULT, PUT_OPTIONS_DEFAULT},
+    blob::{get_block_list, put_block_list, Blob, BlobType, BlockListType, PUT_BLOCK_OPTIONS_DEFAULT},
     client::Client,
     container::{Container, PublicAccess, PublicAccessSupport},
 };
@@ -246,13 +247,14 @@ fn list_containers() {
 
 #[test]
 fn put_blob() {
+    use azure_sdk_for_rust::storage::client::Blob as BlobTrait;
     use azure_sdk_for_rust::storage::client::Container as ContainerTrait;
 
     let (client, mut core) = initialize().unwrap();
 
     let blob_name: &'static str = "m1";
     let container_name: &'static str = "rust-upload-test";
-    let value = "abcdef";
+    let data = b"abcdef";
 
     if core
         .run(client.list_containers().finalize())
@@ -271,45 +273,21 @@ fn put_blob() {
         ).unwrap();
     }
 
-    let new_blob = Blob {
-        name: blob_name.to_owned(),
-        container_name: container_name.to_owned(),
-        snapshot_time: None,
-        last_modified: Some(Utc::now()),
-        etag: Some("".to_owned()),
-        content_length: value.as_bytes().len() as u64,
-        content_type: Some("application/octet-stream".to_owned()),
-        content_encoding: None,
-        content_language: None,
-        content_md5: None,
-        cache_control: None,
-        x_ms_blob_sequence_number: None,
-        blob_type: BlobType::BlockBlob,
-        lease_status: Some(LeaseStatus::Unlocked),
-        lease_state: LeaseState::Available,
-        lease_duration: None,
-        copy_id: None,
-        copy_status: None,
-        copy_source: None,
-        copy_progress: None,
-        copy_completion_time: None,
-        copy_status_description: None,
-        access_tier: String::from(""),
-        access_tier_change_time: None,
-        access_tier_inferred: None,
-        content_disposition: None,
-        creation_time: chrono::Utc::now(),
-        deleted_time: None,
-        incremental_copy: None,
-        metadata: HashMap::new(),
-        remaining_retention_days: None,
-        server_encrypted: false,
-    };
+    // calculate md5 too!
+    let digest = md5::compute(&data[..]);
 
-    core.run(new_blob.put(&client, &PUT_OPTIONS_DEFAULT, Some(&value.as_bytes())))
-        .unwrap();
+    let future = client
+        .put_block_blob()
+        .with_container_name(&container_name)
+        .with_blob_name(&blob_name)
+        .with_content_type("text/plain")
+        .with_body(&data[..])
+        .with_content_md5(&digest[..])
+        .finalize();
 
-    trace!("created {:?}", new_blob);
+    core.run(future).unwrap();
+
+    trace!("created {:?}", blob_name);
 }
 
 fn initialize() -> Result<(Client, Core), AzureError> {

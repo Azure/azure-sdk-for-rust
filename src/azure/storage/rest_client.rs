@@ -1,5 +1,6 @@
 use azure::core::{
     errors::AzureError,
+    headers,
     util::{format_header_value, HeaderMapExt, RequestBuilderExt},
 };
 use base64;
@@ -20,7 +21,6 @@ const AZURE_VERSION: &str = "2017-11-09";
 
 pub const HEADER_VERSION: &str = "x-ms-version"; //=> [String] }
 pub const HEADER_DATE: &str = "x-ms-date"; //=> [String] }
-pub const HEADER_CONTENT_MD5: &str = "Content-MD5"; //=> [String] }
 pub const HEADER_RANGE: &str = "x-ms-range"; // => [range::Range] }
 
 fn generate_authorization(h: &HeaderMap, u: &url::Url, method: Method, hmac_key: &str, service_type: ServiceType) -> String {
@@ -63,7 +63,7 @@ fn string_to_sign(h: &HeaderMap, u: &url::Url, method: Method, service_type: Ser
                 s,
                 "{}\n{}\n{}\n{}\n{}",
                 method.as_str(),
-                add_if_exists(h, HEADER_CONTENT_MD5),
+                add_if_exists(h, headers::CONTENT_MD5),
                 add_if_exists(h, header::CONTENT_TYPE),
                 add_if_exists(h, HEADER_DATE),
                 canonicalized_resource_table(u)
@@ -85,7 +85,7 @@ fn string_to_sign(h: &HeaderMap, u: &url::Url, method: Method, service_type: Ser
                 add_if_exists(h, header::CONTENT_ENCODING),
                 add_if_exists(h, header::CONTENT_LANGUAGE),
                 cl,
-                add_if_exists(h, HEADER_CONTENT_MD5),
+                add_if_exists(h, headers::CONTENT_MD5),
                 add_if_exists(h, header::CONTENT_TYPE),
                 add_if_exists(h, header::DATE),
                 add_if_exists(h, header::IF_MODIFIED_SINCE),

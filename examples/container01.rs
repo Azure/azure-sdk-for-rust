@@ -6,8 +6,8 @@ extern crate hyper_tls;
 extern crate tokio_core;
 
 use azure_sdk_for_rust::core::{
-    ClientRequestIdSupport, ContainerNameSupport, LeaseDurationSupport, LeaseIdSupport, StoredAccessPolicy, StoredAccessPolicyList,
-    TimeoutSupport,
+    ClientRequestIdSupport, ContainerNameSupport, LeaseDurationSupport, LeaseIdSupport, MetadataSupport, StoredAccessPolicy,
+    StoredAccessPolicyList, TimeoutSupport,
 };
 use azure_sdk_for_rust::storage::{
     client::Client,
@@ -63,7 +63,7 @@ fn code() -> Result<(), Box<Error>> {
         .create_container()
         .with_container_name(&container_name)
         .with_public_access(PublicAccess::Container)
-        .with_metadata(metadata)
+        .with_metadata(&metadata)
         .with_timeout(100)
         .finalize();
 

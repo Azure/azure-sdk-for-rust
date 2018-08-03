@@ -20,4 +20,6 @@ pub const COPY_COMPLETION_TIME: &str = "x-ms-copy-completion-time";
 pub const COPY_PROGRESS: &str = "x-ms-copy-progress";
 pub const COPY_SOURCE: &str = "x-ms-copy-source";
 pub const COPY_STATUS: &str = "x-ms-copy-status";
+pub const CONTENT_MD5: &str = "Content-MD5"; //=> [String] }
 pub const SERVER_ENCRYPTED: &str = "x-ms-server-encrypted";
+pub const BLOB_TYPE: &str = "x-ms-blob-type";

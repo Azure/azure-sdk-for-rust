@@ -1,4 +1,5 @@
 use azure::core::{enumerations::ParsingError, range::ParseError};
+use base64;
 use chrono;
 use futures::{Future, Stream};
 use http;
@@ -79,6 +80,14 @@ impl std::error::Error for UnexpectedHTTPResult {
 quick_error! {
     #[derive(Debug)]
     pub enum AzureError {
+        Base64DecodeError(err: base64::DecodeError) {
+            from()
+            display("base64 decode error: {}", err)
+            cause(err)
+        }
+        DigestNot16BytesLong(len : u64) {
+            display("digest length {} bytes instead of 16", len)
+        }
         ParseBoolError(err: ParseBoolError) {
             from()
             display("parse bool error: {}", err)
