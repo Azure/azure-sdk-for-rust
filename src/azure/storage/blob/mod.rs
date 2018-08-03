@@ -35,8 +35,9 @@ mod get_block_list_response;
 pub use self::get_block_list_response::GetBlockListResponse;
 
 use azure::core::headers::{
-    CLIENT_REQUEST_ID, COPY_COMPLETION_TIME, COPY_ID, COPY_PROGRESS, COPY_SOURCE, COPY_STATUS, COPY_STATUS_DESCRIPTION, CREATION_TIME,
-    LEASE_ACTION, LEASE_BREAK_PERIOD, LEASE_DURATION, LEASE_ID, LEASE_STATE, LEASE_STATUS, PROPOSED_LEASE_ID, REQUEST_ID, SERVER_ENCRYPTED,
+    CONTENT_MD5, BLOB_TYPE, CLIENT_REQUEST_ID, COPY_COMPLETION_TIME, COPY_ID, COPY_PROGRESS, COPY_SOURCE, COPY_STATUS,
+    COPY_STATUS_DESCRIPTION, CREATION_TIME, LEASE_ACTION, LEASE_BREAK_PERIOD, LEASE_DURATION, LEASE_ID, LEASE_STATE, LEASE_STATUS,
+    PROPOSED_LEASE_ID, REQUEST_ID, SERVER_ENCRYPTED,
 };
 use base64;
 use chrono::{DateTime, Utc};
@@ -80,7 +81,6 @@ create_enum!(PageWriteType, (Update, "update"), (Clear, "clear"));
 
 const HEADER_BLOB_CONTENT_LENGTH: &str = "x-ms-blob-content-length";
 const HEADER_BLOB_SEQUENCE_NUMBER: &str = "x-ms-blob-sequence-number";
-const HEADER_BLOB_TYPE: &str = "x-ms-blob-type";
 #[allow(dead_code)]
 const HEADER_BLOB_CONTENT_DISPOSITION: &str = "x-ms-blob-content-disposition";
 const HEADER_PAGE_WRITE: &str = "x-ms-blob-page-write";
@@ -272,8 +272,8 @@ impl Blob {
         trace!("x_ms_blob_sequence_number == {:?}", x_ms_blob_sequence_number);
 
         let blob_type = h
-            .get_as_str(HEADER_BLOB_TYPE)
-            .ok_or_else(|| AzureError::HeaderNotFound(HEADER_BLOB_TYPE.to_owned()))?
+            .get_as_str(BLOB_TYPE)
+            .ok_or_else(|| AzureError::HeaderNotFound(BLOB_TYPE.to_owned()))?
             .parse::<BlobType>()?;
         trace!("blob_type == {:?}", blob_type);
 
@@ -283,7 +283,7 @@ impl Blob {
         let content_language = h.get_as_string(header::CONTENT_LANGUAGE);
         trace!("content_language == {:?}", content_language);
 
-        let content_md5 = h.get_as_string(HEADER_CONTENT_MD5);
+        let content_md5 = h.get_as_string(CONTENT_MD5);
         trace!("content_md5 == {:?}", content_md5);
 
         let cache_control = h.get_as_string(header::CACHE_CONTROL);
@@ -439,10 +439,10 @@ impl Blob {
                 // TODO Content-Language
 
                 if let Some(ref content_md5) = self.content_md5 {
-                    request.header_formatted(HEADER_CONTENT_MD5, content_md5);
+                    request.header_formatted(CONTENT_MD5, content_md5);
                 };
 
-                request.header_formatted(HEADER_BLOB_TYPE, self.blob_type);
+                request.header_formatted(BLOB_TYPE, self.blob_type);
 
                 if let Some(ref lease_id) = po.lease_id {
                     request.header_formatted(LEASE_ID, lease_id);
@@ -613,10 +613,10 @@ impl Blob {
                 // TODO Content-Language
 
                 if let Some(ref content_md5) = self.content_md5 {
-                    request.header_formatted(HEADER_CONTENT_MD5, content_md5);
+                    request.header_formatted(CONTENT_MD5, content_md5);
                 };
 
-                request.header_formatted(HEADER_BLOB_TYPE, self.blob_type);
+                request.header_formatted(BLOB_TYPE, self.blob_type);
 
                 if let Some(ref lease_id) = pbo.lease_id {
                     request.header_formatted(LEASE_ID, lease_id);
@@ -749,7 +749,7 @@ where
         Method::PUT,
         move |ref mut request| {
             request.header_formatted(header::CONTENT_LENGTH, xml_bytes.len());
-            request.header_formatted(HEADER_CONTENT_MD5, md5);
+            request.header_formatted(CONTENT_MD5, md5);
             if let Some(lease_id) = lease_id {
                 request.header_formatted(LEASE_ID, *lease_id);
             }
