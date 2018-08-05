@@ -80,6 +80,9 @@ impl std::error::Error for UnexpectedHTTPResult {
 quick_error! {
     #[derive(Debug)]
     pub enum AzureError {
+        Not512ByteAlignedError(size: u64) {
+            display("{} is not 512 byte aligned", size)
+        }
         Base64DecodeError(err: base64::DecodeError) {
             from()
             display("base64 decode error: {}", err)

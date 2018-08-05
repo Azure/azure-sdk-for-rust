@@ -49,8 +49,7 @@ fn code() -> Result<(), Box<Error>> {
                 .map(move |s_content| {
                     println!("blob == {:?}", blob);
                     println!("s_content == {}", s_content);
-                })
-                .from_err()
+                }).from_err()
         });
     core.run(future)?;
 

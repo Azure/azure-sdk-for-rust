@@ -93,8 +93,7 @@ fn code() -> Result<(), Box<Error>> {
             println!("block1 blob for blob {} created", name);
             block_list.blocks.push(BlobBlockType::Uncommitted(encoded_block_id));
             block_list
-        })
-        .and_then(|mut block_list| {
+        }).and_then(|mut block_list| {
             new_blob
                 .put_block(&client, "block2", &PUT_BLOCK_OPTIONS_DEFAULT, &contents2.as_bytes())
                 .map(|encoded_block_id| {
@@ -102,8 +101,7 @@ fn code() -> Result<(), Box<Error>> {
                     block_list.blocks.push(BlobBlockType::Uncommitted(encoded_block_id));
                     block_list
                 })
-        })
-        .and_then(|mut block_list| {
+        }).and_then(|mut block_list| {
             new_blob
                 .put_block(&client, "block3", &PUT_BLOCK_OPTIONS_DEFAULT, &contents3.as_bytes())
                 .map(|encoded_block_id| {
@@ -111,8 +109,7 @@ fn code() -> Result<(), Box<Error>> {
                     block_list.blocks.push(BlobBlockType::Uncommitted(encoded_block_id));
                     block_list
                 })
-        })
-        .map(|block_list| {
+        }).map(|block_list| {
             println!("{:?}", block_list);
             block_list
         });

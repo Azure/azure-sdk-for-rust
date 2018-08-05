@@ -81,8 +81,8 @@ fn code() -> Result<(), Box<Error>> {
     println!("Created 5 documents.");
 
     // let's get 3 entries at a time
-    let response =
-        core.run(
+    let response = core
+        .run(
             client
                 .list_documents(&database_name, &collection_name)
                 .max_item_count(3u64)
@@ -99,8 +99,8 @@ fn code() -> Result<(), Box<Error>> {
     let ct = response.additional_headers.continuation_token.unwrap();
     println!("ct == {}", ct);
 
-    let response =
-        core.run(
+    let response = core
+        .run(
             client
                 .list_documents(&database_name, &collection_name)
                 .continuation_token(ct)
@@ -117,8 +117,8 @@ fn code() -> Result<(), Box<Error>> {
     println!("\n\nLooking for a specific item");
     let id = format!("unique_id{}", 3);
 
-    let response =
-        core.run(
+    let response = core
+        .run(
             client
                 .get_document(&database_name, &collection_name, &id)
                 .partition_key(&id)
@@ -130,8 +130,8 @@ fn code() -> Result<(), Box<Error>> {
     let mut doc = response.document.unwrap();
     doc.entity.a_string = "Something else here".into();
 
-    let _response =
-        core.run(
+    let _response = core
+        .run(
             client.replace_document(&database_name, &collection_name, &doc)
             .partition_key(&id)
             .if_match(doc.document_attributes.etag) // use optimistic concurrency check
@@ -142,8 +142,8 @@ fn code() -> Result<(), Box<Error>> {
     println!("\n\nLooking for non-existing item");
     let id = format!("unique_id{}", 100);
 
-    let response =
-        core.run(
+    let response = core
+        .run(
             client
                 .get_document(&database_name, &collection_name, &id)
                 .partition_key(&id)

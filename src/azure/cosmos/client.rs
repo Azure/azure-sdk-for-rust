@@ -116,8 +116,8 @@ impl Client {
         // No specific headers are required, list collections only needs standard headers
         // which will be provied by perform_request. This is handled by passing an
         // empty closure.
-        let request =
-            self.prepare_request(
+        let request = self
+            .prepare_request(
                 &format!("dbs/{}/colls", database_name),
                 hyper::Method::GET,
                 ResourceType::Collections,
@@ -226,8 +226,8 @@ impl Client {
     ) -> Result<hyper::client::ResponseFuture, AzureError> {
         // No specific headers are required, get database only needs standard headers
         // which will be provied by perform_request
-        let request =
-            self.prepare_request(
+        let request = self
+            .prepare_request(
                 &format!("dbs/{}/colls/{}", database_name, collection_name),
                 hyper::Method::GET,
                 ResourceType::Collections,
@@ -309,8 +309,8 @@ impl Client {
     ) -> Result<hyper::client::ResponseFuture, AzureError> {
         // No specific headers are required.
         // Standard headers (auth and version) will be provied by perform_request
-        let request =
-            self.prepare_request(
+        let request = self
+            .prepare_request(
                 &format!("dbs/{}/colls/{}", database_name, collection_name),
                 hyper::Method::DELETE,
                 ResourceType::Collections,
@@ -346,8 +346,8 @@ impl Client {
         let collection_serialized = serde_json::to_string(collection)?;
         trace!("collection_serialized == {}", collection_serialized);
 
-        let request =
-            self.prepare_request(
+        let request = self
+            .prepare_request(
                 &format!("dbs/{}/colls", database_name),
                 hyper::Method::PUT,
                 ResourceType::Collections,

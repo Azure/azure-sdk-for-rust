@@ -58,8 +58,7 @@ fn code() -> Result<(), Box<Error>> {
         .and_then(|db| {
             println!("created database = {:?}", db);
             client.delete_database("something")
-        })
-        .map(|_| {
+        }).map(|_| {
             println!("database deleted");
         });
     core.run(future)?;

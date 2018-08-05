@@ -35,9 +35,9 @@ mod get_block_list_response;
 pub use self::get_block_list_response::GetBlockListResponse;
 
 use azure::core::headers::{
-    CONTENT_MD5, BLOB_TYPE, CLIENT_REQUEST_ID, COPY_COMPLETION_TIME, COPY_ID, COPY_PROGRESS, COPY_SOURCE, COPY_STATUS,
-    COPY_STATUS_DESCRIPTION, CREATION_TIME, LEASE_ACTION, LEASE_BREAK_PERIOD, LEASE_DURATION, LEASE_ID, LEASE_STATE, LEASE_STATUS,
-    PROPOSED_LEASE_ID, REQUEST_ID, SERVER_ENCRYPTED,
+    CONTENT_MD5, BLOB_CONTENT_LENGTH, BLOB_SEQUENCE_NUMBER, BLOB_TYPE, CLIENT_REQUEST_ID, COPY_COMPLETION_TIME, COPY_ID, COPY_PROGRESS,
+    COPY_SOURCE, COPY_STATUS, COPY_STATUS_DESCRIPTION, CREATION_TIME, LEASE_ACTION, LEASE_BREAK_PERIOD, LEASE_DURATION, LEASE_ID,
+    LEASE_STATE, LEASE_STATUS, PROPOSED_LEASE_ID, REQUEST_ID, SERVER_ENCRYPTED,
 };
 use base64;
 use chrono::{DateTime, Utc};
@@ -79,8 +79,6 @@ create_enum!(
 
 create_enum!(PageWriteType, (Update, "update"), (Clear, "clear"));
 
-const HEADER_BLOB_CONTENT_LENGTH: &str = "x-ms-blob-content-length";
-const HEADER_BLOB_SEQUENCE_NUMBER: &str = "x-ms-blob-sequence-number";
 #[allow(dead_code)]
 const HEADER_BLOB_CONTENT_DISPOSITION: &str = "x-ms-blob-content-disposition";
 const HEADER_PAGE_WRITE: &str = "x-ms-blob-page-write";
@@ -268,7 +266,7 @@ impl Blob {
             .ok_or_else(|| AzureError::HeaderNotFound(header::ETAG.as_str().to_owned()))?;
         trace!("etag == {:?}", etag);
 
-        let x_ms_blob_sequence_number = h.get_as_u64(HEADER_BLOB_SEQUENCE_NUMBER);
+        let x_ms_blob_sequence_number = h.get_as_u64(BLOB_SEQUENCE_NUMBER);
         trace!("x_ms_blob_sequence_number == {:?}", x_ms_blob_sequence_number);
 
         let blob_type = h
@@ -451,7 +449,7 @@ impl Blob {
                 // TODO x-ms-blob-content-disposition
 
                 if self.blob_type == BlobType::PageBlob {
-                    request.header_formatted(HEADER_BLOB_CONTENT_LENGTH, self.content_length);
+                    request.header_formatted(BLOB_CONTENT_LENGTH, self.content_length);
                 }
             },
             r,
@@ -548,7 +546,7 @@ impl Blob {
             move |ref mut request| {
                 let range: Range = range.into();
                 request.header_formatted(HEADER_RANGE, range);
-                request.header_formatted(HEADER_BLOB_CONTENT_LENGTH, content.len());
+                request.header_formatted(BLOB_CONTENT_LENGTH, content.len());
                 if let Some(lease_id) = ppo.lease_id {
                     request.header_formatted(LEASE_ID, lease_id);
                 }
@@ -625,7 +623,7 @@ impl Blob {
                 // TODO x-ms-blob-content-disposition
 
                 if self.blob_type == BlobType::PageBlob {
-                    request.header_formatted(HEADER_BLOB_CONTENT_LENGTH, self.content_length);
+                    request.header_formatted(BLOB_CONTENT_LENGTH, self.content_length);
                 }
 
                 if let Some(ref request_id) = pbo.request_id {
@@ -664,7 +662,7 @@ impl Blob {
             Method::PUT,
             move |ref mut request| {
                 request.header_formatted(HEADER_RANGE, Range::from(range));
-                request.header_static(HEADER_BLOB_CONTENT_LENGTH, "0");
+                request.header_static(BLOB_CONTENT_LENGTH, "0");
                 if let Some(lease_id) = lease_id {
                     request.header_formatted(LEASE_ID, lease_id);
                 }
@@ -845,8 +843,7 @@ where
                 Ok(body) => Ok((headers, body)),
                 Err(err) => Err(AzureError::FromUtf8Error(err)),
             })
-        })
-        .and_then(move |(headers, body)| {
+        }).and_then(move |(headers, body)| {
             debug!("response headers == {:?}", headers);
 
             // extract headers

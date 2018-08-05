@@ -1,11 +1,10 @@
 use azure::core::errors::AzureError;
-use azure::core::headers::{CONTENT_MD5, REQUEST_ID};
+use azure::core::headers::CONTENT_MD5;
 use azure::core::RequestId;
+use azure::storage::blob::responses::PutBlobResponse;
 use base64;
 use chrono::{DateTime, Utc};
 use http::HeaderMap;
-use hyper::header::{ETAG, LAST_MODIFIED};
-use uuid::Uuid;
 
 #[derive(Debug, Clone)]
 pub struct PutBlockBlobResponse {
@@ -17,19 +16,7 @@ pub struct PutBlockBlobResponse {
 
 impl PutBlockBlobResponse {
     pub fn from_headers(headers: &HeaderMap) -> Result<PutBlockBlobResponse, AzureError> {
-        let etag = headers
-            .get(ETAG)
-            .ok_or_else(|| AzureError::HeaderNotFound(ETAG.as_str().to_owned()))?
-            .to_str()?
-            .to_owned();
-
-        let last_modified = headers
-            .get(LAST_MODIFIED)
-            .ok_or_else(|| AzureError::HeaderNotFound(LAST_MODIFIED.as_str().to_owned()))?
-            .to_str()?;
-        let last_modified = DateTime::parse_from_rfc2822(last_modified)?;
-        let last_modified = DateTime::from_utc(last_modified.naive_utc(), Utc);
-        trace!("last_modified == {:?}", last_modified);
+        let pbp = PutBlobResponse::from_headers(headers)?;
 
         let content_md5 = headers
             .get(CONTENT_MD5)
@@ -44,18 +31,11 @@ impl PutBlockBlobResponse {
         let mut content_md5 = [0; 16];
         content_md5.copy_from_slice(&content_md5_vec[0..16]);
 
-        let request_id = headers
-            .get(REQUEST_ID)
-            .ok_or_else(|| AzureError::HeaderNotFound(REQUEST_ID.to_owned()))?
-            .to_str()?;
-
-        let request_id = Uuid::parse_str(request_id)?;
-
         Ok(PutBlockBlobResponse {
-            etag,
-            last_modified,
+            etag: pbp.etag,
+            last_modified: pbp.last_modified,
             content_md5,
-            request_id,
+            request_id: pbp.request_id,
         })
     }
 }
