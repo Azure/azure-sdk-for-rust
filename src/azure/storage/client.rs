@@ -13,6 +13,7 @@ pub trait Blob {
     fn list_blobs<'a>(&'a self) -> blob::requests::ListBlobBuilder<'a, No>;
     fn get_blob<'a>(&'a self) -> blob::requests::GetBlobBuilder<'a, No, No>;
     fn put_block_blob<'a>(&'a self) -> blob::requests::PutBlockBlobBuilder<'a, No, No, No>;
+    fn put_page_blob<'a>(&'a self) -> blob::requests::PutPageBlobBuilder<'a, No, No, No>;
 }
 
 pub trait Container {
@@ -46,6 +47,10 @@ impl Blob for Client {
 
     fn put_block_blob<'a>(&'a self) -> blob::requests::PutBlockBlobBuilder<'a, No, No, No> {
         blob::requests::PutBlockBlobBuilder::new(self)
+    }
+
+    fn put_page_blob<'a>(&'a self) -> blob::requests::PutPageBlobBuilder<'a, No, No, No> {
+        blob::requests::PutPageBlobBuilder::new(self)
     }
 }
 
@@ -149,9 +154,12 @@ impl Client {
 
     /// Uri scheme + authority e.g. http://myaccount.table.core.windows.net/
     pub fn get_uri_prefix(&self, service_type: &ServiceType) -> String {
-        "https://".to_owned() + self.account() + match *service_type {
-            ServiceType::Blob => SERVICE_SUFFIX_BLOB,
-            ServiceType::Table => SERVICE_SUFFIX_TABLE,
-        } + "/"
+        "https://".to_owned()
+            + self.account()
+            + match *service_type {
+                ServiceType::Blob => SERVICE_SUFFIX_BLOB,
+                ServiceType::Table => SERVICE_SUFFIX_TABLE,
+            }
+            + "/"
     }
 }

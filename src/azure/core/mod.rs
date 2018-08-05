@@ -22,8 +22,11 @@ define_encode_set! {
     }
 }
 pub mod headers;
-use self::headers::{CONTENT_MD5, CLIENT_REQUEST_ID, LEASE_BREAK_PERIOD, LEASE_DURATION, LEASE_ID, PROPOSED_LEASE_ID, REQUEST_ID};
-use hyper::header::{CACHE_CONTROL, CONTENT_ENCODING, CONTENT_LANGUAGE, CONTENT_TYPE, RANGE};
+use self::headers::{
+    CONTENT_MD5, BLOB_ACCESS_TIER, BLOB_CONTENT_LENGTH, BLOB_SEQUENCE_NUMBER, CLIENT_REQUEST_ID, LEASE_BREAK_PERIOD, LEASE_DURATION,
+    LEASE_ID, PROPOSED_LEASE_ID, REQUEST_ID,
+};
+use hyper::header::{CACHE_CONTROL, CONTENT_ENCODING, CONTENT_LANGUAGE, CONTENT_LENGTH, CONTENT_TYPE, RANGE};
 use uuid::Uuid;
 pub type RequestId = Uuid;
 use azure::core::errors::AzureError;
@@ -175,6 +178,21 @@ pub trait ContentLanguageOption<'a> {
     fn add_header(&self, builder: &mut Builder) {
         if let Some(content_language) = self.content_language() {
             builder.header(CONTENT_LANGUAGE, content_language);
+        }
+    }
+}
+
+pub trait AccessTierSupport<'a> {
+    type O;
+    fn with_access_tier(self, access_tier: &'a str) -> Self::O;
+}
+
+pub trait AccessTierOption<'a> {
+    fn access_tier(&self) -> Option<&'a str>;
+
+    fn add_header(&self, builder: &mut Builder) {
+        if let Some(access_tier) = self.access_tier() {
+            builder.header(BLOB_ACCESS_TIER, access_tier);
         }
     }
 }
@@ -357,6 +375,55 @@ pub trait PrefixOption<'a> {
         } else {
             None
         }
+    }
+}
+
+pub trait SequenceNumberSupport {
+    type O;
+    fn with_sequence_number(self, sequence_number: u64) -> Self::O;
+}
+
+pub trait SequenceNumberOption {
+    fn sequence_number(&self) -> u64;
+
+    fn add_header(&self, builder: &mut Builder) {
+        builder.header(BLOB_SEQUENCE_NUMBER, &self.sequence_number().to_string() as &str);
+    }
+}
+
+pub trait PageBlobLengthSupport {
+    type O;
+    fn with_content_length(self, content_length: u64) -> Self::O;
+}
+
+pub trait PageBlobLengthRequired {
+    fn content_length(&self) -> u64;
+
+    fn add_header(&self, builder: &mut Builder) {
+        builder.header(BLOB_CONTENT_LENGTH, &self.content_length().to_string() as &str);
+    }
+}
+
+pub trait ContentLengthSupport {
+    type O;
+    fn with_content_length(self, content_length: u64) -> Self::O;
+}
+
+pub trait ContentLengthOption {
+    fn content_length(&self) -> Option<u64>;
+
+    fn add_header(&self, builder: &mut Builder) {
+        if let Some(content_length) = self.content_length() {
+            builder.header(CONTENT_LENGTH, &content_length.to_string() as &str);
+        }
+    }
+}
+
+pub trait ContentLengthRequired {
+    fn content_length(&self) -> u64;
+
+    fn add_header(&self, builder: &mut Builder) {
+        builder.header(CONTENT_LENGTH, &self.content_length().to_string() as &str);
     }
 }
 
