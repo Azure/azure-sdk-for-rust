@@ -767,6 +767,8 @@ impl<'a> PutPageBlobBuilder<'a, Yes, Yes, Yes> {
             Method::PUT,
             |ref mut request| {
                 PageBlobLengthRequired::add_header(&self, request);
+                SequenceNumberOption::add_header(&self, request);
+                AccessTierOption::add_header(&self, request);
                 ContentTypeOption::add_header(&self, request);
                 ContentEncodingOption::add_header(&self, request);
                 ContentLanguageOption::add_header(&self, request);

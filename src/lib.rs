@@ -28,3 +28,4 @@ extern crate smallvec;
 #[macro_use]
 mod azure;
 pub use azure::*;
+pub mod prelude;

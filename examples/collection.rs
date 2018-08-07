@@ -7,10 +7,9 @@ extern crate tokio_core;
 
 use std::error::Error;
 
+use azure_sdk_for_rust::cosmos::{AuthorizationToken, Client, TokenType};
 use futures::future::*;
 use tokio_core::reactor::Core;
-
-use azure_sdk_for_rust::cosmos::{AuthorizationToken, Client, TokenType};
 
 fn main() {
     code().unwrap();

@@ -36,6 +36,7 @@ where
 }
 
 impl<'a> ListBlobBuilder<'a, No> {
+    #[inline]
     pub(crate) fn new(client: &'a Client) -> ListBlobBuilder<'a, No> {
         ListBlobBuilder {
             client,
@@ -60,12 +61,14 @@ impl<'a, ContainerNameSet> ClientRequired<'a> for ListBlobBuilder<'a, ContainerN
 where
     ContainerNameSet: ToAssign,
 {
+    #[inline]
     fn client(&self) -> &'a Client {
         self.client
     }
 }
 
 impl<'a> ContainerNameRequired<'a> for ListBlobBuilder<'a, Yes> {
+    #[inline]
     fn container_name(&self) -> &'a str {
         self.container_name.unwrap()
     }
@@ -75,6 +78,7 @@ impl<'a, ContainerNameSet> ClientRequestIdOption<'a> for ListBlobBuilder<'a, Con
 where
     ContainerNameSet: ToAssign,
 {
+    #[inline]
     fn client_request_id(&self) -> Option<&'a str> {
         self.client_request_id
     }
@@ -84,6 +88,7 @@ impl<'a, ContainerNameSet> TimeoutOption for ListBlobBuilder<'a, ContainerNameSe
 where
     ContainerNameSet: ToAssign,
 {
+    #[inline]
     fn timeout(&self) -> Option<u64> {
         self.timeout
     }
@@ -93,6 +98,7 @@ impl<'a, ContainerNameSet> PrefixOption<'a> for ListBlobBuilder<'a, ContainerNam
 where
     ContainerNameSet: ToAssign,
 {
+    #[inline]
     fn prefix(&self) -> Option<&'a str> {
         self.prefix
     }
@@ -102,6 +108,7 @@ impl<'a, ContainerNameSet> DelimiterOption<'a> for ListBlobBuilder<'a, Container
 where
     ContainerNameSet: ToAssign,
 {
+    #[inline]
     fn delimiter(&self) -> Option<&'a str> {
         self.delimiter
     }
@@ -111,6 +118,7 @@ impl<'a, ContainerNameSet> NextMarkerOption<'a> for ListBlobBuilder<'a, Containe
 where
     ContainerNameSet: ToAssign,
 {
+    #[inline]
     fn next_marker(&self) -> Option<&'a str> {
         self.next_marker
     }
@@ -120,6 +128,7 @@ impl<'a, ContainerNameSet> MaxResultsOption for ListBlobBuilder<'a, ContainerNam
 where
     ContainerNameSet: ToAssign,
 {
+    #[inline]
     fn max_results(&self) -> Option<u32> {
         self.max_results
     }
@@ -129,6 +138,7 @@ impl<'a, ContainerNameSet> IncludeSnapshotsOption for ListBlobBuilder<'a, Contai
 where
     ContainerNameSet: ToAssign,
 {
+    #[inline]
     fn include_snapshots(&self) -> bool {
         self.include_snapshots
     }
@@ -138,6 +148,7 @@ impl<'a, ContainerNameSet> IncludeMetadataOption for ListBlobBuilder<'a, Contain
 where
     ContainerNameSet: ToAssign,
 {
+    #[inline]
     fn include_metadata(&self) -> bool {
         self.include_metadata
     }
@@ -147,6 +158,7 @@ impl<'a, ContainerNameSet> IncludeUncommittedBlobsOption for ListBlobBuilder<'a,
 where
     ContainerNameSet: ToAssign,
 {
+    #[inline]
     fn include_uncommitted_blobs(&self) -> bool {
         self.include_uncommitted_blobs
     }
@@ -156,6 +168,7 @@ impl<'a, ContainerNameSet> IncludeCopyOption for ListBlobBuilder<'a, ContainerNa
 where
     ContainerNameSet: ToAssign,
 {
+    #[inline]
     fn include_copy(&self) -> bool {
         self.include_copy
     }
@@ -165,6 +178,7 @@ impl<'a, ContainerNameSet> IncludeDeletedOption for ListBlobBuilder<'a, Containe
 where
     ContainerNameSet: ToAssign,
 {
+    #[inline]
     fn include_deleted(&self) -> bool {
         self.include_deleted
     }
@@ -176,6 +190,7 @@ where
 {
     type O = ListBlobBuilder<'a, Yes>;
 
+    #[inline]
     fn with_container_name(self, container_name: &'a str) -> Self::O {
         ListBlobBuilder {
             client: self.client,
@@ -202,6 +217,7 @@ where
 {
     type O = ListBlobBuilder<'a, ContainerNameSet>;
 
+    #[inline]
     fn with_client_request_id(self, client_request_id: &'a str) -> Self::O {
         ListBlobBuilder {
             client: self.client,
@@ -228,6 +244,7 @@ where
 {
     type O = ListBlobBuilder<'a, ContainerNameSet>;
 
+    #[inline]
     fn with_timeout(self, timeout: u64) -> Self::O {
         ListBlobBuilder {
             client: self.client,
@@ -254,6 +271,7 @@ where
 {
     type O = ListBlobBuilder<'a, ContainerNameSet>;
 
+    #[inline]
     fn with_prefix(self, prefix: &'a str) -> Self::O {
         ListBlobBuilder {
             client: self.client,
@@ -280,6 +298,7 @@ where
 {
     type O = ListBlobBuilder<'a, ContainerNameSet>;
 
+    #[inline]
     fn with_delimiter(self, delimiter: &'a str) -> Self::O {
         ListBlobBuilder {
             client: self.client,
@@ -306,6 +325,7 @@ where
 {
     type O = ListBlobBuilder<'a, ContainerNameSet>;
 
+    #[inline]
     fn with_next_marker(self, next_marker: &'a str) -> Self::O {
         ListBlobBuilder {
             client: self.client,
@@ -332,6 +352,7 @@ where
 {
     type O = ListBlobBuilder<'a, ContainerNameSet>;
 
+    #[inline]
     fn with_max_results(self, max_results: u32) -> Self::O {
         ListBlobBuilder {
             client: self.client,
@@ -358,6 +379,7 @@ where
 {
     type O = ListBlobBuilder<'a, ContainerNameSet>;
 
+    #[inline]
     fn with_include_snapshots(self) -> Self::O {
         ListBlobBuilder {
             client: self.client,
@@ -384,6 +406,7 @@ where
 {
     type O = ListBlobBuilder<'a, ContainerNameSet>;
 
+    #[inline]
     fn with_include_metadata(self) -> Self::O {
         ListBlobBuilder {
             client: self.client,
@@ -410,6 +433,7 @@ where
 {
     type O = ListBlobBuilder<'a, ContainerNameSet>;
 
+    #[inline]
     fn with_include_uncommitted_blobs(self) -> Self::O {
         ListBlobBuilder {
             client: self.client,
@@ -436,6 +460,7 @@ where
 {
     type O = ListBlobBuilder<'a, ContainerNameSet>;
 
+    #[inline]
     fn with_include_copy(self) -> Self::O {
         ListBlobBuilder {
             client: self.client,
@@ -462,6 +487,7 @@ where
 {
     type O = ListBlobBuilder<'a, ContainerNameSet>;
 
+    #[inline]
     fn with_include_deleted(self) -> Self::O {
         ListBlobBuilder {
             client: self.client,
@@ -490,6 +516,7 @@ impl<'a, ContainerNameSet> ListBlobBuilder<'a, ContainerNameSet> where Container
 impl<'a> IncludeListOptions for ListBlobBuilder<'a, Yes> {}
 
 impl<'a> ListBlobBuilder<'a, Yes> {
+    #[inline]
     pub fn finalize(self) -> impl Future<Item = ListBlobsResponse, Error = AzureError> {
         // we create a copy to move into the future's closure.
         // We need to do this since the closure only accepts

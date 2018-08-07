@@ -8,12 +8,7 @@ extern crate hyper_tls;
 extern crate log;
 extern crate tokio_core;
 
-use azure_sdk_for_rust::core::{
-    BlobNameSupport, ContainerNameSupport, IncludeCopySupport, IncludeDeletedSupport, IncludeMetadataSupport, IncludeSnapshotsSupport,
-    IncludeUncommittedBlobsSupport,
-};
-use azure_sdk_for_rust::storage::client::Blob as BlobTrait;
-use azure_sdk_for_rust::storage::client::Client;
+use azure_sdk_for_rust::prelude::*;
 use std::error::Error;
 use tokio_core::reactor::Core;
 

@@ -1,5 +1,4 @@
 extern crate azure_sdk_for_rust;
-
 extern crate chrono;
 extern crate env_logger;
 extern crate futures;
@@ -7,19 +6,15 @@ extern crate hyper;
 extern crate hyper_tls;
 extern crate tokio_core;
 
-use std::error::Error;
-
-use futures::future::*;
-use tokio_core::reactor::Core;
-
 use azure_sdk_for_rust::{
     core::lease::{LeaseState, LeaseStatus},
-    storage::blob::{Blob, BlobType, PUT_BLOCK_OPTIONS_DEFAULT},
-    storage::client::Client,
+    prelude::*,
+    storage::blob::{get_block_list, put_block_list, Blob, BlobBlockType, BlobType, BlockList, BlockListType, PUT_BLOCK_OPTIONS_DEFAULT},
 };
+use futures::future::*;
 use std::collections::HashMap;
-
-use azure_sdk_for_rust::storage::blob::{get_block_list, put_block_list, BlobBlockType, BlockList, BlockListType};
+use std::error::Error;
+use tokio_core::reactor::Core;
 
 fn main() {
     env_logger::init();

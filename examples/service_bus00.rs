@@ -1,16 +1,13 @@
 extern crate azure_sdk_for_rust;
-
 extern crate futures;
 extern crate hyper;
 extern crate hyper_tls;
 extern crate tokio_core;
 
-use std::error::Error;
-
-use futures::Future;
-use tokio_core::reactor::Core;
-
 use azure_sdk_for_rust::service_bus::event_hub::Client;
+use futures::Future;
+use std::error::Error;
+use tokio_core::reactor::Core;
 
 extern crate time;
 
