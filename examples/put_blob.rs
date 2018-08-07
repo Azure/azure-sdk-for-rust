@@ -1,5 +1,4 @@
 extern crate azure_sdk_for_rust;
-
 extern crate chrono;
 extern crate env_logger;
 extern crate futures;
@@ -7,20 +6,16 @@ extern crate hyper;
 extern crate hyper_tls;
 extern crate tokio_core;
 
-use std::error::Error;
-
-use futures::future::*;
-use tokio_core::reactor::Core;
-
 use azure_sdk_for_rust::{
     core::errors::AzureError,
     core::lease::{LeaseAction, LeaseState, LeaseStatus},
-    core::ContainerNameSupport,
+    prelude::*,
     storage::blob::{Blob, BlobType, LEASE_BLOB_OPTIONS_DEFAULT, PUT_OPTIONS_DEFAULT},
-    storage::client::Blob as BlobTrait,
-    storage::client::Client,
 };
+use futures::future::*;
 use std::collections::HashMap;
+use std::error::Error;
+use tokio_core::reactor::Core;
 
 use std::fs::metadata;
 use std::fs::File;

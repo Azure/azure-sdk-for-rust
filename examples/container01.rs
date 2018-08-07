@@ -5,14 +5,8 @@ extern crate hyper;
 extern crate hyper_tls;
 extern crate tokio_core;
 
-use azure_sdk_for_rust::core::{
-    ClientRequestIdSupport, ContainerNameSupport, LeaseDurationSupport, LeaseIdSupport, MetadataSupport, StoredAccessPolicy,
-    StoredAccessPolicyList, TimeoutSupport,
-};
-use azure_sdk_for_rust::storage::{
-    client::Client,
-    container::{PublicAccess, PublicAccessSupport},
-};
+use azure_sdk_for_rust::prelude::*;
+use azure_sdk_for_rust::storage::container::{PublicAccess, PublicAccessSupport};
 use chrono::{Duration, FixedOffset, Utc};
 use futures::Future;
 use std::collections::HashMap;

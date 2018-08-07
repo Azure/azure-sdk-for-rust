@@ -1,5 +1,4 @@
 extern crate azure_sdk_for_rust;
-
 extern crate chrono;
 extern crate env_logger;
 extern crate futures;
@@ -10,15 +9,10 @@ extern crate log;
 extern crate md5;
 extern crate tokio_core;
 
-use std::error::Error;
-
+use azure_sdk_for_rust::prelude::*;
 use futures::future::*;
+use std::error::Error;
 use tokio_core::reactor::Core;
-
-use azure_sdk_for_rust::{
-    core::{BlobNameSupport, BodySupport, ContainerNameSupport, ContentMD5Support, ContentTypeSupport},
-    storage::client::{Blob as BlobTrait, Client},
-};
 
 fn main() {
     env_logger::init();

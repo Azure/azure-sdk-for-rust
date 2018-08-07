@@ -1,14 +1,17 @@
 extern crate azure_sdk_for_rust;
+extern crate chrono;
 extern crate env_logger;
 extern crate futures;
 extern crate hyper;
 extern crate hyper_tls;
 #[macro_use]
 extern crate log;
+extern crate md5;
 extern crate tokio_core;
 
 use azure_sdk_for_rust::prelude::*;
 use futures::future::*;
+use std::collections::HashMap;
 use std::error::Error;
 use tokio_core::reactor::Core;
 
@@ -27,27 +30,39 @@ fn code() -> Result<(), Box<Error>> {
     let container = std::env::args()
         .nth(1)
         .expect("please specify container name as command line parameter");
-    let blob = std::env::args().nth(2).expect("please specify blob name as command line parameter");
+    let blob_name = std::env::args().nth(2).expect("please specify blob name as command line parameter");
 
     let mut core = Core::new()?;
 
     let client = Client::new(&account, &master_key)?;
 
-    trace!("Requesting blog");
+    let data = b"something";
 
+    let mut metadata = HashMap::new();
+
+    metadata.insert("pollo", "arrosto");
+    metadata.insert("milk", "shake");
+
+    // this is not mandatory but it helps preventing
+    // spurious data to be uploaded.
+    let digest = md5::compute(&data[..]);
+
+    // The required parameters are container_name, blob_name and body.
+    // The builder supports many more optional
+    // parameters (such as LeaseID, or ContentDisposition, etc...)
+    // so make sure to check with the documentation.
     let future = client
-        .get_blob()
+        .put_append_blob()
         .with_container_name(&container)
-        .with_blob_name(&blob)
-        .finalize()
-        .and_then(move |response| {
-            done(String::from_utf8(response.data))
-                .map(move |s_content| {
-                    println!("blob == {:?}", blob);
-                    println!("s_content == {}", s_content);
-                }).from_err()
-        });
-    core.run(future)?;
+        .with_blob_name(&blob_name)
+        .with_content_type("text/plain")
+        .with_content_language("en/us")
+        .with_metadata(&metadata)
+        .finalize();
+
+    trace!("before put_append_blob");
+
+    core.run(future.map(|res| println!("{:?}", res)))?;
 
     Ok(())
 }

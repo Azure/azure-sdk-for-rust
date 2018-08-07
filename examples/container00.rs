@@ -4,8 +4,7 @@ extern crate hyper;
 extern crate hyper_tls;
 extern crate tokio_core;
 
-use azure_sdk_for_rust::core::ContainerNameSupport;
-use azure_sdk_for_rust::storage::{client::Blob as BlobTrait, client::Client};
+use azure_sdk_for_rust::prelude::*;
 use futures::future::*;
 use std::error::Error;
 use tokio_core::reactor::Core;

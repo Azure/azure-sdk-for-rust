@@ -1,16 +1,13 @@
 extern crate azure_sdk_for_rust;
-
 extern crate futures;
 extern crate hyper;
 extern crate hyper_tls;
 extern crate tokio_core;
 
-use std::error::Error;
-
-use futures::future::*;
-use tokio_core::reactor::Core;
-
 use azure_sdk_for_rust::cosmos::{AuthorizationToken, Client, TokenType};
+use futures::future::*;
+use std::error::Error;
+use tokio_core::reactor::Core;
 
 fn main() {
     code().unwrap();

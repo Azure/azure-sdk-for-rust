@@ -36,6 +36,7 @@ where
 }
 
 impl<'a> GetBlobBuilder<'a, No, No> {
+    #[inline]
     pub(crate) fn new(client: &'a Client) -> GetBlobBuilder<'a, No, No> {
         GetBlobBuilder {
             client,
@@ -57,6 +58,7 @@ where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
 {
+    #[inline]
     fn client(&self) -> &'a Client {
         self.client
     }
@@ -66,6 +68,7 @@ impl<'a, BlobNameSet> ContainerNameRequired<'a> for GetBlobBuilder<'a, Yes, Blob
 where
     BlobNameSet: ToAssign,
 {
+    #[inline]
     fn container_name(&self) -> &'a str {
         self.container_name.unwrap()
     }
@@ -75,6 +78,7 @@ impl<'a, ContainerNameSet> BlobNameRequired<'a> for GetBlobBuilder<'a, Container
 where
     ContainerNameSet: ToAssign,
 {
+    #[inline]
     fn blob_name(&self) -> &'a str {
         self.blob_name.unwrap()
     }
@@ -85,6 +89,7 @@ where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
 {
+    #[inline]
     fn snapshot(&self) -> Option<DateTime<Utc>> {
         self.snapshot
     }
@@ -95,6 +100,7 @@ where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
 {
+    #[inline]
     fn timeout(&self) -> Option<u64> {
         self.timeout
     }
@@ -105,6 +111,7 @@ where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
 {
+    #[inline]
     fn range(&self) -> Option<&'a Range> {
         self.range
     }
@@ -115,6 +122,7 @@ where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
 {
+    #[inline]
     fn lease_id(&self) -> Option<&'a LeaseId> {
         self.lease_id
     }
@@ -125,6 +133,7 @@ where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
 {
+    #[inline]
     fn client_request_id(&self) -> Option<&'a str> {
         self.client_request_id
     }
@@ -137,6 +146,7 @@ where
 {
     type O = GetBlobBuilder<'a, Yes, BlobNameSet>;
 
+    #[inline]
     fn with_container_name(self, container_name: &'a str) -> Self::O {
         GetBlobBuilder {
             client: self.client,
@@ -160,6 +170,7 @@ where
 {
     type O = GetBlobBuilder<'a, ContainerNameSet, Yes>;
 
+    #[inline]
     fn with_blob_name(self, blob_name: &'a str) -> Self::O {
         GetBlobBuilder {
             client: self.client,
@@ -183,6 +194,7 @@ where
 {
     type O = GetBlobBuilder<'a, ContainerNameSet, BlobNameSet>;
 
+    #[inline]
     fn with_snapshot(self, snapshot: DateTime<Utc>) -> Self::O {
         GetBlobBuilder {
             client: self.client,
@@ -206,6 +218,7 @@ where
 {
     type O = GetBlobBuilder<'a, ContainerNameSet, BlobNameSet>;
 
+    #[inline]
     fn with_timeout(self, timeout: u64) -> Self::O {
         GetBlobBuilder {
             client: self.client,
@@ -229,6 +242,7 @@ where
 {
     type O = GetBlobBuilder<'a, ContainerNameSet, BlobNameSet>;
 
+    #[inline]
     fn with_range(self, range: &'a Range) -> Self::O {
         GetBlobBuilder {
             client: self.client,
@@ -252,6 +266,7 @@ where
 {
     type O = GetBlobBuilder<'a, ContainerNameSet, BlobNameSet>;
 
+    #[inline]
     fn with_lease_id(self, lease_id: &'a LeaseId) -> Self::O {
         GetBlobBuilder {
             client: self.client,
@@ -275,6 +290,7 @@ where
 {
     type O = GetBlobBuilder<'a, ContainerNameSet, BlobNameSet>;
 
+    #[inline]
     fn with_client_request_id(self, client_request_id: &'a str) -> Self::O {
         GetBlobBuilder {
             client: self.client,
@@ -299,6 +315,7 @@ where
 {}
 
 impl<'a> GetBlobBuilder<'a, Yes, Yes> {
+    #[inline]
     pub fn finalize(self) -> impl Future<Item = GetBlobResponse, Error = AzureError> {
         let container_name = self.container_name().to_owned();
         let blob_name = self.blob_name().to_owned();
