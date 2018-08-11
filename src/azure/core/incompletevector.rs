@@ -2,7 +2,7 @@ use std::ops::{Deref, DerefMut};
 
 pub type ContinuationToken = String;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct IncompleteVector<T> {
     token: Option<String>,
     vector: Vec<T>,

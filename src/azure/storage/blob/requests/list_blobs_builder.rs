@@ -1,12 +1,11 @@
 use azure::core::errors::{check_status_extract_headers_and_body_as_string, AzureError};
 use azure::core::{
-    request_id_from_headers, ClientRequestIdOption, ClientRequestIdSupport, ClientRequired, ContainerNameRequired, ContainerNameSupport,
-    DelimiterOption, DelimiterSupport, IncludeCopyOption, IncludeCopySupport, IncludeDeletedOption, IncludeDeletedSupport,
-    IncludeListOptions, IncludeMetadataOption, IncludeMetadataSupport, IncludeSnapshotsOption, IncludeSnapshotsSupport,
-    IncludeUncommittedBlobsOption, IncludeUncommittedBlobsSupport, MaxResultsOption, MaxResultsSupport, NextMarkerOption,
-    NextMarkerSupport, No, PrefixOption, PrefixSupport, TimeoutOption, TimeoutSupport, ToAssign, Yes,
+    ClientRequestIdOption, ClientRequestIdSupport, ClientRequired, ContainerNameRequired, ContainerNameSupport, DelimiterOption,
+    DelimiterSupport, IncludeCopyOption, IncludeCopySupport, IncludeDeletedOption, IncludeDeletedSupport, IncludeListOptions,
+    IncludeMetadataOption, IncludeMetadataSupport, IncludeSnapshotsOption, IncludeSnapshotsSupport, IncludeUncommittedBlobsOption,
+    IncludeUncommittedBlobsSupport, MaxResultsOption, MaxResultsSupport, NextMarkerOption, NextMarkerSupport, No, PrefixOption,
+    PrefixSupport, TimeoutOption, TimeoutSupport, ToAssign, Yes,
 };
-use azure::storage::blob::incomplete_vector_from_response;
 use azure::storage::blob::responses::ListBlobsResponse;
 use azure::storage::client::Client;
 use futures::future::done;
@@ -549,14 +548,8 @@ impl<'a> ListBlobBuilder<'a, Yes> {
         let req = self.client().perform_request(&uri, Method::GET, |_| {}, None);
 
         done(req).from_err().and_then(move |future_response| {
-            check_status_extract_headers_and_body_as_string(future_response, StatusCode::OK).and_then(move |(headers, body)| {
-                done(incomplete_vector_from_response(&body, &container_name)).and_then(move |incomplete_vector| {
-                    done(request_id_from_headers(&headers).map(move |request_id| ListBlobsResponse {
-                        incomplete_vector,
-                        request_id,
-                    }))
-                })
-            })
+            check_status_extract_headers_and_body_as_string(future_response, StatusCode::OK)
+                .and_then(move |(headers, body_as_str)| done(ListBlobsResponse::from_response(&container_name, &headers, &body_as_str)))
         })
     }
 }

@@ -4,15 +4,15 @@ use azure::core::lease::LeaseId;
 use azure::core::range::Range;
 use azure::core::util::RequestBuilderExt;
 use azure::core::{
-    request_id_from_headers, BlobNameRequired, BlobNameSupport, ClientRequestIdOption, ClientRequestIdSupport, ClientRequired,
-    ContainerNameRequired, ContainerNameSupport, LeaseIdOption, LeaseIdSupport, No, RangeOption, RangeSupport, SnapshotOption,
-    SnapshotSupport, TimeoutOption, TimeoutSupport, ToAssign, Yes,
+    BlobNameRequired, BlobNameSupport, ClientRequestIdOption, ClientRequestIdSupport, ClientRequired, ContainerNameRequired,
+    ContainerNameSupport, LeaseIdOption, LeaseIdSupport, No, RangeOption, RangeSupport, SnapshotOption, SnapshotSupport, TimeoutOption,
+    TimeoutSupport, ToAssign, Yes,
 };
 use azure::storage::blob::responses::GetBlobResponse;
 use azure::storage::blob::Blob;
 use azure::storage::client::Client;
 use chrono::{DateTime, Utc};
-use futures::future::{done, ok};
+use futures::future::done;
 use futures::prelude::*;
 use hyper::{Method, StatusCode};
 use std::marker::PhantomData;
@@ -365,15 +365,8 @@ impl<'a> GetBlobBuilder<'a, Yes, Yes> {
             .from_err()
             .and_then(move |future_response| check_status_extract_headers_and_body(future_response, expected_status_code))
             .and_then(move |(headers, body)| {
-                done(Blob::from_headers(&blob_name, &container_name, snapshot_time, &headers)).and_then(move |blob| {
-                    done(request_id_from_headers(&headers)).and_then(move |request_id| {
-                        ok(GetBlobResponse {
-                            blob,
-                            request_id,
-                            data: body.to_owned(),
-                        })
-                    })
-                })
+                done(Blob::from_headers(&blob_name, &container_name, snapshot_time, &headers))
+                    .and_then(move |blob| done(GetBlobResponse::from_response(&headers, blob, &body)))
             })
     }
 }
