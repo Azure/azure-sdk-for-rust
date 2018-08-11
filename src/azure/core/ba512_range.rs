@@ -1,7 +1,7 @@
+use azure::core::errors::{Not512ByteAlignedError, Parse512AlignedError};
 use azure::core::range::Range;
 use std::convert::Into;
 use std::fmt;
-use std::num::ParseIntError;
 use std::str::FromStr;
 
 #[derive(Debug, Copy, Clone, PartialEq)]
@@ -35,31 +35,6 @@ impl BA512Range {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
-pub enum Not512ByteAlignedError {
-    StartRange(u64),
-    EndRange(u64),
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub enum ParseError {
-    SplitNotFound,
-    ParseIntError(ParseIntError),
-    Not512ByteAlignedError(Not512ByteAlignedError),
-}
-
-impl From<ParseIntError> for ParseError {
-    fn from(pie: ParseIntError) -> ParseError {
-        ParseError::ParseIntError(pie)
-    }
-}
-
-impl From<Not512ByteAlignedError> for ParseError {
-    fn from(nae: Not512ByteAlignedError) -> ParseError {
-        ParseError::Not512ByteAlignedError(nae)
-    }
-}
-
 impl Into<Range> for BA512Range {
     fn into(self) -> Range {
         Range {
@@ -70,11 +45,11 @@ impl Into<Range> for BA512Range {
 }
 
 impl FromStr for BA512Range {
-    type Err = ParseError;
-    fn from_str(s: &str) -> Result<BA512Range, ParseError> {
+    type Err = Parse512AlignedError;
+    fn from_str(s: &str) -> Result<BA512Range, Self::Err> {
         let v = s.split('/').collect::<Vec<&str>>();
         if v.len() != 2 {
-            return Err(ParseError::SplitNotFound);
+            return Err(Parse512AlignedError::SplitNotFound);
         }
 
         let cp_start = v[0].parse::<u64>()?;

@@ -11,22 +11,20 @@ pub mod incompletevector;
 pub mod lease;
 use azure::core::util::HeaderMapExt;
 use azure::storage::client::Client;
+use base64;
 use std::fmt::Debug;
 pub mod ba512_range;
 use base64::encode;
+pub mod modify_conditions;
+use self::modify_conditions::{IfMatchCondition, IfSinceCondition, SequenceNumberCondition};
 pub mod range;
 use url::percent_encoding;
-define_encode_set! {
-    pub COMPLETE_ENCODE_SET = [percent_encoding::USERINFO_ENCODE_SET] | {
-        '+', '-', '&'
-    }
-}
 pub mod headers;
 use self::headers::{
     CONTENT_MD5, BLOB_ACCESS_TIER, BLOB_CONTENT_LENGTH, BLOB_SEQUENCE_NUMBER, CLIENT_REQUEST_ID, LEASE_BREAK_PERIOD, LEASE_DURATION,
-    LEASE_ID, PROPOSED_LEASE_ID, REQUEST_ID,
+    LEASE_ID, PROPOSED_LEASE_ID, REQUEST_ID, REQUEST_SERVER_ENCRYPTED,
 };
-use hyper::header::{CACHE_CONTROL, CONTENT_ENCODING, CONTENT_LANGUAGE, CONTENT_LENGTH, CONTENT_TYPE, RANGE};
+use hyper::header::{CACHE_CONTROL, CONTENT_ENCODING, CONTENT_LANGUAGE, CONTENT_LENGTH, CONTENT_TYPE, DATE, ETAG, LAST_MODIFIED, RANGE};
 use uuid::Uuid;
 pub type RequestId = Uuid;
 use azure::core::errors::AzureError;
@@ -38,6 +36,12 @@ mod stored_access_policy;
 pub(crate) mod util;
 pub use self::stored_access_policy::{StoredAccessPolicy, StoredAccessPolicyList};
 use chrono::{DateTime, Utc};
+
+define_encode_set! {
+    pub COMPLETE_ENCODE_SET = [percent_encoding::USERINFO_ENCODE_SET] | {
+        '+', '-', '&'
+    }
+}
 
 #[derive(Debug)]
 pub struct Yes;
@@ -391,6 +395,51 @@ pub trait SequenceNumberOption {
     }
 }
 
+pub trait SequenceNumberConditionSupport {
+    type O;
+    fn with_sequence_number_condition(self, sequence_number_condition: SequenceNumberCondition) -> Self::O;
+}
+
+pub trait SequenceNumberConditionOption {
+    fn sequence_number_condition(&self) -> Option<SequenceNumberCondition>;
+
+    fn add_header(&self, builder: &mut Builder) {
+        if let Some(sequence_number_condition) = self.sequence_number_condition() {
+            sequence_number_condition.add_header(builder);
+        }
+    }
+}
+
+pub trait IfSinceConditionSupport {
+    type O;
+    fn with_if_since_condition(self, if_since_condition: IfSinceCondition) -> Self::O;
+}
+
+pub trait IfSinceConditionOption {
+    fn if_since_condition(&self) -> Option<IfSinceCondition>;
+
+    fn add_header(&self, builder: &mut Builder) {
+        if let Some(if_since_condition) = self.if_since_condition() {
+            if_since_condition.add_header(builder);
+        }
+    }
+}
+
+pub trait IfMatchConditionSupport<'a> {
+    type O;
+    fn with_if_match_condition(self, if_match_condition: IfMatchCondition<'a>) -> Self::O;
+}
+
+pub trait IfMatchConditionOption<'a> {
+    fn if_match_condition(&self) -> Option<IfMatchCondition<'a>>;
+
+    fn add_header(&self, builder: &mut Builder) {
+        if let Some(if_match_condition) = self.if_match_condition() {
+            if_match_condition.add_header(builder);
+        }
+    }
+}
+
 pub trait PageBlobLengthSupport {
     type O;
     fn with_content_length(self, content_length: u64) -> Self::O;
@@ -490,6 +539,37 @@ pub trait RangeOption<'a> {
     }
 }
 
+pub trait RangeRequired<'a> {
+    fn range(&self) -> &'a range::Range;
+
+    fn add_header(&self, builder: &mut Builder) {
+        builder.header(RANGE, &self.range().to_string() as &str);
+    }
+}
+
+pub trait BA512RangeSupport<'a> {
+    type O;
+    fn with_ba512_range(self, &'a ba512_range::BA512Range) -> Self::O;
+}
+
+pub trait BA512RangeOption<'a> {
+    fn ba512_range(&self) -> Option<&'a ba512_range::BA512Range>;
+
+    fn add_header(&self, builder: &mut Builder) {
+        if let Some(ba512_range) = self.ba512_range() {
+            builder.header(RANGE, &ba512_range.to_string() as &str);
+        }
+    }
+}
+
+pub trait BA512RangeRequired<'a> {
+    fn ba512_range(&self) -> &'a ba512_range::BA512Range;
+
+    fn add_header(&self, builder: &mut Builder) {
+        builder.header(RANGE, &self.ba512_range().to_string() as &str);
+    }
+}
+
 pub trait LeaseDurationSupport {
     type O;
     fn with_lease_duration(self, i8) -> Self::O;
@@ -564,4 +644,81 @@ pub(crate) fn request_id_from_headers(headers: &HeaderMap) -> Result<RequestId, 
         .get_as_str(REQUEST_ID)
         .ok_or_else(|| AzureError::HeaderNotFound(REQUEST_ID.to_owned()))?;
     Ok(Uuid::parse_str(request_id)?)
+}
+
+pub(crate) fn content_md5_from_headers(headers: &HeaderMap) -> Result<[u8; 16], AzureError> {
+    let content_md5 = headers
+        .get(CONTENT_MD5)
+        .ok_or_else(|| AzureError::HeaderNotFound(CONTENT_MD5.to_owned()))?
+        .to_str()?;
+
+    let content_md5_vec = base64::decode(&content_md5)?;
+
+    if content_md5_vec.len() != 16 {
+        return Err(AzureError::DigestNot16BytesLong(content_md5_vec.len() as u64));
+    }
+    let mut content_md5 = [0; 16];
+    content_md5.copy_from_slice(&content_md5_vec[0..16]);
+
+    trace!("content_md5 == {:?}", content_md5);
+    Ok(content_md5)
+}
+
+pub(crate) fn last_modified_from_headers(headers: &HeaderMap) -> Result<DateTime<Utc>, AzureError> {
+    let last_modified = headers
+        .get(LAST_MODIFIED)
+        .ok_or_else(|| AzureError::HeaderNotFound(LAST_MODIFIED.as_str().to_owned()))?
+        .to_str()?;
+    let last_modified = DateTime::parse_from_rfc2822(last_modified)?;
+    let last_modified = DateTime::from_utc(last_modified.naive_utc(), Utc);
+
+    trace!("last_modified == {:?}", last_modified);
+    Ok(last_modified)
+}
+
+pub(crate) fn date_from_headers(headers: &HeaderMap) -> Result<DateTime<Utc>, AzureError> {
+    let date = headers
+        .get(DATE)
+        .ok_or_else(|| AzureError::HeaderNotFound(DATE.as_str().to_owned()))?
+        .to_str()?;
+    let date = DateTime::parse_from_rfc2822(date)?;
+    let date = DateTime::from_utc(date.naive_utc(), Utc);
+
+    trace!("date == {:?}", date);
+    Ok(date)
+}
+
+pub(crate) fn etag_from_headers(headers: &HeaderMap) -> Result<String, AzureError> {
+    let etag = headers
+        .get(ETAG)
+        .ok_or_else(|| AzureError::HeaderNotFound(ETAG.as_str().to_owned()))?
+        .to_str()?
+        .to_owned();
+
+    trace!("etag == {:?}", etag);
+    Ok(etag)
+}
+
+pub(crate) fn sequence_number_from_headers(headers: &HeaderMap) -> Result<u64, AzureError> {
+    let sequence_number = headers
+        .get(BLOB_SEQUENCE_NUMBER)
+        .ok_or_else(|| AzureError::HeaderNotFound(BLOB_SEQUENCE_NUMBER.to_owned()))?
+        .to_str()?;
+
+    let sequence_number = sequence_number.parse::<u64>()?;
+
+    trace!("sequence_number == {:?}", sequence_number);
+    Ok(sequence_number)
+}
+
+pub(crate) fn request_server_encrypted_from_headers(headers: &HeaderMap) -> Result<bool, AzureError> {
+    let request_server_encrypted = headers
+        .get(REQUEST_SERVER_ENCRYPTED)
+        .ok_or_else(|| AzureError::HeaderNotFound(REQUEST_SERVER_ENCRYPTED.to_owned()))?
+        .to_str()?;
+
+    let request_server_encrypted = request_server_encrypted.parse::<bool>()?;
+
+    trace!("request_server_encrypted == {:?}", request_server_encrypted);
+    Ok(request_server_encrypted)
 }

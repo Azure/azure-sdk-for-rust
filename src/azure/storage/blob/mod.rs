@@ -83,7 +83,7 @@ create_enum!(PageWriteType, (Update, "update"), (Clear, "clear"));
 const HEADER_BLOB_CONTENT_DISPOSITION: &str = "x-ms-blob-content-disposition";
 const HEADER_PAGE_WRITE: &str = "x-ms-blob-page-write";
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Blob {
     pub name: String,
     pub container_name: String,

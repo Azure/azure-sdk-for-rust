@@ -11,6 +11,7 @@ use serde_xml_rs;
 use std;
 use std::io::Error as IOError;
 use std::num;
+use std::num::ParseIntError;
 use std::str;
 use std::str::ParseBoolError;
 use std::string;
@@ -79,8 +80,42 @@ impl std::error::Error for UnexpectedHTTPResult {
 
 quick_error! {
     #[derive(Debug)]
+    pub enum Not512ByteAlignedError {
+        StartRange(u: u64) {
+            display("start range not 512-byte aligned: {}", u)
+        }
+        EndRange(u: u64) {
+            display("end range not 512-byte aligned: {}", u)
+        }
+    }
+}
+
+quick_error! {
+    #[derive(Debug)]
+    pub enum Parse512AlignedError {
+        SplitNotFound {
+            display("split not found")
+        }
+        ParseIntError(p :ParseIntError) {
+            from()
+            display("parse int error: {}", p)
+            cause(p)
+        }
+        Not512ByteAlignedError(nb: Not512ByteAlignedError)  {
+            from()
+            display("not 512 byte aligned error: {}", nb)
+            cause(nb)
+        }
+    }
+}
+
+quick_error! {
+    #[derive(Debug)]
     pub enum AzureError {
-        Not512ByteAlignedError(size: u64) {
+        PageNot512ByteAlignedError(start: u64, end: u64) {
+            display("{}-{} is not 512 byte aligned", start, end)
+        }
+         Not512ByteAlignedError(size: u64) {
             display("{} is not 512 byte aligned", size)
         }
         Base64DecodeError(err: base64::DecodeError) {

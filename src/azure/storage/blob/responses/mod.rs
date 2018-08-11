@@ -6,3 +6,5 @@ mod get_blob_response;
 pub use self::get_blob_response::GetBlobResponse;
 mod put_blob_response;
 pub use self::put_blob_response::PutBlobResponse;
+mod update_page_response;
+pub use self::update_page_response::UpdatePageResponse;
