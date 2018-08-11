@@ -217,8 +217,8 @@ If you want to contribute please do! No formality required! :wink:. Please note 
 | ----            | ---                                                                                                                                                  | ---
 | List blobs      | [https://msdn.microsoft.com/en-us/library/azure/dd135734.aspx](https://msdn.microsoft.com/en-us/library/azure/dd135734.aspx)                         | yes
 | Get blob        | [https://msdn.microsoft.com/en-us/library/azure/dd179440.aspx](https://msdn.microsoft.com/en-us/library/azure/dd179440.aspx)                         | yes
-| Put blob        | [https://msdn.microsoft.com/en-us/library/azure/dd179451.aspx](https://msdn.microsoft.com/en-us/library/azure/dd179451.aspx)                         | partial (put block blob and page blob only)
-| Put blob page   | [https://msdn.microsoft.com/en-us/library/azure/dd179451.aspx](https://msdn.microsoft.com/en-us/library/azure/dd179451.aspx)                         |
+| Put blob        | [https://msdn.microsoft.com/en-us/library/azure/dd179451.aspx](https://msdn.microsoft.com/en-us/library/azure/dd179451.aspx)                         | yes
+| Put blob page   | [https://msdn.microsoft.com/en-us/library/azure/dd179451.aspx](https://msdn.microsoft.com/en-us/library/azure/dd179451.aspx)                         | yes (as `update_page`)
 | Clear blob page | [https://msdn.microsoft.com/en-us/library/azure/dd179451.aspx](https://msdn.microsoft.com/en-us/library/azure/dd179451.aspx)                         |
 | Put block       | [https://msdn.microsoft.com/en-us/library/azure/dd135726.aspx](https://msdn.microsoft.com/en-us/library/azure/dd135726.aspx)                         |
 | Get block list  | [https://docs.microsoft.com/en-us/rest/api/storageservices/get-block-list](https://docs.microsoft.com/en-us/rest/api/storageservices/get-block-list) |
