@@ -602,7 +602,6 @@ where
 {}
 
 impl<'a> UpdatePageBuilder<'a, Yes, Yes, Yes, Yes> {
-    #[inline]
     pub fn finalize(self) -> impl Future<Item = UpdatePageResponse, Error = AzureError> {
         let mut uri = format!(
             "https://{}.blob.core.windows.net/{}/{}?comp=page",

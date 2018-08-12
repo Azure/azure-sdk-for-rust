@@ -20,8 +20,9 @@ use azure_sdk_for_rust::core::{
     BlobNameSupport, BodySupport, ContainerNameSupport, ContentMD5Support, ContentTypeSupport, LeaseDurationSupport, LeaseIdSupport,
     NextMarkerSupport, PrefixSupport, StoredAccessPolicy, StoredAccessPolicyList,
 };
+use azure_sdk_for_rust::prelude::*;
 use azure_sdk_for_rust::storage::{
-    blob::{get_block_list, put_block_list, Blob, BlobType, BlockListType, PUT_BLOCK_OPTIONS_DEFAULT},
+    blob::{get_block_list, put_block_list, Blob, BlobType, BlockListType},
     client::Client,
     container::{Container, PublicAccess, PublicAccessSupport},
 };
@@ -175,10 +176,30 @@ fn put_and_get_block_list() {
         server_encrypted: false,
     };
 
-    let future = new_blob
-        .put_block(&client, "block1", &PUT_BLOCK_OPTIONS_DEFAULT, &contents1.as_bytes())
-        .and_then(|_| new_blob.put_block(&client, "block2", &PUT_BLOCK_OPTIONS_DEFAULT, &contents2.as_bytes()))
-        .and_then(|_| new_blob.put_block(&client, "block3", &PUT_BLOCK_OPTIONS_DEFAULT, &contents3.as_bytes()));
+    let future = client
+        .put_block()
+        .with_container_name(&container.name)
+        .with_blob_name(name)
+        .with_body(&contents1.as_bytes())
+        .with_block_id("block1")
+        .finalize()
+        .and_then(|_| {
+            client
+                .put_block()
+                .with_container_name(&container.name)
+                .with_blob_name(name)
+                .with_body(&contents2.as_bytes())
+                .with_block_id("block2")
+                .finalize()
+        }).and_then(|_| {
+            client
+                .put_block()
+                .with_container_name(&container.name)
+                .with_blob_name(name)
+                .with_body(&contents3.as_bytes())
+                .with_block_id("block3")
+                .finalize()
+        });
 
     core.run(future).unwrap();
 

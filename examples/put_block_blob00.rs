@@ -53,9 +53,15 @@ fn code() -> Result<(), Box<Error>> {
         .with_body(&data[..])
         .with_content_md5(&digest[..])
         .finalize();
+    core.run(future.map(|res| println!("{:?}", res)))?;
 
-    trace!("before put_block_blob");
-
+    let future = client
+        .put_block()
+        .with_container_name(&container)
+        .with_blob_name(&blob_name)
+        .with_body(&data[..])
+        .with_block_id("satanasso")
+        .finalize();
     core.run(future.map(|res| println!("{:?}", res)))?;
 
     Ok(())

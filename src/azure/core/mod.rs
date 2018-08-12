@@ -201,6 +201,19 @@ pub trait AccessTierOption<'a> {
     }
 }
 
+pub trait BlockIdSupport<'a> {
+    type O;
+    fn with_block_id(self, block_id: &'a str) -> Self::O;
+}
+
+pub trait BlockIdRequired<'a> {
+    fn block_id(&self) -> &'a str;
+
+    fn to_uri_parameter(&self) -> String {
+        format!("blockid={}", base64::encode(self.block_id()))
+    }
+}
+
 pub trait NextMarkerSupport<'a> {
     type O;
     fn with_next_marker(self, next_marker: &'a str) -> Self::O;
