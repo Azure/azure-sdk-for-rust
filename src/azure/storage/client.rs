@@ -16,6 +16,7 @@ pub trait Blob {
     fn put_page_blob<'a>(&'a self) -> blob::requests::PutPageBlobBuilder<'a, No, No, No>;
     fn put_append_blob<'a>(&'a self) -> blob::requests::PutAppendBlobBuilder<'a, No, No>;
     fn update_page<'a>(&'a self) -> blob::requests::UpdatePageBuilder<'a, No, No, No, No>;
+    fn clear_page<'a>(&'a self) -> blob::requests::ClearPageBuilder<'a, No, No, No>;
 }
 
 pub trait Container {
@@ -61,6 +62,10 @@ impl Blob for Client {
 
     fn update_page<'a>(&'a self) -> blob::requests::UpdatePageBuilder<'a, No, No, No, No> {
         blob::requests::UpdatePageBuilder::new(self)
+    }
+
+    fn clear_page<'a>(&'a self) -> blob::requests::ClearPageBuilder<'a, No, No, No> {
+        blob::requests::ClearPageBuilder::new(self)
     }
 }
 

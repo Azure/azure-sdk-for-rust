@@ -10,6 +10,7 @@ extern crate md5;
 extern crate tokio_core;
 
 use azure_sdk_for_rust::core::ba512_range::BA512Range;
+use azure_sdk_for_rust::core::modify_conditions::SequenceNumberCondition;
 use azure_sdk_for_rust::prelude::*;
 use futures::future::*;
 use std::collections::HashMap;
@@ -18,6 +19,7 @@ use tokio_core::reactor::Core;
 
 fn main() {
     env_logger::init();
+    trace!("example started");
     code().unwrap();
 }
 
@@ -37,16 +39,18 @@ fn code() -> Result<(), Box<Error>> {
 
     let client = Client::new(&account, &master_key)?;
 
-    let data: [u8; 700] = [51; 700];
+    let data: [u8; 2000] = [51; 2000];
 
     let mut metadata = HashMap::new();
 
     metadata.insert("pollo", "arrosto");
     metadata.insert("milk", "shake");
 
+    let slice = &data[512..1024];
+
     // this is not mandatory but it helps preventing
     // spurious data to be uploaded.
-    let digest = md5::compute(&data[0..512]);
+    let digest = md5::compute(slice);
 
     // The required parameters are container_name, blob_name and body.
     // The builder supports many more optional
@@ -60,23 +64,52 @@ fn code() -> Result<(), Box<Error>> {
         .with_content_type("text/plain")
         .with_metadata(&metadata)
         .finalize();
+    core.run(future.map(|res| println!("put_blob == {:?}", res)))?;
 
-    trace!("before put_page_blob");
-
-    core.run(future.map(|res| println!("{:?}", res)))?;
-
+    // this will update a page. The slice must be at least
+    // the size of tha page or a buffer out
+    // of bounds error will be thrown.
     let future = client
         .update_page()
         .with_container_name(&container)
         .with_blob_name(&blob_name)
         .with_ba512_range(&BA512Range::new(0, 511)?)
         .with_content_md5(&digest[..])
-        .with_body(&data[..])
+        .with_body(slice)
         .finalize();
+    core.run(future.map(|res| println!("update first page == {:?}", res)))?;
 
-    trace!("before update_page");
+    // update a second page with the same data
+    let future = client
+        .update_page()
+        .with_container_name(&container)
+        .with_blob_name(&blob_name)
+        .with_ba512_range(&BA512Range::new(512, 1023)?)
+        .with_content_md5(&digest[..])
+        .with_body(slice)
+        .finalize();
+    core.run(future.map(|res| println!("update second page == {:?}", res)))?;
 
-    core.run(future.map(|res| println!("{:?}", res)))?;
+    // update the second page again with checks
+    let future = client
+        .update_page()
+        .with_container_name(&container)
+        .with_blob_name(&blob_name)
+        .with_ba512_range(&BA512Range::new(512, 1023)?)
+        .with_content_md5(&digest[..])
+        .with_body(slice)
+        .with_sequence_number_condition(SequenceNumberCondition::Equal(1))
+        .finalize();
+    let res = core.run(future).unwrap_err();
+    println!("update failed sequence number condition == {:?}", res);
+
+    let future = client
+        .clear_page()
+        .with_container_name(&container)
+        .with_blob_name(&blob_name)
+        .with_ba512_range(&BA512Range::new(0, 511)?)
+        .finalize();
+    core.run(future.map(|res| println!("clear first page {:?}", res)))?;
 
     Ok(())
 }
