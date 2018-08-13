@@ -1,12 +1,3 @@
-mod put_options;
-pub use self::put_options::{PutOptions, PUT_OPTIONS_DEFAULT};
-
-mod put_block_options;
-pub use self::put_block_options::{PutBlockOptions, PUT_BLOCK_OPTIONS_DEFAULT};
-
-mod put_page_options;
-pub use self::put_page_options::{PutPageOptions, PUT_PAGE_OPTIONS_DEFAULT};
-
 mod lease_blob_options;
 pub use self::lease_blob_options::{LeaseBlobOptions, LEASE_BLOB_OPTIONS_DEFAULT};
 
@@ -35,9 +26,9 @@ mod get_block_list_response;
 pub use self::get_block_list_response::GetBlockListResponse;
 
 use azure::core::headers::{
-    CONTENT_MD5, BLOB_CONTENT_LENGTH, BLOB_SEQUENCE_NUMBER, BLOB_TYPE, CLIENT_REQUEST_ID, COPY_COMPLETION_TIME, COPY_ID, COPY_PROGRESS,
-    COPY_SOURCE, COPY_STATUS, COPY_STATUS_DESCRIPTION, CREATION_TIME, LEASE_ACTION, LEASE_BREAK_PERIOD, LEASE_DURATION, LEASE_ID,
-    LEASE_STATE, LEASE_STATUS, PROPOSED_LEASE_ID, REQUEST_ID, SERVER_ENCRYPTED,
+    CONTENT_MD5, BLOB_SEQUENCE_NUMBER, BLOB_TYPE, CLIENT_REQUEST_ID, COPY_COMPLETION_TIME, COPY_ID, COPY_PROGRESS, COPY_SOURCE,
+    COPY_STATUS, COPY_STATUS_DESCRIPTION, CREATION_TIME, LEASE_ACTION, LEASE_BREAK_PERIOD, LEASE_DURATION, LEASE_ID, LEASE_STATE,
+    LEASE_STATUS, PROPOSED_LEASE_ID, REQUEST_ID, SERVER_ENCRYPTED,
 };
 use base64;
 use chrono::{DateTime, Utc};
@@ -51,7 +42,6 @@ use xml::Element;
 use xml::Xml::ElementNode;
 
 use azure::core::{
-    ba512_range::BA512Range,
     enumerations,
     errors::{check_status_extract_body, check_status_extract_headers_and_body, AzureError, TraversingError},
     incompletevector::IncompleteVector,
@@ -60,7 +50,7 @@ use azure::core::{
     range::Range,
     util::{HeaderMapExt, RequestBuilderExt},
 };
-use azure::storage::{client::Client, rest_client::*};
+use azure::storage::client::Client;
 
 create_enum!(
     BlobType,
@@ -78,10 +68,6 @@ create_enum!(
 );
 
 create_enum!(PageWriteType, (Update, "update"), (Clear, "clear"));
-
-#[allow(dead_code)]
-const HEADER_BLOB_CONTENT_DISPOSITION: &str = "x-ms-blob-content-disposition";
-const HEADER_PAGE_WRITE: &str = "x-ms-blob-page-write";
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Blob {
@@ -375,96 +361,6 @@ impl Blob {
         blob_stream::BlobStream::new(c, container_name, blob_name, snapshot, range, lease_id, increment)
     }
 
-    fn put_create_request(&self, c: &Client, po: &PutOptions, r: Option<&[u8]>) -> Result<hyper::client::ResponseFuture, AzureError> {
-        // parameter sanity check
-        match self.blob_type {
-            BlobType::BlockBlob => if r.is_none() {
-                return Err(AzureError::InputParametersError(
-                    "cannot use put_blob with \
-                     BlockBlob without a Read"
-                        .to_owned(),
-                ));
-            },
-            BlobType::PageBlob => {
-                if r.is_some() {
-                    return Err(AzureError::InputParametersError(
-                        "cannot use put_blob with \
-                         PageBlob with a Read"
-                            .to_owned(),
-                    ));
-                }
-
-                if self.content_length % 512 != 0 {
-                    return Err(AzureError::InputParametersError(
-                        "PageBlob size must be aligned \
-                         to 512 bytes boundary"
-                            .to_owned(),
-                    ));
-                }
-            }
-            BlobType::AppendBlob => if r.is_some() {
-                return Err(AzureError::InputParametersError(
-                    "cannot use put_blob with \
-                     AppendBlob with a Read"
-                        .to_owned(),
-                ));
-            },
-        };
-
-        let mut uri = format!(
-            "https://{}.blob.core.windows.net/{}/{}",
-            c.account(),
-            self.container_name,
-            self.name
-        );
-
-        if let Some(ref timeout) = po.timeout {
-            uri = format!("{}&timeout={}", uri, timeout);
-        }
-
-        c.perform_request(
-            &uri,
-            Method::PUT,
-            move |ref mut request| {
-                if let Some(ref ct) = self.content_type {
-                    request.header_formatted(header::CONTENT_TYPE, ct);
-                }
-
-                if let Some(ref ce) = self.content_encoding {
-                    request.header_formatted(header::CONTENT_ENCODING, ce);
-                }
-
-                // TODO Content-Language
-
-                if let Some(ref content_md5) = self.content_md5 {
-                    request.header_formatted(CONTENT_MD5, content_md5);
-                };
-
-                request.header_formatted(BLOB_TYPE, self.blob_type);
-
-                if let Some(ref lease_id) = po.lease_id {
-                    request.header_formatted(LEASE_ID, lease_id);
-                }
-
-                // TODO x-ms-blob-content-disposition
-
-                if self.blob_type == BlobType::PageBlob {
-                    request.header_formatted(BLOB_CONTENT_LENGTH, self.content_length);
-                }
-            },
-            r,
-        )
-    }
-
-    pub fn put(&self, c: &Client, po: &PutOptions, r: Option<&[u8]>) -> impl Future<Item = (), Error = AzureError> {
-        ok(self.put_create_request(c, po, r)).and_then(|req| {
-            done(req)
-                .from_err()
-                .and_then(move |future_response| check_status_extract_body(future_response, StatusCode::CREATED))
-                .and_then(|_| ok(()))
-        })
-    }
-
     pub fn lease(&self, c: &Client, la: LeaseAction, lbo: &LeaseBlobOptions) -> impl Future<Item = LeaseId, Error = AzureError> {
         let mut uri = format!(
             "https://{}.blob.core.windows.net/{}/{}?comp=lease",
@@ -520,162 +416,6 @@ impl Blob {
                     .and_then(|s| s.parse::<Uuid>().ok())
                     .ok_or_else(|| AzureError::HeaderNotFound("x-ms-lease-id".to_owned()))
             })
-    }
-
-    pub fn put_page(
-        &self,
-        c: &Client,
-        range: &BA512Range,
-        ppo: &PutPageOptions,
-        content: &[u8],
-    ) -> impl Future<Item = (), Error = AzureError> {
-        let mut uri = format!(
-            "https://{}.blob.core.windows.net/{}/{}?comp=page",
-            c.account(),
-            self.container_name,
-            self.name
-        );
-
-        if let Some(ref timeout) = ppo.timeout {
-            uri = format!("{}&timeout={}", uri, timeout);
-        }
-
-        let req = c.perform_request(
-            &uri,
-            Method::PUT,
-            move |ref mut request| {
-                let range: Range = range.into();
-                request.header_formatted(HEADER_RANGE, range);
-                request.header_formatted(BLOB_CONTENT_LENGTH, content.len());
-                if let Some(lease_id) = ppo.lease_id {
-                    request.header_formatted(LEASE_ID, lease_id);
-                }
-
-                request.header_formatted(HEADER_PAGE_WRITE, PageWriteType::Update);
-            },
-            Some(content),
-        );
-
-        done(req)
-            .from_err()
-            .and_then(move |future_response| check_status_extract_body(future_response, StatusCode::CREATED))
-            .and_then(|_| ok(()))
-    }
-
-    fn put_block_create_request(
-        &self,
-        c: &Client,
-        encoded_block_id: &str,
-        pbo: &PutBlockOptions,
-        content: &[u8],
-    ) -> Result<hyper::client::ResponseFuture, AzureError> {
-        // parameter sanity check
-        match self.blob_type {
-            BlobType::BlockBlob => {}
-            BlobType::PageBlob => {
-                return Err(AzureError::InputParametersError(String::from(
-                    "cannot use put_block_blob with a page blob",
-                )));
-            }
-            BlobType::AppendBlob => {
-                return Err(AzureError::InputParametersError(String::from(
-                    "cannot use put_block_blob with an AppendBlob",
-                )));
-            }
-        };
-
-        let mut uri = format!(
-            "https://{}.blob.core.windows.net/{}/{}?comp=block&blockid={}",
-            c.account(),
-            self.container_name,
-            self.name,
-            encoded_block_id
-        );
-
-        if let Some(ref timeout) = pbo.timeout {
-            uri = format!("{}&timeout={}", uri, timeout);
-        }
-
-        c.perform_request(
-            &uri,
-            Method::PUT,
-            move |ref mut request| {
-                if let Some(ref ct) = self.content_type {
-                    request.header_formatted(header::CONTENT_TYPE, ct);
-                }
-
-                if let Some(ref ce) = self.content_encoding {
-                    request.header_formatted(header::CONTENT_ENCODING, ce);
-                }
-
-                // TODO Content-Language
-
-                if let Some(ref content_md5) = self.content_md5 {
-                    request.header_formatted(CONTENT_MD5, content_md5);
-                };
-
-                request.header_formatted(BLOB_TYPE, self.blob_type);
-
-                if let Some(ref lease_id) = pbo.lease_id {
-                    request.header_formatted(LEASE_ID, lease_id);
-                }
-
-                // TODO x-ms-blob-content-disposition
-
-                if self.blob_type == BlobType::PageBlob {
-                    request.header_formatted(BLOB_CONTENT_LENGTH, self.content_length);
-                }
-
-                if let Some(ref request_id) = pbo.request_id {
-                    request.header_formatted(CLIENT_REQUEST_ID, request_id.to_owned());
-                }
-            },
-            Some(content),
-        )
-    }
-
-    pub fn put_block(
-        &self,
-        c: &Client,
-        block_id: &str,
-        pbo: &PutBlockOptions,
-        content: &[u8],
-    ) -> impl Future<Item = String, Error = AzureError> {
-        let encoded_block_id = base64::encode(block_id.as_bytes());
-        ok(self.put_block_create_request(c, &encoded_block_id, pbo, content)).and_then(|req| {
-            done(req)
-                .from_err()
-                .and_then(move |future_response| check_status_extract_body(future_response, StatusCode::CREATED))
-                .and_then(|_| ok(encoded_block_id))
-        })
-    }
-
-    pub fn clear_page(&self, c: &Client, range: &BA512Range, lease_id: Option<&LeaseId>) -> impl Future<Item = (), Error = AzureError> {
-        let uri = format!(
-            "https://{}.blob.core.windows.net/{}/{}?comp=page",
-            c.account(),
-            self.container_name,
-            self.name
-        );
-        let req = c.perform_request(
-            &uri,
-            Method::PUT,
-            move |ref mut request| {
-                request.header_formatted(HEADER_RANGE, Range::from(range));
-                request.header_static(BLOB_CONTENT_LENGTH, "0");
-                if let Some(lease_id) = lease_id {
-                    request.header_formatted(LEASE_ID, lease_id);
-                }
-
-                request.header_formatted(HEADER_PAGE_WRITE, PageWriteType::Clear);
-            },
-            None,
-        );
-
-        done(req)
-            .from_err()
-            .and_then(move |future_response| check_status_extract_body(future_response, StatusCode::CREATED))
-            .and_then(|_| ok(()))
     }
 
     pub fn delete(

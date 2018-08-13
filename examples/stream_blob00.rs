@@ -4,13 +4,12 @@ extern crate futures;
 extern crate hyper;
 extern crate tokio_core;
 
-use azure_sdk_for_rust::core::lease::{LeaseState, LeaseStatus};
 use azure_sdk_for_rust::core::range::Range;
-use azure_sdk_for_rust::storage::blob::{Blob, BlobType, PUT_OPTIONS_DEFAULT};
+use azure_sdk_for_rust::prelude::*;
+use azure_sdk_for_rust::storage::blob::Blob;
 use azure_sdk_for_rust::storage::client::Client;
 use futures::future::ok;
 use futures::prelude::*;
-use std::collections::HashMap;
 use tokio_core::reactor::Core;
 
 // This example shows how to stream data from a blob. We will create a simple blob first, the we
@@ -39,42 +38,15 @@ fn code() -> Result<(), Box<std::error::Error>> {
 
     let string = "0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF";
 
-    let new_blob = Blob {
-        name: file_name.to_owned(),
-        container_name: container_name.to_owned(),
-        snapshot_time: None,
-        last_modified: Some(chrono::Utc::now()),
-        etag: None,
-        content_length: string.len() as u64,
-        content_type: Some("text/plain".to_owned()),
-        content_encoding: None,
-        content_language: None,
-        content_md5: None,
-        cache_control: None,
-        x_ms_blob_sequence_number: None,
-        blob_type: BlobType::BlockBlob,
-        lease_status: Some(LeaseStatus::Unlocked),
-        lease_state: LeaseState::Available,
-        lease_duration: None,
-        copy_id: None,
-        copy_status: None,
-        copy_source: None,
-        copy_progress: None,
-        copy_completion_time: None,
-        copy_status_description: None,
-        access_tier: String::from(""),
-        access_tier_change_time: None,
-        access_tier_inferred: None,
-        content_disposition: None,
-        creation_time: chrono::Utc::now(),
-        deleted_time: None,
-        incremental_copy: None,
-        metadata: HashMap::new(),
-        remaining_retention_days: None,
-        server_encrypted: false,
-    };
+    let fut = client
+        .put_block_blob()
+        .with_container_name(&container_name)
+        .with_blob_name(file_name)
+        .with_content_type("text/plain")
+        .with_body(string.as_ref())
+        .finalize();
 
-    let fut = new_blob.put(&client, &PUT_OPTIONS_DEFAULT, Some(string.as_ref())).map(|_| {
+    let fut = fut.map(|_| {
         println!("{}/{} blob created!", container_name, file_name);
     });
     reactor.run(fut)?;
