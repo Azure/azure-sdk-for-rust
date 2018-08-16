@@ -1,4 +1,5 @@
 use azure::storage::blob::{BlobBlockType, BlockWithSizeList};
+use base64;
 use std::borrow::Borrow;
 
 #[derive(Default, Debug, Clone, PartialEq)]
@@ -49,9 +50,9 @@ where
         s.push_str("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<BlockList>\n");
         for bl in &self.blocks {
             let node = match bl {
-                BlobBlockType::Committed(content) => format!("\t<Committed>{}</Committed>\n", content.borrow()),
-                BlobBlockType::Uncommitted(content) => format!("\t<Uncommitted>{}</Uncommitted>\n", content.borrow()),
-                BlobBlockType::Latest(content) => format!("\t<Latest>{}</Latest>\n", content.borrow()),
+                BlobBlockType::Committed(content) => format!("\t<Committed>{}</Committed>\n", base64::encode(content.borrow())),
+                BlobBlockType::Uncommitted(content) => format!("\t<Uncommitted>{}</Uncommitted>\n", base64::encode(content.borrow())),
+                BlobBlockType::Latest(content) => format!("\t<Latest>{}</Latest>\n", base64::encode(content.borrow())),
             };
 
             s.push_str(&node);

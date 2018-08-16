@@ -1,3 +1,5 @@
+mod put_block_list_response;
+pub use self::put_block_list_response::PutBlockListResponse;
 mod put_block_response;
 pub use self::put_block_response::PutBlockResponse;
 mod clear_page_response;

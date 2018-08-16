@@ -18,10 +18,12 @@ use base64::encode;
 pub mod modify_conditions;
 use self::modify_conditions::{IfMatchCondition, IfSinceCondition, SequenceNumberCondition};
 pub mod range;
+use azure::storage::blob::BlockList;
+use std::borrow::Borrow;
 use url::percent_encoding;
 pub mod headers;
 use self::headers::{
-    CONTENT_MD5, BLOB_ACCESS_TIER, BLOB_CONTENT_LENGTH, BLOB_SEQUENCE_NUMBER, CLIENT_REQUEST_ID, LEASE_BREAK_PERIOD, LEASE_DURATION,
+    BLOB_ACCESS_TIER, BLOB_CONTENT_LENGTH, BLOB_SEQUENCE_NUMBER, CLIENT_REQUEST_ID, CONTENT_MD5, LEASE_BREAK_PERIOD, LEASE_DURATION,
     LEASE_ID, PROPOSED_LEASE_ID, REQUEST_ID, REQUEST_SERVER_ENCRYPTED,
 };
 use hyper::header::{CACHE_CONTROL, CONTENT_ENCODING, CONTENT_LANGUAGE, CONTENT_LENGTH, CONTENT_TYPE, DATE, ETAG, LAST_MODIFIED, RANGE};
@@ -489,6 +491,25 @@ pub trait ContentLengthRequired {
     }
 }
 
+pub trait BlockListSupport<'a, T>
+where
+    T: Borrow<str>,
+{
+    type O;
+    fn with_block_list(self, &'a BlockList<T>) -> Self::O;
+}
+
+pub trait BlockListRequired<'a, T>
+where
+    T: Borrow<str> + 'a,
+{
+    fn block_list(&self) -> &'a BlockList<T>;
+
+    fn to_string(&self) -> String {
+        self.block_list().to_xml()
+    }
+}
+
 pub trait LeaseIdSupport<'a> {
     type O;
     fn with_lease_id(self, &'a LeaseId) -> Self::O;
@@ -531,10 +552,15 @@ pub trait ContentMD5Option<'a> {
 
     fn add_header(&self, builder: &mut Builder) {
         if let Some(content_md5) = self.content_md5() {
-            let s = encode(content_md5);
-            builder.header(CONTENT_MD5, &s as &str);
+            add_content_md5_header(content_md5, builder);
         }
     }
+}
+
+#[inline]
+pub(crate) fn add_content_md5_header<'a>(content_md5: &'a [u8], builder: &mut Builder) {
+    let s = encode(content_md5);
+    builder.header(CONTENT_MD5, &s as &str);
 }
 
 pub trait RangeSupport<'a> {
