@@ -10,6 +10,7 @@ extern crate md5;
 extern crate tokio_core;
 
 use azure_sdk_for_rust::prelude::*;
+use azure_sdk_for_rust::storage::blob::{BlobBlockType, BlockList};
 use futures::future::*;
 use std::error::Error;
 use tokio_core::reactor::Core;
@@ -63,6 +64,17 @@ fn code() -> Result<(), Box<Error>> {
         .with_block_id("satanasso")
         .finalize();
     core.run(future.map(|res| println!("{:?}", res)))?;
+
+    let mut block_list = BlockList::default();
+    block_list.blocks.push(BlobBlockType::Uncommitted("satanasso"));
+
+    let future = client
+        .put_block_list()
+        .with_container_name(&container)
+        .with_blob_name(&blob_name)
+        .with_block_list(&block_list)
+        .finalize();
+    core.run(future.map(|res| println!("PutBlockList == {:?}", res)))?;
 
     Ok(())
 }

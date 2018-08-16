@@ -4,6 +4,7 @@ use azure::core::No;
 use azure::storage::{blob, container};
 use hyper::{self, Method};
 use hyper_tls;
+use std::borrow::Borrow;
 
 // Can be variant for different cloud environment
 const SERVICE_SUFFIX_BLOB: &str = ".blob.core.windows.net";
@@ -18,6 +19,7 @@ pub trait Blob {
     fn update_page<'a>(&'a self) -> blob::requests::UpdatePageBuilder<'a, No, No, No, No>;
     fn clear_page<'a>(&'a self) -> blob::requests::ClearPageBuilder<'a, No, No, No>;
     fn put_block<'a>(&'a self) -> blob::requests::PutBlockBuilder<'a, No, No, No, No>;
+    fn put_block_list<'a, T: Borrow<str> + 'a>(&'a self) -> blob::requests::PutBlockListBuilder<'a, T, No, No, No>;
 }
 
 pub trait Container {
@@ -71,6 +73,10 @@ impl Blob for Client {
 
     fn put_block<'a>(&'a self) -> blob::requests::PutBlockBuilder<'a, No, No, No, No> {
         blob::requests::PutBlockBuilder::new(self)
+    }
+
+    fn put_block_list<'a, T: Borrow<str> + 'a>(&'a self) -> blob::requests::PutBlockListBuilder<'a, T, No, No, No> {
+        blob::requests::PutBlockListBuilder::new(self)
     }
 }
 
