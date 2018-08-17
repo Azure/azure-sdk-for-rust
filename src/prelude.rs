@@ -14,5 +14,6 @@ pub use azure::core::{
     SequenceNumberConditionSupport, SequenceNumberOption, SequenceNumberSupport, SnapshotOption, SnapshotSupport, StoredAccessPolicy,
     StoredAccessPolicyList, TimeoutOption, TimeoutSupport,
 };
+pub use azure::storage::container::PublicAccessSupport;
 
 pub use azure::storage::client::{Blob as BlobTrait, Client, Container as ContainerTrait};
