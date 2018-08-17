@@ -239,12 +239,6 @@ impl<'a> CreateBuilder<'a, Yes, Yes> {
             .from_err()
             .and_then(move |future_response| check_status_extract_body(future_response, StatusCode::CREATED).and_then(|_| ok(())))
     }
-
-    //pub fn execute() -> impl Future<Item = (), Error = AzureError> {
-    //    done(req).from_err().and_then(move |future_response| {
-    //        check_status_extract_body(future_response, StatusCode::CreateBuilderd).and_then(|_| ok(()))
-    //    })
-    //}
 }
 
 #[cfg(test)]
