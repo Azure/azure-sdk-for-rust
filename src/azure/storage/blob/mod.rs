@@ -86,7 +86,7 @@ pub struct Blob {
     pub content_disposition: Option<String>,
     pub x_ms_blob_sequence_number: Option<u64>,
     pub blob_type: BlobType,
-    pub access_tier: String,
+    pub access_tier: Option<String>,
     pub lease_status: Option<LeaseStatus>,
     pub lease_state: LeaseState,
     pub lease_duration: Option<LeaseDuration>,
@@ -124,7 +124,7 @@ impl Blob {
         let x_ms_blob_sequence_number = cast_optional::<u64>(elem, &["Properties", "x-ms-blob-sequence-number"])?;
 
         let blob_type = cast_must::<BlobType>(elem, &["Properties", "BlobType"])?;
-        let access_tier = cast_must::<String>(elem, &["Properties", "AccessTier"])?;
+        let access_tier = cast_optional::<String>(elem, &["Properties", "AccessTier"])?;
 
         let lease_status = cast_optional::<LeaseStatus>(elem, &["Properties", "LeaseStatus"])?;
         let lease_state = cast_must::<LeaseState>(elem, &["Properties", "LeaseState"])?;
@@ -140,13 +140,11 @@ impl Blob {
         let server_encrypted = cast_must::<bool>(elem, &["Properties", "ServerEncrypted"])?;
         let incremental_copy = cast_optional::<bool>(elem, &["Properties", "IncrementalCopy"])?;
 
-        // this seems to be either true or absent. We handle absent as false.
-        // This is undocumented and can be wrong/change.
+        // this seems to be either true or absent. We handle absent with None.
+        // Previously we returned false in case of absent value but that was
+        // misleading.
         // TOCHECK
-        let access_tier_inferred = match cast_optional::<bool>(elem, &["Properties", "AccessTierInferred"])? {
-            Some(value) => value,
-            None => false,
-        };
+        let access_tier_inferred = cast_optional::<bool>(elem, &["Properties", "AccessTierInferred"])?;
 
         let access_tier_change_time = cast_optional::<DateTime<Utc>>(elem, &["Properties", "AccessTierChangeTime"])?;
         let deleted_time = cast_optional::<DateTime<Utc>>(elem, &["Properties", "DeletedTime"])?;
@@ -205,7 +203,7 @@ impl Blob {
             copy_status_description,
             incremental_copy,
             server_encrypted,
-            access_tier_inferred: Some(access_tier_inferred),
+            access_tier_inferred: access_tier_inferred,
             access_tier_change_time,
             deleted_time,
             remaining_retention_days,
@@ -329,7 +327,7 @@ impl Blob {
             content_disposition,
             x_ms_blob_sequence_number,
             blob_type,
-            access_tier: "Unknown".to_owned(), // TODO: Maybe use Option?
+            access_tier: None,
             lease_status,
             lease_state,
             lease_duration,

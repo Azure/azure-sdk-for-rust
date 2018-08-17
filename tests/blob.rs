@@ -164,7 +164,7 @@ fn put_and_get_block_list() {
         copy_progress: None,
         copy_completion_time: None,
         copy_status_description: None,
-        access_tier: String::from(""),
+        access_tier: None,
         access_tier_change_time: None,
         access_tier_inferred: None,
         content_disposition: None,
