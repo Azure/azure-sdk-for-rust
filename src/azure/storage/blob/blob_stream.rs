@@ -61,7 +61,7 @@ impl<'a> Stream for BlobStream<'a> {
 
         let item_to_add = match self.future {
             None => {
-                println!("range == {:?}", range);
+                trace!("range == {:?}", range);
                 let mut f = self
                     .client
                     .get_blob()

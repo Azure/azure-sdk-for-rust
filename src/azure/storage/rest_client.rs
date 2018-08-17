@@ -25,11 +25,11 @@ pub const HEADER_DATE: &str = "x-ms-date"; //=> [String] }
 fn generate_authorization(h: &HeaderMap, u: &url::Url, method: Method, hmac_key: &str, service_type: ServiceType) -> String {
     let str_to_sign = string_to_sign(h, u, method, service_type);
 
-    // println!("\nstr_to_sign == {:?}\n", str_to_sign);
-    // println!("str_to_sign == {}", str_to_sign);
+    // debug!("\nstr_to_sign == {:?}\n", str_to_sign);
+    // debug!("str_to_sign == {}", str_to_sign);
 
     let auth = encode_str_to_sign(&str_to_sign, hmac_key);
-    // println!("auth == {:?}", auth);
+    // debug!("auth == {:?}", auth);
 
     format!("SharedKey {}:{}", get_account(u), auth)
 }
@@ -39,7 +39,7 @@ fn encode_str_to_sign(str_to_sign: &str, hmac_key: &str) -> String {
     let sig = hmac::sign(&key, str_to_sign.as_bytes());
 
     // let res = hmac.result();
-    // println!("{:?}", res.code());
+    // debug!("{:?}", res.code());
 
     base64::encode(sig.as_ref())
 }
@@ -141,7 +141,7 @@ fn canonicalize_header(h: &HeaderMap) -> String {
 fn get_account(u: &url::Url) -> String {
     match u.host().unwrap().clone() {
         url::Host::Domain(dm) => {
-            // println!("dom == {:?}", dm);
+            // debug!("dom == {:?}", dm);
 
             let first_dot = dm.find('.').unwrap();
             String::from(&dm[0..first_dot])
@@ -196,7 +196,7 @@ fn canonicalized_resource(u: &url::Url) -> String {
             // find correct parameter
             let ret = lexy_sort(&query_pairs, &qparam);
 
-            // println!("adding to can_res {:?}", ret);
+            // debug!("adding to can_res {:?}", ret);
 
             can_res = can_res + &qparam.to_lowercase() + ":";
 
@@ -245,7 +245,7 @@ where
     let url = url::Url::parse(uri)?;
 
     // for header in additional_headers.iter() {
-    //     println!("{:?}", header.value_string());
+    //     debug!("{:?}", header.value_string());
     //     h.set();
     // }
     let mut request = hyper::Request::builder();

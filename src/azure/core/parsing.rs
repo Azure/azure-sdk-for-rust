@@ -76,7 +76,7 @@ pub fn traverse<'a>(node: &'a Element, path: &[&str], ignore_empty_leaf: bool) -
         path,
         ignore_empty_leaf
     );
-    // println!("path.len() == {:?}", path.len());
+    // debug!("path.len() == {:?}", path.len());
 
     if path.is_empty() {
         let mut vec = Vec::new();
@@ -87,7 +87,7 @@ pub fn traverse<'a>(node: &'a Element, path: &[&str], ignore_empty_leaf: bool) -
     let mut curnode = node;
 
     for (x, item) in path.iter().enumerate() {
-        // println!("x == {}, path[x] == {}", x, path[x]);
+        // debug!("x == {}, path[x] == {}", x, path[x]);
 
         let vec = find_subnodes(curnode, item);
         if vec.is_empty() {
@@ -136,7 +136,7 @@ pub fn inner_text(node: &Element) -> Result<&str, TraversingError> {
 
     Ok("")
 
-    //println!("\n!!! node == {}", node);
+    //debug!("\n!!! node == {}", node);
     //Err(TraversingError::TextNotFound)
 }
 

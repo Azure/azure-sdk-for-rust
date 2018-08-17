@@ -26,7 +26,7 @@ mod get_block_list_response;
 pub use self::get_block_list_response::GetBlockListResponse;
 
 use azure::core::headers::{
-    CONTENT_MD5, BLOB_SEQUENCE_NUMBER, BLOB_TYPE, CLIENT_REQUEST_ID, COPY_COMPLETION_TIME, COPY_ID, COPY_PROGRESS, COPY_SOURCE,
+    BLOB_SEQUENCE_NUMBER, BLOB_TYPE, CLIENT_REQUEST_ID, CONTENT_MD5, COPY_COMPLETION_TIME, COPY_ID, COPY_PROGRESS, COPY_SOURCE,
     COPY_STATUS, COPY_STATUS_DESCRIPTION, CREATION_TIME, LEASE_ACTION, LEASE_BREAK_PERIOD, LEASE_DURATION, LEASE_ID, LEASE_STATE,
     LEASE_STATUS, PROPOSED_LEASE_ID, REQUEST_ID, SERVER_ENCRYPTED,
 };
@@ -219,7 +219,7 @@ impl Blob {
         snapshot_time: Option<DateTime<Utc>>,
         h: &header::HeaderMap,
     ) -> Result<Blob, AzureError> {
-        println!("\n{:?}", h);
+        trace!("\n{:?}", h);
 
         let creation_time = h
             .get(CREATION_TIME)
@@ -624,7 +624,7 @@ where
 #[inline]
 pub(crate) fn incomplete_vector_from_response(body: &str, container_name: &str) -> Result<IncompleteVector<Blob>, AzureError> {
     trace!("body = {}", body);
-    println!("body = {}", body);
+    trace!("body = {}", body);
 
     let elem: Element = body.parse()?;
 
@@ -638,7 +638,7 @@ pub(crate) fn incomplete_vector_from_response(body: &str, container_name: &str) 
 
     let mut v = Vec::new();
     for node_blob in traverse(&elem, &["Blobs", "Blob"], true)? {
-        //println!("{:?}", node_blob);
+        //trace!("{:?}", node_blob);
         v.push(Blob::parse(node_blob, container_name)?);
     }
 
