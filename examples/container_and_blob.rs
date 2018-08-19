@@ -10,7 +10,6 @@ extern crate md5;
 extern crate tokio_core;
 
 use azure_sdk_for_rust::prelude::*;
-use azure_sdk_for_rust::storage::blob::{BlobBlockType, BlockList};
 use azure_sdk_for_rust::storage::container::PublicAccess;
 use futures::future::*;
 use std::error::Error;

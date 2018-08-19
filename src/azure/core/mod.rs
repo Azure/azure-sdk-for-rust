@@ -18,7 +18,7 @@ use base64::encode;
 pub mod modify_conditions;
 use self::modify_conditions::{IfMatchCondition, IfSinceCondition, SequenceNumberCondition};
 pub mod range;
-use azure::storage::blob::BlockList;
+use azure::storage::blob::{BlockList, BlockListType};
 use std::borrow::Borrow;
 use url::percent_encoding;
 pub mod headers;
@@ -200,6 +200,19 @@ pub trait AccessTierOption<'a> {
         if let Some(access_tier) = self.access_tier() {
             builder.header(BLOB_ACCESS_TIER, access_tier);
         }
+    }
+}
+
+pub trait BlockListTypeSupport {
+    type O;
+    fn with_block_list_type(self, block_list_type: BlockListType) -> Self::O;
+}
+
+pub trait BlockListTypeRequired {
+    fn block_list_type(&self) -> BlockListType;
+
+    fn to_uri_parameter(&self) -> String {
+        format!("blocklisttype={}", self.block_list_type().to_str())
     }
 }
 
@@ -703,6 +716,14 @@ pub(crate) fn content_md5_from_headers(headers: &HeaderMap) -> Result<[u8; 16], 
     Ok(content_md5)
 }
 
+pub(crate) fn last_modified_from_headers_optional(headers: &HeaderMap) -> Result<Option<DateTime<Utc>>, AzureError> {
+    if headers.contains_key(LAST_MODIFIED) {
+        Ok(Some(last_modified_from_headers(headers)?))
+    } else {
+        Ok(None)
+    }
+}
+
 pub(crate) fn last_modified_from_headers(headers: &HeaderMap) -> Result<DateTime<Utc>, AzureError> {
     let last_modified = headers
         .get(LAST_MODIFIED)
@@ -725,6 +746,14 @@ pub(crate) fn date_from_headers(headers: &HeaderMap) -> Result<DateTime<Utc>, Az
 
     trace!("date == {:?}", date);
     Ok(date)
+}
+
+pub(crate) fn etag_from_headers_optional(headers: &HeaderMap) -> Result<Option<String>, AzureError> {
+    if headers.contains_key(ETAG) {
+        Ok(Some(etag_from_headers(headers)?))
+    } else {
+        Ok(None)
+    }
 }
 
 pub(crate) fn etag_from_headers(headers: &HeaderMap) -> Result<String, AzureError> {

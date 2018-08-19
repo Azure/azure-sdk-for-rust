@@ -1,5 +1,6 @@
 mod clear_page_builder;
 mod get_blob_builder;
+mod get_block_list_builder;
 mod list_blobs_builder;
 mod put_append_blob_builder;
 mod put_block_blob_builder;
@@ -9,6 +10,7 @@ mod put_page_blob_builder;
 mod update_page_builder;
 pub use self::clear_page_builder::ClearPageBuilder;
 pub use self::get_blob_builder::GetBlobBuilder;
+pub use self::get_block_list_builder::GetBlockListBuilder;
 pub use self::list_blobs_builder::ListBlobBuilder;
 pub use self::put_append_blob_builder::PutAppendBlobBuilder;
 pub use self::put_block_blob_builder::PutBlockBlobBuilder;
