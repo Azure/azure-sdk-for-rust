@@ -213,18 +213,24 @@ If you want to contribute please do! No formality required! :wink:. Please note 
 
 #### Storage blobs
 
-| Method          | URL                                                                                                                                                  | Builder pattern
-| ----            | ---                                                                                                                                                  | ---
-| List blobs      | [https://msdn.microsoft.com/en-us/library/azure/dd135734.aspx](https://msdn.microsoft.com/en-us/library/azure/dd135734.aspx)                         | yes
-| Get blob        | [https://msdn.microsoft.com/en-us/library/azure/dd179440.aspx](https://msdn.microsoft.com/en-us/library/azure/dd179440.aspx)                         | yes
-| Put blob        | [https://msdn.microsoft.com/en-us/library/azure/dd179451.aspx](https://msdn.microsoft.com/en-us/library/azure/dd179451.aspx)                         | yes
-| Put blob page   | [https://msdn.microsoft.com/en-us/library/azure/dd179451.aspx](https://msdn.microsoft.com/en-us/library/azure/dd179451.aspx)                         | yes (as `update_page`)
-| Clear blob page | [https://msdn.microsoft.com/en-us/library/azure/dd179451.aspx](https://msdn.microsoft.com/en-us/library/azure/dd179451.aspx)                         | yes (as `clear_page`)
-| Put block       | [https://msdn.microsoft.com/en-us/library/azure/dd135726.aspx](https://msdn.microsoft.com/en-us/library/azure/dd135726.aspx)                         | yes
-| Get block list  | [https://docs.microsoft.com/en-us/rest/api/storageservices/get-block-list](https://docs.microsoft.com/en-us/rest/api/storageservices/get-block-list) | yes
-| Put block list  | [https://docs.microsoft.com/en-us/rest/api/storageservices/put-block-list](https://docs.microsoft.com/en-us/rest/api/storageservices/put-block-list) | yes
-| Lease blob      | [https://msdn.microsoft.com/library/azure/ee691972.aspx](https://msdn.microsoft.com/library/azure/ee691972.aspx)                                     |
-| Delete blob     | [https://docs.microsoft.com/en-us/rest/api/storageservices/delete-blob](https://docs.microsoft.com/en-us/rest/api/storageservices/delete-blob)       | 
+| Method             | URL                                                                                                                                                  | Builder pattern
+| ----               | ---                                                                                                                                                  | ---
+| List blobs         | [https://docs.microsoft.com/en-us/rest/api/storageservices/list-blobs](https://docs.microsoft.com/en-us/rest/api/storageservices/list-blobs)         | yes
+| Get blob           | [https://docs.microsoft.com/en-us/rest/api/storageservices/get-blob](https://docs.microsoft.com/en-us/rest/api/storageservices/get-blob)             | yes
+| Put block blob     | [https://docs.microsoft.com/en-us/rest/api/storageservices/put-blob](https://docs.microsoft.com/en-us/rest/api/storageservices/put-blob)             | yes
+| Put page blob      | [https://docs.microsoft.com/en-us/rest/api/storageservices/put-blob](https://docs.microsoft.com/en-us/rest/api/storageservices/put-blob)             | yes
+| Put append blob    | [https://docs.microsoft.com/en-us/rest/api/storageservices/put-blob](https://docs.microsoft.com/en-us/rest/api/storageservices/put-blob)             | yes
+| Put blob page      | [https://docs.microsoft.com/en-us/rest/api/storageservices/put-page](https://docs.microsoft.com/en-us/rest/api/storageservices/put-page)             | yes (as `update_page`)
+| Clear blob page    | [https://docs.microsoft.com/en-us/rest/api/storageservices/put-page](https://docs.microsoft.com/en-us/rest/api/storageservices/put-page)             | yes (as `clear_page`)
+| Put block          | [https://docs.microsoft.com/en-us/rest/api/storageservices/put-block](https://docs.microsoft.com/en-us/rest/api/storageservices/put-block)           | yes
+| Get block list     | [https://docs.microsoft.com/en-us/rest/api/storageservices/get-block-list](https://docs.microsoft.com/en-us/rest/api/storageservices/get-block-list) | yes
+| Put block list     | [https://docs.microsoft.com/en-us/rest/api/storageservices/put-block-list](https://docs.microsoft.com/en-us/rest/api/storageservices/put-block-list) | yes
+| Acquire blob lease | [https://docs.microsoft.com/en-us/rest/api/storageservices/lease-blob](https://docs.microsoft.com/en-us/rest/api/storageservices/lease-blob)         |
+| Renew blob lease   | [https://docs.microsoft.com/en-us/rest/api/storageservices/lease-blob](https://docs.microsoft.com/en-us/rest/api/storageservices/lease-blob)         |
+| Change blob lease  | [https://docs.microsoft.com/en-us/rest/api/storageservices/lease-blob](https://docs.microsoft.com/en-us/rest/api/storageservices/lease-blob)         |
+| Release blob lease | [https://docs.microsoft.com/en-us/rest/api/storageservices/lease-blob](https://docs.microsoft.com/en-us/rest/api/storageservices/lease-blob)         |
+| Break blob lease   | [https://docs.microsoft.com/en-us/rest/api/storageservices/lease-blob](https://docs.microsoft.com/en-us/rest/api/storageservices/lease-blob)         |
+| Delete blob        | [https://docs.microsoft.com/en-us/rest/api/storageservices/delete-blob](https://docs.microsoft.com/en-us/rest/api/storageservices/delete-blob)       |
 
 #### Event Hubs
 
