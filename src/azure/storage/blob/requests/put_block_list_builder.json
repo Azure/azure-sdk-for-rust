@@ -1,7 +1,7 @@
 {
 	"name": "PutBlockListBuilder",
 	"extra_types": [ "'a", "T" ],
-	"extra_wheres": ["T: Borrow<str> + 'a"],
+	"extra_wheres": ["T: Borrow<[u8]> + 'a"],
 	"inline": true,
 	"constructor_fields": [
 		{

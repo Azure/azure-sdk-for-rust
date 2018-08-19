@@ -22,7 +22,7 @@ use azure_sdk_for_rust::core::{
 };
 use azure_sdk_for_rust::prelude::*;
 use azure_sdk_for_rust::storage::{
-    blob::{get_block_list, put_block_list, Blob, BlobType, BlockListType},
+    blob::{get_block_list, Blob, BlobType, BlockListType},
     client::Client,
     container::{Container, PublicAccess, PublicAccessSupport},
 };
@@ -217,14 +217,13 @@ fn put_and_get_block_list() {
     let received_block_list = core.run(future).unwrap();
 
     // this has to be migrated to the new builder pattern
-    //let future = put_block_list(
-    //    &client,
-    //    &(&container_name as &str, name),
-    //    None,
-    //    None,
-    //    &received_block_list.block_list.into(),
-    //);
-    //core.run(future).unwrap();
+    let future = client
+        .put_block_list()
+        .with_container_name(&container_name)
+        .with_blob_name(name)
+        .with_block_list(&received_block_list.block_list.into())
+        .finalize();
+    core.run(future).unwrap();
 
     let future = Blob::delete(&client, &container.name, &name, None).map(|_| println!("Blob deleted!"));
     core.run(future).unwrap();

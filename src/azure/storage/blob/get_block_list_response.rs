@@ -4,7 +4,7 @@ use chrono::{DateTime, FixedOffset};
 
 #[derive(Debug, Clone)]
 pub struct GetBlockListResponse {
-    pub block_list: BlockWithSizeList<String>,
+    pub block_list: BlockWithSizeList<Vec<u8>>,
     pub last_modified: Option<DateTime<FixedOffset>>,
     pub etag: Option<String>,
     pub content_type: String,

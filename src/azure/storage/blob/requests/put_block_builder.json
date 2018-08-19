@@ -37,7 +37,7 @@
 		},
 		{
 			"name": "block_id",
-			"field_type": "&'a str",
+			"field_type": "&'a [u8]",
 			"builder_type": "BlockIdSet",
 			"optional": false,
 			"trait_get": "BlockIdRequired<'a>",

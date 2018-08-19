@@ -11,6 +11,8 @@ use futures::future::done;
 use futures::prelude::*;
 use hyper::{Method, StatusCode};
 use std::marker::PhantomData;
+
+#[derive(Debug, Clone)]
 pub struct PutBlockBuilder<'a, ContainerNameSet, BlobNameSet, BodySet, BlockIdSet>
 where
     ContainerNameSet: ToAssign,
@@ -26,7 +28,7 @@ where
     container_name: Option<&'a str>,
     blob_name: Option<&'a str>,
     body: Option<&'a [u8]>,
-    block_id: Option<&'a str>,
+    block_id: Option<&'a [u8]>,
     timeout: Option<u64>,
     content_md5: Option<&'a [u8]>,
     lease_id: Option<&'a LeaseId>,
@@ -34,7 +36,6 @@ where
 }
 
 impl<'a> PutBlockBuilder<'a, No, No, No, No> {
-    #[inline]
     pub(crate) fn new(client: &'a Client) -> PutBlockBuilder<'a, No, No, No, No> {
         PutBlockBuilder {
             client,
@@ -62,7 +63,6 @@ where
     BodySet: ToAssign,
     BlockIdSet: ToAssign,
 {
-    #[inline]
     fn client(&self) -> &'a Client {
         self.client
     }
@@ -74,7 +74,6 @@ where
     BodySet: ToAssign,
     BlockIdSet: ToAssign,
 {
-    #[inline]
     fn container_name(&self) -> &'a str {
         self.container_name.unwrap()
     }
@@ -86,7 +85,6 @@ where
     BodySet: ToAssign,
     BlockIdSet: ToAssign,
 {
-    #[inline]
     fn blob_name(&self) -> &'a str {
         self.blob_name.unwrap()
     }
@@ -98,7 +96,6 @@ where
     BlobNameSet: ToAssign,
     BlockIdSet: ToAssign,
 {
-    #[inline]
     fn body(&self) -> &'a [u8] {
         self.body.unwrap()
     }
@@ -110,8 +107,7 @@ where
     BlobNameSet: ToAssign,
     BodySet: ToAssign,
 {
-    #[inline]
-    fn block_id(&self) -> &'a str {
+    fn block_id(&self) -> &'a [u8] {
         self.block_id.unwrap()
     }
 }
@@ -124,7 +120,6 @@ where
     BodySet: ToAssign,
     BlockIdSet: ToAssign,
 {
-    #[inline]
     fn timeout(&self) -> Option<u64> {
         self.timeout
     }
@@ -138,7 +133,6 @@ where
     BodySet: ToAssign,
     BlockIdSet: ToAssign,
 {
-    #[inline]
     fn content_md5(&self) -> Option<&'a [u8]> {
         self.content_md5
     }
@@ -152,7 +146,6 @@ where
     BodySet: ToAssign,
     BlockIdSet: ToAssign,
 {
-    #[inline]
     fn lease_id(&self) -> Option<&'a LeaseId> {
         self.lease_id
     }
@@ -166,7 +159,6 @@ where
     BodySet: ToAssign,
     BlockIdSet: ToAssign,
 {
-    #[inline]
     fn client_request_id(&self) -> Option<&'a str> {
         self.client_request_id
     }
@@ -182,7 +174,6 @@ where
 {
     type O = PutBlockBuilder<'a, Yes, BlobNameSet, BodySet, BlockIdSet>;
 
-    #[inline]
     fn with_container_name(self, container_name: &'a str) -> Self::O {
         PutBlockBuilder {
             client: self.client,
@@ -212,7 +203,6 @@ where
 {
     type O = PutBlockBuilder<'a, ContainerNameSet, Yes, BodySet, BlockIdSet>;
 
-    #[inline]
     fn with_blob_name(self, blob_name: &'a str) -> Self::O {
         PutBlockBuilder {
             client: self.client,
@@ -242,7 +232,6 @@ where
 {
     type O = PutBlockBuilder<'a, ContainerNameSet, BlobNameSet, Yes, BlockIdSet>;
 
-    #[inline]
     fn with_body(self, body: &'a [u8]) -> Self::O {
         PutBlockBuilder {
             client: self.client,
@@ -272,8 +261,7 @@ where
 {
     type O = PutBlockBuilder<'a, ContainerNameSet, BlobNameSet, BodySet, Yes>;
 
-    #[inline]
-    fn with_block_id(self, block_id: &'a str) -> Self::O {
+    fn with_block_id(self, block_id: &'a [u8]) -> Self::O {
         PutBlockBuilder {
             client: self.client,
             p_container_name: PhantomData {},
@@ -302,7 +290,6 @@ where
 {
     type O = PutBlockBuilder<'a, ContainerNameSet, BlobNameSet, BodySet, BlockIdSet>;
 
-    #[inline]
     fn with_timeout(self, timeout: u64) -> Self::O {
         PutBlockBuilder {
             client: self.client,
@@ -332,7 +319,6 @@ where
 {
     type O = PutBlockBuilder<'a, ContainerNameSet, BlobNameSet, BodySet, BlockIdSet>;
 
-    #[inline]
     fn with_content_md5(self, content_md5: &'a [u8]) -> Self::O {
         PutBlockBuilder {
             client: self.client,
@@ -362,7 +348,6 @@ where
 {
     type O = PutBlockBuilder<'a, ContainerNameSet, BlobNameSet, BodySet, BlockIdSet>;
 
-    #[inline]
     fn with_lease_id(self, lease_id: &'a LeaseId) -> Self::O {
         PutBlockBuilder {
             client: self.client,
@@ -392,7 +377,6 @@ where
 {
     type O = PutBlockBuilder<'a, ContainerNameSet, BlobNameSet, BodySet, BlockIdSet>;
 
-    #[inline]
     fn with_client_request_id(self, client_request_id: &'a str) -> Self::O {
         PutBlockBuilder {
             client: self.client,

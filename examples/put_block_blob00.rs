@@ -10,6 +10,7 @@ extern crate md5;
 extern crate tokio_core;
 
 use azure_sdk_for_rust::prelude::*;
+use azure_sdk_for_rust::storage::blob::{get_block_list, BlockListType};
 use azure_sdk_for_rust::storage::blob::{BlobBlockType, BlockList};
 use futures::future::*;
 use std::error::Error;
@@ -56,23 +57,48 @@ fn code() -> Result<(), Box<Error>> {
         .finalize();
     core.run(future.map(|res| println!("{:?}", res)))?;
 
+    let mut block_list = BlockList::default();
+    block_list.blocks.push(BlobBlockType::Uncommitted(b"satanasso" as &[u8]));
+    block_list.blocks.push(BlobBlockType::Uncommitted(b"pollastro" as &[u8]));
+
     let future = client
         .put_block()
         .with_container_name(&container)
         .with_blob_name(&blob_name)
         .with_body(&data[..])
-        .with_block_id("satanasso")
+        .with_block_id(b"satanasso" as &[u8])
         .finalize();
     core.run(future.map(|res| println!("{:?}", res)))?;
 
-    let mut block_list = BlockList::default();
-    block_list.blocks.push(BlobBlockType::Uncommitted("satanasso"));
+    let future = client
+        .put_block()
+        .with_container_name(&container)
+        .with_blob_name(&blob_name)
+        .with_body(&data[..])
+        .with_block_id(b"pollastro" as &[u8])
+        .finalize();
+    core.run(future.map(|res| println!("{:?}", res)))?;
+
+    //    let container_name = container.name.clone();
+    let future = get_block_list(
+        &client,
+        &(&container as &str, &blob_name as &str),
+        &BlockListType::All,
+        None,
+        None,
+        None,
+        None,
+    );
+    let ret = core.run(future)?;
+
+    let bl = ret.block_list.into();
+    println!("bl == {:?}", bl);
 
     let future = client
         .put_block_list()
         .with_container_name(&container)
         .with_blob_name(&blob_name)
-        .with_block_list(&block_list)
+        .with_block_list(&bl)
         .finalize();
     core.run(future.map(|res| println!("PutBlockList == {:?}", res)))?;
 
