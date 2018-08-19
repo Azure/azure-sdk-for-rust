@@ -11,6 +11,8 @@ use futures::future::done;
 use futures::prelude::*;
 use hyper::{Method, StatusCode};
 use std::marker::PhantomData;
+
+#[derive(Debug, Clone)]
 pub struct PutBlockBuilder<'a, ContainerNameSet, BlobNameSet, BodySet, BlockIdSet>
 where
     ContainerNameSet: ToAssign,
@@ -26,7 +28,7 @@ where
     container_name: Option<&'a str>,
     blob_name: Option<&'a str>,
     body: Option<&'a [u8]>,
-    block_id: Option<&'a str>,
+    block_id: Option<&'a [u8]>,
     timeout: Option<u64>,
     content_md5: Option<&'a [u8]>,
     lease_id: Option<&'a LeaseId>,
@@ -111,7 +113,7 @@ where
     BodySet: ToAssign,
 {
     #[inline]
-    fn block_id(&self) -> &'a str {
+    fn block_id(&self) -> &'a [u8] {
         self.block_id.unwrap()
     }
 }
@@ -273,7 +275,7 @@ where
     type O = PutBlockBuilder<'a, ContainerNameSet, BlobNameSet, BodySet, Yes>;
 
     #[inline]
-    fn with_block_id(self, block_id: &'a str) -> Self::O {
+    fn with_block_id(self, block_id: &'a [u8]) -> Self::O {
         PutBlockBuilder {
             client: self.client,
             p_container_name: PhantomData {},
@@ -422,6 +424,7 @@ where
 {}
 
 impl<'a> PutBlockBuilder<'a, Yes, Yes, Yes, Yes> {
+    #[inline]
     pub fn finalize(self) -> impl Future<Item = PutBlockResponse, Error = AzureError> {
         let mut uri = format!(
             "https://{}.blob.core.windows.net/{}/{}?comp=block",

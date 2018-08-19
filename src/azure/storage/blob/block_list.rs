@@ -5,22 +5,22 @@ use std::borrow::Borrow;
 #[derive(Default, Debug, Clone, PartialEq)]
 pub struct BlockList<T>
 where
-    T: Borrow<str>,
+    T: Borrow<[u8]>,
 {
     pub blocks: Vec<BlobBlockType<T>>,
 }
 
-impl<'a> BlockList<&'a str> {
-    pub fn to_owned(&self) -> BlockList<String> {
-        let mut bl: BlockList<String> = BlockList {
+impl<'a> BlockList<&'a [u8]> {
+    pub fn to_owned(&self) -> BlockList<Vec<u8>> {
+        let mut bl: BlockList<Vec<u8>> = BlockList {
             blocks: Vec::with_capacity(self.blocks.len()),
         };
 
         for entry in &self.blocks {
             bl.blocks.push(match entry {
-                BlobBlockType::Committed(id) => BlobBlockType::Committed(id.to_string()),
-                BlobBlockType::Uncommitted(id) => BlobBlockType::Uncommitted(id.to_string()),
-                BlobBlockType::Latest(id) => BlobBlockType::Latest(id.to_string()),
+                BlobBlockType::Committed(id) => BlobBlockType::Committed(id.to_vec()),
+                BlobBlockType::Uncommitted(id) => BlobBlockType::Uncommitted(id.to_vec()),
+                BlobBlockType::Latest(id) => BlobBlockType::Latest(id.to_vec()),
             });
         }
 
@@ -30,7 +30,7 @@ impl<'a> BlockList<&'a str> {
 
 impl<T> From<BlockWithSizeList<T>> for BlockList<T>
 where
-    T: Borrow<str> + Default,
+    T: Borrow<[u8]> + Default,
 {
     fn from(b: BlockWithSizeList<T>) -> BlockList<T> {
         let mut bl = BlockList::default();
@@ -43,7 +43,7 @@ where
 
 impl<T> BlockList<T>
 where
-    T: Borrow<str>,
+    T: Borrow<[u8]>,
 {
     pub fn to_xml(&self) -> String {
         let mut s = String::new();
@@ -70,10 +70,10 @@ mod test {
     #[test]
     fn to_xml() {
         let mut blocks = BlockList { blocks: Vec::new() };
-        blocks.blocks.push(BlobBlockType::Committed("numero1"));
-        blocks.blocks.push(BlobBlockType::Uncommitted("numero2"));
-        blocks.blocks.push(BlobBlockType::Uncommitted("numero3"));
-        blocks.blocks.push(BlobBlockType::Latest("numero4"));
+        blocks.blocks.push(BlobBlockType::Committed(Vec::from(b"numero1" as &[u8])));
+        blocks.blocks.push(BlobBlockType::Uncommitted(Vec::from(b"numero2" as &[u8])));
+        blocks.blocks.push(BlobBlockType::Uncommitted(Vec::from(b"numero3" as &[u8])));
+        blocks.blocks.push(BlobBlockType::Latest(Vec::from(b"numero4" as &[u8])));
 
         let _retu: &str = &blocks.to_xml();
 

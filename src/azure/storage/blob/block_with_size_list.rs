@@ -1,6 +1,8 @@
+use azure::core::errors::AzureError;
 use azure::storage::blob::BlobBlockType;
 use azure::storage::blob::BlobBlockWithSize;
-use serde_xml_rs::{deserialize, Error};
+use base64;
+use serde_xml_rs::deserialize;
 use std::borrow::Borrow;
 
 #[derive(Debug, Deserialize)]
@@ -40,13 +42,13 @@ struct BlockList {
 #[derive(Default, Debug, Clone, PartialEq)]
 pub struct BlockWithSizeList<T>
 where
-    T: Borrow<str>,
+    T: Borrow<[u8]>,
 {
     pub blocks: Vec<BlobBlockWithSize<T>>,
 }
 
-impl BlockWithSizeList<String> {
-    pub fn try_from(xml: &str) -> Result<BlockWithSizeList<String>, Error> {
+impl BlockWithSizeList<Vec<u8>> {
+    pub fn try_from(xml: &str) -> Result<BlockWithSizeList<Vec<u8>>, AzureError> {
         let bl: BlockList = deserialize(xml.as_bytes())?;
         debug!("bl == {:?}", bl);
 
@@ -55,7 +57,7 @@ impl BlockWithSizeList<String> {
         if let Some(b) = bl.committed_blocks.block {
             for b_val in b {
                 lbs.blocks.push(BlobBlockWithSize {
-                    block_list_type: BlobBlockType::Committed(b_val.name.value),
+                    block_list_type: BlobBlockType::Committed(base64::decode(&b_val.name.value)?.to_owned()),
                     size_in_bytes: b_val.size.value,
                 });
             }
@@ -64,7 +66,7 @@ impl BlockWithSizeList<String> {
         if let Some(b) = bl.uncommitted_blocks.block {
             for b_val in b {
                 lbs.blocks.push(BlobBlockWithSize {
-                    block_list_type: BlobBlockType::Uncommitted(b_val.name.value),
+                    block_list_type: BlobBlockType::Uncommitted(base64::decode(&b_val.name.value)?.to_owned()),
                     size_in_bytes: b_val.size.value,
                 });
             }
@@ -84,13 +86,13 @@ mod test {
             <BlockList>  
               <CommittedBlocks>  
                    <Block>  
-                       <Name>base64-encoded-block-id</Name>  
+                       <Name>YmFzZTY0LWVuY29kZWQtYmxvY2staWQ=</Name>  
                        <Size>200</Size>  
                     </Block>  
                </CommittedBlocks>  
                <UncommittedBlocks>  
                     <Block>  
-                        <Name>base64-encoded-block-id-number2</Name>  
+                        <Name>YmFzZTY0LWVuY29kZWQtYmxvY2staWQtbnVtYmVyMg==</Name>  
                         <Size>4096</Size>  
                     </Block>  
                </UncommittedBlocks>  
@@ -101,8 +103,8 @@ mod test {
         assert!(bl.blocks[0].size_in_bytes == 200);
         assert!(bl.blocks[1].size_in_bytes == 4096);
 
-        assert!(bl.blocks[0].block_list_type == BlobBlockType::Committed(String::from("base64-encoded-block-id")));
-        let b2 = BlobBlockType::Uncommitted(String::from("base64-encoded-block-id-number2"));
+        assert!(bl.blocks[0].block_list_type == BlobBlockType::Committed(Vec::from(b"base64-encoded-block-id" as &[u8])));
+        let b2 = BlobBlockType::Uncommitted(Vec::from(b"base64-encoded-block-id-number2" as &[u8]));
         assert!(
             bl.blocks[1].block_list_type == b2,
             "bl.blocks[1].block_list_type == {:?}, b2 == {:?}",

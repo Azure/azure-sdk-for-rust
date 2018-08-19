@@ -19,7 +19,7 @@ pub trait Blob {
     fn update_page<'a>(&'a self) -> blob::requests::UpdatePageBuilder<'a, No, No, No, No>;
     fn clear_page<'a>(&'a self) -> blob::requests::ClearPageBuilder<'a, No, No, No>;
     fn put_block<'a>(&'a self) -> blob::requests::PutBlockBuilder<'a, No, No, No, No>;
-    fn put_block_list<'a, T: Borrow<str> + 'a>(&'a self) -> blob::requests::PutBlockListBuilder<'a, T, No, No, No>;
+    fn put_block_list<'a, T: Borrow<[u8]> + 'a>(&'a self) -> blob::requests::PutBlockListBuilder<'a, T, No, No, No>;
 }
 
 pub trait Container {
@@ -75,7 +75,7 @@ impl Blob for Client {
         blob::requests::PutBlockBuilder::new(self)
     }
 
-    fn put_block_list<'a, T: Borrow<str> + 'a>(&'a self) -> blob::requests::PutBlockListBuilder<'a, T, No, No, No> {
+    fn put_block_list<'a, T: Borrow<[u8]> + 'a>(&'a self) -> blob::requests::PutBlockListBuilder<'a, T, No, No, No> {
         blob::requests::PutBlockListBuilder::new(self)
     }
 }

@@ -24,7 +24,7 @@ where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     BlockListSet: ToAssign,
-    T: Borrow<str> + 'a,
+    T: Borrow<[u8]> + 'a,
 {
     client: &'a Client,
     p_container_name: PhantomData<ContainerNameSet>,
@@ -46,7 +46,7 @@ where
 
 impl<'a, T> PutBlockListBuilder<'a, T, No, No, No>
 where
-    T: Borrow<str> + 'a,
+    T: Borrow<[u8]> + 'a,
 {
     #[inline]
     pub(crate) fn new(client: &'a Client) -> PutBlockListBuilder<'a, T, No, No, No> {
@@ -77,7 +77,7 @@ where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     BlockListSet: ToAssign,
-    T: Borrow<str> + 'a,
+    T: Borrow<[u8]> + 'a,
 {
     #[inline]
     fn client(&self) -> &'a Client {
@@ -89,7 +89,7 @@ impl<'a, T, BlobNameSet, BlockListSet> ContainerNameRequired<'a> for PutBlockLis
 where
     BlobNameSet: ToAssign,
     BlockListSet: ToAssign,
-    T: Borrow<str> + 'a,
+    T: Borrow<[u8]> + 'a,
 {
     #[inline]
     fn container_name(&self) -> &'a str {
@@ -101,7 +101,7 @@ impl<'a, T, ContainerNameSet, BlockListSet> BlobNameRequired<'a> for PutBlockLis
 where
     ContainerNameSet: ToAssign,
     BlockListSet: ToAssign,
-    T: Borrow<str> + 'a,
+    T: Borrow<[u8]> + 'a,
 {
     #[inline]
     fn blob_name(&self) -> &'a str {
@@ -113,7 +113,7 @@ impl<'a, T, ContainerNameSet, BlobNameSet> BlockListRequired<'a, T> for PutBlock
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
-    T: Borrow<str> + 'a,
+    T: Borrow<[u8]> + 'a,
 {
     #[inline]
     fn block_list(&self) -> &'a BlockList<T> {
@@ -127,7 +127,7 @@ where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     BlockListSet: ToAssign,
-    T: Borrow<str> + 'a,
+    T: Borrow<[u8]> + 'a,
 {
     #[inline]
     fn timeout(&self) -> Option<u64> {
@@ -141,7 +141,7 @@ where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     BlockListSet: ToAssign,
-    T: Borrow<str> + 'a,
+    T: Borrow<[u8]> + 'a,
 {
     #[inline]
     fn content_type(&self) -> Option<&'a str> {
@@ -155,7 +155,7 @@ where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     BlockListSet: ToAssign,
-    T: Borrow<str> + 'a,
+    T: Borrow<[u8]> + 'a,
 {
     #[inline]
     fn content_encoding(&self) -> Option<&'a str> {
@@ -169,7 +169,7 @@ where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     BlockListSet: ToAssign,
-    T: Borrow<str> + 'a,
+    T: Borrow<[u8]> + 'a,
 {
     #[inline]
     fn content_language(&self) -> Option<&'a str> {
@@ -183,7 +183,7 @@ where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     BlockListSet: ToAssign,
-    T: Borrow<str> + 'a,
+    T: Borrow<[u8]> + 'a,
 {
     #[inline]
     fn cache_control(&self) -> Option<&'a str> {
@@ -197,7 +197,7 @@ where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     BlockListSet: ToAssign,
-    T: Borrow<str> + 'a,
+    T: Borrow<[u8]> + 'a,
 {
     #[inline]
     fn content_disposition(&self) -> Option<&'a str> {
@@ -211,7 +211,7 @@ where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     BlockListSet: ToAssign,
-    T: Borrow<str> + 'a,
+    T: Borrow<[u8]> + 'a,
 {
     #[inline]
     fn metadata(&self) -> Option<&'a HashMap<&'a str, &'a str>> {
@@ -225,7 +225,7 @@ where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     BlockListSet: ToAssign,
-    T: Borrow<str> + 'a,
+    T: Borrow<[u8]> + 'a,
 {
     #[inline]
     fn lease_id(&self) -> Option<&'a LeaseId> {
@@ -239,7 +239,7 @@ where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     BlockListSet: ToAssign,
-    T: Borrow<str> + 'a,
+    T: Borrow<[u8]> + 'a,
 {
     #[inline]
     fn client_request_id(&self) -> Option<&'a str> {
@@ -253,7 +253,7 @@ where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     BlockListSet: ToAssign,
-    T: Borrow<str> + 'a,
+    T: Borrow<[u8]> + 'a,
 {
     type O = PutBlockListBuilder<'a, T, Yes, BlobNameSet, BlockListSet>;
 
@@ -286,7 +286,7 @@ where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     BlockListSet: ToAssign,
-    T: Borrow<str> + 'a,
+    T: Borrow<[u8]> + 'a,
 {
     type O = PutBlockListBuilder<'a, T, ContainerNameSet, Yes, BlockListSet>;
 
@@ -319,7 +319,7 @@ where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     BlockListSet: ToAssign,
-    T: Borrow<str> + 'a,
+    T: Borrow<[u8]> + 'a,
 {
     type O = PutBlockListBuilder<'a, T, ContainerNameSet, BlobNameSet, Yes>;
 
@@ -352,7 +352,7 @@ where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     BlockListSet: ToAssign,
-    T: Borrow<str> + 'a,
+    T: Borrow<[u8]> + 'a,
 {
     type O = PutBlockListBuilder<'a, T, ContainerNameSet, BlobNameSet, BlockListSet>;
 
@@ -385,7 +385,7 @@ where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     BlockListSet: ToAssign,
-    T: Borrow<str> + 'a,
+    T: Borrow<[u8]> + 'a,
 {
     type O = PutBlockListBuilder<'a, T, ContainerNameSet, BlobNameSet, BlockListSet>;
 
@@ -418,7 +418,7 @@ where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     BlockListSet: ToAssign,
-    T: Borrow<str> + 'a,
+    T: Borrow<[u8]> + 'a,
 {
     type O = PutBlockListBuilder<'a, T, ContainerNameSet, BlobNameSet, BlockListSet>;
 
@@ -451,7 +451,7 @@ where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     BlockListSet: ToAssign,
-    T: Borrow<str> + 'a,
+    T: Borrow<[u8]> + 'a,
 {
     type O = PutBlockListBuilder<'a, T, ContainerNameSet, BlobNameSet, BlockListSet>;
 
@@ -484,7 +484,7 @@ where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     BlockListSet: ToAssign,
-    T: Borrow<str> + 'a,
+    T: Borrow<[u8]> + 'a,
 {
     type O = PutBlockListBuilder<'a, T, ContainerNameSet, BlobNameSet, BlockListSet>;
 
@@ -517,7 +517,7 @@ where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     BlockListSet: ToAssign,
-    T: Borrow<str> + 'a,
+    T: Borrow<[u8]> + 'a,
 {
     type O = PutBlockListBuilder<'a, T, ContainerNameSet, BlobNameSet, BlockListSet>;
 
@@ -550,7 +550,7 @@ where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     BlockListSet: ToAssign,
-    T: Borrow<str> + 'a,
+    T: Borrow<[u8]> + 'a,
 {
     type O = PutBlockListBuilder<'a, T, ContainerNameSet, BlobNameSet, BlockListSet>;
 
@@ -583,7 +583,7 @@ where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     BlockListSet: ToAssign,
-    T: Borrow<str> + 'a,
+    T: Borrow<[u8]> + 'a,
 {
     type O = PutBlockListBuilder<'a, T, ContainerNameSet, BlobNameSet, BlockListSet>;
 
@@ -616,7 +616,7 @@ where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     BlockListSet: ToAssign,
-    T: Borrow<str> + 'a,
+    T: Borrow<[u8]> + 'a,
 {
     type O = PutBlockListBuilder<'a, T, ContainerNameSet, BlobNameSet, BlockListSet>;
 
@@ -649,12 +649,12 @@ where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     BlockListSet: ToAssign,
-    T: Borrow<str> + 'a,
+    T: Borrow<[u8]> + 'a,
 {}
 
 impl<'a, T> PutBlockListBuilder<'a, T, Yes, Yes, Yes>
 where
-    T: Borrow<str> + 'a,
+    T: Borrow<[u8]> + 'a,
 {
     #[inline]
     pub fn finalize(self) -> impl Future<Item = PutBlockListResponse, Error = AzureError> {

@@ -205,11 +205,11 @@ pub trait AccessTierOption<'a> {
 
 pub trait BlockIdSupport<'a> {
     type O;
-    fn with_block_id(self, block_id: &'a str) -> Self::O;
+    fn with_block_id(self, block_id: &'a [u8]) -> Self::O;
 }
 
 pub trait BlockIdRequired<'a> {
-    fn block_id(&self) -> &'a str;
+    fn block_id(&self) -> &'a [u8];
 
     fn to_uri_parameter(&self) -> String {
         format!("blockid={}", base64::encode(self.block_id()))
@@ -493,7 +493,7 @@ pub trait ContentLengthRequired {
 
 pub trait BlockListSupport<'a, T>
 where
-    T: Borrow<str>,
+    T: Borrow<[u8]>,
 {
     type O;
     fn with_block_list(self, &'a BlockList<T>) -> Self::O;
@@ -501,7 +501,7 @@ where
 
 pub trait BlockListRequired<'a, T>
 where
-    T: Borrow<str> + 'a,
+    T: Borrow<[u8]> + 'a,
 {
     fn block_list(&self) -> &'a BlockList<T>;
 

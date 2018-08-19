@@ -30,13 +30,11 @@ use azure::core::headers::{
     COPY_STATUS, COPY_STATUS_DESCRIPTION, CREATION_TIME, LEASE_ACTION, LEASE_BREAK_PERIOD, LEASE_DURATION, LEASE_ID, LEASE_STATE,
     LEASE_STATUS, PROPOSED_LEASE_ID, REQUEST_ID, SERVER_ENCRYPTED,
 };
-use base64;
 use chrono::{DateTime, Utc};
 use futures::{future::*, prelude::*};
 use hyper::{self, header, Method, StatusCode};
-use md5;
 use std::collections::HashMap;
-use std::{borrow::Borrow, fmt, str::FromStr};
+use std::{fmt, str::FromStr};
 use uuid::Uuid;
 use xml::Element;
 use xml::Xml::ElementNode;
@@ -442,75 +440,6 @@ impl Blob {
     }
 }
 
-fn put_block_list_prepare_request<P, T>(
-    c: &Client,
-    path: &P,
-    timeout: Option<u64>,
-    lease_id: Option<&LeaseId>,
-    block_ids: &BlockList<T>,
-) -> Result<hyper::client::ResponseFuture, AzureError>
-where
-    P: IntoAzurePath,
-    T: Borrow<str>,
-{
-    let container_name = path.container_name()?;
-    let blob_name = path.blob_name()?;
-
-    let mut uri = format!(
-        "https://{}.blob.core.windows.net/{}/{}?comp=blocklist",
-        c.account(),
-        container_name,
-        blob_name,
-    );
-
-    if let Some(ref timeout) = timeout {
-        uri = format!("{}&timeout={}", uri, timeout);
-    }
-
-    // create the blocklist XML
-    let xml = block_ids.to_xml();
-    let xml_bytes = xml.as_bytes();
-
-    // calculate the xml MD5. This can be made optional
-    // in a future version.
-    let md5 = {
-        let hash = md5::compute(xml_bytes);
-        debug!("md5 hash: {:02X}", hash);
-        base64::encode(&*hash)
-    };
-
-    // now create the request
-    c.perform_request(
-        &uri,
-        Method::PUT,
-        move |ref mut request| {
-            request.header_formatted(header::CONTENT_LENGTH, xml_bytes.len());
-            request.header_formatted(CONTENT_MD5, md5);
-            if let Some(lease_id) = lease_id {
-                request.header_formatted(LEASE_ID, *lease_id);
-            }
-        },
-        Some(xml_bytes),
-    )
-}
-
-pub fn put_block_list<P, T>(
-    c: &Client,
-    path: &P,
-    timeout: Option<u64>,
-    lease_id: Option<&LeaseId>,
-    block_ids: &BlockList<T>,
-) -> impl Future<Item = (), Error = AzureError>
-where
-    P: IntoAzurePath,
-    T: Borrow<str>,
-{
-    done(put_block_list_prepare_request(c, path, timeout, lease_id, block_ids))
-        .from_err()
-        .and_then(move |future_response| check_status_extract_body(future_response, StatusCode::CREATED))
-        .and_then(|_| ok(()))
-}
-
 fn get_block_list_create_request<P>(
     c: &Client,
     path: &P,
@@ -614,7 +543,7 @@ where
                     request_id,
                     date,
                 }),
-                Err(error) => Err(AzureError::SerdeXMLDeserializationError(error)),
+                Err(error) => Err(error),
             })
         })
 }
