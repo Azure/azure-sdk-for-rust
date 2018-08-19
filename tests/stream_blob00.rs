@@ -6,7 +6,6 @@ extern crate futures;
 extern crate hyper;
 extern crate tokio_core;
 
-use azure_sdk_for_rust::core::lease::{LeaseState, LeaseStatus};
 use azure_sdk_for_rust::core::range::Range;
 use azure_sdk_for_rust::core::ContainerNameSupport;
 use azure_sdk_for_rust::prelude::*;
@@ -16,7 +15,6 @@ use azure_sdk_for_rust::storage::client::Container as ContainerTrait;
 use azure_sdk_for_rust::storage::container::{PublicAccess, PublicAccessSupport};
 use futures::future::ok;
 use futures::prelude::*;
-use std::collections::HashMap;
 use tokio_core::reactor::Core;
 
 #[test]

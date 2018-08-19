@@ -12,23 +12,19 @@ extern crate md5;
 extern crate serde;
 extern crate uuid;
 
-use azure_sdk_for_rust::core::{
-    errors::AzureError,
-    lease::{LeaseState, LeaseStatus},
-};
+use azure_sdk_for_rust::core::errors::AzureError;
 use azure_sdk_for_rust::core::{
     BlobNameSupport, BodySupport, ContainerNameSupport, ContentMD5Support, ContentTypeSupport, LeaseDurationSupport, LeaseIdSupport,
     NextMarkerSupport, PrefixSupport, StoredAccessPolicy, StoredAccessPolicyList,
 };
 use azure_sdk_for_rust::prelude::*;
 use azure_sdk_for_rust::storage::{
-    blob::{get_block_list, Blob, BlobType, BlockListType},
+    blob::{Blob, BlockListType},
     client::Client,
     container::{Container, PublicAccess, PublicAccessSupport},
 };
 use chrono::{Duration, FixedOffset, Utc};
 use futures::Future;
-use std::collections::HashMap;
 use std::ops::Add;
 use std::ops::Deref;
 use tokio_core::reactor::Core;
@@ -141,47 +137,12 @@ fn put_and_get_block_list() {
     let contents2 = "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB";
     let contents3 = "CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC";
 
-    let new_blob = Blob {
-        name: name.to_owned(),
-        container_name: container.name.to_owned(),
-        snapshot_time: None,
-        last_modified: Some(chrono::Utc::now()),
-        etag: Some("".to_owned()),
-        content_length: 0,
-        content_type: Some("text/plain".to_owned()),
-        content_encoding: None,
-        content_language: None,
-        content_md5: None,
-        cache_control: None,
-        x_ms_blob_sequence_number: None,
-        blob_type: BlobType::BlockBlob,
-        lease_status: Some(LeaseStatus::Unlocked),
-        lease_state: LeaseState::Available,
-        lease_duration: None,
-        copy_id: None,
-        copy_status: None,
-        copy_source: None,
-        copy_progress: None,
-        copy_completion_time: None,
-        copy_status_description: None,
-        access_tier: None,
-        access_tier_change_time: None,
-        access_tier_inferred: None,
-        content_disposition: None,
-        creation_time: chrono::Utc::now(),
-        deleted_time: None,
-        incremental_copy: None,
-        metadata: HashMap::new(),
-        remaining_retention_days: None,
-        server_encrypted: false,
-    };
-
     let future = client
         .put_block()
         .with_container_name(&container.name)
         .with_blob_name(name)
         .with_body(&contents1.as_bytes())
-        .with_block_id("block1")
+        .with_block_id(b"block1")
         .finalize()
         .and_then(|_| {
             client
@@ -189,7 +150,7 @@ fn put_and_get_block_list() {
                 .with_container_name(&container.name)
                 .with_blob_name(name)
                 .with_body(&contents2.as_bytes())
-                .with_block_id("block2")
+                .with_block_id(b"block2")
                 .finalize()
         }).and_then(|_| {
             client
@@ -197,31 +158,26 @@ fn put_and_get_block_list() {
                 .with_container_name(&container.name)
                 .with_blob_name(name)
                 .with_body(&contents3.as_bytes())
-                .with_block_id("block3")
+                .with_block_id(b"block3")
                 .finalize()
         });
 
     core.run(future).unwrap();
 
-    let container_name = container.name.clone();
-    let future = get_block_list(
-        &client,
-        &(&container_name as &str, name),
-        &BlockListType::All,
-        None,
-        None,
-        None,
-        None,
-    );
+    let future = client
+        .get_block_list()
+        .with_container_name(&container.name)
+        .with_blob_name(name)
+        .with_block_list_type(BlockListType::All)
+        .finalize();
 
     let received_block_list = core.run(future).unwrap();
 
-    // this has to be migrated to the new builder pattern
     let future = client
         .put_block_list()
-        .with_container_name(&container_name)
+        .with_container_name(&container.name)
         .with_blob_name(name)
-        .with_block_list(&received_block_list.block_list.into())
+        .with_block_list(&received_block_list.block_with_size_list.into())
         .finalize();
     core.run(future).unwrap();
 

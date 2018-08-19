@@ -10,7 +10,7 @@ extern crate md5;
 extern crate tokio_core;
 
 use azure_sdk_for_rust::prelude::*;
-use azure_sdk_for_rust::storage::blob::{get_block_list, BlockListType};
+use azure_sdk_for_rust::storage::blob::BlockListType;
 use azure_sdk_for_rust::storage::blob::{BlobBlockType, BlockList};
 use futures::future::*;
 use std::error::Error;
@@ -79,19 +79,17 @@ fn code() -> Result<(), Box<Error>> {
         .finalize();
     core.run(future.map(|res| println!("{:?}", res)))?;
 
-    //    let container_name = container.name.clone();
-    let future = get_block_list(
-        &client,
-        &(&container as &str, &blob_name as &str),
-        &BlockListType::All,
-        None,
-        None,
-        None,
-        None,
-    );
-    let ret = core.run(future)?;
+    let future = client
+        .get_block_list()
+        .with_container_name(&container)
+        .with_blob_name(&blob_name)
+        .with_block_list_type(BlockListType::All)
+        .finalize();
 
-    let bl = ret.block_list.into();
+    let ret = core.run(future)?;
+    println!("GetBlockList == {:?}", ret);
+
+    let bl = ret.block_with_size_list.into();
     println!("bl == {:?}", bl);
 
     let future = client

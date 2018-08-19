@@ -1,38 +1,26 @@
 mod lease_blob_options;
 pub use self::lease_blob_options::{LeaseBlobOptions, LEASE_BLOB_OPTIONS_DEFAULT};
-
 mod blob_block_type;
 mod blob_stream;
 pub use self::blob_block_type::BlobBlockType;
-
 mod block_list_type;
 pub use self::block_list_type::BlockListType;
-
 mod blob_block_with_size;
 pub use self::blob_block_with_size::BlobBlockWithSize;
-
 mod block_with_size_list;
 pub use self::block_with_size_list::BlockWithSizeList;
-
-use azure::storage::IntoAzurePath;
-
 mod block_list;
 pub use self::block_list::BlockList;
-
 pub mod requests;
 pub mod responses;
-
-mod get_block_list_response;
-pub use self::get_block_list_response::GetBlockListResponse;
-
 use azure::core::headers::{
     BLOB_SEQUENCE_NUMBER, BLOB_TYPE, CLIENT_REQUEST_ID, CONTENT_MD5, COPY_COMPLETION_TIME, COPY_ID, COPY_PROGRESS, COPY_SOURCE,
     COPY_STATUS, COPY_STATUS_DESCRIPTION, CREATION_TIME, LEASE_ACTION, LEASE_BREAK_PERIOD, LEASE_DURATION, LEASE_ID, LEASE_STATE,
-    LEASE_STATUS, PROPOSED_LEASE_ID, REQUEST_ID, SERVER_ENCRYPTED,
+    LEASE_STATUS, PROPOSED_LEASE_ID, SERVER_ENCRYPTED,
 };
 use chrono::{DateTime, Utc};
 use futures::{future::*, prelude::*};
-use hyper::{self, header, Method, StatusCode};
+use hyper::{header, Method, StatusCode};
 use std::collections::HashMap;
 use std::{fmt, str::FromStr};
 use uuid::Uuid;
@@ -438,114 +426,6 @@ impl Blob {
             .and_then(move |future_response| check_status_extract_body(future_response, StatusCode::ACCEPTED))
             .and_then(|_| ok(()))
     }
-}
-
-fn get_block_list_create_request<P>(
-    c: &Client,
-    path: &P,
-    bl: &BlockListType,
-    timeout: Option<u64>,
-    lease_id: Option<&LeaseId>,
-    request_id: Option<String>,
-    snapshot: Option<&DateTime<Utc>>,
-) -> Result<hyper::client::ResponseFuture, AzureError>
-where
-    P: IntoAzurePath,
-{
-    let container_name = path.container_name()?;
-    let blob_name = path.blob_name()?;
-
-    let mut uri = format!(
-        "https://{}.blob.core.windows.net/{}/{}?comp=blocklist&blocklisttype={}",
-        c.account(),
-        container_name,
-        blob_name,
-        match bl {
-            BlockListType::Committed => "committed",
-            BlockListType::Uncommitted => "uncommitted",
-            BlockListType::All => "all",
-        }
-    );
-
-    if let Some(ref timeout) = timeout {
-        uri = format!("{}&timeout={}", uri, timeout);
-    }
-
-    if let Some(snapshot) = snapshot {
-        uri = format!("{}&snapshot={}", uri, snapshot.to_rfc2822());
-    }
-
-    c.perform_request(
-        &uri,
-        Method::GET,
-        move |ref mut request| {
-            if let Some(lease_id) = lease_id {
-                request.header_formatted(LEASE_ID, lease_id);
-            };
-            if let Some(request_id) = request_id {
-                request.header_bytes(CLIENT_REQUEST_ID, request_id);
-            };
-        },
-        None,
-    )
-}
-
-pub fn get_block_list<P>(
-    c: &Client,
-    path: &P,
-    bl: &BlockListType,
-    timeout: Option<u64>,
-    lease_id: Option<&LeaseId>,
-    request_id: Option<String>,
-    snapshot: Option<&DateTime<Utc>>,
-) -> impl Future<Item = GetBlockListResponse, Error = AzureError>
-where
-    P: IntoAzurePath,
-{
-    done(get_block_list_create_request(c, path, bl, timeout, lease_id, request_id, snapshot))
-        .from_err()
-        .and_then(move |future_response| check_status_extract_headers_and_body(future_response, StatusCode::OK))
-        .and_then(move |(headers, body)| {
-            done(match String::from_utf8(body.to_owned()) {
-                Ok(body) => Ok((headers, body)),
-                Err(err) => Err(AzureError::FromUtf8Error(err)),
-            })
-        }).and_then(move |(headers, body)| {
-            debug!("response headers == {:?}", headers);
-
-            // extract headers
-            let etag = headers.get_as_string(header::ETAG);
-            debug!("etag == {:?}", etag);
-
-            let content_type = headers.get_as_string(header::CONTENT_TYPE).unwrap();
-            debug!("content_type == {:?}", content_type);
-
-            let request_id = Uuid::parse_str(headers.get_as_str(REQUEST_ID).unwrap()).unwrap();
-
-            debug!("request_id == {}", request_id);
-
-            let last_modified = headers
-                .get_as_str(header::LAST_MODIFIED)
-                .map(|s| DateTime::parse_from_rfc2822(s).unwrap());
-
-            let date = headers.get_as_str(header::DATE).unwrap();
-            debug!("date == {}", date);
-            let date = DateTime::parse_from_rfc2822(&date).unwrap();
-
-            debug!("body == {:?}", body);
-
-            done(match BlockWithSizeList::try_from(&body[3..] as &str) {
-                Ok(block_list) => Ok(GetBlockListResponse {
-                    block_list,
-                    last_modified,
-                    etag,
-                    content_type: content_type.clone(),
-                    request_id,
-                    date,
-                }),
-                Err(error) => Err(error),
-            })
-        })
 }
 
 #[inline]

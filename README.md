@@ -221,8 +221,8 @@ If you want to contribute please do! No formality required! :wink:. Please note 
 | Put blob page   | [https://msdn.microsoft.com/en-us/library/azure/dd179451.aspx](https://msdn.microsoft.com/en-us/library/azure/dd179451.aspx)                         | yes (as `update_page`)
 | Clear blob page | [https://msdn.microsoft.com/en-us/library/azure/dd179451.aspx](https://msdn.microsoft.com/en-us/library/azure/dd179451.aspx)                         | yes (as `clear_page`)
 | Put block       | [https://msdn.microsoft.com/en-us/library/azure/dd135726.aspx](https://msdn.microsoft.com/en-us/library/azure/dd135726.aspx)                         | yes
-| Get block list  | [https://docs.microsoft.com/en-us/rest/api/storageservices/get-block-list](https://docs.microsoft.com/en-us/rest/api/storageservices/get-block-list) |
-| Put block list  | [https://docs.microsoft.com/en-us/rest/api/storageservices/put-block-list](https://docs.microsoft.com/en-us/rest/api/storageservices/put-block-list) |
+| Get block list  | [https://docs.microsoft.com/en-us/rest/api/storageservices/get-block-list](https://docs.microsoft.com/en-us/rest/api/storageservices/get-block-list) | yes
+| Put block list  | [https://docs.microsoft.com/en-us/rest/api/storageservices/put-block-list](https://docs.microsoft.com/en-us/rest/api/storageservices/put-block-list) | yes
 | Lease blob      | [https://msdn.microsoft.com/library/azure/ee691972.aspx](https://msdn.microsoft.com/library/azure/ee691972.aspx)                                     |
 | Delete blob     | [https://docs.microsoft.com/en-us/rest/api/storageservices/delete-blob](https://docs.microsoft.com/en-us/rest/api/storageservices/delete-blob)       | 
 
