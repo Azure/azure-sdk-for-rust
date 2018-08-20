@@ -8,7 +8,7 @@ macro_rules! response_from_headers {
 
         #[derive(Debug, Clone, PartialEq)]
         pub struct $cn {
-            $($na: $typ),+,
+            pub $($na: $typ),+,
         }
 
         impl $cn {
@@ -26,6 +26,8 @@ macro_rules! response_from_headers {
     };
 }
 
+mod renew_blob_lease_response;
+pub use self::renew_blob_lease_response::RenewBlobLeaseResponse;
 mod acquire_blob_lease_response;
 pub use self::acquire_blob_lease_response::AcquireBlobLeaseResponse;
 mod get_block_list_response;

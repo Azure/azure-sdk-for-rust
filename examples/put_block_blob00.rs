@@ -106,7 +106,17 @@ fn code() -> Result<(), Box<Error>> {
         .with_blob_name(&blob_name)
         .with_lease_duration(60)
         .finalize();
-    core.run(future.map(|res| println!("Acquire blob lease == {:?}", res)))?;
+    let res = core.run(future)?;
+    println!("Acquire lease == {:?}", res);
+
+    let future = client
+        .renew_blob_lease()
+        .with_container_name(&container)
+        .with_blob_name(&blob_name)
+        .with_lease_id(&res.lease_id)
+        .finalize();
+    let res = core.run(future)?;
+    println!("Renew lease == {:?}", res);
 
     Ok(())
 }
