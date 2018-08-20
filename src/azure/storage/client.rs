@@ -24,6 +24,7 @@ pub trait Blob {
     fn acquire_blob_lease<'a>(&'a self) -> blob::requests::AcquireBlobLeaseBuilder<'a, No, No, No>;
     fn renew_blob_lease<'a>(&'a self) -> blob::requests::RenewBlobLeaseBuilder<'a, No, No, No>;
     fn change_blob_lease<'a>(&'a self) -> blob::requests::ChangeBlobLeaseBuilder<'a, No, No, No, No>;
+    fn release_blob_lease<'a>(&'a self) -> blob::requests::ReleaseBlobLeaseBuilder<'a, No, No, No>;
 }
 
 pub trait Container {
@@ -97,6 +98,10 @@ impl Blob for Client {
 
     fn change_blob_lease<'a>(&'a self) -> blob::requests::ChangeBlobLeaseBuilder<'a, No, No, No, No> {
         blob::requests::ChangeBlobLeaseBuilder::new(self)
+    }
+
+    fn release_blob_lease<'a>(&'a self) -> blob::requests::ReleaseBlobLeaseBuilder<'a, No, No, No> {
+        blob::requests::ReleaseBlobLeaseBuilder::new(self)
     }
 }
 

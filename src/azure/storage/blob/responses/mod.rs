@@ -26,6 +26,8 @@ macro_rules! response_from_headers {
     };
 }
 
+mod release_blob_lease_response;
+pub use self::release_blob_lease_response::ReleaseBlobLeaseResponse;
 mod change_blob_lease_response;
 pub use self::change_blob_lease_response::ChangeBlobLeaseResponse;
 mod renew_blob_lease_response;
