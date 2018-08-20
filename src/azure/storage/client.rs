@@ -21,6 +21,7 @@ pub trait Blob {
     fn put_block<'a>(&'a self) -> blob::requests::PutBlockBuilder<'a, No, No, No, No>;
     fn get_block_list<'a>(&'a self) -> blob::requests::GetBlockListBuilder<'a, No, No, No>;
     fn put_block_list<'a, T: Borrow<[u8]> + 'a>(&'a self) -> blob::requests::PutBlockListBuilder<'a, T, No, No, No>;
+    fn acquire_blob_lease<'a>(&'a self) -> blob::requests::AcquireBlobLeaseBuilder<'a, No, No, No>;
 }
 
 pub trait Container {
@@ -82,6 +83,10 @@ impl Blob for Client {
 
     fn put_block_list<'a, T: Borrow<[u8]> + 'a>(&'a self) -> blob::requests::PutBlockListBuilder<'a, T, No, No, No> {
         blob::requests::PutBlockListBuilder::new(self)
+    }
+
+    fn acquire_blob_lease<'a>(&'a self) -> blob::requests::AcquireBlobLeaseBuilder<'a, No, No, No> {
+        blob::requests::AcquireBlobLeaseBuilder::new(self)
     }
 }
 

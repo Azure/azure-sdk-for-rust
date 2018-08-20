@@ -691,6 +691,13 @@ pub trait BlobNameRequired<'a> {
     fn blob_name(&self) -> &'a str;
 }
 
+pub(crate) fn lease_id_from_headers(headers: &HeaderMap) -> Result<LeaseId, AzureError> {
+    let lease_id = headers
+        .get_as_str(LEASE_ID)
+        .ok_or_else(|| AzureError::HeaderNotFound(LEASE_ID.to_owned()))?;
+    Ok(Uuid::parse_str(lease_id)?)
+}
+
 pub(crate) fn request_id_from_headers(headers: &HeaderMap) -> Result<RequestId, AzureError> {
     let request_id = headers
         .get_as_str(REQUEST_ID)

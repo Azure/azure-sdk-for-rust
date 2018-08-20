@@ -100,5 +100,13 @@ fn code() -> Result<(), Box<Error>> {
         .finalize();
     core.run(future.map(|res| println!("PutBlockList == {:?}", res)))?;
 
+    let future = client
+        .acquire_blob_lease()
+        .with_container_name(&container)
+        .with_blob_name(&blob_name)
+        .with_lease_duration(60)
+        .finalize();
+    core.run(future.map(|res| println!("Acquire blob lease == {:?}", res)))?;
+
     Ok(())
 }
