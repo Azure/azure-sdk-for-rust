@@ -118,5 +118,14 @@ fn code() -> Result<(), Box<Error>> {
     let res = core.run(future)?;
     println!("Renew lease == {:?}", res);
 
+    let future = client
+        .release_blob_lease()
+        .with_container_name(&container)
+        .with_blob_name(&blob_name)
+        .with_lease_id(&res.lease_id)
+        .finalize();
+    let res = core.run(future)?;
+    println!("Release lease == {:?}", res);
+
     Ok(())
 }
