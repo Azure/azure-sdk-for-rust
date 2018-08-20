@@ -26,6 +26,8 @@ macro_rules! response_from_headers {
     };
 }
 
+mod acquire_blob_lease_response;
+pub use self::acquire_blob_lease_response::AcquireBlobLeaseResponse;
 mod get_block_list_response;
 pub use self::get_block_list_response::GetBlockListResponse;
 mod put_block_list_response;
