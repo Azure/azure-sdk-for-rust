@@ -224,8 +224,8 @@ If you want to contribute please do! No formality required! :wink:. Please note 
 | Put block          | [https://docs.microsoft.com/en-us/rest/api/storageservices/put-block](https://docs.microsoft.com/en-us/rest/api/storageservices/put-block)           | yes
 | Get block list     | [https://docs.microsoft.com/en-us/rest/api/storageservices/get-block-list](https://docs.microsoft.com/en-us/rest/api/storageservices/get-block-list) | yes
 | Put block list     | [https://docs.microsoft.com/en-us/rest/api/storageservices/put-block-list](https://docs.microsoft.com/en-us/rest/api/storageservices/put-block-list) | yes
-| Acquire blob lease | [https://docs.microsoft.com/en-us/rest/api/storageservices/lease-blob](https://docs.microsoft.com/en-us/rest/api/storageservices/lease-blob)         |
-| Renew blob lease   | [https://docs.microsoft.com/en-us/rest/api/storageservices/lease-blob](https://docs.microsoft.com/en-us/rest/api/storageservices/lease-blob)         |
+| Acquire blob lease | [https://docs.microsoft.com/en-us/rest/api/storageservices/lease-blob](https://docs.microsoft.com/en-us/rest/api/storageservices/lease-blob)         | yes
+| Renew blob lease   | [https://docs.microsoft.com/en-us/rest/api/storageservices/lease-blob](https://docs.microsoft.com/en-us/rest/api/storageservices/lease-blob)         | yes
 | Change blob lease  | [https://docs.microsoft.com/en-us/rest/api/storageservices/lease-blob](https://docs.microsoft.com/en-us/rest/api/storageservices/lease-blob)         |
 | Release blob lease | [https://docs.microsoft.com/en-us/rest/api/storageservices/lease-blob](https://docs.microsoft.com/en-us/rest/api/storageservices/lease-blob)         |
 | Break blob lease   | [https://docs.microsoft.com/en-us/rest/api/storageservices/lease-blob](https://docs.microsoft.com/en-us/rest/api/storageservices/lease-blob)         |

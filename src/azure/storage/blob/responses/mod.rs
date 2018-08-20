@@ -8,7 +8,7 @@ macro_rules! response_from_headers {
 
         #[derive(Debug, Clone, PartialEq)]
         pub struct $cn {
-            pub $($na: $typ),+,
+             $(pub $na: $typ),+,
         }
 
         impl $cn {
