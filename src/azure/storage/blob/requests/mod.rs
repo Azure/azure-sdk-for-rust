@@ -1,4 +1,5 @@
 mod acquire_blob_lease_builder;
+mod break_blob_lease_builder;
 mod change_blob_lease_builder;
 mod clear_page_builder;
 mod get_blob_builder;
@@ -13,6 +14,7 @@ mod release_blob_lease_builder;
 mod renew_blob_lease_builder;
 mod update_page_builder;
 pub use self::acquire_blob_lease_builder::AcquireBlobLeaseBuilder;
+pub use self::break_blob_lease_builder::BreakBlobLeaseBuilder;
 pub use self::change_blob_lease_builder::ChangeBlobLeaseBuilder;
 pub use self::clear_page_builder::ClearPageBuilder;
 pub use self::get_blob_builder::GetBlobBuilder;

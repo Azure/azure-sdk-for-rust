@@ -24,7 +24,7 @@ use url::percent_encoding;
 pub mod headers;
 use self::headers::{
     BLOB_ACCESS_TIER, BLOB_CONTENT_LENGTH, BLOB_SEQUENCE_NUMBER, CLIENT_REQUEST_ID, CONTENT_MD5, LEASE_BREAK_PERIOD, LEASE_DURATION,
-    LEASE_ID, PROPOSED_LEASE_ID, REQUEST_ID, REQUEST_SERVER_ENCRYPTED,
+    LEASE_ID, LEASE_TIME, PROPOSED_LEASE_ID, REQUEST_ID, REQUEST_SERVER_ENCRYPTED,
 };
 use hyper::header::{CACHE_CONTROL, CONTENT_ENCODING, CONTENT_LANGUAGE, CONTENT_LENGTH, CONTENT_TYPE, DATE, ETAG, LAST_MODIFIED, RANGE};
 use uuid::Uuid;
@@ -663,6 +663,14 @@ pub trait LeaseBreakPeriodSupport {
     fn with_lease_break_period(self, lease_break_period: u8) -> Self::O;
 }
 
+pub trait LeaseBreakPeriodRequired {
+    fn lease_break_period(&self) -> u8;
+
+    fn add_header(&self, builder: &mut Builder) {
+        builder.header(LEASE_BREAK_PERIOD, &self.lease_break_period().to_string() as &str);
+    }
+}
+
 pub trait LeaseBreakPeriodOption {
     fn lease_break_period(&self) -> Option<u8>;
 
@@ -772,6 +780,18 @@ pub(crate) fn etag_from_headers(headers: &HeaderMap) -> Result<String, AzureErro
 
     trace!("etag == {:?}", etag);
     Ok(etag)
+}
+
+pub(crate) fn lease_time_from_headers(headers: &HeaderMap) -> Result<u8, AzureError> {
+    let lease_time = headers
+        .get(LEASE_TIME)
+        .ok_or_else(|| AzureError::HeaderNotFound(LEASE_TIME.to_owned()))?
+        .to_str()?;
+
+    let lease_time = lease_time.parse::<u8>()?;
+
+    trace!("lease_time == {:?}", lease_time);
+    Ok(lease_time)
 }
 
 pub(crate) fn sequence_number_from_headers(headers: &HeaderMap) -> Result<u64, AzureError> {

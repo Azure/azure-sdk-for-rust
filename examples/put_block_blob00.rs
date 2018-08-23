@@ -33,6 +33,8 @@ fn code() -> Result<(), Box<Error>> {
         .expect("please specify container name as command line parameter");
     let blob_name = std::env::args().nth(2).expect("please specify blob name as command line parameter");
 
+    info!("Before reactor creation");
+
     let mut core = Core::new()?;
 
     let client = Client::new(&account, &master_key)?;
@@ -109,20 +111,31 @@ fn code() -> Result<(), Box<Error>> {
     let res = core.run(future)?;
     println!("Acquire lease == {:?}", res);
 
+    let lease_id = res.lease_id;
+
     let future = client
         .renew_blob_lease()
         .with_container_name(&container)
         .with_blob_name(&blob_name)
-        .with_lease_id(&res.lease_id)
+        .with_lease_id(&lease_id)
         .finalize();
     let res = core.run(future)?;
     println!("Renew lease == {:?}", res);
 
     let future = client
+        .break_blob_lease()
+        .with_container_name(&container)
+        .with_blob_name(&blob_name)
+        .with_lease_break_period(15)
+        .finalize();
+    let res = core.run(future)?;
+    println!("Break lease == {:?}", res);
+
+    let future = client
         .release_blob_lease()
         .with_container_name(&container)
         .with_blob_name(&blob_name)
-        .with_lease_id(&res.lease_id)
+        .with_lease_id(&lease_id)
         .finalize();
     let res = core.run(future)?;
     println!("Release lease == {:?}", res);

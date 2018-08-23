@@ -181,6 +181,44 @@ fn put_and_get_block_list() {
         .finalize();
     core.run(future).unwrap();
 
+    let future = client
+        .acquire_blob_lease()
+        .with_container_name(&container.name)
+        .with_blob_name(name)
+        .with_lease_duration(60)
+        .finalize();
+    let res = core.run(future).unwrap();
+    println!("Acquire lease == {:?}", res);
+
+    let lease_id = res.lease_id;
+
+    let future = client
+        .renew_blob_lease()
+        .with_container_name(&container.name)
+        .with_blob_name(name)
+        .with_lease_id(&lease_id)
+        .finalize();
+    let res = core.run(future).unwrap();
+    println!("Renew lease == {:?}", res);
+
+    let future = client
+        .break_blob_lease()
+        .with_container_name(&container.name)
+        .with_blob_name(name)
+        .with_lease_break_period(15)
+        .finalize();
+    let res = core.run(future).unwrap();
+    println!("Break lease == {:?}", res);
+
+    let future = client
+        .release_blob_lease()
+        .with_container_name(&container.name)
+        .with_blob_name(name)
+        .with_lease_id(&lease_id)
+        .finalize();
+    let res = core.run(future).unwrap();
+    println!("Release lease == {:?}", res);
+
     let future = Blob::delete(&client, &container.name, &name, None).map(|_| println!("Blob deleted!"));
     core.run(future).unwrap();
 

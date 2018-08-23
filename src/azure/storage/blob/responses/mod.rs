@@ -52,3 +52,5 @@ mod put_blob_response;
 pub use self::put_blob_response::PutBlobResponse;
 mod update_page_response;
 pub use self::update_page_response::UpdatePageResponse;
+mod break_blob_lease_response;
+pub use self::break_blob_lease_response::BreakBlobLeaseResponse;
