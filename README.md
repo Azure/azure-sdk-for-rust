@@ -228,7 +228,7 @@ If you want to contribute please do! No formality required! :wink:. Please note 
 | Renew blob lease   | [https://docs.microsoft.com/en-us/rest/api/storageservices/lease-blob](https://docs.microsoft.com/en-us/rest/api/storageservices/lease-blob)         | yes
 | Change blob lease  | [https://docs.microsoft.com/en-us/rest/api/storageservices/lease-blob](https://docs.microsoft.com/en-us/rest/api/storageservices/lease-blob)         | yes
 | Release blob lease | [https://docs.microsoft.com/en-us/rest/api/storageservices/lease-blob](https://docs.microsoft.com/en-us/rest/api/storageservices/lease-blob)         | yes
-| Break blob lease   | [https://docs.microsoft.com/en-us/rest/api/storageservices/lease-blob](https://docs.microsoft.com/en-us/rest/api/storageservices/lease-blob)         |
+| Break blob lease   | [https://docs.microsoft.com/en-us/rest/api/storageservices/lease-blob](https://docs.microsoft.com/en-us/rest/api/storageservices/lease-blob)         | yes
 | Delete blob        | [https://docs.microsoft.com/en-us/rest/api/storageservices/delete-blob](https://docs.microsoft.com/en-us/rest/api/storageservices/delete-blob)       |
 
 #### Event Hubs

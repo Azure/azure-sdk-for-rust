@@ -8,11 +8,11 @@ pub use azure::core::{
     IfMatchConditionOption, IfMatchConditionSupport, IfSinceConditionOption, IfSinceConditionSupport, IncludeCopyOption,
     IncludeCopySupport, IncludeDeletedOption, IncludeDeletedSupport, IncludeListOptions, IncludeMetadataOption, IncludeMetadataSupport,
     IncludeSnapshotsOption, IncludeSnapshotsSupport, IncludeUncommittedBlobsOption, IncludeUncommittedBlobsSupport, LeaseBreakPeriodOption,
-    LeaseBreakPeriodSupport, LeaseDurationRequired, LeaseDurationSupport, LeaseIdOption, LeaseIdRequired, LeaseIdSupport, MaxResultsOption,
-    MaxResultsSupport, MetadataOption, MetadataSupport, NextMarkerOption, NextMarkerSupport, PageBlobLengthRequired, PageBlobLengthSupport,
-    PrefixOption, PrefixSupport, ProposedLeaseIdOption, ProposedLeaseIdRequired, ProposedLeaseIdSupport, RangeOption, RangeSupport,
-    SequenceNumberConditionOption, SequenceNumberConditionSupport, SequenceNumberOption, SequenceNumberSupport, SnapshotOption,
-    SnapshotSupport, StoredAccessPolicy, StoredAccessPolicyList, TimeoutOption, TimeoutSupport,
+    LeaseBreakPeriodRequired, LeaseBreakPeriodSupport, LeaseDurationRequired, LeaseDurationSupport, LeaseIdOption, LeaseIdRequired,
+    LeaseIdSupport, MaxResultsOption, MaxResultsSupport, MetadataOption, MetadataSupport, NextMarkerOption, NextMarkerSupport,
+    PageBlobLengthRequired, PageBlobLengthSupport, PrefixOption, PrefixSupport, ProposedLeaseIdOption, ProposedLeaseIdRequired,
+    ProposedLeaseIdSupport, RangeOption, RangeSupport, SequenceNumberConditionOption, SequenceNumberConditionSupport, SequenceNumberOption,
+    SequenceNumberSupport, SnapshotOption, SnapshotSupport, StoredAccessPolicy, StoredAccessPolicyList, TimeoutOption, TimeoutSupport,
 };
 pub use azure::storage::container::PublicAccessSupport;
 
