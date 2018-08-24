@@ -23,8 +23,8 @@ use std::borrow::Borrow;
 use url::percent_encoding;
 pub mod headers;
 use self::headers::{
-    BLOB_ACCESS_TIER, BLOB_CONTENT_LENGTH, BLOB_SEQUENCE_NUMBER, CLIENT_REQUEST_ID, CONTENT_MD5, LEASE_BREAK_PERIOD, LEASE_DURATION,
-    LEASE_ID, LEASE_TIME, PROPOSED_LEASE_ID, REQUEST_ID, REQUEST_SERVER_ENCRYPTED,
+    BLOB_ACCESS_TIER, BLOB_CONTENT_LENGTH, BLOB_SEQUENCE_NUMBER, CLIENT_REQUEST_ID, CONTENT_MD5, DELETE_TYPE_PERMANENT, LEASE_BREAK_PERIOD,
+    LEASE_DURATION, LEASE_ID, LEASE_TIME, PROPOSED_LEASE_ID, REQUEST_ID, REQUEST_SERVER_ENCRYPTED,
 };
 use hyper::header::{CACHE_CONTROL, CONTENT_ENCODING, CONTENT_LANGUAGE, CONTENT_LENGTH, CONTENT_TYPE, DATE, ETAG, LAST_MODIFIED, RANGE};
 use uuid::Uuid;
@@ -260,6 +260,14 @@ pub trait SnapshotOption {
         } else {
             None
         }
+    }
+}
+
+pub trait SnapshotRequired {
+    fn snapshot(&self) -> DateTime<Utc>;
+
+    fn to_uri_parameter(&self) -> String {
+        format!("snapshot={}", self.snapshot().to_rfc2822())
     }
 }
 
@@ -792,6 +800,18 @@ pub(crate) fn lease_time_from_headers(headers: &HeaderMap) -> Result<u8, AzureEr
 
     trace!("lease_time == {:?}", lease_time);
     Ok(lease_time)
+}
+
+pub(crate) fn delete_type_permanent_from_headers(headers: &HeaderMap) -> Result<bool, AzureError> {
+    let delete_type_permanent = headers
+        .get(DELETE_TYPE_PERMANENT)
+        .ok_or_else(|| AzureError::HeaderNotFound(DELETE_TYPE_PERMANENT.to_owned()))?
+        .to_str()?;
+
+    let delete_type_permanent = delete_type_permanent.parse::<bool>()?;
+
+    trace!("delete_type_permanent == {:?}", delete_type_permanent);
+    Ok(delete_type_permanent)
 }
 
 pub(crate) fn sequence_number_from_headers(headers: &HeaderMap) -> Result<u64, AzureError> {
