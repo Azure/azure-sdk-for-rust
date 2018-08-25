@@ -26,6 +26,8 @@ macro_rules! response_from_headers {
     };
 }
 
+mod delete_blob_snapshot_response;
+pub use self::delete_blob_snapshot_response::DeleteBlobSnapshotResponse;
 mod release_blob_lease_response;
 pub use self::release_blob_lease_response::ReleaseBlobLeaseResponse;
 mod change_blob_lease_response;

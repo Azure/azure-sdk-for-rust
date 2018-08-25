@@ -12,7 +12,8 @@ pub use azure::core::{
     LeaseIdSupport, MaxResultsOption, MaxResultsSupport, MetadataOption, MetadataSupport, NextMarkerOption, NextMarkerSupport,
     PageBlobLengthRequired, PageBlobLengthSupport, PrefixOption, PrefixSupport, ProposedLeaseIdOption, ProposedLeaseIdRequired,
     ProposedLeaseIdSupport, RangeOption, RangeSupport, SequenceNumberConditionOption, SequenceNumberConditionSupport, SequenceNumberOption,
-    SequenceNumberSupport, SnapshotOption, SnapshotSupport, StoredAccessPolicy, StoredAccessPolicyList, TimeoutOption, TimeoutSupport,
+    SequenceNumberSupport, SnapshotOption, SnapshotRequired, SnapshotSupport, StoredAccessPolicy, StoredAccessPolicyList, TimeoutOption,
+    TimeoutSupport,
 };
 pub use azure::storage::container::PublicAccessSupport;
 
