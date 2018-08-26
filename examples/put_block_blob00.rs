@@ -9,6 +9,7 @@ extern crate log;
 extern crate md5;
 extern crate tokio_core;
 
+use azure_sdk_for_rust::core::DeleteSnapshotsMethod;
 use azure_sdk_for_rust::prelude::*;
 use azure_sdk_for_rust::storage::blob::BlockListType;
 use azure_sdk_for_rust::storage::blob::{BlobBlockType, BlockList};
@@ -139,6 +140,15 @@ fn code() -> Result<(), Box<Error>> {
         .finalize();
     let res = core.run(future)?;
     println!("Release lease == {:?}", res);
+
+    let future = client
+        .delete_blob()
+        .with_container_name(&container)
+        .with_blob_name(&blob_name)
+        .with_delete_snapshots_method(DeleteSnapshotsMethod::Include)
+        .finalize();
+    let res = core.run(future)?;
+    println!("Delete blob == {:?}", res);
 
     Ok(())
 }

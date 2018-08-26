@@ -17,20 +17,23 @@ pub mod ba512_range;
 use base64::encode;
 pub mod modify_conditions;
 use self::modify_conditions::{IfMatchCondition, IfSinceCondition, SequenceNumberCondition};
+use std::fmt;
+use std::str::FromStr;
 pub mod range;
 use azure::storage::blob::{BlockList, BlockListType};
 use std::borrow::Borrow;
 use url::percent_encoding;
 pub mod headers;
 use self::headers::{
-    BLOB_ACCESS_TIER, BLOB_CONTENT_LENGTH, BLOB_SEQUENCE_NUMBER, CLIENT_REQUEST_ID, CONTENT_MD5, DELETE_TYPE_PERMANENT, LEASE_BREAK_PERIOD,
-    LEASE_DURATION, LEASE_ID, LEASE_TIME, PROPOSED_LEASE_ID, REQUEST_ID, REQUEST_SERVER_ENCRYPTED,
+    BLOB_ACCESS_TIER, BLOB_CONTENT_LENGTH, BLOB_SEQUENCE_NUMBER, CLIENT_REQUEST_ID, CONTENT_MD5, DELETE_SNAPSHOTS, DELETE_TYPE_PERMANENT,
+    LEASE_BREAK_PERIOD, LEASE_DURATION, LEASE_ID, LEASE_TIME, PROPOSED_LEASE_ID, REQUEST_ID, REQUEST_SERVER_ENCRYPTED,
 };
 use hyper::header::{CACHE_CONTROL, CONTENT_ENCODING, CONTENT_LANGUAGE, CONTENT_LENGTH, CONTENT_TYPE, DATE, ETAG, LAST_MODIFIED, RANGE};
 use uuid::Uuid;
 pub type RequestId = Uuid;
-use azure::core::errors::AzureError;
+use azure::core::errors::{AzureError, TraversingError};
 use azure::core::lease::LeaseId;
+use azure::core::parsing::FromStringOptional;
 use http::request::Builder;
 use http::HeaderMap;
 use std::collections::HashMap;
@@ -59,6 +62,8 @@ impl ToAssign for No {}
 
 impl Assigned for Yes {}
 impl NotAssigned for No {}
+
+create_enum!(DeleteSnapshotsMethod, (Include, "include"), (Only, "only"));
 
 pub trait ClientRequired<'a> {
     fn client(&self) -> &'a Client;
@@ -200,6 +205,20 @@ pub trait AccessTierOption<'a> {
         if let Some(access_tier) = self.access_tier() {
             builder.header(BLOB_ACCESS_TIER, access_tier);
         }
+    }
+}
+
+pub trait DeleteSnapshotsMethodSupport {
+    type O;
+    fn with_delete_snapshots_method(self, delete_snapshots_method: DeleteSnapshotsMethod) -> Self::O;
+}
+
+pub trait DeleteSnapshotsMethodRequired {
+    fn delete_snapshots_method(&self) -> DeleteSnapshotsMethod;
+
+    fn add_header(&self, builder: &mut Builder) {
+        let s: &'static str = self.delete_snapshots_method().into();
+        builder.header(DELETE_SNAPSHOTS, s);
     }
 }
 

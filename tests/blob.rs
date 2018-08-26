@@ -13,13 +13,10 @@ extern crate serde;
 extern crate uuid;
 
 use azure_sdk_for_rust::core::errors::AzureError;
-use azure_sdk_for_rust::core::{
-    BlobNameSupport, BodySupport, ContainerNameSupport, ContentMD5Support, ContentTypeSupport, LeaseDurationSupport, LeaseIdSupport,
-    NextMarkerSupport, PrefixSupport, StoredAccessPolicy, StoredAccessPolicyList,
-};
+use azure_sdk_for_rust::core::DeleteSnapshotsMethod;
 use azure_sdk_for_rust::prelude::*;
 use azure_sdk_for_rust::storage::{
-    blob::{Blob, BlockListType},
+    blob::BlockListType,
     client::Client,
     container::{Container, PublicAccess, PublicAccessSupport},
 };
@@ -219,8 +216,14 @@ fn put_and_get_block_list() {
     let res = core.run(future).unwrap();
     println!("Release lease == {:?}", res);
 
-    let future = Blob::delete(&client, &container.name, &name, None).map(|_| println!("Blob deleted!"));
-    core.run(future).unwrap();
+    let future = client
+        .delete_blob()
+        .with_container_name(&container.name)
+        .with_blob_name(name)
+        .with_delete_snapshots_method(DeleteSnapshotsMethod::Include)
+        .finalize();
+    let res = core.run(future).unwrap();
+    println!("Delete blob == {:?}", res);
 
     core.run(
         client
