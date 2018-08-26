@@ -14,27 +14,25 @@ pub use self::block_list::BlockList;
 pub mod requests;
 pub mod responses;
 use azure::core::headers::{
-    BLOB_SEQUENCE_NUMBER, BLOB_TYPE, CLIENT_REQUEST_ID, CONTENT_MD5, COPY_COMPLETION_TIME, COPY_ID, COPY_PROGRESS, COPY_SOURCE,
-    COPY_STATUS, COPY_STATUS_DESCRIPTION, CREATION_TIME, LEASE_ACTION, LEASE_BREAK_PERIOD, LEASE_DURATION, LEASE_ID, LEASE_STATE,
-    LEASE_STATUS, PROPOSED_LEASE_ID, SERVER_ENCRYPTED,
+    BLOB_SEQUENCE_NUMBER, BLOB_TYPE, CONTENT_MD5, COPY_COMPLETION_TIME, COPY_ID, COPY_PROGRESS, COPY_SOURCE, COPY_STATUS,
+    COPY_STATUS_DESCRIPTION, CREATION_TIME, LEASE_DURATION, LEASE_STATE, LEASE_STATUS, SERVER_ENCRYPTED,
 };
 use chrono::{DateTime, Utc};
-use futures::{future::*, prelude::*};
-use hyper::{header, Method, StatusCode};
+use futures::prelude::*;
+use hyper::header;
 use std::collections::HashMap;
 use std::{fmt, str::FromStr};
-use uuid::Uuid;
 use xml::Element;
 use xml::Xml::ElementNode;
 
 use azure::core::{
     enumerations,
-    errors::{check_status_extract_body, check_status_extract_headers_and_body, AzureError, TraversingError},
+    errors::{AzureError, TraversingError},
     incompletevector::IncompleteVector,
-    lease::{LeaseAction, LeaseDuration, LeaseId, LeaseState, LeaseStatus},
+    lease::{LeaseDuration, LeaseId, LeaseState, LeaseStatus},
     parsing::{cast_must, cast_optional, from_azure_time, inner_text, traverse, FromStringOptional},
     range::Range,
-    util::{HeaderMapExt, RequestBuilderExt},
+    util::HeaderMapExt,
 };
 use azure::storage::client::Client;
 
@@ -92,7 +90,7 @@ pub struct Blob {
 }
 
 impl Blob {
-    pub fn parse(elem: &Element, container_name: &str) -> Result<Blob, AzureError> {
+    pub(crate) fn parse(elem: &Element, container_name: &str) -> Result<Blob, AzureError> {
         let name = cast_must::<String>(elem, &["Name"])?;
         let snapshot_time = cast_optional::<DateTime<Utc>>(elem, &["Snapshot"])?;
         let creation_time = cast_must::<DateTime<Utc>>(elem, &["Properties", "Creation-Time"])?;
@@ -197,7 +195,7 @@ impl Blob {
         })
     }
 
-    pub fn from_headers(
+    pub(crate) fn from_headers(
         blob_name: &str,
         container_name: &str,
         snapshot_time: Option<DateTime<Utc>>,
@@ -343,88 +341,6 @@ impl Blob {
         increment: u64,
     ) -> impl Stream<Item = Vec<u8>, Error = AzureError> + 'a {
         blob_stream::BlobStream::new(c, container_name, blob_name, snapshot, range, lease_id, increment)
-    }
-
-    pub fn lease(&self, c: &Client, la: LeaseAction, lbo: &LeaseBlobOptions) -> impl Future<Item = LeaseId, Error = AzureError> {
-        let mut uri = format!(
-            "https://{}.blob.core.windows.net/{}/{}?comp=lease",
-            c.account(),
-            self.container_name,
-            self.name
-        );
-        if let Some(ref timeout) = lbo.timeout {
-            uri = format!("{}&timeout={}", uri, timeout);
-        }
-
-        let req = c.perform_request(
-            &uri,
-            Method::PUT,
-            move |ref mut request| {
-                if let Some(ref lease_id) = lbo.lease_id {
-                    request.header_formatted(LEASE_ID, lease_id);
-                }
-
-                request.header_formatted(LEASE_ACTION, la);
-
-                if let Some(lease_break_period) = lbo.lease_break_period {
-                    request.header_formatted(LEASE_BREAK_PERIOD, lease_break_period);
-                }
-                if let Some(lease_duration) = lbo.lease_duration {
-                    request.header_formatted(LEASE_DURATION, lease_duration);
-                }
-                if let Some(ref proposed_lease_id) = lbo.proposed_lease_id {
-                    request.header_formatted(PROPOSED_LEASE_ID, proposed_lease_id);
-                }
-                if let Some(ref request_id) = lbo.request_id {
-                    request.header_formatted(CLIENT_REQUEST_ID, request_id);
-                }
-            },
-            // this fix is needed to avoid
-            // receiving HTTP Error 411. The request must be chunked or have a content length
-            // This happens since hyper 0.11.2
-            Some(b""),
-        );
-
-        let expected_result = match la {
-            LeaseAction::Acquire => StatusCode::CREATED,
-            LeaseAction::Renew | LeaseAction::Change | LeaseAction::Release => StatusCode::OK,
-            LeaseAction::Break => StatusCode::ACCEPTED,
-        };
-
-        done(req)
-            .from_err()
-            .and_then(move |future_response| check_status_extract_headers_and_body(future_response, expected_result))
-            .and_then(|(headers, _)| {
-                headers
-                    .get_as_str(LEASE_ID)
-                    .and_then(|s| s.parse::<Uuid>().ok())
-                    .ok_or_else(|| AzureError::HeaderNotFound("x-ms-lease-id".to_owned()))
-            })
-    }
-
-    pub fn delete(
-        c: &Client,
-        container_name: &str,
-        blob_name: &str,
-        lease_id: Option<&LeaseId>,
-    ) -> impl Future<Item = (), Error = AzureError> {
-        let uri = format!("https://{}.blob.core.windows.net/{}/{}", c.account(), container_name, blob_name);
-
-        let req = c.perform_request(
-            &uri,
-            Method::DELETE,
-            |ref mut request| {
-                if let Some(lease_id) = lease_id {
-                    request.header_formatted(LEASE_ID, lease_id);
-                }
-            },
-            None,
-        );
-
-        done(req)
-            .from_err()
-            .and_then(move |future_response| check_status_extract_body(future_response, StatusCode::ACCEPTED))
-            .and_then(|_| ok(()))
     }
 }
 

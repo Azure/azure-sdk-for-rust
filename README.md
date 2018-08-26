@@ -8,9 +8,9 @@
 
 [![Crate](https://img.shields.io/crates/v/azure_sdk_for_rust.svg)](https://crates.io/crates/azure_sdk_for_rust) [![cratedown](https://img.shields.io/crates/d/azure_sdk_for_rust.svg)](https://crates.io/crates/azure_sdk_for_rust) [![cratelastdown](https://img.shields.io/crates/dv/azure_sdk_for_rust.svg)](https://crates.io/crates/azure_sdk_for_rust)
 
-[![tag](https://img.shields.io/github/tag/mindflavor/AzureSDKForRust.svg)](https://github.com/MindFlavor/AzureSDKForRust/tree/0.9.0)
-[![release](https://img.shields.io/github/release/mindflavor/AzureSDKForRust.svg)](https://github.com/MindFlavor/AzureSDKForRust/tree/0.9.0)
-[![commitssince](https://img.shields.io/github/commits-since/mindflavor/AzureSDKForRust/0.9.0.svg)](https://img.shields.io/github/commits-since/mindflavor/AzureSDKForRust/0.9.0.svg)
+[![tag](https://img.shields.io/github/tag/mindflavor/AzureSDKForRust.svg)](https://github.com/MindFlavor/AzureSDKForRust/tree/0.10.0)
+[![release](https://img.shields.io/github/release/mindflavor/AzureSDKForRust.svg)](https://github.com/MindFlavor/AzureSDKForRust/tree/0.10.0)
+[![commitssince](https://img.shields.io/github/commits-since/mindflavor/AzureSDKForRust/0.10.0.svg)](https://img.shields.io/github/commits-since/mindflavor/AzureSDKForRust/0.10.0.svg)
 
 ![GitHub contributors](https://img.shields.io/github/contributors/mindflavor/AzureSDKForRust.svg)
 
@@ -19,7 +19,7 @@ Microsoft Azure expose its technologies via REST API. These APIs are easily cons
 
 This crate relies heavily on the excellent crate called [Hyper](https://github.com/hyperium/hyper). As of this library version [0.4.0](https://github.com/MindFlavor/AzureSDKForRust/releases/tag/0.4.0) all the methods are future-aware.
 
-From version 0.8.0 for Cosmos and 0.9.0 for Storage the repo is embracing the builder pattern. This is still an in-progress transition but the resulting API is much more easy to use. Also most checks have been moved to compile-time. Unfortunately the changes are not backward-compatibile. As soon as am I able I will try and blog on the approach taken here.
+From version 0.8.0 for Cosmos and 0.9.0 for Storage the repo is embracing the builder pattern. As of 0.10.0, most of storage APIs have been migrated to the builder pattern but there are methods still missing. Please chech the relevant issues to follow the update process. This is still an in-progress transition but the resulting API is much more easy to use. Also most checks have been moved to compile-time. Unfortunately the changes are not backward-compatibile. I have blogged about my appoach here: [https://dev.to/mindflavor/rust-builder-pattern-with-types-3chf](https://dev.to/mindflavor/rust-builder-pattern-with-types-3chf).
 
 > **NOTE:** This repository is under heavy development and is likely to break over time. The current releases will probabily contain bugs. As usual open issues if you find any.
 

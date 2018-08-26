@@ -183,7 +183,7 @@ impl Client {
         &self.key
     }
 
-    pub fn perform_request<F>(
+    pub(crate) fn perform_request<F>(
         &self,
         uri: &str,
         method: Method,
@@ -196,7 +196,7 @@ impl Client {
         perform_request(&self.hc, uri, method, &self.key, headers_func, request_body, ServiceType::Blob)
     }
 
-    pub fn perform_table_request<F>(
+    pub(crate) fn perform_table_request<F>(
         &self,
         segment: &str,
         method: Method,
@@ -219,7 +219,7 @@ impl Client {
     }
 
     /// Uri scheme + authority e.g. http://myaccount.table.core.windows.net/
-    pub fn get_uri_prefix(&self, service_type: &ServiceType) -> String {
+    pub(crate) fn get_uri_prefix(&self, service_type: &ServiceType) -> String {
         "https://".to_owned()
             + self.account()
             + match *service_type {

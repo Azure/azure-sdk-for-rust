@@ -6,8 +6,7 @@ extern crate futures;
 extern crate hyper;
 extern crate tokio_core;
 
-use azure_sdk_for_rust::core::range::Range;
-use azure_sdk_for_rust::core::ContainerNameSupport;
+use azure_sdk_for_rust::core::{range::Range, DeleteSnapshotsMethod};
 use azure_sdk_for_rust::prelude::*;
 use azure_sdk_for_rust::storage::blob::Blob;
 use azure_sdk_for_rust::storage::client::Client;
@@ -122,9 +121,15 @@ fn code() -> Result<(), Box<std::error::Error>> {
         returned_string
     );
 
-    let future = Blob::delete(&client, &container_name, file_name, None).map(|_| {
-        println!("{}/{} blob deleted!", container_name, file_name);
-    });
+    let future = client
+        .delete_blob()
+        .with_container_name(&container_name)
+        .with_blob_name(file_name)
+        .with_delete_snapshots_method(DeleteSnapshotsMethod::Include)
+        .finalize()
+        .map(|_| {
+            println!("{}/{} blob deleted!", container_name, file_name);
+        });
 
     reactor.run(future)?;
 
