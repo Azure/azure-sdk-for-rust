@@ -27,6 +27,7 @@ pub trait Blob {
     fn release_blob_lease<'a>(&'a self) -> blob::requests::ReleaseBlobLeaseBuilder<'a, No, No, No>;
     fn break_blob_lease<'a>(&'a self) -> blob::requests::BreakBlobLeaseBuilder<'a, No, No, No>;
     fn delete_blob_snapshot<'a>(&'a self) -> blob::requests::DeleteBlobSnapshotBuilder<'a, No, No, No>;
+    fn delete_blob<'a>(&'a self) -> blob::requests::DeleteBlobBuilder<'a, No, No, No>;
 }
 
 pub trait Container {
@@ -112,6 +113,10 @@ impl Blob for Client {
 
     fn delete_blob_snapshot<'a>(&'a self) -> blob::requests::DeleteBlobSnapshotBuilder<'a, No, No, No> {
         blob::requests::DeleteBlobSnapshotBuilder::new(self)
+    }
+
+    fn delete_blob<'a>(&'a self) -> blob::requests::DeleteBlobBuilder<'a, No, No, No> {
+        blob::requests::DeleteBlobBuilder::new(self)
     }
 }
 

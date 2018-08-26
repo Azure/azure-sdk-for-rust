@@ -14,6 +14,16 @@ macro_rules! create_enum {
             )*
         }
 
+        impl ::std::convert::Into<&'static str> for $en {
+            fn into(self) -> &'static str {
+                match self {
+                    $(
+                        $en::$na => $x,
+                    )*
+                }
+            }
+        }
+
         impl FromStringOptional<$en> for $en {
             fn from_str_optional(s : &str) -> Result<$en, TraversingError> {
                 match s.parse::<$en>() {
