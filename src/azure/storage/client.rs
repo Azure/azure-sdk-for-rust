@@ -28,6 +28,8 @@ pub trait Blob {
     fn break_blob_lease<'a>(&'a self) -> blob::requests::BreakBlobLeaseBuilder<'a, No, No, No>;
     fn delete_blob_snapshot<'a>(&'a self) -> blob::requests::DeleteBlobSnapshotBuilder<'a, No, No, No>;
     fn delete_blob<'a>(&'a self) -> blob::requests::DeleteBlobBuilder<'a, No, No, No>;
+
+    fn stream_blob<'a>(&'a self) -> blob::BlobStreamBuilder<'a, No, No, No>;
 }
 
 pub trait Container {
@@ -43,7 +45,7 @@ pub trait Container {
     fn break_container_lease<'a>(&'a self) -> container::requests::BreakLeaseBuilder<'a, No>;
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Client {
     account: String,
     key: String,
@@ -117,6 +119,10 @@ impl Blob for Client {
 
     fn delete_blob<'a>(&'a self) -> blob::requests::DeleteBlobBuilder<'a, No, No, No> {
         blob::requests::DeleteBlobBuilder::new(self)
+    }
+
+    fn stream_blob<'a>(&'a self) -> blob::BlobStreamBuilder<'a, No, No, No> {
+        blob::BlobStreamBuilder::new(self)
     }
 }
 

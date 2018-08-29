@@ -57,15 +57,12 @@ fn code() -> Result<(), Box<std::error::Error>> {
     // http overhead will be less but it also means you will have to wait for more
     // time before receiving anything. In this example we use an awkward value
     // just to make the test worthwile.
-    let stream = Blob::stream(
-        &client,
-        &container_name,
-        file_name,
-        None,
-        &Range::new(0, string.len() as u64),
-        None,
-        13,
-    );
+    let stream = client
+        .stream_blob()
+        .with_container_name(&container_name)
+        .with_blob_name(file_name)
+        .with_range(&Range::new(0, string.len() as u64))
+        .finalize();
 
     let result = std::rc::Rc::new(std::cell::RefCell::new(Vec::new()));
 

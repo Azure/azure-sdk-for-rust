@@ -1,7 +1,8 @@
 mod lease_blob_options;
 pub use self::lease_blob_options::{LeaseBlobOptions, LEASE_BLOB_OPTIONS_DEFAULT};
+mod blob_stream_builder;
+pub use self::blob_stream_builder::BlobStreamBuilder;
 mod blob_block_type;
-mod blob_stream;
 pub use self::blob_block_type::BlobBlockType;
 mod block_list_type;
 pub use self::block_list_type::BlockListType;
@@ -329,18 +330,6 @@ impl Blob {
             remaining_retention_days: None, // TODO: Not present or documentation bug?
             metadata: HashMap::new(),       // TODO: Not present or documentation bug?
         })
-    }
-
-    pub fn stream<'a>(
-        c: &'a Client,
-        container_name: &'a str,
-        blob_name: &'a str,
-        snapshot: Option<&'a DateTime<Utc>>,
-        range: &Range,
-        lease_id: Option<&'a LeaseId>,
-        increment: u64,
-    ) -> impl Stream<Item = Vec<u8>, Error = AzureError> + 'a {
-        blob_stream::BlobStream::new(c, container_name, blob_name, snapshot, range, lease_id, increment)
     }
 }
 
