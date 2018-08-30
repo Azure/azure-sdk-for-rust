@@ -4,8 +4,8 @@ pub type ContinuationToken = String;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct IncompleteVector<T> {
-    token: Option<String>,
-    vector: Vec<T>,
+    pub token: Option<String>,
+    pub vector: Vec<T>,
 }
 
 impl<T> IncompleteVector<T> {

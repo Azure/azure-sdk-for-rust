@@ -1,6 +1,8 @@
 mod lease_blob_options;
 pub use self::lease_blob_options::{LeaseBlobOptions, LEASE_BLOB_OPTIONS_DEFAULT};
 mod blob_block_type;
+mod list_blob_stream_builder;
+pub use self::list_blob_stream_builder::ListBlobStreamBuilder;
 mod blob_stream;
 pub use self::blob_block_type::BlobBlockType;
 mod block_list_type;
