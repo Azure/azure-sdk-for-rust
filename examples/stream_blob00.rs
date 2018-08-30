@@ -6,7 +6,6 @@ extern crate tokio_core;
 
 use azure_sdk_for_rust::core::{range::Range, DeleteSnapshotsMethod};
 use azure_sdk_for_rust::prelude::*;
-use azure_sdk_for_rust::storage::blob::Blob;
 use azure_sdk_for_rust::storage::client::Client;
 use futures::future::ok;
 use futures::prelude::*;

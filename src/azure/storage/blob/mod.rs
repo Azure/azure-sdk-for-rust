@@ -19,7 +19,6 @@ use azure::core::headers::{
     COPY_STATUS_DESCRIPTION, CREATION_TIME, LEASE_DURATION, LEASE_STATE, LEASE_STATUS, SERVER_ENCRYPTED,
 };
 use chrono::{DateTime, Utc};
-use futures::prelude::*;
 use hyper::header;
 use std::collections::HashMap;
 use std::{fmt, str::FromStr};
@@ -30,12 +29,11 @@ use azure::core::{
     enumerations,
     errors::{AzureError, TraversingError},
     incompletevector::IncompleteVector,
-    lease::{LeaseDuration, LeaseId, LeaseState, LeaseStatus},
+    lease::{LeaseDuration, LeaseState, LeaseStatus},
     parsing::{cast_must, cast_optional, from_azure_time, inner_text, traverse, FromStringOptional},
     range::Range,
     util::HeaderMapExt,
 };
-use azure::storage::client::Client;
 
 create_enum!(
     BlobType,

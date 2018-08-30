@@ -356,8 +356,8 @@ impl<'a> BlobStreamBuilder<'a, Yes, Yes, Yes> {
 
         let snapshot = self.snapshot.to_owned();
         let timeout = self.timeout.to_owned();
-        //let lease_id = self.lease_id.to_owned();
-        //let client_request_id = self.client_request_id.to_owned();
+        let lease_id = self.lease_id.map(|v| v.clone());
+        let client_request_id = self.client_request_id.map(|v| v.to_owned());
         let increment = self.increment;
 
         let client = self.client().clone();
@@ -386,12 +386,12 @@ impl<'a> BlobStreamBuilder<'a, Yes, Yes, Yes> {
             if let Some(timeout) = timeout {
                 req = req.with_timeout(timeout);
             }
-            /*if let Some(lease_id) = lease_id {
+            if let Some(ref lease_id) = &lease_id {
                 req = req.with_lease_id(lease_id);
-            }*/
-            /*if let Some(client_request_id) = client_request_id {
+            }
+            if let Some(ref client_request_id) = &client_request_id {
                 req = req.with_client_request_id(client_request_id);
-            }*/
+            }
 
             let req = req.finalize();
             Some(req.map(move |response| {
