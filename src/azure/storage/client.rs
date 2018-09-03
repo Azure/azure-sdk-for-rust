@@ -123,6 +123,7 @@ impl Blob for Client {
 
     fn stream_list_blobs<'a>(&'a self) -> blob::ListBlobStreamBuilder<'a, No> {
         blob::ListBlobStreamBuilder::new(self)
+    }
 
     fn stream_blob<'a>(&'a self) -> blob::BlobStreamBuilder<'a, No, No, No> {
         blob::BlobStreamBuilder::new(self)
