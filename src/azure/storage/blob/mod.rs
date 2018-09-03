@@ -1,5 +1,7 @@
 mod lease_blob_options;
 pub use self::lease_blob_options::{LeaseBlobOptions, LEASE_BLOB_OPTIONS_DEFAULT};
+mod blob_stream_builder;
+pub use self::blob_stream_builder::BlobStreamBuilder;
 mod blob_block_type;
 mod list_blob_stream_builder;
 pub use self::list_blob_stream_builder::ListBlobStreamBuilder;
@@ -20,7 +22,6 @@ use azure::core::headers::{
     COPY_STATUS_DESCRIPTION, CREATION_TIME, LEASE_DURATION, LEASE_STATE, LEASE_STATUS, SERVER_ENCRYPTED,
 };
 use chrono::{DateTime, Utc};
-use futures::prelude::*;
 use hyper::header;
 use std::collections::HashMap;
 use std::{fmt, str::FromStr};
@@ -31,12 +32,11 @@ use azure::core::{
     enumerations,
     errors::{AzureError, TraversingError},
     incompletevector::IncompleteVector,
-    lease::{LeaseDuration, LeaseId, LeaseState, LeaseStatus},
+    lease::{LeaseDuration, LeaseState, LeaseStatus},
     parsing::{cast_must, cast_optional, from_azure_time, inner_text, traverse, FromStringOptional},
     range::Range,
     util::HeaderMapExt,
 };
-use azure::storage::client::Client;
 
 create_enum!(
     BlobType,
@@ -331,18 +331,6 @@ impl Blob {
             remaining_retention_days: None, // TODO: Not present or documentation bug?
             metadata: HashMap::new(),       // TODO: Not present or documentation bug?
         })
-    }
-
-    pub fn stream<'a>(
-        c: &'a Client,
-        container_name: &'a str,
-        blob_name: &'a str,
-        snapshot: Option<&'a DateTime<Utc>>,
-        range: &Range,
-        lease_id: Option<&'a LeaseId>,
-        increment: u64,
-    ) -> impl Stream<Item = Vec<u8>, Error = AzureError> + 'a {
-        blob_stream::BlobStream::new(c, container_name, blob_name, snapshot, range, lease_id, increment)
     }
 }
 

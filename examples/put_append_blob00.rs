@@ -45,7 +45,7 @@ fn code() -> Result<(), Box<Error>> {
 
     // this is not mandatory but it helps preventing
     // spurious data to be uploaded.
-    let digest = md5::compute(&data[..]);
+    let _digest = md5::compute(&data[..]);
 
     // The required parameters are container_name, blob_name and body.
     // The builder supports many more optional
