@@ -8,7 +8,6 @@ extern crate tokio_core;
 
 use azure_sdk_for_rust::core::{range::Range, DeleteSnapshotsMethod};
 use azure_sdk_for_rust::prelude::*;
-use azure_sdk_for_rust::storage::blob::Blob;
 use azure_sdk_for_rust::storage::client::Client;
 use azure_sdk_for_rust::storage::client::Container as ContainerTrait;
 use azure_sdk_for_rust::storage::container::{PublicAccess, PublicAccessSupport};
@@ -69,15 +68,12 @@ fn code() -> Result<(), Box<std::error::Error>> {
     // http overhead will be less but it also means you will have to wait for more
     // time before receiving anything. In this example we use an awkward value
     // just to make the test worthwile.
-    let stream = Blob::stream(
-        &client,
-        &container_name,
-        file_name,
-        None,
-        &Range::new(0, string.len() as u64),
-        None,
-        13,
-    );
+    let stream = client
+        .stream_blob()
+        .with_container_name(&container_name)
+        .with_blob_name(file_name)
+        .with_range(&Range::new(0, string.len() as u64))
+        .finalize();
 
     let result = std::rc::Rc::new(std::cell::RefCell::new(Vec::new()));
 

@@ -3,7 +3,9 @@ pub use self::lease_blob_options::{LeaseBlobOptions, LEASE_BLOB_OPTIONS_DEFAULT}
 mod blob_stream_builder;
 pub use self::blob_stream_builder::BlobStreamBuilder;
 mod blob_block_type;
+mod list_blob_stream_builder;
 pub use self::blob_block_type::BlobBlockType;
+pub use self::list_blob_stream_builder::ListBlobStreamBuilder;
 mod block_list_type;
 pub use self::block_list_type::BlockListType;
 mod blob_block_with_size;
