@@ -423,7 +423,7 @@ enum ContinuationState {
 
 impl<'a> ListBlobStreamBuilder<'a, Yes> {
     #[inline]
-    pub fn finalize(self) -> impl Stream<Item = Vec<Blob>, Error = AzureError> {
+    pub fn finalize(self) -> impl Stream<Item = Blob, Error = AzureError> {
         let container_name = self.container_name().to_owned();
 
         let client_request_id = self.client_request_id.map(|v| v.to_owned());
@@ -482,8 +482,8 @@ impl<'a> ListBlobStreamBuilder<'a, Yes> {
             let req = req.finalize();
             Some(req.map(move |response| {
                 let IncompleteVector { token, vector } = response.incomplete_vector;
-                (vector, ContinuationState::Next(token))
+                (stream::iter_ok(vector), ContinuationState::Next(token))
             }))
-        })
+        }).flatten()
     }
 }
