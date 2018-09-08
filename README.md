@@ -60,6 +60,12 @@ struct MySampleStruct<'a> {
     a_timestamp: i64,
 }
 
+// Following the official azure cosmos db tutorial: https://docs.microsoft.com/pt-br/azure/cosmos-db/sql-api-dotnetcore-get-started
+// Master key is the Primary Key from Keys section in your CosmosDB screen
+// Account is the first part of URI from Keys section, if your URI is  https://test.documents.azure.com:443/ the account is test
+// DATABASES are the base objects in your Data Explorer section
+// COLLECTIONS are the objects inside the DATABASES
+
 const DATABASE: &'static str = "azuresdktestdb";
 const COLLECTION: &'static str = "azuresdktc";
 
