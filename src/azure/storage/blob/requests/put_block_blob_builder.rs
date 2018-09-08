@@ -6,7 +6,7 @@ use azure::core::{
     ClientRequestIdSupport, ClientRequired, ContainerNameRequired, ContainerNameSupport, ContentDispositionOption,
     ContentDispositionSupport, ContentEncodingOption, ContentEncodingSupport, ContentLanguageOption, ContentLanguageSupport,
     ContentMD5Option, ContentMD5Support, ContentTypeOption, ContentTypeSupport, LeaseIdOption, LeaseIdSupport, MetadataOption,
-    MetadataSupport, No, TimeoutOption, TimeoutSupport, ToAssign, Yes,
+    MetadataSupport, No, TimeoutOption, TimeoutSupport, ToAssign, Yes, COMPLETE_ENCODE_SET,
 };
 use azure::storage::blob::responses::PutBlockBlobResponse;
 use azure::storage::client::Client;
@@ -15,6 +15,7 @@ use futures::prelude::*;
 use hyper::{Method, StatusCode};
 use std::collections::HashMap;
 use std::marker::PhantomData;
+use url::percent_encoding::utf8_percent_encode;
 
 #[derive(Debug, Clone)]
 pub struct PutBlockBlobBuilder<'a, ContainerNameSet, BlobNameSet, BodySet>
@@ -671,8 +672,8 @@ impl<'a> PutBlockBlobBuilder<'a, Yes, Yes, Yes> {
         let mut uri = format!(
             "https://{}.blob.core.windows.net/{}/{}",
             self.client().account(),
-            self.container_name(),
-            self.blob_name()
+            utf8_percent_encode(self.container_name(), COMPLETE_ENCODE_SET),
+            utf8_percent_encode(self.blob_name(), COMPLETE_ENCODE_SET)
         );
         if let Some(timeout) = TimeoutOption::to_uri_parameter(&self) {
             uri = format!("{}?{}", uri, timeout);

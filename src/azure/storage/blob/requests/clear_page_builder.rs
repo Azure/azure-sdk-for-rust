@@ -7,7 +7,7 @@ use azure::core::{
     BA512RangeRequired, BA512RangeSupport, BlobNameRequired, BlobNameSupport, ClientRequestIdOption, ClientRequestIdSupport,
     ClientRequired, ContainerNameRequired, ContainerNameSupport, IfMatchConditionOption, IfMatchConditionSupport, IfSinceConditionOption,
     IfSinceConditionSupport, LeaseIdOption, LeaseIdSupport, No, SequenceNumberConditionOption, SequenceNumberConditionSupport,
-    TimeoutOption, TimeoutSupport, ToAssign, Yes,
+    TimeoutOption, TimeoutSupport, ToAssign, Yes, COMPLETE_ENCODE_SET,
 };
 use azure::storage::blob::responses::ClearPageResponse;
 use azure::storage::client::Client;
@@ -15,6 +15,7 @@ use futures::future::done;
 use futures::prelude::*;
 use hyper::{Method, StatusCode};
 use std::marker::PhantomData;
+use url::percent_encoding::utf8_percent_encode;
 
 #[derive(Debug, Clone)]
 pub struct ClearPageBuilder<'a, ContainerNameSet, BlobNameSet, BA512RangeSet>
@@ -456,8 +457,8 @@ impl<'a> ClearPageBuilder<'a, Yes, Yes, Yes> {
         let mut uri = format!(
             "https://{}.blob.core.windows.net/{}/{}?comp=page",
             self.client().account(),
-            self.container_name(),
-            self.blob_name()
+            utf8_percent_encode(self.container_name(), COMPLETE_ENCODE_SET),
+            utf8_percent_encode(self.blob_name(), COMPLETE_ENCODE_SET)
         );
         if let Some(timeout) = TimeoutOption::to_uri_parameter(&self) {
             uri = format!("{}&{}", uri, timeout);

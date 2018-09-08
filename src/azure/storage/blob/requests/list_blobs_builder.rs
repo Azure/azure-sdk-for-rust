@@ -4,7 +4,7 @@ use azure::core::{
     DelimiterSupport, IncludeCopyOption, IncludeCopySupport, IncludeDeletedOption, IncludeDeletedSupport, IncludeListOptions,
     IncludeMetadataOption, IncludeMetadataSupport, IncludeSnapshotsOption, IncludeSnapshotsSupport, IncludeUncommittedBlobsOption,
     IncludeUncommittedBlobsSupport, MaxResultsOption, MaxResultsSupport, NextMarkerOption, NextMarkerSupport, No, PrefixOption,
-    PrefixSupport, TimeoutOption, TimeoutSupport, ToAssign, Yes,
+    PrefixSupport, TimeoutOption, TimeoutSupport, ToAssign, Yes, COMPLETE_ENCODE_SET,
 };
 use azure::storage::blob::responses::ListBlobsResponse;
 use azure::storage::client::Client;
@@ -12,6 +12,7 @@ use futures::future::done;
 use futures::prelude::*;
 use hyper::{Method, StatusCode};
 use std::marker::PhantomData;
+use url::percent_encoding::utf8_percent_encode;
 
 #[derive(Debug, Clone)]
 pub struct ListBlobBuilder<'a, ContainerNameSet>
@@ -526,7 +527,7 @@ impl<'a> ListBlobBuilder<'a, Yes> {
             "https://{}.blob.core.windows.\
              net/{}?restype=container&comp=list",
             self.client().account(),
-            container_name
+            utf8_percent_encode(&container_name, COMPLETE_ENCODE_SET),
         );
 
         if let Some(mr) = MaxResultsOption::to_uri_parameter(&self) {

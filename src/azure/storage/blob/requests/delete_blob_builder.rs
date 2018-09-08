@@ -3,7 +3,7 @@ use azure::core::lease::LeaseId;
 use azure::core::{
     BlobNameRequired, BlobNameSupport, ClientRequestIdOption, ClientRequestIdSupport, ClientRequired, ContainerNameRequired,
     ContainerNameSupport, DeleteSnapshotsMethodRequired, DeleteSnapshotsMethodSupport, LeaseIdOption, LeaseIdSupport, TimeoutOption,
-    TimeoutSupport,
+    TimeoutSupport, COMPLETE_ENCODE_SET,
 };
 use azure::core::{DeleteSnapshotsMethod, No, ToAssign, Yes};
 use azure::storage::blob::responses::DeleteBlobResponse;
@@ -11,6 +11,7 @@ use azure::storage::client::Client;
 use futures::future::{done, Future};
 use hyper::{Method, StatusCode};
 use std::marker::PhantomData;
+use url::percent_encoding::utf8_percent_encode;
 
 #[derive(Debug, Clone)]
 pub struct DeleteBlobBuilder<'a, ContainerNameSet, BlobNameSet, DeleteSnapshotMethodSet>
@@ -306,8 +307,8 @@ impl<'a> DeleteBlobBuilder<'a, Yes, Yes, Yes> {
         let mut uri = format!(
             "https://{}.blob.core.windows.net/{}/{}",
             self.client().account(),
-            self.container_name(),
-            self.blob_name(),
+            utf8_percent_encode(self.container_name(), COMPLETE_ENCODE_SET),
+            utf8_percent_encode(self.blob_name(), COMPLETE_ENCODE_SET)
         );
 
         trace!("delete_blob uri == {:?}", uri);

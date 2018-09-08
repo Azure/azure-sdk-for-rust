@@ -6,7 +6,7 @@ use azure::core::util::RequestBuilderExt;
 use azure::core::{
     BlobNameRequired, BlobNameSupport, ClientRequestIdOption, ClientRequestIdSupport, ClientRequired, ContainerNameRequired,
     ContainerNameSupport, LeaseIdOption, LeaseIdSupport, No, RangeOption, RangeSupport, SnapshotOption, SnapshotSupport, TimeoutOption,
-    TimeoutSupport, ToAssign, Yes,
+    TimeoutSupport, ToAssign, Yes, COMPLETE_ENCODE_SET,
 };
 use azure::storage::blob::responses::GetBlobResponse;
 use azure::storage::blob::Blob;
@@ -16,6 +16,7 @@ use futures::future::done;
 use futures::prelude::*;
 use hyper::{Method, StatusCode};
 use std::marker::PhantomData;
+use url::percent_encoding::utf8_percent_encode;
 
 #[derive(Debug, Clone)]
 pub struct GetBlobBuilder<'a, ContainerNameSet, BlobNameSet>
@@ -324,8 +325,8 @@ impl<'a> GetBlobBuilder<'a, Yes, Yes> {
         let mut uri = format!(
             "https://{}.blob.core.windows.net/{}/{}",
             self.client().account(),
-            &container_name,
-            &blob_name
+            utf8_percent_encode(&container_name, COMPLETE_ENCODE_SET),
+            utf8_percent_encode(&blob_name, COMPLETE_ENCODE_SET)
         );
 
         let mut f_first = true;

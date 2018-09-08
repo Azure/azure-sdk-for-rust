@@ -3,7 +3,7 @@ use azure::core::lease::LeaseId;
 use azure::core::{
     BlobNameRequired, BlobNameSupport, BlockIdRequired, BlockIdSupport, BodyRequired, BodySupport, ClientRequestIdOption,
     ClientRequestIdSupport, ClientRequired, ContainerNameRequired, ContainerNameSupport, ContentMD5Option, ContentMD5Support,
-    LeaseIdOption, LeaseIdSupport, No, TimeoutOption, TimeoutSupport, ToAssign, Yes,
+    LeaseIdOption, LeaseIdSupport, No, TimeoutOption, TimeoutSupport, ToAssign, Yes, COMPLETE_ENCODE_SET,
 };
 use azure::storage::blob::responses::PutBlockResponse;
 use azure::storage::client::Client;
@@ -11,6 +11,7 @@ use futures::future::done;
 use futures::prelude::*;
 use hyper::{Method, StatusCode};
 use std::marker::PhantomData;
+use url::percent_encoding::utf8_percent_encode;
 
 #[derive(Debug, Clone)]
 pub struct PutBlockBuilder<'a, ContainerNameSet, BlobNameSet, BodySet, BlockIdSet>
@@ -429,8 +430,8 @@ impl<'a> PutBlockBuilder<'a, Yes, Yes, Yes, Yes> {
         let mut uri = format!(
             "https://{}.blob.core.windows.net/{}/{}?comp=block",
             self.client().account(),
-            self.container_name(),
-            self.blob_name()
+            utf8_percent_encode(self.container_name(), COMPLETE_ENCODE_SET),
+            utf8_percent_encode(self.blob_name(), COMPLETE_ENCODE_SET)
         );
         if let Some(timeout) = TimeoutOption::to_uri_parameter(&self) {
             uri = format!("{}&{}", uri, timeout);

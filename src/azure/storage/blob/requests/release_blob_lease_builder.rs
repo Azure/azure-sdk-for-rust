@@ -3,7 +3,7 @@ use azure::core::headers::LEASE_ACTION;
 use azure::core::lease::LeaseId;
 use azure::core::{
     BlobNameRequired, BlobNameSupport, ClientRequestIdOption, ClientRequestIdSupport, ClientRequired, ContainerNameRequired,
-    ContainerNameSupport, LeaseIdRequired, LeaseIdSupport, TimeoutOption, TimeoutSupport,
+    ContainerNameSupport, LeaseIdRequired, LeaseIdSupport, TimeoutOption, TimeoutSupport, COMPLETE_ENCODE_SET,
 };
 use azure::core::{No, ToAssign, Yes};
 use azure::storage::blob::responses::ReleaseBlobLeaseResponse;
@@ -11,6 +11,7 @@ use azure::storage::client::Client;
 use futures::future::{done, Future};
 use hyper::{Method, StatusCode};
 use std::marker::PhantomData;
+use url::percent_encoding::utf8_percent_encode;
 
 #[derive(Debug, Clone)]
 pub struct ReleaseBlobLeaseBuilder<'a, ContainerNameSet, BlobNameSet, LeaseIdSet>
@@ -256,8 +257,8 @@ impl<'a> ReleaseBlobLeaseBuilder<'a, Yes, Yes, Yes> {
         let mut uri = format!(
             "https://{}.blob.core.windows.net/{}/{}?comp=lease",
             self.client().account(),
-            self.container_name(),
-            self.blob_name()
+            utf8_percent_encode(self.container_name(), COMPLETE_ENCODE_SET),
+            utf8_percent_encode(self.blob_name(), COMPLETE_ENCODE_SET)
         );
 
         if let Some(nm) = TimeoutOption::to_uri_parameter(&self) {
