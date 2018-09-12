@@ -7,6 +7,7 @@ use azure::core::{
     headers::{BLOB_PUBLIC_ACCESS, HAS_IMMUTABILITY_POLICY, HAS_LEGAL_HOLD, LEASE_DURATION, LEASE_STATE, LEASE_STATUS, META_PREFIX},
     lease::{LeaseDuration, LeaseState, LeaseStatus},
     parsing::{cast_must, cast_optional, traverse, FromStringOptional},
+    ClientRequired, ContainerNameRequired, COMPLETE_ENCODE_SET,
 };
 use chrono::{DateTime, Utc};
 use http::request::Builder;
@@ -14,6 +15,7 @@ use http::HeaderMap;
 use hyper::header;
 use std::collections::HashMap;
 use std::{fmt, str::FromStr};
+use url::percent_encoding::utf8_percent_encode;
 use xml::{Element, Xml};
 
 create_enum!(PublicAccess, (None, "none"), (Container, "container"), (Blob, "blob"));
@@ -210,5 +212,25 @@ impl Container {
             has_legal_hold,
             metadata,
         })
+    }
+}
+
+#[inline]
+pub(crate) fn generate_container_uri<'a, T>(t: &T, params: Option<&str>) -> String
+where
+    T: ClientRequired<'a> + ContainerNameRequired<'a>,
+{
+    match params {
+        Some(ref params) => format!(
+            "https://{}.blob.core.windows.net/{}?{}",
+            t.client().account(),
+            utf8_percent_encode(t.container_name(), COMPLETE_ENCODE_SET),
+            params
+        ),
+        None => format!(
+            "https://{}.blob.core.windows.net/{}",
+            t.client().account(),
+            utf8_percent_encode(t.container_name(), COMPLETE_ENCODE_SET),
+        ),
     }
 }

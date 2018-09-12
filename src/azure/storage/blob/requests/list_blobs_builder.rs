@@ -4,15 +4,15 @@ use azure::core::{
     DelimiterSupport, IncludeCopyOption, IncludeCopySupport, IncludeDeletedOption, IncludeDeletedSupport, IncludeListOptions,
     IncludeMetadataOption, IncludeMetadataSupport, IncludeSnapshotsOption, IncludeSnapshotsSupport, IncludeUncommittedBlobsOption,
     IncludeUncommittedBlobsSupport, MaxResultsOption, MaxResultsSupport, NextMarkerOption, NextMarkerSupport, No, PrefixOption,
-    PrefixSupport, TimeoutOption, TimeoutSupport, ToAssign, Yes, COMPLETE_ENCODE_SET,
+    PrefixSupport, TimeoutOption, TimeoutSupport, ToAssign, Yes,
 };
 use azure::storage::blob::responses::ListBlobsResponse;
 use azure::storage::client::Client;
+use azure::storage::container::generate_container_uri;
 use futures::future::done;
 use futures::prelude::*;
 use hyper::{Method, StatusCode};
 use std::marker::PhantomData;
-use url::percent_encoding::utf8_percent_encode;
 
 #[derive(Debug, Clone)]
 pub struct ListBlobBuilder<'a, ContainerNameSet>
@@ -523,12 +523,7 @@ impl<'a> ListBlobBuilder<'a, Yes> {
         // 'static lifetimes.
         let container_name = self.container_name().to_owned();
 
-        let mut uri = format!(
-            "https://{}.blob.core.windows.\
-             net/{}?restype=container&comp=list",
-            self.client().account(),
-            utf8_percent_encode(&container_name, COMPLETE_ENCODE_SET),
-        );
+        let mut uri = generate_container_uri(&self, Some("restype=container&comp=list"));
 
         if let Some(mr) = MaxResultsOption::to_uri_parameter(&self) {
             uri = format!("{}&{}", uri, mr);
@@ -545,6 +540,8 @@ impl<'a> ListBlobBuilder<'a, Yes> {
         if let Some(mr) = IncludeListOptions::to_uri_parameter(&self) {
             uri = format!("{}&{}", uri, mr);
         }
+
+        trace!("list blob uri = {}", uri);
 
         let req = self.client().perform_request(&uri, Method::GET, |_| {}, None);
 
