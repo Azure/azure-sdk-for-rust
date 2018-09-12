@@ -5,8 +5,9 @@ use azure::core::{
     CacheControlSupport, ClientRequestIdOption, ClientRequestIdSupport, ClientRequired, ContainerNameRequired, ContainerNameSupport,
     ContentDispositionOption, ContentDispositionSupport, ContentEncodingOption, ContentEncodingSupport, ContentLanguageOption,
     ContentLanguageSupport, ContentTypeOption, ContentTypeSupport, LeaseIdOption, LeaseIdSupport, MetadataOption, MetadataSupport, No,
-    TimeoutOption, TimeoutSupport, ToAssign, Yes, COMPLETE_ENCODE_SET,
+    TimeoutOption, TimeoutSupport, ToAssign, Yes,
 };
+use azure::storage::blob::generate_blob_uri;
 use azure::storage::blob::responses::PutBlockListResponse;
 use azure::storage::blob::BlockList;
 use azure::storage::client::Client;
@@ -17,7 +18,6 @@ use md5;
 use std::borrow::Borrow;
 use std::collections::HashMap;
 use std::marker::PhantomData;
-use url::percent_encoding::utf8_percent_encode;
 
 #[derive(Debug, Clone)]
 pub struct PutBlockListBuilder<'a, T, ContainerNameSet, BlobNameSet, BlockListSet>
@@ -659,12 +659,8 @@ where
 {
     #[inline]
     pub fn finalize(self) -> impl Future<Item = PutBlockListResponse, Error = AzureError> {
-        let mut uri = format!(
-            "https://{}.blob.core.windows.net/{}/{}?comp=blocklist",
-            self.client().account(),
-            utf8_percent_encode(self.container_name(), COMPLETE_ENCODE_SET),
-            utf8_percent_encode(self.blob_name(), COMPLETE_ENCODE_SET)
-        );
+        let mut uri = generate_blob_uri(&self, Some("comp=blocklist"));
+
         if let Some(timeout) = TimeoutOption::to_uri_parameter(&self) {
             uri = format!("{}&{}", uri, timeout);
         }

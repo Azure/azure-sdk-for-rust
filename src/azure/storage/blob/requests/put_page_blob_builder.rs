@@ -6,8 +6,9 @@ use azure::core::{
     ClientRequestIdSupport, ClientRequired, ContainerNameRequired, ContainerNameSupport, ContentDispositionOption,
     ContentDispositionSupport, ContentEncodingOption, ContentEncodingSupport, ContentLanguageOption, ContentLanguageSupport,
     ContentTypeOption, ContentTypeSupport, LeaseIdOption, LeaseIdSupport, MetadataOption, MetadataSupport, No, PageBlobLengthRequired,
-    PageBlobLengthSupport, SequenceNumberOption, SequenceNumberSupport, TimeoutOption, TimeoutSupport, ToAssign, Yes, COMPLETE_ENCODE_SET,
+    PageBlobLengthSupport, SequenceNumberOption, SequenceNumberSupport, TimeoutOption, TimeoutSupport, ToAssign, Yes,
 };
+use azure::storage::blob::generate_blob_uri;
 use azure::storage::blob::responses::PutBlobResponse;
 use azure::storage::client::Client;
 use futures::future::{done, ok};
@@ -15,7 +16,6 @@ use futures::prelude::*;
 use hyper::{Method, StatusCode};
 use std::collections::HashMap;
 use std::marker::PhantomData;
-use url::percent_encoding::utf8_percent_encode;
 
 #[derive(Debug, Clone)]
 pub struct PutPageBlobBuilder<'a, ContainerNameSet, BlobNameSet, ContentLengthSet>
@@ -751,12 +751,8 @@ where
 impl<'a> PutPageBlobBuilder<'a, Yes, Yes, Yes> {
     #[inline]
     pub fn finalize(self) -> impl Future<Item = PutBlobResponse, Error = AzureError> {
-        let mut uri = format!(
-            "https://{}.blob.core.windows.net/{}/{}",
-            self.client().account(),
-            utf8_percent_encode(self.container_name(), COMPLETE_ENCODE_SET),
-            utf8_percent_encode(self.blob_name(), COMPLETE_ENCODE_SET)
-        );
+        let mut uri = generate_blob_uri(&self, None);
+
         if let Some(timeout) = TimeoutOption::to_uri_parameter(&self) {
             uri = format!("{}?{}", uri, timeout);
         }

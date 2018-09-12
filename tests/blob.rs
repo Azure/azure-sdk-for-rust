@@ -264,7 +264,7 @@ fn list_containers() {
 }
 
 #[test]
-fn put_blob() {
+fn put_block_blob() {
     use azure_sdk_for_rust::storage::client::Blob as BlobTrait;
     use azure_sdk_for_rust::storage::client::Container as ContainerTrait;
 

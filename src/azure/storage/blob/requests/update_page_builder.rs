@@ -7,15 +7,15 @@ use azure::core::{
     BA512RangeRequired, BA512RangeSupport, BlobNameRequired, BlobNameSupport, BodyRequired, BodySupport, ClientRequestIdOption,
     ClientRequestIdSupport, ClientRequired, ContainerNameRequired, ContainerNameSupport, ContentMD5Option, ContentMD5Support,
     IfMatchConditionOption, IfMatchConditionSupport, IfSinceConditionOption, IfSinceConditionSupport, LeaseIdOption, LeaseIdSupport, No,
-    SequenceNumberConditionOption, SequenceNumberConditionSupport, TimeoutOption, TimeoutSupport, ToAssign, Yes, COMPLETE_ENCODE_SET,
+    SequenceNumberConditionOption, SequenceNumberConditionSupport, TimeoutOption, TimeoutSupport, ToAssign, Yes,
 };
+use azure::storage::blob::generate_blob_uri;
 use azure::storage::blob::responses::UpdatePageResponse;
 use azure::storage::client::Client;
 use futures::future::done;
 use futures::prelude::*;
 use hyper::{Method, StatusCode};
 use std::marker::PhantomData;
-use url::percent_encoding::utf8_percent_encode;
 
 #[derive(Debug, Clone)]
 pub struct UpdatePageBuilder<'a, ContainerNameSet, BlobNameSet, BA512RangeSet, BodySet>
@@ -604,12 +604,8 @@ where
 
 impl<'a> UpdatePageBuilder<'a, Yes, Yes, Yes, Yes> {
     pub fn finalize(self) -> impl Future<Item = UpdatePageResponse, Error = AzureError> {
-        let mut uri = format!(
-            "https://{}.blob.core.windows.net/{}/{}?comp=page",
-            self.client().account(),
-            utf8_percent_encode(self.container_name(), COMPLETE_ENCODE_SET),
-            utf8_percent_encode(self.blob_name(), COMPLETE_ENCODE_SET)
-        );
+        let mut uri = generate_blob_uri(&self, Some("comp=page"));
+
         if let Some(timeout) = TimeoutOption::to_uri_parameter(&self) {
             uri = format!("{}&{}", uri, timeout);
         }

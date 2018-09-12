@@ -3,8 +3,9 @@ use azure::core::lease::LeaseId;
 use azure::core::{
     BlobNameRequired, BlobNameSupport, BlockListTypeRequired, BlockListTypeSupport, ClientRequestIdOption, ClientRequestIdSupport,
     ClientRequired, ContainerNameRequired, ContainerNameSupport, LeaseIdOption, LeaseIdSupport, No, TimeoutOption, TimeoutSupport,
-    ToAssign, Yes, COMPLETE_ENCODE_SET,
+    ToAssign, Yes,
 };
+use azure::storage::blob::generate_blob_uri;
 use azure::storage::blob::responses::GetBlockListResponse;
 use azure::storage::blob::BlockListType;
 use azure::storage::client::Client;
@@ -12,7 +13,6 @@ use futures::future::done;
 use futures::prelude::*;
 use hyper::{Method, StatusCode};
 use std::marker::PhantomData;
-use url::percent_encoding::utf8_percent_encode;
 
 #[derive(Debug, Clone)]
 pub struct GetBlockListBuilder<'a, ContainerNameSet, BlobNameSet, BlobListTypeSet>
@@ -303,12 +303,8 @@ where
 impl<'a> GetBlockListBuilder<'a, Yes, Yes, Yes> {
     #[inline]
     pub fn finalize(self) -> impl Future<Item = GetBlockListResponse, Error = AzureError> {
-        let mut uri = format!(
-            "https://{}.blob.core.windows.net/{}/{}?comp=blocklist",
-            self.client().account(),
-            utf8_percent_encode(self.container_name(), COMPLETE_ENCODE_SET),
-            utf8_percent_encode(self.blob_name(), COMPLETE_ENCODE_SET)
-        );
+        let mut uri = generate_blob_uri(&self, Some("comp=blocklist"));
+
         if let Some(timeout) = TimeoutOption::to_uri_parameter(&self) {
             uri = format!("{}&{}", uri, timeout);
         }

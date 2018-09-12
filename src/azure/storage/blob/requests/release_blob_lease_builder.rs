@@ -3,15 +3,15 @@ use azure::core::headers::LEASE_ACTION;
 use azure::core::lease::LeaseId;
 use azure::core::{
     BlobNameRequired, BlobNameSupport, ClientRequestIdOption, ClientRequestIdSupport, ClientRequired, ContainerNameRequired,
-    ContainerNameSupport, LeaseIdRequired, LeaseIdSupport, TimeoutOption, TimeoutSupport, COMPLETE_ENCODE_SET,
+    ContainerNameSupport, LeaseIdRequired, LeaseIdSupport, TimeoutOption, TimeoutSupport,
 };
 use azure::core::{No, ToAssign, Yes};
+use azure::storage::blob::generate_blob_uri;
 use azure::storage::blob::responses::ReleaseBlobLeaseResponse;
 use azure::storage::client::Client;
 use futures::future::{done, Future};
 use hyper::{Method, StatusCode};
 use std::marker::PhantomData;
-use url::percent_encoding::utf8_percent_encode;
 
 #[derive(Debug, Clone)]
 pub struct ReleaseBlobLeaseBuilder<'a, ContainerNameSet, BlobNameSet, LeaseIdSet>
@@ -254,12 +254,7 @@ where
 
 impl<'a> ReleaseBlobLeaseBuilder<'a, Yes, Yes, Yes> {
     pub fn finalize(self) -> impl Future<Item = ReleaseBlobLeaseResponse, Error = AzureError> {
-        let mut uri = format!(
-            "https://{}.blob.core.windows.net/{}/{}?comp=lease",
-            self.client().account(),
-            utf8_percent_encode(self.container_name(), COMPLETE_ENCODE_SET),
-            utf8_percent_encode(self.blob_name(), COMPLETE_ENCODE_SET)
-        );
+        let mut uri = generate_blob_uri(&self, Some("comp=lease"));
 
         if let Some(nm) = TimeoutOption::to_uri_parameter(&self) {
             uri = format!("{}&{}", uri, nm);

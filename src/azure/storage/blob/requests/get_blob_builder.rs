@@ -6,17 +6,16 @@ use azure::core::util::RequestBuilderExt;
 use azure::core::{
     BlobNameRequired, BlobNameSupport, ClientRequestIdOption, ClientRequestIdSupport, ClientRequired, ContainerNameRequired,
     ContainerNameSupport, LeaseIdOption, LeaseIdSupport, No, RangeOption, RangeSupport, SnapshotOption, SnapshotSupport, TimeoutOption,
-    TimeoutSupport, ToAssign, Yes, COMPLETE_ENCODE_SET,
+    TimeoutSupport, ToAssign, Yes,
 };
 use azure::storage::blob::responses::GetBlobResponse;
-use azure::storage::blob::Blob;
+use azure::storage::blob::{generate_blob_uri, Blob};
 use azure::storage::client::Client;
 use chrono::{DateTime, Utc};
 use futures::future::done;
 use futures::prelude::*;
 use hyper::{Method, StatusCode};
 use std::marker::PhantomData;
-use url::percent_encoding::utf8_percent_encode;
 
 #[derive(Debug, Clone)]
 pub struct GetBlobBuilder<'a, ContainerNameSet, BlobNameSet>
@@ -322,12 +321,7 @@ impl<'a> GetBlobBuilder<'a, Yes, Yes> {
         let blob_name = self.blob_name().to_owned();
         let snapshot_time = self.snapshot();
 
-        let mut uri = format!(
-            "https://{}.blob.core.windows.net/{}/{}",
-            self.client().account(),
-            utf8_percent_encode(&container_name, COMPLETE_ENCODE_SET),
-            utf8_percent_encode(&blob_name, COMPLETE_ENCODE_SET)
-        );
+        let mut uri = generate_blob_uri(&self, None);
 
         let mut f_first = true;
         if let Some(snapshot) = SnapshotOption::to_uri_parameter(&self) {

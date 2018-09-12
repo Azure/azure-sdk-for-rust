@@ -1,5 +1,6 @@
 mod lease_blob_options;
 pub use self::lease_blob_options::{LeaseBlobOptions, LEASE_BLOB_OPTIONS_DEFAULT};
+use url::percent_encoding::utf8_percent_encode;
 mod blob_stream_builder;
 pub use self::blob_stream_builder::BlobStreamBuilder;
 mod blob_block_type;
@@ -35,6 +36,7 @@ use azure::core::{
     parsing::{cast_must, cast_optional, from_azure_time, inner_text, traverse, FromStringOptional},
     range::Range,
     util::HeaderMapExt,
+    BlobNameRequired, ClientRequired, ContainerNameRequired, COMPLETE_ENCODE_SET,
 };
 
 create_enum!(
@@ -355,4 +357,26 @@ pub(crate) fn incomplete_vector_from_response(body: &str, container_name: &str) 
     }
 
     Ok(IncompleteVector::<Blob>::new(next_marker, v))
+}
+
+#[inline]
+pub(crate) fn generate_blob_uri<'a, T>(t: &T, params: Option<&str>) -> String
+where
+    T: ClientRequired<'a> + ContainerNameRequired<'a> + BlobNameRequired<'a>,
+{
+    match params {
+        Some(ref params) => format!(
+            "https://{}.blob.core.windows.net/{}/{}?{}",
+            t.client().account(),
+            utf8_percent_encode(t.container_name(), COMPLETE_ENCODE_SET),
+            utf8_percent_encode(t.blob_name(), COMPLETE_ENCODE_SET),
+            params
+        ),
+        None => format!(
+            "https://{}.blob.core.windows.net/{}/{}",
+            t.client().account(),
+            utf8_percent_encode(t.container_name(), COMPLETE_ENCODE_SET),
+            utf8_percent_encode(t.blob_name(), COMPLETE_ENCODE_SET)
+        ),
+    }
 }

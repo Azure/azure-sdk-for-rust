@@ -3,16 +3,15 @@ use azure::core::lease::LeaseId;
 use azure::core::{
     BlobNameRequired, BlobNameSupport, ClientRequestIdOption, ClientRequestIdSupport, ClientRequired, ContainerNameRequired,
     ContainerNameSupport, LeaseIdOption, LeaseIdSupport, SnapshotRequired, SnapshotSupport, TimeoutOption, TimeoutSupport,
-    COMPLETE_ENCODE_SET,
 };
 use azure::core::{No, ToAssign, Yes};
+use azure::storage::blob::generate_blob_uri;
 use azure::storage::blob::responses::DeleteBlobResponse;
 use azure::storage::client::Client;
 use chrono::{DateTime, Utc};
 use futures::future::{done, Future};
 use hyper::{Method, StatusCode};
 use std::marker::PhantomData;
-use url::percent_encoding::utf8_percent_encode;
 
 #[derive(Debug, Clone)]
 pub struct DeleteBlobSnapshotBuilder<'a, ContainerNameSet, BlobNameSet, SnapshotSet>
@@ -302,13 +301,7 @@ where
 
 impl<'a> DeleteBlobSnapshotBuilder<'a, Yes, Yes, Yes> {
     pub fn finalize(self) -> impl Future<Item = DeleteBlobResponse, Error = AzureError> {
-        let mut uri = format!(
-            "https://{}.blob.core.windows.net/{}/{}?{}",
-            self.client().account(),
-            utf8_percent_encode(self.container_name(), COMPLETE_ENCODE_SET),
-            utf8_percent_encode(self.blob_name(), COMPLETE_ENCODE_SET),
-            SnapshotRequired::to_uri_parameter(&self)
-        );
+        let mut uri = generate_blob_uri(&self, Some(&SnapshotRequired::to_uri_parameter(&self)));
 
         if let Some(nm) = TimeoutOption::to_uri_parameter(&self) {
             uri = format!("{}&{}", uri, nm);
