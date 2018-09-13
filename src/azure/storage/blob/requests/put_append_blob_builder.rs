@@ -7,6 +7,7 @@ use azure::core::{
     ContentEncodingOption, ContentEncodingSupport, ContentLanguageOption, ContentLanguageSupport, ContentTypeOption, ContentTypeSupport,
     LeaseIdOption, LeaseIdSupport, MetadataOption, MetadataSupport, No, TimeoutOption, TimeoutSupport, ToAssign, Yes,
 };
+use azure::storage::blob::generate_blob_uri;
 use azure::storage::blob::responses::PutBlobResponse;
 use azure::storage::client::Client;
 use futures::future::{done, ok};
@@ -507,12 +508,8 @@ where
 impl<'a> PutAppendBlobBuilder<'a, Yes, Yes> {
     #[inline]
     pub fn finalize(self) -> impl Future<Item = PutBlobResponse, Error = AzureError> {
-        let mut uri = format!(
-            "https://{}.blob.core.windows.net/{}/{}",
-            self.client().account(),
-            self.container_name(),
-            self.blob_name()
-        );
+        let mut uri = generate_blob_uri(&self, None);
+
         if let Some(timeout) = TimeoutOption::to_uri_parameter(&self) {
             uri = format!("{}?{}", uri, timeout);
         }

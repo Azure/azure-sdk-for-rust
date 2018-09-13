@@ -5,6 +5,7 @@ use azure::core::{
     ClientRequired, ContainerNameRequired, ContainerNameSupport, LeaseIdOption, LeaseIdSupport, No, TimeoutOption, TimeoutSupport,
     ToAssign, Yes,
 };
+use azure::storage::blob::generate_blob_uri;
 use azure::storage::blob::responses::GetBlockListResponse;
 use azure::storage::blob::BlockListType;
 use azure::storage::client::Client;
@@ -302,12 +303,8 @@ where
 impl<'a> GetBlockListBuilder<'a, Yes, Yes, Yes> {
     #[inline]
     pub fn finalize(self) -> impl Future<Item = GetBlockListResponse, Error = AzureError> {
-        let mut uri = format!(
-            "https://{}.blob.core.windows.net/{}/{}?comp=blocklist",
-            self.client().account(),
-            self.container_name(),
-            self.blob_name()
-        );
+        let mut uri = generate_blob_uri(&self, Some("comp=blocklist"));
+
         if let Some(timeout) = TimeoutOption::to_uri_parameter(&self) {
             uri = format!("{}&{}", uri, timeout);
         }

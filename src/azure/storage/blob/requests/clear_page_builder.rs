@@ -9,6 +9,7 @@ use azure::core::{
     IfSinceConditionSupport, LeaseIdOption, LeaseIdSupport, No, SequenceNumberConditionOption, SequenceNumberConditionSupport,
     TimeoutOption, TimeoutSupport, ToAssign, Yes,
 };
+use azure::storage::blob::generate_blob_uri;
 use azure::storage::blob::responses::ClearPageResponse;
 use azure::storage::client::Client;
 use futures::future::done;
@@ -453,12 +454,8 @@ where
 impl<'a> ClearPageBuilder<'a, Yes, Yes, Yes> {
     #[inline]
     pub fn finalize(self) -> impl Future<Item = ClearPageResponse, Error = AzureError> {
-        let mut uri = format!(
-            "https://{}.blob.core.windows.net/{}/{}?comp=page",
-            self.client().account(),
-            self.container_name(),
-            self.blob_name()
-        );
+        let mut uri = generate_blob_uri(&self, Some("comp=page"));
+
         if let Some(timeout) = TimeoutOption::to_uri_parameter(&self) {
             uri = format!("{}&{}", uri, timeout);
         }

@@ -7,6 +7,7 @@ use azure::core::{
     ContentLanguageSupport, ContentTypeOption, ContentTypeSupport, LeaseIdOption, LeaseIdSupport, MetadataOption, MetadataSupport, No,
     TimeoutOption, TimeoutSupport, ToAssign, Yes,
 };
+use azure::storage::blob::generate_blob_uri;
 use azure::storage::blob::responses::PutBlockListResponse;
 use azure::storage::blob::BlockList;
 use azure::storage::client::Client;
@@ -658,12 +659,8 @@ where
 {
     #[inline]
     pub fn finalize(self) -> impl Future<Item = PutBlockListResponse, Error = AzureError> {
-        let mut uri = format!(
-            "https://{}.blob.core.windows.net/{}/{}?comp=blocklist",
-            self.client().account(),
-            self.container_name(),
-            self.blob_name()
-        );
+        let mut uri = generate_blob_uri(&self, Some("comp=blocklist"));
+
         if let Some(timeout) = TimeoutOption::to_uri_parameter(&self) {
             uri = format!("{}&{}", uri, timeout);
         }

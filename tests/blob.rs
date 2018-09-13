@@ -118,7 +118,7 @@ fn put_and_get_block_list() {
 
     let u = Uuid::new_v4();
     let container = Container::new(&format!("sdkrust{}", u));
-    let name = "asdkrustputblock.txt";
+    let name = "asd - ()krustputblock.txt";
 
     let (client, mut core) = initialize().unwrap();
 
@@ -264,7 +264,7 @@ fn list_containers() {
 }
 
 #[test]
-fn put_blob() {
+fn put_block_blob() {
     use azure_sdk_for_rust::storage::client::Blob as BlobTrait;
     use azure_sdk_for_rust::storage::client::Container as ContainerTrait;
 

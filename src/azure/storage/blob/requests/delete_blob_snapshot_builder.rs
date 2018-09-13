@@ -5,6 +5,7 @@ use azure::core::{
     ContainerNameSupport, LeaseIdOption, LeaseIdSupport, SnapshotRequired, SnapshotSupport, TimeoutOption, TimeoutSupport,
 };
 use azure::core::{No, ToAssign, Yes};
+use azure::storage::blob::generate_blob_uri;
 use azure::storage::blob::responses::DeleteBlobResponse;
 use azure::storage::client::Client;
 use chrono::{DateTime, Utc};
@@ -300,13 +301,7 @@ where
 
 impl<'a> DeleteBlobSnapshotBuilder<'a, Yes, Yes, Yes> {
     pub fn finalize(self) -> impl Future<Item = DeleteBlobResponse, Error = AzureError> {
-        let mut uri = format!(
-            "https://{}.blob.core.windows.net/{}/{}?{}",
-            self.client().account(),
-            self.container_name(),
-            self.blob_name(),
-            SnapshotRequired::to_uri_parameter(&self)
-        );
+        let mut uri = generate_blob_uri(&self, Some(&SnapshotRequired::to_uri_parameter(&self)));
 
         if let Some(nm) = TimeoutOption::to_uri_parameter(&self) {
             uri = format!("{}&{}", uri, nm);

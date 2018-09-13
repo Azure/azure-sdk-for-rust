@@ -6,6 +6,7 @@ use azure::core::{
     TimeoutSupport,
 };
 use azure::core::{DeleteSnapshotsMethod, No, ToAssign, Yes};
+use azure::storage::blob::generate_blob_uri;
 use azure::storage::blob::responses::DeleteBlobResponse;
 use azure::storage::client::Client;
 use futures::future::{done, Future};
@@ -303,18 +304,13 @@ where
 
 impl<'a> DeleteBlobBuilder<'a, Yes, Yes, Yes> {
     pub fn finalize(self) -> impl Future<Item = DeleteBlobResponse, Error = AzureError> {
-        let mut uri = format!(
-            "https://{}.blob.core.windows.net/{}/{}",
-            self.client().account(),
-            self.container_name(),
-            self.blob_name(),
-        );
-
-        trace!("delete_blob uri == {:?}", uri);
+        let mut uri = generate_blob_uri(&self, None);
 
         if let Some(nm) = TimeoutOption::to_uri_parameter(&self) {
             uri = format!("{}?{}", uri, nm);
         }
+
+        trace!("delete_blob uri == {:?}", uri);
 
         let req = self.client().perform_request(
             &uri,

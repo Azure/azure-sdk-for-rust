@@ -6,6 +6,7 @@ use azure::core::{
     ContainerNameSupport, LeaseIdRequired, LeaseIdSupport, TimeoutOption, TimeoutSupport,
 };
 use azure::core::{No, ToAssign, Yes};
+use azure::storage::blob::generate_blob_uri;
 use azure::storage::blob::responses::RenewBlobLeaseResponse;
 use azure::storage::client::Client;
 use futures::future::{done, Future};
@@ -252,12 +253,7 @@ where
 
 impl<'a> RenewBlobLeaseBuilder<'a, Yes, Yes, Yes> {
     pub fn finalize(self) -> impl Future<Item = RenewBlobLeaseResponse, Error = AzureError> {
-        let mut uri = format!(
-            "https://{}.blob.core.windows.net/{}/{}?comp=lease",
-            self.client().account(),
-            self.container_name(),
-            self.blob_name()
-        );
+        let mut uri = generate_blob_uri(&self, Some("comp=lease"));
 
         if let Some(nm) = TimeoutOption::to_uri_parameter(&self) {
             uri = format!("{}&{}", uri, nm);

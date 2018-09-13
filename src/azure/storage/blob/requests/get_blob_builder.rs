@@ -9,7 +9,7 @@ use azure::core::{
     TimeoutSupport, ToAssign, Yes,
 };
 use azure::storage::blob::responses::GetBlobResponse;
-use azure::storage::blob::Blob;
+use azure::storage::blob::{generate_blob_uri, Blob};
 use azure::storage::client::Client;
 use chrono::{DateTime, Utc};
 use futures::future::done;
@@ -321,12 +321,7 @@ impl<'a> GetBlobBuilder<'a, Yes, Yes> {
         let blob_name = self.blob_name().to_owned();
         let snapshot_time = self.snapshot();
 
-        let mut uri = format!(
-            "https://{}.blob.core.windows.net/{}/{}",
-            self.client().account(),
-            &container_name,
-            &blob_name
-        );
+        let mut uri = generate_blob_uri(&self, None);
 
         let mut f_first = true;
         if let Some(snapshot) = SnapshotOption::to_uri_parameter(&self) {

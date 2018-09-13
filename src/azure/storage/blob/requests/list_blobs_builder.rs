@@ -8,6 +8,7 @@ use azure::core::{
 };
 use azure::storage::blob::responses::ListBlobsResponse;
 use azure::storage::client::Client;
+use azure::storage::container::generate_container_uri;
 use futures::future::done;
 use futures::prelude::*;
 use hyper::{Method, StatusCode};
@@ -522,12 +523,7 @@ impl<'a> ListBlobBuilder<'a, Yes> {
         // 'static lifetimes.
         let container_name = self.container_name().to_owned();
 
-        let mut uri = format!(
-            "https://{}.blob.core.windows.\
-             net/{}?restype=container&comp=list",
-            self.client().account(),
-            container_name
-        );
+        let mut uri = generate_container_uri(&self, Some("restype=container&comp=list"));
 
         if let Some(mr) = MaxResultsOption::to_uri_parameter(&self) {
             uri = format!("{}&{}", uri, mr);
@@ -544,6 +540,8 @@ impl<'a> ListBlobBuilder<'a, Yes> {
         if let Some(mr) = IncludeListOptions::to_uri_parameter(&self) {
             uri = format!("{}&{}", uri, mr);
         }
+
+        trace!("list blob uri = {}", uri);
 
         let req = self.client().perform_request(&uri, Method::GET, |_| {}, None);
 
