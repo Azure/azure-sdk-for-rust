@@ -206,7 +206,7 @@ quick_error! {
             display("Error preparing HTTP request: {}", err) // todo: revisit usages / message here
             cause(err)
         }
-        ParseUuidError(err: uuid::ParseError){
+        ParseUuidError(err: uuid::parser::ParseError){
             from()
             display("Parse uuid error: {}", err)
             cause(err)
