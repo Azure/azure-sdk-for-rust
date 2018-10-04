@@ -262,7 +262,7 @@ impl<'a> BreakBlobLeaseBuilder<'a, Yes, Yes, Yes> {
 
         let req = self.client().perform_request(
             &uri,
-            Method::PUT,
+            &Method::PUT,
             |ref mut request| {
                 request.header(LEASE_ACTION, "break");
                 LeaseBreakPeriodRequired::add_header(&self, request);

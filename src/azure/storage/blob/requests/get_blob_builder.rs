@@ -336,7 +336,7 @@ impl<'a> GetBlobBuilder<'a, Yes, Yes> {
 
         let req = self.client().perform_request(
             &uri,
-            Method::GET,
+            &Method::GET,
             |ref mut request| {
                 if let Some(r) = self.range() {
                     LeaseIdOption::add_header(&self, request);

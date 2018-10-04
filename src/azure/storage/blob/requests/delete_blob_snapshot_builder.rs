@@ -309,7 +309,7 @@ impl<'a> DeleteBlobSnapshotBuilder<'a, Yes, Yes, Yes> {
 
         let req = self.client().perform_request(
             &uri,
-            Method::DELETE,
+            &Method::DELETE,
             |ref mut request| {
                 LeaseIdOption::add_header(&self, request);
                 ClientRequestIdOption::add_header(&self, request);

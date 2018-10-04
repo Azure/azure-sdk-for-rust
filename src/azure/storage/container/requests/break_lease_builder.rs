@@ -203,7 +203,7 @@ impl<'a> BreakLeaseBuilder<'a, Yes> {
 
         let req = self.client().perform_request(
             &uri,
-            Method::PUT,
+            &Method::PUT,
             |ref mut request| {
                 ClientRequestIdOption::add_header(&self, request);
                 LeaseIdOption::add_header(&self, request);
@@ -216,6 +216,6 @@ impl<'a> BreakLeaseBuilder<'a, Yes> {
         done(req)
             .from_err()
             .and_then(move |future_response| check_status_extract_headers_and_body(future_response, StatusCode::ACCEPTED))
-            .and_then(|(headers, _body)| done(BreakLeaseResponse::from_response(&headers)))
+            .and_then(|(headers, _body)| done(BreakLeaseResponse::from_headers(&headers)))
     }
 }

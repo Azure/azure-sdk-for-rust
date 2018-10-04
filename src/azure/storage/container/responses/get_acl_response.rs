@@ -26,12 +26,18 @@ impl GetACLResponse {
 
         let etag = match headers.get(header::ETAG) {
             Some(etag) => etag.to_str()?,
-            None => return Err(AzureError::MissingHeaderError(header::ETAG.as_str().to_owned())),
+            None => {
+                static E: header::HeaderName = header::ETAG;
+                return Err(AzureError::MissingHeaderError(E.as_str().to_owned()));
+            }
         };
 
         let last_modified = match headers.get(header::LAST_MODIFIED) {
             Some(last_modified) => last_modified.to_str()?,
-            None => return Err(AzureError::MissingHeaderError(header::LAST_MODIFIED.as_str().to_owned())),
+            None => {
+                static LM: header::HeaderName = header::LAST_MODIFIED;
+                return Err(AzureError::MissingHeaderError(LM.as_str().to_owned()));
+            }
         };
         let last_modified = DateTime::parse_from_rfc2822(last_modified)?;
 
@@ -42,7 +48,10 @@ impl GetACLResponse {
 
         let date = match headers.get(header::DATE) {
             Some(date) => date.to_str()?,
-            None => return Err(AzureError::MissingHeaderError(header::DATE.as_str().to_owned())),
+            None => {
+                static D: header::HeaderName = header::DATE;
+                return Err(AzureError::MissingHeaderError(D.as_str().to_owned()));
+            }
         };
         let date = DateTime::parse_from_rfc2822(date)?;
 

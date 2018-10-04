@@ -23,7 +23,10 @@ impl GetPropertiesResponse {
 
         let date = match headers.get(header::DATE) {
             Some(date) => DateTime::parse_from_rfc2822(date.to_str()?)?,
-            None => return Err(AzureError::MissingHeaderError(header::DATE.as_str().to_owned())),
+            None => {
+                static D: header::HeaderName = header::DATE;
+                return Err(AzureError::MissingHeaderError(D.as_str().to_owned()));
+            }
         };
 
         let container = Container::from_response(container_name, headers)?;

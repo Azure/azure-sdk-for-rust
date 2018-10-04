@@ -356,7 +356,7 @@ impl<'a> BlobStreamBuilder<'a, Yes, Yes, Yes> {
 
         let snapshot = self.snapshot.to_owned();
         let timeout = self.timeout.to_owned();
-        let lease_id = self.lease_id.map(|v| v.clone());
+        let lease_id = self.lease_id.cloned();
         let client_request_id = self.client_request_id.map(|v| v.to_owned());
         let increment = self.increment;
 

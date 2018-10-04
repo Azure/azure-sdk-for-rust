@@ -618,7 +618,7 @@ impl<'a> UpdatePageBuilder<'a, Yes, Yes, Yes, Yes> {
 
         let req = self.client().perform_request(
             &uri,
-            Method::PUT,
+            &Method::PUT,
             |ref mut request| {
                 BA512RangeRequired::add_header(&self, request);
                 ContentMD5Option::add_header(&self, request);

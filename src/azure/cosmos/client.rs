@@ -121,7 +121,8 @@ impl Client {
                 &format!("dbs/{}/colls", database_name),
                 hyper::Method::GET,
                 ResourceType::Collections,
-            ).body(hyper::Body::empty())?;
+            )
+            .body(hyper::Body::empty())?;
 
         trace!("request prepared");
 
@@ -231,7 +232,8 @@ impl Client {
                 &format!("dbs/{}/colls/{}", database_name, collection_name),
                 hyper::Method::GET,
                 ResourceType::Collections,
-            ).body(hyper::Body::empty())?;
+            )
+            .body(hyper::Body::empty())?;
 
         trace!("request prepared");
 
@@ -314,7 +316,8 @@ impl Client {
                 &format!("dbs/{}/colls/{}", database_name, collection_name),
                 hyper::Method::DELETE,
                 ResourceType::Collections,
-            ).body(hyper::Body::empty())?;
+            )
+            .body(hyper::Body::empty())?;
 
         trace!("request prepared");
 
@@ -351,7 +354,8 @@ impl Client {
                 &format!("dbs/{}/colls", database_name),
                 hyper::Method::PUT,
                 ResourceType::Collections,
-            ).body(collection_serialized.into())?;
+            )
+            .body(collection_serialized.into())?;
 
         trace!("request prepared");
 
@@ -557,7 +561,7 @@ impl Client {
             let resource_link = generate_resource_link(&uri_path);
             generate_authorization(&self.auth_token, &http_method, resource_type, resource_link, &time)
         };
-        self.prepare_request_with_signature(uri_path, http_method, time, auth)
+        self.prepare_request_with_signature(uri_path, http_method, &time, &auth)
     }
 
     #[inline]
@@ -571,26 +575,20 @@ impl Client {
         let time = format!("{}", chrono::Utc::now().format(TIME_FORMAT));
 
         let sig = { generate_authorization(&self.auth_token, &http_method, resource_type, resource_link, &time) };
-        self.prepare_request_with_signature(uri_path, http_method, time, sig)
+        self.prepare_request_with_signature(uri_path, http_method, &time, &sig)
     }
 
     #[inline]
-    fn prepare_request_with_signature(
-        &self,
-        uri_path: &str,
-        http_method: hyper::Method,
-        time: String,
-        signature: String,
-    ) -> RequestBuilder {
+    fn prepare_request_with_signature(&self, uri_path: &str, http_method: hyper::Method, time: &str, signature: &str) -> RequestBuilder {
         trace!("prepare_request::auth == {:?}", signature);
         let uri = format!("https://{}.documents.azure.com/{}", self.auth_token.account(), uri_path);
         let mut request = hyper::Request::builder();
         request
             .method(http_method)
             .uri(uri)
-            .header(HEADER_DATE, time.as_str())
+            .header(HEADER_DATE, time)
             .header(HEADER_VERSION, HeaderValue::from_static(AZURE_VERSION))
-            .header(header::AUTHORIZATION, signature.as_str());
+            .header(header::AUTHORIZATION, signature);
         request
     }
 }
@@ -725,7 +723,8 @@ mon, 01 jan 1900 01:00:00 gmt
             "mindflavor".to_owned(),
             TokenType::Master,
             "8F8xXXOptJxkblM1DBXW7a6NMI5oE8NnwPGYBmwxLCKfejOK7B7yhcCHMGvN3PBrlMLIOeol1Hv9RCdzAZR5sg==",
-        ).unwrap();
+        )
+        .unwrap();
 
         let ret = generate_authorization(
             &auth_token,
@@ -750,7 +749,8 @@ mon, 01 jan 1900 01:00:00 gmt
             "mindflavor".to_owned(),
             TokenType::Master,
             "dsZQi3KtZmCv1ljt3VNWNm7sQUF1y5rJfC6kv5JiwvW0EndXdDku/dkKBp8/ufDToSxL",
-        ).unwrap();
+        )
+        .unwrap();
 
         let ret = generate_authorization(&auth_token, &hyper::Method::GET, ResourceType::Databases, "dbs/ToDoList", &time);
 

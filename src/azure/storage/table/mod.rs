@@ -41,7 +41,7 @@ impl TableService {
             TableName: table_name.into(),
         }).unwrap();
         debug!("body == {}", body);
-        let req = self.request_with_default_header(TABLE_TABLES, Method::POST, Some(body));
+        let req = self.request_with_default_header(TABLE_TABLES, &Method::POST, Some(body));
 
         done(req)
             .from_err()
@@ -55,7 +55,7 @@ impl TableService {
         row_key: &str,
     ) -> impl Future<Item = Option<T>, Error = AzureError> {
         let path = &entity_path(table_name, partition_key, row_key);
-        let req = self.request_with_default_header(path, Method::GET, None);
+        let req = self.request_with_default_header(path, &Method::GET, None);
         done(req).from_err().and_then(move |future_response| {
             extract_status_and_body(future_response).and_then(move |(status, body)| {
                 if status == StatusCode::NOT_FOUND {
@@ -87,7 +87,7 @@ impl TableService {
             path.push_str(clause);
         }
 
-        let req = self.request_with_default_header(path.as_str(), Method::GET, None);
+        let req = self.request_with_default_header(path.as_str(), &Method::GET, None);
 
         done(req).from_err().and_then(move |future_response| {
             check_status_extract_body(future_response, StatusCode::OK).and_then(move |body| {
@@ -103,7 +103,7 @@ impl TableService {
         T: Serialize,
     {
         let obj_ser = serde_json::to_string(entity)?;
-        self.request_with_default_header(table_name, Method::POST, Some(&obj_ser))
+        self.request_with_default_header(table_name, &Method::POST, Some(&obj_ser))
     }
 
     pub fn insert_entity<T: Serialize>(&self, table_name: &str, entity: &T) -> impl Future<Item = (), Error = AzureError> {
@@ -126,7 +126,7 @@ impl TableService {
     {
         let body = &serde_json::to_string(entity)?;
         let path = &entity_path(table_name, partition_key, row_key);
-        self.request_with_default_header(path, Method::PUT, Some(body))
+        self.request_with_default_header(path, &Method::PUT, Some(body))
     }
 
     pub fn update_entity<T: Serialize>(
@@ -145,7 +145,7 @@ impl TableService {
     pub fn delete_entity(&self, table_name: &str, partition_key: &str, row_key: &str) -> impl Future<Item = (), Error = AzureError> {
         let path = &entity_path(table_name, partition_key, row_key);
 
-        let req = self.request(path, Method::DELETE, None, |ref mut request| {
+        let req = self.request(path, &Method::DELETE, None, |ref mut request| {
             request.header(header::ACCEPT, HeaderValue::from_static(get_json_mime_nometadata()));
             request.header(header::IF_MATCH, header::HeaderValue::from_static("*"));
         });
@@ -161,13 +161,13 @@ impl TableService {
         batch_items: &[BatchItem<T>],
     ) -> impl Future<Item = (), Error = AzureError> {
         let payload = &generate_batch_payload(
-            self.client.get_uri_prefix(&ServiceType::Table).as_str(),
+            self.client.get_uri_prefix(ServiceType::Table).as_str(),
             table_name,
             partition_key,
             batch_items,
         );
 
-        let req = self.request("$batch", Method::POST, Some(payload), |ref mut request| {
+        let req = self.request("$batch", &Method::POST, Some(payload), |ref mut request| {
             request.header(header::CONTENT_TYPE, header::HeaderValue::from_static(get_batch_mime()));
         });
         done(req).from_err().and_then(move |future_response| {
@@ -180,7 +180,7 @@ impl TableService {
         })
     }
 
-    fn request_with_default_header(&self, segment: &str, method: Method, request_str: Option<&str>) -> Result<ResponseFuture, AzureError> {
+    fn request_with_default_header(&self, segment: &str, method: &Method, request_str: Option<&str>) -> Result<ResponseFuture, AzureError> {
         self.request(segment, method, request_str, |ref mut request| {
             request.header(header::ACCEPT, HeaderValue::from_static(get_json_mime_nometadata()));
             if request_str.is_some() {
@@ -189,7 +189,7 @@ impl TableService {
         })
     }
 
-    fn request<F>(&self, segment: &str, method: Method, request_str: Option<&str>, headers_func: F) -> Result<ResponseFuture, AzureError>
+    fn request<F>(&self, segment: &str, method: &Method, request_str: Option<&str>, headers_func: F) -> Result<ResponseFuture, AzureError>
     where
         F: FnOnce(&mut ::http::request::Builder),
     {

@@ -266,7 +266,7 @@ impl<'a> AcquireLeaseBuilder<'a, Yes, Yes> {
 
         let req = self.client().perform_request(
             &uri,
-            Method::PUT,
+            &Method::PUT,
             |ref mut request| {
                 ClientRequestIdOption::add_header(&self, request);
                 LeaseIdOption::add_header(&self, request);
@@ -280,6 +280,6 @@ impl<'a> AcquireLeaseBuilder<'a, Yes, Yes> {
         done(req)
             .from_err()
             .and_then(move |future_response| check_status_extract_headers_and_body(future_response, StatusCode::CREATED))
-            .and_then(|(headers, _body)| done(AcquireLeaseResponse::from_response(&headers)))
+            .and_then(|(headers, _body)| done(AcquireLeaseResponse::from_headers(&headers)))
     }
 }

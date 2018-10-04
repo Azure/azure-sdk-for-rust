@@ -28,7 +28,9 @@ use self::headers::{
     BLOB_ACCESS_TIER, BLOB_CONTENT_LENGTH, BLOB_SEQUENCE_NUMBER, CLIENT_REQUEST_ID, CONTENT_MD5, DELETE_SNAPSHOTS, DELETE_TYPE_PERMANENT,
     LEASE_BREAK_PERIOD, LEASE_DURATION, LEASE_ID, LEASE_TIME, PROPOSED_LEASE_ID, REQUEST_ID, REQUEST_SERVER_ENCRYPTED,
 };
-use hyper::header::{CACHE_CONTROL, CONTENT_ENCODING, CONTENT_LANGUAGE, CONTENT_LENGTH, CONTENT_TYPE, DATE, ETAG, LAST_MODIFIED, RANGE};
+use hyper::header::{
+    HeaderName, CACHE_CONTROL, CONTENT_ENCODING, CONTENT_LANGUAGE, CONTENT_LENGTH, CONTENT_TYPE, DATE, ETAG, LAST_MODIFIED, RANGE,
+};
 use uuid::Uuid;
 pub type RequestId = Uuid;
 use azure::core::errors::{AzureError, TraversingError};
@@ -46,6 +48,34 @@ define_encode_set! {
     pub COMPLETE_ENCODE_SET = [percent_encoding::USERINFO_ENCODE_SET] | {
         '+', '-', '&'
     }
+}
+
+macro_rules! response_from_headers {
+    ($cn:ident, $($fh:ident -> $na:ident: $typ:ty),+) => {
+        use azure::core::errors::AzureError;
+        use http::HeaderMap;
+        use azure::core::{
+            $($fh,)+
+        };
+
+        #[derive(Debug, Clone, PartialEq)]
+        pub struct $cn {
+             $(pub $na: $typ),+,
+        }
+
+        impl $cn {
+            pub(crate) fn from_headers(headers: &HeaderMap) -> Result<$cn, AzureError> {
+               $(
+                    let $na = $fh(headers)?;
+                )+
+
+                Ok($cn {
+                    $($na,)+
+                })
+            }
+
+        }
+    };
 }
 
 #[derive(Debug)]
@@ -299,7 +329,7 @@ pub trait DelimiterOption<'a> {
     fn delimiter(&self) -> Option<&'a str>;
 
     fn to_uri_parameter(&self) -> Option<String> {
-        if let Some(_) = self.delimiter() {
+        if self.delimiter().is_some() {
             Some("delimiter".to_owned())
         } else {
             None
@@ -374,12 +404,12 @@ pub trait IncludeListOptions:
 {
     fn to_uri_parameter(&self) -> Option<String> {
         let mut s = String::new();
-        let mut f_first = true;
-
-        if self.include_snapshots() {
+        let mut f_first = if self.include_snapshots() {
             s.push_str("snapshots");
-            f_first = false;
-        }
+            false
+        } else {
+            true
+        };
 
         if self.include_metadata() {
             if !f_first {
@@ -412,7 +442,7 @@ pub trait IncludeListOptions:
             s.push_str("deleted");
         }
 
-        if s.len() > 0 {
+        if s.is_empty() {
             Some(format!("include={}", s))
         } else {
             None
@@ -769,8 +799,10 @@ pub(crate) fn last_modified_from_headers_optional(headers: &HeaderMap) -> Result
 pub(crate) fn last_modified_from_headers(headers: &HeaderMap) -> Result<DateTime<Utc>, AzureError> {
     let last_modified = headers
         .get(LAST_MODIFIED)
-        .ok_or_else(|| AzureError::HeaderNotFound(LAST_MODIFIED.as_str().to_owned()))?
-        .to_str()?;
+        .ok_or_else(|| {
+            static LM: HeaderName = LAST_MODIFIED;
+            AzureError::HeaderNotFound(LM.as_str().to_owned())
+        })?.to_str()?;
     let last_modified = DateTime::parse_from_rfc2822(last_modified)?;
     let last_modified = DateTime::from_utc(last_modified.naive_utc(), Utc);
 
@@ -781,8 +813,10 @@ pub(crate) fn last_modified_from_headers(headers: &HeaderMap) -> Result<DateTime
 pub(crate) fn date_from_headers(headers: &HeaderMap) -> Result<DateTime<Utc>, AzureError> {
     let date = headers
         .get(DATE)
-        .ok_or_else(|| AzureError::HeaderNotFound(DATE.as_str().to_owned()))?
-        .to_str()?;
+        .ok_or_else(|| {
+            static D: HeaderName = DATE;
+            AzureError::HeaderNotFound(D.as_str().to_owned())
+        })?.to_str()?;
     let date = DateTime::parse_from_rfc2822(date)?;
     let date = DateTime::from_utc(date.naive_utc(), Utc);
 
@@ -801,8 +835,10 @@ pub(crate) fn etag_from_headers_optional(headers: &HeaderMap) -> Result<Option<S
 pub(crate) fn etag_from_headers(headers: &HeaderMap) -> Result<String, AzureError> {
     let etag = headers
         .get(ETAG)
-        .ok_or_else(|| AzureError::HeaderNotFound(ETAG.as_str().to_owned()))?
-        .to_str()?
+        .ok_or_else(|| {
+            static E: HeaderName = ETAG;
+            AzureError::HeaderNotFound(E.as_str().to_owned())
+        })?.to_str()?
         .to_owned();
 
     trace!("etag == {:?}", etag);

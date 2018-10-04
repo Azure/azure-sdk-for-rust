@@ -314,7 +314,7 @@ impl<'a> GetBlockListBuilder<'a, Yes, Yes, Yes> {
 
         let req = self.client().perform_request(
             &uri,
-            Method::GET,
+            &Method::GET,
             |ref mut request| {
                 LeaseIdOption::add_header(&self, request);
                 ClientRequestIdOption::add_header(&self, request);

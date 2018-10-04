@@ -18,6 +18,10 @@ impl Range {
     pub fn len(&self) -> u64 {
         self.end - self.start
     }
+
+    pub fn is_empty(&self) -> bool {
+        self.end == self.start
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]

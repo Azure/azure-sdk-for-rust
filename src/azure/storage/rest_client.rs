@@ -11,6 +11,7 @@ use ring::{digest::SHA256, hmac};
 use std::fmt::Write;
 use url;
 
+#[derive(Debug, Clone, Copy)]
 pub enum ServiceType {
     Blob,
     // Queue, File,
@@ -22,7 +23,7 @@ const AZURE_VERSION: &str = "2017-11-09";
 pub const HEADER_VERSION: &str = "x-ms-version"; //=> [String] }
 pub const HEADER_DATE: &str = "x-ms-date"; //=> [String] }
 
-fn generate_authorization(h: &HeaderMap, u: &url::Url, method: Method, hmac_key: &str, service_type: ServiceType) -> String {
+fn generate_authorization(h: &HeaderMap, u: &url::Url, method: &Method, hmac_key: &str, service_type: ServiceType) -> String {
     let str_to_sign = string_to_sign(h, u, method, service_type);
 
     // debug!("\nstr_to_sign == {:?}\n", str_to_sign);
@@ -53,8 +54,8 @@ fn add_if_exists<K: header::AsHeaderName>(h: &HeaderMap, key: K) -> &str {
 }
 
 #[allow(unknown_lints)]
-#[allow(needless_pass_by_value)]
-fn string_to_sign(h: &HeaderMap, u: &url::Url, method: Method, service_type: ServiceType) -> String {
+#[clippy::needless_pass_by_value]
+fn string_to_sign(h: &HeaderMap, u: &url::Url, method: &Method, service_type: ServiceType) -> String {
     match service_type {
         ServiceType::Table => {
             let mut s = String::new();
@@ -226,11 +227,11 @@ fn lexy_sort(vec: &url::form_urlencoded::Parse, query_param: &str) -> Vec<(Strin
 }
 
 #[allow(unknown_lints)]
-#[allow(too_many_arguments)]
+#[clippy::too_many_arguments]
 pub fn perform_request<F>(
     client: &hyper::Client<hyper_tls::HttpsConnector<hyper::client::HttpConnector>>,
     uri: &str,
-    http_method: Method,
+    http_method: &Method,
     azure_key: &str,
     headers_func: F,
     request_body: Option<&[u8]>,
@@ -317,7 +318,7 @@ mod test {
         headers.insert(HEADER_DATE, format_header_value(time).unwrap());
         headers.insert(HEADER_VERSION, header::HeaderValue::from_static(AZURE_VERSION));
 
-        let s = string_to_sign(&headers, &u, method, service_type);
+        let s = string_to_sign(&headers, &u, &method, service_type);
 
         assert_eq!(
             s,

@@ -438,7 +438,7 @@ impl<'a> PutBlockBuilder<'a, Yes, Yes, Yes, Yes> {
 
         let req = self.client().perform_request(
             &uri,
-            Method::PUT,
+            &Method::PUT,
             |ref mut request| {
                 ContentMD5Option::add_header(&self, request);
                 LeaseIdOption::add_header(&self, request);

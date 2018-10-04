@@ -190,7 +190,7 @@ impl<'a> ReleaseLeaseBuilder<'a, Yes, Yes> {
 
         let req = self.client().perform_request(
             &uri,
-            Method::PUT,
+            &Method::PUT,
             |ref mut request| {
                 ClientRequestIdOption::add_header(&self, request);
                 LeaseIdRequired::add_header(&self, request);
@@ -202,6 +202,6 @@ impl<'a> ReleaseLeaseBuilder<'a, Yes, Yes> {
         done(req)
             .from_err()
             .and_then(move |future_response| check_status_extract_headers_and_body(future_response, StatusCode::OK))
-            .and_then(|(headers, _body)| done(ReleaseLeaseResponse::from_response(&headers)))
+            .and_then(|(headers, _body)| done(ReleaseLeaseResponse::from_headers(&headers)))
     }
 }
