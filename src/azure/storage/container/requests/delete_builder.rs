@@ -158,7 +158,7 @@ impl<'a> DeleteBuilder<'a, Yes> {
 
         let req = self.client().perform_request(
             &uri,
-            Method::DELETE,
+            &Method::DELETE,
             |ref mut request| {
                 ClientRequestIdOption::add_header(&self, request);
                 LeaseIdOption::add_header(&self, request);

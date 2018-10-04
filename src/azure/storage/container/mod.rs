@@ -13,6 +13,7 @@ use chrono::{DateTime, Utc};
 use http::request::Builder;
 use http::HeaderMap;
 use hyper::header;
+use hyper::header::HeaderName;
 use std::collections::HashMap;
 use std::{fmt, str::FromStr};
 use url::percent_encoding::utf8_percent_encode;
@@ -82,14 +83,20 @@ impl Container {
     pub fn from_response(name: String, headers: &HeaderMap) -> Result<Container, AzureError> {
         let last_modified = match headers.get(header::LAST_MODIFIED) {
             Some(last_modified) => last_modified.to_str()?,
-            None => return Err(AzureError::MissingHeaderError(header::LAST_MODIFIED.as_str().to_owned())),
+            None => {
+                static LM: header::HeaderName = header::LAST_MODIFIED;
+                return Err(AzureError::MissingHeaderError(LM.as_str().to_owned()));
+            }
         };
         let last_modified = DateTime::parse_from_rfc2822(last_modified)?;
         let last_modified = DateTime::from_utc(last_modified.naive_utc(), Utc);
 
         let e_tag = match headers.get(header::ETAG) {
             Some(e_tag) => e_tag.to_str()?.to_owned(),
-            None => return Err(AzureError::MissingHeaderError(header::ETAG.as_str().to_owned())),
+            None => {
+                static ETAG: HeaderName = header::ETAG;
+                return Err(AzureError::MissingHeaderError(ETAG.as_str().to_owned()));
+            }
         };
 
         let lease_status = match headers.get(LEASE_STATUS) {

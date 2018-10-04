@@ -84,7 +84,7 @@ impl<'a> GetPropertiesBuilder<'a, Yes> {
 
         let req = self.client().perform_request(
             &uri,
-            Method::HEAD,
+            &Method::HEAD,
             |ref mut request| {
                 ClientRequestIdOption::add_header(&self, request);
                 LeaseIdOption::add_header(&self, request);

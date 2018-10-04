@@ -226,7 +226,7 @@ impl<'a> CreateBuilder<'a, Yes, Yes> {
 
         let req = self.client().perform_request(
             &uri,
-            Method::PUT,
+            &Method::PUT,
             |ref mut request| {
                 ClientRequestIdOption::add_header(&self, request);
                 PublicAccessRequired::add_header(&self, request);

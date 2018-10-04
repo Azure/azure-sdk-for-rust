@@ -464,7 +464,7 @@ impl<'a> ClearPageBuilder<'a, Yes, Yes, Yes> {
 
         let req = self.client().perform_request(
             &uri,
-            Method::PUT,
+            &Method::PUT,
             |ref mut request| {
                 BA512RangeRequired::add_header(&self, request);
                 request.header(PAGE_WRITE, "clear");

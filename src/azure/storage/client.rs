@@ -196,7 +196,7 @@ impl Client {
     pub(crate) fn perform_request<F>(
         &self,
         uri: &str,
-        method: Method,
+        method: &Method,
         headers_func: F,
         request_body: Option<&[u8]>,
     ) -> Result<hyper::client::ResponseFuture, AzureError>
@@ -209,7 +209,7 @@ impl Client {
     pub(crate) fn perform_table_request<F>(
         &self,
         segment: &str,
-        method: Method,
+        method: &Method,
         headers_func: F,
         request_str: Option<&[u8]>,
     ) -> Result<hyper::client::ResponseFuture, AzureError>
@@ -219,7 +219,7 @@ impl Client {
         debug!("segment: {}, method: {:?}", segment, method,);
         perform_request(
             &self.hc,
-            (self.get_uri_prefix(&ServiceType::Table) + segment).as_str(),
+            (self.get_uri_prefix(ServiceType::Table) + segment).as_str(),
             method,
             &self.key,
             headers_func,
@@ -229,10 +229,10 @@ impl Client {
     }
 
     /// Uri scheme + authority e.g. http://myaccount.table.core.windows.net/
-    pub(crate) fn get_uri_prefix(&self, service_type: &ServiceType) -> String {
+    pub(crate) fn get_uri_prefix(&self, service_type: ServiceType) -> String {
         "https://".to_owned()
             + self.account()
-            + match *service_type {
+            + match service_type {
                 ServiceType::Blob => SERVICE_SUFFIX_BLOB,
                 ServiceType::Table => SERVICE_SUFFIX_TABLE,
             }

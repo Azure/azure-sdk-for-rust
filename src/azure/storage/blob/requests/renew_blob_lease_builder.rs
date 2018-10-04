@@ -261,7 +261,7 @@ impl<'a> RenewBlobLeaseBuilder<'a, Yes, Yes, Yes> {
 
         let req = self.client().perform_request(
             &uri,
-            Method::PUT,
+            &Method::PUT,
             |ref mut request| {
                 LeaseIdRequired::add_header(&self, request);
                 request.header(LEASE_ACTION, "renew");

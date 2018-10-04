@@ -84,7 +84,7 @@ impl<'a> GetACLBuilder<'a, Yes> {
 
         let req = self.client().perform_request(
             &uri,
-            Method::GET,
+            &Method::GET,
             |ref mut request| {
                 ClientRequestIdOption::add_header(&self, request);
                 LeaseIdOption::add_header(&self, request);

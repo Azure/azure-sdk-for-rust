@@ -543,7 +543,7 @@ impl<'a> ListBlobBuilder<'a, Yes> {
 
         trace!("list blob uri = {}", uri);
 
-        let req = self.client().perform_request(&uri, Method::GET, |_| {}, None);
+        let req = self.client().perform_request(&uri, &Method::GET, |_| {}, None);
 
         done(req).from_err().and_then(move |future_response| {
             check_status_extract_headers_and_body_as_string(future_response, StatusCode::OK)

@@ -761,7 +761,7 @@ impl<'a> PutPageBlobBuilder<'a, Yes, Yes, Yes> {
 
         let req = self.client().perform_request(
             &uri,
-            Method::PUT,
+            &Method::PUT,
             |ref mut request| {
                 PageBlobLengthRequired::add_header(&self, request);
                 SequenceNumberOption::add_header(&self, request);
@@ -782,6 +782,6 @@ impl<'a> PutPageBlobBuilder<'a, Yes, Yes, Yes> {
         done(req)
             .from_err()
             .and_then(move |response| check_status_extract_headers_and_body(response, StatusCode::CREATED))
-            .and_then(move |(headers, _body)| done(PutBlobResponse::from_headers(&headers)).and_then(|pbbr| ok(pbbr)))
+            .and_then(move |(headers, _body)| done(PutBlobResponse::from_headers(&headers)).and_then(ok))
     }
 }

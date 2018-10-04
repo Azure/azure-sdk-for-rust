@@ -190,7 +190,7 @@ impl Blob {
             copy_status_description,
             incremental_copy,
             server_encrypted,
-            access_tier_inferred: access_tier_inferred,
+            access_tier_inferred,
             access_tier_change_time,
             deleted_time,
             remaining_retention_days,
@@ -221,20 +221,24 @@ impl Blob {
 
         let content_length = h
             .get(header::CONTENT_LENGTH)
-            .ok_or_else(|| AzureError::HeaderNotFound(header::CONTENT_LENGTH.as_str().to_owned()))?
-            .to_str()?
+            .ok_or_else(|| {
+                static CL: header::HeaderName = header::CONTENT_LENGTH;
+                AzureError::HeaderNotFound(CL.as_str().to_owned())
+            })?.to_str()?
             .parse::<u64>()?;
         trace!("content_length == {:?}", content_length);
 
-        let last_modified = h
-            .get_as_str(header::LAST_MODIFIED)
-            .ok_or_else(|| AzureError::HeaderNotFound(header::LAST_MODIFIED.as_str().to_owned()))?;
+        let last_modified = h.get_as_str(header::LAST_MODIFIED).ok_or_else(|| {
+            static LM: header::HeaderName = header::LAST_MODIFIED;
+            AzureError::HeaderNotFound(LM.as_str().to_owned())
+        })?;
         let last_modified = from_azure_time(last_modified)?;
         trace!("last_modified == {:?}", last_modified);
 
-        let etag = h
-            .get_as_string(header::ETAG)
-            .ok_or_else(|| AzureError::HeaderNotFound(header::ETAG.as_str().to_owned()))?;
+        let etag = h.get_as_string(header::ETAG).ok_or_else(|| {
+            static E: header::HeaderName = header::ETAG;
+            AzureError::HeaderNotFound(E.as_str().to_owned())
+        })?;
         trace!("etag == {:?}", etag);
 
         let x_ms_blob_sequence_number = h.get_as_u64(BLOB_SEQUENCE_NUMBER);
