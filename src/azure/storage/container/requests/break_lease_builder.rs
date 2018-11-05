@@ -192,8 +192,8 @@ impl<'a, ContainerNameSet> BreakLeaseBuilder<'a, ContainerNameSet> where Contain
 impl<'a> BreakLeaseBuilder<'a, Yes> {
     pub fn finalize(self) -> impl Future<Item = BreakLeaseResponse, Error = AzureError> {
         let mut uri = format!(
-            "https://{}.blob.core.windows.net/{}?comp=lease&restype=container",
-            self.client().account(),
+            "{}/{}?comp=lease&restype=container",
+            self.client().blob_uri(),
             self.container_name()
         );
 

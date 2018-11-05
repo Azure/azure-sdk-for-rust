@@ -78,11 +78,7 @@ impl<'a> ListBuilder<'a> {
     }
 
     pub fn finalize(self) -> impl Future<Item = ListContainersResponse, Error = AzureError> {
-        let mut uri = format!(
-            "https://{}.blob.core.windows.net?comp=list&maxresults={}",
-            self.client().account(),
-            self.max_results()
-        );
+        let mut uri = format!("{}?comp=list&maxresults={}", self.client().blob_uri(), self.max_results());
 
         if self.is_metadata_included() {
             uri = format!("{}&include=metadata", uri);

@@ -229,14 +229,14 @@ where
 {
     match params {
         Some(ref params) => format!(
-            "https://{}.blob.core.windows.net/{}?{}",
-            t.client().account(),
+            "{}/{}?{}",
+            t.client().blob_uri(),
             utf8_percent_encode(t.container_name(), COMPLETE_ENCODE_SET),
             params
         ),
         None => format!(
-            "https://{}.blob.core.windows.net/{}",
-            t.client().account(),
+            "{}/{}",
+            t.client().blob_uri(),
             utf8_percent_encode(t.container_name(), COMPLETE_ENCODE_SET),
         ),
     }

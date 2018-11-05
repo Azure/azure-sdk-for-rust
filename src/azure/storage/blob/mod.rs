@@ -224,7 +224,8 @@ impl Blob {
             .ok_or_else(|| {
                 static CL: header::HeaderName = header::CONTENT_LENGTH;
                 AzureError::HeaderNotFound(CL.as_str().to_owned())
-            })?.to_str()?
+            })?
+            .to_str()?
             .parse::<u64>()?;
         trace!("content_length == {:?}", content_length);
 
@@ -370,15 +371,15 @@ where
 {
     match params {
         Some(ref params) => format!(
-            "https://{}.blob.core.windows.net/{}/{}?{}",
-            t.client().account(),
+            "{}/{}/{}?{}",
+            t.client().blob_uri(),
             utf8_percent_encode(t.container_name(), COMPLETE_ENCODE_SET),
             utf8_percent_encode(t.blob_name(), COMPLETE_ENCODE_SET),
             params
         ),
         None => format!(
-            "https://{}.blob.core.windows.net/{}/{}",
-            t.client().account(),
+            "{}/{}/{}",
+            t.client().blob_uri(),
             utf8_percent_encode(t.container_name(), COMPLETE_ENCODE_SET),
             utf8_percent_encode(t.blob_name(), COMPLETE_ENCODE_SET)
         ),

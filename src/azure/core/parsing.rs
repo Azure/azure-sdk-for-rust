@@ -119,10 +119,12 @@ pub fn find_subnodes<'a>(node: &'a Element, subnode: &str) -> Vec<&'a Element> {
         .filter(|x| match **x {
             ElementNode(ref mynode) => mynode.name == subnode,
             _ => false,
-        }).map(|x| match *x {
+        })
+        .map(|x| match *x {
             ElementNode(ref mynode) => mynode,
             _ => unreachable!(),
-        }).collect::<Vec<_>>()
+        })
+        .collect::<Vec<_>>()
 }
 
 #[inline]
