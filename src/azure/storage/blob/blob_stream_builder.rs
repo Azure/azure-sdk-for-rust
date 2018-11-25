@@ -373,7 +373,6 @@ impl<'a> BlobStreamBuilder<'a, Yes, Yes, Yes> {
             } else {
                 Range::new(remaining.start, remaining.start + increment)
             };
-            println!("getting blob {:?} out of {:?}", range, remaining);
 
             let mut req = GetBlobBuilder::new(&client)
                 .with_container_name(&container_name)
