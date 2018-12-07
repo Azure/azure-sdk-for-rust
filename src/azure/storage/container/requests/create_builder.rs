@@ -216,7 +216,6 @@ impl<'a> CreateBuilder<'a, No, No> {
 impl<'a> CreateBuilder<'a, Yes, Yes> {
     pub fn finalize(self) -> impl Future<Item = (), Error = AzureError> {
         let mut uri = format!("{}/{}?restype=container", self.client().blob_uri(), self.container_name());
-        println!("{}", uri);
 
         if let Some(nm) = TimeoutOption::to_uri_parameter(&self) {
             uri = format!("{}&{}", uri, nm);

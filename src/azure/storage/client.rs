@@ -5,6 +5,7 @@ use azure::storage::{blob, container};
 use hyper::{self, Method};
 use hyper_tls;
 use std::borrow::Borrow;
+use url::Url;
 
 pub trait Blob {
     fn list_blobs<'a>(&'a self) -> blob::requests::ListBlobBuilder<'a, No>;
@@ -172,27 +173,36 @@ impl Container for Client {
 
 impl Client {
     pub fn new(account: &str, key: &str) -> Result<Client, AzureError> {
-        use hyper;
+        Client::azure(account, key)
+    }
 
+    pub fn azure(account: &str, key: &str) -> Result<Client, AzureError> {
         let client = hyper::Client::builder().build(hyper_tls::HttpsConnector::new(4)?);
 
-        if cfg!(feature = "emulator") {
-            Ok(Client {
-                account: "devstoreaccount1".to_owned(),
-                key: "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==".to_owned(),
-                hc: client,
-                blob_uri: "http://127.0.0.1:10000/devstoreaccount1".to_owned(),
-                table_uri: "http://127.0.0.1:10002/devstoreaccount1".to_owned(),
-            })
-        } else {
-            Ok(Client {
-                account: account.to_owned(),
-                key: key.to_owned(),
-                hc: client,
-                blob_uri: format!("https://{}.blob.core.windows.net", account),
-                table_uri: format!("https://{}.table.core.windows.net", account),
-            })
-        }
+        Ok(Client {
+            account: account.to_owned(),
+            key: key.to_owned(),
+            hc: client,
+            blob_uri: format!("https://{}.blob.core.windows.net", account),
+            table_uri: format!("https://{}.table.core.windows.net", account),
+        })
+    }
+
+    pub fn emulator(blob_storage_url: &Url, table_storage_url: &Url) -> Result<Client, AzureError> {
+        let client = hyper::Client::builder().build(hyper_tls::HttpsConnector::new(4)?);
+
+        let blob_uri = format!("{}devstoreaccount1", blob_storage_url.as_str());
+        debug!("blob_uri == {}", blob_uri);
+        let table_uri = format!("{}devstoreaccount1", table_storage_url.as_str());
+        debug!("table_uri == {}", table_uri);
+
+        Ok(Client {
+            account: "devstoreaccount1".to_owned(),
+            key: "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==".to_owned(),
+            hc: client,
+            blob_uri,
+            table_uri,
+        })
     }
 
     pub fn account(&self) -> &str {
