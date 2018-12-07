@@ -165,7 +165,8 @@ impl<'a, ContainerNameSet, PublicAccessSet> CreateBuilder<'a, ContainerNameSet, 
 where
     ContainerNameSet: ToAssign,
     PublicAccessSet: ToAssign,
-{}
+{
+}
 
 impl<'a, ContainerNameSet, PublicAccessSet> ContainerNameSupport<'a> for CreateBuilder<'a, ContainerNameSet, PublicAccessSet>
 where
@@ -214,11 +215,7 @@ impl<'a> CreateBuilder<'a, No, No> {
 
 impl<'a> CreateBuilder<'a, Yes, Yes> {
     pub fn finalize(self) -> impl Future<Item = (), Error = AzureError> {
-        let mut uri = format!(
-            "https://{}.blob.core.windows.net/{}?restype=container",
-            self.client().account(),
-            self.container_name()
-        );
+        let mut uri = format!("{}/{}?restype=container", self.client().blob_uri(), self.container_name());
 
         if let Some(nm) = TimeoutOption::to_uri_parameter(&self) {
             uri = format!("{}&{}", uri, nm);

@@ -250,13 +250,14 @@ impl<'a, ContainerNameSet, LeaseDurationSet> AcquireLeaseBuilder<'a, ContainerNa
 where
     ContainerNameSet: ToAssign,
     LeaseDurationSet: ToAssign,
-{}
+{
+}
 
 impl<'a> AcquireLeaseBuilder<'a, Yes, Yes> {
     pub fn finalize(self) -> impl Future<Item = AcquireLeaseResponse, Error = AzureError> {
         let mut uri = format!(
-            "https://{}.blob.core.windows.net/{}?comp=lease&restype=container",
-            self.client().account(),
+            "{}/{}?comp=lease&restype=container",
+            self.client().blob_uri(),
             self.container_name()
         );
 
