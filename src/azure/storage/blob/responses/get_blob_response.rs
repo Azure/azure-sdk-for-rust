@@ -1,6 +1,6 @@
-use azure::core::errors::AzureError;
-use azure::core::{date_from_headers, request_id_from_headers, RequestId};
-use azure::storage::blob::Blob;
+use crate::azure::core::errors::AzureError;
+use crate::azure::core::{date_from_headers, request_id_from_headers, RequestId};
+use crate::azure::storage::blob::Blob;
 use chrono::{DateTime, Utc};
 use http::HeaderMap;
 

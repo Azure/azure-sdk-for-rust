@@ -1,6 +1,8 @@
-use azure::core::errors::AzureError;
-use azure::core::{date_from_headers, etag_from_headers_optional, last_modified_from_headers_optional, request_id_from_headers, RequestId};
-use azure::storage::blob::BlockWithSizeList;
+use crate::azure::core::errors::AzureError;
+use crate::azure::core::{
+    date_from_headers, etag_from_headers_optional, last_modified_from_headers_optional, request_id_from_headers, RequestId,
+};
+use crate::azure::storage::blob::BlockWithSizeList;
 use chrono::{DateTime, Utc};
 use http::HeaderMap;
 use std::str::from_utf8;

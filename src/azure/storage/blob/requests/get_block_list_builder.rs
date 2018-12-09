@@ -1,14 +1,14 @@
-use azure::core::errors::{check_status_extract_headers_and_body, AzureError};
-use azure::core::lease::LeaseId;
-use azure::core::{
+use crate::azure::core::errors::{check_status_extract_headers_and_body, AzureError};
+use crate::azure::core::lease::LeaseId;
+use crate::azure::core::{
     BlobNameRequired, BlobNameSupport, BlockListTypeRequired, BlockListTypeSupport, ClientRequestIdOption, ClientRequestIdSupport,
     ClientRequired, ContainerNameRequired, ContainerNameSupport, LeaseIdOption, LeaseIdSupport, No, TimeoutOption, TimeoutSupport,
     ToAssign, Yes,
 };
-use azure::storage::blob::generate_blob_uri;
-use azure::storage::blob::responses::GetBlockListResponse;
-use azure::storage::blob::BlockListType;
-use azure::storage::client::Client;
+use crate::azure::storage::blob::generate_blob_uri;
+use crate::azure::storage::blob::responses::GetBlockListResponse;
+use crate::azure::storage::blob::BlockListType;
+use crate::azure::storage::client::Client;
 use futures::future::done;
 use futures::prelude::*;
 use hyper::{Method, StatusCode};
@@ -298,7 +298,8 @@ where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     BlobListTypeSet: ToAssign,
-{}
+{
+}
 
 impl<'a> GetBlockListBuilder<'a, Yes, Yes, Yes> {
     #[inline]

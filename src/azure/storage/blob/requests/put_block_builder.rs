@@ -1,13 +1,13 @@
-use azure::core::errors::{check_status_extract_headers_and_body, AzureError};
-use azure::core::lease::LeaseId;
-use azure::core::{
+use crate::azure::core::errors::{check_status_extract_headers_and_body, AzureError};
+use crate::azure::core::lease::LeaseId;
+use crate::azure::core::{
     BlobNameRequired, BlobNameSupport, BlockIdRequired, BlockIdSupport, BodyRequired, BodySupport, ClientRequestIdOption,
     ClientRequestIdSupport, ClientRequired, ContainerNameRequired, ContainerNameSupport, ContentMD5Option, ContentMD5Support,
     LeaseIdOption, LeaseIdSupport, No, TimeoutOption, TimeoutSupport, ToAssign, Yes,
 };
-use azure::storage::blob::generate_blob_uri;
-use azure::storage::blob::responses::PutBlockResponse;
-use azure::storage::client::Client;
+use crate::azure::storage::blob::generate_blob_uri;
+use crate::azure::storage::blob::responses::PutBlockResponse;
+use crate::azure::storage::client::Client;
 use futures::future::done;
 use futures::prelude::*;
 use hyper::{Method, StatusCode};
@@ -422,7 +422,8 @@ where
     BlobNameSet: ToAssign,
     BodySet: ToAssign,
     BlockIdSet: ToAssign,
-{}
+{
+}
 
 impl<'a> PutBlockBuilder<'a, Yes, Yes, Yes, Yes> {
     #[inline]

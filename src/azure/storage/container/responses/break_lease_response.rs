@@ -1,4 +1,4 @@
-use azure::core::RequestId;
+use crate::azure::core::RequestId;
 use chrono::{DateTime, Utc};
 
 response_from_headers!(BreakLeaseResponse,
@@ -9,4 +9,3 @@ response_from_headers!(BreakLeaseResponse,
 		       request_id_from_headers -> request_id: RequestId,
 		       date_from_headers -> date: DateTime<Utc>
 );
-

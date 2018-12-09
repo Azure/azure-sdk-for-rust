@@ -1,5 +1,7 @@
-use azure::core::errors::AzureError;
-use azure::core::{content_md5_from_headers, date_from_headers, request_id_from_headers, request_server_encrypted_from_headers, RequestId};
+use crate::azure::core::errors::AzureError;
+use crate::azure::core::{
+    content_md5_from_headers, date_from_headers, request_id_from_headers, request_server_encrypted_from_headers, RequestId,
+};
 use chrono::{DateTime, Utc};
 use http::HeaderMap;
 

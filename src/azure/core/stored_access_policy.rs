@@ -1,4 +1,4 @@
-use azure::core::errors::AzureError;
+use crate::azure::core::errors::AzureError;
 use chrono::{DateTime, FixedOffset};
 use serde_xml_rs::deserialize;
 

@@ -1,7 +1,7 @@
-use azure::core::errors::AzureError;
-use azure::core::headers::REQUEST_ID;
-use azure::core::{RequestId, StoredAccessPolicyList};
-use azure::storage::container::{public_access_from_header, PublicAccess};
+use crate::azure::core::errors::AzureError;
+use crate::azure::core::headers::REQUEST_ID;
+use crate::azure::core::{RequestId, StoredAccessPolicyList};
+use crate::azure::storage::container::{public_access_from_header, PublicAccess};
 use chrono::{DateTime, FixedOffset};
 use http::header;
 use http::HeaderMap;

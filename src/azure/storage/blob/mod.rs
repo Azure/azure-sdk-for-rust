@@ -17,7 +17,7 @@ mod block_list;
 pub use self::block_list::BlockList;
 pub mod requests;
 pub mod responses;
-use azure::core::headers::{
+use crate::azure::core::headers::{
     BLOB_SEQUENCE_NUMBER, BLOB_TYPE, CONTENT_MD5, COPY_COMPLETION_TIME, COPY_ID, COPY_PROGRESS, COPY_SOURCE, COPY_STATUS,
     COPY_STATUS_DESCRIPTION, CREATION_TIME, LEASE_DURATION, LEASE_STATE, LEASE_STATUS, SERVER_ENCRYPTED,
 };
@@ -28,7 +28,7 @@ use std::{fmt, str::FromStr};
 use xml::Element;
 use xml::Xml::ElementNode;
 
-use azure::core::{
+use crate::azure::core::{
     enumerations,
     errors::{AzureError, TraversingError},
     incompletevector::IncompleteVector,

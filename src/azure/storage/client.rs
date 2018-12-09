@@ -1,7 +1,7 @@
 use super::rest_client::{perform_request, ServiceType};
-use azure::core::errors::AzureError;
-use azure::core::No;
-use azure::storage::{blob, container};
+use crate::azure::core::errors::AzureError;
+use crate::azure::core::No;
+use crate::azure::storage::{blob, container};
 use hyper::{self, Method};
 use hyper_tls;
 use std::borrow::Borrow;

@@ -1,12 +1,12 @@
-use azure::core::errors::{check_status_extract_headers_and_body, AzureError};
-use azure::core::lease::LeaseId;
-use azure::core::{
+use crate::azure::core::errors::{check_status_extract_headers_and_body, AzureError};
+use crate::azure::core::lease::LeaseId;
+use crate::azure::core::{
     ClientRequestIdOption, ClientRequestIdSupport, ClientRequired, ContainerNameRequired, ContainerNameSupport, LeaseIdOption,
     LeaseIdSupport, TimeoutOption, TimeoutSupport,
 };
-use azure::core::{No, StoredAccessPolicyList, ToAssign, Yes};
-use azure::storage::client::Client;
-use azure::storage::container::{public_access_from_header, PublicAccess, PublicAccessRequired, PublicAccessSupport};
+use crate::azure::core::{No, StoredAccessPolicyList, ToAssign, Yes};
+use crate::azure::storage::client::Client;
+use crate::azure::storage::container::{public_access_from_header, PublicAccess, PublicAccessRequired, PublicAccessSupport};
 use futures::future::{done, Future};
 use hyper::{Method, StatusCode};
 use std::marker::PhantomData;

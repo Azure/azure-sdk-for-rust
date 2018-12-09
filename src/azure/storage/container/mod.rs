@@ -1,7 +1,7 @@
 pub mod requests;
 pub mod responses;
 
-use azure::core::{
+use crate::azure::core::{
     enumerations,
     errors::{AzureError, TraversingError},
     headers::{BLOB_PUBLIC_ACCESS, HAS_IMMUTABILITY_POLICY, HAS_LEGAL_HOLD, LEASE_DURATION, LEASE_STATE, LEASE_STATUS, META_PREFIX},
@@ -179,7 +179,7 @@ impl Container {
                         _ => {
                             return Err(AzureError::UnexpectedXMLError(String::from(
                                 "Metadata should contain an ElementNode",
-                            )))
+                            )));
                         }
                     };
 
@@ -195,7 +195,7 @@ impl Container {
                             _ => {
                                 return Err(AzureError::UnexpectedXMLError(String::from(
                                     "Metadata node should contain a CharacterNode with metadata value",
-                                )))
+                                )));
                             }
                         }
                     };

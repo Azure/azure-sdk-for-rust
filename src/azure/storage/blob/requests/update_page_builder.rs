@@ -1,17 +1,17 @@
-use azure::core::ba512_range::BA512Range;
-use azure::core::errors::{check_status_extract_headers_and_body, AzureError};
-use azure::core::headers::PAGE_WRITE;
-use azure::core::lease::LeaseId;
-use azure::core::modify_conditions::{IfMatchCondition, IfSinceCondition, SequenceNumberCondition};
-use azure::core::{
+use crate::azure::core::ba512_range::BA512Range;
+use crate::azure::core::errors::{check_status_extract_headers_and_body, AzureError};
+use crate::azure::core::headers::PAGE_WRITE;
+use crate::azure::core::lease::LeaseId;
+use crate::azure::core::modify_conditions::{IfMatchCondition, IfSinceCondition, SequenceNumberCondition};
+use crate::azure::core::{
     BA512RangeRequired, BA512RangeSupport, BlobNameRequired, BlobNameSupport, BodyRequired, BodySupport, ClientRequestIdOption,
     ClientRequestIdSupport, ClientRequired, ContainerNameRequired, ContainerNameSupport, ContentMD5Option, ContentMD5Support,
     IfMatchConditionOption, IfMatchConditionSupport, IfSinceConditionOption, IfSinceConditionSupport, LeaseIdOption, LeaseIdSupport, No,
     SequenceNumberConditionOption, SequenceNumberConditionSupport, TimeoutOption, TimeoutSupport, ToAssign, Yes,
 };
-use azure::storage::blob::generate_blob_uri;
-use azure::storage::blob::responses::UpdatePageResponse;
-use azure::storage::client::Client;
+use crate::azure::storage::blob::generate_blob_uri;
+use crate::azure::storage::blob::responses::UpdatePageResponse;
+use crate::azure::storage::client::Client;
 use futures::future::done;
 use futures::prelude::*;
 use hyper::{Method, StatusCode};
@@ -600,7 +600,8 @@ where
     BlobNameSet: ToAssign,
     BA512RangeSet: ToAssign,
     BodySet: ToAssign,
-{}
+{
+}
 
 impl<'a> UpdatePageBuilder<'a, Yes, Yes, Yes, Yes> {
     pub fn finalize(self) -> impl Future<Item = UpdatePageResponse, Error = AzureError> {

@@ -1,6 +1,6 @@
-use azure::core::incompletevector::IncompleteVector;
-use azure::core::RequestId;
-use azure::storage::container::Container;
+use crate::azure::core::incompletevector::IncompleteVector;
+use crate::azure::core::RequestId;
+use crate::azure::storage::container::Container;
 
 #[derive(Debug, Clone)]
 pub struct ListContainersResponse {

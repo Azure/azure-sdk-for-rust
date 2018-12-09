@@ -27,5 +27,5 @@ extern crate smallvec;
 
 #[macro_use]
 mod azure;
-pub use azure::*;
+pub use crate::azure::*;
 pub mod prelude;

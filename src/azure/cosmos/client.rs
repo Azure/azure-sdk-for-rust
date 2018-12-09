@@ -1,4 +1,4 @@
-use azure::core::{
+use crate::azure::core::{
     errors::{check_status_extract_body, AzureError},
     util::RequestBuilderExt,
     COMPLETE_ENCODE_SET,
@@ -688,7 +688,7 @@ fn generate_resource_link(u: &str) -> &str {
 
 #[cfg(test)]
 mod tests {
-    use azure::cosmos::client::*;
+    use crate::azure::cosmos::client::*;
 
     #[test]
     fn string_to_sign_00() {

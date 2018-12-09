@@ -1,4 +1,4 @@
-use azure::core::errors::TraversingError;
+use crate::azure::core::errors::TraversingError;
 use chrono;
 use xml::Element;
 use xml::Xml::{CharacterNode, ElementNode};

@@ -1,4 +1,4 @@
-pub use azure::core::{
+pub use crate::azure::core::{
     AccessTierOption, AccessTierSupport, BA512RangeOption, BA512RangeRequired, BA512RangeSupport, BlobNameRequired, BlobNameSupport,
     BlockIdRequired, BlockIdSupport, BlockListRequired, BlockListSupport, BlockListTypeRequired, BlockListTypeSupport, BodyRequired,
     BodySupport, CacheControlOption, CacheControlSupport, ClientRequestIdOption, ClientRequestIdSupport, ClientRequired,
@@ -15,6 +15,6 @@ pub use azure::core::{
     SequenceNumberConditionSupport, SequenceNumberOption, SequenceNumberSupport, SnapshotOption, SnapshotRequired, SnapshotSupport,
     StoredAccessPolicy, StoredAccessPolicyList, TimeoutOption, TimeoutSupport,
 };
-pub use azure::storage::container::PublicAccessSupport;
+pub use crate::azure::storage::container::PublicAccessSupport;
 
-pub use azure::storage::client::{Blob as BlobTrait, Client, Container as ContainerTrait};
+pub use crate::azure::storage::client::{Blob as BlobTrait, Client, Container as ContainerTrait};

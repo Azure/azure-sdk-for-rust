@@ -70,9 +70,9 @@ macro_rules! create_enum {
 
 #[cfg(test)]
 mod test {
-    use azure::core::enumerations;
-    use azure::core::errors::TraversingError;
-    use azure::core::parsing::FromStringOptional;
+    use crate::azure::core::enumerations;
+    use crate::azure::core::errors::TraversingError;
+    use crate::azure::core::parsing::FromStringOptional;
     use std::fmt;
     use std::str::FromStr;
 

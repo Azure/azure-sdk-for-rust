@@ -1,4 +1,4 @@
-use azure::storage::blob::{BlobBlockType, BlockWithSizeList};
+use crate::azure::storage::blob::{BlobBlockType, BlockWithSizeList};
 use base64;
 use std::borrow::Borrow;
 

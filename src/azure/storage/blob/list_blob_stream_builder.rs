@@ -1,14 +1,14 @@
-use azure::core::errors::AzureError;
-use azure::core::incompletevector::IncompleteVector;
-use azure::core::{
+use crate::azure::core::errors::AzureError;
+use crate::azure::core::incompletevector::IncompleteVector;
+use crate::azure::core::{
     ClientRequestIdOption, ClientRequestIdSupport, ClientRequired, ContainerNameRequired, ContainerNameSupport, DelimiterOption,
     DelimiterSupport, IncludeCopyOption, IncludeCopySupport, IncludeDeletedOption, IncludeDeletedSupport, IncludeListOptions,
     IncludeMetadataOption, IncludeMetadataSupport, IncludeSnapshotsOption, IncludeSnapshotsSupport, IncludeUncommittedBlobsOption,
     IncludeUncommittedBlobsSupport, NextMarkerSupport, No, PrefixOption, PrefixSupport, TimeoutOption, TimeoutSupport, ToAssign, Yes,
 };
-use azure::storage::blob::requests::ListBlobBuilder;
-use azure::storage::blob::Blob;
-use azure::storage::client::Client;
+use crate::azure::storage::blob::requests::ListBlobBuilder;
+use crate::azure::storage::blob::Blob;
+use crate::azure::storage::client::Client;
 use futures::prelude::*;
 use futures::stream;
 use std::marker::PhantomData;
@@ -484,6 +484,7 @@ impl<'a> ListBlobStreamBuilder<'a, Yes> {
                 let IncompleteVector { token, vector } = response.incomplete_vector;
                 (stream::iter_ok(vector), ContinuationState::Next(token))
             }))
-        }).flatten()
+        })
+        .flatten()
     }
 }

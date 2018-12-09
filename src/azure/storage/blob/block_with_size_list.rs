@@ -1,6 +1,6 @@
-use azure::core::errors::AzureError;
-use azure::storage::blob::BlobBlockType;
-use azure::storage::blob::BlobBlockWithSize;
+use crate::azure::core::errors::AzureError;
+use crate::azure::storage::blob::BlobBlockType;
+use crate::azure::storage::blob::BlobBlockWithSize;
 use base64;
 use serde_xml_rs::deserialize;
 use std::borrow::Borrow;

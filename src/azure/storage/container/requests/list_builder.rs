@@ -1,13 +1,13 @@
-use azure::core::errors::{check_status_extract_headers_and_body_as_string, AzureError};
-use azure::core::incompletevector::IncompleteVector;
-use azure::core::parsing::{cast_optional, traverse};
-use azure::core::{
+use crate::azure::core::errors::{check_status_extract_headers_and_body_as_string, AzureError};
+use crate::azure::core::incompletevector::IncompleteVector;
+use crate::azure::core::parsing::{cast_optional, traverse};
+use crate::azure::core::{
     request_id_from_headers, ClientRequestIdOption, ClientRequestIdSupport, ClientRequired, NextMarkerOption, NextMarkerSupport,
     PrefixOption, PrefixSupport, TimeoutOption, TimeoutSupport,
 };
-use azure::storage::client::Client;
-use azure::storage::container::responses::ListContainersResponse;
-use azure::storage::container::Container;
+use crate::azure::storage::client::Client;
+use crate::azure::storage::container::responses::ListContainersResponse;
+use crate::azure::storage::container::Container;
 use futures::future::{done, Future};
 use hyper::{Method, StatusCode};
 use xml::Element;

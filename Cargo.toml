@@ -1,16 +1,18 @@
 [package]
-name           = "azure_sdk_for_rust"
-version        = "0.10.1"
-description    = "Rust wrappers around Microsoft Azure REST APIs"
-readme         = "README.md"
-authors        = ["Francesco Cogno <francesco.cogno@outlook.com>", "Max Gortman <mgortman@microsoft.com>", "Dong Liu <doliu@microsoft.com>"]
-license        = "Apache-2.0"
-repository     = "https://github.com/MindFlavor/AzureSDKForRust"
-documentation  = "http://mindflavor.github.io/AzureSDKForRust/azure_sdk_for_rust/index.html"
-homepage       = "https://github.com/MindFlavor/AzureSDKForRust"
+name          = "azure_sdk_for_rust"
+version       = "0.10.2"
+description   = "Rust wrappers around Microsoft Azure REST APIs"
+readme        = "README.md"
+authors       = ["Francesco Cogno <francesco.cogno@outlook.com>", "Max Gortman <mgortman@microsoft.com>", "Dong Liu <doliu@microsoft.com>"]
+license       = "Apache-2.0"
+repository    = "https://github.com/MindFlavor/AzureSDKForRust"
+documentation = "http://mindflavor.github.io/AzureSDKForRust/azure_sdk_for_rust/index.html"
+homepage      = "https://github.com/MindFlavor/AzureSDKForRust"
 
-keywords       = ["sdk", "azure", "rest", "iot", "cloud"]
-categories     = ["api-bindings"]
+keywords      = ["sdk", "azure", "rest", "iot", "cloud"]
+categories    = ["api-bindings"]
+
+edition       = "2018"
 
 [dependencies]
 ring         = "0.13"

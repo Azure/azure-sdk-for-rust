@@ -9,8 +9,8 @@ pub mod parsing;
 pub mod enumerations;
 pub mod incompletevector;
 pub mod lease;
-use azure::core::util::HeaderMapExt;
-use azure::storage::client::Client;
+use crate::azure::core::util::HeaderMapExt;
+use crate::azure::storage::client::Client;
 use base64;
 use std::fmt::Debug;
 pub mod ba512_range;
@@ -20,7 +20,7 @@ use self::modify_conditions::{IfMatchCondition, IfSinceCondition, SequenceNumber
 use std::fmt;
 use std::str::FromStr;
 pub mod range;
-use azure::storage::blob::{BlockList, BlockListType};
+use crate::azure::storage::blob::{BlockList, BlockListType};
 use std::borrow::Borrow;
 use url::percent_encoding;
 pub mod headers;
@@ -33,9 +33,9 @@ use hyper::header::{
 };
 use uuid::Uuid;
 pub type RequestId = Uuid;
-use azure::core::errors::{AzureError, TraversingError};
-use azure::core::lease::LeaseId;
-use azure::core::parsing::FromStringOptional;
+use crate::azure::core::errors::{AzureError, TraversingError};
+use crate::azure::core::lease::LeaseId;
+use crate::azure::core::parsing::FromStringOptional;
 use http::request::Builder;
 use http::HeaderMap;
 use std::collections::HashMap;
@@ -52,9 +52,9 @@ define_encode_set! {
 
 macro_rules! response_from_headers {
     ($cn:ident, $($fh:ident -> $na:ident: $typ:ty),+) => {
-        use azure::core::errors::AzureError;
+        use crate::azure::core::errors::AzureError;
         use http::HeaderMap;
-        use azure::core::{
+        use crate::azure::core::{
             $($fh,)+
         };
 
@@ -566,7 +566,7 @@ where
     T: Borrow<[u8]>,
 {
     type O;
-    fn with_block_list(self, &'a BlockList<T>) -> Self::O;
+    fn with_block_list(self, _: &'a BlockList<T>) -> Self::O;
 }
 
 pub trait BlockListRequired<'a, T>
@@ -582,7 +582,7 @@ where
 
 pub trait LeaseIdSupport<'a> {
     type O;
-    fn with_lease_id(self, &'a LeaseId) -> Self::O;
+    fn with_lease_id(self, _: &'a LeaseId) -> Self::O;
 }
 
 pub trait LeaseIdOption<'a> {
@@ -605,7 +605,7 @@ pub trait LeaseIdRequired<'a> {
 
 pub trait BodySupport<'a> {
     type O;
-    fn with_body(self, &'a [u8]) -> Self::O;
+    fn with_body(self, _: &'a [u8]) -> Self::O;
 }
 
 pub trait BodyRequired<'a> {
@@ -614,7 +614,7 @@ pub trait BodyRequired<'a> {
 
 pub trait ContentMD5Support<'a> {
     type O;
-    fn with_content_md5(self, &'a [u8]) -> Self::O;
+    fn with_content_md5(self, _: &'a [u8]) -> Self::O;
 }
 
 pub trait ContentMD5Option<'a> {
@@ -635,7 +635,7 @@ pub(crate) fn add_content_md5_header<'a>(content_md5: &'a [u8], builder: &mut Bu
 
 pub trait RangeSupport<'a> {
     type O;
-    fn with_range(self, &'a range::Range) -> Self::O;
+    fn with_range(self, _: &'a range::Range) -> Self::O;
 }
 
 pub trait RangeOption<'a> {
@@ -658,7 +658,7 @@ pub trait RangeRequired<'a> {
 
 pub trait BA512RangeSupport<'a> {
     type O;
-    fn with_ba512_range(self, &'a ba512_range::BA512Range) -> Self::O;
+    fn with_ba512_range(self, _: &'a ba512_range::BA512Range) -> Self::O;
 }
 
 pub trait BA512RangeOption<'a> {
@@ -681,7 +681,7 @@ pub trait BA512RangeRequired<'a> {
 
 pub trait LeaseDurationSupport {
     type O;
-    fn with_lease_duration(self, i8) -> Self::O;
+    fn with_lease_duration(self, _: i8) -> Self::O;
 }
 
 pub trait LeaseDurationRequired {
@@ -694,7 +694,7 @@ pub trait LeaseDurationRequired {
 
 pub trait ProposedLeaseIdSupport<'a> {
     type O;
-    fn with_proposed_lease_id(self, &'a LeaseId) -> Self::O;
+    fn with_proposed_lease_id(self, _: &'a LeaseId) -> Self::O;
 }
 
 pub trait ProposedLeaseIdOption<'a> {
@@ -802,7 +802,8 @@ pub(crate) fn last_modified_from_headers(headers: &HeaderMap) -> Result<DateTime
         .ok_or_else(|| {
             static LM: HeaderName = LAST_MODIFIED;
             AzureError::HeaderNotFound(LM.as_str().to_owned())
-        })?.to_str()?;
+        })?
+        .to_str()?;
     let last_modified = DateTime::parse_from_rfc2822(last_modified)?;
     let last_modified = DateTime::from_utc(last_modified.naive_utc(), Utc);
 
@@ -816,7 +817,8 @@ pub(crate) fn date_from_headers(headers: &HeaderMap) -> Result<DateTime<Utc>, Az
         .ok_or_else(|| {
             static D: HeaderName = DATE;
             AzureError::HeaderNotFound(D.as_str().to_owned())
-        })?.to_str()?;
+        })?
+        .to_str()?;
     let date = DateTime::parse_from_rfc2822(date)?;
     let date = DateTime::from_utc(date.naive_utc(), Utc);
 
@@ -838,7 +840,8 @@ pub(crate) fn etag_from_headers(headers: &HeaderMap) -> Result<String, AzureErro
         .ok_or_else(|| {
             static E: HeaderName = ETAG;
             AzureError::HeaderNotFound(E.as_str().to_owned())
-        })?.to_str()?
+        })?
+        .to_str()?
         .to_owned();
 
     trace!("etag == {:?}", etag);
