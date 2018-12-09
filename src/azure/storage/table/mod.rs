@@ -3,9 +3,9 @@ mod batch;
 pub use self::batch::BatchItem;
 
 use self::batch::generate_batch_payload;
-use azure::core::errors::{check_status_extract_body, extract_status_and_body, AzureError, UnexpectedHTTPResult};
-use azure::storage::client::Client;
-use azure::storage::rest_client::ServiceType;
+use crate::azure::core::errors::{check_status_extract_body, extract_status_and_body, AzureError, UnexpectedHTTPResult};
+use crate::azure::storage::client::Client;
+use crate::azure::storage::rest_client::ServiceType;
 use hyper::{
     client::ResponseFuture,
     header::{self, HeaderValue},
@@ -39,7 +39,8 @@ impl TableService {
     pub fn create_table<T: Into<String>>(&self, table_name: T) -> impl Future<Item = (), Error = AzureError> {
         let body = &serde_json::to_string(&TableEntity {
             TableName: table_name.into(),
-        }).unwrap();
+        })
+        .unwrap();
         debug!("body == {}", body);
         let req = self.request_with_default_header(TABLE_TABLES, &Method::POST, Some(body));
 

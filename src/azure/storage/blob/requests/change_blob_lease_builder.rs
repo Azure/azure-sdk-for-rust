@@ -1,14 +1,14 @@
-use azure::core::errors::{check_status_extract_headers_and_body, AzureError};
-use azure::core::headers::LEASE_ACTION;
-use azure::core::lease::LeaseId;
-use azure::core::{
+use crate::azure::core::errors::{check_status_extract_headers_and_body, AzureError};
+use crate::azure::core::headers::LEASE_ACTION;
+use crate::azure::core::lease::LeaseId;
+use crate::azure::core::{
     BlobNameRequired, BlobNameSupport, ClientRequestIdOption, ClientRequestIdSupport, ClientRequired, ContainerNameRequired,
     ContainerNameSupport, LeaseIdRequired, LeaseIdSupport, ProposedLeaseIdRequired, ProposedLeaseIdSupport, TimeoutOption, TimeoutSupport,
 };
-use azure::core::{No, ToAssign, Yes};
-use azure::storage::blob::generate_blob_uri;
-use azure::storage::blob::responses::ChangeBlobLeaseResponse;
-use azure::storage::client::Client;
+use crate::azure::core::{No, ToAssign, Yes};
+use crate::azure::storage::blob::generate_blob_uri;
+use crate::azure::storage::blob::responses::ChangeBlobLeaseResponse;
+use crate::azure::storage::client::Client;
 use futures::future::{done, Future};
 use hyper::{Method, StatusCode};
 use std::marker::PhantomData;
@@ -323,7 +323,8 @@ where
     BlobNameSet: ToAssign,
     LeaseIdSet: ToAssign,
     ProposedLeaseIdSet: ToAssign,
-{}
+{
+}
 
 impl<'a> ChangeBlobLeaseBuilder<'a, Yes, Yes, Yes, Yes> {
     pub fn finalize(self) -> impl Future<Item = ChangeBlobLeaseResponse, Error = AzureError> {

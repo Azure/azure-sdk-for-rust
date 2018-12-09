@@ -1,4 +1,4 @@
-use azure::core::RequestId;
+use crate::azure::core::RequestId;
 use chrono::{DateTime, Utc};
 
 response_from_headers!(ClearPageResponse,

@@ -1,5 +1,5 @@
-use azure::core::RequestId;
-use azure::core::lease::LeaseId;
+use crate::azure::core::lease::LeaseId;
+use crate::azure::core::RequestId;
 use chrono::{DateTime, Utc};
 
 response_from_headers!(RenewBlobLeaseResponse,

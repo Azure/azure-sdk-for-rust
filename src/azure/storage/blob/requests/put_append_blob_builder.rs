@@ -1,15 +1,15 @@
-use azure::core::errors::{check_status_extract_headers_and_body, AzureError};
-use azure::core::headers::BLOB_TYPE;
-use azure::core::lease::LeaseId;
-use azure::core::{
+use crate::azure::core::errors::{check_status_extract_headers_and_body, AzureError};
+use crate::azure::core::headers::BLOB_TYPE;
+use crate::azure::core::lease::LeaseId;
+use crate::azure::core::{
     BlobNameRequired, BlobNameSupport, CacheControlOption, CacheControlSupport, ClientRequestIdOption, ClientRequestIdSupport,
     ClientRequired, ContainerNameRequired, ContainerNameSupport, ContentDispositionOption, ContentDispositionSupport,
     ContentEncodingOption, ContentEncodingSupport, ContentLanguageOption, ContentLanguageSupport, ContentTypeOption, ContentTypeSupport,
     LeaseIdOption, LeaseIdSupport, MetadataOption, MetadataSupport, No, TimeoutOption, TimeoutSupport, ToAssign, Yes,
 };
-use azure::storage::blob::generate_blob_uri;
-use azure::storage::blob::responses::PutBlobResponse;
-use azure::storage::client::Client;
+use crate::azure::storage::blob::generate_blob_uri;
+use crate::azure::storage::blob::responses::PutBlobResponse;
+use crate::azure::storage::client::Client;
 use futures::future::{done, ok};
 use futures::prelude::*;
 use hyper::{Method, StatusCode};
@@ -503,7 +503,8 @@ impl<'a, ContainerNameSet, BlobNameSet> PutAppendBlobBuilder<'a, ContainerNameSe
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
-{}
+{
+}
 
 impl<'a> PutAppendBlobBuilder<'a, Yes, Yes> {
     #[inline]

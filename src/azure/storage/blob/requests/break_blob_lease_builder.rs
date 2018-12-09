@@ -1,13 +1,13 @@
-use azure::core::errors::{check_status_extract_headers_and_body, AzureError};
-use azure::core::headers::LEASE_ACTION;
-use azure::core::{
+use crate::azure::core::errors::{check_status_extract_headers_and_body, AzureError};
+use crate::azure::core::headers::LEASE_ACTION;
+use crate::azure::core::{
     BlobNameRequired, BlobNameSupport, ClientRequestIdOption, ClientRequestIdSupport, ClientRequired, ContainerNameRequired,
     ContainerNameSupport, LeaseBreakPeriodRequired, LeaseBreakPeriodSupport, TimeoutOption, TimeoutSupport,
 };
-use azure::core::{No, ToAssign, Yes};
-use azure::storage::blob::generate_blob_uri;
-use azure::storage::blob::responses::BreakBlobLeaseResponse;
-use azure::storage::client::Client;
+use crate::azure::core::{No, ToAssign, Yes};
+use crate::azure::storage::blob::generate_blob_uri;
+use crate::azure::storage::blob::responses::BreakBlobLeaseResponse;
+use crate::azure::storage::client::Client;
 use futures::future::{done, Future};
 use hyper::{Method, StatusCode};
 use std::marker::PhantomData;
@@ -250,7 +250,8 @@ where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     BreakPeriodSet: ToAssign,
-{}
+{
+}
 
 impl<'a> BreakBlobLeaseBuilder<'a, Yes, Yes, Yes> {
     pub fn finalize(self) -> impl Future<Item = BreakBlobLeaseResponse, Error = AzureError> {

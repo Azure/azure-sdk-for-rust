@@ -1,4 +1,4 @@
-use azure::storage::blob::BlobBlockType;
+use crate::azure::storage::blob::BlobBlockType;
 use std::borrow::Borrow;
 
 #[derive(Debug, Clone, PartialEq)]

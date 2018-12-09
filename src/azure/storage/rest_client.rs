@@ -1,4 +1,4 @@
-use azure::core::{
+use crate::azure::core::{
     errors::AzureError,
     headers,
     util::{format_header_value, HeaderMapExt, RequestBuilderExt},
@@ -308,7 +308,7 @@ mod test {
     #[test]
     fn str_to_sign_test() {
         use super::*;
-        use azure::storage::table::{get_default_json_mime, get_json_mime_nometadata};
+        use crate::azure::storage::table::{get_default_json_mime, get_json_mime_nometadata};
 
         let mut headers: HeaderMap = HeaderMap::new();
         headers.insert(header::ACCEPT, header::HeaderValue::from_static(get_json_mime_nometadata()));

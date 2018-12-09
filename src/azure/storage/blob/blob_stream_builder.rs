@@ -1,13 +1,13 @@
-use azure::core::errors::AzureError;
-use azure::core::lease::LeaseId;
-use azure::core::range::Range;
-use azure::core::{
+use crate::azure::core::errors::AzureError;
+use crate::azure::core::lease::LeaseId;
+use crate::azure::core::range::Range;
+use crate::azure::core::{
     BlobNameRequired, BlobNameSupport, ClientRequestIdOption, ClientRequestIdSupport, ClientRequired, ContainerNameRequired,
     ContainerNameSupport, LeaseIdOption, LeaseIdSupport, No, RangeRequired, RangeSupport, SnapshotOption, SnapshotSupport, TimeoutOption,
     TimeoutSupport, ToAssign, Yes,
 };
-use azure::storage::blob::requests::GetBlobBuilder;
-use azure::storage::client::Client;
+use crate::azure::storage::blob::requests::GetBlobBuilder;
+use crate::azure::storage::client::Client;
 use chrono::{DateTime, Utc};
 use futures::prelude::*;
 use futures::stream;
@@ -345,7 +345,8 @@ where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     RangeSet: ToAssign,
-{}
+{
+}
 
 impl<'a> BlobStreamBuilder<'a, Yes, Yes, Yes> {
     #[inline]

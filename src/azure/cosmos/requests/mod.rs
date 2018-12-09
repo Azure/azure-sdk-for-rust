@@ -1,12 +1,12 @@
 #[allow(unused_imports)]
-use azure::core::{
+use crate::azure::core::{
     errors::{
         check_status_extract_body, check_status_extract_headers_and_body, extract_status_headers_and_body, AzureError, UnexpectedHTTPResult,
     },
     incompletevector::ContinuationToken,
     util::RequestBuilderExt,
 };
-use azure::cosmos::{
+use crate::azure::cosmos::{
     client::headers::*,
     document::{DocumentAttributes, IndexingDirective},
     partition_key::PartitionKey,

@@ -1,16 +1,16 @@
-use azure::core::errors::{check_status_extract_headers_and_body, AzureError};
-use azure::core::lease::LeaseId;
-use azure::core::{
+use crate::azure::core::errors::{check_status_extract_headers_and_body, AzureError};
+use crate::azure::core::lease::LeaseId;
+use crate::azure::core::{
     add_content_md5_header, BlobNameRequired, BlobNameSupport, BlockListRequired, BlockListSupport, CacheControlOption,
     CacheControlSupport, ClientRequestIdOption, ClientRequestIdSupport, ClientRequired, ContainerNameRequired, ContainerNameSupport,
     ContentDispositionOption, ContentDispositionSupport, ContentEncodingOption, ContentEncodingSupport, ContentLanguageOption,
     ContentLanguageSupport, ContentTypeOption, ContentTypeSupport, LeaseIdOption, LeaseIdSupport, MetadataOption, MetadataSupport, No,
     TimeoutOption, TimeoutSupport, ToAssign, Yes,
 };
-use azure::storage::blob::generate_blob_uri;
-use azure::storage::blob::responses::PutBlockListResponse;
-use azure::storage::blob::BlockList;
-use azure::storage::client::Client;
+use crate::azure::storage::blob::generate_blob_uri;
+use crate::azure::storage::blob::responses::PutBlockListResponse;
+use crate::azure::storage::blob::BlockList;
+use crate::azure::storage::client::Client;
 use futures::future::{done, ok};
 use futures::prelude::*;
 use hyper::{Method, StatusCode};
@@ -651,7 +651,8 @@ where
     BlobNameSet: ToAssign,
     BlockListSet: ToAssign,
     T: Borrow<[u8]> + 'a,
-{}
+{
+}
 
 impl<'a, T> PutBlockListBuilder<'a, T, Yes, Yes, Yes>
 where

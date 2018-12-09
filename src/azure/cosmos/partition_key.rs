@@ -1,4 +1,4 @@
-use azure::core::errors::AzureError;
+use crate::azure::core::errors::AzureError;
 use serde_json;
 use smallvec::{IntoIter, SmallVec};
 use std::borrow::Cow;

@@ -1,14 +1,14 @@
-use azure::core::errors::{check_status_extract_headers_and_body_as_string, AzureError};
-use azure::core::{
+use crate::azure::core::errors::{check_status_extract_headers_and_body_as_string, AzureError};
+use crate::azure::core::{
     ClientRequestIdOption, ClientRequestIdSupport, ClientRequired, ContainerNameRequired, ContainerNameSupport, DelimiterOption,
     DelimiterSupport, IncludeCopyOption, IncludeCopySupport, IncludeDeletedOption, IncludeDeletedSupport, IncludeListOptions,
     IncludeMetadataOption, IncludeMetadataSupport, IncludeSnapshotsOption, IncludeSnapshotsSupport, IncludeUncommittedBlobsOption,
     IncludeUncommittedBlobsSupport, MaxResultsOption, MaxResultsSupport, NextMarkerOption, NextMarkerSupport, No, PrefixOption,
     PrefixSupport, TimeoutOption, TimeoutSupport, ToAssign, Yes,
 };
-use azure::storage::blob::responses::ListBlobsResponse;
-use azure::storage::client::Client;
-use azure::storage::container::generate_container_uri;
+use crate::azure::storage::blob::responses::ListBlobsResponse;
+use crate::azure::storage::client::Client;
+use crate::azure::storage::container::generate_container_uri;
 use futures::future::done;
 use futures::prelude::*;
 use hyper::{Method, StatusCode};

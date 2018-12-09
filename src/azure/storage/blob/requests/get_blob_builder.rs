@@ -1,16 +1,16 @@
-use azure::core::errors::{check_status_extract_headers_and_body, AzureError};
-use azure::core::headers::RANGE_GET_CONTENT_MD5;
-use azure::core::lease::LeaseId;
-use azure::core::range::Range;
-use azure::core::util::RequestBuilderExt;
-use azure::core::{
+use crate::azure::core::errors::{check_status_extract_headers_and_body, AzureError};
+use crate::azure::core::headers::RANGE_GET_CONTENT_MD5;
+use crate::azure::core::lease::LeaseId;
+use crate::azure::core::range::Range;
+use crate::azure::core::util::RequestBuilderExt;
+use crate::azure::core::{
     BlobNameRequired, BlobNameSupport, ClientRequestIdOption, ClientRequestIdSupport, ClientRequired, ContainerNameRequired,
     ContainerNameSupport, LeaseIdOption, LeaseIdSupport, No, RangeOption, RangeSupport, SnapshotOption, SnapshotSupport, TimeoutOption,
     TimeoutSupport, ToAssign, Yes,
 };
-use azure::storage::blob::responses::GetBlobResponse;
-use azure::storage::blob::{generate_blob_uri, Blob};
-use azure::storage::client::Client;
+use crate::azure::storage::blob::responses::GetBlobResponse;
+use crate::azure::storage::blob::{generate_blob_uri, Blob};
+use crate::azure::storage::client::Client;
 use chrono::{DateTime, Utc};
 use futures::future::done;
 use futures::prelude::*;
@@ -312,7 +312,8 @@ impl<'a, ContainerNameSet, BlobNameSet> GetBlobBuilder<'a, ContainerNameSet, Blo
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
-{}
+{
+}
 
 impl<'a> GetBlobBuilder<'a, Yes, Yes> {
     #[inline]

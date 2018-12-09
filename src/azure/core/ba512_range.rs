@@ -1,5 +1,5 @@
-use azure::core::errors::{Not512ByteAlignedError, Parse512AlignedError};
-use azure::core::range::Range;
+use crate::azure::core::errors::{Not512ByteAlignedError, Parse512AlignedError};
+use crate::azure::core::range::Range;
 use std::convert::Into;
 use std::fmt;
 use std::str::FromStr;

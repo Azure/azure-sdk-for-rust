@@ -1,4 +1,4 @@
-use azure::core::lease::LeaseId;
+use crate::azure::core::lease::LeaseId;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct LeaseBlobOptions {

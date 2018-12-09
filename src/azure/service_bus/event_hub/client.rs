@@ -1,7 +1,7 @@
 use futures::future::*;
 
-use azure::core::errors::AzureError;
-use azure::service_bus::event_hub::send_event;
+use crate::azure::core::errors::AzureError;
+use crate::azure::service_bus::event_hub::send_event;
 use hyper;
 
 use time::Duration;

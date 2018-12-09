@@ -302,7 +302,8 @@ impl ListDocumentsRequest {
             .map(|(da, e)| Document {
                 document_attributes: da,
                 entity: e,
-            }).collect();
+            })
+            .collect();
 
         Ok(ListDocumentsResponse {
             rid: document_attributes.rid,

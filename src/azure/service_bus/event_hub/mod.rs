@@ -1,4 +1,4 @@
-use azure::core::{
+use crate::azure::core::{
     errors::{check_status_extract_body, AzureError},
     COMPLETE_ENCODE_SET,
 };

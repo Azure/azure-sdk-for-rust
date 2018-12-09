@@ -1,7 +1,7 @@
-use azure::core::errors::AzureError;
-use azure::core::headers::REQUEST_ID;
-use azure::core::RequestId;
-use azure::storage::container::Container;
+use crate::azure::core::errors::AzureError;
+use crate::azure::core::headers::REQUEST_ID;
+use crate::azure::core::RequestId;
+use crate::azure::storage::container::Container;
 use chrono::{DateTime, FixedOffset};
 use http::HeaderMap;
 use hyper::header;

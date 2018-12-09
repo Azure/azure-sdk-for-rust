@@ -1,5 +1,5 @@
+use crate::core::headers::{IF_SEQUENCE_NUMBER_EQ, IF_SEQUENCE_NUMBER_LE, IF_SEQUENCE_NUMBER_LT};
 use chrono::{DateTime, Utc};
-use core::headers::{IF_SEQUENCE_NUMBER_EQ, IF_SEQUENCE_NUMBER_LE, IF_SEQUENCE_NUMBER_LT};
 use http::request::Builder;
 use hyper::header::{IF_MATCH, IF_MODIFIED_SINCE, IF_NONE_MATCH, IF_UNMODIFIED_SINCE};
 
