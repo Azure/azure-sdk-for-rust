@@ -274,8 +274,12 @@ where
     let b = request_body.map(|v| Vec::from(v).into()).unwrap_or_else(hyper::Body::empty);
     let mut request = request.body(b)?;
 
-    let auth = generate_authorization(request.headers(), &url, http_method, azure_key, service_type);
-    request.headers_mut().insert(header::AUTHORIZATION, format_header_value(auth)?);
+    // We sign the request only if it is not already signed (with the signature of an
+    // SAS token for example)
+    if url.query_pairs().find(|p| p.0 == "sig").is_none() {
+        let auth = generate_authorization(request.headers(), &url, http_method, azure_key, service_type);
+        request.headers_mut().insert(header::AUTHORIZATION, format_header_value(auth)?);
+    }
 
     Ok(client.request(request))
 }
