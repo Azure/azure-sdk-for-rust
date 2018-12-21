@@ -46,6 +46,7 @@ pub trait Container {
 pub struct Client {
     account: String,
     key: String,
+    sas_token: Option<Vec<(String, String)>>,
     hc: hyper::Client<hyper_tls::HttpsConnector<hyper::client::HttpConnector>>,
     blob_uri: String,
     table_uri: String,
@@ -176,12 +177,34 @@ impl Client {
         Client::azure(account, key)
     }
 
+    pub fn azure_sas(account: &str, sas_token: &str) -> Result<Client, AzureError> {
+        let client = hyper::Client::builder().build(hyper_tls::HttpsConnector::new(4)?);
+        let params: Vec<(String, String)> = Url::options()
+            // Any base url will do: we just need to parse the SAS token
+            // to get its query pairs.
+            .base_url(Some(&Url::parse("https://blob.core.windows.net").unwrap()))
+            .parse(sas_token).unwrap()
+            .query_pairs()
+            .map(|p| (String::from(p.0), String::from(p.1)))
+            .collect();
+
+        Ok(Client {
+            account: account.to_owned(),
+            key: String::new(),
+            sas_token: Some(params),
+            hc: client,
+            blob_uri: format!("https://{}.blob.core.windows.net", account),
+            table_uri: format!("https://{}.table.core.windows.net", account),
+        })
+    }
+
     pub fn azure(account: &str, key: &str) -> Result<Client, AzureError> {
         let client = hyper::Client::builder().build(hyper_tls::HttpsConnector::new(4)?);
 
         Ok(Client {
             account: account.to_owned(),
             key: key.to_owned(),
+            sas_token: None,
             hc: client,
             blob_uri: format!("https://{}.blob.core.windows.net", account),
             table_uri: format!("https://{}.table.core.windows.net", account),
@@ -199,6 +222,7 @@ impl Client {
         Ok(Client {
             account: "devstoreaccount1".to_owned(),
             key: "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==".to_owned(),
+            sas_token: None,
             hc: client,
             blob_uri,
             table_uri,
@@ -223,6 +247,13 @@ impl Client {
         &self.table_uri
     }
 
+    fn add_sas_token_to_uri(&self, uri: &str) -> String {
+        match &self.sas_token {
+            Some(token) => Url::parse_with_params(uri, token).unwrap().to_string(),
+            None => String::from(uri),
+        }
+    }
+
     pub(crate) fn perform_request<F>(
         &self,
         uri: &str,
@@ -233,7 +264,9 @@ impl Client {
     where
         F: FnOnce(&mut ::http::request::Builder),
     {
-        perform_request(&self.hc, uri, method, &self.key, headers_func, request_body, ServiceType::Blob)
+        let uri = self.add_sas_token_to_uri(uri);
+
+        perform_request(&self.hc, &uri, method, &self.key, headers_func, request_body, ServiceType::Blob)
     }
 
     pub(crate) fn perform_table_request<F>(
@@ -247,9 +280,14 @@ impl Client {
         F: FnOnce(&mut ::http::request::Builder),
     {
         debug!("segment: {}, method: {:?}", segment, method,);
+
+        let uri = self.add_sas_token_to_uri(
+            (self.get_uri_prefix(ServiceType::Table) + segment).as_str()
+        );
+
         perform_request(
             &self.hc,
-            (self.get_uri_prefix(ServiceType::Table) + segment).as_str(),
+            &uri,
             method,
             &self.key,
             headers_func,
