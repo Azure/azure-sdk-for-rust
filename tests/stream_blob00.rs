@@ -90,7 +90,7 @@ fn code() -> Result<(), Box<std::error::Error>> {
     }
 
     let returned_string = {
-        let mut rlock = result.borrow_mut();
+        let rlock = result.borrow();
         String::from_utf8(rlock.to_vec())?
     };
 
