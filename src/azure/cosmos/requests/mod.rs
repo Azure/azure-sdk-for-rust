@@ -27,10 +27,10 @@ use std::{marker::PhantomData, str};
 
 type HyperClient = Arc<hyper::Client<::hyper_tls::HttpsConnector<hyper::client::HttpConnector>>>;
 
-macro_rules! request_bytes_option {
+macro_rules! request_bytes_ref {
     ($name:ident, $ty:ty, $h:path) => {
-        pub fn $name<V: Into<$ty>>(mut self, value: V) -> Self {
-            self.request.header_bytes($h, value.into());
+        pub fn $name<V: AsRef<$ty>>(mut self, value: V) -> Self {
+            self.request.header_bytes($h, bytes::Bytes::from(value.as_ref()));
             self
         }
     };

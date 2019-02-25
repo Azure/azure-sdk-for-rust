@@ -56,7 +56,7 @@ impl GetDocumentRequest {
         GetDocumentRequest { hyper_client, request }
     }
 
-    request_bytes_option!(if_none_match, String, header::IF_NONE_MATCH);
+    request_bytes_ref!(if_none_match, str, header::IF_NONE_MATCH);
 
     pub fn execute<T: DeserializeOwned>(mut self) -> impl Future<Item = GetDocumentResponse<T>, Error = AzureError> {
         trace!("get_document called(request == {:?}", self.request);
@@ -136,7 +136,7 @@ impl QueryDocumentRequest {
     }
 
     request_option!(max_item_count, u64, HEADER_MAX_ITEM_COUNT);
-    request_bytes_option!(continuation_token, ContinuationToken, HEADER_CONTINUATION);
+    request_bytes_ref!(continuation_token, str, HEADER_CONTINUATION);
     request_option!(enable_cross_partition, bool, HEADER_DOCUMENTDB_QUERY_ENABLECROSSPARTITION);
     request_option!(consistency_level, ConsistencyLevel, HEADER_CONSISTENCY_LEVEL);
 
@@ -247,11 +247,11 @@ impl ListDocumentsRequest {
     }
 
     request_option!(max_item_count, u64, HEADER_MAX_ITEM_COUNT);
-    request_bytes_option!(continuation_token, ContinuationToken, HEADER_CONTINUATION);
+    request_bytes_ref!(continuation_token, str, HEADER_CONTINUATION);
     request_option!(consistency_level, ConsistencyLevel, HEADER_CONSISTENCY_LEVEL);
-    request_bytes_option!(session_token, String, HEADER_SESSION_TOKEN);
-    request_bytes_option!(if_none_match, String, header::IF_NONE_MATCH);
-    request_bytes_option!(partition_range_id, String, HEADER_DOCUMENTDB_PARTITIONRANGEID);
+    request_bytes_ref!(session_token, str, HEADER_SESSION_TOKEN);
+    request_bytes_ref!(if_none_match, str, header::IF_NONE_MATCH);
+    request_bytes_ref!(partition_range_id, str, HEADER_DOCUMENTDB_PARTITIONRANGEID);
 
     pub fn incremental_feed(mut self) -> Self {
         self.request.header(HEADER_A_IM, HeaderValue::from_static("Incremental feed"));
@@ -340,7 +340,7 @@ impl<T: DeserializeOwned> ReplaceDocumentRequest<T> {
         }
     }
 
-    request_bytes_option!(if_match, String, header::IF_MATCH);
+    request_bytes_ref!(if_match, str, header::IF_MATCH);
     request_option!(indexing_directive, IndexingDirective, HEADER_INDEXING_DIRECTIVE);
 
     pub fn execute(self) -> impl Future<Item = ReplaceDocumentResponse<T>, Error = AzureError> {
@@ -380,7 +380,7 @@ impl DeleteDocumentRequest {
         DeleteDocumentRequest { hyper_client, request }
     }
 
-    request_bytes_option!(if_match, String, header::IF_MATCH);
+    request_bytes_ref!(if_match, str, header::IF_MATCH);
 
     pub fn execute(mut self) -> impl Future<Item = (), Error = AzureError> {
         trace!("get_document called(request == {:?}", self.request);
