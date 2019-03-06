@@ -508,11 +508,11 @@ impl Client {
         GetDocumentRequest::new(self.hyper_client.clone(), req)
     }
 
-    pub fn query_document<'b, S1: AsRef<str>, S2: AsRef<str>>(
+    pub fn query_documents<'b, S1: AsRef<str>, S2: AsRef<str>, Q: AsRef<Query<'b>>>(
         &self,
         database: S1,
         collection: S2,
-        query: &Query<'b>,
+        query: Q,
     ) -> QueryDocumentRequest {
         let database = database.as_ref();
         let collection = collection.as_ref();
@@ -522,7 +522,7 @@ impl Client {
             hyper::Method::POST,
             ResourceType::Documents,
         );
-        let query_json = serde_json::to_string(query);
+        let query_json = serde_json::to_string(query.as_ref());
         QueryDocumentRequest::new(self.hyper_client.clone(), req, query_json)
     }
 

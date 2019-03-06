@@ -43,7 +43,7 @@ fn code() -> Result<(), Box<Error>> {
     let client = Client::new(authorization_token)?;
 
     let future = client
-        .query_document(&database_name, &collection_name, &Query::from(&query as &str))
+        .query_documents(&database_name, &collection_name, Query::from(query.as_ref()))
         .execute_json();
 
     let ret = core.run(future)?;
@@ -55,7 +55,7 @@ fn code() -> Result<(), Box<Error>> {
     }
 
     let future = client
-        .query_document(&database_name, &collection_name, &Query::from(&query as &str))
+        .query_documents(&database_name, &collection_name, Query::from(query.as_ref()))
         .execute::<MySampleStructOwned>();
 
     let ret = core.run(future)?;
@@ -69,7 +69,7 @@ fn code() -> Result<(), Box<Error>> {
     // test continuation token
     // only if we have more than 2 records
     let future = client
-        .query_document(&database_name, &collection_name, &Query::from(&query as &str))
+        .query_documents(&database_name, &collection_name, Query::from(query.as_ref()))
         .max_item_count(2u64)
         .execute::<MySampleStructOwned>();
 
@@ -85,7 +85,7 @@ fn code() -> Result<(), Box<Error>> {
         let ret = {
             // if we have more, let's get them
             let future = client
-                .query_document(&database_name, &collection_name, &Query::from(&query as &str))
+                .query_documents(&database_name, &collection_name, Query::from(query.as_ref()))
                 .continuation_token(ct)
                 .execute::<MySampleStructOwned>();
             core.run(future)?
