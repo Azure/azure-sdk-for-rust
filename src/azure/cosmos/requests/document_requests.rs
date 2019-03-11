@@ -138,6 +138,7 @@ impl QueryDocumentRequest {
     request_option!(max_item_count, u64, HEADER_MAX_ITEM_COUNT);
     request_bytes_ref!(continuation_token, str, HEADER_CONTINUATION);
     request_option!(enable_cross_partition, bool, HEADER_DOCUMENTDB_QUERY_ENABLECROSSPARTITION);
+    request_option!(enable_parallelize_cross_partition_query, bool, HEADER_DOCUMENTDB_QUERY_PARALLELIZECROSSPARTITION);
     request_option!(consistency_level, ConsistencyLevel, HEADER_CONSISTENCY_LEVEL);
 
     pub fn execute<T: DeserializeOwned>(self) -> impl Future<Item = QueryDocumentResponse<T>, Error = AzureError> {
