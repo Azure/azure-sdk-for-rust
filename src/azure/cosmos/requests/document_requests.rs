@@ -382,6 +382,7 @@ impl DeleteDocumentRequest {
     }
 
     request_bytes_ref!(if_match, str, header::IF_MATCH);
+    request_bytes_ref!(partition_key, str, HEADER_DOCUMENTDB_PARTITIONKEY);
 
     pub fn execute(mut self) -> impl Future<Item = (), Error = AzureError> {
         trace!("get_document called(request == {:?}", self.request);
