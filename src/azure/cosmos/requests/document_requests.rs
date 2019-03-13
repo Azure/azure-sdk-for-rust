@@ -27,6 +27,7 @@ impl CreateDocumentRequest {
 
     request_option!(is_upsert, bool, HEADER_DOCUMENTDB_IS_UPSERT);
     request_option!(indexing_directive, IndexingDirective, HEADER_INDEXING_DIRECTIVE);
+    request_bytes_ref!(partition_key, str, HEADER_DOCUMENTDB_PARTITIONKEY);
 
     pub fn execute(self) -> impl Future<Item = DocumentAttributes, Error = AzureError> {
         trace!("get_document called(request == {:?}", self.request);
