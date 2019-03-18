@@ -25,6 +25,8 @@ impl ExecuteStoredProcedureRequest {
         }
     }
 
+    request_bytes_ref!(partition_key, str, HEADER_DOCUMENTDB_PARTITIONKEY);
+
     pub fn execute<R: DeserializeOwned>(self) -> impl Future<Item = ExecuteStoredProcedureResponse<R>, Error = AzureError> {
         trace!("execute_stored_procedure called(request == {:?}", self.request);
         let hc = self.hyper_client;
