@@ -28,6 +28,7 @@ impl CreateDocumentRequest {
     request_option!(is_upsert, bool, HEADER_DOCUMENTDB_IS_UPSERT);
     request_option!(indexing_directive, IndexingDirective, HEADER_INDEXING_DIRECTIVE);
     request_bytes_ref!(partition_key, str, HEADER_DOCUMENTDB_PARTITIONKEY);
+    request_option!(use_multiple_write_locations, bool, HEADER_ALLOW_MULTIPLE_WRITES);
 
     pub fn execute(self) -> impl Future<Item = DocumentAttributes, Error = AzureError> {
         trace!("get_document called(request == {:?}", self.request);
@@ -59,6 +60,7 @@ impl GetDocumentRequest {
 
     request_bytes_ref!(if_none_match, str, header::IF_NONE_MATCH);
     request_bytes_ref!(partition_key, str, HEADER_DOCUMENTDB_PARTITIONKEY);
+    request_option!(use_multiple_write_locations, bool, HEADER_ALLOW_MULTIPLE_WRITES);
 
     pub fn execute<T: DeserializeOwned>(mut self) -> impl Future<Item = GetDocumentResponse<T>, Error = AzureError> {
         trace!("get_document called(request == {:?}", self.request);
@@ -145,6 +147,7 @@ impl QueryDocumentRequest {
         bool,
         HEADER_DOCUMENTDB_QUERY_PARALLELIZECROSSPARTITIONQUERY
     );
+    request_option!(use_multiple_write_locations, bool, HEADER_ALLOW_MULTIPLE_WRITES);
     request_option!(consistency_level, ConsistencyLevel, HEADER_CONSISTENCY_LEVEL);
 
     pub fn execute<T: DeserializeOwned>(self) -> impl Future<Item = QueryDocumentResponse<T>, Error = AzureError> {
@@ -259,6 +262,7 @@ impl ListDocumentsRequest {
     request_bytes_ref!(session_token, str, HEADER_SESSION_TOKEN);
     request_bytes_ref!(if_none_match, str, header::IF_NONE_MATCH);
     request_bytes_ref!(partition_range_id, str, HEADER_DOCUMENTDB_PARTITIONRANGEID);
+    request_option!(use_multiple_write_locations, bool, HEADER_ALLOW_MULTIPLE_WRITES);
 
     pub fn incremental_feed(mut self) -> Self {
         self.request.header(HEADER_A_IM, HeaderValue::from_static("Incremental feed"));
@@ -350,6 +354,7 @@ impl<T: DeserializeOwned> ReplaceDocumentRequest<T> {
     request_bytes_ref!(if_match, str, header::IF_MATCH);
     request_option!(indexing_directive, IndexingDirective, HEADER_INDEXING_DIRECTIVE);
     request_bytes_ref!(partition_key, str, HEADER_DOCUMENTDB_PARTITIONKEY);
+    request_option!(use_multiple_write_locations, bool, HEADER_ALLOW_MULTIPLE_WRITES);
 
     pub fn execute(self) -> impl Future<Item = ReplaceDocumentResponse<T>, Error = AzureError> {
         trace!("get_document called(request == {:?}", self.request);
@@ -390,6 +395,7 @@ impl DeleteDocumentRequest {
 
     request_bytes_ref!(if_match, str, header::IF_MATCH);
     request_bytes_ref!(partition_key, str, HEADER_DOCUMENTDB_PARTITIONKEY);
+    request_option!(use_multiple_write_locations, bool, HEADER_ALLOW_MULTIPLE_WRITES);
 
     pub fn execute(mut self) -> impl Future<Item = (), Error = AzureError> {
         trace!("get_document called(request == {:?}", self.request);
