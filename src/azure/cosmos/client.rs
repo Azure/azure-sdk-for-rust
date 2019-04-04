@@ -53,7 +53,6 @@ pub(crate) mod headers {
     pub const HEADER_DOCUMENTDB_ISQUERY: &str = "x-ms-documentdb-isquery"; // [bool]
     pub const HEADER_DOCUMENTDB_QUERY_ENABLECROSSPARTITION: &str = "x-ms-documentdb-query-enablecrosspartition"; // [bool]
     pub const HEADER_DOCUMENTDB_QUERY_PARALLELIZECROSSPARTITIONQUERY: &str = "x-ms-documentdb-query-parallelizecrosspartitionquery"; // [bool]
-
 }
 use self::headers::*;
 
