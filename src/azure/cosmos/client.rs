@@ -45,6 +45,7 @@ pub(crate) mod headers {
     pub const HEADER_CONTINUATION: &str = "x-ms-continuation"; // [ContinuationToken]
     pub const HEADER_CONSISTENCY_LEVEL: &str = "x-ms-consistency-level"; // [ConsistencyLevel]
     pub const HEADER_SESSION_TOKEN: &str = "x-ms-session-token"; // [ContinuationToken]
+    pub const HEADER_ALLOW_MULTIPLE_WRITES: &str = "x-ms-cosmos-allow-tentative-writes"; // [bool]
     pub const HEADER_A_IM: &str = "A-IM"; // Cow[str]
     pub const HEADER_DOCUMENTDB_PARTITIONRANGEID: &str = "x-ms-documentdb-partitionkeyrangeid"; // [String]
     pub const HEADER_REQUEST_CHARGE: &str = "x-ms-request-charge"; // [f64]

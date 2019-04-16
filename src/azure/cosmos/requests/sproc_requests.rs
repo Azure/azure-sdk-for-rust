@@ -26,6 +26,7 @@ impl ExecuteStoredProcedureRequest {
     }
 
     request_bytes_ref!(partition_key, str, HEADER_DOCUMENTDB_PARTITIONKEY);
+    request_option!(use_multiple_write_locations, bool, HEADER_ALLOW_MULTIPLE_WRITES);
 
     pub fn execute<R: DeserializeOwned>(self) -> impl Future<Item = ExecuteStoredProcedureResponse<R>, Error = AzureError> {
         trace!("execute_stored_procedure called(request == {:?}", self.request);
