@@ -20,12 +20,13 @@ use hyper::{
     header::{self, HeaderMap, HeaderValue},
     StatusCode,
 };
+use hyper_rustls::HttpsConnector;
 use serde::de::DeserializeOwned;
 use serde_json;
 use std::sync::Arc;
 use std::{marker::PhantomData, str};
 
-type HyperClient = Arc<hyper::Client<::hyper_tls::HttpsConnector<hyper::client::HttpConnector>>>;
+type HyperClient = Arc<hyper::Client<HttpsConnector<hyper::client::HttpConnector>>>;
 
 macro_rules! request_bytes_ref {
     ($name:ident, $ty:ty, $h:path) => {
