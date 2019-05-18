@@ -4,7 +4,6 @@ extern crate chrono;
 extern crate env_logger;
 extern crate futures;
 extern crate hyper;
-extern crate hyper_tls;
 extern crate log;
 extern crate serde;
 extern crate tokio_core;
@@ -31,7 +30,8 @@ fn lease() {
             .with_container_name(container_name)
             .with_public_access(PublicAccess::Container)
             .finalize(),
-    ).unwrap();
+    )
+    .unwrap();
 
     let future = client
         .acquire_container_lease()
@@ -73,7 +73,8 @@ fn break_lease() {
             .with_container_name(container_name)
             .with_public_access(PublicAccess::Container)
             .finalize(),
-    ).unwrap();
+    )
+    .unwrap();
 
     let future = client
         .acquire_container_lease()

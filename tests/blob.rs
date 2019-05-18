@@ -4,7 +4,6 @@ extern crate chrono;
 extern crate env_logger;
 extern crate futures;
 extern crate hyper;
-extern crate hyper_tls;
 extern crate tokio_core;
 #[macro_use]
 extern crate log;
@@ -40,7 +39,8 @@ fn create_and_delete_container() {
             .with_container_name(name)
             .with_public_access(PublicAccess::Container)
             .finalize(),
-    ).unwrap();
+    )
+    .unwrap();
 
     // get acl without stored access policy list
     let future = client.get_container_acl().with_container_name(name).finalize();
@@ -128,7 +128,8 @@ fn put_and_get_block_list() {
             .with_container_name(&container.name)
             .with_public_access(PublicAccess::Container)
             .finalize(),
-    ).expect("container already present");
+    )
+    .expect("container already present");
 
     let contents1 = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
     let contents2 = "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB";
@@ -149,7 +150,8 @@ fn put_and_get_block_list() {
                 .with_body(&contents2.as_bytes())
                 .with_block_id(b"block2")
                 .finalize()
-        }).and_then(|_| {
+        })
+        .and_then(|_| {
             client
                 .put_block()
                 .with_container_name(&container.name)
@@ -231,7 +233,8 @@ fn put_and_get_block_list() {
             .with_container_name(container.as_ref())
             .finalize()
             .map(|_| println!("container {} deleted!", container.name)),
-    ).unwrap();
+    )
+    .unwrap();
 }
 
 #[test]
@@ -288,7 +291,8 @@ fn put_block_blob() {
                 .with_container_name(container_name)
                 .with_public_access(PublicAccess::Blob)
                 .finalize(),
-        ).unwrap();
+        )
+        .unwrap();
     }
 
     // calculate md5 too!

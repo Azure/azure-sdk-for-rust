@@ -4,7 +4,6 @@ extern crate chrono;
 extern crate env_logger;
 extern crate futures;
 extern crate hyper;
-extern crate hyper_tls;
 extern crate tokio_core;
 #[macro_use]
 extern crate log;
@@ -40,7 +39,8 @@ fn put_page_blob() {
                 .with_container_name(container_name)
                 .with_public_access(PublicAccess::Blob)
                 .finalize(),
-        ).unwrap();
+        )
+        .unwrap();
     }
 
     let mut metadata = HashMap::new();
