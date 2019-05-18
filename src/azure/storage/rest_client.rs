@@ -6,7 +6,7 @@ use crate::azure::core::{
 use base64;
 use chrono;
 use hyper::{self, header, HeaderMap, Method};
-use hyper_tls;
+use hyper_rustls;
 use ring::{digest::SHA256, hmac};
 use std::fmt::Write;
 use url;
@@ -235,7 +235,7 @@ fn lexy_sort(vec: &url::form_urlencoded::Parse, query_param: &str) -> Vec<(Strin
 #[allow(unknown_lints)]
 #[clippy::too_many_arguments]
 pub fn perform_request<F>(
-    client: &hyper::Client<hyper_tls::HttpsConnector<hyper::client::HttpConnector>>,
+    client: &hyper::Client<hyper_rustls::HttpsConnector<hyper::client::HttpConnector>>,
     uri: &str,
     http_method: &Method,
     azure_key: &str,
