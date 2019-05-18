@@ -21,6 +21,8 @@ This crate relies heavily on the excellent crate called [Hyper](https://github.c
 
 From version 0.8.0 for Cosmos and 0.9.0 for Storage the repo is embracing the builder pattern. As of 0.10.0, most of storage APIs have been migrated to the builder pattern but there are methods still missing. Please chech the relevant issues to follow the update process. This is still an in-progress transition but the resulting API is much more easy to use. Also most checks have been moved to compile-time. Unfortunately the changes are not backward-compatibile. I have blogged about my appoach here: [https://dev.to/mindflavor/rust-builder-pattern-with-types-3chf](https://dev.to/mindflavor/rust-builder-pattern-with-types-3chf).
 
+From version 0.12.0.0 the library switched from [hyper-tls](https://github.com/hyperium/hyper-tls) to [hyper-rustls](https://github.com/ctz/hyper-rustls) as suggested by [bmc-msft](https://github.com/bmc-msft) in the issue [#120](https://github.com/MindFlavor/AzureSDKForRust/issues/120). This should allow the library to be 100% rust.
+
 > **NOTE:** This repository is under heavy development and is likely to break over time. The current releases will probabily contain bugs. As usual open issues if you find any.
 
 ## Disclaimer
