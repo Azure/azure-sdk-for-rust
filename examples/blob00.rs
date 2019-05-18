@@ -32,7 +32,7 @@ fn code() -> Result<(), Box<Error>> {
 
     let client = Client::new(&account, &master_key)?;
 
-    trace!("Requesting blog");
+    trace!("Requesting blob");
 
     let future = client
         .get_blob()
