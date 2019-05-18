@@ -1,14 +1,12 @@
-use futures::future::*;
-
 use crate::azure::core::errors::AzureError;
 use crate::azure::service_bus::event_hub::send_event;
+use futures::future::*;
 use hyper;
-
+use hyper_rustls::HttpsConnector;
+use ring::{digest::SHA256, hmac::SigningKey};
 use time::Duration;
 
-use ring::{digest::SHA256, hmac::SigningKey};
-
-type HttpClient = hyper::Client<::hyper_tls::HttpsConnector<hyper::client::HttpConnector>>;
+type HttpClient = hyper::Client<HttpsConnector<hyper::client::HttpConnector>>;
 
 pub struct Client {
     namespace: String,
@@ -27,7 +25,7 @@ impl Client {
         K: AsRef<str>,
     {
         let signing_key = SigningKey::new(&SHA256, key.as_ref().as_bytes());
-        let http_client = hyper::Client::builder().build(::hyper_tls::HttpsConnector::new(4)?);
+        let http_client = hyper::Client::builder().build(HttpsConnector::new(4));
 
         Ok(Client {
             namespace: namespace.into(),
