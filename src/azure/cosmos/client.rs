@@ -26,7 +26,7 @@ use serde_json;
 use std::sync::Arc;
 
 use chrono;
-use hyper_tls::HttpsConnector;
+use hyper_rustls::HttpsConnector;
 use url::percent_encoding::utf8_percent_encode;
 
 use futures::future::*;
@@ -71,7 +71,7 @@ pub struct Client {
 
 impl Client {
     pub fn new(auth_token: AuthorizationToken) -> Result<Client, AzureError> {
-        let client = hyper::Client::builder().build(HttpsConnector::new(4)?);
+        let client = hyper::Client::builder().build(HttpsConnector::new(4));
 
         Ok(Client {
             hyper_client: Arc::new(client),

@@ -4,6 +4,7 @@ use crate::azure::core::{
 };
 use futures::future::{self, Future};
 use hyper::{self, header, StatusCode};
+use hyper_rustls::HttpsConnector;
 use ring::hmac;
 use std::ops::Add;
 use time::Duration;
@@ -11,7 +12,7 @@ use time::Duration;
 mod client;
 pub use self::client::Client;
 
-type HttpClient = hyper::Client<::hyper_tls::HttpsConnector<hyper::client::HttpConnector>>;
+type HttpClient = hyper::Client<HttpsConnector<hyper::client::HttpConnector>>;
 
 #[inline]
 fn send_event_prepare<B: Into<String>>(

@@ -1,8 +1,6 @@
 extern crate azure_sdk_for_rust;
-
 extern crate futures;
 extern crate hyper;
-extern crate hyper_tls;
 extern crate tokio_core;
 
 use std::error::Error;

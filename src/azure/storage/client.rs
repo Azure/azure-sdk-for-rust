@@ -3,7 +3,7 @@ use crate::azure::core::errors::AzureError;
 use crate::azure::core::No;
 use crate::azure::storage::{blob, container};
 use hyper::{self, Method};
-use hyper_tls;
+use hyper_rustls::HttpsConnector;
 use std::borrow::Borrow;
 use url::Url;
 
@@ -47,7 +47,7 @@ pub struct Client {
     account: String,
     key: String,
     sas_token: Option<Vec<(String, String)>>,
-    hc: hyper::Client<hyper_tls::HttpsConnector<hyper::client::HttpConnector>>,
+    hc: hyper::Client<HttpsConnector<hyper::client::HttpConnector>>,
     blob_uri: String,
     table_uri: String,
 }
@@ -178,12 +178,13 @@ impl Client {
     }
 
     pub fn azure_sas(account: &str, sas_token: &str) -> Result<Client, AzureError> {
-        let client = hyper::Client::builder().build(hyper_tls::HttpsConnector::new(4)?);
+        let client = hyper::Client::builder().build(HttpsConnector::new(4));
         let params: Vec<(String, String)> = Url::options()
             // Any base url will do: we just need to parse the SAS token
             // to get its query pairs.
             .base_url(Some(&Url::parse("https://blob.core.windows.net").unwrap()))
-            .parse(sas_token).unwrap()
+            .parse(sas_token)
+            .unwrap()
             .query_pairs()
             .map(|p| (String::from(p.0), String::from(p.1)))
             .collect();
@@ -199,7 +200,7 @@ impl Client {
     }
 
     pub fn azure(account: &str, key: &str) -> Result<Client, AzureError> {
-        let client = hyper::Client::builder().build(hyper_tls::HttpsConnector::new(4)?);
+        let client = hyper::Client::builder().build(HttpsConnector::new(4));
 
         Ok(Client {
             account: account.to_owned(),
@@ -212,7 +213,7 @@ impl Client {
     }
 
     pub fn emulator(blob_storage_url: &Url, table_storage_url: &Url) -> Result<Client, AzureError> {
-        let client = hyper::Client::builder().build(hyper_tls::HttpsConnector::new(4)?);
+        let client = hyper::Client::builder().build(HttpsConnector::new(4));
 
         let blob_uri = format!("{}devstoreaccount1", blob_storage_url.as_str());
         debug!("blob_uri == {}", blob_uri);
@@ -281,19 +282,9 @@ impl Client {
     {
         debug!("segment: {}, method: {:?}", segment, method,);
 
-        let uri = self.add_sas_token_to_uri(
-            (self.get_uri_prefix(ServiceType::Table) + segment).as_str()
-        );
+        let uri = self.add_sas_token_to_uri((self.get_uri_prefix(ServiceType::Table) + segment).as_str());
 
-        perform_request(
-            &self.hc,
-            &uri,
-            method,
-            &self.key,
-            headers_func,
-            request_str,
-            ServiceType::Table,
-        )
+        perform_request(&self.hc, &uri, method, &self.key, headers_func, request_str, ServiceType::Table)
     }
 
     /// Uri scheme + authority e.g. http://myaccount.table.core.windows.net/

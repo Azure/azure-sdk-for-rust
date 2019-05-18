@@ -5,7 +5,7 @@ extern crate chrono;
 extern crate futures;
 extern crate http;
 extern crate hyper;
-extern crate hyper_tls;
+extern crate hyper_rustls;
 extern crate md5;
 extern crate ring;
 extern crate time;

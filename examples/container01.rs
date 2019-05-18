@@ -2,7 +2,6 @@ extern crate azure_sdk_for_rust;
 extern crate chrono;
 extern crate futures;
 extern crate hyper;
-extern crate hyper_tls;
 extern crate tokio_core;
 
 use azure_sdk_for_rust::prelude::*;

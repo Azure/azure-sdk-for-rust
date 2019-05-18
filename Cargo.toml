@@ -1,6 +1,6 @@
 [package]
 name          = "azure_sdk_for_rust"
-version       = "0.11.0"
+version       = "0.12.0"
 description   = "Rust wrappers around Microsoft Azure REST APIs"
 readme        = "README.md"
 authors       = ["Francesco Cogno <francesco.cogno@outlook.com>", "Max Gortman <mgortman@microsoft.com>", "Dong Liu <doliu@microsoft.com>"]
@@ -24,7 +24,6 @@ env_logger   = "0.6"
 futures      = "0.1"
 http         = "0.1"
 hyper        = "0.12"
-hyper-tls    = "0.3"
 log          = "0.4"
 mime         = "0.3"
 quick-error  = "1.2"
@@ -37,6 +36,7 @@ url          = "1.7"
 uuid         = { version = "0.7", features = ["v4"] }
 smallvec     = { version = "0.6", features = ["serde"] }
 bytes        = "0.4"
+hyper-rustls = "0.16"
 
 [dev-dependencies]
 tokio-core   = "0.1"

@@ -1,7 +1,6 @@
 extern crate azure_sdk_for_rust;
 extern crate futures;
 extern crate hyper;
-extern crate hyper_tls;
 extern crate tokio_core;
 
 use azure_sdk_for_rust::cosmos::{AuthorizationToken, Client, TokenType};
@@ -55,7 +54,8 @@ fn code() -> Result<(), Box<Error>> {
         .and_then(|db| {
             println!("created database = {:?}", db);
             client.delete_database("something")
-        }).map(|_| {
+        })
+        .map(|_| {
             println!("database deleted");
         });
     core.run(future)?;
