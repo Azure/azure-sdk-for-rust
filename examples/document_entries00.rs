@@ -2,7 +2,6 @@ extern crate azure_sdk_for_rust;
 extern crate chrono;
 extern crate futures;
 extern crate hyper;
-extern crate hyper_tls;
 extern crate tokio_core;
 
 use azure_sdk_for_rust::cosmos::{AuthorizationToken, Client, DocumentRequestExt, TokenType};
@@ -74,7 +73,8 @@ fn code() -> Result<(), Box<Error>> {
             .create_document(&database_name, &collection_name, &doc)
             .partition_key(doc.id)
             .execute()
-    }))).unwrap();
+    })))
+    .unwrap();
     println!("Created 5 documents.");
 
     // let's get 3 entries at a time
@@ -84,7 +84,8 @@ fn code() -> Result<(), Box<Error>> {
                 .list_documents(&database_name, &collection_name)
                 .max_item_count(3u64)
                 .execute::<MySampleStructOwned>(),
-        ).unwrap();
+        )
+        .unwrap();
 
     assert_eq!(response.documents.len(), 3);
     println!("response == {:#?}", response);
@@ -102,7 +103,8 @@ fn code() -> Result<(), Box<Error>> {
                 .list_documents(&database_name, &collection_name)
                 .continuation_token(ct)
                 .execute::<MySampleStructOwned>(),
-        ).unwrap();
+        )
+        .unwrap();
 
     assert_eq!(response.documents.len(), 2);
     println!("response == {:#?}", response);
@@ -120,7 +122,8 @@ fn code() -> Result<(), Box<Error>> {
                 .get_document(&database_name, &collection_name, &id)
                 .partition_key(&id)
                 .execute::<MySampleStructOwned>(),
-        ).unwrap();
+        )
+        .unwrap();
 
     assert_eq!(response.document.is_some(), true);
     println!("response == {:#?}", response);
@@ -129,11 +132,13 @@ fn code() -> Result<(), Box<Error>> {
 
     let _response = core
         .run(
-            client.replace_document(&database_name, &collection_name, &doc)
-            .partition_key(&id)
-            .if_match(doc.document_attributes.etag) // use optimistic concurrency check
-            .execute(),
-        ).unwrap();
+            client
+                .replace_document(&database_name, &collection_name, &doc)
+                .partition_key(&id)
+                .if_match(doc.document_attributes.etag) // use optimistic concurrency check
+                .execute(),
+        )
+        .unwrap();
 
     // This id should not be found. We expect None as result
     println!("\n\nLooking for non-existing item");
@@ -145,7 +150,8 @@ fn code() -> Result<(), Box<Error>> {
                 .get_document(&database_name, &collection_name, &id)
                 .partition_key(&id)
                 .execute::<MySampleStructOwned>(),
-        ).unwrap();
+        )
+        .unwrap();
 
     assert_eq!(response.document.is_some(), false);
     println!("response == {:#?}", response);
@@ -156,7 +162,8 @@ fn code() -> Result<(), Box<Error>> {
             .delete_document(&database_name, &collection_name, &id)
             .partition_key(&id)
             .execute()
-    }))).unwrap();
+    })))
+    .unwrap();
     println!("Cleaned up");
 
     Ok(())

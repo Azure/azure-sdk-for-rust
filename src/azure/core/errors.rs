@@ -5,7 +5,6 @@ use futures::{Future, Stream};
 use http;
 use http::header::ToStrError;
 use hyper::{self, StatusCode};
-use hyper_tls;
 use serde_json;
 use serde_xml_rs;
 use std;
@@ -229,11 +228,6 @@ quick_error! {
         FromUtf8Error(err: string::FromUtf8Error) {
             from()
             display("FromUTF8 error: {}", err)
-            cause(err)
-        }
-        TLSError(err: hyper_tls::Error) {
-            from()
-            display("Native TLS error: {}", err)
             cause(err)
         }
         SerdeXMLDeserializationError(err:serde_xml_rs::Error) {

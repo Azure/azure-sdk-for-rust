@@ -4,7 +4,6 @@ extern crate chrono;
 extern crate env_logger;
 extern crate futures;
 extern crate hyper;
-extern crate hyper_tls;
 extern crate log;
 extern crate tokio_core;
 

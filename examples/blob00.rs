@@ -2,7 +2,6 @@ extern crate azure_sdk_for_rust;
 extern crate env_logger;
 extern crate futures;
 extern crate hyper;
-extern crate hyper_tls;
 #[macro_use]
 extern crate log;
 extern crate tokio_core;
@@ -45,7 +44,8 @@ fn code() -> Result<(), Box<Error>> {
                 .map(move |s_content| {
                     println!("blob == {:?}", blob);
                     println!("s_content == {}", s_content);
-                }).from_err()
+                })
+                .from_err()
         });
     core.run(future)?;
 
