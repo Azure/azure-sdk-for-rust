@@ -3,7 +3,7 @@ use crate::azure::core::errors::AzureError;
 use crate::azure::core::No;
 use crate::azure::storage::{blob, container};
 use hyper::{self, Method};
-use hyper_rustls;
+use hyper_rustls::HttpsConnector;
 use std::borrow::Borrow;
 use url::Url;
 
@@ -47,7 +47,7 @@ pub struct Client {
     account: String,
     key: String,
     sas_token: Option<Vec<(String, String)>>,
-    hc: hyper::Client<hyper_rustls::HttpsConnector<hyper::client::HttpConnector>>,
+    hc: hyper::Client<HttpsConnector<hyper::client::HttpConnector>>,
     blob_uri: String,
     table_uri: String,
 }
@@ -178,7 +178,7 @@ impl Client {
     }
 
     pub fn azure_sas(account: &str, sas_token: &str) -> Result<Client, AzureError> {
-        let client = hyper::Client::builder().build(hyper_rustls::HttpsConnector::new(4));
+        let client = hyper::Client::builder().build(HttpsConnector::new(4));
         let params: Vec<(String, String)> = Url::options()
             // Any base url will do: we just need to parse the SAS token
             // to get its query pairs.
@@ -200,7 +200,7 @@ impl Client {
     }
 
     pub fn azure(account: &str, key: &str) -> Result<Client, AzureError> {
-        let client = hyper::Client::builder().build(hyper_rustls::HttpsConnector::new(4));
+        let client = hyper::Client::builder().build(HttpsConnector::new(4));
 
         Ok(Client {
             account: account.to_owned(),
@@ -213,7 +213,7 @@ impl Client {
     }
 
     pub fn emulator(blob_storage_url: &Url, table_storage_url: &Url) -> Result<Client, AzureError> {
-        let client = hyper::Client::builder().build(hyper_rustls::HttpsConnector::new(4));
+        let client = hyper::Client::builder().build(HttpsConnector::new(4));
 
         let blob_uri = format!("{}devstoreaccount1", blob_storage_url.as_str());
         debug!("blob_uri == {}", blob_uri);
