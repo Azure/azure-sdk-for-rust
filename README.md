@@ -1,6 +1,6 @@
 # Microsoft Azure SDK for Rust
 
-[![docs](https://docs.rs/azure_sdk_for_rust/badge.svg)](https://docs.rs/azure_sdk_for_rust/0.11.0/azure_sdk_for_rust)
+[![docs](https://docs.rs/azure_sdk_for_rust/badge.svg)](https://docs.rs/azure_sdk_for_rust/0.12.0/azure_sdk_for_rust)
 
 [![legal](https://img.shields.io/github/license/mindflavor/AzureSDKForRust.svg)](LICENSE) 
 
@@ -8,9 +8,9 @@
 
 [![Crate](https://img.shields.io/crates/v/azure_sdk_for_rust.svg)](https://crates.io/crates/azure_sdk_for_rust) [![cratedown](https://img.shields.io/crates/d/azure_sdk_for_rust.svg)](https://crates.io/crates/azure_sdk_for_rust) [![cratelastdown](https://img.shields.io/crates/dv/azure_sdk_for_rust.svg)](https://crates.io/crates/azure_sdk_for_rust)
 
-[![tag](https://img.shields.io/github/tag/mindflavor/AzureSDKForRust.svg)](https://github.com/MindFlavor/AzureSDKForRust/tree/0.11.0)
-[![release](https://img.shields.io/github/release/mindflavor/AzureSDKForRust.svg)](https://github.com/MindFlavor/AzureSDKForRust/releases/tag/0.11.0)
-[![commitssince](https://img.shields.io/github/commits-since/mindflavor/AzureSDKForRust/0.11.0.svg)](https://github.com/MindFlavor/AzureSDKForRust/commits/master)
+[![tag](https://img.shields.io/github/tag/mindflavor/AzureSDKForRust.svg)](https://github.com/MindFlavor/AzureSDKForRust/tree/0.12.0)
+[![release](https://img.shields.io/github/release/mindflavor/AzureSDKForRust.svg)](https://github.com/MindFlavor/AzureSDKForRust/releases/tag/0.12.0)
+[![commitssince](https://img.shields.io/github/commits-since/mindflavor/AzureSDKForRust/0.12.0.svg)](https://github.com/MindFlavor/AzureSDKForRust/commits/master)
 
 [![GitHub contributors](https://img.shields.io/github/contributors/MindFlavor/AzureSDKForRust.svg)](https://github.com/MindFlavor/AzureSDKForRust/graphs/contributors)
 
@@ -21,7 +21,7 @@ This crate relies heavily on the excellent crate called [Hyper](https://github.c
 
 From version 0.8.0 for Cosmos and 0.9.0 for Storage the repo is embracing the builder pattern. As of 0.10.0, most of storage APIs have been migrated to the builder pattern but there are methods still missing. Please chech the relevant issues to follow the update process. This is still an in-progress transition but the resulting API is much more easy to use. Also most checks have been moved to compile-time. Unfortunately the changes are not backward-compatibile. I have blogged about my appoach here: [https://dev.to/mindflavor/rust-builder-pattern-with-types-3chf](https://dev.to/mindflavor/rust-builder-pattern-with-types-3chf).
 
-From version 0.12.0.0 the library switched from [hyper-tls](https://github.com/hyperium/hyper-tls) to [hyper-rustls](https://github.com/ctz/hyper-rustls) as suggested by [bmc-msft](https://github.com/bmc-msft) in the issue [#120](https://github.com/MindFlavor/AzureSDKForRust/issues/120). This should allow the library to be 100% rust.
+From version 0.12.0 the library switched from [hyper-tls](https://github.com/hyperium/hyper-tls) to [hyper-rustls](https://github.com/ctz/hyper-rustls) as suggested by [bmc-msft](https://github.com/bmc-msft) in the issue [#120](https://github.com/MindFlavor/AzureSDKForRust/issues/120). This should allow the library to be 100% rust.
 
 > **NOTE:** This repository is under heavy development and is likely to break over time. The current releases will probabily contain bugs. As usual open issues if you find any.
 
