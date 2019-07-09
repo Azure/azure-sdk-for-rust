@@ -1,6 +1,6 @@
 # Microsoft Azure SDK for Rust
 
-[![docs](https://docs.rs/azure_sdk_for_rust/badge.svg)](https://docs.rs/azure_sdk_for_rust/0.12.0/azure_sdk_for_rust)
+[![docs](https://docs.rs/azure_sdk_for_rust/badge.svg)](https://docs.rs/azure_sdk_for_rust/0.20.0/azure_sdk_for_rust)
 
 [![legal](https://img.shields.io/github/license/mindflavor/AzureSDKForRust.svg)](LICENSE) 
 
@@ -8,9 +8,9 @@
 
 [![Crate](https://img.shields.io/crates/v/azure_sdk_for_rust.svg)](https://crates.io/crates/azure_sdk_for_rust) [![cratedown](https://img.shields.io/crates/d/azure_sdk_for_rust.svg)](https://crates.io/crates/azure_sdk_for_rust) [![cratelastdown](https://img.shields.io/crates/dv/azure_sdk_for_rust.svg)](https://crates.io/crates/azure_sdk_for_rust)
 
-[![tag](https://img.shields.io/github/tag/mindflavor/AzureSDKForRust.svg)](https://github.com/MindFlavor/AzureSDKForRust/tree/0.12.0)
-[![release](https://img.shields.io/github/release/mindflavor/AzureSDKForRust.svg)](https://github.com/MindFlavor/AzureSDKForRust/releases/tag/0.12.0)
-[![commitssince](https://img.shields.io/github/commits-since/mindflavor/AzureSDKForRust/0.12.0.svg)](https://github.com/MindFlavor/AzureSDKForRust/commits/master)
+[![tag](https://img.shields.io/github/tag/mindflavor/AzureSDKForRust.svg)](https://github.com/MindFlavor/AzureSDKForRust/tree/0.20.0)
+[![release](https://img.shields.io/github/release/mindflavor/AzureSDKForRust.svg)](https://github.com/MindFlavor/AzureSDKForRust/releases/tag/0.20.0)
+[![commitssince](https://img.shields.io/github/commits-since/mindflavor/AzureSDKForRust/0.20.0.svg)](https://github.com/MindFlavor/AzureSDKForRust/commits/master)
 
 [![GitHub contributors](https://img.shields.io/github/contributors/MindFlavor/AzureSDKForRust.svg)](https://github.com/MindFlavor/AzureSDKForRust/graphs/contributors)
 
@@ -25,6 +25,19 @@ From version 0.12.0 the library switched from [hyper-tls](https://github.com/hyp
 
 > **NOTE:** This repository is under heavy development and is likely to break over time. The current releases will probabily contain bugs. As usual open issues if you find any.
 
+## Upgrading from 0.12.0 
+
+Starting from version `0.20.0` the monolithic crate has been split in several smaller, more manageable, crates. This means you will have to update both your `Cargo.toml` and your `use` statements to use the new version. The crate's names are as follows:
+
+* [azure_sdk_core](azure_sdk_core)
+* [azure_sdk_cosmos](azure_sdk_cosmos)
+* [azure_sdk_service_bus](azure_sdk_service_bus)
+* [azure_sdk_storage_blob](azure_sdk_storage_blob)
+* [azure_sdk_storage_core](azure_sdk_storage_core)
+* [azure_sdk_storage_table](azure_sdk_storage_table)
+
+The names should be self-explanatory; the examples have been updated to use the new crate topology. In case of doubt please do not hesitate to open an issue. As for the functionality, the release `0.20.0` is equivalent to the `0.12.0` so you can migrate to the new crate topology without embedding extra bugs (hopefully! :wink:).
+
 ## Disclaimer
 Although I am a Microsoft employee, this is not a Microsoft endorsed project. It's simply a pet project of mine: I love Rust (who doesn't? :smirk:) and Microsoft Azure technologies so I thought to close the gap between them. It's also a good project for learning Rust. This library relies heavily on [Hyper](https://github.com/hyperium/hyper). We use the latest Hyper code so this library is fully async with Futures and Tokio.
  
@@ -34,25 +47,14 @@ You can find examples in the [```examples```](https://github.com/MindFlavor/Azur
 ### main.rs
 
 ```rust
-extern crate azure_sdk_for_rust;
-
-extern crate chrono;
-extern crate futures;
-extern crate hyper;
-extern crate hyper_tls;
-extern crate tokio;
-extern crate tokio_core;
-
-use std::error::Error;
-
-use futures::future::*;
-use tokio_core::reactor::Core;
-
-use azure_sdk_for_rust::cosmos::{AuthorizationToken, Client, TokenType};
-
 #[macro_use]
 extern crate serde_derive;
-use azure_sdk_for_rust::cosmos;
+// Using the prelude module of the Cosmos crate makes easier to use the Rust Azure SDK for Cosmos
+// DB.
+use azure_sdk_cosmos::prelude::*;
+use futures::future::*;
+use std::error::Error;
+use tokio_core::reactor::Core;
 
 #[derive(Serialize, Deserialize, Debug)]
 struct MySampleStruct<'a> {
@@ -62,14 +64,8 @@ struct MySampleStruct<'a> {
     a_timestamp: i64,
 }
 
-// Following the official azure cosmos db tutorial: https://docs.microsoft.com/pt-br/azure/cosmos-db/sql-api-dotnetcore-get-started
-// Master key is the Primary Key from Keys section in your CosmosDB screen
-// Account is the first part of URI from Keys section, if your URI is  https://test.documents.azure.com:443/ the account is test
-// DATABASES are the base objects in your Data Explorer section
-// COLLECTIONS are the objects inside the DATABASES
-
-const DATABASE: &'static str = "azuresdktestdb";
-const COLLECTION: &'static str = "azuresdktc";
+const DATABASE: &str = "azuresdktestdb";
+const COLLECTION: &str = "azuresdktc";
 
 fn main() {
     code().unwrap();
@@ -85,13 +81,11 @@ fn main() {
 // We will use multiple futures for this hoping to make the code clearer.
 // There is no need to proceed this way in your code.
 // You can go crazy with future combinators if you want to :)
-fn code() -> Result<(), Box<Error>> {
+fn code() -> Result<(), Box<dyn Error>> {
     // Let's get Cosmos account and master key from env variables.
     // This helps automated testing.
-    let master_key =
-        std::env::var("COSMOSDB_MASTER_KEY").expect("Set env variable COSMOS_MASTER_KEY first!");
-    let account =
-        std::env::var("COSMOSDB_ACCOUNT").expect("Set env variable COSMOS_ACCOUNT first!");
+    let master_key = std::env::var("COSMOS_MASTER_KEY").expect("Set env variable COSMOS_MASTER_KEY first!");
+    let account = std::env::var("COSMOS_ACCOUNT").expect("Set env variable COSMOS_ACCOUNT first!");
 
     // First, we create an authorization token. There are two types of tokens, master and resource
     // constrained. Please check the Azure documentation for details. You can change tokens
@@ -125,35 +119,35 @@ fn code() -> Result<(), Box<Error>> {
     // we will create it. The collection creation is more complex and
     // has many options (such as indexing and so on).
     let collection = {
-        let collections = core.run(client.list_collections(&DATABASE))?;
+        let collections = core.run(client.list_collections(&database.id))?;
 
         if let Some(collection) = collections.into_iter().find(|coll| coll.id == COLLECTION) {
             collection
         } else {
-            let indexes = cosmos::collection::IncludedPathIndex {
-                kind: cosmos::collection::KeyKind::Hash,
-                data_type: cosmos::collection::DataType::String,
+            let indexes = IncludedPathIndex {
+                kind: KeyKind::Hash,
+                data_type: DataType::String,
                 precision: Some(3),
             };
 
-            let ip = cosmos::collection::IncludedPath {
+            let ip = IncludedPath {
                 path: "/*".to_owned(),
                 indexes: vec![indexes],
             };
 
-            let ip = cosmos::collection::IndexingPolicy {
+            let ip = IndexingPolicy {
                 automatic: true,
-                indexing_mode: cosmos::collection::IndexingMode::Consistent,
+                indexing_mode: IndexingMode::Consistent,
                 included_paths: vec![ip],
                 excluded_paths: vec![],
             };
 
-            let coll = cosmos::collection::Collection::new(COLLECTION, ip);
+            let coll = Collection::new(COLLECTION, ip);
             // Notice here we specify the expected performance level.
             // Performance levels have price impact. Also, higher
             // performance levels force you to specify an indexing
             // strategy. Consult the documentation for more details.
-            core.run(client.create_collection(&DATABASE, 400, &coll))?
+            core.run(client.create_collection(&database.id, 400, &coll))?
         }
     };
 
@@ -173,15 +167,11 @@ fn code() -> Result<(), Box<Error>> {
     // Notice how easy it is! :)
     // The method create_document will return, upon success,
     // the document attributes.
-    let document_attributes = core.run(
-        client
-            .create_document(&DATABASE, &COLLECTION, &doc)
-            .execute(),
-    )?;
+    let document_attributes = core.run(client.create_document(&database.id, &collection.id, &doc).execute())?;
     println!("document_attributes == {:?}", document_attributes);
 
     // We will perform some cleanup. First we delete the collection...
-    core.run(client.delete_collection(DATABASE, &COLLECTION))?;
+    core.run(client.delete_collection(DATABASE, COLLECTION))?;
     println!("collection deleted");
 
     // And then we delete the database.
@@ -303,6 +293,10 @@ export AZURE_EVENT_HUB_NAME=<azure_event_hub_name>
 export AZURE_POLICY_NAME=<azure_policy_name>
 export AZURE_POLICY_KEY=<azure policy key>
 
+cd azure_sdk_service_bus
+cargo test --features=test_e2e
+
+cd ../azure_sdk_storage_blob
 cargo test --features=test_e2e
 ```
 
@@ -317,6 +311,10 @@ set AZURE_EVENT_HUB_NAME=<azure_event_hub_name>
 set AZURE_POLICY_NAME=<azure_policy_name>
 set AZURE_POLICY_KEY=<azure policy key>
 
+cd azure_sdk_service_bus
+cargo test --features=test_e2e
+
+cd ../azure_sdk_storage_blob
 cargo test --features=test_e2e
 ```
 

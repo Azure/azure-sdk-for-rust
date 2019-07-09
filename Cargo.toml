@@ -1,45 +1,9 @@
-[package]
-name          = "azure_sdk_for_rust"
-version       = "0.12.0"
-description   = "Rust wrappers around Microsoft Azure REST APIs"
-readme        = "README.md"
-authors       = ["Francesco Cogno <francesco.cogno@outlook.com>", "Max Gortman <mgortman@microsoft.com>", "Dong Liu <doliu@microsoft.com>"]
-license       = "Apache-2.0"
-repository    = "https://github.com/MindFlavor/AzureSDKForRust"
-documentation = "http://mindflavor.github.io/AzureSDKForRust/azure_sdk_for_rust/index.html"
-homepage      = "https://github.com/MindFlavor/AzureSDKForRust"
-
-keywords      = ["sdk", "azure", "rest", "iot", "cloud"]
-categories    = ["api-bindings"]
-
-edition       = "2018"
-
-[dependencies]
-ring         = "0.14"
-md5          = "0.6"
-RustyXML     = "0.1"
-base64       = "0.10"
-chrono       = "0.4"
-env_logger   = "0.6"
-futures      = "0.1"
-http         = "0.1"
-hyper        = "0.12"
-log          = "0.4"
-mime         = "0.3"
-quick-error  = "1.2"
-serde        = "1.0"
-serde_derive = "1.0"
-serde_json   = "1.0"
-serde-xml-rs = "0.3"
-time         = "0.1"
-url          = "1.7"
-uuid         = { version = "0.7", features = ["v4"] }
-smallvec     = { version = "0.6", features = ["serde"] }
-bytes        = "0.4"
-hyper-rustls = "0.16"
-
-[dev-dependencies]
-tokio-core   = "0.1"
-
-[features]
-test_e2e       = []
+[workspace]
+members = [
+  "azure_sdk_core",
+  "azure_sdk_cosmos",
+  "azure_sdk_service_bus",
+  "azure_sdk_storage_blob",
+  "azure_sdk_storage_core",
+  "azure_sdk_storage_table"
+]
