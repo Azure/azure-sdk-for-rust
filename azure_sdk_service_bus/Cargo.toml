@@ -15,6 +15,7 @@ categories    = ["api-bindings"]
 edition       = "2018"
 
 [dependencies]
+azure_sdk_core = { path="../azure_sdk_core", version = "0.20.0" }
 ring         = "0.14"
 md5          = "0.6"
 RustyXML     = "0.1"
@@ -37,7 +38,6 @@ uuid         = { version = "0.7", features = ["v4"] }
 smallvec     = { version = "0.6", features = ["serde"] }
 bytes        = "0.4"
 hyper-rustls = "0.16"
-azure_sdk_core = { path="../azure_sdk_core" } 
 
 [dev-dependencies]
 tokio-core   = "0.1"
