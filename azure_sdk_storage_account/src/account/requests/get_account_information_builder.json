@@ -1,0 +1,14 @@
+{
+	"name": "GetAccountInformationBuilder",
+	"extra_types": [ "'a" ],
+	"extra_wheres": [],
+	"constructor_fields": [
+		{
+			"name": "client",
+			"field_type": "&'a Client",
+			"trait_get": "ClientRequired<'a>"
+		}
+	],
+	"fields": [
+	]
+}

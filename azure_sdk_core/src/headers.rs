@@ -33,3 +33,5 @@ pub const PAGE_WRITE: &str = "x-ms-page-write";
 pub const REQUEST_SERVER_ENCRYPTED: &str = "x-ms-request-server-encrypted";
 pub const DELETE_TYPE_PERMANENT: &str = "x-ms-delete-type-permanent";
 pub const DELETE_SNAPSHOTS: &str = "x-ms-delete-snapshots";
+pub const SKU_NAME: &str = "x-ms-sku-name";
+pub const ACCOUNT_KIND: &str = "x-ms-account-kind";
