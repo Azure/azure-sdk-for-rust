@@ -18,7 +18,7 @@ pub enum ServiceType {
     Table,
 }
 
-const AZURE_VERSION: &str = "2017-11-09";
+const AZURE_VERSION: &str = "2018-03-28";
 
 pub const HEADER_VERSION: &str = "x-ms-version"; //=> [String] }
 pub const HEADER_DATE: &str = "x-ms-date"; //=> [String] }

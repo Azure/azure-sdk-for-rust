@@ -45,8 +45,9 @@ pub mod range;
 use url::percent_encoding;
 pub mod headers;
 use self::headers::{
-    BLOB_ACCESS_TIER, BLOB_CONTENT_LENGTH, BLOB_SEQUENCE_NUMBER, CLIENT_REQUEST_ID, CONTENT_MD5, DELETE_SNAPSHOTS, DELETE_TYPE_PERMANENT,
-    LEASE_BREAK_PERIOD, LEASE_DURATION, LEASE_ID, LEASE_TIME, PROPOSED_LEASE_ID, REQUEST_ID, REQUEST_SERVER_ENCRYPTED,
+    ACCOUNT_KIND, BLOB_ACCESS_TIER, BLOB_CONTENT_LENGTH, BLOB_SEQUENCE_NUMBER, CLIENT_REQUEST_ID, CONTENT_MD5, DELETE_SNAPSHOTS,
+    DELETE_TYPE_PERMANENT, LEASE_BREAK_PERIOD, LEASE_DURATION, LEASE_ID, LEASE_TIME, PROPOSED_LEASE_ID, REQUEST_ID,
+    REQUEST_SERVER_ENCRYPTED, SKU_NAME,
 };
 use hyper::header::{
     HeaderName, CACHE_CONTROL, CONTENT_ENCODING, CONTENT_LANGUAGE, CONTENT_LENGTH, CONTENT_TYPE, DATE, ETAG, LAST_MODIFIED, RANGE,
@@ -808,6 +809,24 @@ pub fn date_from_headers(headers: &HeaderMap) -> Result<DateTime<Utc>, AzureErro
 
     trace!("date == {:?}", date);
     Ok(date)
+}
+
+pub fn sku_name_from_headers(headers: &HeaderMap) -> Result<String, AzureError> {
+    let sku_name = headers
+        .get(SKU_NAME)
+        .ok_or_else(|| AzureError::HeaderNotFound(SKU_NAME.to_owned()))?
+        .to_str()?;
+    trace!("sku_name == {:?}", sku_name);
+    Ok(sku_name.to_owned())
+}
+
+pub fn account_kind_from_headers(headers: &HeaderMap) -> Result<String, AzureError> {
+    let account_kind = headers
+        .get(ACCOUNT_KIND)
+        .ok_or_else(|| AzureError::HeaderNotFound(ACCOUNT_KIND.to_owned()))?
+        .to_str()?;
+    trace!("account_kind == {:?}", account_kind);
+    Ok(account_kind.to_owned())
 }
 
 pub fn etag_from_headers_optional(headers: &HeaderMap) -> Result<Option<String>, AzureError> {
