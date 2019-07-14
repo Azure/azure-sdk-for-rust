@@ -35,6 +35,7 @@ Starting from version `0.20.0` the monolithic crate has been split in several sm
 * [azure_sdk_storage_blob](azure_sdk_storage_blob)
 * [azure_sdk_storage_core](azure_sdk_storage_core)
 * [azure_sdk_storage_table](azure_sdk_storage_table)
+* [azure_sdk_storage_account](azure_sdk_storage_account)
 
 The names should be self-explanatory; the examples have been updated to use the new crate topology. In case of doubt please do not hesitate to open an issue. As for the functionality, the release `0.20.0` is equivalent to the `0.12.0` so you can migrate to the new crate topology without embedding extra bugs (hopefully! :wink:).
 
@@ -193,6 +194,14 @@ If you want to contribute please do! No formality required! :wink:. Please note 
 
 ### Implemented methods
 
+#### Storage Account
+
+| Method           | URL                                                                                                                                                                      | Builder pattern
+| ----             | ---                                                                                                                                                                      | ---
+| Get account information | [https://docs.microsoft.com/en-us/rest/api/storageservices/get-account-information](https://docs.microsoft.com/en-us/rest/api/storageservices/get-account-information)                 | yes
+
+
+
 #### Storage Container
 
 | Method           | URL                                                                                                                                                                      | Builder pattern
@@ -227,7 +236,7 @@ If you want to contribute please do! No formality required! :wink:. Please note 
 | Change blob lease  | [https://docs.microsoft.com/en-us/rest/api/storageservices/lease-blob](https://docs.microsoft.com/en-us/rest/api/storageservices/lease-blob)         | yes
 | Release blob lease | [https://docs.microsoft.com/en-us/rest/api/storageservices/lease-blob](https://docs.microsoft.com/en-us/rest/api/storageservices/lease-blob)         | yes
 | Break blob lease   | [https://docs.microsoft.com/en-us/rest/api/storageservices/lease-blob](https://docs.microsoft.com/en-us/rest/api/storageservices/lease-blob)         | yes
-| Delete blob        | [https://docs.microsoft.com/en-us/rest/api/storageservices/delete-blob](https://docs.microsoft.com/en-us/rest/api/storageservices/delete-blob)       |
+| Delete blob        | [https://docs.microsoft.com/en-us/rest/api/storageservices/delete-blob](https://docs.microsoft.com/en-us/rest/api/storageservices/delete-blob)       | yes
 
 #### Event Hubs
 
