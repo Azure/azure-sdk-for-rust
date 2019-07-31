@@ -43,7 +43,7 @@ The names should be self-explanatory; the examples have been updated to use the 
 Although I am a Microsoft employee, this is not a Microsoft endorsed project. It's simply a pet project of mine: I love Rust (who doesn't? :smirk:) and Microsoft Azure technologies so I thought to close the gap between them. It's also a good project for learning Rust. This library relies heavily on [Hyper](https://github.com/hyperium/hyper). We use the latest Hyper code so this library is fully async with Futures and Tokio.
  
 ## Example
-You can find examples in the [```examples```](https://github.com/MindFlavor/AzureSDKForRust/tree/master/examples) folder. Here is a glimpse:
+You can find examples in the [```examples```](https://github.com/MindFlavor/AzureSDKForRust/tree/master/azure_sdk_cosmos/examples) folder of each sub-crate. Here is a glimpse:
 
 ### main.rs
 
