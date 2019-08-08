@@ -54,7 +54,7 @@ use hyper::header::{
 };
 use uuid::Uuid;
 pub type RequestId = Uuid;
-use crate::errors::{AzureError, TraversingError};
+use crate::errors::{check_status_extract_body_2, AzureError, TraversingError};
 use crate::lease::LeaseId;
 use crate::parsing::FromStringOptional;
 use http::request::Builder;
@@ -64,6 +64,9 @@ mod stored_access_policy;
 pub use self::stored_access_policy::{StoredAccessPolicy, StoredAccessPolicyList};
 pub mod prelude;
 use chrono::{DateTime, Utc};
+use futures::future::Future;
+use http::status::StatusCode;
+use hyper::{Body, Client, Request};
 
 define_encode_set! {
     pub COMPLETE_ENCODE_SET = [percent_encoding::USERINFO_ENCODE_SET] | {
@@ -897,4 +900,16 @@ pub fn request_server_encrypted_from_headers(headers: &HeaderMap) -> Result<bool
 
     trace!("request_server_encrypted == {:?}", request_server_encrypted);
     Ok(request_server_encrypted)
+}
+
+pub fn perform_http_request(
+    client: &Client<hyper_rustls::HttpsConnector<hyper::client::HttpConnector>>,
+    req: Request<Body>,
+    expected_status: StatusCode,
+) -> impl Future<Item = String, Error = AzureError> {
+    println!("req == {:?}", req);
+    client
+        .request(req)
+        .from_err()
+        .and_then(move |res| check_status_extract_body_2(res, expected_status))
 }

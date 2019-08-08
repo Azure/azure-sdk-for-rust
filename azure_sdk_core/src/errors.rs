@@ -1,10 +1,11 @@
 use crate::{enumerations::ParsingError, range::ParseError};
 use base64;
 use chrono;
+use futures::future::{done, err, ok, Either};
 use futures::{Future, Stream};
 use http;
 use http::header::ToStrError;
-use hyper::{self, StatusCode};
+use hyper::{self, Body, StatusCode};
 use serde_json;
 use serde_xml_rs;
 use std;
@@ -353,5 +354,30 @@ pub fn check_status_extract_body(
                 body,
             }))
         }
+    })
+}
+
+pub fn check_status_extract_body_2(
+    resp: hyper::Response<Body>,
+    expected_status: StatusCode,
+) -> impl Future<Item = String, Error = AzureError> {
+    let received_status = resp.status();
+
+    resp.into_body().concat2().from_err().and_then(move |body| {
+        done(String::from_utf8(body.to_vec())).from_err().and_then(move |s| {
+            println!("body: {}", s);
+            if received_status != expected_status {
+                Either::A(
+                    err(AzureError::UnexpectedHTTPResult(UnexpectedHTTPResult {
+                        expected: expected_status,
+                        received: received_status,
+                        body: s,
+                    }))
+                    .from_err(),
+                )
+            } else {
+                Either::B(ok(s))
+            }
+        })
     })
 }
