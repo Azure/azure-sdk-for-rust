@@ -1,6 +1,6 @@
 # Microsoft Azure SDK for Rust
 
-[![docs](https://docs.rs/azure_sdk_for_rust/badge.svg)](https://docs.rs/azure_sdk_for_rust/0.20.1/azure_sdk_for_rust)
+[![docs](https://docs.rs/azure_sdk_for_rust/badge.svg)](https://docs.rs/azure_sdk_for_rust/0.20.2/azure_sdk_for_rust)
 
 [![legal](https://img.shields.io/github/license/mindflavor/AzureSDKForRust.svg)](LICENSE) 
 
@@ -8,9 +8,9 @@
 
 [![Crate](https://img.shields.io/crates/v/azure_sdk_for_rust.svg)](https://crates.io/crates/azure_sdk_for_rust) [![cratedown](https://img.shields.io/crates/d/azure_sdk_for_rust.svg)](https://crates.io/crates/azure_sdk_for_rust) [![cratelastdown](https://img.shields.io/crates/dv/azure_sdk_for_rust.svg)](https://crates.io/crates/azure_sdk_for_rust)
 
-[![tag](https://img.shields.io/github/tag/mindflavor/AzureSDKForRust.svg)](https://github.com/MindFlavor/AzureSDKForRust/tree/0.20.1)
-[![release](https://img.shields.io/github/release/mindflavor/AzureSDKForRust.svg)](https://github.com/MindFlavor/AzureSDKForRust/releases/tag/0.20.1)
-[![commitssince](https://img.shields.io/github/commits-since/mindflavor/AzureSDKForRust/0.20.1.svg)](https://github.com/MindFlavor/AzureSDKForRust/commits/master)
+[![tag](https://img.shields.io/github/tag/mindflavor/AzureSDKForRust.svg)](https://github.com/MindFlavor/AzureSDKForRust/tree/0.20.2)
+[![release](https://img.shields.io/github/release/mindflavor/AzureSDKForRust.svg)](https://github.com/MindFlavor/AzureSDKForRust/releases/tag/0.20.2)
+[![commitssince](https://img.shields.io/github/commits-since/mindflavor/AzureSDKForRust/0.20.2.svg)](https://github.com/MindFlavor/AzureSDKForRust/commits/master)
 
 [![GitHub contributors](https://img.shields.io/github/contributors/MindFlavor/AzureSDKForRust.svg)](https://github.com/MindFlavor/AzureSDKForRust/graphs/contributors)
 
