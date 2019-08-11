@@ -48,7 +48,7 @@ fn code() -> Result<(), Box<dyn Error>> {
 
     // Next we will create a Cosmos client. You need an authorization_token but you can later
     // change it if needed. Notice the client will be tied to your reactor.
-    let client = Client::new(authorization_token)?;
+    let client = ClientBuilder::new(authorization_token)?;
 
     // list_databases will give us the databases available in our account. If there is
     // an error (for example, the given key is not valid) you will receive a

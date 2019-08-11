@@ -32,7 +32,7 @@ fn code() -> Result<(), Box<dyn Error>> {
 
     let mut core = Core::new()?;
 
-    let client = Client::new(authorization_token)?;
+    let client = ClientBuilder::new(authorization_token)?;
 
     let future = client
         .query_documents(&database_name, &collection_name, Query::from(query.as_ref()))
