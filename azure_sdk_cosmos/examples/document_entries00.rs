@@ -50,7 +50,7 @@ fn code() -> Result<(), Box<dyn Error>> {
 
     let mut core = Core::new()?;
 
-    let client = Client::new(authorization_token)?;
+    let client = ClientBuilder::new(authorization_token)?;
 
     core.run(futures::future::join_all((0..5).map(|i| {
         let doc = MySampleStruct {

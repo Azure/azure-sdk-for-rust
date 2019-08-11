@@ -1,9 +1,3 @@
-use azure_sdk_core::{
-    errors::{check_status_extract_body, AzureError},
-    util::RequestBuilderExt,
-    COMPLETE_ENCODE_SET,
-};
-
 use super::{
     collection::Collection,
     database::Database,
@@ -12,24 +6,26 @@ use super::{
     requests::*,
     AuthorizationToken, TokenType,
 };
-
+use azure_sdk_core::{
+    errors::{check_status_extract_body, AzureError},
+    util::RequestBuilderExt,
+    COMPLETE_ENCODE_SET,
+};
 use base64;
+use chrono;
+use futures::future::*;
 use http::request::Builder as RequestBuilder;
 use hyper::{
     self,
     header::{self, HeaderValue},
     StatusCode,
 };
+use hyper_rustls::HttpsConnector;
 use ring::{digest::SHA256, hmac};
 use serde::{de::DeserializeOwned, Serialize};
 use serde_json;
 use std::sync::Arc;
-
-use chrono;
-use hyper_rustls::HttpsConnector;
 use url::percent_encoding::utf8_percent_encode;
-
-use futures::future::*;
 
 const AZURE_VERSION: &str = "2017-02-22";
 const VERSION: &str = "1.0";
@@ -52,7 +48,8 @@ pub(crate) mod headers {
     pub const HEADER_DOCUMENTDB_PARTITIONKEY: &str = "x-ms-documentdb-partitionkey"; // [String]
     pub const HEADER_DOCUMENTDB_ISQUERY: &str = "x-ms-documentdb-isquery"; // [bool]
     pub const HEADER_DOCUMENTDB_QUERY_ENABLECROSSPARTITION: &str = "x-ms-documentdb-query-enablecrosspartition"; // [bool]
-    pub const HEADER_DOCUMENTDB_QUERY_PARALLELIZECROSSPARTITIONQUERY: &str = "x-ms-documentdb-query-parallelizecrosspartitionquery"; // [bool]
+    pub const HEADER_DOCUMENTDB_QUERY_PARALLELIZECROSSPARTITIONQUERY: &str = "x-ms-documentdb-query-parallelizecrosspartitionquery";
+    // [bool]
 }
 use self::headers::*;
 
@@ -64,21 +61,128 @@ enum ResourceType {
     StoredProcedures,
 }
 
-pub struct Client {
+#[derive(Debug, Clone)]
+pub struct Client<CUB>
+where
+    CUB: CosmosUriBuilder,
+{
     hyper_client: Arc<hyper::Client<HttpsConnector<hyper::client::HttpConnector>>>,
     auth_token: AuthorizationToken,
+    cosmos_uri_builder: CUB,
 }
 
-impl Client {
-    pub fn new(auth_token: AuthorizationToken) -> Result<Client, AzureError> {
+pub trait CosmosUriBuilder {
+    fn build_base_uri(&self) -> &str;
+}
+
+#[derive(Debug, Clone)]
+pub struct DefaultCosmosUri {
+    uri: String,
+}
+
+impl DefaultCosmosUri {
+    fn new(account: &str) -> DefaultCosmosUri {
+        DefaultCosmosUri {
+            uri: format!("https://{}.documents.azure.com", account),
+        }
+    }
+}
+
+impl CosmosUriBuilder for DefaultCosmosUri {
+    fn build_base_uri(&self) -> &str {
+        &self.uri
+    }
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct ChinaCosmosUri {
+    uri: String,
+}
+
+impl ChinaCosmosUri {
+    fn new(account: &str) -> ChinaCosmosUri {
+        ChinaCosmosUri {
+            uri: format!("https://{}.documents.azure.cn:10255", account),
+        }
+    }
+}
+
+impl CosmosUriBuilder for ChinaCosmosUri {
+    fn build_base_uri(&self) -> &str {
+        &self.uri
+    }
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct CustomCosmosUri {
+    uri: String,
+}
+
+impl CosmosUriBuilder for CustomCosmosUri {
+    fn build_base_uri(&self) -> &str {
+        &self.uri
+    }
+}
+
+pub struct ClientBuilder {}
+
+impl ClientBuilder {
+    pub fn new(auth_token: AuthorizationToken) -> Result<Client<DefaultCosmosUri>, AzureError> {
+        let client = hyper::Client::builder().build(HttpsConnector::new(4));
+        let cosmos_uri_builder = DefaultCosmosUri::new(auth_token.account());
+
+        Ok(Client {
+            hyper_client: Arc::new(client),
+            auth_token,
+            cosmos_uri_builder,
+        })
+    }
+
+    pub fn new_china(auth_token: AuthorizationToken) -> Result<Client<ChinaCosmosUri>, AzureError> {
+        let client = hyper::Client::builder().build(HttpsConnector::new(4));
+        let cosmos_uri_builder = ChinaCosmosUri::new(auth_token.account());
+
+        Ok(Client {
+            hyper_client: Arc::new(client),
+            auth_token,
+            cosmos_uri_builder,
+        })
+    }
+
+    pub fn new_custom(auth_token: AuthorizationToken, uri: String) -> Result<Client<CustomCosmosUri>, AzureError> {
         let client = hyper::Client::builder().build(HttpsConnector::new(4));
 
         Ok(Client {
             hyper_client: Arc::new(client),
             auth_token,
+            cosmos_uri_builder: CustomCosmosUri { uri },
         })
     }
 
+    pub fn new_emulator(address: &str, port: u16) -> Result<Client<CustomCosmosUri>, AzureError> {
+        let client = hyper::Client::builder().build(HttpsConnector::new(4));
+
+        //Account name: localhost:<port>
+        //Account key: C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==
+        let auth_token = AuthorizationToken::new(
+            format!("{}:{}", address, port),
+            TokenType::Master,
+            "C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==",
+        )?;
+        Ok(Client {
+            hyper_client: Arc::new(client),
+            auth_token,
+            cosmos_uri_builder: CustomCosmosUri {
+                uri: format!("https://{}:{}", address, port),
+            },
+        })
+    }
+}
+
+impl<CUB> Client<CUB>
+where
+    CUB: CosmosUriBuilder,
+{
     pub fn set_auth_token(&mut self, at: AuthorizationToken) {
         self.auth_token = at;
     }
@@ -583,7 +687,8 @@ impl Client {
     #[inline]
     fn prepare_request_with_signature(&self, uri_path: &str, http_method: hyper::Method, time: &str, signature: &str) -> RequestBuilder {
         trace!("prepare_request::auth == {:?}", signature);
-        let uri = format!("https://{}.documents.azure.com/{}", self.auth_token.account(), uri_path);
+        let uri = format!("{}/{}", self.cosmos_uri_builder.build_base_uri(), uri_path);
+        debug!("cosmos::client::prepare_request_with_resource_signature::uri == {:?}", uri);
         let mut request = hyper::Request::builder();
         request
             .method(http_method)

@@ -29,7 +29,7 @@ fn code() -> Result<(), Box<dyn Error>> {
     let authorization_token = AuthorizationToken::new(account, TokenType::Master, &master_key)?;
 
     let mut core = Core::new()?;
-    let client = Client::new(authorization_token)?;
+    let client = ClientBuilder::new(authorization_token)?;
 
     let future = client
         .execute_stored_procedure(database, collection, "test_proc", json!(["Robert"]))
