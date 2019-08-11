@@ -1,18 +1,26 @@
 # Microsoft Azure SDK for Rust
 
-[![docs](https://docs.rs/azure_sdk_for_rust/badge.svg)](https://docs.rs/azure_sdk_for_rust/0.20.2/azure_sdk_for_rust)
 
 [![legal](https://img.shields.io/github/license/mindflavor/AzureSDKForRust.svg)](LICENSE) 
 
 [![Build Status](https://travis-ci.org/MindFlavor/AzureSDKForRust.svg?branch=master)](https://travis-ci.org/MindFlavor/AzureSDKForRust) [![Coverage Status](https://coveralls.io/repos/MindFlavor/AzureSDKForRust/badge.svg?branch=master&service=github)](https://coveralls.io/github/MindFlavor/AzureSDKForRust?branch=master) ![stability-unstable](https://img.shields.io/badge/stability-unstable-yellow.svg)
 
-[![Crate](https://img.shields.io/crates/v/azure_sdk_for_rust.svg)](https://crates.io/crates/azure_sdk_for_rust) [![cratedown](https://img.shields.io/crates/d/azure_sdk_for_rust.svg)](https://crates.io/crates/azure_sdk_for_rust) [![cratelastdown](https://img.shields.io/crates/dv/azure_sdk_for_rust.svg)](https://crates.io/crates/azure_sdk_for_rust)
-
-[![tag](https://img.shields.io/github/tag/mindflavor/AzureSDKForRust.svg)](https://github.com/MindFlavor/AzureSDKForRust/tree/0.20.2)
-[![release](https://img.shields.io/github/release/mindflavor/AzureSDKForRust.svg)](https://github.com/MindFlavor/AzureSDKForRust/releases/tag/0.20.2)
-[![commitssince](https://img.shields.io/github/commits-since/mindflavor/AzureSDKForRust/0.20.2.svg)](https://github.com/MindFlavor/AzureSDKForRust/commits/master)
+[![tag](https://img.shields.io/github/tag/mindflavor/AzureSDKForRust.svg)](https://github.com/MindFlavor/AzureSDKForRust/tree/0.20.2) [![release](https://img.shields.io/github/release/mindflavor/AzureSDKForRust.svg)](https://github.com/MindFlavor/AzureSDKForRust/releases/tag/0.20.2) [![commitssince](https://img.shields.io/github/commits-since/mindflavor/AzureSDKForRust/0.20.2.svg)](https://github.com/MindFlavor/AzureSDKForRust/commits/master)
 
 [![GitHub contributors](https://img.shields.io/github/contributors/MindFlavor/AzureSDKForRust.svg)](https://github.com/MindFlavor/AzureSDKForRust/graphs/contributors)
+
+Crate | Docs | Crates.io | Downloads | Downloads@Latest |
+-- | -- | -- | -- | -- |
+[azure_sdk_auth_aad](https://github.com/MindFlavor/AzureSDKForRust/tree/master/azure_sdk_auth_aad) | [![docs](https://docs.rs/azure_sdk_auth_aad/badge.svg)](https://docs.rs/azure_sdk_auth_aad/0.20.2/azure_sdk_auth_aad) | [![Crate](https://img.shields.io/crates/v/azure_sdk_auth_aad.svg)](https://crates.io/crates/azure_sdk_auth_aad) | [![cratedown](https://img.shields.io/crates/d/azure_sdk_auth_aad.svg)](https://crates.io/crates/azure_sdk_auth_aad) | [![cratelastdown](https://img.shields.io/crates/dv/azure_sdk_auth_aad.svg)](https://crates.io/crates/azure_sdk_auth_aad)
+[azure_sdk_core](https://github.com/MindFlavor/AzureSDKForRust/tree/master/azure_sdk_core) | [![docs](https://docs.rs/azure_sdk_core/badge.svg)](https://docs.rs/azure_sdk_core/0.20.2/azure_sdk_for_rust) | [![Crate](https://img.shields.io/crates/v/azure_sdk_core.svg)](https://crates.io/crates/azure_sdk_core) | [![cratedown](https://img.shields.io/crates/d/azure_sdk_core.svg)](https://crates.io/crates/azure_sdk_core) | [![cratelastdown](https://img.shields.io/crates/dv/azure_sdk_core.svg)](https://crates.io/crates/azure_sdk_core)
+[azure_sdk_cosmos](https://github.com/MindFlavor/AzureSDKForRust/tree/master/azure_sdk_cosmos) | [![docs](https://docs.rs/azure_sdk_cosmos/badge.svg)](https://docs.rs/azure_sdk_core/0.21.0/azure_sdk_cosmos) | [![Crate](https://img.shields.io/crates/v/azure_sdk_cosmos.svg)](https://crates.io/crates/azure_sdk_cosmos) | [![cratedown](https://img.shields.io/crates/d/azure_sdk_cosmos.svg)](https://crates.io/crates/azure_sdk_cosmos) | [![cratelastdown](https://img.shields.io/crates/dv/azure_sdk_cosmos.svg)](https://crates.io/crates/azure_sdk_cosmos)
+[azure_sdk_service_bus](https://github.com/MindFlavor/AzureSDKForRust/tree/master/azure_sdk_service_bus) | [![docs](https://docs.rs/azure_sdk_service_bus/badge.svg)](https://docs.rs/azure_sdk_core/0.20.2/azure_sdk_service_bus) | [![Crate](https://img.shields.io/crates/v/azure_sdk_service_bus.svg)](https://crates.io/crates/azure_sdk_service_bus) | [![cratedown](https://img.shields.io/crates/d/azure_sdk_service_bus.svg)](https://crates.io/crates/azure_sdk_service_bus) | [![cratelastdown](https://img.shields.io/crates/dv/azure_sdk_service_bus.svg)](https://crates.io/crates/azure_sdk_service_bus)
+[azure_sdk_storage_account](https://github.com/MindFlavor/AzureSDKForRust/tree/master/azure_sdk_storage_account) | [![docs](https://docs.rs/azure_sdk_storage_account/badge.svg)](https://docs.rs/azure_sdk_core/0.20.2/azure_sdk_storage_account) | [![Crate](https://img.shields.io/crates/v/azure_sdk_storage_account.svg)](https://crates.io/crates/azure_sdk_storage_account) | [![cratedown](https://img.shields.io/crates/d/azure_sdk_storage_account.svg)](https://crates.io/crates/azure_sdk_storage_account) | [![cratelastdown](https://img.shields.io/crates/dv/azure_sdk_storage_account.svg)](https://crates.io/crates/azure_sdk_storage_account)
+[azure_sdk_storage_blob](https://github.com/MindFlavor/AzureSDKForRust/tree/master/azure_sdk_storage_blob) | [![docs](https://docs.rs/azure_sdk_storage_blob/badge.svg)](https://docs.rs/azure_sdk_core/0.20.2/azure_sdk_storage_blob) | [![Crate](https://img.shields.io/crates/v/azure_sdk_storage_blob.svg)](https://crates.io/crates/azure_sdk_storage_blob) | [![cratedown](https://img.shields.io/crates/d/azure_sdk_storage_blob.svg)](https://crates.io/crates/azure_sdk_storage_blob) | [![cratelastdown](https://img.shields.io/crates/dv/azure_sdk_storage_blob.svg)](https://crates.io/crates/azure_sdk_storage_blob)
+[azure_sdk_storage_core](https://github.com/MindFlavor/AzureSDKForRust/tree/master/azure_sdk_storage_core) | [![docs](https://docs.rs/azure_sdk_storage_core/badge.svg)](https://docs.rs/azure_sdk_core/0.20.2/azure_sdk_storage_core) | [![Crate](https://img.shields.io/crates/v/azure_sdk_storage_core.svg)](https://crates.io/crates/azure_sdk_storage_core) | [![cratedown](https://img.shields.io/crates/d/azure_sdk_storage_core.svg)](https://crates.io/crates/azure_sdk_storage_core) | [![cratelastdown](https://img.shields.io/crates/dv/azure_sdk_storage_core.svg)](https://crates.io/crates/azure_sdk_storage_core)
+[azure_sdk_storage_table](https://github.com/MindFlavor/AzureSDKForRust/tree/master/azure_sdk_storage_table) | [![docs](https://docs.rs/azure_sdk_storage_table/badge.svg)](https://docs.rs/azure_sdk_core/0.20.2/azure_sdk_storage_table) | [![Crate](https://img.shields.io/crates/v/azure_sdk_storage_table.svg)](https://crates.io/crates/azure_sdk_storage_table) | [![cratedown](https://img.shields.io/crates/d/azure_sdk_storage_table.svg)](https://crates.io/crates/azure_sdk_storage_table) | [![cratelastdown](https://img.shields.io/crates/dv/azure_sdk_storage_table.svg)](https://crates.io/crates/azure_sdk_storage_table)
+
+
 
 ## Introduction
 Microsoft Azure exposes its technologies via REST API. These APIs are easily consumable from any language (good) but are weakly typed. With this library and its related [crate](https://crates.io/crates/azure_sdk_for_rust/) you can exploit the power of Microsoft Azure from Rust in a idiomatic way.
@@ -27,17 +35,8 @@ From version 0.12.0 the library switched from [hyper-tls](https://github.com/hyp
 
 ## Upgrading from 0.12.0 
 
-Starting from version `0.20.0` the monolithic crate has been split in several smaller, more manageable, crates. This means you will have to update both your `Cargo.toml` and your `use` statements to use the new version. The crate's names are as follows:
-
-* [azure_sdk_core](azure_sdk_core)
-* [azure_sdk_cosmos](azure_sdk_cosmos)
-* [azure_sdk_service_bus](azure_sdk_service_bus)
-* [azure_sdk_storage_blob](azure_sdk_storage_blob)
-* [azure_sdk_storage_core](azure_sdk_storage_core)
-* [azure_sdk_storage_table](azure_sdk_storage_table)
-* [azure_sdk_storage_account](azure_sdk_storage_account)
-
-The names should be self-explanatory; the examples have been updated to use the new crate topology. In case of doubt please do not hesitate to open an issue. As for the functionality, the release `0.20.0` is equivalent to the `0.12.0` so you can migrate to the new crate topology without embedding extra bugs (hopefully! :wink:).
+Starting from version `0.20.0` the monolithic crate has been split in several smaller, more manageable, crates. This means you will have to update both your `Cargo.toml` and your `use` statements to use the new version. The names should be self-explanatory; the examples have been updated to use the new crate topology. In case of doubt please do not hesitate to open an issue. As for the functionality, the release `0.20.0` is equivalent to the `0.12.0` so you can migrate to the new crate topology without embedding extra bugs (hopefully! :wink:). 
+Since `0.20.1` each crate follows its own versioning. In other words we will increase the version number only of the modified crate (instead of all of them at once). This way you won't need to update your referenced version so often if you use more stable crates (such as storage ones) but the newest one can proceed at their own pace. Please refer to the table above for the bleeding-edge versions. This will also mean releases will detail the most important crate version only (since we cannot have releases for each crate in GitHub). That's why, for example, you could find the release `crate_A_0.30.0` *before* release `crate_B_0.27.0`.
 
 ## Disclaimer
 Although I am a Microsoft employee, this is not a Microsoft endorsed project. It's simply a pet project of mine: I love Rust (who doesn't? :smirk:) and Microsoft Azure technologies so I thought to close the gap between them. It's also a good project for learning Rust. This library relies heavily on [Hyper](https://github.com/hyperium/hyper). We use the latest Hyper code so this library is fully async with Futures and Tokio.
@@ -98,7 +97,9 @@ fn code() -> Result<(), Box<dyn Error>> {
 
     // Next we will create a Cosmos client. You need an authorization_token but you can later
     // change it if needed. Notice the client will be tied to your reactor.
-    let client = Client::new(authorization_token)?;
+    // There are other ClientBuilder functions (for example to use the emulator instead of the real CosmosDB). 
+    // Please consult the docs on how to use them.
+    let client = ClientBuilder::new(authorization_token)?;
 
     // list_databases will give us the databases available in our account. If there is
     // an error (for example, the given key is not valid) you will receive a
