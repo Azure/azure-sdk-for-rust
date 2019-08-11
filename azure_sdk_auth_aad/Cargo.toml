@@ -16,7 +16,7 @@ edition            = "2018"
 
 [dependencies]
 azure_sdk_core     = { path = "../azure_sdk_core", version = "0.20.2" }
-oauth2             = { git = "https://github.com/ramosbugs/oauth2-rs.git" }
+oauth2             = "3.0.0-alpha.3"
 base64             = "0.10.1"
 url                = "1.7.2"
 rand               = "0.7.0"
