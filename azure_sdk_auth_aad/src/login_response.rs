@@ -1,6 +1,7 @@
 use azure_sdk_core::errors::AzureError;
 use chrono::{DateTime, TimeZone, Utc};
 use oauth2::AccessToken;
+use std::str::FromStr;
 
 #[derive(Debug, Clone, Deserialize)]
 struct _LoginResponse {
@@ -24,8 +25,10 @@ pub struct LoginResponse {
     pub access_token: AccessToken,
 }
 
-impl LoginResponse {
-    pub fn from_str(s: &str) -> Result<LoginResponse, AzureError> {
+impl FromStr for LoginResponse {
+    type Err = AzureError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
         let r: _LoginResponse = serde_json::from_str(s)?;
 
         let expires_on: i64 = r.expires_on.parse()?;
@@ -44,7 +47,9 @@ impl LoginResponse {
             access_token: AccessToken::new(r.access_token),
         })
     }
+}
 
+impl LoginResponse {
     pub fn access_token(&self) -> &AccessToken {
         &self.access_token
     }
