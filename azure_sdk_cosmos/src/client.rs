@@ -102,7 +102,7 @@ pub struct ChinaCosmosUri {
 impl ChinaCosmosUri {
     fn new(account: &str) -> ChinaCosmosUri {
         ChinaCosmosUri {
-            uri: format!("https://{}.documents.azure.cn:10255", account),
+            uri: format!("https://{}.documents.azure.cn", account),
         }
     }
 }
