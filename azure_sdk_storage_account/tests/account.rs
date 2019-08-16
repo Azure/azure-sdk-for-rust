@@ -1,5 +1,5 @@
 #![cfg(all(test, feature = "test_e2e"))]
-use azure_sdk_storage_blob::prelude::*;
+use azure_sdk_storage_account::prelude::*;
 use azure_sdk_storage_core::prelude::*;
 use tokio_core::reactor::Core;
 

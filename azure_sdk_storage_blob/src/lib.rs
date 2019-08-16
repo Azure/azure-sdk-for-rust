@@ -1,4 +1,5 @@
 #![recursion_limit = "128"]
+#![allow(clippy::needless_lifetimes)]
 
 extern crate base64;
 extern crate chrono;

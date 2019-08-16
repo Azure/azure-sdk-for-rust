@@ -127,6 +127,7 @@ impl CosmosUriBuilder for CustomCosmosUri {
 pub struct ClientBuilder {}
 
 impl ClientBuilder {
+    #[allow(clippy::new_ret_no_self)]
     pub fn new(auth_token: AuthorizationToken) -> Result<Client<DefaultCosmosUri>, AzureError> {
         let client = hyper::Client::builder().build(HttpsConnector::new(4));
         let cosmos_uri_builder = DefaultCosmosUri::new(auth_token.account());
@@ -767,7 +768,7 @@ fn string_to_sign(http_method: &hyper::Method, rt: ResourceType, resource_link: 
 }
 
 fn generate_resource_link(u: &str) -> &str {
-    static ENDING_STRINGS: &'static [&str] = &["dbs", "colls", "docs"];
+    static ENDING_STRINGS: &[&str] = &["dbs", "colls", "docs"];
 
     // store the element only if it does not end with dbs, colls or docs
     let p = u;

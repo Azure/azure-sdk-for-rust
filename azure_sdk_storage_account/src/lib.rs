@@ -14,28 +14,27 @@ extern crate uuid;
 extern crate xml;
 #[macro_use]
 extern crate log;
+extern crate azure_sdk_core;
+extern crate azure_sdk_storage_core;
+extern crate bytes;
 extern crate quick_error;
 extern crate serde;
-#[macro_use]
 extern crate serde_derive;
-extern crate bytes;
 extern crate serde_json;
 extern crate serde_xml_rs;
 extern crate smallvec;
-
-#[macro_use]
-extern crate azure_sdk_core;
-extern crate azure_sdk_storage_core;
 pub mod account;
 pub mod prelude;
 
 use azure_sdk_storage_core::client::Client;
 
 pub trait Account {
+    #[allow(clippy::needless_lifetimes)]
     fn get_account_information<'a>(&'a self) -> account::requests::GetAccountInformationBuilder<'a>;
 }
 
 impl Account for Client {
+    #[allow(clippy::needless_lifetimes)]
     fn get_account_information<'a>(&'a self) -> account::requests::GetAccountInformationBuilder<'a> {
         account::requests::GetAccountInformationBuilder::new(self)
     }

@@ -2,7 +2,6 @@
 extern crate failure;
 #[macro_use]
 extern crate serde_derive;
-#[macro_use]
 extern crate log;
 use azure_sdk_core::errors::AzureError;
 use futures::future::{done, ok, Future};
@@ -12,6 +11,7 @@ use oauth2::curl::http_client;
 use oauth2::{
     AuthType, AuthUrl, AuthorizationCode, ClientId, ClientSecret, CsrfToken, PkceCodeChallenge, PkceCodeVerifier, RedirectUrl, TokenUrl,
 };
+use std::str::FromStr;
 use url::form_urlencoded;
 use url::Url;
 mod login_response;
@@ -82,7 +82,7 @@ pub fn exchange(
         .set_pkce_verifier(auth_obj.pkce_code_verifier)
         .request(http_client);
 
-    println!("MS Graph returned the following token:\n{:?}\n", token);
+    debug!("MS Graph returned the following token:\n{:?}\n", token);
     token
 }
 
@@ -114,7 +114,7 @@ pub fn authorize_non_interactive(
     .and_then(move |request| {
         perform_http_request(&client, request, StatusCode::OK).and_then(|resp| {
             done(LoginResponse::from_str(&resp)).from_err().and_then(|r| {
-                println!("{:?}", r);
+                debug!("{:?}", r);
                 ok(r)
             })
         })

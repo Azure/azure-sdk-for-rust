@@ -25,7 +25,7 @@ impl CreateDocumentRequest {
         }
     }
 
-    request_option!(is_upsert, bool, HEADER_DOCUMENTDB_IS_UPSERT);
+    request_option!(upsert, bool, HEADER_DOCUMENTDB_IS_UPSERT);
     request_option!(indexing_directive, IndexingDirective, HEADER_INDEXING_DIRECTIVE);
     request_bytes_ref!(partition_key, str, HEADER_DOCUMENTDB_PARTITIONKEY);
     request_option!(use_multiple_write_locations, bool, HEADER_ALLOW_MULTIPLE_WRITES);
@@ -196,7 +196,7 @@ impl QueryDocumentRequest {
         let mut d = v.get_mut("Documents").unwrap().take();
         debug!("\n\nd == {:?}\n\n", d);
 
-        let docs = d.as_array_mut().unwrap().into_iter().map(|doc| {
+        let docs = d.as_array_mut().unwrap().iter_mut().map(|doc| {
             // We could either have a Document or a plain entry.
             // We will find out here.
             let mut doc = doc.take();
