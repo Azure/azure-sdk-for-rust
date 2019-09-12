@@ -5,12 +5,13 @@ use azure_sdk_storage_core::ClientRequired;
 use azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError};
 use azure_sdk_core::headers::BLOB_TYPE;
 use azure_sdk_core::lease::LeaseId;
+use azure_sdk_core::modify_conditions::IfMatchCondition;
 use azure_sdk_core::{
     BlobNameRequired, BlobNameSupport, BodyRequired, BodySupport, CacheControlOption, CacheControlSupport, ClientRequestIdOption,
     ClientRequestIdSupport, ContainerNameRequired, ContainerNameSupport, ContentDispositionOption, ContentDispositionSupport,
     ContentEncodingOption, ContentEncodingSupport, ContentLanguageOption, ContentLanguageSupport, ContentMD5Option, ContentMD5Support,
-    ContentTypeOption, ContentTypeSupport, LeaseIdOption, LeaseIdSupport, MetadataOption, MetadataSupport, No, TimeoutOption,
-    TimeoutSupport, ToAssign, Yes,
+    ContentTypeOption, ContentTypeSupport, IfMatchConditionOption, IfMatchConditionSupport, LeaseIdOption, LeaseIdSupport, MetadataOption,
+    MetadataSupport, No, TimeoutOption, TimeoutSupport, ToAssign, Yes,
 };
 use futures::future::{done, ok};
 use futures::prelude::*;
@@ -41,6 +42,7 @@ where
     content_disposition: Option<&'a str>,
     metadata: Option<&'a HashMap<&'a str, &'a str>>,
     lease_id: Option<&'a LeaseId>,
+    if_match_condition: Option<IfMatchCondition<'a>>,
     client_request_id: Option<&'a str>,
 }
 
@@ -64,6 +66,7 @@ impl<'a> PutBlockBlobBuilder<'a, No, No, No> {
             content_disposition: None,
             metadata: None,
             lease_id: None,
+            if_match_condition: None,
             client_request_id: None,
         }
     }
@@ -225,6 +228,19 @@ where
     }
 }
 
+impl<'a, ContainerNameSet, BlobNameSet, BodySet> IfMatchConditionOption<'a>
+    for PutBlockBlobBuilder<'a, ContainerNameSet, BlobNameSet, BodySet>
+where
+    ContainerNameSet: ToAssign,
+    BlobNameSet: ToAssign,
+    BodySet: ToAssign,
+{
+    #[inline]
+    fn if_match_condition(&self) -> Option<IfMatchCondition<'a>> {
+        self.if_match_condition
+    }
+}
+
 impl<'a, ContainerNameSet, BlobNameSet, BodySet> ClientRequestIdOption<'a>
     for PutBlockBlobBuilder<'a, ContainerNameSet, BlobNameSet, BodySet>
 where
@@ -266,6 +282,7 @@ where
             content_disposition: self.content_disposition,
             metadata: self.metadata,
             lease_id: self.lease_id,
+            if_match_condition: self.if_match_condition,
             client_request_id: self.client_request_id,
         }
     }
@@ -298,6 +315,7 @@ where
             content_disposition: self.content_disposition,
             metadata: self.metadata,
             lease_id: self.lease_id,
+            if_match_condition: self.if_match_condition,
             client_request_id: self.client_request_id,
         }
     }
@@ -330,6 +348,7 @@ where
             content_disposition: self.content_disposition,
             metadata: self.metadata,
             lease_id: self.lease_id,
+            if_match_condition: self.if_match_condition,
             client_request_id: self.client_request_id,
         }
     }
@@ -362,6 +381,7 @@ where
             content_disposition: self.content_disposition,
             metadata: self.metadata,
             lease_id: self.lease_id,
+            if_match_condition: self.if_match_condition,
             client_request_id: self.client_request_id,
         }
     }
@@ -394,6 +414,7 @@ where
             content_disposition: self.content_disposition,
             metadata: self.metadata,
             lease_id: self.lease_id,
+            if_match_condition: self.if_match_condition,
             client_request_id: self.client_request_id,
         }
     }
@@ -427,6 +448,7 @@ where
             content_disposition: self.content_disposition,
             metadata: self.metadata,
             lease_id: self.lease_id,
+            if_match_condition: self.if_match_condition,
             client_request_id: self.client_request_id,
         }
     }
@@ -460,6 +482,7 @@ where
             content_disposition: self.content_disposition,
             metadata: self.metadata,
             lease_id: self.lease_id,
+            if_match_condition: self.if_match_condition,
             client_request_id: self.client_request_id,
         }
     }
@@ -492,6 +515,7 @@ where
             content_disposition: self.content_disposition,
             metadata: self.metadata,
             lease_id: self.lease_id,
+            if_match_condition: self.if_match_condition,
             client_request_id: self.client_request_id,
         }
     }
@@ -524,6 +548,7 @@ where
             content_disposition: self.content_disposition,
             metadata: self.metadata,
             lease_id: self.lease_id,
+            if_match_condition: self.if_match_condition,
             client_request_id: self.client_request_id,
         }
     }
@@ -557,6 +582,7 @@ where
             content_disposition: Some(content_disposition),
             metadata: self.metadata,
             lease_id: self.lease_id,
+            if_match_condition: self.if_match_condition,
             client_request_id: self.client_request_id,
         }
     }
@@ -589,6 +615,7 @@ where
             content_disposition: self.content_disposition,
             metadata: Some(metadata),
             lease_id: self.lease_id,
+            if_match_condition: self.if_match_condition,
             client_request_id: self.client_request_id,
         }
     }
@@ -621,6 +648,41 @@ where
             content_disposition: self.content_disposition,
             metadata: self.metadata,
             lease_id: Some(lease_id),
+            if_match_condition: self.if_match_condition,
+            client_request_id: self.client_request_id,
+        }
+    }
+}
+
+impl<'a, ContainerNameSet, BlobNameSet, BodySet> IfMatchConditionSupport<'a>
+    for PutBlockBlobBuilder<'a, ContainerNameSet, BlobNameSet, BodySet>
+where
+    ContainerNameSet: ToAssign,
+    BlobNameSet: ToAssign,
+    BodySet: ToAssign,
+{
+    type O = PutBlockBlobBuilder<'a, ContainerNameSet, BlobNameSet, BodySet>;
+
+    #[inline]
+    fn with_if_match_condition(self, if_match_condition: IfMatchCondition<'a>) -> Self::O {
+        PutBlockBlobBuilder {
+            client: self.client,
+            p_container_name: PhantomData {},
+            p_blob_name: PhantomData {},
+            p_body: PhantomData {},
+            container_name: self.container_name,
+            blob_name: self.blob_name,
+            body: self.body,
+            timeout: self.timeout,
+            content_type: self.content_type,
+            content_encoding: self.content_encoding,
+            content_language: self.content_language,
+            cache_control: self.cache_control,
+            content_md5: self.content_md5,
+            content_disposition: self.content_disposition,
+            metadata: self.metadata,
+            lease_id: self.lease_id,
+            if_match_condition: Some(if_match_condition),
             client_request_id: self.client_request_id,
         }
     }
@@ -654,6 +716,7 @@ where
             content_disposition: self.content_disposition,
             metadata: self.metadata,
             lease_id: self.lease_id,
+            if_match_condition: self.if_match_condition,
             client_request_id: Some(client_request_id),
         }
     }
@@ -692,6 +755,7 @@ impl<'a> PutBlockBlobBuilder<'a, Yes, Yes, Yes> {
                 MetadataOption::add_header(&self, request);
                 request.header(BLOB_TYPE, "BlockBlob");
                 LeaseIdOption::add_header(&self, request);
+                IfMatchConditionOption::add_header(&self, request);
                 ClientRequestIdOption::add_header(&self, request);
             },
             Some(self.body()),
