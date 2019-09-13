@@ -572,10 +572,10 @@ where
         );
 
         let req = self.prepare_request_with_resource_link(
-            &document.document_attributes._self,
+            &document.document_attributes._self(),
             hyper::Method::PUT,
             ResourceType::Documents,
-            &document.document_attributes.rid.to_lowercase(),
+            &document.document_attributes.rid().to_lowercase(),
         );
 
         ReplaceDocumentRequest::new(self.hyper_client.clone(), req, document_serialized)
