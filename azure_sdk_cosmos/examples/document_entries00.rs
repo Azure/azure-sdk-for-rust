@@ -128,7 +128,7 @@ fn code() -> Result<(), Box<dyn Error>> {
             client
                 .replace_document(&database_name, &collection_name, &doc)
                 .partition_key(&id)
-                .if_match(doc.document_attributes.etag) // use optimistic concurrency check
+                .if_match(doc.document_attributes.etag()) // use optimistic concurrency check
                 .execute(),
         )
         .unwrap();
