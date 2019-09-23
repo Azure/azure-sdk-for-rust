@@ -83,6 +83,13 @@
 			"trait_set": "LeaseIdSupport<'a>"
 		},
 		{
+			"name": "if_match_condition",
+			"field_type": "IfMatchCondition<'a>",
+			"optional": true,
+			"trait_get": "IfMatchConditionOption<'a>",
+			"trait_set": "IfMatchConditionSupport<'a>"
+		},
+		{
 			"name": "client_request_id",
 			"field_type": "&'a str",
 			"optional": true,
