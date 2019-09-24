@@ -41,6 +41,7 @@ pub trait Blob {
     fn put_block_blob<'a>(&'a self) -> blob::requests::PutBlockBlobBuilder<'a, No, No, No>;
     fn put_page_blob<'a>(&'a self) -> blob::requests::PutPageBlobBuilder<'a, No, No, No>;
     fn put_append_blob<'a>(&'a self) -> blob::requests::PutAppendBlobBuilder<'a, No, No>;
+    fn put_append_block<'a>(&'a self) -> blob::requests::PutAppendBlockBuilder<'a, No, No, No>;
     fn update_page<'a>(&'a self) -> blob::requests::UpdatePageBuilder<'a, No, No, No, No>;
     fn clear_page<'a>(&'a self) -> blob::requests::ClearPageBuilder<'a, No, No, No>;
     fn put_block<'a>(&'a self) -> blob::requests::PutBlockBuilder<'a, No, No, No, No>;
@@ -89,6 +90,10 @@ impl Blob for Client {
 
     fn put_append_blob<'a>(&'a self) -> blob::requests::PutAppendBlobBuilder<'a, No, No> {
         blob::requests::PutAppendBlobBuilder::new(self)
+    }
+
+    fn put_append_block<'a>(&'a self) -> blob::requests::PutAppendBlockBuilder<'a, No, No, No> {
+        blob::requests::PutAppendBlockBuilder::new(self)
     }
 
     fn update_page<'a>(&'a self) -> blob::requests::UpdatePageBuilder<'a, No, No, No, No> {

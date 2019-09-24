@@ -45,8 +45,8 @@ pub mod range;
 use url::percent_encoding;
 pub mod headers;
 use self::headers::{
-    ACCOUNT_KIND, BLOB_ACCESS_TIER, BLOB_CONTENT_LENGTH, BLOB_SEQUENCE_NUMBER, CLIENT_REQUEST_ID, CONTENT_MD5, DELETE_SNAPSHOTS,
-    DELETE_TYPE_PERMANENT, LEASE_BREAK_PERIOD, LEASE_DURATION, LEASE_ID, LEASE_TIME, PROPOSED_LEASE_ID, REQUEST_ID,
+    ACCOUNT_KIND, APPEND_POSITION, BLOB_ACCESS_TIER, BLOB_CONTENT_LENGTH, BLOB_SEQUENCE_NUMBER, CLIENT_REQUEST_ID, CONTENT_MD5,
+    DELETE_SNAPSHOTS, DELETE_TYPE_PERMANENT, LEASE_BREAK_PERIOD, LEASE_DURATION, LEASE_ID, LEASE_TIME, PROPOSED_LEASE_ID, REQUEST_ID,
     REQUEST_SERVER_ENCRYPTED, SKU_NAME,
 };
 use hyper::header::{
@@ -147,6 +147,21 @@ pub trait ClientRequestIdOption<'a> {
     fn add_header(&self, builder: &mut Builder) {
         if let Some(client_request_id) = self.client_request_id() {
             builder.header(CLIENT_REQUEST_ID, client_request_id);
+        }
+    }
+}
+
+pub trait AppendPositionSupport<'a> {
+    type O;
+    fn with_append_position(self, append_position: &'a str) -> Self::O;
+}
+
+pub trait AppendPositionOption<'a> {
+    fn append_position(&self) -> Option<&'a str>;
+
+    fn add_header(&self, builder: &mut Builder) {
+        if let Some(append_position) = self.append_position() {
+            builder.header(APPEND_POSITION, append_position);
         }
     }
 }
