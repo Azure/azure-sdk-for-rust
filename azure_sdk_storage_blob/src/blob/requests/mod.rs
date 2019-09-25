@@ -18,6 +18,8 @@ mod list_blobs_builder;
 pub use self::list_blobs_builder::ListBlobBuilder;
 mod put_append_blob_builder;
 pub use self::put_append_blob_builder::PutAppendBlobBuilder;
+mod put_append_block_builder;
+pub use self::put_append_block_builder::PutAppendBlockBuilder;
 mod put_block_blob_builder;
 pub use self::put_block_blob_builder::PutBlockBlobBuilder;
 mod put_block_builder;

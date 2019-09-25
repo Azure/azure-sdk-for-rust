@@ -35,3 +35,4 @@ pub const DELETE_TYPE_PERMANENT: &str = "x-ms-delete-type-permanent";
 pub const DELETE_SNAPSHOTS: &str = "x-ms-delete-snapshots";
 pub const SKU_NAME: &str = "x-ms-sku-name";
 pub const ACCOUNT_KIND: &str = "x-ms-account-kind";
+pub const APPEND_POSITION: &str = "x-ms-blob-condition-appendpos";

@@ -1,7 +1,8 @@
 {
-	"name": "PutAppendBlobBuilder",
+	"name": "PutAppendBlockBuilder",
 	"extra_types": [ "'a" ],
 	"extra_wheres": [],
+	"inline": true,
 	"constructor_fields": [
 		{
 			"name": "client",
@@ -27,6 +28,14 @@
 			"trait_set": "BlobNameSupport<'a>"
 		},
 		{
+			"name": "body",
+			"field_type": "&'a [u8]",
+			"builder_type": "BodySet",
+			"optional": false,
+			"trait_get": "BodyRequired<'a>",
+			"trait_set": "BodySupport<'a>"
+		},
+		{
 			"name": "timeout",
 			"field_type": "u64",
 			"optional": true,
@@ -34,46 +43,11 @@
 			"trait_set": "TimeoutSupport"
 		},
 		{
-			"name": "content_type",
-			"field_type": "&'a str",
+			"name": "content_md5",
+			"field_type": "&'a [u8]",
 			"optional": true,
-			"trait_get": "ContentTypeOption<'a>",
-			"trait_set": "ContentTypeSupport<'a>"
-		},
-		{
-			"name": "content_encoding",
-			"field_type": "&'a str",
-			"optional": true,
-			"trait_get": "ContentEncodingOption<'a>",
-			"trait_set": "ContentEncodingSupport<'a>"
-		},
-		{
-			"name": "content_language",
-			"field_type": "&'a str",
-			"optional": true,
-			"trait_get": "ContentLanguageOption<'a>",
-			"trait_set": "ContentLanguageSupport<'a>"
-		},
-		{
-			"name": "cache_control",
-			"field_type": "&'a str",
-			"optional": true,
-			"trait_get": "CacheControlOption<'a>",
-			"trait_set": "CacheControlSupport<'a>"
-		},
-		{
-			"name": "content_disposition",
-			"field_type": "&'a str",
-			"optional": true,
-			"trait_get": "ContentDispositionOption<'a>",
-			"trait_set": "ContentDispositionSupport<'a>"
-		},
-		{
-			"name": "metadata",
-			"field_type": "&'a HashMap<&'a str, &'a str>",
-			"optional": true,
-			"trait_get": "MetadataOption<'a>",
-			"trait_set": "MetadataSupport<'a>"
+			"trait_get": "ContentMD5Option<'a>",
+			"trait_set": "ContentMD5Support<'a>"
 		},
 		{
 			"name": "lease_id",
@@ -95,6 +69,13 @@
 			"optional": true,
 			"trait_get": "ClientRequestIdOption<'a>",
 			"trait_set": "ClientRequestIdSupport<'a>"
+		},
+		{
+			"name": "append_position",
+			"field_type": "u32",
+			"optional": true,
+			"trait_get": "AppendPositionOption",
+			"trait_set": "AppendPositionSupport"
 		}
 	]
 }
