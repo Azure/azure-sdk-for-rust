@@ -72,7 +72,7 @@
 		},
 		{
 			"name": "append_position",
-			"field_type": "&'a str",
+			"field_type": "u32",
 			"optional": true,
 			"trait_get": "AppendPositionOption<'a>",
 			"trait_set": "AppendPositionSupport<'a>"

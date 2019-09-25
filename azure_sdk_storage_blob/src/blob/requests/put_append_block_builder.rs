@@ -34,7 +34,7 @@ where
     lease_id: Option<&'a LeaseId>,
     if_match_condition: Option<IfMatchCondition<'a>>,
     client_request_id: Option<&'a str>,
-    append_position: Option<&'a str>,
+    append_position: Option<u32>,
 }
 
 impl<'a> PutAppendBlockBuilder<'a, No, No, No> {
@@ -173,7 +173,7 @@ where
     BodySet: ToAssign,
 {
     #[inline]
-    fn append_position(&self) -> Option<&'a str> {
+    fn append_position(&self) -> Option<u32> {
         self.append_position
     }
 }
@@ -415,7 +415,7 @@ where
     type O = PutAppendBlockBuilder<'a, ContainerNameSet, BlobNameSet, BodySet>;
 
     #[inline]
-    fn with_append_position(self, append_position: &'a str) -> Self::O {
+    fn with_append_position(self, append_position: u32) -> Self::O {
         PutAppendBlockBuilder {
             client: self.client,
             p_container_name: PhantomData {},

@@ -151,13 +151,13 @@ pub trait ClientRequestIdOption<'a> {
     }
 }
 
-pub trait AppendPositionSupport<'a> {
+pub trait AppendPositionSupport {
     type O;
-    fn with_append_position(self, append_position: &'a str) -> Self::O;
+    fn with_append_position(self, append_position: u32) -> Self::O;
 }
 
-pub trait AppendPositionOption<'a> {
-    fn append_position(&self) -> Option<&'a str>;
+pub trait AppendPositionOption {
+    fn append_position(&self) -> Option<u32>;
 
     fn add_header(&self, builder: &mut Builder) {
         if let Some(append_position) = self.append_position() {
