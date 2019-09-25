@@ -165,8 +165,7 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, BodySet> AppendPositionOption<'a>
-    for PutAppendBlockBuilder<'a, ContainerNameSet, BlobNameSet, BodySet>
+impl<'a, ContainerNameSet, BlobNameSet, BodySet> AppendPositionOption for PutAppendBlockBuilder<'a, ContainerNameSet, BlobNameSet, BodySet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
@@ -405,8 +404,7 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, BodySet> AppendPositionSupport<'a>
-    for PutAppendBlockBuilder<'a, ContainerNameSet, BlobNameSet, BodySet>
+impl<'a, ContainerNameSet, BlobNameSet, BodySet> AppendPositionSupport for PutAppendBlockBuilder<'a, ContainerNameSet, BlobNameSet, BodySet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
