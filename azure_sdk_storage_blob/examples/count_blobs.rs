@@ -1,7 +1,7 @@
 use azure_sdk_core::prelude::*;
 use azure_sdk_storage_blob::prelude::*;
 use azure_sdk_storage_core::prelude::*;
-use futures::future::*;
+use futures::Stream;
 use std::error::Error;
 use tokio_core::reactor::Core;
 
@@ -21,22 +21,12 @@ fn code() -> Result<(), Box<dyn Error>> {
     let client = Client::new(&account, &master_key)?;
 
     let mut count = 0;
-    let mut next_marker: Option<String> = None;
-
-    loop {
-        let mut list_blobs = client.list_blobs().with_container_name(&container);
-        if let Some(ref marker) = next_marker {
-            list_blobs = list_blobs.with_next_marker(marker);
-        }
-        let future = list_blobs.finalize().map(|iv| {
-            count += iv.incomplete_vector.len();
-            next_marker = iv.incomplete_vector.token;
-        });
-        core.run(future)?;
-        if next_marker.is_none(){
-            break;
-        }
-    }
+    let list_blobs = client.stream_list_blobs().with_container_name(&container);
+    let future = list_blobs.finalize().for_each(|_blob| {
+        count += 1;
+        Ok(())
+    });
+    core.run(future)?;
 
     println!("blob count {}", count);
 
