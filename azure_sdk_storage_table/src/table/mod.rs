@@ -1,7 +1,7 @@
 mod batch;
 use self::batch::generate_batch_payload;
 pub use self::batch::BatchItem;
-use azure_sdk_core::errors::{check_status_extract_body, extract_status_and_body, AzureError, UnexpectedHTTPResult};
+use azure_sdk_core::errors::{check_status_extract_body, check_status_extract_headers_and_body, extract_status_and_body, AzureError, UnexpectedHTTPResult};
 use azure_sdk_storage_core::client::Client;
 use azure_sdk_storage_core::{get_default_json_mime, get_json_mime_nometadata, ServiceType};
 use futures::future::*;
@@ -13,6 +13,9 @@ use hyper::{
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 use serde_json;
+use futures::Stream;
+use futures::stream;
+use http::HeaderMap;
 
 const TABLE_TABLES: &str = "TABLES";
 
@@ -94,6 +97,66 @@ impl TableService {
                     .and_then(|ec| ok(ec.value))
             })
         })
+    }
+
+    fn query_entity_collection<T: DeserializeOwned>(
+        &self,
+        table_name: &str,
+        query: Option<&str>,
+        continuation: Option<&Continuation>,
+    ) -> impl Future<Item = EntityCollection<T>, Error = AzureError> {
+        let mut path = table_name.to_owned();
+        path.push_str("?");
+        if let Some(clause) = query {
+            path.push_str(clause);
+        }
+        if let Some(cont) = continuation {
+            path.push_str("&NextPartitionKey=");
+            path.push_str(&cont.next_partition_key);
+            path.push_str("&NextRowKey=");
+            path.push_str(&cont.next_row_key);
+        }
+
+        let req = self.request_with_default_header(path.as_str(), &Method::GET, None);
+
+        done(req)
+            .from_err()
+            .and_then(move |future_response| check_status_extract_headers_and_body(future_response, StatusCode::OK))
+            .and_then(move |(headers, body)| done({
+                serde_json::from_slice::<EntityCollection<T>>(&body)
+                .map(|mut ec| {
+                    ec.continuation = continuation_from_headers(&headers);
+                    ec
+                })
+             }).from_err())
+    }
+
+    pub fn stream_query_entities<'a, T: DeserializeOwned + 'a>(
+        &'a self,
+        table_name: &'a str,
+        query: Option<&'a str>,
+    ) ->  impl Stream<Item = T, Error = AzureError> + 'a {
+
+        stream::unfold(ContinuationState::Start, move |cont_state| {
+            let cont = match cont_state {
+                ContinuationState::Start => None,
+                ContinuationState::Next(Some(cont)) => Some(cont),
+                ContinuationState::Next(None) => return None,
+            };
+
+            let mut path = table_name.to_owned();
+            if let Some(clause) = query {
+                path.push_str("?");
+                path.push_str(clause);
+            }
+
+            let req = self.query_entity_collection(table_name, query, cont.as_ref());
+
+            Some(req.map(move |ec| {
+                (stream::iter_ok(ec.value), ContinuationState::Next(ec.continuation))
+            }))
+        })
+        .flatten()
     }
 
     fn _prepare_insert_entity<T>(&self, table_name: &str, entity: &T) -> Result<ResponseFuture, AzureError>
@@ -205,6 +268,20 @@ impl TableService {
     }
 }
 
+const HEADER_NEXTPARTITIONKEY: &'static str = "x-ms-continuation-NextPartitionKey";
+const HEADER_NEXTROWKEY: &'static str = "x-ms-continuation-NextRowKey";
+
+fn continuation_from_headers(headers: &HeaderMap) -> Option<Continuation> {
+    if headers.contains_key(HEADER_NEXTPARTITIONKEY) && headers.contains_key(HEADER_NEXTROWKEY){
+        Some(Continuation {
+            next_partition_key: headers[HEADER_NEXTPARTITIONKEY].to_str().unwrap().to_string(),
+            next_row_key: headers[HEADER_NEXTROWKEY].to_str().unwrap().to_string(),
+        })
+    } else {
+        None
+    }
+}
+
 #[allow(non_snake_case)]
 #[derive(Serialize, Deserialize)]
 struct TableEntity {
@@ -214,6 +291,18 @@ struct TableEntity {
 #[derive(Deserialize)]
 struct EntityCollection<T> {
     value: Vec<T>,
+    #[serde(skip)]
+    continuation: Option<Continuation>,
+}
+
+struct Continuation {
+    next_partition_key: String,
+    next_row_key: String,
+}
+
+enum ContinuationState {
+    Start,
+    Next(Option<Continuation>),
 }
 
 #[inline]
