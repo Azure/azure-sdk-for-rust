@@ -3,12 +3,9 @@
 extern crate serde_derive;
 
 use azure_sdk_cosmos::collection::*;
+use azure_sdk_cosmos::query::Query;
 
 mod setup;
-
-const DATABASE_NAME: &str = "test-cosmos-db";
-const COLLECTION_NAME: &str = "test-collection";
-const DOCUMENT_NAME: &str = "test-document-name";
 
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 struct Document {
@@ -18,6 +15,10 @@ struct Document {
 
 #[test]
 fn create_and_delete_document() {
+    const DATABASE_NAME: &str = "test-cosmos-db-create-and-delete-document";
+    const COLLECTION_NAME: &str = "test-collection-create-and-delete-document";
+    const DOCUMENT_NAME: &str = "test-document-name-create-and-delete-document";
+
     let (client, mut core) = setup::initialize().unwrap();
 
     core.run(client.create_database(DATABASE_NAME)).unwrap();
@@ -68,9 +69,55 @@ fn create_and_delete_document() {
 }
 
 #[test]
-#[ignore]
-fn replace_document() {}
+fn query_documents() {
+    const DATABASE_NAME: &str = "test-cosmos-db-query-documents";
+    const COLLECTION_NAME: &str = "test-collection-query-documents";
+    const DOCUMENT_NAME: &str = "test-document-name-query-documents";
+
+    let (client, mut core) = setup::initialize().unwrap();
+
+    core.run(client.create_database(DATABASE_NAME)).unwrap();
+
+    // create a new collection
+    let collection_to_create = Collection::new(
+        COLLECTION_NAME,
+        IndexingPolicy {
+            automatic: true,
+            indexing_mode: IndexingMode::Consistent,
+            included_paths: vec![],
+            excluded_paths: vec![],
+        },
+    );
+    core.run(client.create_collection(DATABASE_NAME, 400, &collection_to_create))
+        .unwrap();
+
+    // create a new document
+    let document_data = Document {
+        id: DOCUMENT_NAME.to_string(),
+        hello: 42,
+    };
+    let document = core
+        .run(client.create_document(DATABASE_NAME, COLLECTION_NAME, &document_data).execute())
+        .unwrap();
+    let documents = core
+        .run(client.list_documents(DATABASE_NAME, COLLECTION_NAME).execute::<Document>())
+        .unwrap()
+        .documents;
+    assert!(documents.len() == 1);
+
+    // now query all documents and see if we get the correct result
+    let query_request = client
+        .query_documents(DATABASE_NAME, COLLECTION_NAME, Query::new("SELECT * FROM c"))
+        .execute::<Document>();
+    let query_result = core.run(query_request).unwrap().results;
+
+    assert!(query_result.len() == 1);
+    assert!(query_result[0].document_attributes.as_ref().unwrap().rid() == document.rid());
+    assert_eq!(query_result[0].result, document_data);
+
+    core.run(client.delete_database(DATABASE_NAME)).unwrap();
+}
 
 #[test]
 #[ignore]
-fn query_documents() {}
+fn replace_document() {}

@@ -2,10 +2,10 @@
 
 mod setup;
 
-const DATABASE_NAME: &str = "cosmos-test-db";
-
 #[test]
 fn create_and_delete_database() {
+    const DATABASE_NAME: &str = "cosmos-test-db-create-and-delete-database";
+
     let (client, mut core) = setup::initialize().unwrap();
 
     // list existing databases and remember their number

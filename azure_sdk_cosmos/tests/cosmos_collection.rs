@@ -4,11 +4,11 @@ use azure_sdk_cosmos::collection::*;
 
 mod setup;
 
-const DATABASE_NAME: &str = "test-cosmos-db";
-const COLLECTION_NAME: &str = "test-collection";
-
 #[test]
 fn create_and_delete_collection() {
+    const DATABASE_NAME: &str = "test-cosmos-db-create-and-delete-collection";
+    const COLLECTION_NAME: &str = "test-collection-create-and-delete-collection";
+
     let (client, mut core) = setup::initialize().unwrap();
 
     core.run(client.create_database(DATABASE_NAME)).unwrap();
