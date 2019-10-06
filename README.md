@@ -302,6 +302,9 @@ export AZURE_EVENT_HUB_NAME=<azure_event_hub_name>
 export AZURE_POLICY_NAME=<azure_policy_name>
 export AZURE_POLICY_KEY=<azure policy key>
 
+export COSMOS_ACCOUNT=<cosmos_account>
+export COSMOS_KEY=<cosmos_master_key>
+
 cd azure_sdk_service_bus
 cargo test --features=test_e2e
 
@@ -309,6 +312,9 @@ cd ../azure_sdk_storage_blob
 cargo test --features=test_e2e
 
 cd ../azure_sdk_storage_account
+cargo test --features=test_e2e
+
+cd ../azure_sdk_cosmos
 cargo test --features=test_e2e
 ```
 
@@ -323,6 +329,9 @@ set AZURE_EVENT_HUB_NAME=<azure_event_hub_name>
 set AZURE_POLICY_NAME=<azure_policy_name>
 set AZURE_POLICY_KEY=<azure policy key>
 
+set COSMOS_ACCOUNT=<cosmos_account>
+set COSMOS_MASTER_KEY=<cosmos_master_key>
+
 cd azure_sdk_service_bus
 cargo test --features=test_e2e
 
@@ -330,6 +339,9 @@ cd ../azure_sdk_storage_blob
 cargo test --features=test_e2e
 
 cd ../azure_sdk_storage_account
+cargo test --features=test_e2e
+
+cd ../azure_sdk_cosmos
 cargo test --features=test_e2e
 ```
 
