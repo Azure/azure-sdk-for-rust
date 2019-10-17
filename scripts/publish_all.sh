@@ -4,13 +4,19 @@ cd azure_sdk_core
 cargo publish
 cd ..
 
+sleep 20
+
 cd azure_sdk_storage_core
 cargo publish
 cd ..
 
+sleep 20
+
 cd azure_sdk_storage_account
 cargo publish
 cd ..
+
+sleep 20
 
 cd azure_sdk_storage_blob
 cargo publish
