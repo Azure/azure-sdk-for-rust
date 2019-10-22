@@ -7,7 +7,7 @@ use azure_sdk_core::errors::AzureError;
 use futures::future::{done, ok, Future};
 use log::debug;
 use oauth2::basic::BasicClient;
-use oauth2::curl::http_client;
+use oauth2::reqwest::http_client;
 use oauth2::{
     AuthType, AuthUrl, AuthorizationCode, ClientId, ClientSecret, CsrfToken, PkceCodeChallenge, PkceCodeVerifier, RedirectUrl, TokenUrl,
 };
@@ -72,7 +72,7 @@ pub fn exchange(
     code: AuthorizationCode,
 ) -> Result<
     oauth2::StandardTokenResponse<oauth2::EmptyExtraTokenFields, oauth2::basic::BasicTokenType>,
-    oauth2::RequestTokenError<oauth2::curl::Error, oauth2::StandardErrorResponse<oauth2::basic::BasicErrorResponseType>>,
+    oauth2::RequestTokenError<oauth2::reqwest::Error, oauth2::StandardErrorResponse<oauth2::basic::BasicErrorResponseType>>,
 > {
     // Exchange the code with a token.
     let token = auth_obj
