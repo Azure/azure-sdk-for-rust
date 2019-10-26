@@ -98,7 +98,9 @@ fn code() -> Result<(), Box<dyn Error>> {
             // Performance levels have price impact. Also, higher
             // performance levels force you to specify an indexing
             // strategy. Consult the documentation for more details.
-            core.run(client.create_collection(&database.id, 400, &coll))?
+            core.run(client.create_collection(&database.id, Offer::Throughput(400), &coll))?
+            // you can also use the predefined performance levels. For example:
+            //core.run(client.create_collection(&database.id, Offer::S2, &coll))?
         }
     };
 
