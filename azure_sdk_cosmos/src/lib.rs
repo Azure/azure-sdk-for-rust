@@ -35,12 +35,14 @@ pub mod request_response;
 
 pub mod collection;
 pub mod document;
+pub mod offer;
 mod partition_key;
 pub mod prelude;
 pub mod query;
 
 pub use self::authorization_token::*;
 pub use self::client::*;
+pub use self::offer::Offer;
 pub use self::partition_key::*;
 pub use self::requests::*;
 

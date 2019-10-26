@@ -4,7 +4,7 @@ use super::{
     query::Query,
     request_response::{Document, ListCollectionsResponse, ListDatabasesResponse},
     requests::*,
-    AuthorizationToken, TokenType,
+    AuthorizationToken, Offer, TokenType,
 };
 use azure_sdk_core::{
     errors::{check_status_extract_body, AzureError},
@@ -35,6 +35,7 @@ pub(crate) mod headers {
     pub const HEADER_VERSION: &str = "x-ms-version"; // Cow[str]
     pub const HEADER_DATE: &str = "x-ms-date"; // [String]
     pub const HEADER_OFFER_THROUGHPUT: &str = "x-ms-offer-throughput"; // [u64]
+    pub const HEADER_OFFER_TYPE: &str = "x-ms-offer-type"; // [&str]
     pub const HEADER_DOCUMENTDB_IS_UPSERT: &str = "x-ms-documentdb-is-upsert"; // [bool]
     pub const HEADER_INDEXING_DIRECTIVE: &str = "x-ms-indexing-directive"; // [IndexingDirective]
     pub const HEADER_MAX_ITEM_COUNT: &str = "x-ms-max-item-count"; // [u64]
@@ -366,7 +367,7 @@ where
     fn create_collection_create_request(
         &self,
         database_name: &str,
-        required_throughput: u64,
+        offer: Offer,
         collection: &Collection,
     ) -> Result<hyper::client::ResponseFuture, AzureError> {
         // Headers added as per
@@ -380,9 +381,15 @@ where
             hyper::Method::POST,
             ResourceType::Collections,
         );
-        request.header_formatted(HEADER_OFFER_THROUGHPUT, required_throughput);
-        let request = request.body(collection_serialized.into())?;
 
+        match offer {
+            Offer::Throughput(throughput) => request.header_formatted(HEADER_OFFER_THROUGHPUT, throughput),
+            Offer::S1 => request.header_formatted(HEADER_OFFER_TYPE, "S1"),
+            Offer::S2 => request.header_formatted(HEADER_OFFER_TYPE, "S2"),
+            Offer::S3 => request.header_formatted(HEADER_OFFER_TYPE, "S3"),
+        };
+
+        let request = request.body(collection_serialized.into())?;
         trace!("request prepared");
 
         Ok(self.hyper_client.request(request))
@@ -391,18 +398,18 @@ where
     pub fn create_collection(
         &self,
         database_name: &str,
-        required_throughput: u64,
+        offer: Offer,
         collection: &Collection,
     ) -> impl Future<Item = Collection, Error = AzureError> {
         trace!(
             "create_collection(database_name == {:?}, \
-             required_throughput == {:?}, collection == {:?} called",
+             offer == {:?}, collection == {:?} called",
             database_name,
-            required_throughput,
+            offer,
             collection
         );
 
-        let req = self.create_collection_create_request(database_name, required_throughput, collection);
+        let req = self.create_collection_create_request(database_name, offer, collection);
 
         done(req).from_err().and_then(move |future_response| {
             check_status_extract_body(future_response, StatusCode::CREATED)
