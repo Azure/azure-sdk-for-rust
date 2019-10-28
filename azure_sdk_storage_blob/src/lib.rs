@@ -56,6 +56,7 @@ pub trait Blob {
     fn delete_blob<'a>(&'a self) -> blob::requests::DeleteBlobBuilder<'a, No, No, No>;
     fn stream_list_blobs<'a>(&'a self) -> blob::ListBlobStreamBuilder<'a, No>;
     fn stream_blob<'a>(&'a self) -> blob::BlobStreamBuilder<'a, No, No, No>;
+    fn generate_signed_blob_url<'a>(&'a self) -> blob::SignedUrlBuilder<'a, No, No, No>;
 }
 
 pub trait Container {
@@ -150,6 +151,9 @@ impl Blob for Client {
 
     fn stream_blob<'a>(&'a self) -> blob::BlobStreamBuilder<'a, No, No, No> {
         blob::BlobStreamBuilder::new(self)
+    }
+    fn generate_signed_blob_url<'a>(&'a self) -> blob::SignedUrlBuilder<'a, No, No, No> {
+        blob::SignedUrlBuilder::new(self)
     }
 }
 

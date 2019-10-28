@@ -33,3 +33,14 @@ pub trait ClientRequired<'a> {
 mod into_azure_path;
 pub mod prelude;
 pub use self::into_azure_path::IntoAzurePath;
+
+pub mod shared_access_signature;
+
+pub trait SharedAccessSignatureSupport<'a> {
+    type O;
+    fn with_shared_access_signature(self, signature: &'a shared_access_signature::SharedAccessSignature) -> Self::O;
+}
+
+pub trait SharedAccessSignatureRequired<'a> {
+    fn shared_access_signature(&self) -> &'a shared_access_signature::SharedAccessSignature;
+}
