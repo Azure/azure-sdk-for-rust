@@ -6,6 +6,8 @@ use super::{
     requests::*,
     AuthorizationToken, Offer, TokenType,
 };
+use crate::create_collection_builder::CreateCollectionBuilder;
+use azure_sdk_core::No;
 use azure_sdk_core::{
     errors::{check_status_extract_body, AzureError},
     util::RequestBuilderExt,
@@ -393,6 +395,10 @@ where
         trace!("request prepared");
 
         Ok(self.hyper_client.request(request))
+    }
+
+    pub fn create_collection_builder(&self) -> CreateCollectionBuilder<CUB, No, No, No, No> {
+        CreateCollectionBuilder::new(self)
     }
 
     pub fn create_collection(

@@ -93,14 +93,21 @@ fn code() -> Result<(), Box<dyn Error>> {
                 excluded_paths: vec![],
             };
 
-            let coll = Collection::new(COLLECTION, ip);
             // Notice here we specify the expected performance level.
             // Performance levels have price impact. Also, higher
             // performance levels force you to specify an indexing
             // strategy. Consult the documentation for more details.
-            core.run(client.create_collection(&database.id, Offer::Throughput(400), &coll))?
             // you can also use the predefined performance levels. For example:
-            //core.run(client.create_collection(&database.id, Offer::S2, &coll))?
+            // `Offer::S2`.
+            core.run(
+                client
+                    .create_collection_builder()
+                    .with_id(COLLECTION)
+                    .with_database_name(&database.id)
+                    .with_offer(Offer::Throughput(400))
+                    .with_indexing_policy(ip)
+                    .finalize(),
+            )?
         }
     };
 
