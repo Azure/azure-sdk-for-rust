@@ -1,15 +1,19 @@
+use crate::IPRange;
 use azure_sdk_core::{
     errors::AzureError,
     headers,
     util::{format_header_value, HeaderMapExt, RequestBuilderExt},
+    COMPLETE_ENCODE_SET,
 };
 use base64;
 use chrono;
+use chrono::{DateTime, Utc};
 use hyper::{self, header, HeaderMap, Method};
 use hyper_rustls::HttpsConnector;
 use ring::{digest::SHA256, hmac};
 use std::fmt::Write;
 use url;
+use url::percent_encoding::utf8_percent_encode;
 
 #[derive(Debug, Clone, Copy)]
 pub enum ServiceType {
@@ -19,6 +23,7 @@ pub enum ServiceType {
 }
 
 const AZURE_VERSION: &str = "2018-03-28";
+const SAS_VERSION: &str = "2019-02-02";
 
 pub const HEADER_VERSION: &str = "x-ms-version"; //=> [String] }
 pub const HEADER_DATE: &str = "x-ms-date"; //=> [String] }
@@ -51,6 +56,216 @@ fn add_if_exists<K: header::AsHeaderName>(h: &HeaderMap, key: K) -> &str {
         Some(ce) => ce.to_str().unwrap(),
         None => "",
     }
+}
+
+#[allow(dead_code)]
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub(crate) enum SASType {
+    Container,
+    Blob,
+    FileShare,
+    File,
+    Queue,
+    Table,
+}
+
+pub(crate) fn generate_storage_sas(
+    key: &str,
+    start: Option<&DateTime<Utc>>,
+    end: &DateTime<Utc>,
+    path: &url::Url,
+    permission: &str,
+    identifier: &str,
+    ip_range: Option<&IPRange>,
+    resource: SASType,
+    snapshot_time: Option<&DateTime<Utc>>,
+    cache_control: &str,
+    content_disposition: &str,
+    content_encoding: &str,
+    content_language: &str,
+    content_type: &str,
+    starting_pk: &str,
+    ending_pk: &str,
+    starting_rk: &str,
+    ending_rk: &str,
+) -> String {
+    let canonicalized_resource = canonicalized_resource(path);
+    debug!("canonicalized_resource == {}", canonicalized_resource);
+
+    // if it's multiline take the first line only
+    let canonicalized_resource = canonicalized_resource.lines().next().unwrap();
+
+    let start_string = if let Some(start) = start {
+        start.to_rfc3339_opts(chrono::SecondsFormat::Secs, true)
+    } else {
+        "".to_owned()
+    };
+    debug!("start_string == {}", start_string);
+    let end_string = end.to_rfc3339_opts(chrono::SecondsFormat::Secs, true);
+    debug!("end_string == {}", end_string);
+    let snapshot_time_string = if let Some(snapshot_time) = snapshot_time {
+        snapshot_time.to_rfc3339_opts(chrono::SecondsFormat::Secs, true)
+    } else {
+        "".to_owned()
+    };
+    debug!("snapshot_time_string == {}", snapshot_time_string);
+
+    let protocol = path.scheme();
+    debug!("protocol == {}", protocol);
+
+    let resource_char = match resource {
+        SASType::Blob => "b",
+        SASType::Container => "c",
+        SASType::FileShare => "s", // this is guessed... can and most likely will be wrong
+        SASType::File => "f",      // this is guessed... can and most likely will be wrong
+        SASType::Queue => "q",
+        SASType::Table => "t",
+    };
+    debug!("resource_char == {}", resource_char);
+
+    let type_canonicalized_resource = format!(
+        "{}{}",
+        match resource {
+            SASType::Blob => "/blob",
+            SASType::Container => "/blob",
+            SASType::FileShare => "/file",
+            SASType::File => "/file",
+            SASType::Queue => "/queue",
+            SASType::Table => "/table",
+        },
+        canonicalized_resource
+    );
+    debug!("type_canonicalized_resource == {}", type_canonicalized_resource);
+
+    let ip_range_string = if let Some(ip_range) = ip_range {
+        format!("{}-{}", ip_range.start.to_string(), ip_range.end.to_string())
+    } else {
+        "".to_owned()
+    };
+
+    let string_to_sign = match resource {
+        // File and FileShare are guessed. The documentation is
+        // incosistent
+        // (https://docs.microsoft.com/en-us/rest/api/storageservices/create-service-sas#version-2018-11-09-and-later)
+        SASType::Blob | SASType::Container | SASType::File | SASType::FileShare => format!(
+            "{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}",
+            permission,
+            start_string,
+            end_string,
+            type_canonicalized_resource,
+            identifier,
+            ip_range_string,
+            protocol,
+            SAS_VERSION,
+            resource_char,
+            snapshot_time_string,
+            cache_control,
+            content_disposition,
+            content_encoding,
+            content_language,
+            content_type
+        ),
+        SASType::Table => format!(
+            "{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}",
+            permission,
+            start_string,
+            end_string,
+            type_canonicalized_resource,
+            identifier,
+            ip_range_string,
+            protocol,
+            SAS_VERSION,
+            starting_pk,
+            starting_rk,
+            ending_pk,
+            ending_rk,
+        ),
+        SASType::Queue => format!(
+            "{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}",
+            permission, start_string, end_string, type_canonicalized_resource, identifier, ip_range_string, protocol, SAS_VERSION,
+        ),
+    };
+
+    debug!("string_to_sign == \n{}", string_to_sign);
+
+    let key = hmac::SigningKey::new(&SHA256, &base64::decode(key).unwrap());
+    let sig = hmac::sign(&key, string_to_sign.as_bytes());
+
+    let result = base64::encode(sig.as_ref());
+
+    let token = format!(
+        "{}{}{}{}{}{}{}{}{}{}{}{}se={}&sp={}&sr={}&spr={}&sv={}&sig={}",
+        if let Some(_) = start {
+            format!("st={}&", utf8_percent_encode(&start_string, COMPLETE_ENCODE_SET))
+        } else {
+            "".to_owned()
+        },
+        if let Some(_) = snapshot_time {
+            // sst is guessed, I haven't been able to find the correct one in
+            // the docs.
+            format!("sst={}&", utf8_percent_encode(&snapshot_time_string, COMPLETE_ENCODE_SET))
+        } else {
+            "".to_owned()
+        },
+        if let Some(_) = ip_range {
+            format!("sip={}&", utf8_percent_encode(&ip_range_string, COMPLETE_ENCODE_SET))
+        } else {
+            "".to_owned()
+        },
+        if cache_control.is_empty() {
+            "".to_owned()
+        } else {
+            format!("rscc={}&", utf8_percent_encode(&cache_control, COMPLETE_ENCODE_SET))
+        },
+        if content_disposition.is_empty() {
+            "".to_owned()
+        } else {
+            format!("rscd={}&", utf8_percent_encode(&content_disposition, COMPLETE_ENCODE_SET))
+        },
+        if content_encoding.is_empty() {
+            "".to_owned()
+        } else {
+            format!("rsce={}&", utf8_percent_encode(&content_encoding, COMPLETE_ENCODE_SET))
+        },
+        if content_language.is_empty() {
+            "".to_owned()
+        } else {
+            format!("rscl={}&", utf8_percent_encode(&content_language, COMPLETE_ENCODE_SET))
+        },
+        if content_type.is_empty() {
+            "".to_owned()
+        } else {
+            format!("rsct={}&", utf8_percent_encode(&content_type, COMPLETE_ENCODE_SET))
+        },
+        if starting_pk.is_empty() {
+            "".to_owned()
+        } else {
+            format!("spk={}&", utf8_percent_encode(&starting_pk, COMPLETE_ENCODE_SET))
+        },
+        if ending_pk.is_empty() {
+            "".to_owned()
+        } else {
+            format!("epk={}&", utf8_percent_encode(&ending_pk, COMPLETE_ENCODE_SET))
+        },
+        if starting_rk.is_empty() {
+            "".to_owned()
+        } else {
+            format!("srk={}&", utf8_percent_encode(&starting_rk, COMPLETE_ENCODE_SET))
+        },
+        if ending_rk.is_empty() {
+            "".to_owned()
+        } else {
+            format!("erk={}&", utf8_percent_encode(&ending_rk, COMPLETE_ENCODE_SET))
+        },
+        utf8_percent_encode(&end_string, COMPLETE_ENCODE_SET),
+        permission,
+        resource_char,
+        protocol,
+        SAS_VERSION,
+        utf8_percent_encode(&result, COMPLETE_ENCODE_SET),
+    );
+
+    token
 }
 
 #[allow(unknown_lints)]
@@ -304,7 +519,7 @@ mod test {
         let dt = chrono::DateTime::parse_from_rfc2822("Fri, 28 Nov 2014 21:00:09 +0900").unwrap();
         let time = format!("{}", dt.format("%a, %d %h %Y %T GMT%Z"));
 
-        println!("time == {}", time);
+        debug!("time == {}", time);
 
         let mut h = hyper::header::HeaderMap::new();
 
