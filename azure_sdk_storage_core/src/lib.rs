@@ -33,7 +33,8 @@ pub trait ClientRequired<'a> {
 mod into_azure_path;
 pub mod prelude;
 pub use self::into_azure_path::IntoAzurePath;
-
+mod blob_sas_builder;
+mod container_sas_builder;
 pub mod shared_access_signature;
 
 pub trait SharedAccessSignatureSupport<'a> {
@@ -43,4 +44,10 @@ pub trait SharedAccessSignatureSupport<'a> {
 
 pub trait SharedAccessSignatureRequired<'a> {
     fn shared_access_signature(&self) -> &'a shared_access_signature::SharedAccessSignature;
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct IPRange {
+    pub start: std::net::IpAddr,
+    pub end: std::net::IpAddr,
 }
