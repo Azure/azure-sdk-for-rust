@@ -1,11 +1,11 @@
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub enum KeyKind {
     Hash,
     Range,
     Spatial,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub enum DataType {
     String,
     Number,
@@ -14,7 +14,7 @@ pub enum DataType {
     LineString,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub enum IndexingMode {
     #[serde(rename = "consistent")]
     Consistent,
@@ -22,7 +22,7 @@ pub enum IndexingMode {
     Lazy,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct IncludedPath {
     #[serde(rename = "path")]
     pub path: String,
@@ -30,7 +30,7 @@ pub struct IncludedPath {
     pub indexes: Vec<IncludedPathIndex>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct IncludedPathIndex {
     #[serde(rename = "dataType")]
     pub data_type: DataType,
@@ -40,19 +40,19 @@ pub struct IncludedPathIndex {
     pub kind: KeyKind,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct ExcludedPath {
     #[serde(rename = "path")]
     pub path: String,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct PartitionKey {
     pub paths: Vec<String>,
     pub kind: KeyKind,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct IndexingPolicy {
     #[serde(rename = "automatic")]
     pub automatic: bool,
@@ -64,7 +64,7 @@ pub struct IndexingPolicy {
     pub excluded_paths: Vec<ExcludedPath>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Collection {
     pub id: String,
     #[serde(rename = "indexingPolicy")]

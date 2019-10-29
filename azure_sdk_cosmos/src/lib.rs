@@ -28,6 +28,7 @@ extern crate azure_sdk_core;
 
 mod authorization_token;
 mod client;
+mod create_collection_builder;
 pub mod database;
 mod requests;
 
