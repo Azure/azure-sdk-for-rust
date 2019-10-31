@@ -31,7 +31,7 @@ fn code() -> Result<(), Box<dyn Error>> {
     core.run(create_table)?;
 
     let mut count = 0;
-    let inserts = table_service.stream_query_entities(&table_name, None)
+    let inserts = table_service.stream_query_entities_fullmetadata(&table_name, None)
         .for_each(|entity: serde_json::Value| {
             count += 1;
             to_table_service.insert_entity(&table_name, &entity)

@@ -507,6 +507,11 @@ pub fn get_json_mime_nometadata() -> &'static str {
     "application/json; odata=nometadata"
 }
 
+#[inline]
+pub fn get_json_mime_fullmetadata() -> &'static str {
+    "application/json; odata=fullmetadata"
+}
+
 mod test {
     extern crate chrono;
     extern crate hyper;

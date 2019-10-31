@@ -3,7 +3,7 @@ use self::batch::generate_batch_payload;
 pub use self::batch::BatchItem;
 use azure_sdk_core::errors::{check_status_extract_body, check_status_extract_headers_and_body, extract_status_and_body, AzureError, UnexpectedHTTPResult};
 use azure_sdk_storage_core::client::Client;
-use azure_sdk_storage_core::{get_default_json_mime, get_json_mime_nometadata, ServiceType};
+use azure_sdk_storage_core::{get_default_json_mime, get_json_mime_nometadata, get_json_mime_fullmetadata, ServiceType};
 use futures::future::*;
 use hyper::{
     client::ResponseFuture,
@@ -42,7 +42,7 @@ impl TableService {
         })
         .unwrap();
         debug!("body == {}", body);
-        let req = self.request_with_default_header(TABLE_TABLES, &Method::POST, Some(body));
+        let req = self.request_with_default_header(TABLE_TABLES, &Method::POST, Some(body), false);
 
         done(req)
             .from_err()
@@ -56,7 +56,7 @@ impl TableService {
         row_key: &str,
     ) -> impl Future<Item = Option<T>, Error = AzureError> {
         let path = &entity_path(table_name, partition_key, row_key);
-        let req = self.request_with_default_header(path, &Method::GET, None);
+        let req = self.request_with_default_header(path, &Method::GET, None, false);
         done(req).from_err().and_then(move |future_response| {
             extract_status_and_body(future_response).and_then(move |(status, body)| {
                 if status == StatusCode::NOT_FOUND {
@@ -88,7 +88,7 @@ impl TableService {
             path.push_str(clause);
         }
 
-        let req = self.request_with_default_header(path.as_str(), &Method::GET, None);
+        let req = self.request_with_default_header(path.as_str(), &Method::GET, None, false);
 
         done(req).from_err().and_then(move |future_response| {
             check_status_extract_body(future_response, StatusCode::OK).and_then(move |body| {
@@ -104,6 +104,7 @@ impl TableService {
         table_name: &str,
         query: Option<&str>,
         continuation: Option<&Continuation>,
+        fullmetadata: bool,
     ) -> impl Future<Item = EntityCollection<T>, Error = AzureError> {
         let mut path = table_name.to_owned();
         path.push_str("?");
@@ -117,7 +118,7 @@ impl TableService {
             path.push_str(&cont.next_row_key);
         }
 
-        let req = self.request_with_default_header(path.as_str(), &Method::GET, None);
+        let req = self.request_with_default_header(path.as_str(), &Method::GET, None, fullmetadata);
 
         done(req)
             .from_err()
@@ -131,10 +132,11 @@ impl TableService {
              }).from_err())
     }
 
-    pub fn stream_query_entities<'a, T: DeserializeOwned + 'a>(
+    fn stream_query_entities_metadata<'a, T: DeserializeOwned + 'a>(
         &'a self,
         table_name: &'a str,
         query: Option<&'a str>,
+        fullmetadata: bool,
     ) ->  impl Stream<Item = T, Error = AzureError> + 'a {
 
         stream::unfold(ContinuationState::Start, move |cont_state| {
@@ -150,7 +152,7 @@ impl TableService {
                 path.push_str(clause);
             }
 
-            let req = self.query_entity_collection(table_name, query, cont.as_ref());
+            let req = self.query_entity_collection(table_name, query, cont.as_ref(), fullmetadata);
 
             Some(req.map(move |ec| {
                 (stream::iter_ok(ec.value), ContinuationState::Next(ec.continuation))
@@ -159,12 +161,28 @@ impl TableService {
         .flatten()
     }
 
+    pub fn stream_query_entities<'a, T: DeserializeOwned + 'a>(
+        &'a self,
+        table_name: &'a str,
+        query: Option<&'a str>,
+    ) ->  impl Stream<Item = T, Error = AzureError> + 'a {
+        self.stream_query_entities_metadata(table_name, query, false)
+    }
+
+    pub fn stream_query_entities_fullmetadata<'a, T: DeserializeOwned + 'a>(
+        &'a self,
+        table_name: &'a str,
+        query: Option<&'a str>,
+    ) ->  impl Stream<Item = T, Error = AzureError> + 'a {
+        self.stream_query_entities_metadata(table_name, query, true)
+    }
+
     fn _prepare_insert_entity<T>(&self, table_name: &str, entity: &T) -> Result<ResponseFuture, AzureError>
     where
         T: Serialize,
     {
         let obj_ser = serde_json::to_string(entity)?;
-        self.request_with_default_header(table_name, &Method::POST, Some(&obj_ser))
+        self.request_with_default_header(table_name, &Method::POST, Some(&obj_ser), false)
     }
 
     pub fn insert_entity<T: Serialize>(&self, table_name: &str, entity: &T) -> impl Future<Item = (), Error = AzureError> {
@@ -187,7 +205,7 @@ impl TableService {
     {
         let body = &serde_json::to_string(entity)?;
         let path = &entity_path(table_name, partition_key, row_key);
-        self.request_with_default_header(path, &Method::PUT, Some(body))
+        self.request_with_default_header(path, &Method::PUT, Some(body), false)
     }
 
     pub fn update_entity<T: Serialize>(
@@ -241,8 +259,13 @@ impl TableService {
         })
     }
 
-    fn request_with_default_header(&self, segment: &str, method: &Method, request_str: Option<&str>) -> Result<ResponseFuture, AzureError> {
+    fn request_with_default_header(&self, segment: &str, method: &Method, request_str: Option<&str>, fullmetadata: bool) -> Result<ResponseFuture, AzureError> {
         self.request(segment, method, request_str, |ref mut request| {
+            if fullmetadata {
+                request.header(header::ACCEPT, HeaderValue::from_static(get_json_mime_fullmetadata()));
+            } else {
+                request.header(header::ACCEPT, HeaderValue::from_static(get_json_mime_nometadata()));
+            }
             request.header(header::ACCEPT, HeaderValue::from_static(get_json_mime_nometadata()));
             if request_str.is_some() {
                 request.header(header::CONTENT_TYPE, HeaderValue::from_static(get_default_json_mime()));

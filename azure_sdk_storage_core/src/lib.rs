@@ -24,7 +24,7 @@ extern crate serde_xml_rs;
 extern crate smallvec;
 pub mod client;
 mod rest_client;
-pub use self::rest_client::{get_default_json_mime, get_json_mime_nometadata, perform_request, ServiceType};
+pub use self::rest_client::{get_default_json_mime, get_json_mime_nometadata, get_json_mime_fullmetadata, perform_request, ServiceType};
 use crate::client::Client;
 
 pub trait ClientRequired<'a> {
