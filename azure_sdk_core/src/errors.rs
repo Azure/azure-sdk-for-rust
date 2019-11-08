@@ -211,11 +211,11 @@ quick_error! {
             display("Parse uuid error: {}", err)
             cause(err)
         }
-        // URIParseError(err: hyper::error::UriError) {
-        //     from()
-        //     display("URI parse error: {}", err)
-        //     cause(err)
-        // }
+        ReqwestError(err: reqwest::Error){
+            from()
+            display("Reqwest error: {}", err)
+            cause(err)
+        }
         ChronoParserError(err: chrono::ParseError) {
             from()
             display("Chrono parser error: {}", err)
@@ -295,7 +295,9 @@ pub fn extract_status_headers_and_body(
         let (head, body) = res.into_parts();
         let status = head.status;
         let headers = head.headers;
-        body.concat2().from_err().and_then(move |body| Ok((status, headers, body)))
+        body.concat2()
+            .from_err()
+            .and_then(move |body| Ok((status, headers, body)))
     })
 }
 
@@ -322,14 +324,18 @@ pub fn check_status_extract_headers_and_body_as_string(
     resp: hyper::client::ResponseFuture,
     expected_status_code: hyper::StatusCode,
 ) -> impl Future<Item = (hyper::HeaderMap, String), Error = AzureError> {
-    check_status_extract_headers_and_body(resp, expected_status_code).and_then(move |(headers, body)| {
-        let body = str::from_utf8(&body)?.to_owned();
-        Ok((headers, body))
-    })
+    check_status_extract_headers_and_body(resp, expected_status_code).and_then(
+        move |(headers, body)| {
+            let body = str::from_utf8(&body)?.to_owned();
+            Ok((headers, body))
+        },
+    )
 }
 
 #[inline]
-pub fn extract_status_and_body(resp: hyper::client::ResponseFuture) -> impl Future<Item = (StatusCode, String), Error = AzureError> {
+pub fn extract_status_and_body(
+    resp: hyper::client::ResponseFuture,
+) -> impl Future<Item = (StatusCode, String), Error = AzureError> {
     resp.from_err().and_then(|res| {
         let status = res.status();
         res.into_body()
@@ -364,20 +370,22 @@ pub fn check_status_extract_body_2(
     let received_status = resp.status();
 
     resp.into_body().concat2().from_err().and_then(move |body| {
-        done(String::from_utf8(body.to_vec())).from_err().and_then(move |s| {
-            println!("body: {}", s);
-            if received_status != expected_status {
-                Either::A(
-                    err(AzureError::UnexpectedHTTPResult(UnexpectedHTTPResult {
-                        expected: expected_status,
-                        received: received_status,
-                        body: s,
-                    }))
-                    .from_err(),
-                )
-            } else {
-                Either::B(ok(s))
-            }
-        })
+        done(String::from_utf8(body.to_vec()))
+            .from_err()
+            .and_then(move |s| {
+                println!("body: {}", s);
+                if received_status != expected_status {
+                    Either::A(
+                        err(AzureError::UnexpectedHTTPResult(UnexpectedHTTPResult {
+                            expected: expected_status,
+                            received: received_status,
+                            body: s,
+                        }))
+                        .from_err(),
+                    )
+                } else {
+                    Either::B(ok(s))
+                }
+            })
     })
 }
