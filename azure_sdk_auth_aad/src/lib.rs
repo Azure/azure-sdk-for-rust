@@ -11,7 +11,6 @@ use oauth2::{
     AuthType, AuthUrl, AuthorizationCode, ClientId, ClientSecret, CsrfToken, PkceCodeChallenge,
     PkceCodeVerifier, RedirectUrl, TokenUrl,
 };
-use std::str::FromStr;
 use url::form_urlencoded;
 use url::Url;
 mod login_response;
@@ -20,6 +19,7 @@ use std::sync::Arc;
 pub mod errors;
 mod naive_server;
 use futures::compat::Future01CompatExt;
+use futures::TryFutureExt;
 pub use naive_server::naive_server;
 use reqwest;
 
@@ -97,10 +97,10 @@ pub async fn exchange(
         .set_pkce_verifier(auth_obj.pkce_code_verifier)
         .request_async(async_http_client)
         .compat()
-        .await?;
+        .await;
 
     debug!("MS Graph returned the following token:\n{:?}\n", token);
-    Ok(token)
+    token
 }
 
 pub async fn authorize_non_interactive(
@@ -124,14 +124,13 @@ pub async fn authorize_non_interactive(
     ))
     .map_err(|error| AzureError::GenericErrorWithText(error.to_string()))?;
 
-    let resp = client
+    client
         .post(url)
         .header("ContentType", "Application / WwwFormUrlEncoded")
         .body(encoded)
         .send()
         .await?
-        .text()
-        .await?;
-
-    Ok(LoginResponse::from_str(&resp)?)
+        .json::<LoginResponse>()
+        .map_err(|e| AzureError::from(e))
+        .await
 }
