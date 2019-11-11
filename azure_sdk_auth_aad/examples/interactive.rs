@@ -66,22 +66,4 @@ async fn main_async() {
         .unwrap();
 
     println!("\n\nresp {:?}", resp);
-
-    //let request = Request::builder()
-    //    .method("GET")
-    //    .header("Authorization", format!("Bearer {}", token.access_token().secret()))
-    //    //        .uri(format!("https://management.azure.com/subscriptions/{}/resourcegroups?api-version=2017-05-10", subscription_id))
-    //    .uri(format!(
-    //        "https://management.azure.com/subscriptions/{}/providers/Microsoft.Sql/servers?api-version=2015-05-01-preview",
-    //        subscription_id
-    //    ))
-    //    .body(Body::from(""))
-    //    .unwrap();
-
-    //let fut =
-    //    perform_http_request(&client, request, http::status::StatusCode::OK).and_then(|resp| {
-    //        println!("\n\nresp {:?}", resp);
-    //        ok(())
-    //    });
-    //core.run(fut).unwrap();
 }

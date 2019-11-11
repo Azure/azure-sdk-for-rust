@@ -1,6 +1,7 @@
 use azure_sdk_core::errors::AzureError;
 use chrono::{DateTime, TimeZone, Utc};
 use oauth2::AccessToken;
+use serde::de::{self, Deserialize, Deserializer};
 use std::str::FromStr;
 
 #[derive(Debug, Clone, Deserialize)]
@@ -46,6 +47,16 @@ impl FromStr for LoginResponse {
             resource: r.resource,
             access_token: AccessToken::new(r.access_token),
         })
+    }
+}
+
+impl<'de> Deserialize<'de> for LoginResponse {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        FromStr::from_str(&s).map_err(de::Error::custom)
     }
 }
 
