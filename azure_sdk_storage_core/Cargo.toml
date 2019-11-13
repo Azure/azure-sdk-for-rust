@@ -1,6 +1,6 @@
 [package]
 name          = "azure_sdk_storage_core"
-version       = "0.20.5"
+version       = "0.20.6"
 description   = "Rust wrappers around Microsoft Azure REST APIs - Core storage crate"
 readme        = "README.md"
 authors       = ["Francesco Cogno <francesco.cogno@outlook.com>", "Max Gortman <mgortman@microsoft.com>", "Dong Liu <doliu@microsoft.com>"]

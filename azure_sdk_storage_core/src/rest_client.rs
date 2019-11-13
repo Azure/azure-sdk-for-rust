@@ -28,7 +28,13 @@ const SAS_VERSION: &str = "2019-02-02";
 pub const HEADER_VERSION: &str = "x-ms-version"; //=> [String] }
 pub const HEADER_DATE: &str = "x-ms-date"; //=> [String] }
 
-fn generate_authorization(h: &HeaderMap, u: &url::Url, method: &Method, hmac_key: &str, service_type: ServiceType) -> String {
+fn generate_authorization(
+    h: &HeaderMap,
+    u: &url::Url,
+    method: &Method,
+    hmac_key: &str,
+    service_type: ServiceType,
+) -> String {
     let str_to_sign = string_to_sign(h, u, method, service_type);
 
     // debug!("\nstr_to_sign == {:?}\n", str_to_sign);
@@ -135,10 +141,17 @@ pub(crate) fn generate_storage_sas(
         },
         canonicalized_resource
     );
-    debug!("type_canonicalized_resource == {}", type_canonicalized_resource);
+    debug!(
+        "type_canonicalized_resource == {}",
+        type_canonicalized_resource
+    );
 
     let ip_range_string = if let Some(ip_range) = ip_range {
-        format!("{}-{}", ip_range.start.to_string(), ip_range.end.to_string())
+        format!(
+            "{}-{}",
+            ip_range.start.to_string(),
+            ip_range.end.to_string()
+        )
     } else {
         "".to_owned()
     };
@@ -182,7 +195,14 @@ pub(crate) fn generate_storage_sas(
         ),
         SASType::Queue => format!(
             "{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}",
-            permission, start_string, end_string, type_canonicalized_resource, identifier, ip_range_string, protocol, SAS_VERSION,
+            permission,
+            start_string,
+            end_string,
+            type_canonicalized_resource,
+            identifier,
+            ip_range_string,
+            protocol,
+            SAS_VERSION,
         ),
     };
 
@@ -196,66 +216,102 @@ pub(crate) fn generate_storage_sas(
     let token = format!(
         "{}{}{}{}{}{}{}{}{}{}{}{}se={}&sp={}&sr={}&spr={}&sv={}&sig={}",
         if let Some(_) = start {
-            format!("st={}&", utf8_percent_encode(&start_string, COMPLETE_ENCODE_SET))
+            format!(
+                "st={}&",
+                utf8_percent_encode(&start_string, COMPLETE_ENCODE_SET)
+            )
         } else {
             "".to_owned()
         },
         if let Some(_) = snapshot_time {
             // sst is guessed, I haven't been able to find the correct one in
             // the docs.
-            format!("sst={}&", utf8_percent_encode(&snapshot_time_string, COMPLETE_ENCODE_SET))
+            format!(
+                "sst={}&",
+                utf8_percent_encode(&snapshot_time_string, COMPLETE_ENCODE_SET)
+            )
         } else {
             "".to_owned()
         },
         if let Some(_) = ip_range {
-            format!("sip={}&", utf8_percent_encode(&ip_range_string, COMPLETE_ENCODE_SET))
+            format!(
+                "sip={}&",
+                utf8_percent_encode(&ip_range_string, COMPLETE_ENCODE_SET)
+            )
         } else {
             "".to_owned()
         },
         if cache_control.is_empty() {
             "".to_owned()
         } else {
-            format!("rscc={}&", utf8_percent_encode(&cache_control, COMPLETE_ENCODE_SET))
+            format!(
+                "rscc={}&",
+                utf8_percent_encode(&cache_control, COMPLETE_ENCODE_SET)
+            )
         },
         if content_disposition.is_empty() {
             "".to_owned()
         } else {
-            format!("rscd={}&", utf8_percent_encode(&content_disposition, COMPLETE_ENCODE_SET))
+            format!(
+                "rscd={}&",
+                utf8_percent_encode(&content_disposition, COMPLETE_ENCODE_SET)
+            )
         },
         if content_encoding.is_empty() {
             "".to_owned()
         } else {
-            format!("rsce={}&", utf8_percent_encode(&content_encoding, COMPLETE_ENCODE_SET))
+            format!(
+                "rsce={}&",
+                utf8_percent_encode(&content_encoding, COMPLETE_ENCODE_SET)
+            )
         },
         if content_language.is_empty() {
             "".to_owned()
         } else {
-            format!("rscl={}&", utf8_percent_encode(&content_language, COMPLETE_ENCODE_SET))
+            format!(
+                "rscl={}&",
+                utf8_percent_encode(&content_language, COMPLETE_ENCODE_SET)
+            )
         },
         if content_type.is_empty() {
             "".to_owned()
         } else {
-            format!("rsct={}&", utf8_percent_encode(&content_type, COMPLETE_ENCODE_SET))
+            format!(
+                "rsct={}&",
+                utf8_percent_encode(&content_type, COMPLETE_ENCODE_SET)
+            )
         },
         if starting_pk.is_empty() {
             "".to_owned()
         } else {
-            format!("spk={}&", utf8_percent_encode(&starting_pk, COMPLETE_ENCODE_SET))
+            format!(
+                "spk={}&",
+                utf8_percent_encode(&starting_pk, COMPLETE_ENCODE_SET)
+            )
         },
         if ending_pk.is_empty() {
             "".to_owned()
         } else {
-            format!("epk={}&", utf8_percent_encode(&ending_pk, COMPLETE_ENCODE_SET))
+            format!(
+                "epk={}&",
+                utf8_percent_encode(&ending_pk, COMPLETE_ENCODE_SET)
+            )
         },
         if starting_rk.is_empty() {
             "".to_owned()
         } else {
-            format!("srk={}&", utf8_percent_encode(&starting_rk, COMPLETE_ENCODE_SET))
+            format!(
+                "srk={}&",
+                utf8_percent_encode(&starting_rk, COMPLETE_ENCODE_SET)
+            )
         },
         if ending_rk.is_empty() {
             "".to_owned()
         } else {
-            format!("erk={}&", utf8_percent_encode(&ending_rk, COMPLETE_ENCODE_SET))
+            format!(
+                "erk={}&",
+                utf8_percent_encode(&ending_rk, COMPLETE_ENCODE_SET)
+            )
         },
         utf8_percent_encode(&end_string, COMPLETE_ENCODE_SET),
         permission,
@@ -269,7 +325,12 @@ pub(crate) fn generate_storage_sas(
 }
 
 #[allow(unknown_lints)]
-fn string_to_sign(h: &HeaderMap, u: &url::Url, method: &Method, service_type: ServiceType) -> String {
+fn string_to_sign(
+    h: &HeaderMap,
+    u: &url::Url,
+    method: &Method,
+    service_type: ServiceType,
+) -> String {
     match service_type {
         ServiceType::Table => {
             let mut s = String::new();
@@ -435,7 +496,7 @@ fn canonicalized_resource(u: &url::Url) -> String {
     can_res[0..can_res.len() - 1].to_owned()
 }
 
-fn lexy_sort(vec: &url::form_urlencoded::Parse, query_param: &str) -> Vec<(String)> {
+fn lexy_sort(vec: &url::form_urlencoded::Parse, query_param: &str) -> Vec<String> {
     let mut v_values: Vec<String> = Vec::new();
 
     for item in vec.filter(|x| x.0 == *query_param) {
@@ -482,16 +543,28 @@ where
     // a Cow with 'static lifetime...
     headers_func(&mut request);
 
-    request.header_bytes(HEADER_DATE, time).header_static(HEADER_VERSION, AZURE_VERSION);
+    request
+        .header_bytes(HEADER_DATE, time)
+        .header_static(HEADER_VERSION, AZURE_VERSION);
 
-    let b = request_body.map(|v| Vec::from(v).into()).unwrap_or_else(hyper::Body::empty);
+    let b = request_body
+        .map(|v| Vec::from(v).into())
+        .unwrap_or_else(hyper::Body::empty);
     let mut request = request.body(b)?;
 
     // We sign the request only if it is not already signed (with the signature of an
     // SAS token for example)
     if url.query_pairs().find(|p| p.0 == "sig").is_none() {
-        let auth = generate_authorization(request.headers(), &url, http_method, azure_key, service_type);
-        request.headers_mut().insert(header::AUTHORIZATION, format_header_value(auth)?);
+        let auth = generate_authorization(
+            request.headers(),
+            &url,
+            http_method,
+            azure_key,
+            service_type,
+        );
+        request
+            .headers_mut()
+            .insert(header::AUTHORIZATION, format_header_value(auth)?);
     }
 
     Ok(client.request(request))
@@ -529,7 +602,10 @@ mod test {
         let mut h = hyper::header::HeaderMap::new();
 
         h.insert(HEADER_DATE, format_header_value(time).unwrap());
-        h.insert(HEADER_VERSION, header::HeaderValue::from_static("2015-04-05"));
+        h.insert(
+            HEADER_VERSION,
+            header::HeaderValue::from_static("2015-04-05"),
+        );
 
         assert_eq!(
             super::canonicalize_header(&h),
@@ -542,10 +618,17 @@ mod test {
         use super::*;
 
         let mut headers: HeaderMap = HeaderMap::new();
-        headers.insert(header::ACCEPT, header::HeaderValue::from_static(get_json_mime_nometadata()));
-        headers.insert(header::CONTENT_TYPE, header::HeaderValue::from_static(get_default_json_mime()));
+        headers.insert(
+            header::ACCEPT,
+            header::HeaderValue::from_static(get_json_mime_nometadata()),
+        );
+        headers.insert(
+            header::CONTENT_TYPE,
+            header::HeaderValue::from_static(get_default_json_mime()),
+        );
 
-        let u: url::Url = url::Url::parse("https://mindrust.table.core.windows.net/TABLES").unwrap();
+        let u: url::Url =
+            url::Url::parse("https://mindrust.table.core.windows.net/TABLES").unwrap();
         let method: Method = Method::POST;
         let service_type: ServiceType = ServiceType::Table;
 
@@ -553,7 +636,10 @@ mod test {
         let time = format!("{}", dt.format("%a, %d %h %Y %T GMT"));
 
         headers.insert(HEADER_DATE, format_header_value(time).unwrap());
-        headers.insert(HEADER_VERSION, header::HeaderValue::from_static(AZURE_VERSION));
+        headers.insert(
+            HEADER_VERSION,
+            header::HeaderValue::from_static(AZURE_VERSION),
+        );
 
         let s = string_to_sign(&headers, &u, &method, service_type);
 
@@ -608,7 +694,10 @@ Wed, 03 May 2017 14:04:56 GMT
              net/mycontainer/myblob",
         )
         .unwrap();
-        assert_eq!(super::canonicalized_resource(&url), "/myaccount-secondary/mycontainer/myblob");
+        assert_eq!(
+            super::canonicalized_resource(&url),
+            "/myaccount-secondary/mycontainer/myblob"
+        );
     }
 
     #[test]
