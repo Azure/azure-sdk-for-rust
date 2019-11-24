@@ -19,6 +19,7 @@ use http::HeaderMap;
 
 const TABLE_TABLES: &str = "TABLES";
 
+#[derive(Clone)]
 pub struct TableService {
     client: Client,
 }
@@ -288,6 +289,79 @@ impl TableService {
         };
 
         self.client.perform_table_request(segment, method, headers_func, request_vec)
+    }
+}
+
+#[derive(Clone)]
+pub struct TableStorage {
+    service: TableService,
+    table_name: String,
+}
+
+impl TableStorage {
+    pub fn new<S:Into<String>>(service: TableService, table_name: S) -> Self {
+        TableStorage { 
+            service, 
+            table_name: table_name.into()
+        }
+    }
+
+    pub fn create_table<T: Into<String>>(&self) -> impl Future<Item = (), Error = AzureError> {
+        self.service.create_table(self.table_name.clone())
+    }
+
+    pub fn get_entity<T: DeserializeOwned>(
+        &self,
+        partition_key: &str,
+        row_key: &str,
+    ) -> impl Future<Item = Option<T>, Error = AzureError> {
+        self.service.get_entity(&self.table_name, partition_key, row_key)
+    }
+
+    pub fn query_entities<T: DeserializeOwned>(
+        &self,
+        query: Option<&str>,
+    ) -> impl Future<Item = Vec<T>, Error = AzureError> {
+        self.service.query_entities(&self.table_name, query)
+    }
+
+    pub fn stream_query_entities<'a, T: DeserializeOwned + 'a>(
+        &'a self,
+        query: Option<&'a str>,
+    ) ->  impl Stream<Item = T, Error = AzureError> + 'a {
+        self.service.stream_query_entities(&self.table_name, query)
+    }
+
+    pub fn stream_query_entities_fullmetadata<'a, T: DeserializeOwned + 'a>(
+        &'a self,
+        query: Option<&'a str>,
+    ) ->  impl Stream<Item = T, Error = AzureError> + 'a {
+        self.service.stream_query_entities_fullmetadata(&self.table_name, query)
+    }
+
+    pub fn insert_entity<T: Serialize>(&self, entity: &T) -> impl Future<Item = (), Error = AzureError> {
+        self.service.insert_entity::<T>(&self.table_name, entity)
+    }
+
+    pub fn update_entity<T: Serialize>(
+        &self,
+        partition_key: &str,
+        row_key: &str,
+        entity: &T,
+    ) -> impl Future<Item = (), Error = AzureError> {
+        self.service.update_entity(&self.table_name, partition_key, row_key, entity)
+    }
+
+    pub fn delete_entity(&self, partition_key: &str, row_key: &str) -> impl Future<Item = (), Error = AzureError> {
+        self.service.delete_entity(&self.table_name, partition_key, row_key)
+    }
+
+    pub fn batch<T: Serialize>(
+        &self,
+        partition_key: &str,
+        batch_items: &[BatchItem<T>],
+    ) -> impl Future<Item = (), Error = AzureError> {
+        self.service.batch(&self.table_name, partition_key, batch_items)
     }
 }
 
