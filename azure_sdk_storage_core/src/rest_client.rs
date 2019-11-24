@@ -47,6 +47,7 @@ fn generate_authorization(
 }
 
 fn encode_str_to_sign(str_to_sign: &str, hmac_key: &str) -> String {
+    debug!("hmac_key: {:?}", hmac_key);
     let key = hmac::SigningKey::new(&SHA256, &base64::decode(hmac_key).unwrap());
     let sig = hmac::sign(&key, str_to_sign.as_bytes());
 
