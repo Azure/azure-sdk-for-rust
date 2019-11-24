@@ -306,7 +306,7 @@ impl TableStorage {
         }
     }
 
-    pub fn create_table<T: Into<String>>(&self) -> impl Future<Item = (), Error = AzureError> {
+    pub fn create_table(&self) -> impl Future<Item = (), Error = AzureError> {
         self.service.create_table(self.table_name.clone())
     }
 
