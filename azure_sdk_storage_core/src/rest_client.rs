@@ -34,26 +34,26 @@ fn generate_authorization(
     method: &Method,
     hmac_key: &str,
     service_type: ServiceType,
-) -> String {
+) -> Result<String, AzureError> {
     let str_to_sign = string_to_sign(h, u, method, service_type);
 
     // debug!("\nstr_to_sign == {:?}\n", str_to_sign);
     // debug!("str_to_sign == {}", str_to_sign);
 
-    let auth = encode_str_to_sign(&str_to_sign, hmac_key);
+    let auth = encode_str_to_sign(&str_to_sign, hmac_key)?;
     // debug!("auth == {:?}", auth);
 
-    format!("SharedKey {}:{}", get_account(u), auth)
+    Ok(format!("SharedKey {}:{}", get_account(u), auth))
 }
 
-fn encode_str_to_sign(str_to_sign: &str, hmac_key: &str) -> String {
-    let key = hmac::SigningKey::new(&SHA256, &base64::decode(hmac_key).unwrap());
+fn encode_str_to_sign(str_to_sign: &str, hmac_key: &str) -> Result<String, AzureError> {
+    let key = hmac::SigningKey::new(&SHA256, &base64::decode(hmac_key)?);
     let sig = hmac::sign(&key, str_to_sign.as_bytes());
 
     // let res = hmac.result();
     // debug!("{:?}", res.code());
 
-    base64::encode(sig.as_ref())
+    Ok(base64::encode(sig.as_ref()))
 }
 
 #[inline]
@@ -561,7 +561,7 @@ where
             http_method,
             azure_key,
             service_type,
-        );
+        )?;
         request
             .headers_mut()
             .insert(header::AUTHORIZATION, format_header_value(auth)?);
@@ -708,7 +708,7 @@ Wed, 03 May 2017 14:04:56 GMT
             .to_owned();
 
         assert_eq!(
-            super::encode_str_to_sign(&str_to_sign, &hmac_key),
+            super::encode_str_to_sign(&str_to_sign, &hmac_key).unwrap(),
             "gZzaRaIkvC9jYRY123tq3xXZdsMAcgAbjKQo8y0p0Fs=".to_owned()
         );
     }
@@ -721,7 +721,7 @@ Wed, 03 May 2017 14:04:56 GMT
             .to_owned();
 
         assert_eq!(
-            super::encode_str_to_sign(&str_to_sign, &hmac_key),
+            super::encode_str_to_sign(&str_to_sign, &hmac_key).unwrap(),
             "YuKoXELO9M9HXeeGaSXBr4Nk+CgPAEQhcwJ6tVtBRCw=".to_owned()
         );
     }
@@ -734,7 +734,7 @@ Wed, 03 May 2017 14:04:56 GMT
             .to_owned();
 
         assert_eq!(
-            super::encode_str_to_sign(&str_to_sign, &hmac_key),
+            super::encode_str_to_sign(&str_to_sign, &hmac_key).unwrap(),
             "YuKoXELO9M9HXeeGaSXBr4Nk+CgPAEQhcwJ6tVtBRCw=".to_owned()
         );
     }
