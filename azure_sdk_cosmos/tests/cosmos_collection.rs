@@ -1,17 +1,16 @@
 #![cfg(all(test, feature = "test_e2e"))]
-
 use azure_sdk_cosmos::collection::*;
-
+use azure_sdk_cosmos::Offer;
 mod setup;
 
-#[test]
-fn create_and_delete_collection() {
+#[tokio::test]
+async fn create_and_delete_collection() {
     const DATABASE_NAME: &str = "test-cosmos-db-create-and-delete-collection";
     const COLLECTION_NAME: &str = "test-collection-create-and-delete-collection";
 
-    let (client, mut core) = setup::initialize().unwrap();
+    let client = setup::initialize().unwrap();
 
-    core.run(client.create_database(DATABASE_NAME)).unwrap();
+    client.create_database(DATABASE_NAME).await.unwrap();
 
     // create a new collection
     let collection_to_create = Collection::new(
@@ -23,32 +22,39 @@ fn create_and_delete_collection() {
             excluded_paths: vec![],
         },
     );
-    let collection = core
-        .run(client.create_collection(DATABASE_NAME, 400, &collection_to_create))
+    let collection = client
+        .create_collection(DATABASE_NAME, Offer::S2, &collection_to_create)
+        .await
         .unwrap();
-    let collections = core.run(client.list_collections(DATABASE_NAME)).unwrap();
+    let collections = client.list_collections(DATABASE_NAME).await.unwrap();
     assert!(collections.len() == 1);
 
     // try to get the previously created collection
-    let collection_after_get = core.run(client.get_collection(DATABASE_NAME, COLLECTION_NAME)).unwrap();
+    let collection_after_get = client
+        .get_collection(DATABASE_NAME, COLLECTION_NAME)
+        .await
+        .unwrap();
     assert!(collection.rid == collection_after_get.rid);
 
     // delete the collection
-    core.run(client.delete_collection(DATABASE_NAME, COLLECTION_NAME)).unwrap();
-    let collections = core.run(client.list_collections(DATABASE_NAME)).unwrap();
+    client
+        .delete_collection(DATABASE_NAME, COLLECTION_NAME)
+        .await
+        .unwrap();
+    let collections = client.list_collections(DATABASE_NAME).await.unwrap();
     assert!(collections.len() == 0);
 
-    core.run(client.delete_database(DATABASE_NAME)).unwrap();
+    client.delete_database(DATABASE_NAME).await.unwrap();
 }
 
-#[test]
 #[ignore]
-fn replace_collection() {
-    let (client, mut core) = setup::initialize().unwrap();
+#[tokio::test]
+async fn replace_collection() {
+    let client = setup::initialize().unwrap();
     const DATABASE_NAME: &str = "test-cosmos-db";
     const COLLECTION_NAME: &str = "test-collection";
 
-    core.run(client.create_database(DATABASE_NAME)).unwrap();
+    client.create_database(DATABASE_NAME).await.unwrap();
 
     // create a new collection
     let collection_to_create = Collection::new(
@@ -60,14 +66,16 @@ fn replace_collection() {
             excluded_paths: vec![],
         },
     );
-    core.run(client.create_collection(DATABASE_NAME, 400, &collection_to_create))
+    client
+        .create_collection(DATABASE_NAME, Offer::S2, &collection_to_create)
+        .await
         .unwrap();
-    let collections = core.run(client.list_collections(DATABASE_NAME)).unwrap();
+    let collections = client.list_collections(DATABASE_NAME).await.unwrap();
     assert!(collections.len() == 1);
     //assert!(collection.indexing_policy)
 
     // now try to update the indexing policy of the collection (= change_collection)
     // TODO: waiting for issue #153
 
-    core.run(client.delete_database(DATABASE_NAME)).unwrap();
+    client.delete_database(DATABASE_NAME).await.unwrap();
 }

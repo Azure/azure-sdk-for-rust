@@ -12,221 +12,254 @@ use azure_sdk_storage_blob::{
 };
 use azure_sdk_storage_core::prelude::*;
 use chrono::{Duration, FixedOffset, Utc};
-use futures::Future;
 use std::ops::Add;
 use std::ops::Deref;
-use tokio_core::reactor::Core;
 use uuid::Uuid;
 
-#[test]
-fn create_and_delete_container() {
+#[tokio::test]
+async fn create_and_delete_container() {
     let name: &'static str = "azuresdkrustetoets";
 
-    let (client, mut core) = initialize().unwrap();
-    core.run(
-        client
-            .create_container()
-            .with_container_name(name)
-            .with_public_access(PublicAccess::Container)
-            .finalize(),
-    )
-    .unwrap();
+    let client = initialize().unwrap();
+    client
+        .create_container()
+        .with_container_name(name)
+        .with_public_access(PublicAccess::Container)
+        .finalize()
+        .await
+        .unwrap();
 
     // get acl without stored access policy list
-    let future = client.get_container_acl().with_container_name(name).finalize();
-    let _result = core.run(future).unwrap();
+    let _result = client
+        .get_container_acl()
+        .with_container_name(name)
+        .finalize()
+        .await
+        .unwrap();
 
     // set stored acess policy list
     let dt_start = Utc::now().with_timezone(&FixedOffset::east(0));
     let dt_end = dt_start.add(Duration::days(7));
 
     let mut sapl = StoredAccessPolicyList::default();
-    sapl.stored_access.push(StoredAccessPolicy::new("pollo", dt_start, dt_end, "rwd"));
+    sapl.stored_access
+        .push(StoredAccessPolicy::new("pollo", dt_start, dt_end, "rwd"));
 
-    let future = client
+    let _result = client
         .set_container_acl()
         .with_container_name(name)
         .with_public_access(PublicAccess::Blob)
         .with_stored_access_policy_list(&sapl)
-        .finalize();
-
-    let _result = core.run(future).unwrap();
+        .finalize()
+        .await
+        .unwrap();
 
     // now we get back the acess policy list and compare to the one created
-    let future = client.get_container_acl().with_container_name(name).finalize();
-    let result = core.run(future).unwrap();
+    let result = client
+        .get_container_acl()
+        .with_container_name(name)
+        .finalize()
+        .await
+        .unwrap();
 
     assert!(result.public_access == PublicAccess::Blob);
     // we cannot compare the returned result because Azure will
     // trim the milliseconds
     // assert!(sapl == result.stored_access_policy_list);
     assert!(sapl.stored_access.len() == result.stored_access_policy_list.stored_access.len());
-    for (i1, i2) in sapl.stored_access.iter().zip(result.stored_access_policy_list.stored_access.iter()) {
+    for (i1, i2) in sapl
+        .stored_access
+        .iter()
+        .zip(result.stored_access_policy_list.stored_access.iter())
+    {
         assert!(i1.id == i2.id);
         assert!(i1.permission == i2.permission);
     }
 
-    let future = client.get_container_properties().with_container_name(name).finalize();
-    let res = core.run(future).unwrap();
+    let res = client
+        .get_container_properties()
+        .with_container_name(name)
+        .finalize()
+        .await
+        .unwrap();
     assert!(res.container.public_access == PublicAccess::Blob);
 
-    let list = core.run(client.list_containers().with_prefix(name).finalize()).unwrap();
-    let cont_list: Vec<&Container> = list.incomplete_vector.deref().into_iter().filter(|e| e.name == name).collect();
+    let list = client
+        .list_containers()
+        .with_prefix(name)
+        .finalize()
+        .await
+        .unwrap();
+    let cont_list: Vec<&Container> = list
+        .incomplete_vector
+        .deref()
+        .into_iter()
+        .filter(|e| e.name == name)
+        .collect();
 
     if cont_list.len() != 1 {
         panic!("More than 1 container returned with the same name!");
     }
 
-    let future = client
+    let res = client
         .acquire_container_lease()
         .with_container_name(&cont_list[0].name)
         .with_lease_duration(30)
-        .finalize();
-    let res = core.run(future).unwrap();
+        .finalize()
+        .await
+        .unwrap();
     let lease_id = res.lease_id;
 
-    let future = client
+    let _res = client
         .renew_container_lease()
         .with_container_name(&cont_list[0].name)
         .with_lease_id(&lease_id)
-        .finalize();
-    let _res = core.run(future).unwrap();
+        .finalize()
+        .await
+        .unwrap();
 
-    let cont_delete = client
+    client
         .delete_container()
         .with_container_name(&cont_list[0].name)
         .with_lease_id(&lease_id) // must pass the lease here too
-        .finalize();
-
-    core.run(cont_delete).unwrap();
+        .finalize()
+        .await
+        .unwrap();
 }
 
-#[test]
-fn put_and_get_block_list() {
+#[tokio::test]
+async fn put_and_get_block_list() {
     let u = Uuid::new_v4();
     let container = Container::new(&format!("sdkrust{}", u));
     let name = "asd - ()krustputblock.txt";
 
-    let (client, mut core) = initialize().unwrap();
+    let client = initialize().unwrap();
 
-    core.run(
-        client
-            .create_container()
-            .with_container_name(&container.name)
-            .with_public_access(PublicAccess::Container)
-            .finalize(),
-    )
-    .expect("container already present");
+    client
+        .create_container()
+        .with_container_name(&container.name)
+        .with_public_access(PublicAccess::Container)
+        .finalize()
+        .await
+        .expect("container already present");
 
     let contents1 = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
     let contents2 = "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB";
     let contents3 = "CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC";
 
-    let future = client
+    client
         .put_block()
         .with_container_name(&container.name)
         .with_blob_name(name)
         .with_body(&contents1.as_bytes())
         .with_block_id(b"block1")
         .finalize()
-        .and_then(|_| {
-            client
-                .put_block()
-                .with_container_name(&container.name)
-                .with_blob_name(name)
-                .with_body(&contents2.as_bytes())
-                .with_block_id(b"block2")
-                .finalize()
-        })
-        .and_then(|_| {
-            client
-                .put_block()
-                .with_container_name(&container.name)
-                .with_blob_name(name)
-                .with_body(&contents3.as_bytes())
-                .with_block_id(b"block3")
-                .finalize()
-        });
+        .await
+        .unwrap();
 
-    core.run(future).unwrap();
+    client
+        .put_block()
+        .with_container_name(&container.name)
+        .with_blob_name(name)
+        .with_body(&contents2.as_bytes())
+        .with_block_id(b"block2")
+        .finalize()
+        .await
+        .unwrap();
 
-    let future = client
+    client
+        .put_block()
+        .with_container_name(&container.name)
+        .with_blob_name(name)
+        .with_body(&contents3.as_bytes())
+        .with_block_id(b"block3")
+        .finalize()
+        .await
+        .unwrap();
+
+    let received_block_list = client
         .get_block_list()
         .with_container_name(&container.name)
         .with_blob_name(name)
         .with_block_list_type(BlockListType::All)
-        .finalize();
+        .finalize()
+        .await
+        .unwrap();
 
-    let received_block_list = core.run(future).unwrap();
-
-    let future = client
+    client
         .put_block_list()
         .with_container_name(&container.name)
         .with_blob_name(name)
         .with_block_list(&received_block_list.block_with_size_list.into())
-        .finalize();
-    core.run(future).unwrap();
+        .finalize()
+        .await
+        .unwrap();
 
-    let future = client
+    let res = client
         .acquire_blob_lease()
         .with_container_name(&container.name)
         .with_blob_name(name)
         .with_lease_duration(60)
-        .finalize();
-    let res = core.run(future).unwrap();
+        .finalize()
+        .await
+        .unwrap();
     println!("Acquire lease == {:?}", res);
 
     let lease_id = res.lease_id;
 
-    let future = client
+    let res = client
         .renew_blob_lease()
         .with_container_name(&container.name)
         .with_blob_name(name)
         .with_lease_id(&lease_id)
-        .finalize();
-    let res = core.run(future).unwrap();
+        .finalize()
+        .await
+        .unwrap();
     println!("Renew lease == {:?}", res);
 
-    let future = client
+    let res = client
         .break_blob_lease()
         .with_container_name(&container.name)
         .with_blob_name(name)
         .with_lease_break_period(15)
-        .finalize();
-    let res = core.run(future).unwrap();
+        .finalize()
+        .await
+        .unwrap();
     println!("Break lease == {:?}", res);
 
-    let future = client
+    let res = client
         .release_blob_lease()
         .with_container_name(&container.name)
         .with_blob_name(name)
         .with_lease_id(&lease_id)
-        .finalize();
-    let res = core.run(future).unwrap();
+        .finalize()
+        .await
+        .unwrap();
     println!("Release lease == {:?}", res);
 
-    let future = client
+    let res = client
         .delete_blob()
         .with_container_name(&container.name)
         .with_blob_name(name)
         .with_delete_snapshots_method(DeleteSnapshotsMethod::Include)
-        .finalize();
-    let res = core.run(future).unwrap();
+        .finalize()
+        .await
+        .unwrap();
     println!("Delete blob == {:?}", res);
 
-    core.run(
-        client
-            .delete_container()
-            .with_container_name(container.as_ref())
-            .finalize()
-            .map(|_| println!("container {} deleted!", container.name)),
-    )
-    .unwrap();
+    client
+        .delete_container()
+        .with_container_name(container.as_ref())
+        .finalize()
+        .await
+        .unwrap();
+
+    println!("container {} deleted!", container.name);
 }
 
-#[test]
-fn list_containers() {
-    let (client, mut core) = initialize().unwrap();
+#[tokio::test]
+async fn list_containers() {
+    let client = initialize().unwrap();
 
     trace!("running list_containers");
 
@@ -236,9 +269,9 @@ fn list_containers() {
         let ret = {
             let builder = client.list_containers().with_max_results(2);
             if let Some(nm) = next_marker {
-                core.run(builder.with_next_marker(&nm).finalize()).unwrap()
+                builder.with_next_marker(&nm).finalize().await.unwrap()
             } else {
-                core.run(builder.finalize()).unwrap()
+                builder.finalize().await.unwrap()
             }
         };
 
@@ -251,53 +284,55 @@ fn list_containers() {
     }
 }
 
-#[test]
-fn put_block_blob() {
-    let (client, mut core) = initialize().unwrap();
+#[tokio::test]
+async fn put_block_blob() {
+    let client = initialize().unwrap();
 
     let blob_name: &'static str = "m1";
     let container_name: &'static str = "rust-upload-test";
     let data = b"abcdef";
 
-    if core
-        .run(client.list_containers().finalize())
+    if client
+        .list_containers()
+        .finalize()
+        .await
         .unwrap()
         .incomplete_vector
         .iter()
         .find(|x| x.name == container_name)
         .is_none()
     {
-        core.run(
-            client
-                .create_container()
-                .with_container_name(container_name)
-                .with_public_access(PublicAccess::Blob)
-                .finalize(),
-        )
-        .unwrap();
+        client
+            .create_container()
+            .with_container_name(container_name)
+            .with_public_access(PublicAccess::Blob)
+            .finalize()
+            .await
+            .unwrap();
     }
 
     // calculate md5 too!
     let digest = md5::compute(&data[..]);
 
-    let future = client
+    client
         .put_block_blob()
         .with_container_name(&container_name)
         .with_blob_name(&blob_name)
         .with_content_type("text/plain")
         .with_body(&data[..])
         .with_content_md5(&digest[..])
-        .finalize();
-
-    core.run(future).unwrap();
+        .finalize()
+        .await
+        .unwrap();
 
     trace!("created {:?}", blob_name);
 }
 
-fn initialize() -> Result<(Client, Core), AzureError> {
-    let account = std::env::var("STORAGE_ACCOUNT").expect("Set env variable STORAGE_ACCOUNT first!");
-    let master_key = std::env::var("STORAGE_MASTER_KEY").expect("Set env variable STORAGE_MASTER_KEY first!");
-    let core = Core::new()?;
+fn initialize() -> Result<Client, AzureError> {
+    let account =
+        std::env::var("STORAGE_ACCOUNT").expect("Set env variable STORAGE_ACCOUNT first!");
+    let master_key =
+        std::env::var("STORAGE_MASTER_KEY").expect("Set env variable STORAGE_MASTER_KEY first!");
 
-    Ok((Client::new(&account, &master_key)?, core))
+    Ok(Client::new(&account, &master_key)?)
 }

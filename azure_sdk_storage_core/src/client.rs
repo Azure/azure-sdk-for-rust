@@ -20,7 +20,7 @@ impl Client {
     }
 
     pub fn azure_sas(account: &str, sas_token: &str) -> Result<Client, AzureError> {
-        let client = hyper::Client::builder().build(HttpsConnector::new(4));
+        let client = hyper::Client::builder().build(HttpsConnector::new());
         let params: Vec<(String, String)> = Url::options()
             // Any base url will do: we just need to parse the SAS token
             // to get its query pairs.
@@ -42,7 +42,7 @@ impl Client {
     }
 
     pub fn azure(account: &str, key: &str) -> Result<Client, AzureError> {
-        let client = hyper::Client::builder().build(HttpsConnector::new(4));
+        let client = hyper::Client::builder().build(HttpsConnector::new());
 
         Ok(Client {
             account: account.to_owned(),
@@ -55,7 +55,7 @@ impl Client {
     }
 
     pub fn emulator(blob_storage_url: &Url, table_storage_url: &Url) -> Result<Client, AzureError> {
-        let client = hyper::Client::builder().build(HttpsConnector::new(4));
+        let client = hyper::Client::builder().build(HttpsConnector::new());
 
         let blob_uri = format!("{}devstoreaccount1", blob_storage_url.as_str());
         debug!("blob_uri == {}", blob_uri);

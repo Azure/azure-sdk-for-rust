@@ -1,36 +1,15 @@
 #![recursion_limit = "128"]
 #![allow(clippy::needless_lifetimes)]
 
-extern crate base64;
-extern crate chrono;
-extern crate futures;
-extern crate http;
-extern crate hyper;
-extern crate hyper_rustls;
-extern crate md5;
-extern crate ring;
-extern crate time;
-extern crate url;
-extern crate uuid;
-extern crate xml;
 #[macro_use]
 extern crate log;
-extern crate quick_error;
-extern crate serde;
 #[macro_use]
 extern crate serde_derive;
-extern crate bytes;
-extern crate serde_json;
-extern crate serde_xml_rs;
-extern crate smallvec;
-
 #[macro_use]
 extern crate azure_sdk_core;
-extern crate azure_sdk_storage_core;
 pub mod blob;
 pub mod container;
 pub mod prelude;
-
 use azure_sdk_core::No;
 use azure_sdk_storage_core::client::Client;
 use std::borrow::Borrow;
@@ -46,13 +25,19 @@ pub trait Blob {
     fn clear_page<'a>(&'a self) -> blob::requests::ClearPageBuilder<'a, No, No, No>;
     fn put_block<'a>(&'a self) -> blob::requests::PutBlockBuilder<'a, No, No, No, No>;
     fn get_block_list<'a>(&'a self) -> blob::requests::GetBlockListBuilder<'a, No, No, No>;
-    fn put_block_list<'a, T: Borrow<[u8]> + 'a>(&'a self) -> blob::requests::PutBlockListBuilder<'a, T, No, No, No>;
+    fn put_block_list<'a, T: Borrow<[u8]> + 'a>(
+        &'a self,
+    ) -> blob::requests::PutBlockListBuilder<'a, T, No, No, No>;
     fn acquire_blob_lease<'a>(&'a self) -> blob::requests::AcquireBlobLeaseBuilder<'a, No, No, No>;
     fn renew_blob_lease<'a>(&'a self) -> blob::requests::RenewBlobLeaseBuilder<'a, No, No, No>;
-    fn change_blob_lease<'a>(&'a self) -> blob::requests::ChangeBlobLeaseBuilder<'a, No, No, No, No>;
+    fn change_blob_lease<'a>(
+        &'a self,
+    ) -> blob::requests::ChangeBlobLeaseBuilder<'a, No, No, No, No>;
     fn release_blob_lease<'a>(&'a self) -> blob::requests::ReleaseBlobLeaseBuilder<'a, No, No, No>;
     fn break_blob_lease<'a>(&'a self) -> blob::requests::BreakBlobLeaseBuilder<'a, No, No, No>;
-    fn delete_blob_snapshot<'a>(&'a self) -> blob::requests::DeleteBlobSnapshotBuilder<'a, No, No, No>;
+    fn delete_blob_snapshot<'a>(
+        &'a self,
+    ) -> blob::requests::DeleteBlobSnapshotBuilder<'a, No, No, No>;
     fn delete_blob<'a>(&'a self) -> blob::requests::DeleteBlobBuilder<'a, No, No, No>;
     fn stream_list_blobs<'a>(&'a self) -> blob::ListBlobStreamBuilder<'a, No>;
     fn stream_blob<'a>(&'a self) -> blob::BlobStreamBuilder<'a, No, No, No>;
@@ -66,9 +51,13 @@ pub trait Container {
     fn get_container_acl<'a>(&'a self) -> container::requests::GetACLBuilder<'a, No>;
     fn set_container_acl<'a>(&'a self) -> container::requests::SetACLBuilder<'a, No, No>;
     fn get_container_properties<'a>(&'a self) -> container::requests::GetPropertiesBuilder<'a, No>;
-    fn acquire_container_lease<'a>(&'a self) -> container::requests::AcquireLeaseBuilder<'a, No, No>;
+    fn acquire_container_lease<'a>(
+        &'a self,
+    ) -> container::requests::AcquireLeaseBuilder<'a, No, No>;
     fn renew_container_lease<'a>(&'a self) -> container::requests::RenewLeaseBuilder<'a, No, No>;
-    fn release_container_lease<'a>(&'a self) -> container::requests::ReleaseLeaseBuilder<'a, No, No>;
+    fn release_container_lease<'a>(
+        &'a self,
+    ) -> container::requests::ReleaseLeaseBuilder<'a, No, No>;
     fn break_container_lease<'a>(&'a self) -> container::requests::BreakLeaseBuilder<'a, No>;
 }
 
@@ -113,7 +102,9 @@ impl Blob for Client {
         blob::requests::GetBlockListBuilder::new(self)
     }
 
-    fn put_block_list<'a, T: Borrow<[u8]> + 'a>(&'a self) -> blob::requests::PutBlockListBuilder<'a, T, No, No, No> {
+    fn put_block_list<'a, T: Borrow<[u8]> + 'a>(
+        &'a self,
+    ) -> blob::requests::PutBlockListBuilder<'a, T, No, No, No> {
         blob::requests::PutBlockListBuilder::new(self)
     }
 
@@ -125,7 +116,9 @@ impl Blob for Client {
         blob::requests::RenewBlobLeaseBuilder::new(self)
     }
 
-    fn change_blob_lease<'a>(&'a self) -> blob::requests::ChangeBlobLeaseBuilder<'a, No, No, No, No> {
+    fn change_blob_lease<'a>(
+        &'a self,
+    ) -> blob::requests::ChangeBlobLeaseBuilder<'a, No, No, No, No> {
         blob::requests::ChangeBlobLeaseBuilder::new(self)
     }
 
@@ -137,7 +130,9 @@ impl Blob for Client {
         blob::requests::BreakBlobLeaseBuilder::new(self)
     }
 
-    fn delete_blob_snapshot<'a>(&'a self) -> blob::requests::DeleteBlobSnapshotBuilder<'a, No, No, No> {
+    fn delete_blob_snapshot<'a>(
+        &'a self,
+    ) -> blob::requests::DeleteBlobSnapshotBuilder<'a, No, No, No> {
         blob::requests::DeleteBlobSnapshotBuilder::new(self)
     }
 
@@ -182,7 +177,9 @@ impl Container for Client {
         container::requests::GetPropertiesBuilder::new(self)
     }
 
-    fn acquire_container_lease<'a>(&'a self) -> container::requests::AcquireLeaseBuilder<'a, No, No> {
+    fn acquire_container_lease<'a>(
+        &'a self,
+    ) -> container::requests::AcquireLeaseBuilder<'a, No, No> {
         container::requests::AcquireLeaseBuilder::new(self)
     }
 
@@ -190,7 +187,9 @@ impl Container for Client {
         container::requests::RenewLeaseBuilder::new(self)
     }
 
-    fn release_container_lease<'a>(&'a self) -> container::requests::ReleaseLeaseBuilder<'a, No, No> {
+    fn release_container_lease<'a>(
+        &'a self,
+    ) -> container::requests::ReleaseLeaseBuilder<'a, No, No> {
         container::requests::ReleaseLeaseBuilder::new(self)
     }
 

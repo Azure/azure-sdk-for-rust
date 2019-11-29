@@ -5,32 +5,35 @@
 
 [![Build Status](https://travis-ci.org/MindFlavor/AzureSDKForRust.svg?branch=master)](https://travis-ci.org/MindFlavor/AzureSDKForRust) [![Coverage Status](https://coveralls.io/repos/MindFlavor/AzureSDKForRust/badge.svg?branch=master&service=github)](https://coveralls.io/github/MindFlavor/AzureSDKForRust?branch=master) ![stability-unstable](https://img.shields.io/badge/stability-unstable-yellow.svg)
 
-[![tag](https://img.shields.io/github/tag/mindflavor/AzureSDKForRust.svg)](https://github.com/MindFlavor/AzureSDKForRust/tree/0.24.0) [![release](https://img.shields.io/github/release/mindflavor/AzureSDKForRust.svg)](https://github.com/MindFlavor/AzureSDKForRust/releases/tag/0.24.0) [![commitssince](https://img.shields.io/github/commits-since/mindflavor/AzureSDKForRust/0.24.0.svg)](https://github.com/MindFlavor/AzureSDKForRust/commits/master)
+[![tag](https://img.shields.io/github/tag/mindflavor/AzureSDKForRust.svg)](https://github.com/MindFlavor/AzureSDKForRust/tree/0.30.0) [![release](https://img.shields.io/github/release/mindflavor/AzureSDKForRust.svg)](https://github.com/MindFlavor/AzureSDKForRust/releases/tag/0.30.0) [![commitssince](https://img.shields.io/github/commits-since/mindflavor/AzureSDKForRust/0.30.0.svg)](https://github.com/MindFlavor/AzureSDKForRust/commits/master)
 
 [![GitHub contributors](https://img.shields.io/github/contributors/MindFlavor/AzureSDKForRust.svg)](https://github.com/MindFlavor/AzureSDKForRust/graphs/contributors)
 
 Crate | Docs | Crates.io | Downloads | Downloads@Latest |
 -- | -- | -- | -- | -- |
-[azure_sdk_auth_aad](https://github.com/MindFlavor/AzureSDKForRust/tree/master/azure_sdk_auth_aad) | [![docs](https://docs.rs/azure_sdk_auth_aad/badge.svg)](https://docs.rs/azure_sdk_auth_aad/0.21.1/azure_sdk_auth_aad) | [![Crate](https://img.shields.io/crates/v/azure_sdk_auth_aad.svg)](https://crates.io/crates/azure_sdk_auth_aad) | [![cratedown](https://img.shields.io/crates/d/azure_sdk_auth_aad.svg)](https://crates.io/crates/azure_sdk_auth_aad) | [![cratelastdown](https://img.shields.io/crates/dv/azure_sdk_auth_aad.svg)](https://crates.io/crates/azure_sdk_auth_aad)
-[azure_sdk_core](https://github.com/MindFlavor/AzureSDKForRust/tree/master/azure_sdk_core) | [![docs](https://docs.rs/azure_sdk_core/badge.svg)](https://docs.rs/azure_sdk_core/0.20.3/azure_sdk_core) | [![Crate](https://img.shields.io/crates/v/azure_sdk_core.svg)](https://crates.io/crates/azure_sdk_core) | [![cratedown](https://img.shields.io/crates/d/azure_sdk_core.svg)](https://crates.io/crates/azure_sdk_core) | [![cratelastdown](https://img.shields.io/crates/dv/azure_sdk_core.svg)](https://crates.io/crates/azure_sdk_core)
-[azure_sdk_cosmos](https://github.com/MindFlavor/AzureSDKForRust/tree/master/azure_sdk_cosmos) | [![docs](https://docs.rs/azure_sdk_cosmos/badge.svg)](https://docs.rs/azure_sdk_cosmos/0.23.2/azure_sdk_cosmos) | [![Crate](https://img.shields.io/crates/v/azure_sdk_cosmos.svg)](https://crates.io/crates/azure_sdk_cosmos) | [![cratedown](https://img.shields.io/crates/d/azure_sdk_cosmos.svg)](https://crates.io/crates/azure_sdk_cosmos) | [![cratelastdown](https://img.shields.io/crates/dv/azure_sdk_cosmos.svg)](https://crates.io/crates/azure_sdk_cosmos)
-[azure_sdk_service_bus](https://github.com/MindFlavor/AzureSDKForRust/tree/master/azure_sdk_service_bus) | [![docs](https://docs.rs/azure_sdk_service_bus/badge.svg)](https://docs.rs/azure_sdk_service_bus/0.20.4/azure_sdk_service_bus) | [![Crate](https://img.shields.io/crates/v/azure_sdk_service_bus.svg)](https://crates.io/crates/azure_sdk_service_bus) | [![cratedown](https://img.shields.io/crates/d/azure_sdk_service_bus.svg)](https://crates.io/crates/azure_sdk_service_bus) | [![cratelastdown](https://img.shields.io/crates/dv/azure_sdk_service_bus.svg)](https://crates.io/crates/azure_sdk_service_bus)
-[azure_sdk_storage_account](https://github.com/MindFlavor/AzureSDKForRust/tree/master/azure_sdk_storage_account) | [![docs](https://docs.rs/azure_sdk_storage_account/badge.svg)](https://docs.rs/azure_sdk_storage_account/0.20.4/azure_sdk_storage_account) | [![Crate](https://img.shields.io/crates/v/azure_sdk_storage_account.svg)](https://crates.io/crates/azure_sdk_storage_account) | [![cratedown](https://img.shields.io/crates/d/azure_sdk_storage_account.svg)](https://crates.io/crates/azure_sdk_storage_account) | [![cratelastdown](https://img.shields.io/crates/dv/azure_sdk_storage_account.svg)](https://crates.io/crates/azure_sdk_storage_account)
-[azure_sdk_storage_blob](https://github.com/MindFlavor/AzureSDKForRust/tree/master/azure_sdk_storage_blob) | [![docs](https://docs.rs/azure_sdk_storage_blob/badge.svg)](https://docs.rs/azure_sdk_storage_blob/0.23.1/azure_sdk_storage_blob) | [![Crate](https://img.shields.io/crates/v/azure_sdk_storage_blob.svg)](https://crates.io/crates/azure_sdk_storage_blob) | [![cratedown](https://img.shields.io/crates/d/azure_sdk_storage_blob.svg)](https://crates.io/crates/azure_sdk_storage_blob) | [![cratelastdown](https://img.shields.io/crates/dv/azure_sdk_storage_blob.svg)](https://crates.io/crates/azure_sdk_storage_blob)
-[azure_sdk_storage_core](https://github.com/MindFlavor/AzureSDKForRust/tree/master/azure_sdk_storage_core) | [![docs](https://docs.rs/azure_sdk_storage_core/badge.svg)](https://docs.rs/azure_sdk_storage_core/0.20.4/azure_sdk_storage_core) | [![Crate](https://img.shields.io/crates/v/azure_sdk_storage_core.svg)](https://crates.io/crates/azure_sdk_storage_core) | [![cratedown](https://img.shields.io/crates/d/azure_sdk_storage_core.svg)](https://crates.io/crates/azure_sdk_storage_core) | [![cratelastdown](https://img.shields.io/crates/dv/azure_sdk_storage_core.svg)](https://crates.io/crates/azure_sdk_storage_core)
-[azure_sdk_storage_table](https://github.com/MindFlavor/AzureSDKForRust/tree/master/azure_sdk_storage_table) | [![docs](https://docs.rs/azure_sdk_storage_table/badge.svg)](https://docs.rs/azure_sdk_storage_table/0.20.4/azure_sdk_storage_table) | [![Crate](https://img.shields.io/crates/v/azure_sdk_storage_table.svg)](https://crates.io/crates/azure_sdk_storage_table) | [![cratedown](https://img.shields.io/crates/d/azure_sdk_storage_table.svg)](https://crates.io/crates/azure_sdk_storage_table) | [![cratelastdown](https://img.shields.io/crates/dv/azure_sdk_storage_table.svg)](https://crates.io/crates/azure_sdk_storage_table)
-
+[azure_sdk_auth_aad](https://github.com/MindFlavor/AzureSDKForRust/tree/master/azure_sdk_auth_aad) | [![docs](https://docs.rs/azure_sdk_auth_aad/badge.svg)](https://docs.rs/azure_sdk_auth_aad/0.30.0/azure_sdk_auth_aad) | [![Crate](https://img.shields.io/crates/v/azure_sdk_auth_aad.svg)](https://crates.io/crates/azure_sdk_auth_aad) | [![cratedown](https://img.shields.io/crates/d/azure_sdk_auth_aad.svg)](https://crates.io/crates/azure_sdk_auth_aad) | [![cratelastdown](https://img.shields.io/crates/dv/azure_sdk_auth_aad.svg)](https://crates.io/crates/azure_sdk_auth_aad)
+[azure_sdk_core](https://github.com/MindFlavor/AzureSDKForRust/tree/master/azure_sdk_core) | [![docs](https://docs.rs/azure_sdk_core/badge.svg)](https://docs.rs/azure_sdk_core/0.30.0/azure_sdk_core) | [![Crate](https://img.shields.io/crates/v/azure_sdk_core.svg)](https://crates.io/crates/azure_sdk_core) | [![cratedown](https://img.shields.io/crates/d/azure_sdk_core.svg)](https://crates.io/crates/azure_sdk_core) | [![cratelastdown](https://img.shields.io/crates/dv/azure_sdk_core.svg)](https://crates.io/crates/azure_sdk_core)
+[azure_sdk_cosmos](https://github.com/MindFlavor/AzureSDKForRust/tree/master/azure_sdk_cosmos) | [![docs](https://docs.rs/azure_sdk_cosmos/badge.svg)](https://docs.rs/azure_sdk_cosmos/0.30.0/azure_sdk_cosmos) | [![Crate](https://img.shields.io/crates/v/azure_sdk_cosmos.svg)](https://crates.io/crates/azure_sdk_cosmos) | [![cratedown](https://img.shields.io/crates/d/azure_sdk_cosmos.svg)](https://crates.io/crates/azure_sdk_cosmos) | [![cratelastdown](https://img.shields.io/crates/dv/azure_sdk_cosmos.svg)](https://crates.io/crates/azure_sdk_cosmos)
+[azure_sdk_service_bus](https://github.com/MindFlavor/AzureSDKForRust/tree/master/azure_sdk_service_bus) | [![docs](https://docs.rs/azure_sdk_service_bus/badge.svg)](https://docs.rs/azure_sdk_service_bus/0.30.0/azure_sdk_service_bus) | [![Crate](https://img.shields.io/crates/v/azure_sdk_service_bus.svg)](https://crates.io/crates/azure_sdk_service_bus) | [![cratedown](https://img.shields.io/crates/d/azure_sdk_service_bus.svg)](https://crates.io/crates/azure_sdk_service_bus) | [![cratelastdown](https://img.shields.io/crates/dv/azure_sdk_service_bus.svg)](https://crates.io/crates/azure_sdk_service_bus)
+[azure_sdk_storage_account](https://github.com/MindFlavor/AzureSDKForRust/tree/master/azure_sdk_storage_account) | [![docs](https://docs.rs/azure_sdk_storage_account/badge.svg)](https://docs.rs/azure_sdk_storage_account/0.30.0/azure_sdk_storage_account) | [![Crate](https://img.shields.io/crates/v/azure_sdk_storage_account.svg)](https://crates.io/crates/azure_sdk_storage_account) | [![cratedown](https://img.shields.io/crates/d/azure_sdk_storage_account.svg)](https://crates.io/crates/azure_sdk_storage_account) | [![cratelastdown](https://img.shields.io/crates/dv/azure_sdk_storage_account.svg)](https://crates.io/crates/azure_sdk_storage_account)
+[azure_sdk_storage_blob](https://github.com/MindFlavor/AzureSDKForRust/tree/master/azure_sdk_storage_blob) | [![docs](https://docs.rs/azure_sdk_storage_blob/badge.svg)](https://docs.rs/azure_sdk_storage_blob/0.30.0/azure_sdk_storage_blob) | [![Crate](https://img.shields.io/crates/v/azure_sdk_storage_blob.svg)](https://crates.io/crates/azure_sdk_storage_blob) | [![cratedown](https://img.shields.io/crates/d/azure_sdk_storage_blob.svg)](https://crates.io/crates/azure_sdk_storage_blob) | [![cratelastdown](https://img.shields.io/crates/dv/azure_sdk_storage_blob.svg)](https://crates.io/crates/azure_sdk_storage_blob)
+[azure_sdk_storage_core](https://github.com/MindFlavor/AzureSDKForRust/tree/master/azure_sdk_storage_core) | [![docs](https://docs.rs/azure_sdk_storage_core/badge.svg)](https://docs.rs/azure_sdk_storage_core/0.30.0/azure_sdk_storage_core) | [![Crate](https://img.shields.io/crates/v/azure_sdk_storage_core.svg)](https://crates.io/crates/azure_sdk_storage_core) | [![cratedown](https://img.shields.io/crates/d/azure_sdk_storage_core.svg)](https://crates.io/crates/azure_sdk_storage_core) | [![cratelastdown](https://img.shields.io/crates/dv/azure_sdk_storage_core.svg)](https://crates.io/crates/azure_sdk_storage_core)
+[azure_sdk_storage_table](https://github.com/MindFlavor/AzureSDKForRust/tree/master/azure_sdk_storage_table) | [![docs](https://docs.rs/azure_sdk_storage_table/badge.svg)](https://docs.rs/azure_sdk_storage_table/0.30.0/azure_sdk_storage_table) | [![Crate](https://img.shields.io/crates/v/azure_sdk_storage_table.svg)](https://crates.io/crates/azure_sdk_storage_table) | [![cratedown](https://img.shields.io/crates/d/azure_sdk_storage_table.svg)](https://crates.io/crates/azure_sdk_storage_table) | [![cratelastdown](https://img.shields.io/crates/dv/azure_sdk_storage_table.svg)](https://crates.io/crates/azure_sdk_storage_table)
 
 ## Introduction
 Microsoft Azure exposes its technologies via REST API. These APIs are easily consumable from any language (good) but are weakly typed. With this library and its related [crate](https://crates.io/crates/azure_sdk_for_rust/) you can exploit the power of Microsoft Azure from Rust in a idiomatic way.
 
-This crate relies heavily on the excellent crate called [Hyper](https://github.com/hyperium/hyper). As of this library version [0.4.0](https://github.com/MindFlavor/AzureSDKForRust/releases/tag/0.4.0) all the methods are future-aware.
+This crate relies heavily on the excellent crate called [Hyper](https://github.com/hyperium/hyper). As of this library version [0.30.0](https://github.com/MindFlavor/AzureSDKForRust/releases/tag/0.30.0) all the methods are async/await compliant (`futures 0.3`).
 
 From version 0.8.0 for Cosmos and 0.9.0 for Storage the repo is embracing the builder pattern. As of 0.10.0, most of storage APIs have been migrated to the builder pattern but there are methods still missing. Please chech the relevant issues to follow the update process. This is still an in-progress transition but the resulting API is much more easy to use. Also most checks have been moved to compile-time. Unfortunately the changes are not backward-compatibile. I have blogged about my appoach here: [https://dev.to/mindflavor/rust-builder-pattern-with-types-3chf](https://dev.to/mindflavor/rust-builder-pattern-with-types-3chf).
 
 From version 0.12.0 the library switched from [hyper-tls](https://github.com/hyperium/hyper-tls) to [hyper-rustls](https://github.com/ctz/hyper-rustls) as suggested by [bmc-msft](https://github.com/bmc-msft) in the issue [#120](https://github.com/MindFlavor/AzureSDKForRust/issues/120). This should allow the library to be 100% rust.
 
 > **NOTE:** This repository is under heavy development and is likely to break over time. The current releases will probabily contain bugs. As usual open issues if you find any.
+
+## Upgrading from pre 0.30.0
+
+From version `0.30.0` the libraries are fully async/await compliant. For the most part, your code should work as before, just replace `and_then` with `await?`. Also make sure to specify `2018` as Rust version in your `Cargo.toml`!
 
 ## Upgrading from 0.12.0 
 
@@ -51,9 +54,7 @@ extern crate serde_derive;
 // Using the prelude module of the Cosmos crate makes easier to use the Rust Azure SDK for Cosmos
 // DB.
 use azure_sdk_cosmos::prelude::*;
-use futures::future::*;
 use std::error::Error;
-use tokio_core::reactor::Core;
 
 #[derive(Serialize, Deserialize, Debug)]
 struct MySampleStruct<'a> {
@@ -66,24 +67,18 @@ struct MySampleStruct<'a> {
 const DATABASE: &str = "azuresdktestdb";
 const COLLECTION: &str = "azuresdktc";
 
-fn main() {
-    code().unwrap();
-}
-
 // This code will perform these tasks:
 // 1. Find an Azure Cosmos DB called *DATABASE*. If it does not exist, create it.
 // 2. Find an Azure Cosmos collection called *COLLECTION* in *DATABASE*.
 //      If it does not exist, create it.
 // 3. Store an entry in collection *COLLECTION* of database *DATABASE*.
 // 4. Delete everything.
-//
-// We will use multiple futures for this hoping to make the code clearer.
-// There is no need to proceed this way in your code.
-// You can go crazy with future combinators if you want to :)
-fn code() -> Result<(), Box<dyn Error>> {
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn Error>> {
     // Let's get Cosmos account and master key from env variables.
     // This helps automated testing.
-    let master_key = std::env::var("COSMOS_MASTER_KEY").expect("Set env variable COSMOS_MASTER_KEY first!");
+    let master_key =
+        std::env::var("COSMOS_MASTER_KEY").expect("Set env variable COSMOS_MASTER_KEY first!");
     let account = std::env::var("COSMOS_ACCOUNT").expect("Set env variable COSMOS_ACCOUNT first!");
 
     // First, we create an authorization token. There are two types of tokens, master and resource
@@ -91,28 +86,24 @@ fn code() -> Result<(), Box<dyn Error>> {
     // at will and it's a good practice to raise your privileges only when needed.
     let authorization_token = AuthorizationToken::new(account, TokenType::Master, &master_key)?;
 
-    // We will create a tokio-core reactor which will drive our futures.
-    let mut core = Core::new()?;
-
     // Next we will create a Cosmos client. You need an authorization_token but you can later
-    // change it if needed. Notice the client will be tied to your reactor.
-    // There are other ClientBuilder functions (for example to use the emulator instead of the real CosmosDB). 
-    // Please consult the docs on how to use them.
+    // change it if needed.
     let client = ClientBuilder::new(authorization_token)?;
 
     // list_databases will give us the databases available in our account. If there is
     // an error (for example, the given key is not valid) you will receive a
     // specific AzureError. In this example we will look for a specific database
     // so we chain a filter operation.
-    let future = client
+    let db = client
         .list_databases()
-        .and_then(|databases| ok(databases.into_iter().find(|db| db.id == DATABASE)));
+        .await?
+        .into_iter()
+        .find(|db| db.id == DATABASE);
 
-    // Now we run the future and check the answer. If the requested database
-    // is not found we create it.
-    let database = match core.run(future)? {
+    // If the requested database is not found we create it.
+    let database = match db {
         Some(db) => db,
-        None => core.run(client.create_database(DATABASE))?,
+        None => client.create_database(DATABASE).await?,
     };
     println!("database == {:?}", database);
 
@@ -120,7 +111,7 @@ fn code() -> Result<(), Box<dyn Error>> {
     // we will create it. The collection creation is more complex and
     // has many options (such as indexing and so on).
     let collection = {
-        let collections = core.run(client.list_collections(&database.id))?;
+        let collections = client.list_collections(&database.id).await?;
 
         if let Some(collection) = collections.into_iter().find(|coll| coll.id == COLLECTION) {
             collection
@@ -149,15 +140,14 @@ fn code() -> Result<(), Box<dyn Error>> {
             // strategy. Consult the documentation for more details.
             // you can also use the predefined performance levels. For example:
             // `Offer::S2`.
-            core.run(
-                client
-                    .create_collection_builder()
-                    .with_id(COLLECTION)
-                    .with_database_name(&database.id)
-                    .with_offer(Offer::Throughput(400))
-                    .with_indexing_policy(ip)
-                    .finalize(),
-            )?
+            client
+                .create_collection_builder()
+                .with_id(COLLECTION)
+                .with_database_name(&database.id)
+                .with_offer(Offer::Throughput(400))
+                .with_indexing_policy(ip)
+                .finalize()
+                .await?
         }
     };
 
@@ -177,15 +167,18 @@ fn code() -> Result<(), Box<dyn Error>> {
     // Notice how easy it is! :)
     // The method create_document will return, upon success,
     // the document attributes.
-    let document_attributes = core.run(client.create_document(&database.id, &collection.id, &doc).execute())?;
+    let document_attributes = client
+        .create_document(&database.id, &collection.id, &doc)
+        .execute()
+        .await?;
     println!("document_attributes == {:?}", document_attributes);
 
     // We will perform some cleanup. First we delete the collection...
-    core.run(client.delete_collection(DATABASE, COLLECTION))?;
+    client.delete_collection(DATABASE, COLLECTION).await?;
     println!("collection deleted");
 
     // And then we delete the database.
-    core.run(client.delete_database(DATABASE))?;
+    client.delete_database(DATABASE).await?;
     println!("database deleted");
 
     Ok(())

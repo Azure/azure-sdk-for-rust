@@ -1,10 +1,16 @@
 mod batch;
 use self::batch::generate_batch_payload;
 pub use self::batch::BatchItem;
-use azure_sdk_core::errors::{check_status_extract_body, check_status_extract_headers_and_body, extract_status_and_body, AzureError, UnexpectedHTTPResult};
+use azure_sdk_core::errors::{
+    check_status_extract_body, check_status_extract_headers_and_body, extract_status_and_body,
+    AzureError, UnexpectedHTTPResult,
+};
 use azure_sdk_storage_core::client::Client;
-use azure_sdk_storage_core::{get_default_json_mime, get_json_mime_nometadata, get_json_mime_fullmetadata, ServiceType};
-use futures::future::*;
+use azure_sdk_storage_core::{
+    get_default_json_mime, get_json_mime_fullmetadata, get_json_mime_nometadata, ServiceType,
+};
+use futures::stream::Stream;
+use http::HeaderMap;
 use hyper::{
     client::ResponseFuture,
     header::{self, HeaderValue},
@@ -13,9 +19,6 @@ use hyper::{
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 use serde_json;
-use futures::Stream;
-use futures::stream;
-use http::HeaderMap;
 
 const TABLE_TABLES: &str = "TABLES";
 
@@ -28,84 +31,77 @@ impl TableService {
         TableService { client }
     }
 
-    pub fn list_tables(&self) -> impl Future<Item = Vec<String>, Error = AzureError> {
-        self.query_entities(TABLE_TABLES, None).and_then(|entities| {
-            let e: Vec<String> = entities.into_iter().map(|x: TableEntity| x.TableName).collect();
-            ok(e)
-        })
+    pub async fn list_tables(&self) -> Result<Vec<String>, AzureError> {
+        let entities = self.query_entities(TABLE_TABLES, None).await?;
+        let e: Vec<String> = entities
+            .into_iter()
+            .map(|x: TableEntity| x.TableName)
+            .collect();
+        Ok(e)
     }
 
     // Create table if not exists.
-    pub fn create_table<T: Into<String>>(&self, table_name: T) -> impl Future<Item = (), Error = AzureError> {
+    pub async fn create_table<T: Into<String>>(&self, table_name: T) -> Result<(), AzureError> {
         let body = &serde_json::to_string(&TableEntity {
             TableName: table_name.into(),
         })
         .unwrap();
         debug!("body == {}", body);
-        let req = self.request_with_default_header(TABLE_TABLES, &Method::POST, Some(body), false);
+        let future_response =
+            self.request_with_default_header(TABLE_TABLES, &Method::POST, Some(body), false)?;
 
-        done(req)
-            .from_err()
-            .and_then(move |future_response| check_status_extract_body(future_response, StatusCode::CREATED).and_then(move |_| ok(())))
+        check_status_extract_body(future_response, StatusCode::CREATED).await?;
+        Ok(())
     }
 
-    pub fn get_entity<T: DeserializeOwned>(
+    pub async fn get_entity<T: DeserializeOwned>(
         &self,
         table_name: &str,
         partition_key: &str,
         row_key: &str,
-    ) -> impl Future<Item = Option<T>, Error = AzureError> {
+    ) -> Result<Option<T>, AzureError> {
         let path = &entity_path(table_name, partition_key, row_key);
-        let req = self.request_with_default_header(path, &Method::GET, None, false);
-        done(req).from_err().and_then(move |future_response| {
-            extract_status_and_body(future_response).and_then(move |(status, body)| {
-                if status == StatusCode::NOT_FOUND {
-                    ok(None)
-                } else if status != StatusCode::OK {
-                    err(AzureError::UnexpectedHTTPResult(UnexpectedHTTPResult::new(
-                        StatusCode::OK,
-                        status,
-                        &body,
-                    )))
-                } else {
-                    match serde_json::from_str(&body) {
-                        Ok(item) => ok(Some(item)),
-                        Err(error) => err(error.into()),
-                    }
-                }
-            })
-        })
+        let future_response = self.request_with_default_header(path, &Method::GET, None, false)?;
+        let (status, body) = extract_status_and_body(future_response).await?;
+
+        if status == StatusCode::NOT_FOUND {
+            Ok(None)
+        } else if status != StatusCode::OK {
+            Err(AzureError::UnexpectedHTTPResult(UnexpectedHTTPResult::new(
+                StatusCode::OK,
+                status,
+                &body,
+            )))
+        } else {
+            Ok(serde_json::from_str(&body)?)
+        }
     }
 
-    pub fn query_entities<T: DeserializeOwned>(
+    pub async fn query_entities<T: DeserializeOwned>(
         &self,
         table_name: &str,
         query: Option<&str>,
-    ) -> impl Future<Item = Vec<T>, Error = AzureError> {
+    ) -> Result<Vec<T>, AzureError> {
         let mut path = table_name.to_owned();
         if let Some(clause) = query {
             path.push_str("?");
             path.push_str(clause);
         }
 
-        let req = self.request_with_default_header(path.as_str(), &Method::GET, None, false);
-
-        done(req).from_err().and_then(move |future_response| {
-            check_status_extract_body(future_response, StatusCode::OK).and_then(move |body| {
-                done(serde_json::from_str::<EntityCollection<T>>(&body))
-                    .from_err()
-                    .and_then(|ec| ok(ec.value))
-            })
-        })
+        let future_response =
+            self.request_with_default_header(path.as_str(), &Method::GET, None, false)?;
+        let body = check_status_extract_body(future_response, StatusCode::OK).await?;
+        let ec = serde_json::from_str::<EntityCollection<T>>(&body)?;
+        Ok(ec.value)
     }
 
-    fn query_entity_collection<T: DeserializeOwned>(
+    async fn query_entity_collection<T: DeserializeOwned>(
         &self,
         table_name: &str,
         query: Option<&str>,
         continuation: Option<&Continuation>,
         fullmetadata: bool,
-    ) -> impl Future<Item = EntityCollection<T>, Error = AzureError> {
+    ) -> Result<EntityCollection<T>, AzureError> {
         let mut path = table_name.to_owned();
         path.push_str("?");
         if let Some(clause) = query {
@@ -118,18 +114,17 @@ impl TableService {
             path.push_str(&cont.next_row_key);
         }
 
-        let req = self.request_with_default_header(path.as_str(), &Method::GET, None, fullmetadata);
+        let future_response =
+            self.request_with_default_header(path.as_str(), &Method::GET, None, fullmetadata)?;
 
-        done(req)
-            .from_err()
-            .and_then(move |future_response| check_status_extract_headers_and_body(future_response, StatusCode::OK))
-            .and_then(move |(headers, body)| done({
-                serde_json::from_slice::<EntityCollection<T>>(&body)
-                .map(|mut ec| {
-                    ec.continuation = continuation_from_headers(&headers);
-                    ec
-                })
-             }).from_err())
+        let (headers, body) =
+            check_status_extract_headers_and_body(future_response, StatusCode::OK).await?;
+        Ok(
+            serde_json::from_slice::<EntityCollection<T>>(&body).map(|mut ec| {
+                ec.continuation = continuation_from_headers(&headers);
+                ec
+            })?,
+        )
     }
 
     fn stream_query_entities_metadata<'a, T: DeserializeOwned + 'a>(
@@ -137,35 +132,40 @@ impl TableService {
         table_name: &'a str,
         query: Option<&'a str>,
         fullmetadata: bool,
-    ) ->  impl Stream<Item = T, Error = AzureError> + 'a {
+    ) -> impl Stream<Item = Result<Vec<T>, AzureError>> + 'a {
+        futures::stream::unfold(ContinuationState::Start, move |cont_state| {
+            async move {
+                let cont = match cont_state {
+                    ContinuationState::Start => None,
+                    ContinuationState::Next(Some(cont)) => Some(cont),
+                    ContinuationState::Next(None) => return None,
+                };
 
-        stream::unfold(ContinuationState::Start, move |cont_state| {
-            let cont = match cont_state {
-                ContinuationState::Start => None,
-                ContinuationState::Next(Some(cont)) => Some(cont),
-                ContinuationState::Next(None) => return None,
-            };
+                let mut path = table_name.to_owned();
+                if let Some(clause) = query {
+                    path.push_str("?");
+                    path.push_str(clause);
+                }
 
-            let mut path = table_name.to_owned();
-            if let Some(clause) = query {
-                path.push_str("?");
-                path.push_str(clause);
+                let ec = self
+                    .query_entity_collection(table_name, query, cont.as_ref(), fullmetadata)
+                    .await;
+
+                let ec = match ec {
+                    Ok(ec) => ec,
+                    Err(err) => return Some((Err(err), ContinuationState::Next(None))),
+                };
+
+                Some((Ok(ec.value), ContinuationState::Next(ec.continuation)))
             }
-
-            let req = self.query_entity_collection(table_name, query, cont.as_ref(), fullmetadata);
-
-            Some(req.map(move |ec| {
-                (stream::iter_ok(ec.value), ContinuationState::Next(ec.continuation))
-            }))
         })
-        .flatten()
     }
 
     pub fn stream_query_entities<'a, T: DeserializeOwned + 'a>(
         &'a self,
         table_name: &'a str,
         query: Option<&'a str>,
-    ) ->  impl Stream<Item = T, Error = AzureError> + 'a {
+    ) -> impl Stream<Item = Result<Vec<T>, AzureError>> + 'a {
         self.stream_query_entities_metadata(table_name, query, false)
     }
 
@@ -173,11 +173,15 @@ impl TableService {
         &'a self,
         table_name: &'a str,
         query: Option<&'a str>,
-    ) ->  impl Stream<Item = T, Error = AzureError> + 'a {
+    ) -> impl Stream<Item = Result<Vec<T>, AzureError>> + 'a {
         self.stream_query_entities_metadata(table_name, query, true)
     }
 
-    fn _prepare_insert_entity<T>(&self, table_name: &str, entity: &T) -> Result<ResponseFuture, AzureError>
+    fn _prepare_insert_entity<T>(
+        &self,
+        table_name: &str,
+        entity: &T,
+    ) -> Result<ResponseFuture, AzureError>
     where
         T: Serialize,
     {
@@ -185,12 +189,15 @@ impl TableService {
         self.request_with_default_header(table_name, &Method::POST, Some(&obj_ser), false)
     }
 
-    pub fn insert_entity<T: Serialize>(&self, table_name: &str, entity: &T) -> impl Future<Item = (), Error = AzureError> {
-        let req = self._prepare_insert_entity(table_name, entity);
+    pub async fn insert_entity<T: Serialize>(
+        &self,
+        table_name: &str,
+        entity: &T,
+    ) -> Result<(), AzureError> {
+        let future_response = self._prepare_insert_entity(table_name, entity)?;
 
-        done(req)
-            .from_err()
-            .and_then(move |future_response| check_status_extract_body(future_response, StatusCode::CREATED).and_then(move |_| ok(())))
+        check_status_extract_body(future_response, StatusCode::CREATED).await?;
+        Ok(())
     }
 
     fn _prepare_update_entity<T>(
@@ -208,37 +215,44 @@ impl TableService {
         self.request_with_default_header(path, &Method::PUT, Some(body), false)
     }
 
-    pub fn update_entity<T: Serialize>(
+    pub async fn update_entity<T: Serialize>(
         &self,
         table_name: &str,
         partition_key: &str,
         row_key: &str,
         entity: &T,
-    ) -> impl Future<Item = (), Error = AzureError> {
-        let req = self._prepare_update_entity(table_name, partition_key, row_key, entity);
-        done(req)
-            .from_err()
-            .and_then(move |future_response| check_status_extract_body(future_response, StatusCode::NO_CONTENT).and_then(move |_| ok(())))
+    ) -> Result<(), AzureError> {
+        let future_response =
+            self._prepare_update_entity(table_name, partition_key, row_key, entity)?;
+        check_status_extract_body(future_response, StatusCode::NO_CONTENT).await?;
+        Ok(())
     }
 
-    pub fn delete_entity(&self, table_name: &str, partition_key: &str, row_key: &str) -> impl Future<Item = (), Error = AzureError> {
+    pub async fn delete_entity(
+        &self,
+        table_name: &str,
+        partition_key: &str,
+        row_key: &str,
+    ) -> Result<(), AzureError> {
         let path = &entity_path(table_name, partition_key, row_key);
 
-        let req = self.request(path, &Method::DELETE, None, |ref mut request| {
-            request.header(header::ACCEPT, HeaderValue::from_static(get_json_mime_nometadata()));
+        let future_response = self.request(path, &Method::DELETE, None, |ref mut request| {
+            request.header(
+                header::ACCEPT,
+                HeaderValue::from_static(get_json_mime_nometadata()),
+            );
             request.header(header::IF_MATCH, header::HeaderValue::from_static("*"));
-        });
-        done(req)
-            .from_err()
-            .and_then(move |future_response| check_status_extract_body(future_response, StatusCode::NO_CONTENT).and_then(move |_| ok(())))
+        })?;
+        check_status_extract_body(future_response, StatusCode::NO_CONTENT).await?;
+        Ok(())
     }
 
-    pub fn batch<T: Serialize>(
+    pub async fn batch<T: Serialize>(
         &self,
         table_name: &str,
         partition_key: &str,
         batch_items: &[BatchItem<T>],
-    ) -> impl Future<Item = (), Error = AzureError> {
+    ) -> Result<(), AzureError> {
         let payload = &generate_batch_payload(
             self.client.get_uri_prefix(ServiceType::Table).as_str(),
             table_name,
@@ -246,34 +260,59 @@ impl TableService {
             batch_items,
         );
 
-        let req = self.request("$batch", &Method::POST, Some(payload), |ref mut request| {
-            request.header(header::CONTENT_TYPE, header::HeaderValue::from_static(get_batch_mime()));
-        });
-        done(req).from_err().and_then(move |future_response| {
-            check_status_extract_body(future_response, StatusCode::ACCEPTED).and_then(move |_| {
-                // TODO deal with body response, handle batch failure.
-                // let ref body = get_response_body(&mut response)?;
-                // info!("{}", body);
-                ok(())
-            })
-        })
+        let future_response =
+            self.request("$batch", &Method::POST, Some(payload), |ref mut request| {
+                request.header(
+                    header::CONTENT_TYPE,
+                    header::HeaderValue::from_static(get_batch_mime()),
+                );
+            })?;
+        check_status_extract_body(future_response, StatusCode::ACCEPTED).await?;
+        // TODO deal with body response, handle batch failure.
+        // let ref body = get_response_body(&mut response)?;
+        // info!("{}", body);
+        Ok(())
     }
 
-    fn request_with_default_header(&self, segment: &str, method: &Method, request_str: Option<&str>, fullmetadata: bool) -> Result<ResponseFuture, AzureError> {
+    fn request_with_default_header(
+        &self,
+        segment: &str,
+        method: &Method,
+        request_str: Option<&str>,
+        fullmetadata: bool,
+    ) -> Result<ResponseFuture, AzureError> {
         self.request(segment, method, request_str, |ref mut request| {
             if fullmetadata {
-                request.header(header::ACCEPT, HeaderValue::from_static(get_json_mime_fullmetadata()));
+                request.header(
+                    header::ACCEPT,
+                    HeaderValue::from_static(get_json_mime_fullmetadata()),
+                );
             } else {
-                request.header(header::ACCEPT, HeaderValue::from_static(get_json_mime_nometadata()));
+                request.header(
+                    header::ACCEPT,
+                    HeaderValue::from_static(get_json_mime_nometadata()),
+                );
             }
-            request.header(header::ACCEPT, HeaderValue::from_static(get_json_mime_nometadata()));
+            request.header(
+                header::ACCEPT,
+                HeaderValue::from_static(get_json_mime_nometadata()),
+            );
             if request_str.is_some() {
-                request.header(header::CONTENT_TYPE, HeaderValue::from_static(get_default_json_mime()));
+                request.header(
+                    header::CONTENT_TYPE,
+                    HeaderValue::from_static(get_default_json_mime()),
+                );
             }
         })
     }
 
-    fn request<F>(&self, segment: &str, method: &Method, request_str: Option<&str>, headers_func: F) -> Result<ResponseFuture, AzureError>
+    fn request<F>(
+        &self,
+        segment: &str,
+        method: &Method,
+        request_str: Option<&str>,
+        headers_func: F,
+    ) -> Result<ResponseFuture, AzureError>
     where
         F: FnOnce(&mut ::http::request::Builder),
     {
@@ -287,7 +326,8 @@ impl TableService {
             None => None,
         };
 
-        self.client.perform_table_request(segment, method, headers_func, request_vec)
+        self.client
+            .perform_table_request(segment, method, headers_func, request_vec)
     }
 }
 
@@ -295,9 +335,12 @@ const HEADER_NEXTPARTITIONKEY: &'static str = "x-ms-continuation-NextPartitionKe
 const HEADER_NEXTROWKEY: &'static str = "x-ms-continuation-NextRowKey";
 
 fn continuation_from_headers(headers: &HeaderMap) -> Option<Continuation> {
-    if headers.contains_key(HEADER_NEXTPARTITIONKEY) && headers.contains_key(HEADER_NEXTROWKEY){
+    if headers.contains_key(HEADER_NEXTPARTITIONKEY) && headers.contains_key(HEADER_NEXTROWKEY) {
         Some(Continuation {
-            next_partition_key: headers[HEADER_NEXTPARTITIONKEY].to_str().unwrap().to_string(),
+            next_partition_key: headers[HEADER_NEXTPARTITIONKEY]
+                .to_str()
+                .unwrap()
+                .to_string(),
             next_row_key: headers[HEADER_NEXTROWKEY].to_str().unwrap().to_string(),
         })
     } else {
@@ -318,11 +361,13 @@ struct EntityCollection<T> {
     continuation: Option<Continuation>,
 }
 
+#[derive(Debug, Clone)]
 struct Continuation {
     next_partition_key: String,
     next_row_key: String,
 }
 
+#[derive(Debug, Clone)]
 enum ContinuationState {
     Start,
     Next(Option<Continuation>),

@@ -1,20 +1,20 @@
 use crate::blob::generate_blob_uri;
 use crate::blob::responses::PutBlobResponse;
-use azure_sdk_storage_core::client::Client;
-use azure_sdk_storage_core::ClientRequired;
 use azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError};
 use azure_sdk_core::headers::BLOB_TYPE;
 use azure_sdk_core::lease::LeaseId;
 use azure_sdk_core::modify_conditions::IfMatchCondition;
 use azure_sdk_core::{
-    BlobNameRequired, BlobNameSupport, CacheControlOption, CacheControlSupport, ClientRequestIdOption, ClientRequestIdSupport,
-    ContainerNameRequired, ContainerNameSupport, ContentDispositionOption, ContentDispositionSupport, ContentEncodingOption,
-    ContentEncodingSupport, ContentLanguageOption, ContentLanguageSupport, ContentTypeOption, ContentTypeSupport, IfMatchConditionOption,
-    IfMatchConditionSupport, LeaseIdOption, LeaseIdSupport, MetadataOption, MetadataSupport, No, TimeoutOption, TimeoutSupport, ToAssign,
+    BlobNameRequired, BlobNameSupport, CacheControlOption, CacheControlSupport,
+    ClientRequestIdOption, ClientRequestIdSupport, ContainerNameRequired, ContainerNameSupport,
+    ContentDispositionOption, ContentDispositionSupport, ContentEncodingOption,
+    ContentEncodingSupport, ContentLanguageOption, ContentLanguageSupport, ContentTypeOption,
+    ContentTypeSupport, IfMatchConditionOption, IfMatchConditionSupport, LeaseIdOption,
+    LeaseIdSupport, MetadataOption, MetadataSupport, No, TimeoutOption, TimeoutSupport, ToAssign,
     Yes,
 };
-use futures::future::{done, ok};
-use futures::prelude::*;
+use azure_sdk_storage_core::client::Client;
+use azure_sdk_storage_core::ClientRequired;
 use hyper::{Method, StatusCode};
 use std::collections::HashMap;
 use std::marker::PhantomData;
@@ -65,7 +65,8 @@ impl<'a> PutAppendBlobBuilder<'a, No, No> {
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet> ClientRequired<'a> for PutAppendBlobBuilder<'a, ContainerNameSet, BlobNameSet>
+impl<'a, ContainerNameSet, BlobNameSet> ClientRequired<'a>
+    for PutAppendBlobBuilder<'a, ContainerNameSet, BlobNameSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
@@ -96,7 +97,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet> TimeoutOption for PutAppendBlobBuilder<'a, ContainerNameSet, BlobNameSet>
+impl<'a, ContainerNameSet, BlobNameSet> TimeoutOption
+    for PutAppendBlobBuilder<'a, ContainerNameSet, BlobNameSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
@@ -107,7 +109,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet> ContentTypeOption<'a> for PutAppendBlobBuilder<'a, ContainerNameSet, BlobNameSet>
+impl<'a, ContainerNameSet, BlobNameSet> ContentTypeOption<'a>
+    for PutAppendBlobBuilder<'a, ContainerNameSet, BlobNameSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
@@ -118,7 +121,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet> ContentEncodingOption<'a> for PutAppendBlobBuilder<'a, ContainerNameSet, BlobNameSet>
+impl<'a, ContainerNameSet, BlobNameSet> ContentEncodingOption<'a>
+    for PutAppendBlobBuilder<'a, ContainerNameSet, BlobNameSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
@@ -129,7 +133,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet> ContentLanguageOption<'a> for PutAppendBlobBuilder<'a, ContainerNameSet, BlobNameSet>
+impl<'a, ContainerNameSet, BlobNameSet> ContentLanguageOption<'a>
+    for PutAppendBlobBuilder<'a, ContainerNameSet, BlobNameSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
@@ -140,7 +145,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet> CacheControlOption<'a> for PutAppendBlobBuilder<'a, ContainerNameSet, BlobNameSet>
+impl<'a, ContainerNameSet, BlobNameSet> CacheControlOption<'a>
+    for PutAppendBlobBuilder<'a, ContainerNameSet, BlobNameSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
@@ -151,7 +157,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet> ContentDispositionOption<'a> for PutAppendBlobBuilder<'a, ContainerNameSet, BlobNameSet>
+impl<'a, ContainerNameSet, BlobNameSet> ContentDispositionOption<'a>
+    for PutAppendBlobBuilder<'a, ContainerNameSet, BlobNameSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
@@ -162,7 +169,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet> MetadataOption<'a> for PutAppendBlobBuilder<'a, ContainerNameSet, BlobNameSet>
+impl<'a, ContainerNameSet, BlobNameSet> MetadataOption<'a>
+    for PutAppendBlobBuilder<'a, ContainerNameSet, BlobNameSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
@@ -173,7 +181,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet> LeaseIdOption<'a> for PutAppendBlobBuilder<'a, ContainerNameSet, BlobNameSet>
+impl<'a, ContainerNameSet, BlobNameSet> LeaseIdOption<'a>
+    for PutAppendBlobBuilder<'a, ContainerNameSet, BlobNameSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
@@ -184,7 +193,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet> IfMatchConditionOption<'a> for PutAppendBlobBuilder<'a, ContainerNameSet, BlobNameSet>
+impl<'a, ContainerNameSet, BlobNameSet> IfMatchConditionOption<'a>
+    for PutAppendBlobBuilder<'a, ContainerNameSet, BlobNameSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
@@ -195,7 +205,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet> ClientRequestIdOption<'a> for PutAppendBlobBuilder<'a, ContainerNameSet, BlobNameSet>
+impl<'a, ContainerNameSet, BlobNameSet> ClientRequestIdOption<'a>
+    for PutAppendBlobBuilder<'a, ContainerNameSet, BlobNameSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
@@ -206,7 +217,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet> ContainerNameSupport<'a> for PutAppendBlobBuilder<'a, ContainerNameSet, BlobNameSet>
+impl<'a, ContainerNameSet, BlobNameSet> ContainerNameSupport<'a>
+    for PutAppendBlobBuilder<'a, ContainerNameSet, BlobNameSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
@@ -235,7 +247,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet> BlobNameSupport<'a> for PutAppendBlobBuilder<'a, ContainerNameSet, BlobNameSet>
+impl<'a, ContainerNameSet, BlobNameSet> BlobNameSupport<'a>
+    for PutAppendBlobBuilder<'a, ContainerNameSet, BlobNameSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
@@ -264,7 +277,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet> TimeoutSupport for PutAppendBlobBuilder<'a, ContainerNameSet, BlobNameSet>
+impl<'a, ContainerNameSet, BlobNameSet> TimeoutSupport
+    for PutAppendBlobBuilder<'a, ContainerNameSet, BlobNameSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
@@ -293,7 +307,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet> ContentTypeSupport<'a> for PutAppendBlobBuilder<'a, ContainerNameSet, BlobNameSet>
+impl<'a, ContainerNameSet, BlobNameSet> ContentTypeSupport<'a>
+    for PutAppendBlobBuilder<'a, ContainerNameSet, BlobNameSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
@@ -322,7 +337,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet> ContentEncodingSupport<'a> for PutAppendBlobBuilder<'a, ContainerNameSet, BlobNameSet>
+impl<'a, ContainerNameSet, BlobNameSet> ContentEncodingSupport<'a>
+    for PutAppendBlobBuilder<'a, ContainerNameSet, BlobNameSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
@@ -351,7 +367,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet> ContentLanguageSupport<'a> for PutAppendBlobBuilder<'a, ContainerNameSet, BlobNameSet>
+impl<'a, ContainerNameSet, BlobNameSet> ContentLanguageSupport<'a>
+    for PutAppendBlobBuilder<'a, ContainerNameSet, BlobNameSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
@@ -380,7 +397,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet> CacheControlSupport<'a> for PutAppendBlobBuilder<'a, ContainerNameSet, BlobNameSet>
+impl<'a, ContainerNameSet, BlobNameSet> CacheControlSupport<'a>
+    for PutAppendBlobBuilder<'a, ContainerNameSet, BlobNameSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
@@ -409,7 +427,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet> ContentDispositionSupport<'a> for PutAppendBlobBuilder<'a, ContainerNameSet, BlobNameSet>
+impl<'a, ContainerNameSet, BlobNameSet> ContentDispositionSupport<'a>
+    for PutAppendBlobBuilder<'a, ContainerNameSet, BlobNameSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
@@ -438,7 +457,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet> MetadataSupport<'a> for PutAppendBlobBuilder<'a, ContainerNameSet, BlobNameSet>
+impl<'a, ContainerNameSet, BlobNameSet> MetadataSupport<'a>
+    for PutAppendBlobBuilder<'a, ContainerNameSet, BlobNameSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
@@ -467,7 +487,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet> LeaseIdSupport<'a> for PutAppendBlobBuilder<'a, ContainerNameSet, BlobNameSet>
+impl<'a, ContainerNameSet, BlobNameSet> LeaseIdSupport<'a>
+    for PutAppendBlobBuilder<'a, ContainerNameSet, BlobNameSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
@@ -496,7 +517,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet> IfMatchConditionSupport<'a> for PutAppendBlobBuilder<'a, ContainerNameSet, BlobNameSet>
+impl<'a, ContainerNameSet, BlobNameSet> IfMatchConditionSupport<'a>
+    for PutAppendBlobBuilder<'a, ContainerNameSet, BlobNameSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
@@ -525,7 +547,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet> ClientRequestIdSupport<'a> for PutAppendBlobBuilder<'a, ContainerNameSet, BlobNameSet>
+impl<'a, ContainerNameSet, BlobNameSet> ClientRequestIdSupport<'a>
+    for PutAppendBlobBuilder<'a, ContainerNameSet, BlobNameSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
@@ -564,7 +587,7 @@ where
 
 impl<'a> PutAppendBlobBuilder<'a, Yes, Yes> {
     #[inline]
-    pub fn finalize(self) -> impl Future<Item = PutBlobResponse, Error = AzureError> {
+    pub async fn finalize(self) -> Result<PutBlobResponse, AzureError> {
         let mut uri = generate_blob_uri(&self, None);
 
         if let Some(timeout) = TimeoutOption::to_uri_parameter(&self) {
@@ -573,7 +596,7 @@ impl<'a> PutAppendBlobBuilder<'a, Yes, Yes> {
 
         trace!("uri == {:?}", uri);
 
-        let req = self.client().perform_request(
+        let future_response = self.client().perform_request(
             &uri,
             &Method::PUT,
             |ref mut request| {
@@ -589,11 +612,10 @@ impl<'a> PutAppendBlobBuilder<'a, Yes, Yes> {
                 ClientRequestIdOption::add_header(&self, request);
             },
             None,
-        );
+        )?;
 
-        done(req)
-            .from_err()
-            .and_then(move |response| check_status_extract_headers_and_body(response, StatusCode::CREATED))
-            .and_then(move |(headers, _body)| done(PutBlobResponse::from_headers(&headers)).and_then(ok))
+        let (headers, _body) =
+            check_status_extract_headers_and_body(future_response, StatusCode::CREATED).await?;
+        PutBlobResponse::from_headers(&headers)
     }
 }

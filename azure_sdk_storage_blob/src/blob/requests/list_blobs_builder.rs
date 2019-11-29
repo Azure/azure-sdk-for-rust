@@ -1,17 +1,17 @@
 use crate::blob::responses::ListBlobsResponse;
-use azure_sdk_storage_core::client::Client;
 use crate::container::generate_container_uri;
-use azure_sdk_storage_core::ClientRequired;
 use azure_sdk_core::errors::{check_status_extract_headers_and_body_as_string, AzureError};
 use azure_sdk_core::{
-    ClientRequestIdOption, ClientRequestIdSupport, ContainerNameRequired, ContainerNameSupport, DelimiterOption, DelimiterSupport,
-    IncludeCopyOption, IncludeCopySupport, IncludeDeletedOption, IncludeDeletedSupport, IncludeListOptions, IncludeMetadataOption,
-    IncludeMetadataSupport, IncludeSnapshotsOption, IncludeSnapshotsSupport, IncludeUncommittedBlobsOption, IncludeUncommittedBlobsSupport,
-    MaxResultsOption, MaxResultsSupport, NextMarkerOption, NextMarkerSupport, No, PrefixOption, PrefixSupport, TimeoutOption,
-    TimeoutSupport, ToAssign, Yes,
+    ClientRequestIdOption, ClientRequestIdSupport, ContainerNameRequired, ContainerNameSupport,
+    DelimiterOption, DelimiterSupport, IncludeCopyOption, IncludeCopySupport, IncludeDeletedOption,
+    IncludeDeletedSupport, IncludeListOptions, IncludeMetadataOption, IncludeMetadataSupport,
+    IncludeSnapshotsOption, IncludeSnapshotsSupport, IncludeUncommittedBlobsOption,
+    IncludeUncommittedBlobsSupport, MaxResultsOption, MaxResultsSupport, NextMarkerOption,
+    NextMarkerSupport, No, PrefixOption, PrefixSupport, TimeoutOption, TimeoutSupport, ToAssign,
+    Yes,
 };
-use futures::future::done;
-use futures::prelude::*;
+use azure_sdk_storage_core::client::Client;
+use azure_sdk_storage_core::ClientRequired;
 use hyper::{Method, StatusCode};
 use std::marker::PhantomData;
 
@@ -518,7 +518,7 @@ impl<'a> IncludeListOptions for ListBlobBuilder<'a, Yes> {}
 
 impl<'a> ListBlobBuilder<'a, Yes> {
     #[inline]
-    pub fn finalize(self) -> impl Future<Item = ListBlobsResponse, Error = AzureError> {
+    pub async fn finalize(self) -> Result<ListBlobsResponse, AzureError> {
         // we create a copy to move into the future's closure.
         // We need to do this since the closure only accepts
         // 'static lifetimes.
@@ -544,11 +544,13 @@ impl<'a> ListBlobBuilder<'a, Yes> {
 
         trace!("list blob uri = {}", uri);
 
-        let req = self.client().perform_request(&uri, &Method::GET, |_| {}, None);
+        let future_response = self
+            .client()
+            .perform_request(&uri, &Method::GET, |_| {}, None)?;
 
-        done(req).from_err().and_then(move |future_response| {
+        let (headers, body_as_str) =
             check_status_extract_headers_and_body_as_string(future_response, StatusCode::OK)
-                .and_then(move |(headers, body_as_str)| done(ListBlobsResponse::from_response(&container_name, &headers, &body_as_str)))
-        })
+                .await?;
+        ListBlobsResponse::from_response(&container_name, &headers, &body_as_str)
     }
 }

@@ -1,16 +1,16 @@
 use crate::blob::generate_blob_uri;
 use crate::blob::responses::DeleteBlobResponse;
-use azure_sdk_storage_core::client::Client;
-use azure_sdk_storage_core::ClientRequired;
 use azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError};
 use azure_sdk_core::lease::LeaseId;
 use azure_sdk_core::{
-    BlobNameRequired, BlobNameSupport, ClientRequestIdOption, ClientRequestIdSupport, ContainerNameRequired, ContainerNameSupport,
-    LeaseIdOption, LeaseIdSupport, SnapshotRequired, SnapshotSupport, TimeoutOption, TimeoutSupport,
+    BlobNameRequired, BlobNameSupport, ClientRequestIdOption, ClientRequestIdSupport,
+    ContainerNameRequired, ContainerNameSupport, LeaseIdOption, LeaseIdSupport, SnapshotRequired,
+    SnapshotSupport, TimeoutOption, TimeoutSupport,
 };
 use azure_sdk_core::{No, ToAssign, Yes};
+use azure_sdk_storage_core::client::Client;
+use azure_sdk_storage_core::ClientRequired;
 use chrono::{DateTime, Utc};
-use futures::future::{done, Future};
 use hyper::{Method, StatusCode};
 use std::marker::PhantomData;
 
@@ -64,7 +64,8 @@ where
     }
 }
 
-impl<'a, BlobNameSet, SnapshotSet> ContainerNameRequired<'a> for DeleteBlobSnapshotBuilder<'a, Yes, BlobNameSet, SnapshotSet>
+impl<'a, BlobNameSet, SnapshotSet> ContainerNameRequired<'a>
+    for DeleteBlobSnapshotBuilder<'a, Yes, BlobNameSet, SnapshotSet>
 where
     BlobNameSet: ToAssign,
     SnapshotSet: ToAssign,
@@ -75,7 +76,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, SnapshotSet> BlobNameRequired<'a> for DeleteBlobSnapshotBuilder<'a, ContainerNameSet, Yes, SnapshotSet>
+impl<'a, ContainerNameSet, SnapshotSet> BlobNameRequired<'a>
+    for DeleteBlobSnapshotBuilder<'a, ContainerNameSet, Yes, SnapshotSet>
 where
     ContainerNameSet: ToAssign,
     SnapshotSet: ToAssign,
@@ -86,7 +88,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet> SnapshotRequired for DeleteBlobSnapshotBuilder<'a, ContainerNameSet, BlobNameSet, Yes>
+impl<'a, ContainerNameSet, BlobNameSet> SnapshotRequired
+    for DeleteBlobSnapshotBuilder<'a, ContainerNameSet, BlobNameSet, Yes>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
@@ -293,7 +296,8 @@ where
 }
 
 // methods callable regardless
-impl<'a, ContainerNameSet, BlobNameSet, SnapshotSet> DeleteBlobSnapshotBuilder<'a, ContainerNameSet, BlobNameSet, SnapshotSet>
+impl<'a, ContainerNameSet, BlobNameSet, SnapshotSet>
+    DeleteBlobSnapshotBuilder<'a, ContainerNameSet, BlobNameSet, SnapshotSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
@@ -302,14 +306,14 @@ where
 }
 
 impl<'a> DeleteBlobSnapshotBuilder<'a, Yes, Yes, Yes> {
-    pub fn finalize(self) -> impl Future<Item = DeleteBlobResponse, Error = AzureError> {
+    pub async fn finalize(self) -> Result<DeleteBlobResponse, AzureError> {
         let mut uri = generate_blob_uri(&self, Some(&SnapshotRequired::to_uri_parameter(&self)));
 
         if let Some(nm) = TimeoutOption::to_uri_parameter(&self) {
             uri = format!("{}&{}", uri, nm);
         }
 
-        let req = self.client().perform_request(
+        let future_response = self.client().perform_request(
             &uri,
             &Method::DELETE,
             |ref mut request| {
@@ -317,11 +321,10 @@ impl<'a> DeleteBlobSnapshotBuilder<'a, Yes, Yes, Yes> {
                 ClientRequestIdOption::add_header(&self, request);
             },
             None,
-        );
+        )?;
 
-        done(req)
-            .from_err()
-            .and_then(move |future_response| check_status_extract_headers_and_body(future_response, StatusCode::ACCEPTED))
-            .and_then(|(headers, _body)| done(DeleteBlobResponse::from_headers(&headers)))
+        let (headers, _body) =
+            check_status_extract_headers_and_body(future_response, StatusCode::ACCEPTED).await?;
+        DeleteBlobResponse::from_headers(&headers)
     }
 }

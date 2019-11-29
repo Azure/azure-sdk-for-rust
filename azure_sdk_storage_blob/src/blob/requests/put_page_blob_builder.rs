@@ -1,19 +1,19 @@
 use crate::blob::generate_blob_uri;
 use crate::blob::responses::PutBlobResponse;
-use azure_sdk_storage_core::client::Client;
-use azure_sdk_storage_core::ClientRequired;
 use azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError};
 use azure_sdk_core::headers::BLOB_TYPE;
 use azure_sdk_core::lease::LeaseId;
 use azure_sdk_core::{
-    AccessTierOption, AccessTierSupport, BlobNameRequired, BlobNameSupport, CacheControlOption, CacheControlSupport, ClientRequestIdOption,
-    ClientRequestIdSupport, ContainerNameRequired, ContainerNameSupport, ContentDispositionOption, ContentDispositionSupport,
-    ContentEncodingOption, ContentEncodingSupport, ContentLanguageOption, ContentLanguageSupport, ContentTypeOption, ContentTypeSupport,
-    LeaseIdOption, LeaseIdSupport, MetadataOption, MetadataSupport, No, PageBlobLengthRequired, PageBlobLengthSupport,
-    SequenceNumberOption, SequenceNumberSupport, TimeoutOption, TimeoutSupport, ToAssign, Yes,
+    AccessTierOption, AccessTierSupport, BlobNameRequired, BlobNameSupport, CacheControlOption,
+    CacheControlSupport, ClientRequestIdOption, ClientRequestIdSupport, ContainerNameRequired,
+    ContainerNameSupport, ContentDispositionOption, ContentDispositionSupport,
+    ContentEncodingOption, ContentEncodingSupport, ContentLanguageOption, ContentLanguageSupport,
+    ContentTypeOption, ContentTypeSupport, LeaseIdOption, LeaseIdSupport, MetadataOption,
+    MetadataSupport, No, PageBlobLengthRequired, PageBlobLengthSupport, SequenceNumberOption,
+    SequenceNumberSupport, TimeoutOption, TimeoutSupport, ToAssign, Yes,
 };
-use futures::future::{done, ok};
-use futures::prelude::*;
+use azure_sdk_storage_core::client::Client;
+use azure_sdk_storage_core::ClientRequired;
 use hyper::{Method, StatusCode};
 use std::collections::HashMap;
 use std::marker::PhantomData;
@@ -84,7 +84,8 @@ where
     }
 }
 
-impl<'a, BlobNameSet, ContentLengthSet> ContainerNameRequired<'a> for PutPageBlobBuilder<'a, Yes, BlobNameSet, ContentLengthSet>
+impl<'a, BlobNameSet, ContentLengthSet> ContainerNameRequired<'a>
+    for PutPageBlobBuilder<'a, Yes, BlobNameSet, ContentLengthSet>
 where
     BlobNameSet: ToAssign,
     ContentLengthSet: ToAssign,
@@ -95,7 +96,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, ContentLengthSet> BlobNameRequired<'a> for PutPageBlobBuilder<'a, ContainerNameSet, Yes, ContentLengthSet>
+impl<'a, ContainerNameSet, ContentLengthSet> BlobNameRequired<'a>
+    for PutPageBlobBuilder<'a, ContainerNameSet, Yes, ContentLengthSet>
 where
     ContainerNameSet: ToAssign,
     ContentLengthSet: ToAssign,
@@ -106,7 +108,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet> PageBlobLengthRequired for PutPageBlobBuilder<'a, ContainerNameSet, BlobNameSet, Yes>
+impl<'a, ContainerNameSet, BlobNameSet> PageBlobLengthRequired
+    for PutPageBlobBuilder<'a, ContainerNameSet, BlobNameSet, Yes>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
@@ -742,7 +745,8 @@ where
 }
 
 // methods callable regardless
-impl<'a, ContainerNameSet, BlobNameSet, ContentLengthSet> PutPageBlobBuilder<'a, ContainerNameSet, BlobNameSet, ContentLengthSet>
+impl<'a, ContainerNameSet, BlobNameSet, ContentLengthSet>
+    PutPageBlobBuilder<'a, ContainerNameSet, BlobNameSet, ContentLengthSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
@@ -752,7 +756,7 @@ where
 
 impl<'a> PutPageBlobBuilder<'a, Yes, Yes, Yes> {
     #[inline]
-    pub fn finalize(self) -> impl Future<Item = PutBlobResponse, Error = AzureError> {
+    pub async fn finalize(self) -> Result<PutBlobResponse, AzureError> {
         let mut uri = generate_blob_uri(&self, None);
 
         if let Some(timeout) = TimeoutOption::to_uri_parameter(&self) {
@@ -761,7 +765,7 @@ impl<'a> PutPageBlobBuilder<'a, Yes, Yes, Yes> {
 
         trace!("uri == {:?}", uri);
 
-        let req = self.client().perform_request(
+        let future_response = self.client().perform_request(
             &uri,
             &Method::PUT,
             |ref mut request| {
@@ -779,11 +783,10 @@ impl<'a> PutPageBlobBuilder<'a, Yes, Yes, Yes> {
                 ClientRequestIdOption::add_header(&self, request);
             },
             None,
-        );
+        )?;
 
-        done(req)
-            .from_err()
-            .and_then(move |response| check_status_extract_headers_and_body(response, StatusCode::CREATED))
-            .and_then(move |(headers, _body)| done(PutBlobResponse::from_headers(&headers)).and_then(ok))
+        let (headers, _body) =
+            check_status_extract_headers_and_body(future_response, StatusCode::CREATED).await?;
+        PutBlobResponse::from_headers(&headers)
     }
 }

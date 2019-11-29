@@ -1,15 +1,18 @@
 pub mod requests;
 pub mod responses;
 
-use azure_sdk_storage_core::ClientRequired;
 use azure_sdk_core::{
     enumerations,
     errors::{AzureError, TraversingError},
-    headers::{BLOB_PUBLIC_ACCESS, HAS_IMMUTABILITY_POLICY, HAS_LEGAL_HOLD, LEASE_DURATION, LEASE_STATE, LEASE_STATUS, META_PREFIX},
+    headers::{
+        BLOB_PUBLIC_ACCESS, HAS_IMMUTABILITY_POLICY, HAS_LEGAL_HOLD, LEASE_DURATION, LEASE_STATE,
+        LEASE_STATUS, META_PREFIX,
+    },
     lease::{LeaseDuration, LeaseState, LeaseStatus},
     parsing::{cast_must, cast_optional, traverse, FromStringOptional},
-    ContainerNameRequired, COMPLETE_ENCODE_SET,
+    ContainerNameRequired,
 };
+use azure_sdk_storage_core::ClientRequired;
 use chrono::{DateTime, Utc};
 use http::request::Builder;
 use http::HeaderMap;
@@ -17,12 +20,19 @@ use hyper::header;
 use hyper::header::HeaderName;
 use std::collections::HashMap;
 use std::{fmt, str::FromStr};
-use url::percent_encoding::utf8_percent_encode;
+use url::form_urlencoded;
 use xml::{Element, Xml};
 
-create_enum!(PublicAccess, (None, "none"), (Container, "container"), (Blob, "blob"));
+create_enum!(
+    PublicAccess,
+    (None, "none"),
+    (Container, "container"),
+    (Blob, "blob")
+);
 
-pub(crate) fn public_access_from_header(header_map: &HeaderMap) -> Result<PublicAccess, AzureError> {
+pub(crate) fn public_access_from_header(
+    header_map: &HeaderMap,
+) -> Result<PublicAccess, AzureError> {
     let pa = match header_map.get(BLOB_PUBLIC_ACCESS) {
         Some(pa) => PublicAccess::from_str(pa.to_str()?)?,
         None => PublicAccess::None,
@@ -121,7 +131,11 @@ impl Container {
 
         let has_immutability_policy = match headers.get(HAS_IMMUTABILITY_POLICY) {
             Some(has_immutability_policy) => bool::from_str(has_immutability_policy.to_str()?)?,
-            None => return Err(AzureError::MissingHeaderError(HAS_IMMUTABILITY_POLICY.to_owned())),
+            None => {
+                return Err(AzureError::MissingHeaderError(
+                    HAS_IMMUTABILITY_POLICY.to_owned(),
+                ))
+            }
         };
 
         let has_legal_hold = match headers.get(HAS_LEGAL_HOLD) {
@@ -157,16 +171,19 @@ impl Container {
 
         let lease_state = cast_must::<LeaseState>(elem, &["Properties", "LeaseState"])?;
 
-        let lease_duration = cast_optional::<LeaseDuration>(elem, &["Properties", "LeaseDuration"])?;
+        let lease_duration =
+            cast_optional::<LeaseDuration>(elem, &["Properties", "LeaseDuration"])?;
 
         let lease_status = cast_must::<LeaseStatus>(elem, &["Properties", "LeaseStatus"])?;
 
-        let public_access = match cast_optional::<PublicAccess>(elem, &["Properties", "PublicAccess"])? {
-            Some(pa) => pa,
-            None => PublicAccess::None,
-        };
+        let public_access =
+            match cast_optional::<PublicAccess>(elem, &["Properties", "PublicAccess"])? {
+                Some(pa) => pa,
+                None => PublicAccess::None,
+            };
 
-        let has_immutability_policy = cast_must::<bool>(elem, &["Properties", "HasImmutabilityPolicy"])?;
+        let has_immutability_policy =
+            cast_must::<bool>(elem, &["Properties", "HasImmutabilityPolicy"])?;
         let has_legal_hold = cast_must::<bool>(elem, &["Properties", "HasLegalHold"])?;
 
         let metadata = {
@@ -187,7 +204,9 @@ impl Container {
                     let key = elem.name.to_owned();
 
                     if elem.children.is_empty() {
-                        return Err(AzureError::UnexpectedXMLError(String::from("Metadata node should not be empty")));
+                        return Err(AzureError::UnexpectedXMLError(String::from(
+                            "Metadata node should not be empty",
+                        )));
                     }
 
                     let content = {
@@ -232,13 +251,13 @@ where
         Some(ref params) => format!(
             "{}/{}?{}",
             t.client().blob_uri(),
-            utf8_percent_encode(t.container_name(), COMPLETE_ENCODE_SET),
+            form_urlencoded::byte_serialize(t.container_name().as_bytes()).collect::<String>(),
             params
         ),
         None => format!(
             "{}/{}",
             t.client().blob_uri(),
-            utf8_percent_encode(t.container_name(), COMPLETE_ENCODE_SET),
+            form_urlencoded::byte_serialize(t.container_name().as_bytes()).collect::<String>(),
         ),
     }
 }

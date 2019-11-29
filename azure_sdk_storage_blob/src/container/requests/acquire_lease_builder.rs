@@ -1,15 +1,15 @@
-use azure_sdk_storage_core::client::Client;
 use crate::container::responses::AcquireLeaseResponse;
-use azure_sdk_storage_core::ClientRequired;
 use azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError};
 use azure_sdk_core::headers::LEASE_ACTION;
 use azure_sdk_core::lease::LeaseId;
 use azure_sdk_core::{
-    ClientRequestIdOption, ClientRequestIdSupport, ContainerNameRequired, ContainerNameSupport, LeaseDurationRequired,
-    LeaseDurationSupport, LeaseIdOption, LeaseIdSupport, ProposedLeaseIdOption, ProposedLeaseIdSupport, TimeoutOption, TimeoutSupport,
+    ClientRequestIdOption, ClientRequestIdSupport, ContainerNameRequired, ContainerNameSupport,
+    LeaseDurationRequired, LeaseDurationSupport, LeaseIdOption, LeaseIdSupport,
+    ProposedLeaseIdOption, ProposedLeaseIdSupport, TimeoutOption, TimeoutSupport,
 };
 use azure_sdk_core::{No, ToAssign, Yes};
-use futures::future::{done, Future};
+use azure_sdk_storage_core::client::Client;
+use azure_sdk_storage_core::ClientRequired;
 use hyper::{Method, StatusCode};
 use std::marker::PhantomData;
 
@@ -46,7 +46,8 @@ impl<'a> AcquireLeaseBuilder<'a, No, No> {
     }
 }
 
-impl<'a, ContainerNameSet, LeaseDurationSet> ClientRequired<'a> for AcquireLeaseBuilder<'a, ContainerNameSet, LeaseDurationSet>
+impl<'a, ContainerNameSet, LeaseDurationSet> ClientRequired<'a>
+    for AcquireLeaseBuilder<'a, ContainerNameSet, LeaseDurationSet>
 where
     ContainerNameSet: ToAssign,
     LeaseDurationSet: ToAssign,
@@ -56,7 +57,8 @@ where
     }
 }
 
-impl<'a, LeaseDurationSet> ContainerNameRequired<'a> for AcquireLeaseBuilder<'a, Yes, LeaseDurationSet>
+impl<'a, LeaseDurationSet> ContainerNameRequired<'a>
+    for AcquireLeaseBuilder<'a, Yes, LeaseDurationSet>
 where
     LeaseDurationSet: ToAssign,
 {
@@ -65,7 +67,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, LeaseDurationSet> ClientRequestIdOption<'a> for AcquireLeaseBuilder<'a, ContainerNameSet, LeaseDurationSet>
+impl<'a, ContainerNameSet, LeaseDurationSet> ClientRequestIdOption<'a>
+    for AcquireLeaseBuilder<'a, ContainerNameSet, LeaseDurationSet>
 where
     ContainerNameSet: ToAssign,
     LeaseDurationSet: ToAssign,
@@ -75,7 +78,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, LeaseDurationSet> TimeoutOption for AcquireLeaseBuilder<'a, ContainerNameSet, LeaseDurationSet>
+impl<'a, ContainerNameSet, LeaseDurationSet> TimeoutOption
+    for AcquireLeaseBuilder<'a, ContainerNameSet, LeaseDurationSet>
 where
     ContainerNameSet: ToAssign,
     LeaseDurationSet: ToAssign,
@@ -85,7 +89,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, LeaseDurationSet> LeaseIdOption<'a> for AcquireLeaseBuilder<'a, ContainerNameSet, LeaseDurationSet>
+impl<'a, ContainerNameSet, LeaseDurationSet> LeaseIdOption<'a>
+    for AcquireLeaseBuilder<'a, ContainerNameSet, LeaseDurationSet>
 where
     ContainerNameSet: ToAssign,
     LeaseDurationSet: ToAssign,
@@ -104,7 +109,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, LeaseDurationSet> ProposedLeaseIdOption<'a> for AcquireLeaseBuilder<'a, ContainerNameSet, LeaseDurationSet>
+impl<'a, ContainerNameSet, LeaseDurationSet> ProposedLeaseIdOption<'a>
+    for AcquireLeaseBuilder<'a, ContainerNameSet, LeaseDurationSet>
 where
     ContainerNameSet: ToAssign,
     LeaseDurationSet: ToAssign,
@@ -114,7 +120,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, LeaseDurationSet> ContainerNameSupport<'a> for AcquireLeaseBuilder<'a, ContainerNameSet, LeaseDurationSet>
+impl<'a, ContainerNameSet, LeaseDurationSet> ContainerNameSupport<'a>
+    for AcquireLeaseBuilder<'a, ContainerNameSet, LeaseDurationSet>
 where
     ContainerNameSet: ToAssign,
     LeaseDurationSet: ToAssign,
@@ -136,7 +143,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, LeaseDurationSet> ClientRequestIdSupport<'a> for AcquireLeaseBuilder<'a, ContainerNameSet, LeaseDurationSet>
+impl<'a, ContainerNameSet, LeaseDurationSet> ClientRequestIdSupport<'a>
+    for AcquireLeaseBuilder<'a, ContainerNameSet, LeaseDurationSet>
 where
     ContainerNameSet: ToAssign,
     LeaseDurationSet: ToAssign,
@@ -158,7 +166,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, LeaseDurationSet> TimeoutSupport for AcquireLeaseBuilder<'a, ContainerNameSet, LeaseDurationSet>
+impl<'a, ContainerNameSet, LeaseDurationSet> TimeoutSupport
+    for AcquireLeaseBuilder<'a, ContainerNameSet, LeaseDurationSet>
 where
     ContainerNameSet: ToAssign,
     LeaseDurationSet: ToAssign,
@@ -180,7 +189,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, LeaseDurationSet> LeaseIdSupport<'a> for AcquireLeaseBuilder<'a, ContainerNameSet, LeaseDurationSet>
+impl<'a, ContainerNameSet, LeaseDurationSet> LeaseIdSupport<'a>
+    for AcquireLeaseBuilder<'a, ContainerNameSet, LeaseDurationSet>
 where
     ContainerNameSet: ToAssign,
     LeaseDurationSet: ToAssign,
@@ -202,7 +212,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, LeaseDurationSet> LeaseDurationSupport for AcquireLeaseBuilder<'a, ContainerNameSet, LeaseDurationSet>
+impl<'a, ContainerNameSet, LeaseDurationSet> LeaseDurationSupport
+    for AcquireLeaseBuilder<'a, ContainerNameSet, LeaseDurationSet>
 where
     ContainerNameSet: ToAssign,
     LeaseDurationSet: ToAssign,
@@ -224,7 +235,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, LeaseDurationSet> ProposedLeaseIdSupport<'a> for AcquireLeaseBuilder<'a, ContainerNameSet, LeaseDurationSet>
+impl<'a, ContainerNameSet, LeaseDurationSet> ProposedLeaseIdSupport<'a>
+    for AcquireLeaseBuilder<'a, ContainerNameSet, LeaseDurationSet>
 where
     ContainerNameSet: ToAssign,
     LeaseDurationSet: ToAssign,
@@ -247,7 +259,8 @@ where
 }
 
 // methods callable regardless
-impl<'a, ContainerNameSet, LeaseDurationSet> AcquireLeaseBuilder<'a, ContainerNameSet, LeaseDurationSet>
+impl<'a, ContainerNameSet, LeaseDurationSet>
+    AcquireLeaseBuilder<'a, ContainerNameSet, LeaseDurationSet>
 where
     ContainerNameSet: ToAssign,
     LeaseDurationSet: ToAssign,
@@ -255,7 +268,7 @@ where
 }
 
 impl<'a> AcquireLeaseBuilder<'a, Yes, Yes> {
-    pub fn finalize(self) -> impl Future<Item = AcquireLeaseResponse, Error = AzureError> {
+    pub async fn finalize(self) -> Result<AcquireLeaseResponse, AzureError> {
         let mut uri = format!(
             "{}/{}?comp=lease&restype=container",
             self.client().blob_uri(),
@@ -266,7 +279,7 @@ impl<'a> AcquireLeaseBuilder<'a, Yes, Yes> {
             uri = format!("{}&{}", uri, nm);
         }
 
-        let req = self.client().perform_request(
+        let future_response = self.client().perform_request(
             &uri,
             &Method::PUT,
             |ref mut request| {
@@ -277,11 +290,10 @@ impl<'a> AcquireLeaseBuilder<'a, Yes, Yes> {
                 ProposedLeaseIdOption::add_header(&self, request);
             },
             Some(&[]),
-        );
+        )?;
 
-        done(req)
-            .from_err()
-            .and_then(move |future_response| check_status_extract_headers_and_body(future_response, StatusCode::CREATED))
-            .and_then(|(headers, _body)| done(AcquireLeaseResponse::from_headers(&headers)))
+        let (headers, _body) =
+            check_status_extract_headers_and_body(future_response, StatusCode::CREATED).await?;
+        AcquireLeaseResponse::from_headers(&headers)
     }
 }

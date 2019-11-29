@@ -1,32 +1,32 @@
 use azure_sdk_auth_aad::*;
 use oauth2::{ClientId, ClientSecret};
 use std::env;
+use std::error::Error;
 use std::sync::Arc;
 use url::Url;
-use futures::executor::block_on;
 
-fn main() {
-    block_on(main_async());
-}
-
-async fn main_async() {
-    let client_id = ClientId::new(env::var("CLIENT_ID").expect("Missing CLIENT_ID environment variable."));
-    let client_secret = ClientSecret::new(env::var("CLIENT_SECRET").expect("Missing CLIENT_SECRET environment variable."));
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn Error>> {
+    let client_id =
+        ClientId::new(env::var("CLIENT_ID").expect("Missing CLIENT_ID environment variable."));
+    let client_secret = ClientSecret::new(
+        env::var("CLIENT_SECRET").expect("Missing CLIENT_SECRET environment variable."),
+    );
     let tenant_id = env::var("TENANT_ID").expect("Missing TENANT_ID environment variable.");
-    let subscription_id = env::var("SUBSCRIPTION_ID").expect("Missing SUBSCRIPTION_ID environment variable.");
-    
+    let subscription_id =
+        env::var("SUBSCRIPTION_ID").expect("Missing SUBSCRIPTION_ID environment variable.");
+
     // This Future will give you the final token to
     // use in authorization.
     let client = Arc::new(reqwest::Client::new());
-    let non_interactive = authorize_non_interactive(
+    let token = authorize_non_interactive(
         client.clone(),
         &client_id,
         &client_secret,
         "https://management.azure.com/",
         &tenant_id,
-    ).await;
-
-    let token = non_interactive.unwrap();
+    )
+    .await?;
     println!("Non interactive authorization == {:?}", token);
 
     // Let's enumerate the Azure SQL Databases instances
@@ -36,7 +36,7 @@ async fn main_async() {
     let url = Url::parse(&format!(
             "https://management.azure.com/subscriptions/{}/providers/Microsoft.Sql/servers?api-version=2015-05-01-preview",
             subscription_id
-        )).unwrap();
+        ))?;
 
     let resp = reqwest::Client::new()
         .get(url)
@@ -45,11 +45,10 @@ async fn main_async() {
             format!("Bearer {}", token.access_token().secret()),
         )
         .send()
-        .await
-        .unwrap()
+        .await?
         .text()
-        .await
-        .unwrap();
+        .await?;
 
     println!("\n\nresp {:?}", resp);
+    Ok(())
 }

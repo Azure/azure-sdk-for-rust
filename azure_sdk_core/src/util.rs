@@ -27,12 +27,12 @@ fn format_as_bytes<D: Display>(value: D) -> Bytes {
 
 #[allow(dead_code)]
 pub fn into_header_value<B: Into<Bytes>>(value: B) -> Result<HeaderValue, http::Error> {
-    let value = value.into();
+    let value: &[u8] = &value.into();
     Ok(HeaderValue::try_from(value)?)
 }
 
 pub fn format_header_value<D: Display>(value: D) -> Result<HeaderValue, http::Error> {
-    let value = format_as_bytes(value);
+    let value: &[u8] = &format_as_bytes(value);
     Ok(HeaderValue::try_from(value)?)
 }
 
@@ -75,7 +75,7 @@ pub trait RequestBuilderExt {
     where
         HeaderName: HttpTryFrom<K>,
     {
-        self.header(key, format_as_bytes(value))
+        self.header(key, &format_as_bytes(value) as &[u8])
     }
 
     fn header_static<K>(&mut self, key: K, value: &'static str) -> &mut Self
@@ -89,7 +89,7 @@ pub trait RequestBuilderExt {
     where
         HeaderName: HttpTryFrom<K>,
     {
-        self.header(key, value.into())
+        self.header(key, &value.into() as &[u8])
     }
 }
 

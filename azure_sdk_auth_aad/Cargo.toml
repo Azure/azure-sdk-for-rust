@@ -1,6 +1,6 @@
 [package]
 name               = "azure_sdk_auth_aad"
-version            = "0.22.0"
+version            = "0.30.0"
 description        = "Rust wrappers around Microsoft Azure REST APIs - Azure OAuth2 helper crate"
 readme             = "README.md"
 authors            = ["Francesco Cogno <francesco.cogno@outlook.com>"]
@@ -15,21 +15,25 @@ categories         = ["api-bindings"]
 edition            = "2018"
 
 [dependencies]
-azure_sdk_core       = { path = "../azure_sdk_core", version = "0.20.4" }
-oauth2               = "3.0.0-alpha.4"
-base64               = "0.10.1"
-url                  = "2.1.0"
+azure_sdk_core       = { path          = "../azure_sdk_core", version = "0.30.0" }
+oauth2               = "               = 3.0.0-alpha.4"
+base64               = "0.11"
+url                  = "2.1"
 rand                 = "0.7.2"
 failure              = "0.1.6"
-futures-core-preview = { version = "=0.3.0-alpha.19" }
-futures-preview      = { version = "=0.3.0-alpha.19", features = ["compat", "async-await"] }
-http                 = "0.1.19"
-serde                = "1.0.101"
-serde_derive         = "1.0.101"
-chrono               = "0.4.9"
-serde_json           = "1.0.41"
-log                  = "0.4.8"
-reqwest 	     = { version = "0.10.0-alpha.1", features = ["json"] }
+futures-core-preview = { version       = "                            = 0.3.0-alpha.19" }
+futures-preview      = { version       = "                            = 0.3.0-alpha.19", features = ["compat", "async-await"] }
+http                 = "0.1.20"
+serde                = "1.0"
+serde_derive         = "1.0"
+chrono               = "0.4"
+serde_json           = "1.0"
+log                  = "0.4"
+reqwest              = { version       = "0.10.0-alpha.2", features   = ["json"] }
+
+[dev-dependencies]
+futures-util         = "0.3.1"
+tokio                = "0.2.0-alpha.6"
 
 [features]
-test_e2e           = []
+test_e2e             = []

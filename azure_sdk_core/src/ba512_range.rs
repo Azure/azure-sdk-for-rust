@@ -60,7 +60,7 @@ impl FromStr for BA512Range {
 }
 
 impl fmt::Display for BA512Range {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "bytes={}-{}", self.start, self.end)
     }
 }

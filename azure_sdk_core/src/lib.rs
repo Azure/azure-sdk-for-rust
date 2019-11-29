@@ -1,30 +1,12 @@
 #![recursion_limit = "128"]
+#![warn(rust_2018_idioms)]
 
-extern crate base64;
-extern crate chrono;
-extern crate futures;
-extern crate http;
-extern crate hyper;
-extern crate hyper_rustls;
-extern crate md5;
-extern crate ring;
-extern crate time;
-#[macro_use]
-extern crate url;
-extern crate uuid;
-extern crate xml;
 #[macro_use]
 extern crate log;
 #[macro_use]
 extern crate quick_error;
-extern crate serde;
 #[macro_use]
 extern crate serde_derive;
-extern crate bytes;
-extern crate serde_json;
-extern crate serde_xml_rs;
-extern crate smallvec;
-
 #[macro_use]
 pub mod errors;
 pub mod parsing;
@@ -41,16 +23,17 @@ pub mod modify_conditions;
 use self::modify_conditions::{IfMatchCondition, IfSinceCondition, SequenceNumberCondition};
 use std::fmt;
 use std::str::FromStr;
-pub mod range;
-use url::percent_encoding;
 pub mod headers;
+pub mod range;
 use self::headers::{
-    ACCOUNT_KIND, APPEND_POSITION, BLOB_ACCESS_TIER, BLOB_CONTENT_LENGTH, BLOB_SEQUENCE_NUMBER, CACHE_CONTROL, CLIENT_REQUEST_ID,
-    CONTENT_DISPOSITION, CONTENT_MD5, DELETE_SNAPSHOTS, DELETE_TYPE_PERMANENT, LEASE_BREAK_PERIOD, LEASE_DURATION, LEASE_ID, LEASE_TIME,
+    ACCOUNT_KIND, APPEND_POSITION, BLOB_ACCESS_TIER, BLOB_CONTENT_LENGTH, BLOB_SEQUENCE_NUMBER,
+    CACHE_CONTROL, CLIENT_REQUEST_ID, CONTENT_DISPOSITION, CONTENT_MD5, DELETE_SNAPSHOTS,
+    DELETE_TYPE_PERMANENT, LEASE_BREAK_PERIOD, LEASE_DURATION, LEASE_ID, LEASE_TIME,
     PROPOSED_LEASE_ID, REQUEST_ID, REQUEST_SERVER_ENCRYPTED, SKU_NAME,
 };
 use hyper::header::{
-    HeaderName, CONTENT_ENCODING, CONTENT_LANGUAGE, CONTENT_LENGTH, CONTENT_TYPE, DATE, ETAG, LAST_MODIFIED, RANGE,
+    HeaderName, CONTENT_ENCODING, CONTENT_LANGUAGE, CONTENT_LENGTH, CONTENT_TYPE, DATE, ETAG,
+    LAST_MODIFIED, RANGE,
 };
 use uuid::Uuid;
 pub type RequestId = Uuid;
@@ -64,15 +47,8 @@ mod stored_access_policy;
 pub use self::stored_access_policy::{StoredAccessPolicy, StoredAccessPolicyList};
 pub mod prelude;
 use chrono::{DateTime, Utc};
-use futures::future::Future;
 use http::status::StatusCode;
 use hyper::{Body, Client, Request};
-
-define_encode_set! {
-    pub COMPLETE_ENCODE_SET = [percent_encoding::USERINFO_ENCODE_SET] | {
-        '+', '-', '&'
-    }
-}
 
 #[macro_export]
 macro_rules! response_from_headers {
@@ -275,7 +251,10 @@ pub trait AccessTierOption<'a> {
 
 pub trait DeleteSnapshotsMethodSupport {
     type O;
-    fn with_delete_snapshots_method(self, delete_snapshots_method: DeleteSnapshotsMethod) -> Self::O;
+    fn with_delete_snapshots_method(
+        self,
+        delete_snapshots_method: DeleteSnapshotsMethod,
+    ) -> Self::O;
 }
 
 pub trait DeleteSnapshotsMethodRequired {
@@ -422,7 +401,11 @@ pub trait IncludeDeletedOption {
 }
 
 pub trait IncludeListOptions:
-    IncludeSnapshotsOption + IncludeMetadataOption + IncludeUncommittedBlobsOption + IncludeCopyOption + IncludeDeletedOption
+    IncludeSnapshotsOption
+    + IncludeMetadataOption
+    + IncludeUncommittedBlobsOption
+    + IncludeCopyOption
+    + IncludeDeletedOption
 {
     fn to_uri_parameter(&self) -> Option<String> {
         let mut s = String::new();
@@ -498,13 +481,19 @@ pub trait SequenceNumberOption {
     fn sequence_number(&self) -> u64;
 
     fn add_header(&self, builder: &mut Builder) {
-        builder.header(BLOB_SEQUENCE_NUMBER, &self.sequence_number().to_string() as &str);
+        builder.header(
+            BLOB_SEQUENCE_NUMBER,
+            &self.sequence_number().to_string() as &str,
+        );
     }
 }
 
 pub trait SequenceNumberConditionSupport {
     type O;
-    fn with_sequence_number_condition(self, sequence_number_condition: SequenceNumberCondition) -> Self::O;
+    fn with_sequence_number_condition(
+        self,
+        sequence_number_condition: SequenceNumberCondition,
+    ) -> Self::O;
 }
 
 pub trait SequenceNumberConditionOption {
@@ -556,7 +545,10 @@ pub trait PageBlobLengthRequired {
     fn content_length(&self) -> u64;
 
     fn add_header(&self, builder: &mut Builder) {
-        builder.header(BLOB_CONTENT_LENGTH, &self.content_length().to_string() as &str);
+        builder.header(
+            BLOB_CONTENT_LENGTH,
+            &self.content_length().to_string() as &str,
+        );
     }
 }
 
@@ -714,7 +706,10 @@ pub trait ProposedLeaseIdRequired<'a> {
     fn proposed_lease_id(&self) -> &'a LeaseId;
 
     fn add_header(&self, builder: &mut Builder) {
-        builder.header(PROPOSED_LEASE_ID, &self.proposed_lease_id().to_string() as &str);
+        builder.header(
+            PROPOSED_LEASE_ID,
+            &self.proposed_lease_id().to_string() as &str,
+        );
     }
 }
 
@@ -727,7 +722,10 @@ pub trait LeaseBreakPeriodRequired {
     fn lease_break_period(&self) -> u8;
 
     fn add_header(&self, builder: &mut Builder) {
-        builder.header(LEASE_BREAK_PERIOD, &self.lease_break_period().to_string() as &str);
+        builder.header(
+            LEASE_BREAK_PERIOD,
+            &self.lease_break_period().to_string() as &str,
+        );
     }
 }
 
@@ -782,7 +780,9 @@ pub fn content_md5_from_headers(headers: &HeaderMap) -> Result<[u8; 16], AzureEr
     let content_md5_vec = base64::decode(&content_md5)?;
 
     if content_md5_vec.len() != 16 {
-        return Err(AzureError::DigestNot16BytesLong(content_md5_vec.len() as u64));
+        return Err(AzureError::DigestNot16BytesLong(
+            content_md5_vec.len() as u64
+        ));
     }
     let mut content_md5 = [0; 16];
     content_md5.copy_from_slice(&content_md5_vec[0..16]);
@@ -791,7 +791,9 @@ pub fn content_md5_from_headers(headers: &HeaderMap) -> Result<[u8; 16], AzureEr
     Ok(content_md5)
 }
 
-pub fn last_modified_from_headers_optional(headers: &HeaderMap) -> Result<Option<DateTime<Utc>>, AzureError> {
+pub fn last_modified_from_headers_optional(
+    headers: &HeaderMap,
+) -> Result<Option<DateTime<Utc>>, AzureError> {
     if headers.contains_key(LAST_MODIFIED) {
         Ok(Some(last_modified_from_headers(headers)?))
     } else {
@@ -917,14 +919,12 @@ pub fn request_server_encrypted_from_headers(headers: &HeaderMap) -> Result<bool
     Ok(request_server_encrypted)
 }
 
-pub fn perform_http_request(
+pub async fn perform_http_request(
     client: &Client<hyper_rustls::HttpsConnector<hyper::client::HttpConnector>>,
     req: Request<Body>,
     expected_status: StatusCode,
-) -> impl Future<Item = String, Error = AzureError> {
-    println!("req == {:?}", req);
-    client
-        .request(req)
-        .from_err()
-        .and_then(move |res| check_status_extract_body_2(res, expected_status))
+) -> Result<String, AzureError> {
+    debug!("req == {:?}", req);
+    let res = client.request(req).await?;
+    check_status_extract_body_2(res, expected_status).await
 }

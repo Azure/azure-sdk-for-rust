@@ -1,11 +1,3 @@
-#[allow(unused_imports)]
-use azure_sdk_core::{
-    errors::{
-        check_status_extract_body, check_status_extract_headers_and_body, extract_status_headers_and_body, AzureError, UnexpectedHTTPResult,
-    },
-    incompletevector::ContinuationToken,
-    util::RequestBuilderExt,
-};
 use crate::{
     client::headers::*,
     document::{DocumentAttributes, IndexingDirective},
@@ -13,7 +5,15 @@ use crate::{
     request_response::*,
     ConsistencyLevel,
 };
-use futures::{future, prelude::*};
+#[allow(unused_imports)]
+use azure_sdk_core::{
+    errors::{
+        check_status_extract_body, check_status_extract_headers_and_body,
+        extract_status_headers_and_body, AzureError, UnexpectedHTTPResult,
+    },
+    incompletevector::ContinuationToken,
+    util::RequestBuilderExt,
+};
 use http::request::Builder as RequestBuilder;
 use hyper::{
     self,
@@ -29,9 +29,9 @@ use std::{marker::PhantomData, str};
 type HyperClient = Arc<hyper::Client<HttpsConnector<hyper::client::HttpConnector>>>;
 
 macro_rules! request_bytes_ref {
-    ($name:ident, $ty:ty, $h:path) => {
-        pub fn $name<V: AsRef<$ty>>(mut self, value: V) -> Self {
-            self.request.header_bytes($h, bytes::Bytes::from(value.as_ref()));
+    ($name:ident, $h:path) => {
+        pub fn $name<V:Into<bytes::Bytes>>(mut self, value: V) -> Self {
+            self.request.header_bytes($h, value);
             self
         }
     };

@@ -1,15 +1,15 @@
-use azure_sdk_storage_core::client::Client;
 use crate::container::responses::BreakLeaseResponse;
-use azure_sdk_storage_core::ClientRequired;
 use azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError};
 use azure_sdk_core::headers::LEASE_ACTION;
 use azure_sdk_core::lease::LeaseId;
 use azure_sdk_core::{
-    ClientRequestIdOption, ClientRequestIdSupport, ContainerNameRequired, ContainerNameSupport, LeaseBreakPeriodOption,
-    LeaseBreakPeriodSupport, LeaseIdOption, LeaseIdSupport, TimeoutOption, TimeoutSupport,
+    ClientRequestIdOption, ClientRequestIdSupport, ContainerNameRequired, ContainerNameSupport,
+    LeaseBreakPeriodOption, LeaseBreakPeriodSupport, LeaseIdOption, LeaseIdSupport, TimeoutOption,
+    TimeoutSupport,
 };
 use azure_sdk_core::{No, ToAssign, Yes};
-use futures::future::{done, Future};
+use azure_sdk_storage_core::client::Client;
+use azure_sdk_storage_core::ClientRequired;
 use hyper::{Method, StatusCode};
 use std::marker::PhantomData;
 
@@ -191,7 +191,7 @@ where
 impl<'a, ContainerNameSet> BreakLeaseBuilder<'a, ContainerNameSet> where ContainerNameSet: ToAssign {}
 
 impl<'a> BreakLeaseBuilder<'a, Yes> {
-    pub fn finalize(self) -> impl Future<Item = BreakLeaseResponse, Error = AzureError> {
+    pub async fn finalize(self) -> Result<BreakLeaseResponse, AzureError> {
         let mut uri = format!(
             "{}/{}?comp=lease&restype=container",
             self.client().blob_uri(),
@@ -202,7 +202,7 @@ impl<'a> BreakLeaseBuilder<'a, Yes> {
             uri = format!("{}&{}", uri, nm);
         }
 
-        let req = self.client().perform_request(
+        let future_response = self.client().perform_request(
             &uri,
             &Method::PUT,
             |ref mut request| {
@@ -212,11 +212,10 @@ impl<'a> BreakLeaseBuilder<'a, Yes> {
                 LeaseBreakPeriodOption::add_header(&self, request);
             },
             Some(&[]),
-        );
+        )?;
 
-        done(req)
-            .from_err()
-            .and_then(move |future_response| check_status_extract_headers_and_body(future_response, StatusCode::ACCEPTED))
-            .and_then(|(headers, _body)| done(BreakLeaseResponse::from_headers(&headers)))
+        let (headers, _body) =
+            check_status_extract_headers_and_body(future_response, StatusCode::ACCEPTED).await?;
+        BreakLeaseResponse::from_headers(&headers)
     }
 }

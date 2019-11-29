@@ -1,15 +1,15 @@
 use crate::blob::generate_blob_uri;
 use crate::blob::responses::DeleteBlobResponse;
-use azure_sdk_storage_core::client::Client;
-use azure_sdk_storage_core::ClientRequired;
 use azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError};
 use azure_sdk_core::lease::LeaseId;
 use azure_sdk_core::{
-    BlobNameRequired, BlobNameSupport, ClientRequestIdOption, ClientRequestIdSupport, ContainerNameRequired, ContainerNameSupport,
-    DeleteSnapshotsMethodRequired, DeleteSnapshotsMethodSupport, LeaseIdOption, LeaseIdSupport, TimeoutOption, TimeoutSupport,
+    BlobNameRequired, BlobNameSupport, ClientRequestIdOption, ClientRequestIdSupport,
+    ContainerNameRequired, ContainerNameSupport, DeleteSnapshotsMethodRequired,
+    DeleteSnapshotsMethodSupport, LeaseIdOption, LeaseIdSupport, TimeoutOption, TimeoutSupport,
 };
 use azure_sdk_core::{DeleteSnapshotsMethod, No, ToAssign, Yes};
-use futures::future::{done, Future};
+use azure_sdk_storage_core::client::Client;
+use azure_sdk_storage_core::ClientRequired;
 use hyper::{Method, StatusCode};
 use std::marker::PhantomData;
 
@@ -87,7 +87,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet> DeleteSnapshotsMethodRequired for DeleteBlobBuilder<'a, ContainerNameSet, BlobNameSet, Yes>
+impl<'a, ContainerNameSet, BlobNameSet> DeleteSnapshotsMethodRequired
+    for DeleteBlobBuilder<'a, ContainerNameSet, BlobNameSet, Yes>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
@@ -199,7 +200,10 @@ where
     type O = DeleteBlobBuilder<'a, ContainerNameSet, BlobNameSet, Yes>;
 
     #[inline]
-    fn with_delete_snapshots_method(self, delete_snapshots_method: DeleteSnapshotsMethod) -> Self::O {
+    fn with_delete_snapshots_method(
+        self,
+        delete_snapshots_method: DeleteSnapshotsMethod,
+    ) -> Self::O {
         DeleteBlobBuilder {
             client: self.client,
             p_container_name: PhantomData {},
@@ -304,7 +308,7 @@ where
 }
 
 impl<'a> DeleteBlobBuilder<'a, Yes, Yes, Yes> {
-    pub fn finalize(self) -> impl Future<Item = DeleteBlobResponse, Error = AzureError> {
+    pub async fn finalize(self) -> Result<DeleteBlobResponse, AzureError> {
         let mut uri = generate_blob_uri(&self, None);
 
         if let Some(nm) = TimeoutOption::to_uri_parameter(&self) {
@@ -313,7 +317,7 @@ impl<'a> DeleteBlobBuilder<'a, Yes, Yes, Yes> {
 
         trace!("delete_blob uri == {:?}", uri);
 
-        let req = self.client().perform_request(
+        let future_response = self.client().perform_request(
             &uri,
             &Method::DELETE,
             |ref mut request| {
@@ -322,11 +326,9 @@ impl<'a> DeleteBlobBuilder<'a, Yes, Yes, Yes> {
                 ClientRequestIdOption::add_header(&self, request);
             },
             None,
-        );
-
-        done(req)
-            .from_err()
-            .and_then(move |future_response| check_status_extract_headers_and_body(future_response, StatusCode::ACCEPTED))
-            .and_then(|(headers, _body)| done(DeleteBlobResponse::from_headers(&headers)))
+        )?;
+        let (headers, _body) =
+            check_status_extract_headers_and_body(future_response, StatusCode::ACCEPTED).await?;
+        DeleteBlobResponse::from_headers(&headers)
     }
 }

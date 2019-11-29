@@ -1,14 +1,11 @@
 use azure_sdk_auth_aad::*;
-use futures::executor::block_on;
 use oauth2::{ClientId, ClientSecret, TokenResponse};
 use std::env;
+use std::error::Error;
 use url::Url;
 
-fn main() {
-    block_on(main_async());
-}
-
-async fn main_async() {
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn Error>> {
     let client_id =
         ClientId::new(env::var("CLIENT_ID").expect("Missing CLIENT_ID environment variable."));
     let client_secret = ClientSecret::new(
@@ -50,7 +47,7 @@ async fn main_async() {
     let url = Url::parse(&format!(
             "https://management.azure.com/subscriptions/{}/providers/Microsoft.Sql/servers?api-version=2015-05-01-preview",
             subscription_id
-        )).unwrap();
+        ))?;
 
     let resp = reqwest::Client::new()
         .get(url)
@@ -59,11 +56,11 @@ async fn main_async() {
             format!("Bearer {}", token.access_token().secret()),
         )
         .send()
-        .await
-        .unwrap()
+        .await?
         .text()
-        .await
-        .unwrap();
+        .await?;
 
     println!("\n\nresp {:?}", resp);
+
+    Ok(())
 }

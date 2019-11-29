@@ -1,17 +1,18 @@
 use crate::blob::requests::ListBlobBuilder;
 use crate::blob::Blob;
-use azure_sdk_storage_core::client::Client;
-use azure_sdk_storage_core::ClientRequired;
 use azure_sdk_core::errors::AzureError;
 use azure_sdk_core::incompletevector::IncompleteVector;
 use azure_sdk_core::{
-    ClientRequestIdOption, ClientRequestIdSupport, ContainerNameRequired, ContainerNameSupport, DelimiterOption, DelimiterSupport,
-    IncludeCopyOption, IncludeCopySupport, IncludeDeletedOption, IncludeDeletedSupport, IncludeListOptions, IncludeMetadataOption,
-    IncludeMetadataSupport, IncludeSnapshotsOption, IncludeSnapshotsSupport, IncludeUncommittedBlobsOption, IncludeUncommittedBlobsSupport,
-    NextMarkerSupport, No, PrefixOption, PrefixSupport, TimeoutOption, TimeoutSupport, ToAssign, Yes,
+    ClientRequestIdOption, ClientRequestIdSupport, ContainerNameRequired, ContainerNameSupport,
+    DelimiterOption, DelimiterSupport, IncludeCopyOption, IncludeCopySupport, IncludeDeletedOption,
+    IncludeDeletedSupport, IncludeListOptions, IncludeMetadataOption, IncludeMetadataSupport,
+    IncludeSnapshotsOption, IncludeSnapshotsSupport, IncludeUncommittedBlobsOption,
+    IncludeUncommittedBlobsSupport, NextMarkerSupport, No, PrefixOption, PrefixSupport,
+    TimeoutOption, TimeoutSupport, ToAssign, Yes,
 };
-use futures::prelude::*;
-use futures::stream;
+use azure_sdk_storage_core::client::Client;
+use azure_sdk_storage_core::ClientRequired;
+use futures::stream::Stream;
 use std::marker::PhantomData;
 
 #[derive(Debug, Clone)]
@@ -130,7 +131,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet> IncludeUncommittedBlobsOption for ListBlobStreamBuilder<'a, ContainerNameSet>
+impl<'a, ContainerNameSet> IncludeUncommittedBlobsOption
+    for ListBlobStreamBuilder<'a, ContainerNameSet>
 where
     ContainerNameSet: ToAssign,
 {
@@ -185,7 +187,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet> ClientRequestIdSupport<'a> for ListBlobStreamBuilder<'a, ContainerNameSet>
+impl<'a, ContainerNameSet> ClientRequestIdSupport<'a>
+    for ListBlobStreamBuilder<'a, ContainerNameSet>
 where
     ContainerNameSet: ToAssign,
 {
@@ -335,7 +338,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet> IncludeUncommittedBlobsSupport for ListBlobStreamBuilder<'a, ContainerNameSet>
+impl<'a, ContainerNameSet> IncludeUncommittedBlobsSupport
+    for ListBlobStreamBuilder<'a, ContainerNameSet>
 where
     ContainerNameSet: ToAssign,
 {
@@ -411,7 +415,10 @@ where
 }
 
 // methods callable regardless
-impl<'a, ContainerNameSet> ListBlobStreamBuilder<'a, ContainerNameSet> where ContainerNameSet: ToAssign {}
+impl<'a, ContainerNameSet> ListBlobStreamBuilder<'a, ContainerNameSet> where
+    ContainerNameSet: ToAssign
+{
+}
 
 // this empty trait is required in order to use IncludeListOptions methods. No duck typing, sorry
 // :(
@@ -424,9 +431,9 @@ enum ContinuationState {
 
 impl<'a> ListBlobStreamBuilder<'a, Yes> {
     #[inline]
-    pub fn finalize(self) -> impl Stream<Item = Blob, Error = AzureError> {
+    pub fn finalize(self) -> impl Stream<Item = Result<Vec<Blob>, AzureError>> + 'a {
+        let client = self.client().clone();
         let container_name = self.container_name().to_owned();
-
         let client_request_id = self.client_request_id.map(|v| v.to_owned());
         let timeout = self.timeout.to_owned();
         let prefix = self.prefix.map(|v| v.to_owned());
@@ -437,55 +444,63 @@ impl<'a> ListBlobStreamBuilder<'a, Yes> {
         let include_copy = self.include_copy;
         let include_deleted = self.include_deleted;
 
-        let client = self.client().clone();
+        futures::stream::unfold(Some(ContinuationState::Start), move |cont_token| {
+            let client = client.clone();
+            let container_name = container_name.clone();
+            let client_request_id = client_request_id.clone();
+            let prefix = prefix.clone();
+            let delimiter = delimiter.clone();
 
-        stream::unfold(ContinuationState::Start, move |cont_token| {
-            let marker = match cont_token {
-                ContinuationState::Start => None,
-                ContinuationState::Next(Some(marker)) => Some(marker),
-                ContinuationState::Next(None) => return None,
-            };
+            async move {
+                let marker = match cont_token {
+                    Some(ContinuationState::Start) => None,
+                    Some(ContinuationState::Next(Some(marker))) => Some(marker),
+                    Some(ContinuationState::Next(None)) => return None,
+                    None => return None,
+                };
 
-            let mut req = ListBlobBuilder::new(&client).with_container_name(&container_name);
+                let mut req = ListBlobBuilder::new(&client).with_container_name(&container_name);
 
-            if let Some(ref marker) = &marker {
-                req = req.with_next_marker(&*marker);
-            }
-            if let Some(ref client_request_id) = &client_request_id {
-                req = req.with_client_request_id(client_request_id);
-            }
-            if let Some(timeout) = timeout {
-                req = req.with_timeout(timeout);
-            }
-            if let Some(ref prefix) = &prefix {
-                req = req.with_prefix(prefix);
-            }
-            if let Some(ref delimiter) = &delimiter {
-                req = req.with_delimiter(delimiter);
-            }
+                if let Some(ref marker) = &marker {
+                    req = req.with_next_marker(&*marker);
+                }
+                if let Some(ref client_request_id) = &client_request_id {
+                    req = req.with_client_request_id(client_request_id);
+                }
+                if let Some(timeout) = timeout {
+                    req = req.with_timeout(timeout);
+                }
+                if let Some(ref prefix) = &prefix {
+                    req = req.with_prefix(prefix);
+                }
+                if let Some(ref delimiter) = &delimiter {
+                    req = req.with_delimiter(delimiter);
+                }
 
-            if include_snapshots {
-                req = req.with_include_snapshots();
-            }
-            if include_metadata {
-                req = req.with_include_metadata();
-            }
-            if include_uncommitted_blobs {
-                req = req.with_include_uncommitted_blobs();
-            }
-            if include_copy {
-                req = req.with_include_copy();
-            }
-            if include_deleted {
-                req = req.with_include_deleted();
-            }
+                if include_snapshots {
+                    req = req.with_include_snapshots();
+                }
+                if include_metadata {
+                    req = req.with_include_metadata();
+                }
+                if include_uncommitted_blobs {
+                    req = req.with_include_uncommitted_blobs();
+                }
+                if include_copy {
+                    req = req.with_include_copy();
+                }
+                if include_deleted {
+                    req = req.with_include_deleted();
+                }
 
-            let req = req.finalize();
-            Some(req.map(move |response| {
+                let response = match req.finalize().await {
+                    Ok(response) => response,
+                    Err(err) => return Some((Err(err), None)),
+                };
                 let IncompleteVector { token, vector } = response.incomplete_vector;
-                (stream::iter_ok(vector), ContinuationState::Next(token))
-            }))
+
+                Some((Ok(vector), Some(ContinuationState::Next(token))))
+            }
         })
-        .flatten()
     }
 }

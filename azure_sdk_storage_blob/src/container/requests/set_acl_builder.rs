@@ -1,14 +1,15 @@
-use azure_sdk_storage_core::client::Client;
-use crate::container::{public_access_from_header, PublicAccess, PublicAccessRequired, PublicAccessSupport};
-use azure_sdk_storage_core::ClientRequired;
+use crate::container::{
+    public_access_from_header, PublicAccess, PublicAccessRequired, PublicAccessSupport,
+};
 use azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError};
 use azure_sdk_core::lease::LeaseId;
 use azure_sdk_core::{
-    ClientRequestIdOption, ClientRequestIdSupport, ContainerNameRequired, ContainerNameSupport, LeaseIdOption, LeaseIdSupport,
-    TimeoutOption, TimeoutSupport,
+    ClientRequestIdOption, ClientRequestIdSupport, ContainerNameRequired, ContainerNameSupport,
+    LeaseIdOption, LeaseIdSupport, TimeoutOption, TimeoutSupport,
 };
 use azure_sdk_core::{No, StoredAccessPolicyList, ToAssign, Yes};
-use futures::future::{done, Future};
+use azure_sdk_storage_core::client::Client;
+use azure_sdk_storage_core::ClientRequired;
 use hyper::{Method, StatusCode};
 use std::marker::PhantomData;
 
@@ -29,7 +30,8 @@ where
     stored_access_policy_list: Option<&'a StoredAccessPolicyList>,
 }
 
-impl<'a, ContainerNameSet, PublicAccessSet> ClientRequired<'a> for SetACLBuilder<'a, ContainerNameSet, PublicAccessSet>
+impl<'a, ContainerNameSet, PublicAccessSet> ClientRequired<'a>
+    for SetACLBuilder<'a, ContainerNameSet, PublicAccessSet>
 where
     ContainerNameSet: ToAssign,
     PublicAccessSet: ToAssign,
@@ -64,7 +66,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, PublicAccessSet> ContainerNameSupport<'a> for SetACLBuilder<'a, ContainerNameSet, PublicAccessSet>
+impl<'a, ContainerNameSet, PublicAccessSet> ContainerNameSupport<'a>
+    for SetACLBuilder<'a, ContainerNameSet, PublicAccessSet>
 where
     ContainerNameSet: ToAssign,
     PublicAccessSet: ToAssign,
@@ -96,7 +99,10 @@ where
         self.stored_access_policy_list
     }
 
-    pub fn with_stored_access_policy_list(self, sapl: &'a StoredAccessPolicyList) -> SetACLBuilder<'a, ContainerNameSet, PublicAccessSet> {
+    pub fn with_stored_access_policy_list(
+        self,
+        sapl: &'a StoredAccessPolicyList,
+    ) -> SetACLBuilder<'a, ContainerNameSet, PublicAccessSet> {
         SetACLBuilder {
             p_container_name: PhantomData {},
             p_public_access: PhantomData {},
@@ -112,8 +118,12 @@ where
 }
 
 impl<'a> SetACLBuilder<'a, Yes, Yes> {
-    pub fn finalize(self) -> impl Future<Item = PublicAccess, Error = AzureError> {
-        let mut uri = format!("{}/{}?restype=container&comp=acl", self.client().blob_uri(), self.container_name());
+    pub async fn finalize(self) -> Result<PublicAccess, AzureError> {
+        let mut uri = format!(
+            "{}/{}?restype=container&comp=acl",
+            self.client().blob_uri(),
+            self.container_name()
+        );
 
         if let Some(nm) = TimeoutOption::to_uri_parameter(&self) {
             uri = format!("{}&{}", uri, nm);
@@ -126,7 +136,7 @@ impl<'a> SetACLBuilder<'a, Yes, Yes> {
             None
         };
 
-        let req = self.client().perform_request(
+        let future_response = self.client().perform_request(
             &uri,
             &Method::PUT,
             |ref mut request| {
@@ -138,16 +148,17 @@ impl<'a> SetACLBuilder<'a, Yes, Yes> {
                 Some(ref x) => Some(x.as_bytes()),
                 None => Some(&[]),
             },
-        );
+        )?;
 
-        done(req)
-            .from_err()
-            .and_then(move |future_response| check_status_extract_headers_and_body(future_response, StatusCode::OK))
-            .and_then(|(headers, _body)| done(public_access_from_header(&headers)))
+        let (headers, _body) =
+            check_status_extract_headers_and_body(future_response, StatusCode::OK).await?;
+
+        public_access_from_header(&headers)
     }
 }
 
-impl<'a, ContainerNameSet, PublicAccessSet> TimeoutOption for SetACLBuilder<'a, ContainerNameSet, PublicAccessSet>
+impl<'a, ContainerNameSet, PublicAccessSet> TimeoutOption
+    for SetACLBuilder<'a, ContainerNameSet, PublicAccessSet>
 where
     ContainerNameSet: ToAssign,
     PublicAccessSet: ToAssign,
@@ -157,7 +168,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, PublicAccessSet> TimeoutSupport for SetACLBuilder<'a, ContainerNameSet, PublicAccessSet>
+impl<'a, ContainerNameSet, PublicAccessSet> TimeoutSupport
+    for SetACLBuilder<'a, ContainerNameSet, PublicAccessSet>
 where
     ContainerNameSet: ToAssign,
     PublicAccessSet: ToAssign,
@@ -179,7 +191,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, PublicAccessSet> ClientRequestIdOption<'a> for SetACLBuilder<'a, ContainerNameSet, PublicAccessSet>
+impl<'a, ContainerNameSet, PublicAccessSet> ClientRequestIdOption<'a>
+    for SetACLBuilder<'a, ContainerNameSet, PublicAccessSet>
 where
     ContainerNameSet: ToAssign,
     PublicAccessSet: ToAssign,
@@ -189,7 +202,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, PublicAccessSet> ClientRequestIdSupport<'a> for SetACLBuilder<'a, ContainerNameSet, PublicAccessSet>
+impl<'a, ContainerNameSet, PublicAccessSet> ClientRequestIdSupport<'a>
+    for SetACLBuilder<'a, ContainerNameSet, PublicAccessSet>
 where
     ContainerNameSet: ToAssign,
     PublicAccessSet: ToAssign,
@@ -211,7 +225,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, PublicAccessSet> LeaseIdOption<'a> for SetACLBuilder<'a, ContainerNameSet, PublicAccessSet>
+impl<'a, ContainerNameSet, PublicAccessSet> LeaseIdOption<'a>
+    for SetACLBuilder<'a, ContainerNameSet, PublicAccessSet>
 where
     ContainerNameSet: ToAssign,
     PublicAccessSet: ToAssign,
@@ -221,7 +236,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, PublicAccessSet> LeaseIdSupport<'a> for SetACLBuilder<'a, ContainerNameSet, PublicAccessSet>
+impl<'a, ContainerNameSet, PublicAccessSet> LeaseIdSupport<'a>
+    for SetACLBuilder<'a, ContainerNameSet, PublicAccessSet>
 where
     ContainerNameSet: ToAssign,
     PublicAccessSet: ToAssign,
@@ -243,7 +259,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, PublicAccessSet> PublicAccessSupport for SetACLBuilder<'a, ContainerNameSet, PublicAccessSet>
+impl<'a, ContainerNameSet, PublicAccessSet> PublicAccessSupport
+    for SetACLBuilder<'a, ContainerNameSet, PublicAccessSet>
 where
     ContainerNameSet: ToAssign,
     PublicAccessSet: ToAssign,
