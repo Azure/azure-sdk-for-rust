@@ -26,19 +26,26 @@ impl CreateDocumentRequest {
     }
 
     request_option!(upsert, bool, HEADER_DOCUMENTDB_IS_UPSERT);
-    request_option!(indexing_directive, IndexingDirective, HEADER_INDEXING_DIRECTIVE);
-    request_bytes_ref!(partition_key, str, HEADER_DOCUMENTDB_PARTITIONKEY);
-    request_option!(use_multiple_write_locations, bool, HEADER_ALLOW_MULTIPLE_WRITES);
+    request_option!(
+        indexing_directive,
+        IndexingDirective,
+        HEADER_INDEXING_DIRECTIVE
+    );
+    request_bytes_ref!(partition_key, HEADER_DOCUMENTDB_PARTITIONKEY);
+    request_option!(
+        use_multiple_write_locations,
+        bool,
+        HEADER_ALLOW_MULTIPLE_WRITES
+    );
 
-    pub fn execute(self) -> impl Future<Item = DocumentAttributes, Error = AzureError> {
+    pub async fn execute(self) -> Result<DocumentAttributes, AzureError> {
         trace!("get_document called(request == {:?}", self.request);
         let hc = self.hyper_client;
         let mut req = self.request;
-        future::result(self.payload)
-            .from_err()
-            .and_then(move |payload| Ok(req.body(payload.into())?))
-            .and_then(move |r| check_status_extract_body(hc.request(r), StatusCode::CREATED))
-            .and_then(move |body| Ok(serde_json::from_str::<DocumentAttributes>(&body)?))
+        let payload = self.payload?;
+        let r = req.body(payload.into())?;
+        let body = check_status_extract_body(hc.request(r), StatusCode::CREATED).await?;
+        Ok(serde_json::from_str::<DocumentAttributes>(&body)?)
     }
 }
 
@@ -55,20 +62,29 @@ impl DocumentRequestExt for GetDocumentRequest {
 
 impl GetDocumentRequest {
     pub(crate) fn new(hyper_client: HyperClient, request: RequestBuilder) -> GetDocumentRequest {
-        GetDocumentRequest { hyper_client, request }
+        GetDocumentRequest {
+            hyper_client,
+            request,
+        }
     }
 
-    request_bytes_ref!(if_none_match, str, header::IF_NONE_MATCH);
-    request_bytes_ref!(partition_key, str, HEADER_DOCUMENTDB_PARTITIONKEY);
-    request_option!(use_multiple_write_locations, bool, HEADER_ALLOW_MULTIPLE_WRITES);
+    request_bytes_ref!(if_none_match, header::IF_NONE_MATCH);
+    request_bytes_ref!(partition_key, HEADER_DOCUMENTDB_PARTITIONKEY);
+    request_option!(
+        use_multiple_write_locations,
+        bool,
+        HEADER_ALLOW_MULTIPLE_WRITES
+    );
 
-    pub fn execute<T: DeserializeOwned>(mut self) -> impl Future<Item = GetDocumentResponse<T>, Error = AzureError> {
+    pub async fn execute<T: DeserializeOwned>(
+        mut self,
+    ) -> Result<GetDocumentResponse<T>, AzureError> {
         trace!("get_document called(request == {:?}", self.request);
 
-        future::result(self.request.body(hyper::Body::empty()))
-            .from_err()
-            .and_then(move |r| extract_status_headers_and_body(self.hyper_client.request(r)))
-            .and_then(move |(status, headers, body)| Self::extract_result(status, &headers, &body))
+        let r = self.request.body(hyper::Body::empty())?;
+        let (status, headers, body) =
+            extract_status_headers_and_body(self.hyper_client.request(r)).await?;
+        Self::extract_result(status, &headers, &body)
     }
 
     fn extract_result<R: DeserializeOwned>(
@@ -131,7 +147,10 @@ impl QueryDocumentRequest {
     ) -> QueryDocumentRequest {
         request
             .header(HEADER_DOCUMENTDB_ISQUERY, HeaderValue::from_static("true"))
-            .header(header::CONTENT_TYPE, HeaderValue::from_static(QUERY_CONTENT_TYPE));
+            .header(
+                header::CONTENT_TYPE,
+                HeaderValue::from_static(QUERY_CONTENT_TYPE),
+            );
         QueryDocumentRequest {
             hyper_client,
             request,
@@ -140,33 +159,53 @@ impl QueryDocumentRequest {
     }
 
     request_option!(max_item_count, u64, HEADER_MAX_ITEM_COUNT);
-    request_bytes_ref!(continuation_token, str, HEADER_CONTINUATION);
-    request_option!(enable_cross_partition, bool, HEADER_DOCUMENTDB_QUERY_ENABLECROSSPARTITION);
+    request_bytes_ref!(continuation_token, HEADER_CONTINUATION);
+    request_option!(
+        enable_cross_partition,
+        bool,
+        HEADER_DOCUMENTDB_QUERY_ENABLECROSSPARTITION
+    );
     request_option!(
         enable_parallelize_cross_partition_query,
         bool,
         HEADER_DOCUMENTDB_QUERY_PARALLELIZECROSSPARTITIONQUERY
     );
-    request_option!(use_multiple_write_locations, bool, HEADER_ALLOW_MULTIPLE_WRITES);
-    request_option!(consistency_level, ConsistencyLevel, HEADER_CONSISTENCY_LEVEL);
+    request_option!(
+        use_multiple_write_locations,
+        bool,
+        HEADER_ALLOW_MULTIPLE_WRITES
+    );
+    request_option!(
+        consistency_level,
+        ConsistencyLevel,
+        HEADER_CONSISTENCY_LEVEL
+    );
 
-    pub fn execute<T: DeserializeOwned>(self) -> impl Future<Item = QueryDocumentResponse<T>, Error = AzureError> {
+    pub async fn execute<T: DeserializeOwned>(
+        self,
+    ) -> Result<QueryDocumentResponse<T>, AzureError> {
         trace!("get_document called(request == {:?}", self.request);
-        self.execute_json().and_then(Self::convert_query_document_type)
+        let p = self.execute_json().await?;
+        Self::convert_query_document_type(p)
     }
 
-    pub fn execute_json(self) -> impl Future<Item = QueryDocumentResponse<serde_json::Value>, Error = AzureError> {
+    pub async fn execute_json(
+        self,
+    ) -> Result<QueryDocumentResponse<serde_json::Value>, AzureError> {
         trace!("query_document called(request == {:?}", self.request);
         let hc = self.hyper_client;
         let mut req = self.request;
-        future::result(self.payload)
-            .from_err()
-            .and_then(move |payload| Ok(req.body(payload.into())?))
-            .and_then(move |r| check_status_extract_headers_and_body(hc.request(r), StatusCode::OK))
-            .and_then(move |(headers, body)| Self::extract_result_json(&body, &headers))
+        let payload = self.payload?;
+        let r = req.body(payload.into())?;
+        let (headers, body) =
+            check_status_extract_headers_and_body(hc.request(r), StatusCode::OK).await?;
+        Self::extract_result_json(&body, &headers)
     }
 
-    fn extract_result_json(body: &[u8], headers: &HeaderMap) -> Result<QueryDocumentResponse<serde_json::Value>, AzureError> {
+    fn extract_result_json(
+        body: &[u8],
+        headers: &HeaderMap,
+    ) -> Result<QueryDocumentResponse<serde_json::Value>, AzureError> {
         trace!("headers == {:?}", headers);
 
         let additional_headers = QueryDocumentResponseAdditonalHeaders {
@@ -225,7 +264,9 @@ impl QueryDocumentRequest {
     }
 
     #[inline]
-    fn convert_query_document_type<T>(qdr: QueryDocumentResponse<serde_json::Value>) -> Result<QueryDocumentResponse<T>, AzureError>
+    fn convert_query_document_type<T>(
+        qdr: QueryDocumentResponse<serde_json::Value>,
+    ) -> Result<QueryDocumentResponse<T>, AzureError>
     where
         T: DeserializeOwned,
     {
@@ -253,30 +294,48 @@ pub struct ListDocumentsRequest {
 
 impl ListDocumentsRequest {
     pub(crate) fn new(hyper_client: HyperClient, request: RequestBuilder) -> ListDocumentsRequest {
-        ListDocumentsRequest { hyper_client, request }
+        ListDocumentsRequest {
+            hyper_client,
+            request,
+        }
     }
 
     request_option!(max_item_count, u64, HEADER_MAX_ITEM_COUNT);
-    request_bytes_ref!(continuation_token, str, HEADER_CONTINUATION);
-    request_option!(consistency_level, ConsistencyLevel, HEADER_CONSISTENCY_LEVEL);
-    request_bytes_ref!(session_token, str, HEADER_SESSION_TOKEN);
-    request_bytes_ref!(if_none_match, str, header::IF_NONE_MATCH);
-    request_bytes_ref!(partition_range_id, str, HEADER_DOCUMENTDB_PARTITIONRANGEID);
-    request_option!(use_multiple_write_locations, bool, HEADER_ALLOW_MULTIPLE_WRITES);
+    request_bytes_ref!(continuation_token, HEADER_CONTINUATION);
+    request_option!(
+        consistency_level,
+        ConsistencyLevel,
+        HEADER_CONSISTENCY_LEVEL
+    );
+    request_bytes_ref!(session_token, HEADER_SESSION_TOKEN);
+    request_bytes_ref!(if_none_match, header::IF_NONE_MATCH);
+    request_bytes_ref!(partition_range_id, HEADER_DOCUMENTDB_PARTITIONRANGEID);
+    request_option!(
+        use_multiple_write_locations,
+        bool,
+        HEADER_ALLOW_MULTIPLE_WRITES
+    );
 
     pub fn incremental_feed(mut self) -> Self {
-        self.request.header(HEADER_A_IM, HeaderValue::from_static("Incremental feed"));
+        self.request
+            .header(HEADER_A_IM, HeaderValue::from_static("Incremental feed"));
         self
     }
 
-    pub fn execute<T: DeserializeOwned>(mut self) -> impl Future<Item = ListDocumentsResponse<T>, Error = AzureError> {
-        future::result(self.request.body(hyper::Body::empty()))
-            .from_err()
-            .and_then(move |r| check_status_extract_headers_and_body(self.hyper_client.request(r), StatusCode::OK))
-            .and_then(|(headers, whole_body)| Self::extract_result::<T>(&whole_body, &headers))
+    pub async fn execute<T: DeserializeOwned>(
+        mut self,
+    ) -> Result<ListDocumentsResponse<T>, AzureError> {
+        let r = self.request.body(hyper::Body::empty())?;
+        let (headers, whole_body) =
+            check_status_extract_headers_and_body(self.hyper_client.request(r), StatusCode::OK)
+                .await?;
+        Self::extract_result::<T>(&whole_body, &headers)
     }
 
-    fn extract_result<T>(body: &[u8], headers: &HeaderMap) -> Result<ListDocumentsResponse<T>, AzureError>
+    fn extract_result<T>(
+        body: &[u8],
+        headers: &HeaderMap,
+    ) -> Result<ListDocumentsResponse<T>, AzureError>
     where
         T: DeserializeOwned,
     {
@@ -294,7 +353,10 @@ impl ListDocumentsRequest {
             // If problems arise we
             // will change the field to be Option(al).
             charge: derive_request_charge(headers),
-            etag: headers.get(header::ETAG).and_then(|v| v.to_str().ok()).map(|s| s.to_owned()),
+            etag: headers
+                .get(header::ETAG)
+                .and_then(|v| v.to_str().ok())
+                .map(|s| s.to_owned()),
         };
         debug!("ado == {:?}", ado);
 
@@ -351,23 +413,34 @@ impl<T: DeserializeOwned> ReplaceDocumentRequest<T> {
         }
     }
 
-    request_bytes_ref!(if_match, str, header::IF_MATCH);
-    request_option!(indexing_directive, IndexingDirective, HEADER_INDEXING_DIRECTIVE);
-    request_bytes_ref!(partition_key, str, HEADER_DOCUMENTDB_PARTITIONKEY);
-    request_option!(use_multiple_write_locations, bool, HEADER_ALLOW_MULTIPLE_WRITES);
+    request_bytes_ref!(if_match, header::IF_MATCH);
+    request_option!(
+        indexing_directive,
+        IndexingDirective,
+        HEADER_INDEXING_DIRECTIVE
+    );
+    request_bytes_ref!(partition_key, HEADER_DOCUMENTDB_PARTITIONKEY);
+    request_option!(
+        use_multiple_write_locations,
+        bool,
+        HEADER_ALLOW_MULTIPLE_WRITES
+    );
 
-    pub fn execute(self) -> impl Future<Item = ReplaceDocumentResponse<T>, Error = AzureError> {
+    pub async fn execute(self) -> Result<ReplaceDocumentResponse<T>, AzureError> {
         trace!("get_document called(request == {:?}", self.request);
         let hc = self.hyper_client;
         let mut req = self.request;
-        future::result(self.payload)
-            .from_err()
-            .and_then(move |payload| Ok(req.body(payload.into())?))
-            .and_then(move |r| check_status_extract_headers_and_body(hc.request(r), StatusCode::OK))
-            .and_then(move |(headers, body)| Self::extract_result(&headers, &body))
+        let payload = self.payload?;
+        let r = req.body(payload.into())?;
+        let (headers, body) =
+            check_status_extract_headers_and_body(hc.request(r), StatusCode::OK).await?;
+        Self::extract_result(&headers, &body)
     }
 
-    fn extract_result<R: DeserializeOwned>(headers: &HeaderMap, body: &[u8]) -> Result<ReplaceDocumentResponse<R>, AzureError> {
+    fn extract_result<R: DeserializeOwned>(
+        headers: &HeaderMap,
+        body: &[u8],
+    ) -> Result<ReplaceDocumentResponse<R>, AzureError> {
         let additional_headers = DocumentAdditionalHeaders::derive_from(headers);
         let document = Document::from_json(body)?;
         Ok(ReplaceDocumentResponse {
@@ -390,20 +463,26 @@ impl DocumentRequestExt for DeleteDocumentRequest {
 
 impl DeleteDocumentRequest {
     pub(crate) fn new(hyper_client: HyperClient, request: RequestBuilder) -> DeleteDocumentRequest {
-        DeleteDocumentRequest { hyper_client, request }
+        DeleteDocumentRequest {
+            hyper_client,
+            request,
+        }
     }
 
-    request_bytes_ref!(if_match, str, header::IF_MATCH);
-    request_bytes_ref!(partition_key, str, HEADER_DOCUMENTDB_PARTITIONKEY);
-    request_option!(use_multiple_write_locations, bool, HEADER_ALLOW_MULTIPLE_WRITES);
+    request_bytes_ref!(if_match, header::IF_MATCH);
+    request_bytes_ref!(partition_key, HEADER_DOCUMENTDB_PARTITIONKEY);
+    request_option!(
+        use_multiple_write_locations,
+        bool,
+        HEADER_ALLOW_MULTIPLE_WRITES
+    );
 
-    pub fn execute(mut self) -> impl Future<Item = (), Error = AzureError> {
+    pub async fn execute(mut self) -> Result<(), AzureError> {
         trace!("get_document called(request == {:?}", self.request);
 
-        future::result(self.request.body(hyper::Body::empty()))
-            .from_err()
-            .and_then(move |r| check_status_extract_body(self.hyper_client.request(r), StatusCode::NO_CONTENT))
-            .and_then(|_| Ok(()))
+        let r = self.request.body(hyper::Body::empty())?;
+        check_status_extract_body(self.hyper_client.request(r), StatusCode::NO_CONTENT).await?;
+        Ok(())
     }
 }
 
@@ -411,23 +490,34 @@ pub trait DocumentRequestExt: Sized {
     fn request(&mut self) -> &mut RequestBuilder;
 
     fn session_token<S: AsRef<str>>(mut self, token: S) -> Self {
-        self.request().header_formatted(HEADER_SESSION_TOKEN, token.as_ref());
+        self.request()
+            .header_formatted(HEADER_SESSION_TOKEN, token.as_ref());
         self
     }
 
     fn partition_key<'a, P: Into<PartitionKey<'a>>>(mut self, key: P) -> Self {
         // todo: move unwrap into PartitionKey impl itself as we control the impl and it surely won't error out
         if let Some(ser_key) = key.into().to_json().unwrap() {
-            self.request().header_formatted(HEADER_DOCUMENTDB_PARTITIONKEY, ser_key);
+            self.request()
+                .header_formatted(HEADER_DOCUMENTDB_PARTITIONKEY, ser_key);
         }
         self
     }
 }
 
 fn derive_continuation_token(headers: &HeaderMap) -> Option<String> {
-    headers.get(HEADER_CONTINUATION).and_then(|v| v.to_str().ok()).map(|v| v.to_owned())
+    headers
+        .get(HEADER_CONTINUATION)
+        .and_then(|v| v.to_str().ok())
+        .map(|v| v.to_owned())
 }
 
 fn derive_request_charge(headers: &HeaderMap) -> f64 {
-    headers.get(HEADER_REQUEST_CHARGE).unwrap().to_str().unwrap().parse().unwrap()
+    headers
+        .get(HEADER_REQUEST_CHARGE)
+        .unwrap()
+        .to_str()
+        .unwrap()
+        .parse()
+        .unwrap()
 }

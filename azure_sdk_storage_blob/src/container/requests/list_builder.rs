@@ -1,15 +1,14 @@
-use azure_sdk_storage_core::client::Client;
 use crate::container::responses::ListContainersResponse;
 use crate::container::Container;
-use azure_sdk_storage_core::ClientRequired;
 use azure_sdk_core::errors::{check_status_extract_headers_and_body_as_string, AzureError};
 use azure_sdk_core::incompletevector::IncompleteVector;
 use azure_sdk_core::parsing::{cast_optional, traverse};
 use azure_sdk_core::{
-    request_id_from_headers, ClientRequestIdOption, ClientRequestIdSupport, NextMarkerOption, NextMarkerSupport, PrefixOption,
-    PrefixSupport, TimeoutOption, TimeoutSupport,
+    request_id_from_headers, ClientRequestIdOption, ClientRequestIdSupport, NextMarkerOption,
+    NextMarkerSupport, PrefixOption, PrefixSupport, TimeoutOption, TimeoutSupport,
 };
-use futures::future::{done, Future};
+use azure_sdk_storage_core::client::Client;
+use azure_sdk_storage_core::ClientRequired;
 use hyper::{Method, StatusCode};
 use xml::Element;
 
@@ -78,8 +77,12 @@ impl<'a> ListBuilder<'a> {
         }
     }
 
-    pub fn finalize(self) -> impl Future<Item = ListContainersResponse, Error = AzureError> {
-        let mut uri = format!("{}?comp=list&maxresults={}", self.client().blob_uri(), self.max_results());
+    pub async fn finalize(self) -> Result<ListContainersResponse, AzureError> {
+        let mut uri = format!(
+            "{}?comp=list&maxresults={}",
+            self.client().blob_uri(),
+            self.max_results()
+        );
 
         if self.is_metadata_included() {
             uri = format!("{}&include=metadata", uri);
@@ -97,24 +100,23 @@ impl<'a> ListBuilder<'a> {
             uri = format!("{}&{}", uri, nm);
         }
 
-        let req = self.client().perform_request(
+        let future_response = self.client().perform_request(
             &uri,
             &Method::GET,
             |ref mut request| {
                 ClientRequestIdOption::add_header(&self, request);
             },
             None,
-        );
+        )?;
 
-        done(req).from_err().and_then(move |future_response| {
-            check_status_extract_headers_and_body_as_string(future_response, StatusCode::OK).and_then(move |(headers, body)| {
-                done(incomplete_vector_from_response(&body)).and_then(move |incomplete_vector| {
-                    done(request_id_from_headers(&headers)).map(|request_id| ListContainersResponse {
-                        incomplete_vector,
-                        request_id,
-                    })
-                })
-            })
+        let (headers, body) =
+            check_status_extract_headers_and_body_as_string(future_response, StatusCode::OK)
+                .await?;
+        let incomplete_vector = incomplete_vector_from_response(&body)?;
+        let request_id = request_id_from_headers(&headers)?;
+        Ok(ListContainersResponse {
+            incomplete_vector,
+            request_id,
         })
     }
 }

@@ -1,13 +1,10 @@
-use azure_sdk_core::{
-    errors::{check_status_extract_body, AzureError},
-    COMPLETE_ENCODE_SET,
-};
-use futures::future::{self, Future};
+use azure_sdk_core::errors::{check_status_extract_body, AzureError};
 use hyper::{self, header, StatusCode};
 use hyper_rustls::HttpsConnector;
 use ring::hmac;
 use std::ops::Add;
 use time::Duration;
+use url::form_urlencoded;
 
 mod client;
 pub use self::client::Client;
@@ -20,12 +17,15 @@ fn send_event_prepare<B: Into<String>>(
     namespace: &str,
     event_hub: &str,
     policy_name: &str,
-    signing_key: &hmac::SigningKey,
+    signing_key: &hmac::Key,
     event_body: B,
     duration: Duration,
 ) -> Result<hyper::client::ResponseFuture, AzureError> {
     // prepare the url to call
-    let url = format!("https://{}.servicebus.windows.net/{}/messages", namespace, event_hub);
+    let url = format!(
+        "https://{}.servicebus.windows.net/{}/messages",
+        namespace, event_hub
+    );
     debug!("url == {:?}", url);
 
     // generate sas signature based on key name, key value, url and duration.
@@ -34,37 +34,48 @@ fn send_event_prepare<B: Into<String>>(
 
     let event_body = event_body.into();
     let request = hyper::Request::post(url)
-        .header(header::AUTHORIZATION, ::bytes::Bytes::from(sas))
+        .header(header::AUTHORIZATION, sas)
         .body(event_body.into())?;
 
     Ok(http_client.request(request))
 }
 
-fn send_event(
+async fn send_event(
     http_client: &HttpClient,
     namespace: &str,
     event_hub: &str,
     policy_name: &str,
-    hmac: &hmac::SigningKey,
+    hmac: &hmac::Key,
     event_body: &str,
     duration: Duration,
-) -> impl Future<Item = (), Error = AzureError> {
-    let req = send_event_prepare(http_client, namespace, event_hub, policy_name, hmac, event_body, duration);
+) -> Result<(), AzureError> {
+    let req = send_event_prepare(
+        http_client,
+        namespace,
+        event_hub,
+        policy_name,
+        hmac,
+        event_body,
+        duration,
+    );
 
-    future::result(req)
-        .from_err()
-        .and_then(move |future_response| check_status_extract_body(future_response, StatusCode::CREATED))
-        .and_then(|_| Ok(()))
+    check_status_extract_body(req?, StatusCode::CREATED).await?;
+    Ok(())
 }
 
-fn generate_signature(policy_name: &str, signing_key: &hmac::SigningKey, url: &str, ttl: Duration) -> String {
-    use url::{form_urlencoded::Serializer, percent_encoding::utf8_percent_encode};
+fn generate_signature(
+    policy_name: &str,
+    signing_key: &hmac::Key,
+    url: &str,
+    ttl: Duration,
+) -> String {
+    use url::form_urlencoded::Serializer;
 
     let expiry = ::chrono::Utc::now().add(ttl).timestamp();
     debug!("expiry == {:?}", expiry);
 
-    let url_encoded = utf8_percent_encode(url, COMPLETE_ENCODE_SET);
-    //debug!("url_encoded == {:?}", url_encoded);
+    let url_encoded: String = form_urlencoded::byte_serialize(url.as_bytes()).collect();
+    debug!("url_encoded == {:?}", url_encoded);
 
     let str_to_sign = format!("{}\n{}", url_encoded, expiry);
     debug!("str_to_sign == {:?}", str_to_sign);

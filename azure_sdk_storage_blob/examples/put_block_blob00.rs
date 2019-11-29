@@ -4,30 +4,24 @@ extern crate log;
 use azure_sdk_core::prelude::*;
 use azure_sdk_storage_blob::prelude::*;
 use azure_sdk_storage_core::prelude::*;
-use futures::future::*;
 use std::error::Error;
-use tokio_core::reactor::Core;
 
-fn main() {
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn Error>> {
     env_logger::init();
-    code().unwrap();
-}
-
-// We run a separate method to use the elegant quotation mark operator.
-// A series of unwrap(), unwrap() would have achieved the same result.
-fn code() -> Result<(), Box<dyn Error>> {
+    debug!("log initialized");
     // First we retrieve the account name and master key from environment variables.
-    let account = std::env::var("STORAGE_ACCOUNT").expect("Set env variable STORAGE_ACCOUNT first!");
-    let master_key = std::env::var("STORAGE_MASTER_KEY").expect("Set env variable STORAGE_MASTER_KEY first!");
+    let account =
+        std::env::var("STORAGE_ACCOUNT").expect("Set env variable STORAGE_ACCOUNT first!");
+    let master_key =
+        std::env::var("STORAGE_MASTER_KEY").expect("Set env variable STORAGE_MASTER_KEY first!");
 
     let container = std::env::args()
         .nth(1)
         .expect("please specify container name as command line parameter");
-    let blob_name = std::env::args().nth(2).expect("please specify blob name as command line parameter");
-
-    info!("Before reactor creation");
-
-    let mut core = Core::new()?;
+    let blob_name = std::env::args()
+        .nth(2)
+        .expect("please specify blob name as command line parameter");
 
     let client = Client::new(&account, &master_key)?;
 
@@ -41,104 +35,111 @@ fn code() -> Result<(), Box<dyn Error>> {
     // The builder supports many more optional
     // parameters (such as LeaseID, or ContentDisposition, MD5 etc...)
     // so make sure to check with the documentation.
-    let future = client
+    let res = client
         .put_block_blob()
         .with_container_name(&container)
         .with_blob_name(&blob_name)
         .with_content_type("text/plain")
         .with_body(&data[..])
         .with_content_md5(&digest[..])
-        .finalize();
-    core.run(future.map(|res| println!("{:?}", res)))?;
+        .finalize()
+        .await?;
+    println!("{:?}", res);
 
     let mut block_list = BlockList::default();
-    block_list.blocks.push(BlobBlockType::Uncommitted(b"satanasso" as &[u8]));
-    block_list.blocks.push(BlobBlockType::Uncommitted(b"pollastro" as &[u8]));
+    block_list
+        .blocks
+        .push(BlobBlockType::Uncommitted(b"satanasso" as &[u8]));
+    block_list
+        .blocks
+        .push(BlobBlockType::Uncommitted(b"pollastro" as &[u8]));
 
-    let future = client
+    let res = client
         .put_block()
         .with_container_name(&container)
         .with_blob_name(&blob_name)
         .with_body(&data[..])
         .with_block_id(b"satanasso" as &[u8])
-        .finalize();
-    core.run(future.map(|res| println!("{:?}", res)))?;
+        .finalize()
+        .await?;
+    println!("{:?}", res);
 
-    let future = client
+    client
         .put_block()
         .with_container_name(&container)
         .with_blob_name(&blob_name)
         .with_body(&data[..])
         .with_block_id(b"pollastro" as &[u8])
-        .finalize();
-    core.run(future.map(|res| println!("{:?}", res)))?;
+        .finalize()
+        .await?;
 
-    let future = client
+    let ret = client
         .get_block_list()
         .with_container_name(&container)
         .with_blob_name(&blob_name)
         .with_block_list_type(BlockListType::All)
-        .finalize();
+        .finalize()
+        .await?;
 
-    let ret = core.run(future)?;
     println!("GetBlockList == {:?}", ret);
 
     let bl = ret.block_with_size_list.into();
     println!("bl == {:?}", bl);
 
-    let future = client
+    let res = client
         .put_block_list()
         .with_container_name(&container)
         .with_blob_name(&blob_name)
         .with_block_list(&bl)
-        .finalize();
-    core.run(future.map(|res| println!("PutBlockList == {:?}", res)))?;
+        .finalize()
+        .await?;
+    println!("PutBlockList == {:?}", res);
 
-    let future = client
+    let res = client
         .acquire_blob_lease()
         .with_container_name(&container)
         .with_blob_name(&blob_name)
         .with_lease_duration(60)
-        .finalize();
-    let res = core.run(future)?;
+        .finalize()
+        .await?;
     println!("Acquire lease == {:?}", res);
 
     let lease_id = res.lease_id;
 
-    let future = client
+    let res = client
         .renew_blob_lease()
         .with_container_name(&container)
         .with_blob_name(&blob_name)
         .with_lease_id(&lease_id)
-        .finalize();
-    let res = core.run(future)?;
+        .finalize()
+        .await?;
     println!("Renew lease == {:?}", res);
 
-    let future = client
+    let res = client
         .break_blob_lease()
         .with_container_name(&container)
         .with_blob_name(&blob_name)
         .with_lease_break_period(15)
-        .finalize();
-    let res = core.run(future)?;
+        .finalize()
+        .await?;
     println!("Break lease == {:?}", res);
 
-    let future = client
+    let res = client
         .release_blob_lease()
         .with_container_name(&container)
         .with_blob_name(&blob_name)
         .with_lease_id(&lease_id)
-        .finalize();
-    let res = core.run(future)?;
+        .finalize()
+        .await?;
     println!("Release lease == {:?}", res);
 
-    let future = client
+    let res = client
         .delete_blob()
         .with_container_name(&container)
         .with_blob_name(&blob_name)
         .with_delete_snapshots_method(DeleteSnapshotsMethod::Include)
-        .finalize();
-    let res = core.run(future)?;
+        .finalize()
+        .await?;
     println!("Delete blob == {:?}", res);
 
     Ok(())

@@ -1,14 +1,13 @@
-use azure_sdk_storage_core::client::Client;
 use crate::container::responses::GetACLResponse;
-use azure_sdk_storage_core::ClientRequired;
 use azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError};
 use azure_sdk_core::lease::LeaseId;
 use azure_sdk_core::{
-    ClientRequestIdOption, ClientRequestIdSupport, ContainerNameRequired, ContainerNameSupport, LeaseIdOption, LeaseIdSupport,
-    TimeoutOption, TimeoutSupport,
+    ClientRequestIdOption, ClientRequestIdSupport, ContainerNameRequired, ContainerNameSupport,
+    LeaseIdOption, LeaseIdSupport, TimeoutOption, TimeoutSupport,
 };
 use azure_sdk_core::{No, ToAssign, Yes};
-use futures::future::{done, Future};
+use azure_sdk_storage_core::client::Client;
+use azure_sdk_storage_core::ClientRequired;
 use hyper::{Method, StatusCode};
 use std::marker::PhantomData;
 
@@ -72,14 +71,18 @@ where
 }
 
 impl<'a> GetACLBuilder<'a, Yes> {
-    pub fn finalize(self) -> impl Future<Item = GetACLResponse, Error = AzureError> {
-        let mut uri = format!("{}/{}?restype=container&comp=acl", self.client().blob_uri(), self.container_name());
+    pub async fn finalize(self) -> Result<GetACLResponse, AzureError> {
+        let mut uri = format!(
+            "{}/{}?restype=container&comp=acl",
+            self.client().blob_uri(),
+            self.container_name()
+        );
 
         if let Some(nm) = TimeoutOption::to_uri_parameter(&self) {
             uri = format!("{}&{}", uri, nm);
         }
 
-        let req = self.client().perform_request(
+        let future_response = self.client().perform_request(
             &uri,
             &Method::GET,
             |ref mut request| {
@@ -87,15 +90,12 @@ impl<'a> GetACLBuilder<'a, Yes> {
                 LeaseIdOption::add_header(&self, request);
             },
             None,
-        );
+        )?;
 
-        done(req)
-            .from_err()
-            .and_then(move |future_response| check_status_extract_headers_and_body(future_response, StatusCode::OK))
-            .and_then(|(headers, body)| {
-                // todo: parse SAS policies
-                done(GetACLResponse::from_response(&body, &headers))
-            })
+        let (headers, body) =
+            check_status_extract_headers_and_body(future_response, StatusCode::OK).await?;
+        // todo: parse SAS policies
+        GetACLResponse::from_response(&body, &headers)
     }
 }
 

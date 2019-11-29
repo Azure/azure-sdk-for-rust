@@ -1,6 +1,5 @@
 mod lease_blob_options;
 pub use self::lease_blob_options::{LeaseBlobOptions, LEASE_BLOB_OPTIONS_DEFAULT};
-use url::percent_encoding::utf8_percent_encode;
 mod blob_stream_builder;
 pub use self::blob_stream_builder::BlobStreamBuilder;
 mod blob_block_type;
@@ -19,16 +18,18 @@ mod shared_access;
 pub use self::shared_access::SignedUrlBuilder;
 pub mod requests;
 pub mod responses;
-use azure_sdk_storage_core::ClientRequired;
 use azure_sdk_core::headers::{
-    BLOB_SEQUENCE_NUMBER, BLOB_TYPE, CONTENT_MD5, COPY_COMPLETION_TIME, COPY_ID, COPY_PROGRESS, COPY_SOURCE, COPY_STATUS,
-    COPY_STATUS_DESCRIPTION, CREATION_TIME, LEASE_DURATION, LEASE_STATE, LEASE_STATUS, SERVER_ENCRYPTED,
+    BLOB_SEQUENCE_NUMBER, BLOB_TYPE, CONTENT_MD5, COPY_COMPLETION_TIME, COPY_ID, COPY_PROGRESS,
+    COPY_SOURCE, COPY_STATUS, COPY_STATUS_DESCRIPTION, CREATION_TIME, LEASE_DURATION, LEASE_STATE,
+    LEASE_STATUS, SERVER_ENCRYPTED,
 };
+use azure_sdk_storage_core::ClientRequired;
 use chrono::{DateTime, Utc};
 use hyper::header;
 use std::borrow::Borrow;
 use std::collections::HashMap;
 use std::{fmt, str::FromStr};
+use url::form_urlencoded;
 use xml::Element;
 use xml::Xml::ElementNode;
 
@@ -37,10 +38,12 @@ use azure_sdk_core::{
     errors::{AzureError, TraversingError},
     incompletevector::IncompleteVector,
     lease::{LeaseDuration, LeaseState, LeaseStatus},
-    parsing::{cast_must, cast_optional, from_azure_time, inner_text, traverse, FromStringOptional},
+    parsing::{
+        cast_must, cast_optional, from_azure_time, inner_text, traverse, FromStringOptional,
+    },
     range::Range,
     util::HeaderMapExt,
-    BlobNameRequired, ContainerNameRequired, COMPLETE_ENCODE_SET,
+    BlobNameRequired, ContainerNameRequired,
 };
 
 pub trait BlockListTypeSupport {
@@ -143,22 +146,27 @@ impl Blob {
         let content_language = cast_optional::<String>(elem, &["Properties", "Content-Language"])?;
         let content_md5 = cast_optional::<String>(elem, &["Properties", "Content-MD5"])?;
         let cache_control = cast_optional::<String>(elem, &["Properties", "Cache-Control"])?;
-        let content_disposition = cast_optional::<String>(elem, &["Properties", "Content-Disposition"])?;
-        let x_ms_blob_sequence_number = cast_optional::<u64>(elem, &["Properties", "x-ms-blob-sequence-number"])?;
+        let content_disposition =
+            cast_optional::<String>(elem, &["Properties", "Content-Disposition"])?;
+        let x_ms_blob_sequence_number =
+            cast_optional::<u64>(elem, &["Properties", "x-ms-blob-sequence-number"])?;
 
         let blob_type = cast_must::<BlobType>(elem, &["Properties", "BlobType"])?;
         let access_tier = cast_optional::<String>(elem, &["Properties", "AccessTier"])?;
 
         let lease_status = cast_optional::<LeaseStatus>(elem, &["Properties", "LeaseStatus"])?;
         let lease_state = cast_must::<LeaseState>(elem, &["Properties", "LeaseState"])?;
-        let lease_duration = cast_optional::<LeaseDuration>(elem, &["Properties", "LeaseDuration"])?;
+        let lease_duration =
+            cast_optional::<LeaseDuration>(elem, &["Properties", "LeaseDuration"])?;
 
         let copy_id = cast_optional::<String>(elem, &["Properties", "CopyId"])?;
         let copy_status = cast_optional::<CopyStatus>(elem, &["Properties", "CopyStatus"])?;
         let copy_source = cast_optional::<String>(elem, &["Properties", "CopySource"])?;
         let copy_progress = cast_optional::<String>(elem, &["Properties", "CopyProgress"])?;
-        let copy_completion_time = cast_optional::<DateTime<Utc>>(elem, &["Properties", "CopyCompletionTime"])?;
-        let copy_status_description = cast_optional::<String>(elem, &["Properties", "CopyStatusDescription"])?;
+        let copy_completion_time =
+            cast_optional::<DateTime<Utc>>(elem, &["Properties", "CopyCompletionTime"])?;
+        let copy_status_description =
+            cast_optional::<String>(elem, &["Properties", "CopyStatusDescription"])?;
 
         let server_encrypted = cast_must::<bool>(elem, &["Properties", "ServerEncrypted"])?;
         let incremental_copy = cast_optional::<bool>(elem, &["Properties", "IncrementalCopy"])?;
@@ -167,11 +175,14 @@ impl Blob {
         // Previously we returned false in case of absent value but that was
         // misleading.
         // TOCHECK
-        let access_tier_inferred = cast_optional::<bool>(elem, &["Properties", "AccessTierInferred"])?;
+        let access_tier_inferred =
+            cast_optional::<bool>(elem, &["Properties", "AccessTierInferred"])?;
 
-        let access_tier_change_time = cast_optional::<DateTime<Utc>>(elem, &["Properties", "AccessTierChangeTime"])?;
+        let access_tier_change_time =
+            cast_optional::<DateTime<Utc>>(elem, &["Properties", "AccessTierChangeTime"])?;
         let deleted_time = cast_optional::<DateTime<Utc>>(elem, &["Properties", "DeletedTime"])?;
-        let remaining_retention_days = cast_optional::<u64>(elem, &["Properties", "RemainingRetentionDays"])?;
+        let remaining_retention_days =
+            cast_optional::<u64>(elem, &["Properties", "RemainingRetentionDays"])?;
 
         let mut cp_bytes: Option<Range> = None;
         if let Some(txt) = copy_progress {
@@ -191,7 +202,12 @@ impl Blob {
                             debug!("key == {:?}, value == {:?}", key, value);
                             metadata.insert(key, value);
                         }
-                        _ => return Err(TraversingError::UnexpectedNodeTypeError("ElementNode".to_owned()).into()),
+                        _ => {
+                            return Err(TraversingError::UnexpectedNodeTypeError(
+                                "ElementNode".to_owned(),
+                            )
+                            .into())
+                        }
                     }
                 }
             }
@@ -279,7 +295,10 @@ impl Blob {
         trace!("etag == {:?}", etag);
 
         let x_ms_blob_sequence_number = h.get_as_u64(BLOB_SEQUENCE_NUMBER);
-        trace!("x_ms_blob_sequence_number == {:?}", x_ms_blob_sequence_number);
+        trace!(
+            "x_ms_blob_sequence_number == {:?}",
+            x_ms_blob_sequence_number
+        );
 
         let blob_type = h
             .get_as_str(BLOB_TYPE)
@@ -323,12 +342,18 @@ impl Blob {
         let copy_source = h.get_as_string(COPY_SOURCE);
         trace!("copy_source == {:?}", copy_source);
 
-        let copy_progress = h.get_as_str(COPY_PROGRESS).and_then(|cp| Some(Range::from_str(cp).ok()?));
+        let copy_progress = h
+            .get_as_str(COPY_PROGRESS)
+            .and_then(|cp| Some(Range::from_str(cp).ok()?));
         trace!("copy_progress == {:?}", copy_progress);
 
-        let copy_completion_time: Option<DateTime<Utc>> = h
-            .get_as_str(COPY_COMPLETION_TIME)
-            .and_then(|cct| Some(DateTime::from_utc(DateTime::parse_from_rfc2822(cct).ok()?.naive_utc(), Utc)));
+        let copy_completion_time: Option<DateTime<Utc>> =
+            h.get_as_str(COPY_COMPLETION_TIME).and_then(|cct| {
+                Some(DateTime::from_utc(
+                    DateTime::parse_from_rfc2822(cct).ok()?.naive_utc(),
+                    Utc,
+                ))
+            });
         trace!("copy_completion_time == {:?}", copy_completion_time);
 
         let copy_status_description = h.get_as_string(COPY_STATUS_DESCRIPTION);
@@ -377,7 +402,10 @@ impl Blob {
 }
 
 #[inline]
-pub(crate) fn incomplete_vector_from_response(body: &str, container_name: &str) -> Result<IncompleteVector<Blob>, AzureError> {
+pub(crate) fn incomplete_vector_from_response(
+    body: &str,
+    container_name: &str,
+) -> Result<IncompleteVector<Blob>, AzureError> {
     trace!("body = {}", body);
     trace!("body = {}", body);
 
@@ -409,15 +437,15 @@ where
         Some(ref params) => format!(
             "{}/{}/{}?{}",
             t.client().blob_uri(),
-            utf8_percent_encode(t.container_name(), COMPLETE_ENCODE_SET),
-            utf8_percent_encode(t.blob_name(), COMPLETE_ENCODE_SET),
+            form_urlencoded::byte_serialize(t.container_name().as_bytes()).collect::<String>(),
+            form_urlencoded::byte_serialize(t.blob_name().as_bytes()).collect::<String>(),
             params
         ),
         None => format!(
             "{}/{}/{}",
             t.client().blob_uri(),
-            utf8_percent_encode(t.container_name(), COMPLETE_ENCODE_SET),
-            utf8_percent_encode(t.blob_name(), COMPLETE_ENCODE_SET)
+            form_urlencoded::byte_serialize(t.container_name().as_bytes()).collect::<String>(),
+            form_urlencoded::byte_serialize(t.blob_name().as_bytes()).collect::<String>(),
         ),
     }
 }

@@ -1,16 +1,15 @@
 use crate::blob::generate_blob_uri;
 use crate::blob::responses::GetBlockListResponse;
 use crate::blob::{BlockListType, BlockListTypeRequired, BlockListTypeSupport};
-use azure_sdk_storage_core::client::Client;
-use azure_sdk_storage_core::ClientRequired;
 use azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError};
 use azure_sdk_core::lease::LeaseId;
 use azure_sdk_core::{
-    BlobNameRequired, BlobNameSupport, ClientRequestIdOption, ClientRequestIdSupport, ContainerNameRequired, ContainerNameSupport,
-    LeaseIdOption, LeaseIdSupport, No, TimeoutOption, TimeoutSupport, ToAssign, Yes,
+    BlobNameRequired, BlobNameSupport, ClientRequestIdOption, ClientRequestIdSupport,
+    ContainerNameRequired, ContainerNameSupport, LeaseIdOption, LeaseIdSupport, No, TimeoutOption,
+    TimeoutSupport, ToAssign, Yes,
 };
-use futures::future::done;
-use futures::prelude::*;
+use azure_sdk_storage_core::client::Client;
+use azure_sdk_storage_core::ClientRequired;
 use hyper::{Method, StatusCode};
 use std::marker::PhantomData;
 
@@ -64,7 +63,8 @@ where
     }
 }
 
-impl<'a, BlobNameSet, BlobListTypeSet> ContainerNameRequired<'a> for GetBlockListBuilder<'a, Yes, BlobNameSet, BlobListTypeSet>
+impl<'a, BlobNameSet, BlobListTypeSet> ContainerNameRequired<'a>
+    for GetBlockListBuilder<'a, Yes, BlobNameSet, BlobListTypeSet>
 where
     BlobNameSet: ToAssign,
     BlobListTypeSet: ToAssign,
@@ -75,7 +75,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobListTypeSet> BlobNameRequired<'a> for GetBlockListBuilder<'a, ContainerNameSet, Yes, BlobListTypeSet>
+impl<'a, ContainerNameSet, BlobListTypeSet> BlobNameRequired<'a>
+    for GetBlockListBuilder<'a, ContainerNameSet, Yes, BlobListTypeSet>
 where
     ContainerNameSet: ToAssign,
     BlobListTypeSet: ToAssign,
@@ -86,7 +87,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet> BlockListTypeRequired for GetBlockListBuilder<'a, ContainerNameSet, BlobNameSet, Yes>
+impl<'a, ContainerNameSet, BlobNameSet> BlockListTypeRequired
+    for GetBlockListBuilder<'a, ContainerNameSet, BlobNameSet, Yes>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
@@ -293,7 +295,8 @@ where
 }
 
 // methods callable regardless
-impl<'a, ContainerNameSet, BlobNameSet, BlobListTypeSet> GetBlockListBuilder<'a, ContainerNameSet, BlobNameSet, BlobListTypeSet>
+impl<'a, ContainerNameSet, BlobNameSet, BlobListTypeSet>
+    GetBlockListBuilder<'a, ContainerNameSet, BlobNameSet, BlobListTypeSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
@@ -303,7 +306,7 @@ where
 
 impl<'a> GetBlockListBuilder<'a, Yes, Yes, Yes> {
     #[inline]
-    pub fn finalize(self) -> impl Future<Item = GetBlockListResponse, Error = AzureError> {
+    pub async fn finalize(self) -> Result<GetBlockListResponse, AzureError> {
         let mut uri = generate_blob_uri(&self, Some("comp=blocklist"));
 
         if let Some(timeout) = TimeoutOption::to_uri_parameter(&self) {
@@ -313,7 +316,7 @@ impl<'a> GetBlockListBuilder<'a, Yes, Yes, Yes> {
 
         trace!("uri == {:?}", uri);
 
-        let req = self.client().perform_request(
+        let future_response = self.client().perform_request(
             &uri,
             &Method::GET,
             |ref mut request| {
@@ -321,11 +324,10 @@ impl<'a> GetBlockListBuilder<'a, Yes, Yes, Yes> {
                 ClientRequestIdOption::add_header(&self, request);
             },
             None,
-        );
+        )?;
 
-        done(req)
-            .from_err()
-            .and_then(move |response| check_status_extract_headers_and_body(response, StatusCode::OK))
-            .and_then(move |(headers, body)| done(GetBlockListResponse::from_response(&headers, &body)))
+        let (headers, body) =
+            check_status_extract_headers_and_body(future_response, StatusCode::OK).await?;
+        GetBlockListResponse::from_response(&headers, &body)
     }
 }

@@ -1,13 +1,12 @@
-use azure_sdk_storage_core::client::Client;
 use crate::container::{PublicAccess, PublicAccessRequired, PublicAccessSupport};
-use azure_sdk_storage_core::ClientRequired;
 use azure_sdk_core::errors::{check_status_extract_body, AzureError};
 use azure_sdk_core::{
-    ClientRequestIdOption, ClientRequestIdSupport, ContainerNameRequired, ContainerNameSupport, MetadataOption, MetadataSupport,
-    TimeoutOption, TimeoutSupport,
+    ClientRequestIdOption, ClientRequestIdSupport, ContainerNameRequired, ContainerNameSupport,
+    MetadataOption, MetadataSupport, TimeoutOption, TimeoutSupport,
 };
 use azure_sdk_core::{No, ToAssign, Yes};
-use futures::future::{done, ok, Future};
+use azure_sdk_storage_core::client::Client;
+use azure_sdk_storage_core::ClientRequired;
 use hyper::{Method, StatusCode};
 use std::collections::HashMap;
 use std::marker::PhantomData;
@@ -28,7 +27,8 @@ where
     metadata: Option<&'a HashMap<&'a str, &'a str>>,
 }
 
-impl<'a, ContainerNameSet, PublicAccessSet> ClientRequired<'a> for CreateBuilder<'a, ContainerNameSet, PublicAccessSet>
+impl<'a, ContainerNameSet, PublicAccessSet> ClientRequired<'a>
+    for CreateBuilder<'a, ContainerNameSet, PublicAccessSet>
 where
     ContainerNameSet: ToAssign,
     PublicAccessSet: ToAssign,
@@ -38,7 +38,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, PublicAccessSet> MetadataOption<'a> for CreateBuilder<'a, ContainerNameSet, PublicAccessSet>
+impl<'a, ContainerNameSet, PublicAccessSet> MetadataOption<'a>
+    for CreateBuilder<'a, ContainerNameSet, PublicAccessSet>
 where
     ContainerNameSet: ToAssign,
     PublicAccessSet: ToAssign,
@@ -48,7 +49,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, PublicAccessSet> MetadataSupport<'a> for CreateBuilder<'a, ContainerNameSet, PublicAccessSet>
+impl<'a, ContainerNameSet, PublicAccessSet> MetadataSupport<'a>
+    for CreateBuilder<'a, ContainerNameSet, PublicAccessSet>
 where
     ContainerNameSet: ToAssign,
     PublicAccessSet: ToAssign,
@@ -69,14 +71,18 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, PublicAccessSet> PublicAccessSupport for CreateBuilder<'a, ContainerNameSet, PublicAccessSet>
+impl<'a, ContainerNameSet, PublicAccessSet> PublicAccessSupport
+    for CreateBuilder<'a, ContainerNameSet, PublicAccessSet>
 where
     ContainerNameSet: ToAssign,
     PublicAccessSet: ToAssign,
 {
     type O = CreateBuilder<'a, ContainerNameSet, Yes>;
 
-    fn with_public_access(self, public_access: PublicAccess) -> CreateBuilder<'a, ContainerNameSet, Yes> {
+    fn with_public_access(
+        self,
+        public_access: PublicAccess,
+    ) -> CreateBuilder<'a, ContainerNameSet, Yes> {
         CreateBuilder {
             p_container_name: PhantomData {},
             p_public_access: PhantomData {},
@@ -99,7 +105,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, PublicAccessSet> ClientRequestIdOption<'a> for CreateBuilder<'a, ContainerNameSet, PublicAccessSet>
+impl<'a, ContainerNameSet, PublicAccessSet> ClientRequestIdOption<'a>
+    for CreateBuilder<'a, ContainerNameSet, PublicAccessSet>
 where
     ContainerNameSet: ToAssign,
     PublicAccessSet: ToAssign,
@@ -109,7 +116,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, PublicAccessSet> ClientRequestIdSupport<'a> for CreateBuilder<'a, ContainerNameSet, PublicAccessSet>
+impl<'a, ContainerNameSet, PublicAccessSet> ClientRequestIdSupport<'a>
+    for CreateBuilder<'a, ContainerNameSet, PublicAccessSet>
 where
     ContainerNameSet: ToAssign,
     PublicAccessSet: ToAssign,
@@ -130,7 +138,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, PublicAccessSet> TimeoutSupport for CreateBuilder<'a, ContainerNameSet, PublicAccessSet>
+impl<'a, ContainerNameSet, PublicAccessSet> TimeoutSupport
+    for CreateBuilder<'a, ContainerNameSet, PublicAccessSet>
 where
     ContainerNameSet: ToAssign,
     PublicAccessSet: ToAssign,
@@ -151,7 +160,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, PublicAccessSet> TimeoutOption for CreateBuilder<'a, ContainerNameSet, PublicAccessSet>
+impl<'a, ContainerNameSet, PublicAccessSet> TimeoutOption
+    for CreateBuilder<'a, ContainerNameSet, PublicAccessSet>
 where
     ContainerNameSet: ToAssign,
     PublicAccessSet: ToAssign,
@@ -169,7 +179,8 @@ where
 {
 }
 
-impl<'a, ContainerNameSet, PublicAccessSet> ContainerNameSupport<'a> for CreateBuilder<'a, ContainerNameSet, PublicAccessSet>
+impl<'a, ContainerNameSet, PublicAccessSet> ContainerNameSupport<'a>
+    for CreateBuilder<'a, ContainerNameSet, PublicAccessSet>
 where
     ContainerNameSet: ToAssign,
     PublicAccessSet: ToAssign,
@@ -215,14 +226,18 @@ impl<'a> CreateBuilder<'a, No, No> {
 }
 
 impl<'a> CreateBuilder<'a, Yes, Yes> {
-    pub fn finalize(self) -> impl Future<Item = (), Error = AzureError> {
-        let mut uri = format!("{}/{}?restype=container", self.client().blob_uri(), self.container_name());
+    pub async fn finalize(self) -> Result<(), AzureError> {
+        let mut uri = format!(
+            "{}/{}?restype=container",
+            self.client().blob_uri(),
+            self.container_name()
+        );
 
         if let Some(nm) = TimeoutOption::to_uri_parameter(&self) {
             uri = format!("{}&{}", uri, nm);
         }
 
-        let req = self.client().perform_request(
+        let future_response = self.client().perform_request(
             &uri,
             &Method::PUT,
             |ref mut request| {
@@ -231,11 +246,10 @@ impl<'a> CreateBuilder<'a, Yes, Yes> {
                 MetadataOption::add_header(&self, request);
             },
             Some(&[]),
-        );
+        )?;
 
-        done(req)
-            .from_err()
-            .and_then(move |future_response| check_status_extract_body(future_response, StatusCode::CREATED).and_then(|_| ok(())))
+        check_status_extract_body(future_response, StatusCode::CREATED).await?;
+        Ok(())
     }
 }
 

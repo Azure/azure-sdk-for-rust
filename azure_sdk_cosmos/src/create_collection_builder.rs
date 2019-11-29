@@ -3,7 +3,6 @@ use crate::collection::{Collection, IndexingPolicy, PartitionKey};
 use crate::Offer;
 use azure_sdk_core::errors::AzureError;
 use azure_sdk_core::{No, ToAssign, Yes};
-use futures::future::*;
 use std::marker::PhantomData;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -61,7 +60,8 @@ where
     }
 }
 
-impl<'a, CUB, OfferSet, IdSet, IndexingPolicySet> CreateCollectionBuilder<'a, CUB, No, OfferSet, IdSet, IndexingPolicySet>
+impl<'a, CUB, OfferSet, IdSet, IndexingPolicySet>
+    CreateCollectionBuilder<'a, CUB, No, OfferSet, IdSet, IndexingPolicySet>
 where
     CUB: CosmosUriBuilder,
     DatabaseNameSet: ToAssign,
@@ -70,7 +70,10 @@ where
     IndexingPolicySet: ToAssign,
 {
     #[inline]
-    pub fn with_database_name(self, database_name: &'a str) -> CreateCollectionBuilder<'a, CUB, Yes, OfferSet, IdSet, IndexingPolicySet> {
+    pub fn with_database_name(
+        self,
+        database_name: &'a str,
+    ) -> CreateCollectionBuilder<'a, CUB, Yes, OfferSet, IdSet, IndexingPolicySet> {
         CreateCollectionBuilder {
             client: self.client,
             database_name: Some(database_name),
@@ -86,7 +89,8 @@ where
     }
 }
 
-impl<'a, CUB, DatabaseNameSet, IdSet, IndexingPolicySet> CreateCollectionBuilder<'a, CUB, DatabaseNameSet, No, IdSet, IndexingPolicySet>
+impl<'a, CUB, DatabaseNameSet, IdSet, IndexingPolicySet>
+    CreateCollectionBuilder<'a, CUB, DatabaseNameSet, No, IdSet, IndexingPolicySet>
 where
     CUB: CosmosUriBuilder,
     DatabaseNameSet: ToAssign,
@@ -95,7 +99,10 @@ where
     IndexingPolicySet: ToAssign,
 {
     #[inline]
-    pub fn with_offer(self, offer: Offer) -> CreateCollectionBuilder<'a, CUB, DatabaseNameSet, Yes, IdSet, IndexingPolicySet> {
+    pub fn with_offer(
+        self,
+        offer: Offer,
+    ) -> CreateCollectionBuilder<'a, CUB, DatabaseNameSet, Yes, IdSet, IndexingPolicySet> {
         CreateCollectionBuilder {
             client: self.client,
             database_name: self.database_name,
@@ -121,7 +128,10 @@ where
     IndexingPolicySet: ToAssign,
 {
     #[inline]
-    pub fn with_id(self, id: &'a str) -> CreateCollectionBuilder<'a, CUB, DatabaseNameSet, OfferSet, Yes, IndexingPolicySet> {
+    pub fn with_id(
+        self,
+        id: &'a str,
+    ) -> CreateCollectionBuilder<'a, CUB, DatabaseNameSet, OfferSet, Yes, IndexingPolicySet> {
         CreateCollectionBuilder {
             client: self.client,
             database_name: self.database_name,
@@ -137,7 +147,8 @@ where
     }
 }
 
-impl<'a, CUB, DatabaseNameSet, OfferSet, IdSet> CreateCollectionBuilder<'a, CUB, DatabaseNameSet, OfferSet, IdSet, No>
+impl<'a, CUB, DatabaseNameSet, OfferSet, IdSet>
+    CreateCollectionBuilder<'a, CUB, DatabaseNameSet, OfferSet, IdSet, No>
 where
     CUB: CosmosUriBuilder,
     DatabaseNameSet: ToAssign,
@@ -199,7 +210,7 @@ where
     CUB: CosmosUriBuilder,
 {
     #[inline]
-    pub fn finalize(self) -> impl Future<Item = Collection, Error = AzureError> {
+    pub async fn finalize(self) -> Result<Collection, AzureError> {
         trace!(
             "create_collection_builder::finalize(database_name == {:?}, \
              id == {:?}, offer == {:?}, indexing_policy == {:?}, parition_key == {:?} called",
@@ -214,6 +225,11 @@ where
         collection.parition_key = self.partition_key;
 
         self.client
-            .create_collection(self.database_name.unwrap(), self.offer.unwrap(), &collection)
+            .create_collection(
+                self.database_name.unwrap(),
+                self.offer.unwrap(),
+                &collection,
+            )
+            .await
     }
 }

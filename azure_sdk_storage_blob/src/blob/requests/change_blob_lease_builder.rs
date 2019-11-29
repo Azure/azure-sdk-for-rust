@@ -1,16 +1,16 @@
 use crate::blob::generate_blob_uri;
 use crate::blob::responses::ChangeBlobLeaseResponse;
-use azure_sdk_storage_core::client::Client;
-use azure_sdk_storage_core::ClientRequired;
 use azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError};
 use azure_sdk_core::headers::LEASE_ACTION;
 use azure_sdk_core::lease::LeaseId;
 use azure_sdk_core::{
-    BlobNameRequired, BlobNameSupport, ClientRequestIdOption, ClientRequestIdSupport, ContainerNameRequired, ContainerNameSupport,
-    LeaseIdRequired, LeaseIdSupport, ProposedLeaseIdRequired, ProposedLeaseIdSupport, TimeoutOption, TimeoutSupport,
+    BlobNameRequired, BlobNameSupport, ClientRequestIdOption, ClientRequestIdSupport,
+    ContainerNameRequired, ContainerNameSupport, LeaseIdRequired, LeaseIdSupport,
+    ProposedLeaseIdRequired, ProposedLeaseIdSupport, TimeoutOption, TimeoutSupport,
 };
 use azure_sdk_core::{No, ToAssign, Yes};
-use futures::future::{done, Future};
+use azure_sdk_storage_core::client::Client;
+use azure_sdk_storage_core::ClientRequired;
 use hyper::{Method, StatusCode};
 use std::marker::PhantomData;
 
@@ -268,7 +268,8 @@ where
     LeaseIdSet: ToAssign,
     ProposedLeaseIdSet: ToAssign,
 {
-    type O = ChangeBlobLeaseBuilder<'a, ContainerNameSet, BlobNameSet, LeaseIdSet, ProposedLeaseIdSet>;
+    type O =
+        ChangeBlobLeaseBuilder<'a, ContainerNameSet, BlobNameSet, LeaseIdSet, ProposedLeaseIdSet>;
 
     #[inline]
     fn with_timeout(self, timeout: u64) -> Self::O {
@@ -296,7 +297,8 @@ where
     LeaseIdSet: ToAssign,
     ProposedLeaseIdSet: ToAssign,
 {
-    type O = ChangeBlobLeaseBuilder<'a, ContainerNameSet, BlobNameSet, LeaseIdSet, ProposedLeaseIdSet>;
+    type O =
+        ChangeBlobLeaseBuilder<'a, ContainerNameSet, BlobNameSet, LeaseIdSet, ProposedLeaseIdSet>;
 
     #[inline]
     fn with_client_request_id(self, client_request_id: &'a str) -> Self::O {
@@ -328,14 +330,14 @@ where
 }
 
 impl<'a> ChangeBlobLeaseBuilder<'a, Yes, Yes, Yes, Yes> {
-    pub fn finalize(self) -> impl Future<Item = ChangeBlobLeaseResponse, Error = AzureError> {
+    pub async fn finalize(self) -> Result<ChangeBlobLeaseResponse, AzureError> {
         let mut uri = generate_blob_uri(&self, Some("comp=lease"));
 
         if let Some(nm) = TimeoutOption::to_uri_parameter(&self) {
             uri = format!("{}&{}", uri, nm);
         }
 
-        let req = self.client().perform_request(
+        let future_response = self.client().perform_request(
             &uri,
             &Method::PUT,
             |ref mut request| {
@@ -345,11 +347,10 @@ impl<'a> ChangeBlobLeaseBuilder<'a, Yes, Yes, Yes, Yes> {
                 ClientRequestIdOption::add_header(&self, request);
             },
             None,
-        );
+        )?;
 
-        done(req)
-            .from_err()
-            .and_then(move |future_response| check_status_extract_headers_and_body(future_response, StatusCode::OK))
-            .and_then(|(headers, _body)| done(ChangeBlobLeaseResponse::from_headers(&headers)))
+        let (headers, _body) =
+            check_status_extract_headers_and_body(future_response, StatusCode::OK).await?;
+        ChangeBlobLeaseResponse::from_headers(&headers)
     }
 }

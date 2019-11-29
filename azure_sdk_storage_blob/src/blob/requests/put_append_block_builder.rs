@@ -4,14 +4,14 @@ use azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError};
 use azure_sdk_core::lease::LeaseId;
 use azure_sdk_core::modify_conditions::IfMatchCondition;
 use azure_sdk_core::{
-    AppendPositionOption, AppendPositionSupport, BlobNameRequired, BlobNameSupport, BodyRequired, BodySupport, ClientRequestIdOption,
-    ClientRequestIdSupport, ContainerNameRequired, ContainerNameSupport, ContentMD5Option, ContentMD5Support, IfMatchConditionOption,
-    IfMatchConditionSupport, LeaseIdOption, LeaseIdSupport, No, TimeoutOption, TimeoutSupport, ToAssign, Yes,
+    AppendPositionOption, AppendPositionSupport, BlobNameRequired, BlobNameSupport, BodyRequired,
+    BodySupport, ClientRequestIdOption, ClientRequestIdSupport, ContainerNameRequired,
+    ContainerNameSupport, ContentMD5Option, ContentMD5Support, IfMatchConditionOption,
+    IfMatchConditionSupport, LeaseIdOption, LeaseIdSupport, No, TimeoutOption, TimeoutSupport,
+    ToAssign, Yes,
 };
 use azure_sdk_storage_core::client::Client;
 use azure_sdk_storage_core::ClientRequired;
-use futures::future::done;
-use futures::prelude::*;
 use hyper::{Method, StatusCode};
 use std::marker::PhantomData;
 
@@ -58,7 +58,8 @@ impl<'a> PutAppendBlockBuilder<'a, No, No, No> {
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, BodySet> ClientRequired<'a> for PutAppendBlockBuilder<'a, ContainerNameSet, BlobNameSet, BodySet>
+impl<'a, ContainerNameSet, BlobNameSet, BodySet> ClientRequired<'a>
+    for PutAppendBlockBuilder<'a, ContainerNameSet, BlobNameSet, BodySet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
@@ -70,7 +71,8 @@ where
     }
 }
 
-impl<'a, BlobNameSet, BodySet> ContainerNameRequired<'a> for PutAppendBlockBuilder<'a, Yes, BlobNameSet, BodySet>
+impl<'a, BlobNameSet, BodySet> ContainerNameRequired<'a>
+    for PutAppendBlockBuilder<'a, Yes, BlobNameSet, BodySet>
 where
     BlobNameSet: ToAssign,
     BodySet: ToAssign,
@@ -81,7 +83,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BodySet> BlobNameRequired<'a> for PutAppendBlockBuilder<'a, ContainerNameSet, Yes, BodySet>
+impl<'a, ContainerNameSet, BodySet> BlobNameRequired<'a>
+    for PutAppendBlockBuilder<'a, ContainerNameSet, Yes, BodySet>
 where
     ContainerNameSet: ToAssign,
     BodySet: ToAssign,
@@ -92,7 +95,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet> BodyRequired<'a> for PutAppendBlockBuilder<'a, ContainerNameSet, BlobNameSet, Yes>
+impl<'a, ContainerNameSet, BlobNameSet> BodyRequired<'a>
+    for PutAppendBlockBuilder<'a, ContainerNameSet, BlobNameSet, Yes>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
@@ -103,7 +107,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, BodySet> TimeoutOption for PutAppendBlockBuilder<'a, ContainerNameSet, BlobNameSet, BodySet>
+impl<'a, ContainerNameSet, BlobNameSet, BodySet> TimeoutOption
+    for PutAppendBlockBuilder<'a, ContainerNameSet, BlobNameSet, BodySet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
@@ -115,7 +120,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, BodySet> ContentMD5Option<'a> for PutAppendBlockBuilder<'a, ContainerNameSet, BlobNameSet, BodySet>
+impl<'a, ContainerNameSet, BlobNameSet, BodySet> ContentMD5Option<'a>
+    for PutAppendBlockBuilder<'a, ContainerNameSet, BlobNameSet, BodySet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
@@ -127,7 +133,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, BodySet> LeaseIdOption<'a> for PutAppendBlockBuilder<'a, ContainerNameSet, BlobNameSet, BodySet>
+impl<'a, ContainerNameSet, BlobNameSet, BodySet> LeaseIdOption<'a>
+    for PutAppendBlockBuilder<'a, ContainerNameSet, BlobNameSet, BodySet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
@@ -165,7 +172,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, BodySet> AppendPositionOption for PutAppendBlockBuilder<'a, ContainerNameSet, BlobNameSet, BodySet>
+impl<'a, ContainerNameSet, BlobNameSet, BodySet> AppendPositionOption
+    for PutAppendBlockBuilder<'a, ContainerNameSet, BlobNameSet, BodySet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
@@ -206,7 +214,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, BodySet> BlobNameSupport<'a> for PutAppendBlockBuilder<'a, ContainerNameSet, BlobNameSet, BodySet>
+impl<'a, ContainerNameSet, BlobNameSet, BodySet> BlobNameSupport<'a>
+    for PutAppendBlockBuilder<'a, ContainerNameSet, BlobNameSet, BodySet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
@@ -234,7 +243,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, BodySet> BodySupport<'a> for PutAppendBlockBuilder<'a, ContainerNameSet, BlobNameSet, BodySet>
+impl<'a, ContainerNameSet, BlobNameSet, BodySet> BodySupport<'a>
+    for PutAppendBlockBuilder<'a, ContainerNameSet, BlobNameSet, BodySet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
@@ -262,7 +272,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, BodySet> TimeoutSupport for PutAppendBlockBuilder<'a, ContainerNameSet, BlobNameSet, BodySet>
+impl<'a, ContainerNameSet, BlobNameSet, BodySet> TimeoutSupport
+    for PutAppendBlockBuilder<'a, ContainerNameSet, BlobNameSet, BodySet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
@@ -290,7 +301,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, BodySet> ContentMD5Support<'a> for PutAppendBlockBuilder<'a, ContainerNameSet, BlobNameSet, BodySet>
+impl<'a, ContainerNameSet, BlobNameSet, BodySet> ContentMD5Support<'a>
+    for PutAppendBlockBuilder<'a, ContainerNameSet, BlobNameSet, BodySet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
@@ -318,7 +330,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, BodySet> LeaseIdSupport<'a> for PutAppendBlockBuilder<'a, ContainerNameSet, BlobNameSet, BodySet>
+impl<'a, ContainerNameSet, BlobNameSet, BodySet> LeaseIdSupport<'a>
+    for PutAppendBlockBuilder<'a, ContainerNameSet, BlobNameSet, BodySet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
@@ -404,7 +417,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, BodySet> AppendPositionSupport for PutAppendBlockBuilder<'a, ContainerNameSet, BlobNameSet, BodySet>
+impl<'a, ContainerNameSet, BlobNameSet, BodySet> AppendPositionSupport
+    for PutAppendBlockBuilder<'a, ContainerNameSet, BlobNameSet, BodySet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
@@ -433,7 +447,8 @@ where
 }
 
 // methods callable regardless
-impl<'a, ContainerNameSet, BlobNameSet, BodySet> PutAppendBlockBuilder<'a, ContainerNameSet, BlobNameSet, BodySet>
+impl<'a, ContainerNameSet, BlobNameSet, BodySet>
+    PutAppendBlockBuilder<'a, ContainerNameSet, BlobNameSet, BodySet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
@@ -443,7 +458,7 @@ where
 
 impl<'a> PutAppendBlockBuilder<'a, Yes, Yes, Yes> {
     #[inline]
-    pub fn finalize(self) -> impl Future<Item = PutBlockResponse, Error = AzureError> {
+    pub async fn finalize(self) -> Result<PutBlockResponse, AzureError> {
         let mut uri = generate_blob_uri(&self, Some("comp=appendblock"));
 
         if let Some(timeout) = TimeoutOption::to_uri_parameter(&self) {
@@ -452,7 +467,7 @@ impl<'a> PutAppendBlockBuilder<'a, Yes, Yes, Yes> {
 
         trace!("uri == {:?}", uri);
 
-        let req = self.client().perform_request(
+        let future_response = self.client().perform_request(
             &uri,
             &Method::PUT,
             |ref mut request| {
@@ -463,11 +478,10 @@ impl<'a> PutAppendBlockBuilder<'a, Yes, Yes, Yes> {
                 AppendPositionOption::add_header(&self, request);
             },
             Some(self.body()),
-        );
+        )?;
 
-        done(req)
-            .from_err()
-            .and_then(move |response| check_status_extract_headers_and_body(response, StatusCode::CREATED))
-            .and_then(move |(headers, _body)| done(PutBlockResponse::from_headers(&headers)))
+        let (headers, _body) =
+            check_status_extract_headers_and_body(future_response, StatusCode::CREATED).await?;
+        PutBlockResponse::from_headers(&headers)
     }
 }

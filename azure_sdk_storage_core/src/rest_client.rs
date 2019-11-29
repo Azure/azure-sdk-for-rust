@@ -1,24 +1,22 @@
 use crate::IPRange;
-use azure_sdk_core::{
-    errors::AzureError,
-    headers,
-    util::{format_header_value, HeaderMapExt, RequestBuilderExt},
-    COMPLETE_ENCODE_SET,
-};
+use azure_sdk_core::errors::AzureError;
+use azure_sdk_core::headers;
+use azure_sdk_core::util::{format_header_value, HeaderMapExt, RequestBuilderExt};
 use base64;
 use chrono;
 use chrono::{DateTime, Utc};
 use hyper::{self, header, HeaderMap, Method};
 use hyper_rustls::HttpsConnector;
-use ring::{digest::SHA256, hmac};
+use ring::hmac;
 use std::fmt::Write;
 use url;
-use url::percent_encoding::utf8_percent_encode;
+use url::form_urlencoded;
 
 #[derive(Debug, Clone, Copy)]
 pub enum ServiceType {
     Blob,
-    // Queue, File,
+    // Queue,
+    // File,
     Table,
 }
 
@@ -34,26 +32,26 @@ fn generate_authorization(
     method: &Method,
     hmac_key: &str,
     service_type: ServiceType,
-) -> Result<String, AzureError> {
+) -> String {
     let str_to_sign = string_to_sign(h, u, method, service_type);
 
     // debug!("\nstr_to_sign == {:?}\n", str_to_sign);
     // debug!("str_to_sign == {}", str_to_sign);
 
-    let auth = encode_str_to_sign(&str_to_sign, hmac_key)?;
+    let auth = encode_str_to_sign(&str_to_sign, hmac_key);
     // debug!("auth == {:?}", auth);
 
-    Ok(format!("SharedKey {}:{}", get_account(u), auth))
+    format!("SharedKey {}:{}", get_account(u), auth)
 }
 
-fn encode_str_to_sign(str_to_sign: &str, hmac_key: &str) -> Result<String, AzureError> {
-    let key = hmac::SigningKey::new(&SHA256, &base64::decode(hmac_key)?);
+fn encode_str_to_sign(str_to_sign: &str, hmac_key: &str) -> String {
+    let key = hmac::Key::new(ring::hmac::HMAC_SHA256, &base64::decode(hmac_key).unwrap());
     let sig = hmac::sign(&key, str_to_sign.as_bytes());
 
     // let res = hmac.result();
     // debug!("{:?}", res.code());
 
-    Ok(base64::encode(sig.as_ref()))
+    base64::encode(sig.as_ref())
 }
 
 #[inline]
@@ -208,7 +206,7 @@ pub(crate) fn generate_storage_sas(
 
     debug!("string_to_sign == \n{}", string_to_sign);
 
-    let key = hmac::SigningKey::new(&SHA256, &base64::decode(key).unwrap());
+    let key = hmac::Key::new(ring::hmac::HMAC_SHA256, &base64::decode(key).unwrap());
     let sig = hmac::sign(&key, string_to_sign.as_bytes());
 
     let result = base64::encode(sig.as_ref());
@@ -218,7 +216,7 @@ pub(crate) fn generate_storage_sas(
         if let Some(_) = start {
             format!(
                 "st={}&",
-                utf8_percent_encode(&start_string, COMPLETE_ENCODE_SET)
+                form_urlencoded::byte_serialize(start_string.as_bytes()).collect::<String>()
             )
         } else {
             "".to_owned()
@@ -228,7 +226,8 @@ pub(crate) fn generate_storage_sas(
             // the docs.
             format!(
                 "sst={}&",
-                utf8_percent_encode(&snapshot_time_string, COMPLETE_ENCODE_SET)
+                form_urlencoded::byte_serialize(snapshot_time_string.as_bytes())
+                    .collect::<String>()
             )
         } else {
             "".to_owned()
@@ -236,7 +235,7 @@ pub(crate) fn generate_storage_sas(
         if let Some(_) = ip_range {
             format!(
                 "sip={}&",
-                utf8_percent_encode(&ip_range_string, COMPLETE_ENCODE_SET)
+                form_urlencoded::byte_serialize(ip_range_string.as_bytes()).collect::<String>()
             )
         } else {
             "".to_owned()
@@ -246,7 +245,7 @@ pub(crate) fn generate_storage_sas(
         } else {
             format!(
                 "rscc={}&",
-                utf8_percent_encode(&cache_control, COMPLETE_ENCODE_SET)
+                form_urlencoded::byte_serialize(cache_control.as_bytes()).collect::<String>()
             )
         },
         if content_disposition.is_empty() {
@@ -254,7 +253,7 @@ pub(crate) fn generate_storage_sas(
         } else {
             format!(
                 "rscd={}&",
-                utf8_percent_encode(&content_disposition, COMPLETE_ENCODE_SET)
+                form_urlencoded::byte_serialize(content_disposition.as_bytes()).collect::<String>()
             )
         },
         if content_encoding.is_empty() {
@@ -262,7 +261,7 @@ pub(crate) fn generate_storage_sas(
         } else {
             format!(
                 "rsce={}&",
-                utf8_percent_encode(&content_encoding, COMPLETE_ENCODE_SET)
+                form_urlencoded::byte_serialize(content_encoding.as_bytes()).collect::<String>()
             )
         },
         if content_language.is_empty() {
@@ -270,7 +269,7 @@ pub(crate) fn generate_storage_sas(
         } else {
             format!(
                 "rscl={}&",
-                utf8_percent_encode(&content_language, COMPLETE_ENCODE_SET)
+                form_urlencoded::byte_serialize(content_language.as_bytes()).collect::<String>()
             )
         },
         if content_type.is_empty() {
@@ -278,7 +277,7 @@ pub(crate) fn generate_storage_sas(
         } else {
             format!(
                 "rsct={}&",
-                utf8_percent_encode(&content_type, COMPLETE_ENCODE_SET)
+                form_urlencoded::byte_serialize(content_type.as_bytes()).collect::<String>()
             )
         },
         if starting_pk.is_empty() {
@@ -286,7 +285,7 @@ pub(crate) fn generate_storage_sas(
         } else {
             format!(
                 "spk={}&",
-                utf8_percent_encode(&starting_pk, COMPLETE_ENCODE_SET)
+                form_urlencoded::byte_serialize(starting_pk.as_bytes()).collect::<String>()
             )
         },
         if ending_pk.is_empty() {
@@ -294,7 +293,7 @@ pub(crate) fn generate_storage_sas(
         } else {
             format!(
                 "epk={}&",
-                utf8_percent_encode(&ending_pk, COMPLETE_ENCODE_SET)
+                form_urlencoded::byte_serialize(ending_pk.as_bytes()).collect::<String>()
             )
         },
         if starting_rk.is_empty() {
@@ -302,7 +301,7 @@ pub(crate) fn generate_storage_sas(
         } else {
             format!(
                 "srk={}&",
-                utf8_percent_encode(&starting_rk, COMPLETE_ENCODE_SET)
+                form_urlencoded::byte_serialize(starting_rk.as_bytes()).collect::<String>()
             )
         },
         if ending_rk.is_empty() {
@@ -310,15 +309,15 @@ pub(crate) fn generate_storage_sas(
         } else {
             format!(
                 "erk={}&",
-                utf8_percent_encode(&ending_rk, COMPLETE_ENCODE_SET)
+                form_urlencoded::byte_serialize(ending_rk.as_bytes()).collect::<String>()
             )
         },
-        utf8_percent_encode(&end_string, COMPLETE_ENCODE_SET),
+        form_urlencoded::byte_serialize(end_string.as_bytes()).collect::<String>(),
         permission,
         resource_char,
         protocol,
         SAS_VERSION,
-        utf8_percent_encode(&result, COMPLETE_ENCODE_SET),
+        form_urlencoded::byte_serialize(result.as_bytes()).collect::<String>()
     );
 
     token
@@ -561,7 +560,7 @@ where
             http_method,
             azure_key,
             service_type,
-        )?;
+        );
         request
             .headers_mut()
             .insert(header::AUTHORIZATION, format_header_value(auth)?);
@@ -708,7 +707,7 @@ Wed, 03 May 2017 14:04:56 GMT
             .to_owned();
 
         assert_eq!(
-            super::encode_str_to_sign(&str_to_sign, &hmac_key).unwrap(),
+            super::encode_str_to_sign(&str_to_sign, &hmac_key),
             "gZzaRaIkvC9jYRY123tq3xXZdsMAcgAbjKQo8y0p0Fs=".to_owned()
         );
     }
@@ -721,7 +720,7 @@ Wed, 03 May 2017 14:04:56 GMT
             .to_owned();
 
         assert_eq!(
-            super::encode_str_to_sign(&str_to_sign, &hmac_key).unwrap(),
+            super::encode_str_to_sign(&str_to_sign, &hmac_key),
             "YuKoXELO9M9HXeeGaSXBr4Nk+CgPAEQhcwJ6tVtBRCw=".to_owned()
         );
     }
@@ -734,7 +733,7 @@ Wed, 03 May 2017 14:04:56 GMT
             .to_owned();
 
         assert_eq!(
-            super::encode_str_to_sign(&str_to_sign, &hmac_key).unwrap(),
+            super::encode_str_to_sign(&str_to_sign, &hmac_key),
             "YuKoXELO9M9HXeeGaSXBr4Nk+CgPAEQhcwJ6tVtBRCw=".to_owned()
         );
     }

@@ -64,7 +64,7 @@ impl FromStr for Range {
 }
 
 impl fmt::Display for Range {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "bytes={}-{}", self.start, self.end)
     }
 }
@@ -95,7 +95,10 @@ mod test {
 
     #[test]
     fn test_range_display() {
-        let range = Range { start: 100, end: 500 };
+        let range = Range {
+            start: 100,
+            end: 500,
+        };
 
         let txt = format!("{}", range);
 

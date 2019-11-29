@@ -1,13 +1,12 @@
-use azure_sdk_storage_core::client::Client;
-use azure_sdk_storage_core::ClientRequired;
 use azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError};
 use azure_sdk_core::lease::LeaseId;
 use azure_sdk_core::{
-    ClientRequestIdOption, ClientRequestIdSupport, ContainerNameRequired, ContainerNameSupport, LeaseIdOption, LeaseIdSupport,
-    TimeoutOption, TimeoutSupport,
+    ClientRequestIdOption, ClientRequestIdSupport, ContainerNameRequired, ContainerNameSupport,
+    LeaseIdOption, LeaseIdSupport, TimeoutOption, TimeoutSupport,
 };
 use azure_sdk_core::{No, ToAssign, Yes};
-use futures::future::{done, ok, Future};
+use azure_sdk_storage_core::client::Client;
+use azure_sdk_storage_core::ClientRequired;
 use hyper::{Method, StatusCode};
 use std::marker::PhantomData;
 
@@ -146,14 +145,18 @@ impl<'a> DeleteBuilder<'a, No> {
 }
 
 impl<'a> DeleteBuilder<'a, Yes> {
-    pub fn finalize(self) -> impl Future<Item = (), Error = AzureError> {
-        let mut uri = format!("{}/{}?restype=container", self.client().blob_uri(), self.container_name());
+    pub async fn finalize(self) -> Result<(), AzureError> {
+        let mut uri = format!(
+            "{}/{}?restype=container",
+            self.client().blob_uri(),
+            self.container_name()
+        );
 
         if let Some(nm) = TimeoutOption::to_uri_parameter(&self) {
             uri = format!("{}&{}", uri, nm);
         }
 
-        let req = self.client().perform_request(
+        let future_response = self.client().perform_request(
             &uri,
             &Method::DELETE,
             |ref mut request| {
@@ -161,11 +164,10 @@ impl<'a> DeleteBuilder<'a, Yes> {
                 LeaseIdOption::add_header(&self, request);
             },
             Some(&[]),
-        );
+        )?;
 
-        done(req).from_err().and_then(move |future_response| {
-            check_status_extract_headers_and_body(future_response, StatusCode::ACCEPTED).and_then(|_| ok(()))
-        })
+        check_status_extract_headers_and_body(future_response, StatusCode::ACCEPTED).await?;
+        Ok(())
     }
 }
 

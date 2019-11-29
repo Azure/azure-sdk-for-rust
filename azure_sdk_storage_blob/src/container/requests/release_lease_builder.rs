@@ -1,15 +1,14 @@
-use azure_sdk_storage_core::client::Client;
 use crate::container::responses::ReleaseLeaseResponse;
-use azure_sdk_storage_core::ClientRequired;
 use azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError};
 use azure_sdk_core::headers::LEASE_ACTION;
 use azure_sdk_core::lease::LeaseId;
 use azure_sdk_core::{
-    ClientRequestIdOption, ClientRequestIdSupport, ContainerNameRequired, ContainerNameSupport, LeaseIdRequired, LeaseIdSupport,
-    TimeoutOption, TimeoutSupport,
+    ClientRequestIdOption, ClientRequestIdSupport, ContainerNameRequired, ContainerNameSupport,
+    LeaseIdRequired, LeaseIdSupport, TimeoutOption, TimeoutSupport,
 };
 use azure_sdk_core::{No, ToAssign, Yes};
-use futures::future::{done, Future};
+use azure_sdk_storage_core::client::Client;
+use azure_sdk_storage_core::ClientRequired;
 use hyper::{Method, StatusCode};
 use std::marker::PhantomData;
 
@@ -42,7 +41,8 @@ impl<'a> ReleaseLeaseBuilder<'a, No, No> {
     }
 }
 
-impl<'a, ContainerNameSet, LeaseIdSet> ClientRequired<'a> for ReleaseLeaseBuilder<'a, ContainerNameSet, LeaseIdSet>
+impl<'a, ContainerNameSet, LeaseIdSet> ClientRequired<'a>
+    for ReleaseLeaseBuilder<'a, ContainerNameSet, LeaseIdSet>
 where
     ContainerNameSet: ToAssign,
     LeaseIdSet: ToAssign,
@@ -61,7 +61,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, LeaseIdSet> ClientRequestIdOption<'a> for ReleaseLeaseBuilder<'a, ContainerNameSet, LeaseIdSet>
+impl<'a, ContainerNameSet, LeaseIdSet> ClientRequestIdOption<'a>
+    for ReleaseLeaseBuilder<'a, ContainerNameSet, LeaseIdSet>
 where
     ContainerNameSet: ToAssign,
     LeaseIdSet: ToAssign,
@@ -71,7 +72,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, LeaseIdSet> TimeoutOption for ReleaseLeaseBuilder<'a, ContainerNameSet, LeaseIdSet>
+impl<'a, ContainerNameSet, LeaseIdSet> TimeoutOption
+    for ReleaseLeaseBuilder<'a, ContainerNameSet, LeaseIdSet>
 where
     ContainerNameSet: ToAssign,
     LeaseIdSet: ToAssign,
@@ -90,7 +92,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, LeaseIdSet> ContainerNameSupport<'a> for ReleaseLeaseBuilder<'a, ContainerNameSet, LeaseIdSet>
+impl<'a, ContainerNameSet, LeaseIdSet> ContainerNameSupport<'a>
+    for ReleaseLeaseBuilder<'a, ContainerNameSet, LeaseIdSet>
 where
     ContainerNameSet: ToAssign,
     LeaseIdSet: ToAssign,
@@ -110,7 +113,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, LeaseIdSet> ClientRequestIdSupport<'a> for ReleaseLeaseBuilder<'a, ContainerNameSet, LeaseIdSet>
+impl<'a, ContainerNameSet, LeaseIdSet> ClientRequestIdSupport<'a>
+    for ReleaseLeaseBuilder<'a, ContainerNameSet, LeaseIdSet>
 where
     ContainerNameSet: ToAssign,
     LeaseIdSet: ToAssign,
@@ -130,7 +134,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, LeaseIdSet> TimeoutSupport for ReleaseLeaseBuilder<'a, ContainerNameSet, LeaseIdSet>
+impl<'a, ContainerNameSet, LeaseIdSet> TimeoutSupport
+    for ReleaseLeaseBuilder<'a, ContainerNameSet, LeaseIdSet>
 where
     ContainerNameSet: ToAssign,
     LeaseIdSet: ToAssign,
@@ -150,7 +155,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, LeaseIdSet> LeaseIdSupport<'a> for ReleaseLeaseBuilder<'a, ContainerNameSet, LeaseIdSet>
+impl<'a, ContainerNameSet, LeaseIdSet> LeaseIdSupport<'a>
+    for ReleaseLeaseBuilder<'a, ContainerNameSet, LeaseIdSet>
 where
     ContainerNameSet: ToAssign,
     LeaseIdSet: ToAssign,
@@ -179,7 +185,7 @@ where
 }
 
 impl<'a> ReleaseLeaseBuilder<'a, Yes, Yes> {
-    pub fn finalize(self) -> impl Future<Item = ReleaseLeaseResponse, Error = AzureError> {
+    pub async fn finalize(self) -> Result<ReleaseLeaseResponse, AzureError> {
         let mut uri = format!(
             "{}/{}?comp=lease&restype=container",
             self.client().blob_uri(),
@@ -190,7 +196,7 @@ impl<'a> ReleaseLeaseBuilder<'a, Yes, Yes> {
             uri = format!("{}&{}", uri, nm);
         }
 
-        let req = self.client().perform_request(
+        let future_response = self.client().perform_request(
             &uri,
             &Method::PUT,
             |ref mut request| {
@@ -199,11 +205,10 @@ impl<'a> ReleaseLeaseBuilder<'a, Yes, Yes> {
                 request.header(LEASE_ACTION, "release");
             },
             Some(&[]),
-        );
+        )?;
 
-        done(req)
-            .from_err()
-            .and_then(move |future_response| check_status_extract_headers_and_body(future_response, StatusCode::OK))
-            .and_then(|(headers, _body)| done(ReleaseLeaseResponse::from_headers(&headers)))
+        let (headers, _body) =
+            check_status_extract_headers_and_body(future_response, StatusCode::OK).await?;
+        ReleaseLeaseResponse::from_headers(&headers)
     }
 }

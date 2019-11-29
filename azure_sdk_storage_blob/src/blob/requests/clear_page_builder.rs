@@ -1,20 +1,21 @@
 use crate::blob::generate_blob_uri;
 use crate::blob::responses::ClearPageResponse;
-use azure_sdk_storage_core::client::Client;
-use azure_sdk_storage_core::ClientRequired;
 use azure_sdk_core::ba512_range::BA512Range;
 use azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError};
 use azure_sdk_core::headers::PAGE_WRITE;
 use azure_sdk_core::lease::LeaseId;
-use azure_sdk_core::modify_conditions::{IfMatchCondition, IfSinceCondition, SequenceNumberCondition};
-use azure_sdk_core::{
-    BA512RangeRequired, BA512RangeSupport, BlobNameRequired, BlobNameSupport, ClientRequestIdOption, ClientRequestIdSupport,
-    ContainerNameRequired, ContainerNameSupport, IfMatchConditionOption, IfMatchConditionSupport, IfSinceConditionOption,
-    IfSinceConditionSupport, LeaseIdOption, LeaseIdSupport, No, SequenceNumberConditionOption, SequenceNumberConditionSupport,
-    TimeoutOption, TimeoutSupport, ToAssign, Yes,
+use azure_sdk_core::modify_conditions::{
+    IfMatchCondition, IfSinceCondition, SequenceNumberCondition,
 };
-use futures::future::done;
-use futures::prelude::*;
+use azure_sdk_core::{
+    BA512RangeRequired, BA512RangeSupport, BlobNameRequired, BlobNameSupport,
+    ClientRequestIdOption, ClientRequestIdSupport, ContainerNameRequired, ContainerNameSupport,
+    IfMatchConditionOption, IfMatchConditionSupport, IfSinceConditionOption,
+    IfSinceConditionSupport, LeaseIdOption, LeaseIdSupport, No, SequenceNumberConditionOption,
+    SequenceNumberConditionSupport, TimeoutOption, TimeoutSupport, ToAssign, Yes,
+};
+use azure_sdk_storage_core::client::Client;
+use azure_sdk_storage_core::ClientRequired;
 use hyper::{Method, StatusCode};
 use std::marker::PhantomData;
 
@@ -74,7 +75,8 @@ where
     }
 }
 
-impl<'a, BlobNameSet, BA512RangeSet> ContainerNameRequired<'a> for ClearPageBuilder<'a, Yes, BlobNameSet, BA512RangeSet>
+impl<'a, BlobNameSet, BA512RangeSet> ContainerNameRequired<'a>
+    for ClearPageBuilder<'a, Yes, BlobNameSet, BA512RangeSet>
 where
     BlobNameSet: ToAssign,
     BA512RangeSet: ToAssign,
@@ -85,7 +87,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BA512RangeSet> BlobNameRequired<'a> for ClearPageBuilder<'a, ContainerNameSet, Yes, BA512RangeSet>
+impl<'a, ContainerNameSet, BA512RangeSet> BlobNameRequired<'a>
+    for ClearPageBuilder<'a, ContainerNameSet, Yes, BA512RangeSet>
 where
     ContainerNameSet: ToAssign,
     BA512RangeSet: ToAssign,
@@ -96,7 +99,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet> BA512RangeRequired<'a> for ClearPageBuilder<'a, ContainerNameSet, BlobNameSet, Yes>
+impl<'a, ContainerNameSet, BlobNameSet> BA512RangeRequired<'a>
+    for ClearPageBuilder<'a, ContainerNameSet, BlobNameSet, Yes>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
@@ -172,7 +176,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, BA512RangeSet> TimeoutOption for ClearPageBuilder<'a, ContainerNameSet, BlobNameSet, BA512RangeSet>
+impl<'a, ContainerNameSet, BlobNameSet, BA512RangeSet> TimeoutOption
+    for ClearPageBuilder<'a, ContainerNameSet, BlobNameSet, BA512RangeSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
@@ -310,7 +315,10 @@ where
     type O = ClearPageBuilder<'a, ContainerNameSet, BlobNameSet, BA512RangeSet>;
 
     #[inline]
-    fn with_sequence_number_condition(self, sequence_number_condition: SequenceNumberCondition) -> Self::O {
+    fn with_sequence_number_condition(
+        self,
+        sequence_number_condition: SequenceNumberCondition,
+    ) -> Self::O {
         ClearPageBuilder {
             client: self.client,
             p_container_name: PhantomData {},
@@ -416,7 +424,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, BA512RangeSet> TimeoutSupport for ClearPageBuilder<'a, ContainerNameSet, BlobNameSet, BA512RangeSet>
+impl<'a, ContainerNameSet, BlobNameSet, BA512RangeSet> TimeoutSupport
+    for ClearPageBuilder<'a, ContainerNameSet, BlobNameSet, BA512RangeSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
@@ -445,7 +454,8 @@ where
 }
 
 // methods callable regardless
-impl<'a, ContainerNameSet, BlobNameSet, BA512RangeSet> ClearPageBuilder<'a, ContainerNameSet, BlobNameSet, BA512RangeSet>
+impl<'a, ContainerNameSet, BlobNameSet, BA512RangeSet>
+    ClearPageBuilder<'a, ContainerNameSet, BlobNameSet, BA512RangeSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
@@ -455,7 +465,7 @@ where
 
 impl<'a> ClearPageBuilder<'a, Yes, Yes, Yes> {
     #[inline]
-    pub fn finalize(self) -> impl Future<Item = ClearPageResponse, Error = AzureError> {
+    pub async fn finalize(self) -> Result<ClearPageResponse, AzureError> {
         let mut uri = generate_blob_uri(&self, Some("comp=page"));
 
         if let Some(timeout) = TimeoutOption::to_uri_parameter(&self) {
@@ -464,7 +474,7 @@ impl<'a> ClearPageBuilder<'a, Yes, Yes, Yes> {
 
         trace!("uri == {:?}", uri);
 
-        let req = self.client().perform_request(
+        let future_response = self.client().perform_request(
             &uri,
             &Method::PUT,
             |ref mut request| {
@@ -477,11 +487,10 @@ impl<'a> ClearPageBuilder<'a, Yes, Yes, Yes> {
                 ClientRequestIdOption::add_header(&self, request);
             },
             None,
-        );
+        )?;
 
-        done(req)
-            .from_err()
-            .and_then(move |response| check_status_extract_headers_and_body(response, StatusCode::CREATED))
-            .and_then(move |(headers, _body)| done(ClearPageResponse::from_headers(&headers)))
+        let (headers, _body) =
+            check_status_extract_headers_and_body(future_response, StatusCode::CREATED).await?;
+        ClearPageResponse::from_headers(&headers)
     }
 }

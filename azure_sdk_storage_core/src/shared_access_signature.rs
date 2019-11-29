@@ -1,11 +1,11 @@
 use super::{Client, ClientRequired};
-use azure_sdk_core::{No, ToAssign, COMPLETE_ENCODE_SET};
-use base64::{decode, encode};
+use azure_sdk_core::{No, ToAssign};
+use base64::encode;
 use chrono::{DateTime, Utc};
-use hmac_sha256::HMAC;
+use ring::hmac;
 use std::fmt;
 use std::marker::PhantomData;
-use url::percent_encoding::{utf8_percent_encode, DEFAULT_ENCODE_SET};
+use url::form_urlencoded;
 
 /// Service version of the shared access signature ([Azure documentation](https://docs.microsoft.com/en-us/rest/api/storageservices/create-service-sas#specifying-the-signed-version-field)).
 #[derive(Copy, Clone)]
@@ -160,13 +160,20 @@ impl SharedAccessSignature {
                     self.signed_permissions,
                     self.signed_resource,
                     self.signed_resource_type,
-                    self.signed_start.map_or("".to_string(), |v| SharedAccessSignature::format_date(v)),
+                    self.signed_start
+                        .map_or("".to_string(), |v| SharedAccessSignature::format_date(v)),
                     SharedAccessSignature::format_date(self.signed_expiry),
                     self.signed_ip.clone().unwrap_or("".to_string()),
-                    self.signed_protocol.as_ref().map_or("".to_string(), |v| v.to_string()),
+                    self.signed_protocol
+                        .as_ref()
+                        .map_or("".to_string(), |v| v.to_string()),
                     self.signed_version,
                 );
-                let sig_bytes = HMAC::mac(string_to_sign.as_bytes(), &decode(&self.key).unwrap());
+
+                let key =
+                    hmac::Key::new(ring::hmac::HMAC_SHA256, &base64::decode(&self.key).unwrap());
+                let sig_bytes = hmac::sign(&key, string_to_sign.as_bytes());
+
                 encode(&sig_bytes)
             }
             _ => {
@@ -184,7 +191,10 @@ impl SharedAccessSignature {
             format!("srt={}", self.signed_resource_type),
             format!(
                 "se={}",
-                utf8_percent_encode(&SharedAccessSignature::format_date(self.signed_expiry), DEFAULT_ENCODE_SET)
+                form_urlencoded::byte_serialize(
+                    SharedAccessSignature::format_date(self.signed_expiry).as_bytes()
+                )
+                .collect::<String>()
             ),
             format!("sp={}", self.signed_permissions),
         ];
@@ -192,7 +202,10 @@ impl SharedAccessSignature {
         if let Some(start) = &self.signed_start {
             elements.push(format!(
                 "st={}",
-                utf8_percent_encode(&SharedAccessSignature::format_date(*start), DEFAULT_ENCODE_SET)
+                form_urlencoded::byte_serialize(
+                    SharedAccessSignature::format_date(*start).as_bytes()
+                )
+                .collect::<String>()
             ))
         }
         if let Some(ip) = &self.signed_ip {
@@ -202,7 +215,10 @@ impl SharedAccessSignature {
             elements.push(format!("spr={}", protocol))
         }
         let sig = SharedAccessSignature::signature(self);
-        elements.push(format!("sig={}", utf8_percent_encode(&sig, COMPLETE_ENCODE_SET)));
+        elements.push(format!(
+            "sig={}",
+            form_urlencoded::byte_serialize(sig.as_bytes()).collect::<String>()
+        ));
 
         elements.join("&")
     }
@@ -220,8 +236,13 @@ impl std::fmt::Debug for SharedAccessSignature {
     }
 }
 
-pub struct SharedAccessSignatureBuilder<'a, SasResourceSet, SasResourceTypeSet, SasExpirySet, SasPermissionsSet>
-where
+pub struct SharedAccessSignatureBuilder<
+    'a,
+    SasResourceSet,
+    SasResourceTypeSet,
+    SasExpirySet,
+    SasPermissionsSet,
+> where
     SasResourceSet: ToAssign,
     SasResourceTypeSet: ToAssign,
     SasExpirySet: ToAssign,
@@ -279,7 +300,13 @@ impl<'a> SharedAccessSignatureBuilder<'a, No, No, No, No> {
 }
 
 impl<'a, SasResourceSet, SasResourceTypeSet, SasExpirySet, SasPermissionsSet> ClientRequired<'a>
-    for SharedAccessSignatureBuilder<'a, SasResourceSet, SasResourceTypeSet, SasExpirySet, SasPermissionsSet>
+    for SharedAccessSignatureBuilder<
+        'a,
+        SasResourceSet,
+        SasResourceTypeSet,
+        SasExpirySet,
+        SasPermissionsSet,
+    >
 where
     SasResourceSet: ToAssign,
     SasResourceTypeSet: ToAssign,
@@ -308,7 +335,13 @@ pub trait SasResourceRequired {
 }
 
 impl<'a, SasResourceSet, SasResourceTypeSet, SasExpirySet, SasPermissionsSet> SasResourceRequired
-    for SharedAccessSignatureBuilder<'a, SasResourceSet, SasResourceTypeSet, SasExpirySet, SasPermissionsSet>
+    for SharedAccessSignatureBuilder<
+        'a,
+        SasResourceSet,
+        SasResourceTypeSet,
+        SasExpirySet,
+        SasPermissionsSet,
+    >
 where
     SasResourceSet: ToAssign,
     SasResourceTypeSet: ToAssign,
@@ -327,14 +360,26 @@ pub trait SasResourceSupport<'a> {
 }
 
 impl<'a, SasResourceSet, SasResourceTypeSet, SasExpirySet, SasPermissionsSet> SasResourceSupport<'a>
-    for SharedAccessSignatureBuilder<'a, SasResourceSet, SasResourceTypeSet, SasExpirySet, SasPermissionsSet>
+    for SharedAccessSignatureBuilder<
+        'a,
+        SasResourceSet,
+        SasResourceTypeSet,
+        SasExpirySet,
+        SasPermissionsSet,
+    >
 where
     SasResourceSet: ToAssign,
     SasResourceTypeSet: ToAssign,
     SasExpirySet: ToAssign,
     SasPermissionsSet: ToAssign,
 {
-    type O = SharedAccessSignatureBuilder<'a, SasResourceSet, SasResourceTypeSet, SasExpirySet, SasPermissionsSet>;
+    type O = SharedAccessSignatureBuilder<
+        'a,
+        SasResourceSet,
+        SasResourceTypeSet,
+        SasExpirySet,
+        SasPermissionsSet,
+    >;
 
     #[inline]
     fn with_resource(self, resource: SasResource) -> Self::O {
@@ -360,8 +405,15 @@ pub trait SasResourceTypeRequired {
     fn resource_type(&self) -> SasResourceType;
 }
 
-impl<'a, SasResourceSet, SasResourceTypeSet, SasExpirySet, SasPermissionsSet> SasResourceTypeRequired
-    for SharedAccessSignatureBuilder<'a, SasResourceSet, SasResourceTypeSet, SasExpirySet, SasPermissionsSet>
+impl<'a, SasResourceSet, SasResourceTypeSet, SasExpirySet, SasPermissionsSet>
+    SasResourceTypeRequired
+    for SharedAccessSignatureBuilder<
+        'a,
+        SasResourceSet,
+        SasResourceTypeSet,
+        SasExpirySet,
+        SasPermissionsSet,
+    >
 where
     SasResourceSet: ToAssign,
     SasResourceTypeSet: ToAssign,
@@ -379,15 +431,28 @@ pub trait SasResourceTypeSupport<'a> {
     fn with_resource_type(self, resource_type: SasResourceType) -> Self::O;
 }
 
-impl<'a, SasResourceSet, SasResourceTypeSet, SasExpirySet, SasPermissionsSet> SasResourceTypeSupport<'a>
-    for SharedAccessSignatureBuilder<'a, SasResourceSet, SasResourceTypeSet, SasExpirySet, SasPermissionsSet>
+impl<'a, SasResourceSet, SasResourceTypeSet, SasExpirySet, SasPermissionsSet>
+    SasResourceTypeSupport<'a>
+    for SharedAccessSignatureBuilder<
+        'a,
+        SasResourceSet,
+        SasResourceTypeSet,
+        SasExpirySet,
+        SasPermissionsSet,
+    >
 where
     SasResourceSet: ToAssign,
     SasResourceTypeSet: ToAssign,
     SasExpirySet: ToAssign,
     SasPermissionsSet: ToAssign,
 {
-    type O = SharedAccessSignatureBuilder<'a, SasResourceSet, SasResourceTypeSet, SasExpirySet, SasPermissionsSet>;
+    type O = SharedAccessSignatureBuilder<
+        'a,
+        SasResourceSet,
+        SasResourceTypeSet,
+        SasExpirySet,
+        SasPermissionsSet,
+    >;
 
     #[inline]
     fn with_resource_type(self, resource_type: SasResourceType) -> Self::O {
@@ -414,7 +479,13 @@ pub trait SasExpiryRequired {
 }
 
 impl<'a, SasResourceSet, SasResourceTypeSet, SasExpirySet, SasPermissionsSet> SasExpiryRequired
-    for SharedAccessSignatureBuilder<'a, SasResourceSet, SasResourceTypeSet, SasExpirySet, SasPermissionsSet>
+    for SharedAccessSignatureBuilder<
+        'a,
+        SasResourceSet,
+        SasResourceTypeSet,
+        SasExpirySet,
+        SasPermissionsSet,
+    >
 where
     SasResourceSet: ToAssign,
     SasResourceTypeSet: ToAssign,
@@ -433,14 +504,26 @@ pub trait SasExpirySupport<'a> {
 }
 
 impl<'a, SasResourceSet, SasResourceTypeSet, SasExpirySet, SasPermissionsSet> SasExpirySupport<'a>
-    for SharedAccessSignatureBuilder<'a, SasResourceSet, SasResourceTypeSet, SasExpirySet, SasPermissionsSet>
+    for SharedAccessSignatureBuilder<
+        'a,
+        SasResourceSet,
+        SasResourceTypeSet,
+        SasExpirySet,
+        SasPermissionsSet,
+    >
 where
     SasResourceSet: ToAssign,
     SasResourceTypeSet: ToAssign,
     SasExpirySet: ToAssign,
     SasPermissionsSet: ToAssign,
 {
-    type O = SharedAccessSignatureBuilder<'a, SasResourceSet, SasResourceTypeSet, SasExpirySet, SasPermissionsSet>;
+    type O = SharedAccessSignatureBuilder<
+        'a,
+        SasResourceSet,
+        SasResourceTypeSet,
+        SasExpirySet,
+        SasPermissionsSet,
+    >;
 
     #[inline]
     fn with_expiry(self, expiry: DateTime<Utc>) -> Self::O {
@@ -467,7 +550,13 @@ pub trait SasPermissionsRequired {
 }
 
 impl<'a, SasResourceSet, SasResourceTypeSet, SasExpirySet, SasPermissionsSet> SasPermissionsRequired
-    for SharedAccessSignatureBuilder<'a, SasResourceSet, SasResourceTypeSet, SasExpirySet, SasPermissionsSet>
+    for SharedAccessSignatureBuilder<
+        'a,
+        SasResourceSet,
+        SasResourceTypeSet,
+        SasExpirySet,
+        SasPermissionsSet,
+    >
 where
     SasResourceSet: ToAssign,
     SasResourceTypeSet: ToAssign,
@@ -485,15 +574,28 @@ pub trait SasPermissionsSupport<'a> {
     fn with_permissions(self, permissions: SasPermissions) -> Self::O;
 }
 
-impl<'a, SasResourceSet, SasResourceTypeSet, SasExpirySet, SasPermissionsSet> SasPermissionsSupport<'a>
-    for SharedAccessSignatureBuilder<'a, SasResourceSet, SasResourceTypeSet, SasExpirySet, SasPermissionsSet>
+impl<'a, SasResourceSet, SasResourceTypeSet, SasExpirySet, SasPermissionsSet>
+    SasPermissionsSupport<'a>
+    for SharedAccessSignatureBuilder<
+        'a,
+        SasResourceSet,
+        SasResourceTypeSet,
+        SasExpirySet,
+        SasPermissionsSet,
+    >
 where
     SasResourceSet: ToAssign,
     SasResourceTypeSet: ToAssign,
     SasExpirySet: ToAssign,
     SasPermissionsSet: ToAssign,
 {
-    type O = SharedAccessSignatureBuilder<'a, SasResourceSet, SasResourceTypeSet, SasExpirySet, SasPermissionsSet>;
+    type O = SharedAccessSignatureBuilder<
+        'a,
+        SasResourceSet,
+        SasResourceTypeSet,
+        SasExpirySet,
+        SasPermissionsSet,
+    >;
 
     #[inline]
     fn with_permissions(self, permissions: SasPermissions) -> Self::O {
@@ -521,14 +623,26 @@ pub trait SasStartSupport<'a> {
 }
 
 impl<'a, SasResourceSet, SasResourceTypeSet, SasExpirySet, SasPermissionsSet> SasStartSupport<'a>
-    for SharedAccessSignatureBuilder<'a, SasResourceSet, SasResourceTypeSet, SasExpirySet, SasPermissionsSet>
+    for SharedAccessSignatureBuilder<
+        'a,
+        SasResourceSet,
+        SasResourceTypeSet,
+        SasExpirySet,
+        SasPermissionsSet,
+    >
 where
     SasResourceSet: ToAssign,
     SasResourceTypeSet: ToAssign,
     SasExpirySet: ToAssign,
     SasPermissionsSet: ToAssign,
 {
-    type O = SharedAccessSignatureBuilder<'a, SasResourceSet, SasResourceTypeSet, SasExpirySet, SasPermissionsSet>;
+    type O = SharedAccessSignatureBuilder<
+        'a,
+        SasResourceSet,
+        SasResourceTypeSet,
+        SasExpirySet,
+        SasPermissionsSet,
+    >;
 
     #[inline]
     fn with_start(self, start: DateTime<Utc>) -> Self::O {
@@ -556,14 +670,26 @@ pub trait SasIpSupport<'a> {
 }
 
 impl<'a, SasResourceSet, SasResourceTypeSet, SasExpirySet, SasPermissionsSet> SasIpSupport<'a>
-    for SharedAccessSignatureBuilder<'a, SasResourceSet, SasResourceTypeSet, SasExpirySet, SasPermissionsSet>
+    for SharedAccessSignatureBuilder<
+        'a,
+        SasResourceSet,
+        SasResourceTypeSet,
+        SasExpirySet,
+        SasPermissionsSet,
+    >
 where
     SasResourceSet: ToAssign,
     SasResourceTypeSet: ToAssign,
     SasExpirySet: ToAssign,
     SasPermissionsSet: ToAssign,
 {
-    type O = SharedAccessSignatureBuilder<'a, SasResourceSet, SasResourceTypeSet, SasExpirySet, SasPermissionsSet>;
+    type O = SharedAccessSignatureBuilder<
+        'a,
+        SasResourceSet,
+        SasResourceTypeSet,
+        SasExpirySet,
+        SasPermissionsSet,
+    >;
 
     #[inline]
     fn with_ip(self, ip: &str) -> Self::O {
@@ -591,14 +717,26 @@ pub trait SasProtocolSupport<'a> {
 }
 
 impl<'a, SasResourceSet, SasResourceTypeSet, SasExpirySet, SasPermissionsSet> SasProtocolSupport<'a>
-    for SharedAccessSignatureBuilder<'a, SasResourceSet, SasResourceTypeSet, SasExpirySet, SasPermissionsSet>
+    for SharedAccessSignatureBuilder<
+        'a,
+        SasResourceSet,
+        SasResourceTypeSet,
+        SasExpirySet,
+        SasPermissionsSet,
+    >
 where
     SasResourceSet: ToAssign,
     SasResourceTypeSet: ToAssign,
     SasExpirySet: ToAssign,
     SasPermissionsSet: ToAssign,
 {
-    type O = SharedAccessSignatureBuilder<'a, SasResourceSet, SasResourceTypeSet, SasExpirySet, SasPermissionsSet>;
+    type O = SharedAccessSignatureBuilder<
+        'a,
+        SasResourceSet,
+        SasResourceTypeSet,
+        SasExpirySet,
+        SasPermissionsSet,
+    >;
 
     #[inline]
     fn with_protocol(self, protocol: SasProtocol) -> Self::O {

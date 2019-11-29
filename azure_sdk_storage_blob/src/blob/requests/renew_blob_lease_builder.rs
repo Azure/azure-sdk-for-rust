@@ -1,16 +1,16 @@
 use crate::blob::generate_blob_uri;
 use crate::blob::responses::RenewBlobLeaseResponse;
-use azure_sdk_storage_core::client::Client;
-use azure_sdk_storage_core::ClientRequired;
 use azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError};
 use azure_sdk_core::headers::LEASE_ACTION;
 use azure_sdk_core::lease::LeaseId;
 use azure_sdk_core::{
-    BlobNameRequired, BlobNameSupport, ClientRequestIdOption, ClientRequestIdSupport, ContainerNameRequired, ContainerNameSupport,
-    LeaseIdRequired, LeaseIdSupport, TimeoutOption, TimeoutSupport,
+    BlobNameRequired, BlobNameSupport, ClientRequestIdOption, ClientRequestIdSupport,
+    ContainerNameRequired, ContainerNameSupport, LeaseIdRequired, LeaseIdSupport, TimeoutOption,
+    TimeoutSupport,
 };
 use azure_sdk_core::{No, ToAssign, Yes};
-use futures::future::{done, Future};
+use azure_sdk_storage_core::client::Client;
+use azure_sdk_storage_core::ClientRequired;
 use hyper::{Method, StatusCode};
 use std::marker::PhantomData;
 
@@ -62,7 +62,8 @@ where
     }
 }
 
-impl<'a, BlobNameSet, LeaseIdSet> ContainerNameRequired<'a> for RenewBlobLeaseBuilder<'a, Yes, BlobNameSet, LeaseIdSet>
+impl<'a, BlobNameSet, LeaseIdSet> ContainerNameRequired<'a>
+    for RenewBlobLeaseBuilder<'a, Yes, BlobNameSet, LeaseIdSet>
 where
     BlobNameSet: ToAssign,
     LeaseIdSet: ToAssign,
@@ -73,7 +74,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, LeaseIdSet> BlobNameRequired<'a> for RenewBlobLeaseBuilder<'a, ContainerNameSet, Yes, LeaseIdSet>
+impl<'a, ContainerNameSet, LeaseIdSet> BlobNameRequired<'a>
+    for RenewBlobLeaseBuilder<'a, ContainerNameSet, Yes, LeaseIdSet>
 where
     ContainerNameSet: ToAssign,
     LeaseIdSet: ToAssign,
@@ -84,7 +86,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet> LeaseIdRequired<'a> for RenewBlobLeaseBuilder<'a, ContainerNameSet, BlobNameSet, Yes>
+impl<'a, ContainerNameSet, BlobNameSet> LeaseIdRequired<'a>
+    for RenewBlobLeaseBuilder<'a, ContainerNameSet, BlobNameSet, Yes>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
@@ -95,7 +98,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, LeaseIdSet> TimeoutOption for RenewBlobLeaseBuilder<'a, ContainerNameSet, BlobNameSet, LeaseIdSet>
+impl<'a, ContainerNameSet, BlobNameSet, LeaseIdSet> TimeoutOption
+    for RenewBlobLeaseBuilder<'a, ContainerNameSet, BlobNameSet, LeaseIdSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
@@ -195,7 +199,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, LeaseIdSet> TimeoutSupport for RenewBlobLeaseBuilder<'a, ContainerNameSet, BlobNameSet, LeaseIdSet>
+impl<'a, ContainerNameSet, BlobNameSet, LeaseIdSet> TimeoutSupport
+    for RenewBlobLeaseBuilder<'a, ContainerNameSet, BlobNameSet, LeaseIdSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
@@ -245,7 +250,8 @@ where
 }
 
 // methods callable regardless
-impl<'a, ContainerNameSet, BlobNameSet, LeaseIdSet> RenewBlobLeaseBuilder<'a, ContainerNameSet, BlobNameSet, LeaseIdSet>
+impl<'a, ContainerNameSet, BlobNameSet, LeaseIdSet>
+    RenewBlobLeaseBuilder<'a, ContainerNameSet, BlobNameSet, LeaseIdSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
@@ -254,14 +260,14 @@ where
 }
 
 impl<'a> RenewBlobLeaseBuilder<'a, Yes, Yes, Yes> {
-    pub fn finalize(self) -> impl Future<Item = RenewBlobLeaseResponse, Error = AzureError> {
+    pub async fn finalize(self) -> Result<RenewBlobLeaseResponse, AzureError> {
         let mut uri = generate_blob_uri(&self, Some("comp=lease"));
 
         if let Some(nm) = TimeoutOption::to_uri_parameter(&self) {
             uri = format!("{}&{}", uri, nm);
         }
 
-        let req = self.client().perform_request(
+        let future_response = self.client().perform_request(
             &uri,
             &Method::PUT,
             |ref mut request| {
@@ -270,11 +276,10 @@ impl<'a> RenewBlobLeaseBuilder<'a, Yes, Yes, Yes> {
                 ClientRequestIdOption::add_header(&self, request);
             },
             None,
-        );
+        )?;
 
-        done(req)
-            .from_err()
-            .and_then(move |future_response| check_status_extract_headers_and_body(future_response, StatusCode::OK))
-            .and_then(|(headers, _body)| done(RenewBlobLeaseResponse::from_headers(&headers)))
+        let (headers, _body) =
+            check_status_extract_headers_and_body(future_response, StatusCode::OK).await?;
+        RenewBlobLeaseResponse::from_headers(&headers)
     }
 }

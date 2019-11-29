@@ -3,15 +3,14 @@ use azure_sdk_core::errors::AzureError;
 use azure_sdk_core::lease::LeaseId;
 use azure_sdk_core::range::Range;
 use azure_sdk_core::{
-    BlobNameRequired, BlobNameSupport, ClientRequestIdOption, ClientRequestIdSupport, ContainerNameRequired, ContainerNameSupport,
-    LeaseIdOption, LeaseIdSupport, No, RangeRequired, RangeSupport, SnapshotOption, SnapshotSupport, TimeoutOption, TimeoutSupport,
-    ToAssign, Yes,
+    BlobNameRequired, BlobNameSupport, ClientRequestIdOption, ClientRequestIdSupport,
+    ContainerNameRequired, ContainerNameSupport, LeaseIdOption, LeaseIdSupport, No, RangeRequired,
+    RangeSupport, SnapshotOption, SnapshotSupport, TimeoutOption, TimeoutSupport, ToAssign, Yes,
 };
 use azure_sdk_storage_core::client::Client;
 use azure_sdk_storage_core::ClientRequired;
 use chrono::{DateTime, Utc};
-use futures::prelude::*;
-use futures::stream;
+use futures::stream::Stream;
 use std::marker::PhantomData;
 
 #[derive(Debug, Clone)]
@@ -55,7 +54,8 @@ impl<'a> BlobStreamBuilder<'a, No, No, No> {
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, RangeSet> ClientRequired<'a> for BlobStreamBuilder<'a, ContainerNameSet, BlobNameSet, RangeSet>
+impl<'a, ContainerNameSet, BlobNameSet, RangeSet> ClientRequired<'a>
+    for BlobStreamBuilder<'a, ContainerNameSet, BlobNameSet, RangeSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
@@ -67,7 +67,8 @@ where
     }
 }
 
-impl<'a, BlobNameSet, RangeSet> ContainerNameRequired<'a> for BlobStreamBuilder<'a, Yes, BlobNameSet, RangeSet>
+impl<'a, BlobNameSet, RangeSet> ContainerNameRequired<'a>
+    for BlobStreamBuilder<'a, Yes, BlobNameSet, RangeSet>
 where
     BlobNameSet: ToAssign,
     RangeSet: ToAssign,
@@ -78,7 +79,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, RangeSet> BlobNameRequired<'a> for BlobStreamBuilder<'a, ContainerNameSet, Yes, RangeSet>
+impl<'a, ContainerNameSet, RangeSet> BlobNameRequired<'a>
+    for BlobStreamBuilder<'a, ContainerNameSet, Yes, RangeSet>
 where
     ContainerNameSet: ToAssign,
     RangeSet: ToAssign,
@@ -89,7 +91,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet> RangeRequired<'a> for BlobStreamBuilder<'a, ContainerNameSet, BlobNameSet, Yes>
+impl<'a, ContainerNameSet, BlobNameSet> RangeRequired<'a>
+    for BlobStreamBuilder<'a, ContainerNameSet, BlobNameSet, Yes>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
@@ -100,7 +103,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, RangeSet> SnapshotOption for BlobStreamBuilder<'a, ContainerNameSet, BlobNameSet, RangeSet>
+impl<'a, ContainerNameSet, BlobNameSet, RangeSet> SnapshotOption
+    for BlobStreamBuilder<'a, ContainerNameSet, BlobNameSet, RangeSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
@@ -112,7 +116,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, RangeSet> TimeoutOption for BlobStreamBuilder<'a, ContainerNameSet, BlobNameSet, RangeSet>
+impl<'a, ContainerNameSet, BlobNameSet, RangeSet> TimeoutOption
+    for BlobStreamBuilder<'a, ContainerNameSet, BlobNameSet, RangeSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
@@ -124,7 +129,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, RangeSet> LeaseIdOption<'a> for BlobStreamBuilder<'a, ContainerNameSet, BlobNameSet, RangeSet>
+impl<'a, ContainerNameSet, BlobNameSet, RangeSet> LeaseIdOption<'a>
+    for BlobStreamBuilder<'a, ContainerNameSet, BlobNameSet, RangeSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
@@ -177,7 +183,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, RangeSet> BlobNameSupport<'a> for BlobStreamBuilder<'a, ContainerNameSet, BlobNameSet, RangeSet>
+impl<'a, ContainerNameSet, BlobNameSet, RangeSet> BlobNameSupport<'a>
+    for BlobStreamBuilder<'a, ContainerNameSet, BlobNameSet, RangeSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
@@ -204,7 +211,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, RangeSet> RangeSupport<'a> for BlobStreamBuilder<'a, ContainerNameSet, BlobNameSet, RangeSet>
+impl<'a, ContainerNameSet, BlobNameSet, RangeSet> RangeSupport<'a>
+    for BlobStreamBuilder<'a, ContainerNameSet, BlobNameSet, RangeSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
@@ -231,7 +239,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, RangeSet> SnapshotSupport for BlobStreamBuilder<'a, ContainerNameSet, BlobNameSet, RangeSet>
+impl<'a, ContainerNameSet, BlobNameSet, RangeSet> SnapshotSupport
+    for BlobStreamBuilder<'a, ContainerNameSet, BlobNameSet, RangeSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
@@ -258,7 +267,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, RangeSet> TimeoutSupport for BlobStreamBuilder<'a, ContainerNameSet, BlobNameSet, RangeSet>
+impl<'a, ContainerNameSet, BlobNameSet, RangeSet> TimeoutSupport
+    for BlobStreamBuilder<'a, ContainerNameSet, BlobNameSet, RangeSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
@@ -285,7 +295,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, RangeSet> LeaseIdSupport<'a> for BlobStreamBuilder<'a, ContainerNameSet, BlobNameSet, RangeSet>
+impl<'a, ContainerNameSet, BlobNameSet, RangeSet> LeaseIdSupport<'a>
+    for BlobStreamBuilder<'a, ContainerNameSet, BlobNameSet, RangeSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
@@ -341,7 +352,8 @@ where
 }
 
 // methods callable regardless
-impl<'a, ContainerNameSet, BlobNameSet, RangeSet> BlobStreamBuilder<'a, ContainerNameSet, BlobNameSet, RangeSet>
+impl<'a, ContainerNameSet, BlobNameSet, RangeSet>
+    BlobStreamBuilder<'a, ContainerNameSet, BlobNameSet, RangeSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
@@ -351,60 +363,65 @@ where
 
 impl<'a> BlobStreamBuilder<'a, Yes, Yes, Yes> {
     #[inline]
-    pub fn finalize(self) -> impl Stream<Item = Vec<u8>, Error = AzureError> {
-        let container_name = self.container_name().to_owned();
-        let blob_name = self.blob_name().to_owned();
+    pub fn finalize(self) -> impl Stream<Item = Result<Vec<u8>, AzureError>> + 'a {
+        let client = self.client().clone();
+        let container_name = self.container_name().clone();
+        let client_request_id = self.client_request_id.map(|v| v.to_owned());
+        let blob_name = self.blob_name().clone();
         let range = self.range().to_owned();
-
         let snapshot = self.snapshot.to_owned();
         let timeout = self.timeout.to_owned();
         let lease_id = self.lease_id.cloned();
-        let client_request_id = self.client_request_id.map(|v| v.to_owned());
         let increment = self.increment;
 
-        let client = self.client().clone();
+        futures::stream::unfold(Some(range), move |remaining| {
+            let client = client.clone();
+            let client_request_id = client_request_id.clone();
 
-        stream::unfold(Some(range), move |remaining| {
-            let remaining = match remaining {
-                Some(range) => range,
-                None => return None,
-            };
+            async move {
+                let remaining = match remaining {
+                    Some(range) => range,
+                    None => return None,
+                };
 
-            let range = if remaining.start + increment > remaining.end {
-                Range::new(remaining.start, remaining.end)
-            } else {
-                Range::new(remaining.start, remaining.start + increment)
-            };
+                let range = if remaining.start + increment > remaining.end {
+                    Range::new(remaining.start, remaining.end)
+                } else {
+                    Range::new(remaining.start, remaining.start + increment)
+                };
 
-            let mut req = GetBlobBuilder::new(&client)
-                .with_container_name(&container_name)
-                .with_blob_name(&blob_name)
-                .with_range(&range);
+                let mut req = GetBlobBuilder::new(&client)
+                    .with_container_name(&container_name)
+                    .with_blob_name(&blob_name)
+                    .with_range(&range);
 
-            if let Some(snapshot) = snapshot {
-                req = req.with_snapshot(snapshot);
-            }
-            if let Some(timeout) = timeout {
-                req = req.with_timeout(timeout);
-            }
-            if let Some(ref lease_id) = &lease_id {
-                req = req.with_lease_id(lease_id);
-            }
-            if let Some(ref client_request_id) = &client_request_id {
-                req = req.with_client_request_id(client_request_id);
-            }
+                if let Some(snapshot) = snapshot {
+                    req = req.with_snapshot(snapshot);
+                }
+                if let Some(timeout) = timeout {
+                    req = req.with_timeout(timeout);
+                }
+                if let Some(ref lease_id) = &lease_id {
+                    req = req.with_lease_id(lease_id);
+                }
+                if let Some(ref client_request_id) = &client_request_id {
+                    req = req.with_client_request_id(client_request_id);
+                }
 
-            let req = req.finalize();
-            Some(req.map(move |response| {
-                (
-                    response.data,
+                let response = match req.finalize().await {
+                    Ok(response) => response,
+                    Err(err) => return Some((Err(err), None)),
+                };
+
+                Some((
+                    Ok(response.data),
                     if remaining.end > range.end {
                         Some(Range::new(range.end, remaining.end))
                     } else {
                         None
                     },
-                )
-            }))
+                ))
+            }
         })
     }
 }

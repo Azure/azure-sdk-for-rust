@@ -1,20 +1,18 @@
 use crate::blob::responses::GetBlobResponse;
 use crate::blob::{generate_blob_uri, Blob};
-use azure_sdk_storage_core::client::Client;
-use azure_sdk_storage_core::ClientRequired;
 use azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError};
 use azure_sdk_core::headers::RANGE_GET_CONTENT_MD5;
 use azure_sdk_core::lease::LeaseId;
 use azure_sdk_core::range::Range;
 use azure_sdk_core::util::RequestBuilderExt;
 use azure_sdk_core::{
-    BlobNameRequired, BlobNameSupport, ClientRequestIdOption, ClientRequestIdSupport, ContainerNameRequired, ContainerNameSupport,
-    LeaseIdOption, LeaseIdSupport, No, RangeOption, RangeSupport, SnapshotOption, SnapshotSupport, TimeoutOption, TimeoutSupport, ToAssign,
-    Yes,
+    BlobNameRequired, BlobNameSupport, ClientRequestIdOption, ClientRequestIdSupport,
+    ContainerNameRequired, ContainerNameSupport, LeaseIdOption, LeaseIdSupport, No, RangeOption,
+    RangeSupport, SnapshotOption, SnapshotSupport, TimeoutOption, TimeoutSupport, ToAssign, Yes,
 };
+use azure_sdk_storage_core::client::Client;
+use azure_sdk_storage_core::ClientRequired;
 use chrono::{DateTime, Utc};
-use futures::future::done;
-use futures::prelude::*;
 use hyper::{Method, StatusCode};
 use std::marker::PhantomData;
 
@@ -54,7 +52,8 @@ impl<'a> GetBlobBuilder<'a, No, No> {
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet> ClientRequired<'a> for GetBlobBuilder<'a, ContainerNameSet, BlobNameSet>
+impl<'a, ContainerNameSet, BlobNameSet> ClientRequired<'a>
+    for GetBlobBuilder<'a, ContainerNameSet, BlobNameSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
@@ -85,7 +84,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet> SnapshotOption for GetBlobBuilder<'a, ContainerNameSet, BlobNameSet>
+impl<'a, ContainerNameSet, BlobNameSet> SnapshotOption
+    for GetBlobBuilder<'a, ContainerNameSet, BlobNameSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
@@ -96,7 +96,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet> TimeoutOption for GetBlobBuilder<'a, ContainerNameSet, BlobNameSet>
+impl<'a, ContainerNameSet, BlobNameSet> TimeoutOption
+    for GetBlobBuilder<'a, ContainerNameSet, BlobNameSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
@@ -107,7 +108,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet> RangeOption<'a> for GetBlobBuilder<'a, ContainerNameSet, BlobNameSet>
+impl<'a, ContainerNameSet, BlobNameSet> RangeOption<'a>
+    for GetBlobBuilder<'a, ContainerNameSet, BlobNameSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
@@ -118,7 +120,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet> LeaseIdOption<'a> for GetBlobBuilder<'a, ContainerNameSet, BlobNameSet>
+impl<'a, ContainerNameSet, BlobNameSet> LeaseIdOption<'a>
+    for GetBlobBuilder<'a, ContainerNameSet, BlobNameSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
@@ -129,7 +132,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet> ClientRequestIdOption<'a> for GetBlobBuilder<'a, ContainerNameSet, BlobNameSet>
+impl<'a, ContainerNameSet, BlobNameSet> ClientRequestIdOption<'a>
+    for GetBlobBuilder<'a, ContainerNameSet, BlobNameSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
@@ -140,7 +144,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet> ContainerNameSupport<'a> for GetBlobBuilder<'a, ContainerNameSet, BlobNameSet>
+impl<'a, ContainerNameSet, BlobNameSet> ContainerNameSupport<'a>
+    for GetBlobBuilder<'a, ContainerNameSet, BlobNameSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
@@ -164,7 +169,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet> BlobNameSupport<'a> for GetBlobBuilder<'a, ContainerNameSet, BlobNameSet>
+impl<'a, ContainerNameSet, BlobNameSet> BlobNameSupport<'a>
+    for GetBlobBuilder<'a, ContainerNameSet, BlobNameSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
@@ -188,7 +194,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet> SnapshotSupport for GetBlobBuilder<'a, ContainerNameSet, BlobNameSet>
+impl<'a, ContainerNameSet, BlobNameSet> SnapshotSupport
+    for GetBlobBuilder<'a, ContainerNameSet, BlobNameSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
@@ -212,7 +219,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet> TimeoutSupport for GetBlobBuilder<'a, ContainerNameSet, BlobNameSet>
+impl<'a, ContainerNameSet, BlobNameSet> TimeoutSupport
+    for GetBlobBuilder<'a, ContainerNameSet, BlobNameSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
@@ -236,7 +244,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet> RangeSupport<'a> for GetBlobBuilder<'a, ContainerNameSet, BlobNameSet>
+impl<'a, ContainerNameSet, BlobNameSet> RangeSupport<'a>
+    for GetBlobBuilder<'a, ContainerNameSet, BlobNameSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
@@ -260,7 +269,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet> LeaseIdSupport<'a> for GetBlobBuilder<'a, ContainerNameSet, BlobNameSet>
+impl<'a, ContainerNameSet, BlobNameSet> LeaseIdSupport<'a>
+    for GetBlobBuilder<'a, ContainerNameSet, BlobNameSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
@@ -284,7 +294,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet> ClientRequestIdSupport<'a> for GetBlobBuilder<'a, ContainerNameSet, BlobNameSet>
+impl<'a, ContainerNameSet, BlobNameSet> ClientRequestIdSupport<'a>
+    for GetBlobBuilder<'a, ContainerNameSet, BlobNameSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
@@ -318,7 +329,7 @@ where
 
 impl<'a> GetBlobBuilder<'a, Yes, Yes> {
     #[inline]
-    pub fn finalize(self) -> impl Future<Item = GetBlobResponse, Error = AzureError> {
+    pub async fn finalize(self) -> Result<GetBlobResponse, AzureError> {
         let container_name = self.container_name().to_owned();
         let blob_name = self.blob_name().to_owned();
         let snapshot_time = self.snapshot();
@@ -336,7 +347,7 @@ impl<'a> GetBlobBuilder<'a, Yes, Yes> {
 
         trace!("uri == {:?}", uri);
 
-        let req = self.client().perform_request(
+        let future_response = self.client().perform_request(
             &uri,
             &Method::GET,
             |ref mut request| {
@@ -350,7 +361,7 @@ impl<'a> GetBlobBuilder<'a, Yes, Yes> {
                 }
             },
             None,
-        );
+        )?;
 
         let expected_status_code = if self.range().is_some() {
             StatusCode::PARTIAL_CONTENT
@@ -358,12 +369,9 @@ impl<'a> GetBlobBuilder<'a, Yes, Yes> {
             StatusCode::OK
         };
 
-        done(req)
-            .from_err()
-            .and_then(move |future_response| check_status_extract_headers_and_body(future_response, expected_status_code))
-            .and_then(move |(headers, body)| {
-                done(Blob::from_headers(&blob_name, &container_name, snapshot_time, &headers))
-                    .and_then(move |blob| done(GetBlobResponse::from_response(&headers, blob, &body)))
-            })
+        let (headers, body) =
+            check_status_extract_headers_and_body(future_response, expected_status_code).await?;
+        let blob = Blob::from_headers(&blob_name, &container_name, snapshot_time, &headers)?;
+        GetBlobResponse::from_response(&headers, blob, &body)
     }
 }

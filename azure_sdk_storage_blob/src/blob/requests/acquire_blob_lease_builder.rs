@@ -1,16 +1,16 @@
 use crate::blob::generate_blob_uri;
 use crate::blob::responses::AcquireBlobLeaseResponse;
-use azure_sdk_storage_core::client::Client;
-use azure_sdk_storage_core::ClientRequired;
 use azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError};
 use azure_sdk_core::headers::LEASE_ACTION;
 use azure_sdk_core::lease::LeaseId;
 use azure_sdk_core::{
-    BlobNameRequired, BlobNameSupport, ClientRequestIdOption, ClientRequestIdSupport, ContainerNameRequired, ContainerNameSupport,
-    LeaseDurationRequired, LeaseDurationSupport, ProposedLeaseIdOption, ProposedLeaseIdSupport, TimeoutOption, TimeoutSupport,
+    BlobNameRequired, BlobNameSupport, ClientRequestIdOption, ClientRequestIdSupport,
+    ContainerNameRequired, ContainerNameSupport, LeaseDurationRequired, LeaseDurationSupport,
+    ProposedLeaseIdOption, ProposedLeaseIdSupport, TimeoutOption, TimeoutSupport,
 };
 use azure_sdk_core::{No, ToAssign, Yes};
-use futures::future::{done, Future};
+use azure_sdk_storage_core::client::Client;
+use azure_sdk_storage_core::ClientRequired;
 use hyper::{Method, StatusCode};
 use std::marker::PhantomData;
 
@@ -64,7 +64,8 @@ where
     }
 }
 
-impl<'a, BlobNameSet, LeaseDurationSet> ContainerNameRequired<'a> for AcquireBlobLeaseBuilder<'a, Yes, BlobNameSet, LeaseDurationSet>
+impl<'a, BlobNameSet, LeaseDurationSet> ContainerNameRequired<'a>
+    for AcquireBlobLeaseBuilder<'a, Yes, BlobNameSet, LeaseDurationSet>
 where
     BlobNameSet: ToAssign,
     LeaseDurationSet: ToAssign,
@@ -75,7 +76,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, LeaseDurationSet> BlobNameRequired<'a> for AcquireBlobLeaseBuilder<'a, ContainerNameSet, Yes, LeaseDurationSet>
+impl<'a, ContainerNameSet, LeaseDurationSet> BlobNameRequired<'a>
+    for AcquireBlobLeaseBuilder<'a, ContainerNameSet, Yes, LeaseDurationSet>
 where
     ContainerNameSet: ToAssign,
     LeaseDurationSet: ToAssign,
@@ -86,7 +88,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet> LeaseDurationRequired for AcquireBlobLeaseBuilder<'a, ContainerNameSet, BlobNameSet, Yes>
+impl<'a, ContainerNameSet, BlobNameSet> LeaseDurationRequired
+    for AcquireBlobLeaseBuilder<'a, ContainerNameSet, BlobNameSet, Yes>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
@@ -293,7 +296,8 @@ where
 }
 
 // methods callable regardless
-impl<'a, ContainerNameSet, BlobNameSet, LeaseDurationSet> AcquireBlobLeaseBuilder<'a, ContainerNameSet, BlobNameSet, LeaseDurationSet>
+impl<'a, ContainerNameSet, BlobNameSet, LeaseDurationSet>
+    AcquireBlobLeaseBuilder<'a, ContainerNameSet, BlobNameSet, LeaseDurationSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
@@ -302,14 +306,14 @@ where
 }
 
 impl<'a> AcquireBlobLeaseBuilder<'a, Yes, Yes, Yes> {
-    pub fn finalize(self) -> impl Future<Item = AcquireBlobLeaseResponse, Error = AzureError> {
+    pub async fn finalize(self) -> Result<AcquireBlobLeaseResponse, AzureError> {
         let mut uri = generate_blob_uri(&self, Some("comp=lease"));
 
         if let Some(nm) = TimeoutOption::to_uri_parameter(&self) {
             uri = format!("{}&{}", uri, nm);
         }
 
-        let req = self.client().perform_request(
+        let future_response = self.client().perform_request(
             &uri,
             &Method::PUT,
             |ref mut request| {
@@ -319,11 +323,10 @@ impl<'a> AcquireBlobLeaseBuilder<'a, Yes, Yes, Yes> {
                 ClientRequestIdOption::add_header(&self, request);
             },
             None,
-        );
+        )?;
 
-        done(req)
-            .from_err()
-            .and_then(move |future_response| check_status_extract_headers_and_body(future_response, StatusCode::CREATED))
-            .and_then(|(headers, _body)| done(AcquireBlobLeaseResponse::from_headers(&headers)))
+        let (headers, _body) =
+            check_status_extract_headers_and_body(future_response, StatusCode::CREATED).await?;
+        AcquireBlobLeaseResponse::from_headers(&headers)
     }
 }

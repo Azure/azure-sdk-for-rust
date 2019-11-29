@@ -1,20 +1,22 @@
 use crate::blob::generate_blob_uri;
 use crate::blob::responses::UpdatePageResponse;
-use azure_sdk_storage_core::client::Client;
-use azure_sdk_storage_core::ClientRequired;
 use azure_sdk_core::ba512_range::BA512Range;
 use azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError};
 use azure_sdk_core::headers::PAGE_WRITE;
 use azure_sdk_core::lease::LeaseId;
-use azure_sdk_core::modify_conditions::{IfMatchCondition, IfSinceCondition, SequenceNumberCondition};
-use azure_sdk_core::{
-    BA512RangeRequired, BA512RangeSupport, BlobNameRequired, BlobNameSupport, BodyRequired, BodySupport, ClientRequestIdOption,
-    ClientRequestIdSupport, ContainerNameRequired, ContainerNameSupport, ContentMD5Option, ContentMD5Support, IfMatchConditionOption,
-    IfMatchConditionSupport, IfSinceConditionOption, IfSinceConditionSupport, LeaseIdOption, LeaseIdSupport, No,
-    SequenceNumberConditionOption, SequenceNumberConditionSupport, TimeoutOption, TimeoutSupport, ToAssign, Yes,
+use azure_sdk_core::modify_conditions::{
+    IfMatchCondition, IfSinceCondition, SequenceNumberCondition,
 };
-use futures::future::done;
-use futures::prelude::*;
+use azure_sdk_core::{
+    BA512RangeRequired, BA512RangeSupport, BlobNameRequired, BlobNameSupport, BodyRequired,
+    BodySupport, ClientRequestIdOption, ClientRequestIdSupport, ContainerNameRequired,
+    ContainerNameSupport, ContentMD5Option, ContentMD5Support, IfMatchConditionOption,
+    IfMatchConditionSupport, IfSinceConditionOption, IfSinceConditionSupport, LeaseIdOption,
+    LeaseIdSupport, No, SequenceNumberConditionOption, SequenceNumberConditionSupport,
+    TimeoutOption, TimeoutSupport, ToAssign, Yes,
+};
+use azure_sdk_storage_core::client::Client;
+use azure_sdk_storage_core::ClientRequired;
 use hyper::{Method, StatusCode};
 use std::marker::PhantomData;
 
@@ -82,7 +84,8 @@ where
     }
 }
 
-impl<'a, BlobNameSet, BA512RangeSet, BodySet> ContainerNameRequired<'a> for UpdatePageBuilder<'a, Yes, BlobNameSet, BA512RangeSet, BodySet>
+impl<'a, BlobNameSet, BA512RangeSet, BodySet> ContainerNameRequired<'a>
+    for UpdatePageBuilder<'a, Yes, BlobNameSet, BA512RangeSet, BodySet>
 where
     BlobNameSet: ToAssign,
     BA512RangeSet: ToAssign,
@@ -440,7 +443,10 @@ where
     type O = UpdatePageBuilder<'a, ContainerNameSet, BlobNameSet, BA512RangeSet, BodySet>;
 
     #[inline]
-    fn with_sequence_number_condition(self, sequence_number_condition: SequenceNumberCondition) -> Self::O {
+    fn with_sequence_number_condition(
+        self,
+        sequence_number_condition: SequenceNumberCondition,
+    ) -> Self::O {
         UpdatePageBuilder {
             client: self.client,
             p_container_name: PhantomData {},
@@ -595,7 +601,8 @@ where
 }
 
 // methods callable regardless
-impl<'a, ContainerNameSet, BlobNameSet, BA512RangeSet, BodySet> UpdatePageBuilder<'a, ContainerNameSet, BlobNameSet, BA512RangeSet, BodySet>
+impl<'a, ContainerNameSet, BlobNameSet, BA512RangeSet, BodySet>
+    UpdatePageBuilder<'a, ContainerNameSet, BlobNameSet, BA512RangeSet, BodySet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
@@ -605,7 +612,7 @@ where
 }
 
 impl<'a> UpdatePageBuilder<'a, Yes, Yes, Yes, Yes> {
-    pub fn finalize(self) -> impl Future<Item = UpdatePageResponse, Error = AzureError> {
+    pub async fn finalize(self) -> Result<UpdatePageResponse, AzureError> {
         let mut uri = generate_blob_uri(&self, Some("comp=page"));
 
         if let Some(timeout) = TimeoutOption::to_uri_parameter(&self) {
@@ -618,7 +625,7 @@ impl<'a> UpdatePageBuilder<'a, Yes, Yes, Yes, Yes> {
         trace!("upper == {}", upper);
         let b = &self.body()[0..upper];
 
-        let req = self.client().perform_request(
+        let future_response = self.client().perform_request(
             &uri,
             &Method::PUT,
             |ref mut request| {
@@ -632,11 +639,10 @@ impl<'a> UpdatePageBuilder<'a, Yes, Yes, Yes, Yes> {
                 ClientRequestIdOption::add_header(&self, request);
             },
             Some(b),
-        );
+        )?;
 
-        done(req)
-            .from_err()
-            .and_then(move |response| check_status_extract_headers_and_body(response, StatusCode::CREATED))
-            .and_then(move |(headers, _body)| done(UpdatePageResponse::from_headers(&headers)))
+        let (headers, _body) =
+            check_status_extract_headers_and_body(future_response, StatusCode::CREATED).await?;
+        UpdatePageResponse::from_headers(&headers)
     }
 }

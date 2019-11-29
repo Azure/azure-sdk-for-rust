@@ -1,9 +1,8 @@
 use crate::event_hub::send_event;
 use azure_sdk_core::errors::AzureError;
-use futures::future::*;
 use hyper;
 use hyper_rustls::HttpsConnector;
-use ring::{digest::SHA256, hmac::SigningKey};
+use ring::hmac::Key;
 use time::Duration;
 
 type HttpClient = hyper::Client<HttpsConnector<hyper::client::HttpConnector>>;
@@ -12,20 +11,25 @@ pub struct Client {
     namespace: String,
     event_hub: String,
     policy_name: String,
-    signing_key: SigningKey,
+    signing_key: Key,
     http_client: HttpClient,
 }
 
 impl Client {
-    pub fn new<N, E, P, K>(namespace: N, event_hub: E, policy_name: P, key: K) -> Result<Client, AzureError>
+    pub fn new<N, E, P, K>(
+        namespace: N,
+        event_hub: E,
+        policy_name: P,
+        key: K,
+    ) -> Result<Client, AzureError>
     where
         N: Into<String>,
         E: Into<String>,
         P: Into<String>,
         K: AsRef<str>,
     {
-        let signing_key = SigningKey::new(&SHA256, key.as_ref().as_bytes());
-        let http_client = hyper::Client::builder().build(HttpsConnector::new(4));
+        let signing_key = Key::new(ring::hmac::HMAC_SHA256, key.as_ref().as_bytes());
+        let http_client = hyper::Client::builder().build(HttpsConnector::new());
 
         Ok(Client {
             namespace: namespace.into(),
@@ -36,7 +40,11 @@ impl Client {
         })
     }
 
-    pub fn send_event(&mut self, event_body: &str, duration: Duration) -> impl Future<Item = (), Error = AzureError> {
+    pub async fn send_event(
+        &mut self,
+        event_body: &str,
+        duration: Duration,
+    ) -> Result<(), AzureError> {
         {
             send_event(
                 &self.http_client,
@@ -47,6 +55,7 @@ impl Client {
                 event_body,
                 duration,
             )
+            .await
         }
     }
 }

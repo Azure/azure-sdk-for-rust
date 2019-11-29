@@ -3,9 +3,7 @@ extern crate serde_derive;
 // Using the prelude module of the Cosmos crate makes easier to use the Rust Azure SDK for Cosmos
 // DB.
 use azure_sdk_cosmos::prelude::*;
-use futures::future::*;
 use std::error::Error;
-use tokio_core::reactor::Core;
 
 #[derive(Serialize, Deserialize, Debug)]
 struct MySampleStruct<'a> {
@@ -18,24 +16,18 @@ struct MySampleStruct<'a> {
 const DATABASE: &str = "azuresdktestdb";
 const COLLECTION: &str = "azuresdktc";
 
-fn main() {
-    code().unwrap();
-}
-
 // This code will perform these tasks:
 // 1. Find an Azure Cosmos DB called *DATABASE*. If it does not exist, create it.
 // 2. Find an Azure Cosmos collection called *COLLECTION* in *DATABASE*.
 //      If it does not exist, create it.
 // 3. Store an entry in collection *COLLECTION* of database *DATABASE*.
 // 4. Delete everything.
-//
-// We will use multiple futures for this hoping to make the code clearer.
-// There is no need to proceed this way in your code.
-// You can go crazy with future combinators if you want to :)
-fn code() -> Result<(), Box<dyn Error>> {
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn Error>> {
     // Let's get Cosmos account and master key from env variables.
     // This helps automated testing.
-    let master_key = std::env::var("COSMOS_MASTER_KEY").expect("Set env variable COSMOS_MASTER_KEY first!");
+    let master_key =
+        std::env::var("COSMOS_MASTER_KEY").expect("Set env variable COSMOS_MASTER_KEY first!");
     let account = std::env::var("COSMOS_ACCOUNT").expect("Set env variable COSMOS_ACCOUNT first!");
 
     // First, we create an authorization token. There are two types of tokens, master and resource
@@ -43,26 +35,24 @@ fn code() -> Result<(), Box<dyn Error>> {
     // at will and it's a good practice to raise your privileges only when needed.
     let authorization_token = AuthorizationToken::new(account, TokenType::Master, &master_key)?;
 
-    // We will create a tokio-core reactor which will drive our futures.
-    let mut core = Core::new()?;
-
     // Next we will create a Cosmos client. You need an authorization_token but you can later
-    // change it if needed. Notice the client will be tied to your reactor.
+    // change it if needed.
     let client = ClientBuilder::new(authorization_token)?;
 
     // list_databases will give us the databases available in our account. If there is
     // an error (for example, the given key is not valid) you will receive a
     // specific AzureError. In this example we will look for a specific database
     // so we chain a filter operation.
-    let future = client
+    let db = client
         .list_databases()
-        .and_then(|databases| ok(databases.into_iter().find(|db| db.id == DATABASE)));
+        .await?
+        .into_iter()
+        .find(|db| db.id == DATABASE);
 
-    // Now we run the future and check the answer. If the requested database
-    // is not found we create it.
-    let database = match core.run(future)? {
+    // If the requested database is not found we create it.
+    let database = match db {
         Some(db) => db,
-        None => core.run(client.create_database(DATABASE))?,
+        None => client.create_database(DATABASE).await?,
     };
     println!("database == {:?}", database);
 
@@ -70,7 +60,7 @@ fn code() -> Result<(), Box<dyn Error>> {
     // we will create it. The collection creation is more complex and
     // has many options (such as indexing and so on).
     let collection = {
-        let collections = core.run(client.list_collections(&database.id))?;
+        let collections = client.list_collections(&database.id).await?;
 
         if let Some(collection) = collections.into_iter().find(|coll| coll.id == COLLECTION) {
             collection
@@ -99,15 +89,14 @@ fn code() -> Result<(), Box<dyn Error>> {
             // strategy. Consult the documentation for more details.
             // you can also use the predefined performance levels. For example:
             // `Offer::S2`.
-            core.run(
-                client
-                    .create_collection_builder()
-                    .with_id(COLLECTION)
-                    .with_database_name(&database.id)
-                    .with_offer(Offer::Throughput(400))
-                    .with_indexing_policy(ip)
-                    .finalize(),
-            )?
+            client
+                .create_collection_builder()
+                .with_id(COLLECTION)
+                .with_database_name(&database.id)
+                .with_offer(Offer::Throughput(400))
+                .with_indexing_policy(ip)
+                .finalize()
+                .await?
         }
     };
 
@@ -127,15 +116,18 @@ fn code() -> Result<(), Box<dyn Error>> {
     // Notice how easy it is! :)
     // The method create_document will return, upon success,
     // the document attributes.
-    let document_attributes = core.run(client.create_document(&database.id, &collection.id, &doc).execute())?;
+    let document_attributes = client
+        .create_document(&database.id, &collection.id, &doc)
+        .execute()
+        .await?;
     println!("document_attributes == {:?}", document_attributes);
 
     // We will perform some cleanup. First we delete the collection...
-    core.run(client.delete_collection(DATABASE, COLLECTION))?;
+    client.delete_collection(DATABASE, COLLECTION).await?;
     println!("collection deleted");
 
     // And then we delete the database.
-    core.run(client.delete_database(DATABASE))?;
+    client.delete_database(DATABASE).await?;
     println!("database deleted");
 
     Ok(())

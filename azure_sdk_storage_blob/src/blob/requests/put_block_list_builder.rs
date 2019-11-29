@@ -2,18 +2,18 @@ use crate::blob::generate_blob_uri;
 use crate::blob::responses::PutBlockListResponse;
 use crate::blob::BlockList;
 use crate::blob::{BlockListRequired, BlockListSupport};
-use azure_sdk_storage_core::client::Client;
-use azure_sdk_storage_core::ClientRequired;
 use azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError};
 use azure_sdk_core::lease::LeaseId;
 use azure_sdk_core::{
-    add_content_md5_header, BlobNameRequired, BlobNameSupport, CacheControlOption, CacheControlSupport, ClientRequestIdOption,
-    ClientRequestIdSupport, ContainerNameRequired, ContainerNameSupport, ContentDispositionOption, ContentDispositionSupport,
-    ContentEncodingOption, ContentEncodingSupport, ContentLanguageOption, ContentLanguageSupport, ContentTypeOption, ContentTypeSupport,
-    LeaseIdOption, LeaseIdSupport, MetadataOption, MetadataSupport, No, TimeoutOption, TimeoutSupport, ToAssign, Yes,
+    add_content_md5_header, BlobNameRequired, BlobNameSupport, CacheControlOption,
+    CacheControlSupport, ClientRequestIdOption, ClientRequestIdSupport, ContainerNameRequired,
+    ContainerNameSupport, ContentDispositionOption, ContentDispositionSupport,
+    ContentEncodingOption, ContentEncodingSupport, ContentLanguageOption, ContentLanguageSupport,
+    ContentTypeOption, ContentTypeSupport, LeaseIdOption, LeaseIdSupport, MetadataOption,
+    MetadataSupport, No, TimeoutOption, TimeoutSupport, ToAssign, Yes,
 };
-use futures::future::{done, ok};
-use futures::prelude::*;
+use azure_sdk_storage_core::client::Client;
+use azure_sdk_storage_core::ClientRequired;
 use hyper::{Method, StatusCode};
 use md5;
 use std::borrow::Borrow;
@@ -87,7 +87,8 @@ where
     }
 }
 
-impl<'a, T, BlobNameSet, BlockListSet> ContainerNameRequired<'a> for PutBlockListBuilder<'a, T, Yes, BlobNameSet, BlockListSet>
+impl<'a, T, BlobNameSet, BlockListSet> ContainerNameRequired<'a>
+    for PutBlockListBuilder<'a, T, Yes, BlobNameSet, BlockListSet>
 where
     BlobNameSet: ToAssign,
     BlockListSet: ToAssign,
@@ -99,7 +100,8 @@ where
     }
 }
 
-impl<'a, T, ContainerNameSet, BlockListSet> BlobNameRequired<'a> for PutBlockListBuilder<'a, T, ContainerNameSet, Yes, BlockListSet>
+impl<'a, T, ContainerNameSet, BlockListSet> BlobNameRequired<'a>
+    for PutBlockListBuilder<'a, T, ContainerNameSet, Yes, BlockListSet>
 where
     ContainerNameSet: ToAssign,
     BlockListSet: ToAssign,
@@ -111,7 +113,8 @@ where
     }
 }
 
-impl<'a, T, ContainerNameSet, BlobNameSet> BlockListRequired<'a, T> for PutBlockListBuilder<'a, T, ContainerNameSet, BlobNameSet, Yes>
+impl<'a, T, ContainerNameSet, BlobNameSet> BlockListRequired<'a, T>
+    for PutBlockListBuilder<'a, T, ContainerNameSet, BlobNameSet, Yes>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
@@ -646,7 +649,8 @@ where
 }
 
 // methods callable regardless
-impl<'a, T, ContainerNameSet, BlobNameSet, BlockListSet> PutBlockListBuilder<'a, T, ContainerNameSet, BlobNameSet, BlockListSet>
+impl<'a, T, ContainerNameSet, BlobNameSet, BlockListSet>
+    PutBlockListBuilder<'a, T, ContainerNameSet, BlobNameSet, BlockListSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
@@ -660,7 +664,7 @@ where
     T: Borrow<[u8]> + 'a,
 {
     #[inline]
-    pub fn finalize(self) -> impl Future<Item = PutBlockListResponse, Error = AzureError> {
+    pub async fn finalize(self) -> Result<PutBlockListResponse, AzureError> {
         let mut uri = generate_blob_uri(&self, Some("comp=blocklist"));
 
         if let Some(timeout) = TimeoutOption::to_uri_parameter(&self) {
@@ -681,7 +685,7 @@ where
             hash
         };
 
-        let req = self.client().perform_request(
+        let future_response = self.client().perform_request(
             &uri,
             &Method::PUT,
             |ref mut request| {
@@ -696,11 +700,10 @@ where
                 ClientRequestIdOption::add_header(&self, request);
             },
             Some(body_bytes),
-        );
+        )?;
 
-        done(req)
-            .from_err()
-            .and_then(move |response| check_status_extract_headers_and_body(response, StatusCode::CREATED))
-            .and_then(move |(headers, _body)| done(PutBlockListResponse::from_headers(&headers)).and_then(ok))
+        let (headers, _body) =
+            check_status_extract_headers_and_body(future_response, StatusCode::CREATED).await?;
+        PutBlockListResponse::from_headers(&headers)
     }
 }
