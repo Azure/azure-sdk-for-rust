@@ -31,7 +31,12 @@ impl<T: Serialize> BatchItem<T> {
     }
 }
 
-pub fn generate_batch_payload<T: Serialize>(uri_prefix: &str, table: &str, primary_key: &str, items: &[BatchItem<T>]) -> String {
+pub fn generate_batch_payload<T: Serialize>(
+    uri_prefix: &str,
+    table: &str,
+    primary_key: &str,
+    items: &[BatchItem<T>],
+) -> String {
     let mut payload: String = BATCH_BEGIN.to_owned();
     for item in items {
         payload.push_str(CHANGESET_BEGIN);
@@ -107,7 +112,12 @@ If-Match: *
             bupdate("Channel_17", "3", 9, "PDC 2008..."),
             bdelete("3"),
         ];
-        let actual = generate_batch_payload("https://myaccount.table.core.windows.net/", "Blogs", "Channel_17", items.as_slice());
+        let actual = generate_batch_payload(
+            "https://myaccount.table.core.windows.net/",
+            "Blogs",
+            "Channel_17",
+            items.as_slice(),
+        );
         assert_eq!(expected, actual);
     }
 
