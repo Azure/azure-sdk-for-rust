@@ -78,9 +78,9 @@ macro_rules! response_from_headers {
     };
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq, PartialEq, Copy, Serialize, Deserialize)]
 pub struct Yes;
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq, PartialEq, Copy, Serialize, Deserialize)]
 pub struct No;
 
 pub trait ToAssign: Debug {}

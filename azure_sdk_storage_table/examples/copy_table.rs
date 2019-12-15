@@ -15,30 +15,37 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let to_master_key = std::env::var("TO_STORAGE_MASTER_KEY")
         .expect("Set env variable TO_STORAGE_MASTER_KEY first!");
 
-    let table_name = std::env::args()
+    let from_table_name = std::env::args()
         .nth(1)
-        .expect("please specify table name as command line parameter");
+        .expect("please specify source table name as first command line parameter");
+    let to_table_name = std::env::args()
+        .nth(2)
+        .expect("please specify destination table name as second command line parameter");
 
     let table_service = TableService::new(Client::new(&account, &master_key)?);
     let to_table_service = TableService::new(Client::new(&to_account, &to_master_key)?);
 
-    println!("creating table {}", &table_name);
-    to_table_service.create_table(&table_name).await?;
+    println!("creating table {}", &to_table_name);
+    to_table_service.create_table(&to_table_name).await?;
 
     let mut count: u32 = 0;
 
-    while let Some(entities) = Box::pin(
-        table_service.stream_query_entities_fullmetadata::<serde_json::Value>(&table_name, None),
-    )
-    .next()
-    .await
-    {
-        count += 1;
-        for entity in entities {
-            to_table_service.insert_entity(&table_name, &entity).await?;
+    let mut stream = Box::pin(
+        table_service
+            .stream_query_entries_fullmetadata::<serde_json::Value>(&from_table_name, None),
+    );
+
+    while let Some(entries) = stream.next().await {
+        let entries = entries?;
+        for entry in entries {
+            count += 1;
+            to_table_service
+                .insert_entry(&to_table_name, &entry)
+                .await?;
+            println!("{:?}", entry);
         }
     }
-    println!("copied {} entities to table {}", count, &table_name);
+    println!("copied {} entities to table {}", count, &from_table_name);
 
     Ok(())
 }

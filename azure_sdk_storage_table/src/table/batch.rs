@@ -3,7 +3,9 @@
 1. Only support single changeset in a batch request
 2. Only allow PUT and GET in changeset
 */
-use super::entity_path;
+use super::entry_path;
+use crate::TableEntry;
+use serde::de::DeserializeOwned;
 use serde::Serialize;
 use serde_json;
 
@@ -23,27 +25,35 @@ const ACCEPT_HEADER: &str = "Accept: application/json;odata=nometadata\n";
 const IF_MATCH_HEADER: &str = "If-Match: *\n";
 
 // RowKey, Payload. Payload None for deletion
-pub struct BatchItem<T: Serialize>(String, Option<T>);
+pub struct BatchItem<T>(String, Option<TableEntry<T>>)
+where
+    T: Serialize + DeserializeOwned;
 
-impl<T: Serialize> BatchItem<T> {
-    pub fn new(row_key: String, value: Option<T>) -> Self {
+impl<T> BatchItem<T>
+where
+    T: Serialize + DeserializeOwned,
+{
+    pub fn new(row_key: String, value: Option<TableEntry<T>>) -> Self {
         BatchItem(row_key, value)
     }
 }
 
-pub fn generate_batch_payload<T: Serialize>(
+pub fn generate_batch_payload<T>(
     uri_prefix: &str,
     table: &str,
     primary_key: &str,
     items: &[BatchItem<T>],
-) -> String {
+) -> String
+where
+    T: Serialize + DeserializeOwned,
+{
     let mut payload: String = BATCH_BEGIN.to_owned();
     for item in items {
         payload.push_str(CHANGESET_BEGIN);
         payload.push_str(if item.1.is_some() { "PUT" } else { "DELETE" });
         payload.push_str(" ");
         payload.push_str(uri_prefix);
-        payload.push_str(entity_path(table, primary_key, item.0.as_str()).as_str());
+        payload.push_str(entry_path(table, primary_key, item.0.as_str()).as_str());
         payload.push_str(" HTTP/1.1\n");
         payload.push_str(ACCEPT_HEADER);
         if let Some(ref v) = item.1 {
@@ -64,10 +74,8 @@ mod test {
     use super::*;
 
     #[allow(non_snake_case)]
-    #[derive(Serialize)]
+    #[derive(Serialize, Deserialize)]
     struct Entity {
-        PartitionKey: String,
-        RowKey: String,
         Rating: i32,
         Text: String,
     }
@@ -85,7 +93,7 @@ PUT https://myaccount.table.core.windows.net/Blogs(PartitionKey='Channel_17',Row
 Accept: application/json;odata=nometadata
 Content-Type: application/json
 
-{"PartitionKey":"Channel_17","RowKey":"3","Rating":9,"Text":".NET..."}
+{"RowKey":"3","PartitionKey":"Channel_17","etag":null,"Rating":9,"Text":".NET..."}
 --changeset_8a28b620-b4bb-458c-a177-0959fb14c977
 Content-Type: application/http
 Content-Transfer-Encoding: binary
@@ -94,7 +102,7 @@ PUT https://myaccount.table.core.windows.net/Blogs(PartitionKey='Channel_17',Row
 Accept: application/json;odata=nometadata
 Content-Type: application/json
 
-{"PartitionKey":"Channel_17","RowKey":"3","Rating":9,"Text":"PDC 2008..."}
+{"RowKey":"3","PartitionKey":"Channel_17","etag":null,"Rating":9,"Text":"PDC 2008..."}
 --changeset_8a28b620-b4bb-458c-a177-0959fb14c977
 Content-Type: application/http
 Content-Transfer-Encoding: binary
@@ -124,11 +132,14 @@ If-Match: *
     fn bupdate(pk: &str, rk: &str, rating: i32, text: &str) -> BatchItem<Entity> {
         BatchItem(
             rk.to_owned(),
-            Some(Entity {
-                PartitionKey: pk.to_owned(),
-                RowKey: rk.to_owned(),
-                Rating: rating,
-                Text: text.to_owned(),
+            Some(TableEntry {
+                partition_key: pk.to_owned(),
+                row_key: rk.to_owned(),
+                etag: None,
+                payload: Entity {
+                    Rating: rating,
+                    Text: text.to_owned(),
+                },
             }),
         )
     }
