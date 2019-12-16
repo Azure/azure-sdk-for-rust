@@ -22,7 +22,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .nth(2)
         .expect("please specify destination table name as second command line parameter");
 
-    let table_service = TableService::new(Client::new(&account, &master_key)?);
+    let from_table_service = TableService::new(Client::new(&account, &master_key)?);
     let to_table_service = TableService::new(Client::new(&to_account, &to_master_key)?);
 
     println!("creating table {}", &to_table_name);
@@ -31,7 +31,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let mut count: u32 = 0;
 
     let mut stream = Box::pin(
-        table_service
+        from_table_service
             .stream_query_entries_fullmetadata::<serde_json::Value>(&from_table_name, None),
     );
 
@@ -45,7 +45,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
             println!("{:?}", entry);
         }
     }
-    println!("copied {} entities to table {}", count, &from_table_name);
+    println!(
+        "copied {} entities to table {} in {}",
+        count, &to_table_name, to_account,
+    );
 
     Ok(())
 }

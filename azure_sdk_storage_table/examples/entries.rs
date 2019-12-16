@@ -50,19 +50,19 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let ret: TableEntry<MyEntry> = table_service
         .get_entry(&table_name, &my_entry.partition_key, &my_entry.row_key)
         .await?;
-    println!("get_entry2 result == {:?}", ret);
+    println!("get_entry result == {:?}", ret);
 
     // now we update the entry passing the etag.
     my_entry.payload.my_value = "Wheel on the bus".to_owned();
 
     table_service.update_entry("example", &my_entry).await?;
-    println!("update_entry2 completed without errors");
+    println!("update_entry completed without errors");
 
     // get the entry again (new payload and etag)
     let ret: TableEntry<MyEntry> = table_service
         .get_entry(&table_name, &my_entry.partition_key, &my_entry.row_key)
         .await?;
-    println!("get_entry2 result == {:?}", ret);
+    println!("get_entry result == {:?}", ret);
 
     Ok(())
 }
