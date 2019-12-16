@@ -33,7 +33,7 @@ impl<'a> GetAccountInformationBuilder<'a> {
 
         let req = self
             .client()
-            .perform_request(&uri, &Method::GET, |ref mut _request| {}, None);
+            .perform_request(&uri, &Method::GET, |request| {request}, None);
         let (headers, _) = check_status_extract_headers_and_body(req?, StatusCode::OK).await?;
         GetAccountInformationResponse::from_headers(&headers)
     }
