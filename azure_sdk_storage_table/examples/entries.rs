@@ -17,10 +17,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
         std::env::var("STORAGE_ACCOUNT").expect("Set env variable STORAGE_ACCOUNT first!");
     let master_key =
         std::env::var("STORAGE_MASTER_KEY").expect("Set env variable STORAGE_MASTER_KEY first!");
-
-    let client = Client::new(&account, &master_key)?;
-    let table_service = TableService::new(client);
-
     let table_name = std::env::args()
         .nth(1)
         .expect("pass the table name as first command line parameter.");
@@ -29,7 +25,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .nth(2)
         .expect("pass the row key as second command line parameter.");
 
-    let table_storage = TableStorage::new(table_service.clone(), table_name.clone());
+    let client = Client::new(&account, &master_key)?;
+    let table_service = TableService::new(client);
+    let table_storage = TableStorage::new(table_service, table_name);
 
     let mut my_entry = TableEntry {
         row_key: row_key,
@@ -43,24 +41,24 @@ async fn main() -> Result<(), Box<dyn Error>> {
     };
 
     // insert the entry
-    table_service.insert_entry(&table_name, &my_entry).await?;
+    table_storage.insert_entry(&my_entry).await?;
     println!("entry inserted");
 
     // get the entry (notice the etag)
-    let ret: TableEntry<MyEntry> = table_service
-        .get_entry(&table_name, &my_entry.partition_key, &my_entry.row_key)
+    let ret: TableEntry<MyEntry> = table_storage
+        .get_entry(&my_entry.partition_key, &my_entry.row_key)
         .await?;
     println!("get_entry result == {:?}", ret);
 
     // now we update the entry passing the etag.
     my_entry.payload.my_value = "Wheel on the bus".to_owned();
 
-    table_service.update_entry("example", &my_entry).await?;
+    table_storage.update_entry(&my_entry).await?;
     println!("update_entry completed without errors");
 
     // get the entry again (new payload and etag)
-    let ret: TableEntry<MyEntry> = table_service
-        .get_entry(&table_name, &my_entry.partition_key, &my_entry.row_key)
+    let ret: TableEntry<MyEntry> = table_storage
+        .get_entry(&my_entry.partition_key, &my_entry.row_key)
         .await?;
     println!("get_entry result == {:?}", ret);
 
