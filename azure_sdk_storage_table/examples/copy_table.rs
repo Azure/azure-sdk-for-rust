@@ -1,6 +1,6 @@
 use azure_sdk_storage_core::client::Client;
 use azure_sdk_storage_table::table::TableService;
-use futures_util::stream::StreamExt;
+use futures::stream::StreamExt;
 use std::error::Error;
 
 #[tokio::main]
