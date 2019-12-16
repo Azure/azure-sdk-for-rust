@@ -108,7 +108,9 @@ impl DocumentAttributes {
         self.attachments = value.into();
     }
 
-    pub(crate) fn try_extract(from: &mut ::serde_json::Map<String, ::serde_json::Value>) -> Option<DocumentAttributes> {
+    pub(crate) fn try_extract(
+        from: &mut ::serde_json::Map<String, ::serde_json::Value>,
+    ) -> Option<DocumentAttributes> {
         let id = from.get("id")?.as_str()?.to_owned();
         let rid = from.remove("_rid")?.as_str()?.to_owned();
         let ts = from.remove("_ts")?.as_u64()?;

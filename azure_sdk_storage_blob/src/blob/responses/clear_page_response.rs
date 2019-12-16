@@ -1,5 +1,5 @@
-use azure_sdk_core::RequestId;
 use azure_sdk_core::errors::AzureError;
+use azure_sdk_core::RequestId;
 use chrono::{DateTime, Utc};
 
 response_from_headers!(ClearPageResponse,

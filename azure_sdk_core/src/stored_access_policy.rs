@@ -15,7 +15,12 @@ pub struct StoredAccessPolicy {
 }
 
 impl StoredAccessPolicy {
-    pub fn new<A, B>(id: A, start: DateTime<FixedOffset>, expiry: DateTime<FixedOffset>, permission: B) -> StoredAccessPolicy
+    pub fn new<A, B>(
+        id: A,
+        start: DateTime<FixedOffset>,
+        expiry: DateTime<FixedOffset>,
+        permission: B,
+    ) -> StoredAccessPolicy
     where
         A: Into<String>,
         B: Into<String>,
@@ -35,7 +40,9 @@ impl StoredAccessPolicyList {
     }
 
     pub fn from_xml(xml: &str) -> Result<StoredAccessPolicyList, AzureError> {
-        let mut sal = StoredAccessPolicyList { stored_access: Vec::new() };
+        let mut sal = StoredAccessPolicyList {
+            stored_access: Vec::new(),
+        };
         let sis: SignedIdentifiers = serde_xml_rs::de::from_reader(xml.as_bytes())?;
 
         if let Some(sis) = sis.signed_identifiers {
@@ -60,9 +67,18 @@ impl StoredAccessPolicyList {
         for sa in &self.stored_access {
             s.push_str("\t<SignedIdentifier>\n");
             s.push_str(&format!("\t\t<Id>{}</Id>\n\t\t<AccessPolicy>\n", sa.id));
-            s.push_str(&format!("\t\t\t<Start>{}</Start>\n", sa.start.format("%Y-%m-%dT%H:%M:%SZ")));
-            s.push_str(&format!("\t\t\t<Expiry>{}</Expiry>\n", sa.expiry.format("%Y-%m-%dT%H:%M:%SZ")));
-            s.push_str(&format!("\t\t\t<Permission>{}</Permission>\n", sa.permission));
+            s.push_str(&format!(
+                "\t\t\t<Start>{}</Start>\n",
+                sa.start.format("%Y-%m-%dT%H:%M:%SZ")
+            ));
+            s.push_str(&format!(
+                "\t\t\t<Expiry>{}</Expiry>\n",
+                sa.expiry.format("%Y-%m-%dT%H:%M:%SZ")
+            ));
+            s.push_str(&format!(
+                "\t\t\t<Permission>{}</Permission>\n",
+                sa.permission
+            ));
             s.push_str("\t\t</AccessPolicy>\n\t</SignedIdentifier>\n");
         }
 

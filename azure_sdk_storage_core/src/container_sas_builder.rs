@@ -74,14 +74,18 @@ impl<'a> ContainerSASBuilder<'a, No, No, No> {
     }
 }
 
-impl<'a, KeySet, ValidityEndSet, AtLeastOnePermission> ContainerSASBuilder<'a, KeySet, ValidityEndSet, AtLeastOnePermission>
+impl<'a, KeySet, ValidityEndSet, AtLeastOnePermission>
+    ContainerSASBuilder<'a, KeySet, ValidityEndSet, AtLeastOnePermission>
 where
     KeySet: ToAssign,
     ValidityEndSet: ToAssign,
     AtLeastOnePermission: ToAssign,
 {
     #[inline]
-    pub fn with_key(&self, key: &'a str) -> ContainerSASBuilder<'a, Yes, ValidityEndSet, AtLeastOnePermission> {
+    pub fn with_key(
+        &self,
+        key: &'a str,
+    ) -> ContainerSASBuilder<'a, Yes, ValidityEndSet, AtLeastOnePermission> {
         ContainerSASBuilder {
             path: self.path,
             p_key: PhantomData {},
@@ -108,7 +112,8 @@ where
     }
 }
 
-impl<'a, ValidityEndSet, AtLeastOnePermission> ContainerSASBuilder<'a, Yes, ValidityEndSet, AtLeastOnePermission>
+impl<'a, ValidityEndSet, AtLeastOnePermission>
+    ContainerSASBuilder<'a, Yes, ValidityEndSet, AtLeastOnePermission>
 where
     ValidityEndSet: ToAssign,
     AtLeastOnePermission: ToAssign,
@@ -119,14 +124,18 @@ where
     }
 }
 
-impl<'a, KeySet, ValidityEndSet, AtLeastOnePermission> ContainerSASBuilder<'a, KeySet, ValidityEndSet, AtLeastOnePermission>
+impl<'a, KeySet, ValidityEndSet, AtLeastOnePermission>
+    ContainerSASBuilder<'a, KeySet, ValidityEndSet, AtLeastOnePermission>
 where
     KeySet: ToAssign,
     ValidityEndSet: ToAssign,
     AtLeastOnePermission: ToAssign,
 {
     #[inline]
-    pub fn with_validity_end(&self, validity_end: &'a DateTime<Utc>) -> ContainerSASBuilder<'a, KeySet, Yes, AtLeastOnePermission> {
+    pub fn with_validity_end(
+        &self,
+        validity_end: &'a DateTime<Utc>,
+    ) -> ContainerSASBuilder<'a, KeySet, Yes, AtLeastOnePermission> {
         ContainerSASBuilder {
             path: self.path,
             p_key: self.p_key,
@@ -164,7 +173,8 @@ where
     }
 }
 
-impl<'a, KeySet, ValidityEndSet, AtLeastOnePermission> ContainerSASBuilder<'a, KeySet, ValidityEndSet, AtLeastOnePermission>
+impl<'a, KeySet, ValidityEndSet, AtLeastOnePermission>
+    ContainerSASBuilder<'a, KeySet, ValidityEndSet, AtLeastOnePermission>
 where
     KeySet: ToAssign,
     ValidityEndSet: ToAssign,
@@ -334,7 +344,8 @@ where
 }
 
 // methods callable regardless
-impl<'a, KeySet, ValidityEndSet, AtLeastOnePermission> ContainerSASBuilder<'a, KeySet, ValidityEndSet, AtLeastOnePermission>
+impl<'a, KeySet, ValidityEndSet, AtLeastOnePermission>
+    ContainerSASBuilder<'a, KeySet, ValidityEndSet, AtLeastOnePermission>
 where
     KeySet: ToAssign,
     ValidityEndSet: ToAssign,
@@ -667,7 +678,11 @@ impl<'a> ContainerSASBuilder<'a, Yes, Yes, Yes> {
             self.validity_end(),
             self.path(),
             &self.permission_string(),
-            if let Some(identifier) = self.identifier() { identifier } else { "" },
+            if let Some(identifier) = self.identifier() {
+                identifier
+            } else {
+                ""
+            },
             self.ip_range(),
             SASType::Container,
             self.snapshot_time(),

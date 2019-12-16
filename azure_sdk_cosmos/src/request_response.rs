@@ -1,7 +1,8 @@
-use azure_sdk_core::{errors::AzureError, util::HeaderMapExt};
 use crate::{
-    client::headers::HEADER_REQUEST_CHARGE, collection::Collection, database::Database, document::DocumentAttributes,
+    client::headers::HEADER_REQUEST_CHARGE, collection::Collection, database::Database,
+    document::DocumentAttributes,
 };
+use azure_sdk_core::{errors::AzureError, util::HeaderMapExt};
 use serde::de::DeserializeOwned;
 
 #[derive(Deserialize, Debug)]
@@ -96,7 +97,11 @@ pub struct DocumentAdditionalHeaders {
 impl DocumentAdditionalHeaders {
     pub(crate) fn derive_from(headers: &::hyper::HeaderMap) -> DocumentAdditionalHeaders {
         DocumentAdditionalHeaders {
-            charge: headers.get_as_str(HEADER_REQUEST_CHARGE).unwrap().parse::<f64>().unwrap(),
+            charge: headers
+                .get_as_str(HEADER_REQUEST_CHARGE)
+                .unwrap()
+                .parse::<f64>()
+                .unwrap(),
         }
     }
 }

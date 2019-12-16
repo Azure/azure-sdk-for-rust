@@ -120,10 +120,12 @@ pub trait ClientRequestIdSupport<'a> {
 pub trait ClientRequestIdOption<'a> {
     fn client_request_id(&self) -> Option<&'a str>;
 
-    fn add_header(&self, builder: &mut Builder) {
+    #[must_use]
+    fn add_header(&self, mut builder: Builder) -> Builder {
         if let Some(client_request_id) = self.client_request_id() {
-            builder.header(CLIENT_REQUEST_ID, client_request_id);
+            builder = builder.header(CLIENT_REQUEST_ID, client_request_id);
         }
+        builder
     }
 }
 
@@ -135,10 +137,12 @@ pub trait AppendPositionSupport {
 pub trait AppendPositionOption {
     fn append_position(&self) -> Option<u32>;
 
-    fn add_header(&self, builder: &mut Builder) {
+    #[must_use]
+    fn add_header(&self, mut builder: Builder) -> Builder {
         if let Some(append_position) = self.append_position() {
-            builder.header(APPEND_POSITION, append_position);
+            builder = builder.header(APPEND_POSITION, append_position);
         }
+        builder
     }
 }
 
@@ -150,10 +154,12 @@ pub trait ContentDispositionSupport<'a> {
 pub trait ContentDispositionOption<'a> {
     fn content_disposition(&self) -> Option<&'a str>;
 
-    fn add_header(&self, builder: &mut Builder) {
+    #[must_use]
+    fn add_header(&self, mut builder: Builder) -> Builder {
         if let Some(content_disposition) = self.content_disposition() {
-            builder.header(CONTENT_DISPOSITION, content_disposition);
+            builder = builder.header(CONTENT_DISPOSITION, content_disposition);
         }
+        builder
     }
 }
 
@@ -165,12 +171,14 @@ pub trait MetadataSupport<'a> {
 pub trait MetadataOption<'a> {
     fn metadata(&self) -> Option<&'a HashMap<&'a str, &'a str>>;
 
-    fn add_header(&self, builder: &mut Builder) {
+    #[must_use]
+    fn add_header(&self, mut builder: Builder) -> Builder {
         if let Some(metadata) = self.metadata() {
             for (key, val) in metadata.iter() {
-                builder.header(&format!("x-ms-meta-{}", key) as &str, val as &str);
+                builder = builder.header(&format!("x-ms-meta-{}", key) as &str, val as &str);
             }
         }
+        builder
     }
 }
 
@@ -182,10 +190,12 @@ pub trait CacheControlSupport<'a> {
 pub trait CacheControlOption<'a> {
     fn cache_control(&self) -> Option<&'a str>;
 
-    fn add_header(&self, builder: &mut Builder) {
+    #[must_use]
+    fn add_header(&self, mut builder: Builder) -> Builder {
         if let Some(cache_control) = self.cache_control() {
-            builder.header(CACHE_CONTROL, cache_control);
+            builder = builder.header(CACHE_CONTROL, cache_control);
         }
+        builder
     }
 }
 
@@ -197,10 +207,12 @@ pub trait ContentEncodingSupport<'a> {
 pub trait ContentEncodingOption<'a> {
     fn content_encoding(&self) -> Option<&'a str>;
 
-    fn add_header(&self, builder: &mut Builder) {
+    #[must_use]
+    fn add_header(&self, mut builder: Builder) -> Builder {
         if let Some(content_encoding) = self.content_encoding() {
-            builder.header(CONTENT_ENCODING, content_encoding);
+            builder = builder.header(CONTENT_ENCODING, content_encoding);
         }
+        builder
     }
 }
 
@@ -212,10 +224,12 @@ pub trait ContentTypeSupport<'a> {
 pub trait ContentTypeOption<'a> {
     fn content_type(&self) -> Option<&'a str>;
 
-    fn add_header(&self, builder: &mut Builder) {
+    #[must_use]
+    fn add_header(&self, mut builder: Builder) -> Builder {
         if let Some(content_type) = self.content_type() {
-            builder.header(CONTENT_TYPE, content_type);
+            builder = builder.header(CONTENT_TYPE, content_type);
         }
+        builder
     }
 }
 
@@ -227,10 +241,12 @@ pub trait ContentLanguageSupport<'a> {
 pub trait ContentLanguageOption<'a> {
     fn content_language(&self) -> Option<&'a str>;
 
-    fn add_header(&self, builder: &mut Builder) {
+    #[must_use]
+    fn add_header(&self, mut builder: Builder) -> Builder {
         if let Some(content_language) = self.content_language() {
-            builder.header(CONTENT_LANGUAGE, content_language);
+            builder = builder.header(CONTENT_LANGUAGE, content_language);
         }
+        builder
     }
 }
 
@@ -242,10 +258,12 @@ pub trait AccessTierSupport<'a> {
 pub trait AccessTierOption<'a> {
     fn access_tier(&self) -> Option<&'a str>;
 
-    fn add_header(&self, builder: &mut Builder) {
+    #[must_use]
+    fn add_header(&self, mut builder: Builder) -> Builder {
         if let Some(access_tier) = self.access_tier() {
-            builder.header(BLOB_ACCESS_TIER, access_tier);
+            builder = builder.header(BLOB_ACCESS_TIER, access_tier);
         }
+        builder
     }
 }
 
@@ -260,9 +278,10 @@ pub trait DeleteSnapshotsMethodSupport {
 pub trait DeleteSnapshotsMethodRequired {
     fn delete_snapshots_method(&self) -> DeleteSnapshotsMethod;
 
-    fn add_header(&self, builder: &mut Builder) {
+    #[must_use]
+    fn add_header(&self, builder: Builder) -> Builder {
         let s: &'static str = self.delete_snapshots_method().into();
-        builder.header(DELETE_SNAPSHOTS, s);
+        builder.header(DELETE_SNAPSHOTS, s)
     }
 }
 
@@ -480,11 +499,12 @@ pub trait SequenceNumberSupport {
 pub trait SequenceNumberOption {
     fn sequence_number(&self) -> u64;
 
-    fn add_header(&self, builder: &mut Builder) {
+    #[must_use]
+    fn add_header(&self, builder: Builder) -> Builder {
         builder.header(
             BLOB_SEQUENCE_NUMBER,
             &self.sequence_number().to_string() as &str,
-        );
+        )
     }
 }
 
@@ -499,10 +519,12 @@ pub trait SequenceNumberConditionSupport {
 pub trait SequenceNumberConditionOption {
     fn sequence_number_condition(&self) -> Option<SequenceNumberCondition>;
 
-    fn add_header(&self, builder: &mut Builder) {
+    #[must_use]
+    fn add_header(&self, mut builder: Builder) -> Builder {
         if let Some(sequence_number_condition) = self.sequence_number_condition() {
-            sequence_number_condition.add_header(builder);
+            builder = sequence_number_condition.add_header(builder);
         }
+        builder
     }
 }
 
@@ -514,10 +536,12 @@ pub trait IfSinceConditionSupport {
 pub trait IfSinceConditionOption {
     fn if_since_condition(&self) -> Option<IfSinceCondition>;
 
-    fn add_header(&self, builder: &mut Builder) {
+    #[must_use]
+    fn add_header(&self, mut builder: Builder) -> Builder {
         if let Some(if_since_condition) = self.if_since_condition() {
-            if_since_condition.add_header(builder);
+            builder = if_since_condition.add_header(builder);
         }
+        builder
     }
 }
 
@@ -529,10 +553,12 @@ pub trait IfMatchConditionSupport<'a> {
 pub trait IfMatchConditionOption<'a> {
     fn if_match_condition(&self) -> Option<IfMatchCondition<'a>>;
 
-    fn add_header(&self, builder: &mut Builder) {
+    #[must_use]
+    fn add_header(&self, mut builder: Builder) -> Builder {
         if let Some(if_match_condition) = self.if_match_condition() {
-            if_match_condition.add_header(builder);
+            builder = if_match_condition.add_header(builder);
         }
+        builder
     }
 }
 
@@ -544,11 +570,12 @@ pub trait PageBlobLengthSupport {
 pub trait PageBlobLengthRequired {
     fn content_length(&self) -> u64;
 
-    fn add_header(&self, builder: &mut Builder) {
+    #[must_use]
+    fn add_header(&self, builder: Builder) -> Builder {
         builder.header(
             BLOB_CONTENT_LENGTH,
             &self.content_length().to_string() as &str,
-        );
+        )
     }
 }
 
@@ -560,18 +587,21 @@ pub trait ContentLengthSupport {
 pub trait ContentLengthOption {
     fn content_length(&self) -> Option<u64>;
 
-    fn add_header(&self, builder: &mut Builder) {
+    #[must_use]
+    fn add_header(&self, mut builder: Builder) -> Builder {
         if let Some(content_length) = self.content_length() {
-            builder.header(CONTENT_LENGTH, &content_length.to_string() as &str);
+            builder = builder.header(CONTENT_LENGTH, &content_length.to_string() as &str);
         }
+        builder
     }
 }
 
 pub trait ContentLengthRequired {
     fn content_length(&self) -> u64;
 
-    fn add_header(&self, builder: &mut Builder) {
-        builder.header(CONTENT_LENGTH, &self.content_length().to_string() as &str);
+    #[must_use]
+    fn add_header(&self, builder: Builder) -> Builder {
+        builder.header(CONTENT_LENGTH, &self.content_length().to_string() as &str)
     }
 }
 
@@ -583,18 +613,21 @@ pub trait LeaseIdSupport<'a> {
 pub trait LeaseIdOption<'a> {
     fn lease_id(&self) -> Option<&'a LeaseId>;
 
-    fn add_header(&self, builder: &mut Builder) {
+    #[must_use]
+    fn add_header(&self, mut builder: Builder) -> Builder {
         if let Some(lease_id) = self.lease_id() {
-            builder.header(LEASE_ID, &lease_id.to_string() as &str);
+            builder = builder.header(LEASE_ID, &lease_id.to_string() as &str);
         }
+        builder
     }
 }
 
 pub trait LeaseIdRequired<'a> {
     fn lease_id(&self) -> &'a LeaseId;
 
-    fn add_header(&self, builder: &mut Builder) {
-        builder.header(LEASE_ID, &self.lease_id().to_string() as &str);
+    #[must_use]
+    fn add_header(&self, builder: Builder) -> Builder {
+        builder.header(LEASE_ID, &self.lease_id().to_string() as &str)
     }
 }
 
@@ -615,17 +648,20 @@ pub trait ContentMD5Support<'a> {
 pub trait ContentMD5Option<'a> {
     fn content_md5(&self) -> Option<&'a [u8]>;
 
-    fn add_header(&self, builder: &mut Builder) {
+    #[must_use]
+    fn add_header(&self, mut builder: Builder) -> Builder {
         if let Some(content_md5) = self.content_md5() {
-            add_content_md5_header(content_md5, builder);
+            builder = add_content_md5_header(content_md5, builder);
         }
+        builder
     }
 }
 
 #[inline]
-pub fn add_content_md5_header<'a>(content_md5: &'a [u8], builder: &mut Builder) {
+#[must_use]
+pub fn add_content_md5_header<'a>(content_md5: &'a [u8], builder: Builder) -> Builder {
     let s = encode(content_md5);
-    builder.header(CONTENT_MD5, &s as &str);
+    builder.header(CONTENT_MD5, &s as &str)
 }
 
 pub trait RangeSupport<'a> {
@@ -636,18 +672,21 @@ pub trait RangeSupport<'a> {
 pub trait RangeOption<'a> {
     fn range(&self) -> Option<&'a range::Range>;
 
-    fn add_header(&self, builder: &mut Builder) {
+    #[must_use]
+    fn add_header(&self, mut builder: Builder) -> Builder {
         if let Some(range) = self.range() {
-            builder.header(RANGE, &range.to_string() as &str);
+            builder = builder.header(RANGE, &range.to_string() as &str);
         }
+        builder
     }
 }
 
 pub trait RangeRequired<'a> {
     fn range(&self) -> &'a range::Range;
 
-    fn add_header(&self, builder: &mut Builder) {
-        builder.header(RANGE, &self.range().to_string() as &str);
+    #[must_use]
+    fn add_header(&self, builder: Builder) -> Builder {
+        builder.header(RANGE, &self.range().to_string() as &str)
     }
 }
 
@@ -659,18 +698,21 @@ pub trait BA512RangeSupport<'a> {
 pub trait BA512RangeOption<'a> {
     fn ba512_range(&self) -> Option<&'a ba512_range::BA512Range>;
 
-    fn add_header(&self, builder: &mut Builder) {
+    #[must_use]
+    fn add_header(&self, mut builder: Builder) -> Builder {
         if let Some(ba512_range) = self.ba512_range() {
-            builder.header(RANGE, &ba512_range.to_string() as &str);
+            builder = builder.header(RANGE, &ba512_range.to_string() as &str);
         }
+        builder
     }
 }
 
 pub trait BA512RangeRequired<'a> {
     fn ba512_range(&self) -> &'a ba512_range::BA512Range;
 
-    fn add_header(&self, builder: &mut Builder) {
-        builder.header(RANGE, &self.ba512_range().to_string() as &str);
+    #[must_use]
+    fn add_header(&self, builder: Builder) -> Builder {
+        builder.header(RANGE, &self.ba512_range().to_string() as &str)
     }
 }
 
@@ -682,8 +724,9 @@ pub trait LeaseDurationSupport {
 pub trait LeaseDurationRequired {
     fn lease_duration(&self) -> i8;
 
-    fn add_header(&self, builder: &mut Builder) {
-        builder.header(LEASE_DURATION, &self.lease_duration().to_string() as &str);
+    #[must_use]
+    fn add_header(&self, builder: Builder) -> Builder {
+        builder.header(LEASE_DURATION, &self.lease_duration().to_string() as &str)
     }
 }
 
@@ -695,21 +738,24 @@ pub trait ProposedLeaseIdSupport<'a> {
 pub trait ProposedLeaseIdOption<'a> {
     fn proposed_lease_id(&self) -> Option<&'a LeaseId>;
 
-    fn add_header(&self, builder: &mut Builder) {
+    #[must_use]
+    fn add_header(&self, mut builder: Builder) -> Builder {
         if let Some(pld) = self.proposed_lease_id() {
-            builder.header(PROPOSED_LEASE_ID, &pld.to_string() as &str);
+            builder = builder.header(PROPOSED_LEASE_ID, &pld.to_string() as &str);
         }
+        builder
     }
 }
 
 pub trait ProposedLeaseIdRequired<'a> {
     fn proposed_lease_id(&self) -> &'a LeaseId;
 
-    fn add_header(&self, builder: &mut Builder) {
+    #[must_use]
+    fn add_header(&self, builder: Builder) -> Builder {
         builder.header(
             PROPOSED_LEASE_ID,
             &self.proposed_lease_id().to_string() as &str,
-        );
+        )
     }
 }
 
@@ -721,21 +767,24 @@ pub trait LeaseBreakPeriodSupport {
 pub trait LeaseBreakPeriodRequired {
     fn lease_break_period(&self) -> u8;
 
-    fn add_header(&self, builder: &mut Builder) {
+    #[must_use]
+    fn add_header(&self, builder: Builder) -> Builder {
         builder.header(
             LEASE_BREAK_PERIOD,
             &self.lease_break_period().to_string() as &str,
-        );
+        )
     }
 }
 
 pub trait LeaseBreakPeriodOption {
     fn lease_break_period(&self) -> Option<u8>;
 
-    fn add_header(&self, builder: &mut Builder) {
+    #[must_use]
+    fn add_header(&self, mut builder: Builder) -> Builder {
         if let Some(lease_break_period) = self.lease_break_period() {
-            builder.header(LEASE_BREAK_PERIOD, &lease_break_period.to_string() as &str);
+            builder = builder.header(LEASE_BREAK_PERIOD, &lease_break_period.to_string() as &str);
         }
+        builder
     }
 }
 

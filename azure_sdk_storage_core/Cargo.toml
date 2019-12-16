@@ -15,19 +15,16 @@ categories    = ["api-bindings"]
 edition       = "2018"
 
 [dependencies]
-azure_sdk_core          = { path           = "../azure_sdk_core", version = "0.30.1" }
+azure_sdk_core          = { path = "../azure_sdk_core", version = "0.30.1" }
 ring                    = "0.16"
 md5                     = "0.7"
 RustyXML                = "0.1"
 base64                  = "0.11"
 chrono                  = "0.4"
-env_logger              = "0.7"
-http                    = "0.1.20"
-http-body               = "0.2.0-alpha.3"
-futures-core-preview    = "0.3.0-alpha.19"
-futures-channel-preview = "0.3.0-alpha.19"
-futures-util-preview    = "0.3.0-alpha.19"
-hyper                   = { version        = "0.13.0-alpha.4" , features  = ["unstable-stream"] }
+http                    = "0.2.0"
+http-body               = "0.3.1"
+futures                 = "0.3.1"
+hyper                   = "0.13"
 log                     = "0.4"
 mime                    = "0.3"
 quick-error             = "1.2"
@@ -37,13 +34,14 @@ serde_json              = "1.0"
 serde-xml-rs            = "0.3"
 time                    = "0.1"
 url                     = "2.1"
-uuid                    = { version        = "0.8", features              = ["v4"] }
-smallvec                = { version        = "1.0"            , features  = ["serde"] }
+uuid                    = { version = "0.8", features = ["v4"] }
+smallvec                = { version = "1.0", features = ["serde"] }
 bytes                   = "0.5"
-hyper-rustls            = { version        = "0.19.0-alpha.3" , features  = [] }
+hyper-rustls            = { git = "https://github.com/ctz/hyper-rustls.git" }
 
 [dev-dependencies]
-tokio-core              = "0.1"
+tokio                   = "0.2.4"
+env_logger              = "0.7"
 
 [features]
 test_e2e                = []

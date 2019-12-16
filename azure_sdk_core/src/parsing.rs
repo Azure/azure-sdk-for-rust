@@ -46,19 +46,29 @@ pub fn from_azure_time(s: &str) -> Result<chrono::DateTime<chrono::Utc>, chrono:
 }
 
 #[inline]
-pub fn traverse_single_must<'a>(node: &'a Element, path: &[&str]) -> Result<&'a Element, TraversingError> {
+pub fn traverse_single_must<'a>(
+    node: &'a Element,
+    path: &[&str],
+) -> Result<&'a Element, TraversingError> {
     let vec = traverse(node, path, false)?;
     if vec.len() > 1 {
-        return Err(TraversingError::MultipleNode(path[path.len() - 1].to_owned()));
+        return Err(TraversingError::MultipleNode(
+            path[path.len() - 1].to_owned(),
+        ));
     }
 
     Ok(vec[0])
 }
 
-pub fn traverse_single_optional<'a>(node: &'a Element, path: &[&str]) -> Result<Option<&'a Element>, TraversingError> {
+pub fn traverse_single_optional<'a>(
+    node: &'a Element,
+    path: &[&str],
+) -> Result<Option<&'a Element>, TraversingError> {
     let vec = traverse(node, path, true)?;
     if vec.len() > 1 {
-        return Err(TraversingError::MultipleNode(path[path.len() - 1].to_owned()));
+        return Err(TraversingError::MultipleNode(
+            path[path.len() - 1].to_owned(),
+        ));
     }
 
     if vec.is_empty() {
@@ -69,7 +79,11 @@ pub fn traverse_single_optional<'a>(node: &'a Element, path: &[&str]) -> Result<
 }
 
 #[inline]
-pub fn traverse<'a>(node: &'a Element, path: &[&str], ignore_empty_leaf: bool) -> Result<Vec<&'a Element>, TraversingError> {
+pub fn traverse<'a>(
+    node: &'a Element,
+    path: &[&str],
+    ignore_empty_leaf: bool,
+) -> Result<Vec<&'a Element>, TraversingError> {
     trace!(
         "traverse(node == {:?}, path == {:?}, ignore_empty_leaf == {})",
         node,
@@ -287,7 +301,8 @@ mod test {
         let elem: Element = XML.parse().unwrap();
 
         let res = super::traverse(&elem, &["Containers", "Container"], false).unwrap();
-        let res_final = super::traverse_single_must(res[1], &["Properties", "LeaseStatus"]).unwrap();
+        let res_final =
+            super::traverse_single_must(res[1], &["Properties", "LeaseStatus"]).unwrap();
 
         if let Ok(inner) = super::inner_text(res_final) {
             assert_eq!(inner, "locked");
@@ -301,7 +316,8 @@ mod test {
         let elem: Element = XML.parse().unwrap();
 
         let res = super::traverse(&elem, &["Containers", "Container"], false).unwrap();
-        let res_final = super::traverse_single_optional(res[1], &["Properties", "Pinocchio"]).unwrap();
+        let res_final =
+            super::traverse_single_optional(res[1], &["Properties", "Pinocchio"]).unwrap();
 
         assert_eq!(res_final, None);
     }

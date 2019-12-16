@@ -15,25 +15,23 @@ categories         = ["api-bindings"]
 edition            = "2018"
 
 [dependencies]
-azure_sdk_core       = { path          = "../azure_sdk_core", version = "0.30.0" }
-oauth2               = "               = 3.0.0-alpha.4"
+azure_sdk_core       = { path = "../azure_sdk_core", version = "0.30.0" }
+oauth2               = "3.0.0-alpha.4"
 base64               = "0.11"
 url                  = "2.1"
 rand                 = "0.7.2"
 failure              = "0.1.6"
-futures-core-preview = { version       = "                            = 0.3.0-alpha.19" }
-futures-preview      = { version       = "                            = 0.3.0-alpha.19", features = ["compat", "async-await"] }
-http                 = "0.1.20"
+futures              = "0.3.1"
+http                 = "0.2.0"
 serde                = "1.0"
 serde_derive         = "1.0"
 chrono               = "0.4"
 serde_json           = "1.0"
 log                  = "0.4"
-reqwest              = { version       = "0.10.0-alpha.2", features   = ["json"] }
+reqwest              = { git = "https://github.com/seanmonstar/reqwest.git" }
 
 [dev-dependencies]
-futures-util         = "0.3.1"
-tokio                = "0.2.0-alpha.6"
+tokio                = "0.2.4"
 
 [features]
 test_e2e             = []

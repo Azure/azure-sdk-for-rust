@@ -1,7 +1,7 @@
+use crate::container::Container;
 use azure_sdk_core::errors::AzureError;
 use azure_sdk_core::headers::REQUEST_ID;
 use azure_sdk_core::RequestId;
-use crate::container::Container;
 use chrono::{DateTime, FixedOffset};
 use http::HeaderMap;
 use hyper::header;
@@ -15,7 +15,10 @@ pub struct GetPropertiesResponse {
 }
 
 impl GetPropertiesResponse {
-    pub(crate) fn from_response(container_name: String, headers: &HeaderMap) -> Result<GetPropertiesResponse, AzureError> {
+    pub(crate) fn from_response(
+        container_name: String,
+        headers: &HeaderMap,
+    ) -> Result<GetPropertiesResponse, AzureError> {
         let request_id = match headers.get(REQUEST_ID) {
             Some(request_id) => Uuid::parse_str(request_id.to_str()?)?,
             None => return Err(AzureError::MissingHeaderError(REQUEST_ID.to_owned())),

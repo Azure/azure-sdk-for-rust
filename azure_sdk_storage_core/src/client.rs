@@ -105,11 +105,19 @@ impl Client {
         request_body: Option<&[u8]>,
     ) -> Result<hyper::client::ResponseFuture, AzureError>
     where
-        F: FnOnce(&mut ::http::request::Builder),
+        F: FnOnce(::http::request::Builder) -> ::http::request::Builder,
     {
         let uri = self.add_sas_token_to_uri(uri);
 
-        perform_request(&self.hc, &uri, method, &self.key, headers_func, request_body, ServiceType::Blob)
+        perform_request(
+            &self.hc,
+            &uri,
+            method,
+            &self.key,
+            headers_func,
+            request_body,
+            ServiceType::Blob,
+        )
     }
 
     pub fn perform_table_request<F>(
@@ -120,13 +128,22 @@ impl Client {
         request_str: Option<&[u8]>,
     ) -> Result<hyper::client::ResponseFuture, AzureError>
     where
-        F: FnOnce(&mut ::http::request::Builder),
+        F: FnOnce(::http::request::Builder) -> ::http::request::Builder,
     {
         debug!("segment: {}, method: {:?}", segment, method,);
 
-        let uri = self.add_sas_token_to_uri((self.get_uri_prefix(ServiceType::Table) + segment).as_str());
+        let uri =
+            self.add_sas_token_to_uri((self.get_uri_prefix(ServiceType::Table) + segment).as_str());
 
-        perform_request(&self.hc, &uri, method, &self.key, headers_func, request_str, ServiceType::Table)
+        perform_request(
+            &self.hc,
+            &uri,
+            method,
+            &self.key,
+            headers_func,
+            request_str,
+            ServiceType::Table,
+        )
     }
 
     /// Uri scheme + authority e.g. http://myaccount.table.core.windows.net/
