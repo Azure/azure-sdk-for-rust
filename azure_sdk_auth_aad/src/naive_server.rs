@@ -5,10 +5,7 @@ use std::io::{BufRead, BufReader, Write};
 use std::net::TcpListener;
 use url::Url;
 
-pub fn naive_server(
-    auth_obj: &AuthObj,
-    port: u32,
-) -> Result<AuthorizationCode, ServerReceiveError> {
+pub fn naive_server(auth_obj: &AuthObj, port: u32) -> Result<AuthorizationCode, ServerReceiveError> {
     // A very naive implementation of the redirect server.
     // A ripoff of https://github.com/ramosbugs/oauth2-rs/blob/master/examples/msgraph.rs, stripped
     // down for simplicity.
@@ -23,9 +20,7 @@ pub fn naive_server(
 
                 let redirect_url = match request_line.split_whitespace().nth(1) {
                     Some(redirect_url) => redirect_url,
-                    None => {
-                        return Err(ServerReceiveError::UnexpectedRedirectUrl { url: request_line })
-                    }
+                    None => return Err(ServerReceiveError::UnexpectedRedirectUrl { url: request_line }),
                 };
                 let url = Url::parse(&("http://localhost".to_string() + redirect_url)).unwrap();
 
@@ -63,11 +58,7 @@ pub fn naive_server(
                 }
 
                 let message = "Authentication complete. You can close this window now.";
-                let response = format!(
-                    "HTTP/1.1 200 OK\r\ncontent-length: {}\r\n\r\n{}",
-                    message.len(),
-                    message
-                );
+                let response = format!("HTTP/1.1 200 OK\r\ncontent-length: {}\r\n\r\n{}", message.len(), message);
                 stream.write_all(response.as_bytes()).unwrap();
 
                 // The server will terminate itself after collecting the first code.

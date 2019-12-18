@@ -6,6 +6,7 @@ extern crate log;
 use azure_sdk_core::errors::AzureError;
 use log::debug;
 use oauth2::basic::BasicClient;
+use oauth2::reqwest::async_http_client;
 use oauth2::{
     AuthType, AuthUrl, AuthorizationCode, ClientId, ClientSecret, CsrfToken, PkceCodeChallenge,
     PkceCodeVerifier, RedirectUrl, TokenUrl,
@@ -17,6 +18,8 @@ pub use login_response::*;
 use std::sync::Arc;
 pub mod errors;
 mod naive_server;
+use futures::compat::Future01CompatExt;
+use futures::TryFutureExt;
 pub use naive_server::naive_server;
 use reqwest;
 
@@ -93,6 +96,7 @@ pub async fn exchange(
         // Send the PKCE code verifier in the token request
         .set_pkce_verifier(auth_obj.pkce_code_verifier)
         .request_async(async_http_client)
+        .compat()
         .await;
 
     debug!("MS Graph returned the following token:\n{:?}\n", token);

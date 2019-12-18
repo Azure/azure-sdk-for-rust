@@ -5,12 +5,12 @@ pub struct ExecuteStoredProcedureRequest {
     request: RequestBuilder,
     payload: Result<String, serde_json::Error>,
 }
-/*
+
 impl DocumentRequestExt for ExecuteStoredProcedureRequest {
     fn request(&mut self) -> &mut RequestBuilder {
         &mut self.request
     }
-}*/
+}
 
 impl ExecuteStoredProcedureRequest {
     pub(crate) fn new(

@@ -6,12 +6,11 @@ pub struct CreateDocumentRequest {
     payload: Result<String, serde_json::Error>,
 }
 
-/*impl DocumentRequestExt for CreateDocumentRequest {
+impl DocumentRequestExt for CreateDocumentRequest {
     fn request(&mut self) -> &mut RequestBuilder {
         &mut self.request
     }
 }
-*/
 
 impl CreateDocumentRequest {
     pub(crate) fn new(
@@ -42,7 +41,7 @@ impl CreateDocumentRequest {
     pub async fn execute(self) -> Result<DocumentAttributes, AzureError> {
         trace!("get_document called(request == {:?}", self.request);
         let hc = self.hyper_client;
-        let req = self.request;
+        let mut req = self.request;
         let payload = self.payload?;
         let r = req.body(payload.into())?;
         let body = check_status_extract_body(hc.request(r), StatusCode::CREATED).await?;
@@ -54,13 +53,13 @@ pub struct GetDocumentRequest {
     hyper_client: HyperClient,
     request: RequestBuilder,
 }
-/*
+
 impl DocumentRequestExt for GetDocumentRequest {
     fn request(&mut self) -> &mut RequestBuilder {
         &mut self.request
     }
 }
-*/
+
 impl GetDocumentRequest {
     pub(crate) fn new(hyper_client: HyperClient, request: RequestBuilder) -> GetDocumentRequest {
         GetDocumentRequest {
@@ -77,7 +76,9 @@ impl GetDocumentRequest {
         HEADER_ALLOW_MULTIPLE_WRITES
     );
 
-    pub async fn execute<T: DeserializeOwned>(self) -> Result<GetDocumentResponse<T>, AzureError> {
+    pub async fn execute<T: DeserializeOwned>(
+        mut self,
+    ) -> Result<GetDocumentResponse<T>, AzureError> {
         trace!("get_document called(request == {:?}", self.request);
 
         let r = self.request.body(hyper::Body::empty())?;
@@ -129,22 +130,22 @@ pub struct QueryDocumentRequest {
     request: RequestBuilder,
     payload: Result<String, serde_json::Error>,
 }
-/*
+
 impl DocumentRequestExt for QueryDocumentRequest {
     fn request(&mut self) -> &mut RequestBuilder {
         &mut self.request
     }
 }
-*/
+
 const QUERY_CONTENT_TYPE: &str = "application/query+json";
 
 impl QueryDocumentRequest {
     pub(crate) fn new(
         hyper_client: HyperClient,
-        request: RequestBuilder,
+        mut request: RequestBuilder,
         payload: Result<String, serde_json::Error>,
     ) -> QueryDocumentRequest {
-        let request = request
+        request
             .header(HEADER_DOCUMENTDB_ISQUERY, HeaderValue::from_static("true"))
             .header(
                 header::CONTENT_TYPE,
@@ -193,7 +194,7 @@ impl QueryDocumentRequest {
     ) -> Result<QueryDocumentResponse<serde_json::Value>, AzureError> {
         trace!("query_document called(request == {:?}", self.request);
         let hc = self.hyper_client;
-        let req = self.request;
+        let mut req = self.request;
         let payload = self.payload?;
         let r = req.body(payload.into())?;
         let (headers, body) =
@@ -315,17 +316,14 @@ impl ListDocumentsRequest {
         HEADER_ALLOW_MULTIPLE_WRITES
     );
 
-    pub fn incremental_feed(self) -> Self {
-        ListDocumentsRequest {
-            request: self
-                .request
-                .header(HEADER_A_IM, HeaderValue::from_static("Incremental feed")),
-            ..self
-        }
+    pub fn incremental_feed(mut self) -> Self {
+        self.request
+            .header(HEADER_A_IM, HeaderValue::from_static("Incremental feed"));
+        self
     }
 
     pub async fn execute<T: DeserializeOwned>(
-        self,
+        mut self,
     ) -> Result<ListDocumentsResponse<T>, AzureError> {
         let r = self.request.body(hyper::Body::empty())?;
         let (headers, whole_body) =
@@ -394,13 +392,13 @@ pub struct ReplaceDocumentRequest<T> {
     payload: Result<String, serde_json::Error>,
     _t: PhantomData<T>,
 }
-/*
+
 impl<T> DocumentRequestExt for ReplaceDocumentRequest<T> {
     fn request(&mut self) -> &mut RequestBuilder {
         &mut self.request
     }
 }
-*/
+
 impl<T: DeserializeOwned> ReplaceDocumentRequest<T> {
     pub(crate) fn new(
         hyper_client: HyperClient,
@@ -431,7 +429,7 @@ impl<T: DeserializeOwned> ReplaceDocumentRequest<T> {
     pub async fn execute(self) -> Result<ReplaceDocumentResponse<T>, AzureError> {
         trace!("get_document called(request == {:?}", self.request);
         let hc = self.hyper_client;
-        let req = self.request;
+        let mut req = self.request;
         let payload = self.payload?;
         let r = req.body(payload.into())?;
         let (headers, body) =
@@ -456,12 +454,12 @@ pub struct DeleteDocumentRequest {
     hyper_client: HyperClient,
     request: RequestBuilder,
 }
-/*
+
 impl DocumentRequestExt for DeleteDocumentRequest {
     fn request(&mut self) -> &mut RequestBuilder {
         &mut self.request
     }
-}*/
+}
 
 impl DeleteDocumentRequest {
     pub(crate) fn new(hyper_client: HyperClient, request: RequestBuilder) -> DeleteDocumentRequest {
@@ -479,7 +477,7 @@ impl DeleteDocumentRequest {
         HEADER_ALLOW_MULTIPLE_WRITES
     );
 
-    pub async fn execute(self) -> Result<(), AzureError> {
+    pub async fn execute(mut self) -> Result<(), AzureError> {
         trace!("get_document called(request == {:?}", self.request);
 
         let r = self.request.body(hyper::Body::empty())?;
@@ -488,21 +486,23 @@ impl DeleteDocumentRequest {
     }
 }
 
-#[must_use]
-fn session_token<S: AsRef<str>>(request: RequestBuilder, token: S) -> RequestBuilder {
-    request.header_formatted(HEADER_SESSION_TOKEN, token.as_ref())
-}
+pub trait DocumentRequestExt: Sized {
+    fn request(&mut self) -> &mut RequestBuilder;
 
-#[must_use]
-fn partition_key<'a, P: Into<PartitionKey<'a>>>(
-    mut request: RequestBuilder,
-    key: P,
-) -> RequestBuilder {
-    // todo: move unwrap into PartitionKey impl itself as we control the impl and it surely won't error out
-    if let Some(ser_key) = key.into().to_json().unwrap() {
-        request = request.header_formatted(HEADER_DOCUMENTDB_PARTITIONKEY, ser_key);
+    fn session_token<S: AsRef<str>>(mut self, token: S) -> Self {
+        self.request()
+            .header_formatted(HEADER_SESSION_TOKEN, token.as_ref());
+        self
     }
-    request
+
+    fn partition_key<'a, P: Into<PartitionKey<'a>>>(mut self, key: P) -> Self {
+        // todo: move unwrap into PartitionKey impl itself as we control the impl and it surely won't error out
+        if let Some(ser_key) = key.into().to_json().unwrap() {
+            self.request()
+                .header_formatted(HEADER_DOCUMENTDB_PARTITIONKEY, ser_key);
+        }
+        self
+    }
 }
 
 fn derive_continuation_token(headers: &HeaderMap) -> Option<String> {
