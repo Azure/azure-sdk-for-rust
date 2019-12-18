@@ -50,9 +50,17 @@ where
         s.push_str("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<BlockList>\n");
         for bl in &self.blocks {
             let node = match bl {
-                BlobBlockType::Committed(content) => format!("\t<Committed>{}</Committed>\n", base64::encode(content.borrow())),
-                BlobBlockType::Uncommitted(content) => format!("\t<Uncommitted>{}</Uncommitted>\n", base64::encode(content.borrow())),
-                BlobBlockType::Latest(content) => format!("\t<Latest>{}</Latest>\n", base64::encode(content.borrow())),
+                BlobBlockType::Committed(content) => format!(
+                    "\t<Committed>{}</Committed>\n",
+                    base64::encode(content.borrow())
+                ),
+                BlobBlockType::Uncommitted(content) => format!(
+                    "\t<Uncommitted>{}</Uncommitted>\n",
+                    base64::encode(content.borrow())
+                ),
+                BlobBlockType::Latest(content) => {
+                    format!("\t<Latest>{}</Latest>\n", base64::encode(content.borrow()))
+                }
             };
 
             s.push_str(&node);
@@ -70,14 +78,21 @@ mod test {
     #[test]
     fn to_xml() {
         let mut blocks = BlockList { blocks: Vec::new() };
-        blocks.blocks.push(BlobBlockType::Committed(Vec::from(b"numero1" as &[u8])));
-        blocks.blocks.push(BlobBlockType::Uncommitted(Vec::from(b"numero2" as &[u8])));
-        blocks.blocks.push(BlobBlockType::Uncommitted(Vec::from(b"numero3" as &[u8])));
-        blocks.blocks.push(BlobBlockType::Latest(Vec::from(b"numero4" as &[u8])));
+        blocks
+            .blocks
+            .push(BlobBlockType::Committed(Vec::from(b"numero1" as &[u8])));
+        blocks
+            .blocks
+            .push(BlobBlockType::Uncommitted(Vec::from(b"numero2" as &[u8])));
+        blocks
+            .blocks
+            .push(BlobBlockType::Uncommitted(Vec::from(b"numero3" as &[u8])));
+        blocks
+            .blocks
+            .push(BlobBlockType::Latest(Vec::from(b"numero4" as &[u8])));
 
         let _retu: &str = &blocks.to_xml();
 
         // to assert with handcrafted XML
     }
-
 }

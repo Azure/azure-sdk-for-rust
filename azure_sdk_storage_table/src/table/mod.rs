@@ -296,13 +296,12 @@ impl TableService {
             batch_items,
         );
 
-        let future_response =
-            self.request("$batch", &Method::POST, Some(payload), |request| {
-                request.header(
-                    header::CONTENT_TYPE,
-                    header::HeaderValue::from_static(get_batch_mime()),
-                )
-            })?;
+        let future_response = self.request("$batch", &Method::POST, Some(payload), |request| {
+            request.header(
+                header::CONTENT_TYPE,
+                header::HeaderValue::from_static(get_batch_mime()),
+            )
+        })?;
         check_status_extract_body(future_response, StatusCode::ACCEPTED).await?;
         // TODO deal with body response, handle batch failure.
         // let ref body = get_response_body(&mut response)?;

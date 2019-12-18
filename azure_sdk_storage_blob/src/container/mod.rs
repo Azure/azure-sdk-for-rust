@@ -48,10 +48,12 @@ pub trait PublicAccessSupport {
 pub trait PublicAccessRequired {
     fn public_access(&self) -> PublicAccess;
 
-    fn add_header(&self, builder: &mut Builder) {
+    #[must_use]
+    fn add_header(&self, mut builder: Builder) -> Builder {
         if self.public_access() != PublicAccess::None {
-            builder.header(BLOB_PUBLIC_ACCESS, self.public_access().as_ref());
+            builder = builder.header(BLOB_PUBLIC_ACCESS, self.public_access().as_ref());
         }
+        builder
     }
 }
 

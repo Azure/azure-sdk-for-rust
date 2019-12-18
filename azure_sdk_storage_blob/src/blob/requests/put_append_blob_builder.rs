@@ -599,17 +599,18 @@ impl<'a> PutAppendBlobBuilder<'a, Yes, Yes> {
         let future_response = self.client().perform_request(
             &uri,
             &Method::PUT,
-            |ref mut request| {
-                ContentTypeOption::add_header(&self, request);
-                ContentEncodingOption::add_header(&self, request);
-                ContentLanguageOption::add_header(&self, request);
-                CacheControlOption::add_header(&self, request);
-                ContentDispositionOption::add_header(&self, request);
-                MetadataOption::add_header(&self, request);
-                request.header(BLOB_TYPE, "AppendBlob");
-                LeaseIdOption::add_header(&self, request);
-                IfMatchConditionOption::add_header(&self, request);
-                ClientRequestIdOption::add_header(&self, request);
+            |mut request| {
+                request = ContentTypeOption::add_header(&self, request);
+                request = ContentEncodingOption::add_header(&self, request);
+                request = ContentLanguageOption::add_header(&self, request);
+                request = CacheControlOption::add_header(&self, request);
+                request = ContentDispositionOption::add_header(&self, request);
+                request = MetadataOption::add_header(&self, request);
+                request = request.header(BLOB_TYPE, "AppendBlob");
+                request = LeaseIdOption::add_header(&self, request);
+                request = IfMatchConditionOption::add_header(&self, request);
+                request = ClientRequestIdOption::add_header(&self, request);
+                request
             },
             None,
         )?;

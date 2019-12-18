@@ -159,9 +159,10 @@ impl<'a> DeleteBuilder<'a, Yes> {
         let future_response = self.client().perform_request(
             &uri,
             &Method::DELETE,
-            |ref mut request| {
-                ClientRequestIdOption::add_header(&self, request);
-                LeaseIdOption::add_header(&self, request);
+            |mut request| {
+                request = ClientRequestIdOption::add_header(&self, request);
+                request = LeaseIdOption::add_header(&self, request);
+                request
             },
             Some(&[]),
         )?;

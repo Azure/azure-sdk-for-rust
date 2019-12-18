@@ -269,10 +269,11 @@ impl<'a> BreakBlobLeaseBuilder<'a, Yes, Yes, Yes> {
         let future_response = self.client().perform_request(
             &uri,
             &Method::PUT,
-            |ref mut request| {
-                request.header(LEASE_ACTION, "break");
-                LeaseBreakPeriodRequired::add_header(&self, request);
-                ClientRequestIdOption::add_header(&self, request);
+            |mut request| {
+                request = request.header(LEASE_ACTION, "break");
+                request = LeaseBreakPeriodRequired::add_header(&self, request);
+                request = ClientRequestIdOption::add_header(&self, request);
+                request
             },
             None,
         )?;

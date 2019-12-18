@@ -316,11 +316,12 @@ impl<'a> AcquireBlobLeaseBuilder<'a, Yes, Yes, Yes> {
         let future_response = self.client().perform_request(
             &uri,
             &Method::PUT,
-            |ref mut request| {
-                request.header(LEASE_ACTION, "acquire");
-                LeaseDurationRequired::add_header(&self, request);
-                ProposedLeaseIdOption::add_header(&self, request);
-                ClientRequestIdOption::add_header(&self, request);
+            |mut request| {
+                request = request.header(LEASE_ACTION, "acquire");
+                request = LeaseDurationRequired::add_header(&self, request);
+                request = ProposedLeaseIdOption::add_header(&self, request);
+                request = ClientRequestIdOption::add_header(&self, request);
+                request
             },
             None,
         )?;

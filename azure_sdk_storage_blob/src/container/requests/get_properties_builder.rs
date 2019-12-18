@@ -85,9 +85,10 @@ impl<'a> GetPropertiesBuilder<'a, Yes> {
         let future_response = self.client().perform_request(
             &uri,
             &Method::HEAD,
-            |ref mut request| {
-                ClientRequestIdOption::add_header(&self, request);
-                LeaseIdOption::add_header(&self, request);
+            |mut request| {
+                request = ClientRequestIdOption::add_header(&self, request);
+                request = LeaseIdOption::add_header(&self, request);
+                request
             },
             None,
         )?;

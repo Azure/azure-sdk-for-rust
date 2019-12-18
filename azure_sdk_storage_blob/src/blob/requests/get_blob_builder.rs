@@ -350,15 +350,16 @@ impl<'a> GetBlobBuilder<'a, Yes, Yes> {
         let future_response = self.client().perform_request(
             &uri,
             &Method::GET,
-            |ref mut request| {
+            |mut request| {
                 if let Some(r) = self.range() {
-                    LeaseIdOption::add_header(&self, request);
-                    RangeOption::add_header(&self, request);
+                    request = LeaseIdOption::add_header(&self, request);
+                    request = RangeOption::add_header(&self, request);
 
                     if r.len() <= 4 * 1024 * 1024 {
-                        request.header_static(RANGE_GET_CONTENT_MD5, "true");
+                        request = request.header_static(RANGE_GET_CONTENT_MD5, "true");
                     }
                 }
+                request
             },
             None,
         )?;

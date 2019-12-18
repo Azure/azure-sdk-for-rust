@@ -1,6 +1,6 @@
+use crate::blob::Blob;
 use azure_sdk_core::errors::AzureError;
 use azure_sdk_core::{date_from_headers, request_id_from_headers, RequestId};
-use crate::blob::Blob;
 use chrono::{DateTime, Utc};
 use http::HeaderMap;
 
@@ -13,7 +13,11 @@ pub struct GetBlobResponse {
 }
 
 impl GetBlobResponse {
-    pub(crate) fn from_response(headers: &HeaderMap, blob: Blob, body: &[u8]) -> Result<GetBlobResponse, AzureError> {
+    pub(crate) fn from_response(
+        headers: &HeaderMap,
+        blob: Blob,
+        body: &[u8],
+    ) -> Result<GetBlobResponse, AzureError> {
         let request_id = request_id_from_headers(headers)?;
         let date = date_from_headers(headers)?;
 

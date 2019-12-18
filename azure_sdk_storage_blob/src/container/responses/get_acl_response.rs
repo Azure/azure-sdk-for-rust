@@ -1,11 +1,11 @@
+use crate::container::{public_access_from_header, PublicAccess};
 use azure_sdk_core::errors::AzureError;
 use azure_sdk_core::headers::REQUEST_ID;
 use azure_sdk_core::{RequestId, StoredAccessPolicyList};
-use crate::container::{public_access_from_header, PublicAccess};
 use chrono::{DateTime, FixedOffset};
 use http::header;
 use http::HeaderMap;
-use hyper::Chunk;
+use hyper::body;
 use uuid::Uuid;
 
 #[derive(Debug, Clone)]
@@ -20,7 +20,10 @@ pub struct GetACLResponse {
 
 impl GetACLResponse {
     // this should be named into and be consuming
-    pub(crate) fn from_response(body: &Chunk, headers: &HeaderMap) -> Result<GetACLResponse, AzureError> {
+    pub(crate) fn from_response(
+        body: &body::Bytes,
+        headers: &HeaderMap,
+    ) -> Result<GetACLResponse, AzureError> {
         let public_access = public_access_from_header(&headers)?;
         let body = String::from_utf8(body.to_vec())?;
 

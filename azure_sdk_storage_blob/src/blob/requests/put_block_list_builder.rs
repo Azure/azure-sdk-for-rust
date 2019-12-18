@@ -688,16 +688,17 @@ where
         let future_response = self.client().perform_request(
             &uri,
             &Method::PUT,
-            |ref mut request| {
-                ContentTypeOption::add_header(&self, request);
-                ContentEncodingOption::add_header(&self, request);
-                ContentLanguageOption::add_header(&self, request);
-                add_content_md5_header(&md5[..], request);
-                CacheControlOption::add_header(&self, request);
-                ContentDispositionOption::add_header(&self, request);
-                MetadataOption::add_header(&self, request);
-                LeaseIdOption::add_header(&self, request);
-                ClientRequestIdOption::add_header(&self, request);
+            |mut request| {
+                request = ContentTypeOption::add_header(&self, request);
+                request = ContentEncodingOption::add_header(&self, request);
+                request = ContentLanguageOption::add_header(&self, request);
+                request = add_content_md5_header(&md5[..], request);
+                request = CacheControlOption::add_header(&self, request);
+                request = ContentDispositionOption::add_header(&self, request);
+                request = MetadataOption::add_header(&self, request);
+                request = LeaseIdOption::add_header(&self, request);
+                request = ClientRequestIdOption::add_header(&self, request);
+                request
             },
             Some(body_bytes),
         )?;

@@ -1,8 +1,12 @@
 use crate::blob::generate_blob_uri;
-use azure_sdk_core::{BlobNameRequired, BlobNameSupport, ContainerNameRequired, ContainerNameSupport, No, ToAssign, Yes};
+use azure_sdk_core::{
+    BlobNameRequired, BlobNameSupport, ContainerNameRequired, ContainerNameSupport, No, ToAssign,
+    Yes,
+};
 use azure_sdk_storage_core::client::Client;
 use azure_sdk_storage_core::{
-    shared_access_signature::SharedAccessSignature, ClientRequired, SharedAccessSignatureRequired, SharedAccessSignatureSupport,
+    shared_access_signature::SharedAccessSignature, ClientRequired, SharedAccessSignatureRequired,
+    SharedAccessSignatureSupport,
 };
 use std::marker::PhantomData;
 
@@ -48,7 +52,8 @@ where
     }
 }
 
-impl<'a, BlobNameSet, SignatureSet> ContainerNameRequired<'a> for SignedUrlBuilder<'a, Yes, BlobNameSet, SignatureSet>
+impl<'a, BlobNameSet, SignatureSet> ContainerNameRequired<'a>
+    for SignedUrlBuilder<'a, Yes, BlobNameSet, SignatureSet>
 where
     BlobNameSet: ToAssign,
     SignatureSet: ToAssign,
@@ -59,7 +64,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, SignatureSet> BlobNameRequired<'a> for SignedUrlBuilder<'a, ContainerNameSet, Yes, SignatureSet>
+impl<'a, ContainerNameSet, SignatureSet> BlobNameRequired<'a>
+    for SignedUrlBuilder<'a, ContainerNameSet, Yes, SignatureSet>
 where
     ContainerNameSet: ToAssign,
     SignatureSet: ToAssign,
@@ -70,7 +76,8 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet> SharedAccessSignatureRequired<'a> for SignedUrlBuilder<'a, ContainerNameSet, BlobNameSet, Yes>
+impl<'a, ContainerNameSet, BlobNameSet> SharedAccessSignatureRequired<'a>
+    for SignedUrlBuilder<'a, ContainerNameSet, BlobNameSet, Yes>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,

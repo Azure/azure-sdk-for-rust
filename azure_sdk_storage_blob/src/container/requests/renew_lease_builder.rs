@@ -199,10 +199,11 @@ impl<'a> RenewLeaseBuilder<'a, Yes, Yes> {
         let future_response = self.client().perform_request(
             &uri,
             &Method::PUT,
-            |ref mut request| {
-                ClientRequestIdOption::add_header(&self, request);
-                LeaseIdRequired::add_header(&self, request);
-                request.header(LEASE_ACTION, "renew");
+            |mut request| {
+                request = ClientRequestIdOption::add_header(&self, request);
+                request = LeaseIdRequired::add_header(&self, request);
+                request = request.header(LEASE_ACTION, "renew");
+                request
             },
             Some(&[]),
         )?;
