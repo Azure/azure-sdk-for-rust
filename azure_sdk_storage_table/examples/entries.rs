@@ -1,5 +1,6 @@
 #[macro_use]
 extern crate serde_derive;
+use azure_sdk_core::errors::AzureError;
 use azure_sdk_storage_core::client::Client;
 use azure_sdk_storage_table::table::{TableService, TableStorage};
 use azure_sdk_storage_table::TableEntry;
@@ -28,8 +29,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let client = Client::new(&account, &master_key)?;
     let table_service = TableService::new(client);
     let table_storage = TableStorage::new(table_service, table_name);
+    table_storage.create_if_not_exists().await?;
 
-    let mut my_entry = TableEntry {
+    let my_entry = TableEntry {
         row_key: row_key,
         partition_key: "100".to_owned(),
         etag: None,
@@ -41,25 +43,34 @@ async fn main() -> Result<(), Box<dyn Error>> {
     };
 
     // insert the entry
-    table_storage.insert_entry(&my_entry).await?;
-    println!("entry inserted");
+    let mut my_entry = table_storage.insert_entry(my_entry).await?;
+    println!("entry inserted: {:?}", my_entry);
 
     // get the entry (notice the etag)
     let ret: TableEntry<MyEntry> = table_storage
         .get_entry(&my_entry.partition_key, &my_entry.row_key)
-        .await?;
+        .await?
+        .ok_or(AzureError::GenericErrorWithText(
+            "item not found after insertion".to_string(),
+        ))?;
     println!("get_entry result == {:?}", ret);
 
     // now we update the entry passing the etag.
     my_entry.payload.my_value = "Wheel on the bus".to_owned();
 
-    table_storage.update_entry(&my_entry).await?;
-    println!("update_entry completed without errors");
+    let my_entry = table_storage.update_entry(my_entry).await?;
+    println!(
+        "update_entry completed without errors: {:?}",
+        my_entry
+    );
 
     // get the entry again (new payload and etag)
     let ret: TableEntry<MyEntry> = table_storage
         .get_entry(&my_entry.partition_key, &my_entry.row_key)
-        .await?;
+        .await?
+        .ok_or(AzureError::GenericErrorWithText(
+            "item not found after update".to_string(),
+        ))?;
     println!("get_entry result == {:?}", ret);
 
     Ok(())
