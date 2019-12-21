@@ -268,15 +268,16 @@ impl TableService {
         Ok(entry)
     }
 
-    pub async fn delete_entry<'a, T>(
+    pub async fn delete_entry<'a>(
         &self,
         table_name: &str,
-        entry: &'a TableEntry<T>,
+        partition_key: &'a str,
+        row_key: &'a str,
     ) -> Result<(), AzureError>
     where
         T: Serialize + DeserializeOwned,
     {
-        let path = &entry_path(table_name, &entry.partition_key, &entry.row_key);
+        let path = &entry_path(table_name, partition_key, row_key);
 
         let future_response = self.request(path, &Method::DELETE, None, |ref mut request| {
             request.header(
@@ -466,11 +467,17 @@ impl TableStorage {
         self.service.update_entry(&self.table_name, entry).await
     }
 
-    pub async fn delete_entry<'a, T>(&self, entry: &'a TableEntry<T>) -> Result<(), AzureError>
+    pub async fn delete_entry<'a>(
+        &self,
+        partition_key: &'a str,
+        row_key: &'a str,
+    ) -> Result<(), AzureError>
     where
         T: Serialize + DeserializeOwned,
     {
-        self.service.delete_entry(&self.table_name, entry).await
+        self.service
+            .delete_entry(&self.table_name, partition_key, row_key)
+            .await
     }
 
     pub async fn batch<T>(
