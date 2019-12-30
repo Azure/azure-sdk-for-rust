@@ -273,18 +273,21 @@ impl TableService {
         table_name: &str,
         partition_key: &'a str,
         row_key: &'a str,
-    ) -> Result<(), AzureError>
-    where
-        T: Serialize + DeserializeOwned,
-    {
+        etag: Option<&'a str>,
+    ) -> Result<(), AzureError> {
         let path = &entry_path(table_name, partition_key, row_key);
+
+        let etag = match etag {
+            Some(ref etag) => etag,
+            None => "*",
+        };
 
         let future_response = self.request(path, &Method::DELETE, None, |ref mut request| {
             request.header(
                 header::ACCEPT,
                 HeaderValue::from_static(get_json_mime_nometadata()),
             );
-            request.header(header::IF_MATCH, header::HeaderValue::from_static("*"));
+            request.header(header::IF_MATCH, etag);
         })?;
         check_status_extract_body(future_response, StatusCode::NO_CONTENT).await?;
         Ok(())
@@ -471,12 +474,10 @@ impl TableStorage {
         &self,
         partition_key: &'a str,
         row_key: &'a str,
-    ) -> Result<(), AzureError>
-    where
-        T: Serialize + DeserializeOwned,
-    {
+        etag: Option<&'a str>,
+    ) -> Result<(), AzureError> {
         self.service
-            .delete_entry(&self.table_name, partition_key, row_key)
+            .delete_entry(&self.table_name, partition_key, row_key, etag)
             .await
     }
 
