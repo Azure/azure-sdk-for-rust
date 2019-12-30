@@ -64,7 +64,7 @@ impl TableService {
         table_name: &str,
         partition_key: &str,
         row_key: &str,
-    ) -> Result<TableEntry<T>, AzureError>
+    ) -> Result<Option<TableEntry<T>>, AzureError>
     where
         T: Serialize + DeserializeOwned,
     {
@@ -72,9 +72,14 @@ impl TableService {
         let future_response =
             self.request_with_default_header(path, &Method::GET, None, false, |_| {})?;
         let (headers, body) =
-            check_status_extract_headers_and_body(future_response, StatusCode::OK).await?;
+            match check_status_extract_headers_and_body(future_response, StatusCode::OK).await {
+                Err(AzureError::UnexpectedHTTPResult(e)) if e.status_code() == 404 => {
+                    return Ok(None)
+                }
+                x => x,
+            }?;
 
-        TableEntry::try_from((&headers, &body as &[u8]))
+        TableEntry::try_from((&headers, &body as &[u8])).map(|entry| Some(entry))
     }
 
     pub async fn query_entries<T>(
@@ -201,13 +206,13 @@ impl TableService {
         self.stream_query_entries_metadata(table_name, query, true)
     }
 
-    pub async fn insert_entry<'a, T>(
+    pub async fn insert_entry<T>(
         &self,
         table_name: &str,
-        entry: &'a TableEntry<T>,
-    ) -> Result<(), AzureError>
+        entry: TableEntry<T>,
+    ) -> Result<TableEntry<T>, AzureError>
     where
-        T: Serialize + DeserializeOwned + 'a,
+        T: Serialize + DeserializeOwned,
     {
         let obj_ser = serde_json::to_string(&entry)?.to_owned();
 
@@ -219,17 +224,18 @@ impl TableService {
             |_| {},
         )?;
 
-        check_status_extract_body(future_response, StatusCode::CREATED).await?;
-        Ok(())
+        let (headers, body) =
+            check_status_extract_headers_and_body(future_response, StatusCode::CREATED).await?;
+        TableEntry::try_from((&headers, &body as &[u8]))
     }
 
-    pub async fn update_entry<'a, T>(
+    pub async fn update_entry<T>(
         &self,
         table_name: &str,
-        entry: &'a TableEntry<T>,
-    ) -> Result<(), AzureError>
+        mut entry: TableEntry<T>,
+    ) -> Result<TableEntry<T>, AzureError>
     where
-        T: Serialize + DeserializeOwned + 'a,
+        T: Serialize + DeserializeOwned,
     {
         let obj_ser = serde_json::to_string(&entry)?.to_owned();
         let path = &entry_path(table_name, &entry.partition_key, &entry.row_key);
@@ -250,31 +256,38 @@ impl TableService {
                 headers.append(header::IF_MATCH, etag.parse().unwrap());
             },
         )?;
-        let (headers, body) =
+
+        let (headers, _body) =
             check_status_extract_headers_and_body(future_response, StatusCode::NO_CONTENT).await?;
 
-        debug!("response headers == {:?}", headers);
-        debug!("response body == {:?}", body);
-
-        Ok(())
+        // inject etag if present
+        entry.etag = match headers.get(header::ETAG) {
+            Some(etag) => Some(etag.to_str()?.to_owned()),
+            None => None,
+        };
+        Ok(entry)
     }
 
-    pub async fn delete_entry<'a, T>(
+    pub async fn delete_entry<'a>(
         &self,
         table_name: &str,
-        entry: &'a TableEntry<T>,
-    ) -> Result<(), AzureError>
-    where
-        T: Serialize + DeserializeOwned,
-    {
-        let path = &entry_path(table_name, &entry.partition_key, &entry.row_key);
+        partition_key: &'a str,
+        row_key: &'a str,
+        etag: Option<&'a str>,
+    ) -> Result<(), AzureError> {
+        let path = &entry_path(table_name, partition_key, row_key);
+
+        let etag = match etag {
+            Some(ref etag) => etag,
+            None => "*",
+        };
 
         let future_response = self.request(path, &Method::DELETE, None, |ref mut request| {
             request.header(
                 header::ACCEPT,
                 HeaderValue::from_static(get_json_mime_nometadata()),
             );
-            request.header(header::IF_MATCH, header::HeaderValue::from_static("*"));
+            request.header(header::IF_MATCH, etag);
         })?;
         check_status_extract_body(future_response, StatusCode::NO_CONTENT).await?;
         Ok(())
@@ -389,15 +402,19 @@ impl TableStorage {
         }
     }
 
-    pub async fn create_table(&self) -> Result<(), AzureError> {
+    pub async fn create(&self) -> Result<(), AzureError> {
         self.service.create_table(self.table_name.clone()).await
+    }
+
+    pub async fn create_if_not_exists(&self) -> Result<(), AzureError> {
+        self.create().await.or_else(ignore_409)
     }
 
     pub async fn get_entry<T: DeserializeOwned>(
         &self,
         partition_key: &str,
         row_key: &str,
-    ) -> Result<TableEntry<T>, AzureError>
+    ) -> Result<Option<TableEntry<T>>, AzureError>
     where
         T: Serialize + DeserializeOwned,
     {
@@ -437,27 +454,31 @@ impl TableStorage {
             .stream_query_entries_fullmetadata(&self.table_name, query)
     }
 
-    pub async fn insert_entry<'a, T>(&self, entry: &'a TableEntry<T>) -> Result<(), AzureError>
+    pub async fn insert_entry<T>(&self, entry: TableEntry<T>) -> Result<TableEntry<T>, AzureError>
     where
-        T: Serialize + DeserializeOwned + 'a,
+        T: Serialize + DeserializeOwned,
     {
         self.service
             .insert_entry::<T>(&self.table_name, entry)
             .await
     }
 
-    pub async fn update_entry<T>(&self, entry: &TableEntry<T>) -> Result<(), AzureError>
+    pub async fn update_entry<T>(&self, entry: TableEntry<T>) -> Result<TableEntry<T>, AzureError>
     where
         T: Serialize + DeserializeOwned,
     {
         self.service.update_entry(&self.table_name, entry).await
     }
 
-    pub async fn delete_entry<'a, T>(&self, entry: &'a TableEntry<T>) -> Result<(), AzureError>
-    where
-        T: Serialize + DeserializeOwned,
-    {
-        self.service.delete_entry(&self.table_name, entry).await
+    pub async fn delete_entry<'a>(
+        &self,
+        partition_key: &'a str,
+        row_key: &'a str,
+        etag: Option<&'a str>,
+    ) -> Result<(), AzureError> {
+        self.service
+            .delete_entry(&self.table_name, partition_key, row_key, etag)
+            .await
     }
 
     pub async fn batch<T>(
@@ -524,4 +545,12 @@ fn entry_path(table_name: &str, partition_key: &str, row_key: &str) -> String {
 #[inline]
 pub fn get_batch_mime() -> &'static str {
     "multipart/mixed; boundary=batch_a1e9d677-b28b-435e-a89e-87e6a768a431"
+}
+
+#[inline]
+pub fn ignore_409(err: AzureError) -> Result<(), AzureError> {
+    match err {
+        AzureError::UnexpectedHTTPResult(e) if e.status_code() == 409 => Ok(()),
+        e => Err(e),
+    }
 }

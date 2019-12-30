@@ -10,9 +10,13 @@ pub struct TableEntry<T> {
     pub row_key: String,
     #[serde(rename = "PartitionKey")]
     pub partition_key: String,
-    pub etag: Option<String>, // none means etag check is disabled
+
+    // etag is not serialized, it is parsed from the header
+    #[serde(skip_serializing)]
+    pub etag: Option<String>,
+    
     #[serde(flatten)]
-    pub payload: T, // raw, partition key is not included
+    pub payload: T,
 }
 
 impl<T> TableEntry<T>

@@ -39,10 +39,11 @@ async fn main() -> Result<(), Box<dyn Error>> {
         let entries = entries?;
         for entry in entries {
             count += 1;
-            to_table_service
-                .insert_entry(&to_table_name, &entry)
+            println!("before {:?}", entry);
+            let entry = to_table_service
+                .insert_entry(&to_table_name, entry)
                 .await?;
-            println!("{:?}", entry);
+            println!("after {:?}", entry);
         }
     }
     println!(
