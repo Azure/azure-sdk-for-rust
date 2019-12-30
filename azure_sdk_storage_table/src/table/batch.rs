@@ -93,7 +93,7 @@ PUT https://myaccount.table.core.windows.net/Blogs(PartitionKey='Channel_17',Row
 Accept: application/json;odata=nometadata
 Content-Type: application/json
 
-{"RowKey":"3","PartitionKey":"Channel_17","etag":null,"Rating":9,"Text":".NET..."}
+{"RowKey":"3","PartitionKey":"Channel_17","Rating":9,"Text":".NET..."}
 --changeset_8a28b620-b4bb-458c-a177-0959fb14c977
 Content-Type: application/http
 Content-Transfer-Encoding: binary
@@ -102,7 +102,7 @@ PUT https://myaccount.table.core.windows.net/Blogs(PartitionKey='Channel_17',Row
 Accept: application/json;odata=nometadata
 Content-Type: application/json
 
-{"RowKey":"3","PartitionKey":"Channel_17","etag":null,"Rating":9,"Text":"PDC 2008..."}
+{"RowKey":"3","PartitionKey":"Channel_17","Rating":9,"Text":"PDC 2008..."}
 --changeset_8a28b620-b4bb-458c-a177-0959fb14c977
 Content-Type: application/http
 Content-Transfer-Encoding: binary
