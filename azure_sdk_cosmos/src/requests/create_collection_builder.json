@@ -1,0 +1,61 @@
+{
+	"name": "CreateCollectionBuilder",
+	"derive": "Debug, Clone",
+	"uses": [
+			"crate::clients::{CosmosUriBuilder, DatabaseClient, ResourceType}",
+			"crate::collection::{Collection, IndexingPolicy, PartitionKey}",
+			"crate::prelude::*",
+			"crate::collection::CollectionName",
+			"crate::responses::CreateCollectionResponse",
+			"crate::Offer",
+			"azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError}",
+			"azure_sdk_core::{No, ToAssign, Yes}",
+			"hyper::StatusCode",
+			"std::convert::TryInto",
+			"std::marker::PhantomData"
+	],
+	"extra_types": [ "'a", "CUB" ],
+	"inline": true,
+	"extra_wheres": [ "CUB: CosmosUriBuilder" ],
+	"constructor_fields": [
+		{
+			"name": "database_client",
+			"field_type": "&'a DatabaseClient<'a, CUB>",
+			"trait_get": "DatabaseClientRequired<'a, CUB>"
+		}
+	],
+	"fields": [
+		{
+			"name": "offer",
+			"field_type": "Offer",
+			"builder_type": "OfferSet",
+			"optional": false,
+			"trait_get": "OfferRequired",
+			"trait_set": "OfferSupport"
+		},	
+		{
+			"name": "collection_name",
+			"field_type": "&'a dyn CollectionName",
+			"builder_type": "CollectionNameSet",
+			"optional": false,
+			"trait_get": "CollectionNameRequired<'a>",
+			"trait_set": "CollectionNameSupport<'a>"
+		},
+		{
+			"name": "indexing_policy",
+			"field_type": "&'a IndexingPolicy",
+			"builder_type": "IndexingPolicySet",
+			"optional": false,
+			"trait_get": "IndexingPolicyRequired<'a>",
+			"trait_set": "IndexingPolicySupport<'a>"
+		},
+		{
+			"name": "partition_key",
+			"field_type": "&'a PartitionKey",
+			"builder_type": "PartitionKeySet",
+			"optional": false,
+			"trait_get": "PartitionKeyRequired<'a>",
+			"trait_set": "PartitionKeySupport<'a>"
+		}
+	]
+}

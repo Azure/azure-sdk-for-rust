@@ -1,6 +1,6 @@
 [package]
 name          = "azure_sdk_cosmos"
-version       = "0.30.0"
+version       = "0.32.0"
 description   = "Rust wrappers around Microsoft Azure REST APIs - Azure Cosmos DB crate"
 readme        = "README.md"
 authors       = ["Francesco Cogno <francesco.cogno@outlook.com>", "Max Gortman <mgortman@microsoft.com>"]
@@ -15,7 +15,7 @@ categories    = ["api-bindings"]
 edition       = "2018"
 
 [dependencies]
-azure_sdk_core           = { path           = "../azure_sdk_core", version = "0.30.0" }
+azure_sdk_core           = { path           = "../azure_sdk_core", version = "0.30.1" }
 ring                     = "0.16"
 md5                      = "0.7"
 RustyXML                 = "0.1"
@@ -31,7 +31,7 @@ hyper                    = { version        = "0.13.0-alpha.4" , features  = ["u
 log                      = "0.4"
 mime                     = "0.3"
 quick-error              = "1.2"
-serde                    = "1.0"
+serde                    = { version = "1.0" }
 serde_derive             = "1.0"
 serde_json               = "1.0"
 serde-xml-rs             = "0.3"
@@ -41,11 +41,13 @@ uuid                     = { version        = "0.8", features              = ["v
 smallvec                 = { version        = "1.0"            , features  = ["serde"] }
 bytes                    = "0.5"
 hyper-rustls             = { version        = "0.19.0-alpha.3" , features  = [] }
+futures                 = "0.3"
 
 [dev-dependencies]
 futures-executor-preview = "0.3.0-alpha.19"
 tokio                    = "0.2.0-alpha.6"
 futures-util             = "0.3.1"
+serde                    = { version = "1.0", features = ["derive"] }
 
 [features]
 test_e2e                 = []

@@ -1,4 +1,5 @@
 #![cfg(all(test, feature = "test_e2e"))]
+use azure_sdk_cosmos::prelude::*;
 
 mod setup;
 
@@ -9,20 +10,35 @@ async fn create_and_delete_database() {
     let client = setup::initialize().unwrap();
 
     // list existing databases and remember their number
-    let databases = client.list_databases().await.unwrap();
-    let database_count_before = databases.len();
+    let databases = client.list_databases().execute().await.unwrap();
+    let database_count_before = databases.databases.len();
 
     // create a new database and check if the number of DBs increased
-    let database = client.create_database(DATABASE_NAME).await.unwrap();
-    let databases = client.list_databases().await.unwrap();
-    assert!(databases.len() == database_count_before + 1);
+    let database = client
+        .create_database()
+        .with_database_name(&DATABASE_NAME)
+        .execute()
+        .await
+        .unwrap();
+    let databases = client.list_databases().execute().await.unwrap();
+    assert!(databases.databases.len() == database_count_before + 1);
 
     // get the previously created database
-    let database_after_get = client.get_database(DATABASE_NAME).await.unwrap();
-    assert!(database.rid == database_after_get.rid);
+    let database_after_get = client
+        .with_database(&DATABASE_NAME)
+        .get_database()
+        .execute()
+        .await
+        .unwrap();
+    assert!(database.database.rid == database_after_get.database.rid);
 
     // delete the database
-    client.delete_database(DATABASE_NAME).await.unwrap();
-    let databases = client.list_databases().await.unwrap();
-    assert!(databases.len() == database_count_before);
+    client
+        .with_database(&DATABASE_NAME)
+        .delete_database()
+        .execute()
+        .await
+        .unwrap();
+    let databases = client.list_databases().execute().await.unwrap();
+    assert!(databases.databases.len() == database_count_before);
 }

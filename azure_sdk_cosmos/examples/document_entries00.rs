@@ -1,35 +1,27 @@
+use azure_sdk_core::modify_conditions::IfMatchCondition;
+use azure_sdk_core::prelude::*;
 use azure_sdk_cosmos::prelude::*;
+use futures_util::stream::StreamExt;
+use std::borrow::Cow;
 use std::error::Error;
 #[macro_use]
 extern crate serde_derive;
 
-// Now we create the same struct twice. The second
-// will be used by the 'get' methods. There must not
-// be references: the struct must own all the data. This
-// is required in order to satisfy DeserializeOwned.
-#[derive(Serialize, Deserialize, Debug)]
+// Now we create a sample struct. The Cow trick
+// allows us to use the same struct for serializing
+// (without having to own the items if not needed) and
+// for deserializing (where owning is required).
+// We do not need to define the "id" field here, it will be
+// specified in the Document struct below.
+#[derive(Serialize, Deserialize, Clone, Debug)]
 struct MySampleStruct<'a> {
-    id: &'a str,
-    a_string: &'a str,
-    a_number: u64,
-    a_timestamp: i64,
-}
-
-// Shadow struct. See above. Of course
-// you do not need both if your starting
-// struct owns all its data.
-#[derive(Serialize, Deserialize, Debug)]
-struct MySampleStructOwned {
-    id: String,
-    a_string: String,
+    a_string: Cow<'a, str>,
     a_number: u64,
     a_timestamp: i64,
 }
 
 // This example expects you to have created a collection
-// with partitionKey on "id". This SDK works with
-// unpartitioned collections too but this example,
-// for simplicity sake, does not :)
+// with partitionKey on "id".
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     let database_name = std::env::args()
@@ -46,30 +38,35 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let authorization_token = AuthorizationToken::new(account, TokenType::Master, &master_key)?;
 
     let client = ClientBuilder::new(authorization_token)?;
+    let client = client.with_database(&database_name);
+    let client = client.with_collection(&collection_name);
 
     for i in 0u64..5 {
-        let doc = MySampleStructOwned {
-            id: format!("unique_id{}", i),
-            a_string: "Something here".to_owned(),
-            a_number: i,
-            a_timestamp: chrono::Utc::now().timestamp(),
-        };
+        let doc = Document::new(
+            format!("unique_id{}", i),
+            MySampleStruct {
+                a_string: Cow::Borrowed("Something here"),
+                a_number: i,
+                a_timestamp: chrono::Utc::now().timestamp(),
+            },
+        );
 
         // let's add an entity.
         client
-            .create_document(&database_name, &collection_name, &doc)
-            .partition_key(doc.id)
+            .create_document()
+            .with_document(&doc)
+            .with_partition_keys(PartitionKeys::new().push(doc.document_attributes.id())?)
             .execute()
             .await?;
     }
 
     println!("Created 5 documents.");
 
-    // let's get 3 entries at a time
+    // Let's get 3 entries at a time.
     let response = client
-        .list_documents(&database_name, &collection_name)
-        .max_item_count(3u64)
-        .execute::<MySampleStructOwned>()
+        .list_documents()
+        .with_max_item_count(3)
+        .execute::<MySampleStruct>()
         .await?;
 
     assert_eq!(response.documents.len(), 3);
@@ -86,9 +83,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
     println!("ct == {}", ct);
 
     let response = client
-        .list_documents(&database_name, &collection_name)
-        .continuation_token(ct)
-        .execute::<MySampleStructOwned>()
+        .list_documents()
+        .with_continuation(&ct)
+        .execute::<MySampleStruct>()
         .await?;
 
     assert_eq!(response.documents.len(), 2);
@@ -101,47 +98,75 @@ async fn main() -> Result<(), Box<dyn Error>> {
         false
     );
 
+    // we can have Rust pass the continuation_token for
+    // us if we call the stream function. Here we
+    // ask for 3 items at the time but of course you don't have to do that, the
+    // stream function will work regardless of the limits imposed.
+    println!("\nStreaming documents");
+    let stream = client.list_documents().with_max_item_count(3);
+    let mut stream = Box::pin(stream.stream::<MySampleStruct>());
+    // TODO: As soon as the streaming functionality is completed
+    // in Rust substitute this while let Some... into
+    // for each (or whatever the Rust team picks).
+    while let Some(res) = stream.next().await {
+        let res = res?;
+        println!("Received {} documents in one batch!", res.documents.len());
+    }
+
     println!("\n\nLooking for a specific item");
     let id = format!("unique_id{}", 3);
 
     let response = client
-        .get_document(&database_name, &collection_name, &id)
-        .partition_key(id.clone())
-        .execute::<MySampleStructOwned>()
+        .with_document(&id)
+        .get_document()
+        .with_partition_keys(PartitionKeys::new().push(&id)?)
+        .execute::<MySampleStruct>()
         .await?;
 
     assert_eq!(response.document.is_some(), true);
     println!("response == {:#?}", response);
-    let mut doc = response.document.unwrap();
-    doc.entity.a_string = "Something else here".into();
+    let mut doc = response.clone().document.unwrap();
+    doc.document.a_string = "Something else here".into();
 
     let etag = doc.document_attributes.etag().to_owned();
 
-    let _response = client
-        .replace_document(&database_name, &collection_name, &doc)
-        .partition_key(id)
-        .if_match(etag) // use optimistic concurrency check
+    println!("\n\nReplacing document");
+    let replace_document_response = client
+        .replace_document()
+        .with_document(&doc)
+        .with_partition_keys(PartitionKeys::new().push(&id)?)
+        .with_consistency_level(ConsistencyLevel::from(&response))
+        .with_if_match_condition(IfMatchCondition::Match(&etag)) // use optimistic concurrency check
         .execute()
         .await?;
 
-    // This id should not be found. We expect None as result
+    println!(
+        "replace_document_response == {:#?}",
+        replace_document_response
+    );
+
+    // This id should not be found. We expect None as result and
+    // has_been_found == false
     println!("\n\nLooking for non-existing item");
     let id = format!("unique_id{}", 100);
 
     let response = client
-        .get_document(&database_name, &collection_name, &id)
-        .partition_key(id.clone())
-        .execute::<MySampleStructOwned>()
+        .with_document(&id)
+        .get_document()
+        .with_partition_keys(PartitionKeys::new().push(&id)?)
+        .execute::<MySampleStruct>()
         .await?;
 
     assert_eq!(response.document.is_some(), false);
+    assert_eq!(response.has_been_found, false);
     println!("response == {:#?}", response);
 
     for i in 0u64..5 {
         let id = format!("unique_id{}", i);
         client
-            .delete_document(&database_name, &collection_name, &id)
-            .partition_key(id.clone())
+            .with_document(&id)
+            .delete_document()
+            .with_partition_keys(PartitionKeys::new().push(&id)?)
             .execute()
             .await?;
     }

@@ -2,13 +2,14 @@
 extern crate serde_derive;
 // Using the prelude module of the Cosmos crate makes easier to use the Rust Azure SDK for Cosmos
 // DB.
+use azure_sdk_core::prelude::*;
 use azure_sdk_cosmos::prelude::*;
+use std::borrow::Cow;
 use std::error::Error;
 
 #[derive(Serialize, Deserialize, Debug)]
 struct MySampleStruct<'a> {
-    id: &'a str,
-    a_string: &'a str,
+    a_string: Cow<'a, str>,
     a_number: u64,
     a_timestamp: i64,
 }
@@ -37,7 +38,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     // Next we will create a Cosmos client. You need an authorization_token but you can later
     // change it if needed.
-    let client = ClientBuilder::new(authorization_token)?;
+    let client = ClientBuilder::new(authorization_token.clone())?;
 
     // list_databases will give us the databases available in our account. If there is
     // an error (for example, the given key is not valid) you will receive a
@@ -45,14 +46,23 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // so we chain a filter operation.
     let db = client
         .list_databases()
+        .execute()
         .await?
+        .databases
         .into_iter()
         .find(|db| db.id == DATABASE);
 
     // If the requested database is not found we create it.
     let database = match db {
         Some(db) => db,
-        None => client.create_database(DATABASE).await?,
+        None => {
+            client
+                .create_database()
+                .with_database_name(&DATABASE)
+                .execute()
+                .await?
+                .database
+        }
     };
     println!("database == {:?}", database);
 
@@ -60,9 +70,17 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // we will create it. The collection creation is more complex and
     // has many options (such as indexing and so on).
     let collection = {
-        let collections = client.list_collections(&database.id).await?;
+        let collections = client
+            .with_database(&database.id)
+            .list_collections()
+            .execute()
+            .await?;
 
-        if let Some(collection) = collections.into_iter().find(|coll| coll.id == COLLECTION) {
+        if let Some(collection) = collections
+            .collections
+            .into_iter()
+            .find(|coll| coll.id == COLLECTION)
+        {
             collection
         } else {
             let indexes = IncludedPathIndex {
@@ -73,7 +91,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
             let ip = IncludedPath {
                 path: "/*".to_owned(),
-                indexes: vec![indexes],
+                indexes: Some(vec![indexes]),
             };
 
             let ip = IndexingPolicy {
@@ -90,44 +108,111 @@ async fn main() -> Result<(), Box<dyn Error>> {
             // you can also use the predefined performance levels. For example:
             // `Offer::S2`.
             client
-                .create_collection_builder()
-                .with_id(COLLECTION)
-                .with_database_name(&database.id)
+                .with_database(&database.id)
+                .create_collection()
+                .with_collection_name(&COLLECTION)
                 .with_offer(Offer::Throughput(400))
-                .with_indexing_policy(ip)
-                .finalize()
+                .with_indexing_policy(&ip)
+                .with_partition_key(&("/id".into()))
+                .execute()
                 .await?
+                .collection
         }
     };
 
     println!("collection = {:?}", collection);
 
     // Now that we have a database and a collection we can insert
-    // data in them. Let's create a struct. The only constraint
-    // is that the struct should be Serializable.
-    let doc = MySampleStruct {
-        id: "unique_id1",
-        a_string: "Something here",
-        a_number: 100,
-        a_timestamp: chrono::Utc::now().timestamp(),
-    };
+    // data in them. Let's create a Document. The only constraint
+    // is that we need an id and an arbitrary, Serializable type.
+    let doc = Document::new(
+        "unique_id100".to_owned(),
+        MySampleStruct {
+            a_string: Cow::Borrowed("Something here"),
+            a_number: 100,
+            a_timestamp: chrono::Utc::now().timestamp(),
+        },
+    );
 
     // Now we store the struct in Azure Cosmos DB.
     // Notice how easy it is! :)
+    // First we construct a "collection" specific client so we
+    // do not need to specify it over and over.
+    let database_client = client.with_database(&database.id);
+    let collection_client = database_client.with_collection(&collection.id);
+
     // The method create_document will return, upon success,
     // the document attributes.
-    let document_attributes = client
-        .create_document(&database.id, &collection.id, &doc)
+    let create_document_response = collection_client
+        .create_document()
+        .with_document(&doc)
+        .with_partition_keys(&(&doc.document_attributes.id).into())
         .execute()
         .await?;
-    println!("document_attributes == {:?}", document_attributes);
+    println!(
+        "create_document_response == {:#?}",
+        create_document_response
+    );
+
+    // Now we list all the documents in our collection. It
+    // should show we have 1 document.
+    println!("Listing documents...");
+    let list_documents_response = collection_client
+        .list_documents()
+        .execute::<MySampleStruct>()
+        .await?;
+    println!(
+        "list_documents_response contains {} documents",
+        list_documents_response.documents.len()
+    );
+
+    // Now we get the same document by id.
+    let get_document_response = collection_client
+        .with_document(&doc)
+        .get_document()
+        .with_partition_keys(&(&doc.document_attributes.id).into())
+        .execute::<MySampleStruct>()
+        .await?;
+    println!("get_document_response == {:#?}", get_document_response);
+
+    // The document can be no longer there so the result is
+    // an Option<Document<T>>
+    if let Some(document) = get_document_response.document {
+        // Now, for the sake of experimentation, we will update (replace) the
+        // document created. We do this only if the original document has not been
+        // modified in the meantime. This is called optimistic concurrency.
+        // In order to do so, we pass to this replace_document call
+        // the etag received in the previous get_document. The etag is an opaque value that
+        // changes every time the document is updated. If the passed etag is different in
+        // CosmosDB it means something else updated the document before us!
+        let replace_document_response = collection_client
+            .replace_document()
+            .with_document(&doc)
+            .with_partition_keys(&(&doc.document_attributes.id).into())
+            .with_if_match_condition(IfMatchCondition::Match(&document.document_attributes.etag))
+            .execute()
+            .await?;
+        println!(
+            "replace_document_response == {:#?}",
+            replace_document_response
+        );
+    }
 
     // We will perform some cleanup. First we delete the collection...
-    client.delete_collection(DATABASE, COLLECTION).await?;
+    client
+        .with_database(&DATABASE)
+        .with_collection(&COLLECTION)
+        .delete_collection()
+        .execute()
+        .await?;
     println!("collection deleted");
 
     // And then we delete the database.
-    client.delete_database(DATABASE).await?;
+    client
+        .with_database(&database.id)
+        .delete_database()
+        .execute()
+        .await?;
     println!("database deleted");
 
     Ok(())

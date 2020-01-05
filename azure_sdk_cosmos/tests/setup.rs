@@ -1,5 +1,6 @@
 use azure_sdk_core::errors::AzureError;
-use azure_sdk_cosmos::{AuthorizationToken, Client, ClientBuilder, CosmosUriBuilder, TokenType};
+use azure_sdk_cosmos::clients::{Client, ClientBuilder, CosmosUriBuilder};
+use azure_sdk_cosmos::{AuthorizationToken, TokenType};
 
 pub fn initialize() -> Result<Client<impl CosmosUriBuilder>, AzureError> {
     let account = std::env::var("COSMOS_ACCOUNT").expect("Set env variable COSMOS_ACCOUNT first!");

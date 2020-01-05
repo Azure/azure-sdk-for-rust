@@ -6,8 +6,7 @@
 ///     response.setBody("Hello, " + personToGreet);
 /// }
 use azure_sdk_cosmos::prelude::*;
-#[macro_use]
-extern crate serde_json;
+use azure_sdk_cosmos::stored_procedure::Parameters;
 use std::error::Error;
 
 #[tokio::main]
@@ -28,12 +27,16 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let client = ClientBuilder::new(authorization_token)?;
 
     let ret = client
-        .execute_stored_procedure(database, collection, "test_proc", json!(["Robert"]))
+        .with_database(&database)
+        .with_collection(&collection)
+        .with_stored_procedure(&"test_proc")
+        .execute_stored_procedure()
+        .with_parameters(Parameters::new().push("Robert")?)
         .execute::<serde_json::Value>()
         .await?;
 
     println!("Response object:\n{:#?}", ret);
-    println!("Response as JSON:\n{}", ret.result.to_string());
+    println!("Response as JSON:\n{}", ret.payload.to_string());
 
     Ok(())
 }

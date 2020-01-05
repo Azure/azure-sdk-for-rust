@@ -1,0 +1,26 @@
+{
+	"name": "DeleteCollectionBuilder",
+	"derive": "Debug, Clone",
+	"uses": [
+		"use crate::client2::CosmosUriBuilder",
+		"crate::responses::DeleteCollectionResponse",
+		"crate::CollectionBuilderTrait",
+		"crate::CollectionClient",
+		"crate::CollectionClientRequired",
+		"azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError}",
+		"hyper::StatusCode",
+		"std::convert::TryInto"
+	],
+	"inline": true,
+	"extra_types": [ "'a", "CUB" ],
+	"extra_wheres": ["CUB: CosmosUriBuilder" ],
+	"constructor_fields": [
+		{
+			"name": "collection_client",
+			"field_type": "&'a CollectionClient<'a, CUB>",
+			"trait_get": "CollectionClientRequired<'a, CUB>"
+		}
+	],
+	"fields": [
+	]
+}

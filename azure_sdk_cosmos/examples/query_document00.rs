@@ -1,7 +1,9 @@
 use azure_sdk_cosmos::prelude::*;
+use azure_sdk_cosmos::responses::QueryDocumentsResponse;
 use std::error::Error;
 #[macro_use]
 extern crate serde_derive;
+use azure_sdk_cosmos::Query;
 
 #[derive(Serialize, Deserialize, Debug)]
 struct MySampleStructOwned {
@@ -9,6 +11,14 @@ struct MySampleStructOwned {
     a_string: String,
     a_number: u64,
     a_timestamp: i64,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+struct MySecondSampleStructOwned {
+    id: String,
+    color: String,
+    #[serde(rename = "myvalue")]
+    my_value: String,
 }
 
 #[tokio::main]
@@ -30,74 +40,96 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let authorization_token = AuthorizationToken::new(account, TokenType::Master, &master_key)?;
 
     let client = ClientBuilder::new(authorization_token)?;
+    let client = client.with_database(&database_name);
+    let client = client.with_collection(&collection_name);
 
-    let ret = client
-        .query_documents(
-            &database_name,
-            &collection_name,
-            Query::from(query.as_ref()),
-        )
-        .execute_json()
+    let query_obj = Query::new(&query);
+    let respo: QueryDocumentsResponse<MySecondSampleStructOwned> = client
+        .query_documents()
+        .with_query(&query_obj)
+        .with_query_cross_partition(true)
+        .with_parallelize_cross_partition_query(true)
+        .with_max_item_count(2)
+        .execute()
         .await?;
+    println!("as items == {:?}", respo);
 
-    println!("As JSON:\n{:?}", ret);
-
-    for doc in ret.results {
-        println!("{}", doc.result);
-    }
-
-    let ret = client
-        .query_documents(
-            &database_name,
-            &collection_name,
-            Query::from(query.as_ref()),
-        )
-        .execute::<MySampleStructOwned>()
+    let respo: QueryDocumentsResponse<serde_json::Value> = client
+        .query_documents()
+        .with_query(&query_obj)
+        .with_query_cross_partition(true)
+        .with_max_item_count(3)
+        .execute()
         .await?;
+    println!("as json == {:?}", respo);
 
-    println!("\nAs entities:\n{:?}", ret);
+    //let ret = client
+    //    .query_documents(
+    //        &database_name,
+    //        &collection_name,
+    //        Query::from(query.as_ref()),
+    //    )
+    //    .execute_json()
+    //    .await?;
 
-    for doc in ret.results {
-        println!("{:?}", doc);
-    }
+    //println!("As JSON:\n{:?}", ret);
 
-    // test continuation token
-    // only if we have more than 2 records
-    let ret = client
-        .query_documents(
-            &database_name,
-            &collection_name,
-            Query::from(query.as_ref()),
-        )
-        .max_item_count(2u64)
-        .execute::<MySampleStructOwned>()
-        .await?;
+    //for doc in ret.results {
+    //    println!("{}", doc.result);
+    //}
 
-    println!(
-        "Received {} entries. Continuation token is == {:?}",
-        ret.results.len(),
-        ret.additional_headers.continuation_token
-    );
+    //let ret = client
+    //    .query_documents(
+    //        &database_name,
+    //        &collection_name,
+    //        Query::from(query.as_ref()),
+    //    )
+    //    .execute::<MySampleStructOwned>()
+    //    .await?;
 
-    if let Some(ct) = ret.additional_headers.continuation_token {
-        let ret = {
-            // if we have more, let's get them
-            client
-                .query_documents(
-                    &database_name,
-                    &collection_name,
-                    Query::from(query.as_ref()),
-                )
-                .continuation_token(ct)
-                .execute::<MySampleStructOwned>()
-                .await?
-        };
-        println!(
-            "Received {} entries. Continuation token is == {:?}",
-            ret.results.len(),
-            ret.additional_headers.continuation_token
-        );
-    }
+    //println!("\nAs entities:\n{:?}", ret);
+
+    //for doc in ret.results {
+    //    println!("{:?}", doc);
+    //}
+
+    //// test continuation token
+    //// only if we have more than 2 records
+    //let ret = client
+    //    .query_documents(
+    //        &database_name,
+    //        &collection_name,
+    //        Query::from(query.as_ref()),
+    //    )
+    //    .max_item_count(2u64)
+    //    .execute::<MySampleStructOwned>()
+    //    .await?;
+
+    //println!(
+    //    "Received {} entries. Continuation token is == {:?}",
+    //    ret.results.len(),
+    //    ret.additional_headers.continuation_token
+    //);
+
+    //if let Some(ct) = ret.additional_headers.continuation_token {
+    //    let ret = {
+    //        // if we have more, let's get them
+    //        client
+    //            .query_documents(
+    //                &database_name,
+    //                &collection_name,
+    //                Query::from(query.as_ref()),
+    //            )
+    //            .continuation_token(ct)
+    //            .execute::<MySampleStructOwned>()
+    //            .await?
+    //    };
+    //    println!(
+    //        "Received {} entries. Continuation token is == {:?}",
+    //        ret.results.len(),
+    //        ret.additional_headers.continuation_token
+    //    );
+    //}
 
     Ok(())
 }
