@@ -1,6 +1,7 @@
 mod create_collection_builder;
 mod create_database_builder;
 mod create_document_builder;
+mod create_user_builder;
 mod delete_collection_builder;
 mod delete_database_builder;
 mod delete_document_builder;
@@ -17,6 +18,7 @@ mod replace_document_builder;
 pub use self::create_collection_builder::CreateCollectionBuilder;
 pub use self::create_database_builder::CreateDatabaseBuilder;
 pub use self::create_document_builder::CreateDocumentBuilder;
+pub use self::create_user_builder::CreateUserBuilder;
 pub use self::delete_collection_builder::DeleteCollectionBuilder;
 pub use self::delete_database_builder::DeleteDatabaseBuilder;
 pub use self::delete_document_builder::DeleteDocumentBuilder;
