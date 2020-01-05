@@ -5,15 +5,15 @@
 
 [![Build Status](https://travis-ci.org/MindFlavor/AzureSDKForRust.svg?branch=master)](https://travis-ci.org/MindFlavor/AzureSDKForRust) [![Coverage Status](https://coveralls.io/repos/MindFlavor/AzureSDKForRust/badge.svg?branch=master&service=github)](https://coveralls.io/github/MindFlavor/AzureSDKForRust?branch=master) ![stability-unstable](https://img.shields.io/badge/stability-unstable-yellow.svg)
 
-[![tag](https://img.shields.io/github/tag/mindflavor/AzureSDKForRust.svg)](https://github.com/MindFlavor/AzureSDKForRust/tree/table_0.31.0) [![release](https://img.shields.io/github/release/mindflavor/AzureSDKForRust.svg)](https://github.com/MindFlavor/AzureSDKForRust/releases/tag/table_0.31.0) [![commitssince](https://img.shields.io/github/commits-since/mindflavor/AzureSDKForRust/table_0.31.0.svg)](https://github.com/MindFlavor/AzureSDKForRust/commits/master)
+[![tag](https://img.shields.io/github/tag/mindflavor/AzureSDKForRust.svg)](https://github.com/MindFlavor/AzureSDKForRust/tree/cosmos_0.32.0) [![release](https://img.shields.io/github/release/mindflavor/AzureSDKForRust.svg)](https://github.com/MindFlavor/AzureSDKForRust/releases/tag/cosmos_0.32.0) [![commitssince](https://img.shields.io/github/commits-since/mindflavor/AzureSDKForRust/cosmos_0.32.0.svg)](https://github.com/MindFlavor/AzureSDKForRust/commits/master)
 
 [![GitHub contributors](https://img.shields.io/github/contributors/MindFlavor/AzureSDKForRust.svg)](https://github.com/MindFlavor/AzureSDKForRust/graphs/contributors)
 
 Crate | Docs | Crates.io | Downloads | Downloads@Latest |
 -- | -- | -- | -- | -- |
 [azure_sdk_auth_aad](https://github.com/MindFlavor/AzureSDKForRust/tree/master/azure_sdk_auth_aad) | [![docs](https://docs.rs/azure_sdk_auth_aad/badge.svg)](https://docs.rs/azure_sdk_auth_aad/0.30.0/azure_sdk_auth_aad) | [![Crate](https://img.shields.io/crates/v/azure_sdk_auth_aad.svg)](https://crates.io/crates/azure_sdk_auth_aad) | [![cratedown](https://img.shields.io/crates/d/azure_sdk_auth_aad.svg)](https://crates.io/crates/azure_sdk_auth_aad) | [![cratelastdown](https://img.shields.io/crates/dv/azure_sdk_auth_aad.svg)](https://crates.io/crates/azure_sdk_auth_aad)
-[azure_sdk_core](https://github.com/MindFlavor/AzureSDKForRust/tree/master/azure_sdk_core) | [![docs](https://docs.rs/azure_sdk_core/badge.svg)](https://docs.rs/azure_sdk_core/0.30.1/azure_sdk_core) | [![Crate](https://img.shields.io/crates/v/azure_sdk_core.svg)](https://crates.io/crates/azure_sdk_core) | [![cratedown](https://img.shields.io/crates/d/azure_sdk_core.svg)](https://crates.io/crates/azure_sdk_core) | [![cratelastdown](https://img.shields.io/crates/dv/azure_sdk_core.svg)](https://crates.io/crates/azure_sdk_core)
-[azure_sdk_cosmos](https://github.com/MindFlavor/AzureSDKForRust/tree/master/azure_sdk_cosmos) | [![docs](https://docs.rs/azure_sdk_cosmos/badge.svg)](https://docs.rs/azure_sdk_cosmos/0.30.0/azure_sdk_cosmos) | [![Crate](https://img.shields.io/crates/v/azure_sdk_cosmos.svg)](https://crates.io/crates/azure_sdk_cosmos) | [![cratedown](https://img.shields.io/crates/d/azure_sdk_cosmos.svg)](https://crates.io/crates/azure_sdk_cosmos) | [![cratelastdown](https://img.shields.io/crates/dv/azure_sdk_cosmos.svg)](https://crates.io/crates/azure_sdk_cosmos)
+[azure_sdk_core](https://github.com/MindFlavor/AzureSDKForRust/tree/master/azure_sdk_core) | [![docs](https://docs.rs/azure_sdk_core/badge.svg)](https://docs.rs/azure_sdk_core/0.30.3/azure_sdk_core) | [![Crate](https://img.shields.io/crates/v/azure_sdk_core.svg)](https://crates.io/crates/azure_sdk_core) | [![cratedown](https://img.shields.io/crates/d/azure_sdk_core.svg)](https://crates.io/crates/azure_sdk_core) | [![cratelastdown](https://img.shields.io/crates/dv/azure_sdk_core.svg)](https://crates.io/crates/azure_sdk_core)
+[azure_sdk_cosmos](https://github.com/MindFlavor/AzureSDKForRust/tree/master/azure_sdk_cosmos) | [![docs](https://docs.rs/azure_sdk_cosmos/badge.svg)](https://docs.rs/azure_sdk_cosmos/0.32.0/azure_sdk_cosmos) | [![Crate](https://img.shields.io/crates/v/azure_sdk_cosmos.svg)](https://crates.io/crates/azure_sdk_cosmos) | [![cratedown](https://img.shields.io/crates/d/azure_sdk_cosmos.svg)](https://crates.io/crates/azure_sdk_cosmos) | [![cratelastdown](https://img.shields.io/crates/dv/azure_sdk_cosmos.svg)](https://crates.io/crates/azure_sdk_cosmos)
 [azure_sdk_service_bus](https://github.com/MindFlavor/AzureSDKForRust/tree/master/azure_sdk_service_bus) | [![docs](https://docs.rs/azure_sdk_service_bus/badge.svg)](https://docs.rs/azure_sdk_service_bus/0.30.0/azure_sdk_service_bus) | [![Crate](https://img.shields.io/crates/v/azure_sdk_service_bus.svg)](https://crates.io/crates/azure_sdk_service_bus) | [![cratedown](https://img.shields.io/crates/d/azure_sdk_service_bus.svg)](https://crates.io/crates/azure_sdk_service_bus) | [![cratelastdown](https://img.shields.io/crates/dv/azure_sdk_service_bus.svg)](https://crates.io/crates/azure_sdk_service_bus)
 [azure_sdk_storage_account](https://github.com/MindFlavor/AzureSDKForRust/tree/master/azure_sdk_storage_account) | [![docs](https://docs.rs/azure_sdk_storage_account/badge.svg)](https://docs.rs/azure_sdk_storage_account/0.30.0/azure_sdk_storage_account) | [![Crate](https://img.shields.io/crates/v/azure_sdk_storage_account.svg)](https://crates.io/crates/azure_sdk_storage_account) | [![cratedown](https://img.shields.io/crates/d/azure_sdk_storage_account.svg)](https://crates.io/crates/azure_sdk_storage_account) | [![cratelastdown](https://img.shields.io/crates/dv/azure_sdk_storage_account.svg)](https://crates.io/crates/azure_sdk_storage_account)
 [azure_sdk_storage_blob](https://github.com/MindFlavor/AzureSDKForRust/tree/master/azure_sdk_storage_blob) | [![docs](https://docs.rs/azure_sdk_storage_blob/badge.svg)](https://docs.rs/azure_sdk_storage_blob/0.30.0/azure_sdk_storage_blob) | [![Crate](https://img.shields.io/crates/v/azure_sdk_storage_blob.svg)](https://crates.io/crates/azure_sdk_storage_blob) | [![cratedown](https://img.shields.io/crates/d/azure_sdk_storage_blob.svg)](https://crates.io/crates/azure_sdk_storage_blob) | [![cratelastdown](https://img.shields.io/crates/dv/azure_sdk_storage_blob.svg)](https://crates.io/crates/azure_sdk_storage_blob)
@@ -53,26 +53,28 @@ You can find examples in the [```examples```](https://github.com/MindFlavor/Azur
 extern crate serde_derive;
 // Using the prelude module of the Cosmos crate makes easier to use the Rust Azure SDK for Cosmos
 // DB.
+use azure_sdk_core::prelude::*;
 use azure_sdk_cosmos::prelude::*;
+use futures_util::stream::StreamExt;
+use std::borrow::Cow;
 use std::error::Error;
 
+// This is the stuct we want to use in our sample.
+// Make sure to have a collection with partition key "a_number" for this example to
+// work (you can create with this SDK too, check the examples folder for that task).
 #[derive(Serialize, Deserialize, Debug)]
 struct MySampleStruct<'a> {
-    id: &'a str,
-    a_string: &'a str,
+    a_string: Cow<'a, str>,
     a_number: u64,
     a_timestamp: i64,
 }
 
-const DATABASE: &str = "azuresdktestdb";
-const COLLECTION: &str = "azuresdktc";
-
 // This code will perform these tasks:
-// 1. Find an Azure Cosmos DB called *DATABASE*. If it does not exist, create it.
-// 2. Find an Azure Cosmos collection called *COLLECTION* in *DATABASE*.
-//      If it does not exist, create it.
-// 3. Store an entry in collection *COLLECTION* of database *DATABASE*.
-// 4. Delete everything.
+// 1. Create 10 documents in the collection.
+// 2. Stream all the documents.
+// 3. Query the documents.
+// 4. Delete the documents returned by task 4.
+// 5. Check the remaining documents.
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     // Let's get Cosmos account and master key from env variables.
@@ -81,105 +83,107 @@ async fn main() -> Result<(), Box<dyn Error>> {
         std::env::var("COSMOS_MASTER_KEY").expect("Set env variable COSMOS_MASTER_KEY first!");
     let account = std::env::var("COSMOS_ACCOUNT").expect("Set env variable COSMOS_ACCOUNT first!");
 
+    let database_name = std::env::args()
+        .nth(1)
+        .expect("please specify the database name as first command line parameter");
+    let collection_name = std::env::args()
+        .nth(2)
+        .expect("please specify the collection name as first command line parameter");
+
     // First, we create an authorization token. There are two types of tokens, master and resource
-    // constrained. Please check the Azure documentation for details. You can change tokens
-    // at will and it's a good practice to raise your privileges only when needed.
+    // constrained. Please check the Azure documentation for details.
     let authorization_token = AuthorizationToken::new(account, TokenType::Master, &master_key)?;
 
-    // Next we will create a Cosmos client. You need an authorization_token but you can later
-    // change it if needed.
-    let client = ClientBuilder::new(authorization_token)?;
+    // Next we will create a Cosmos client.
+    let client = ClientBuilder::new(authorization_token.clone())?;
+    // We know the database so we can obtain a database client.
+    let database_client = client.with_database(&database_name);
+    // We know the collection so we can obtain a collection client.
+    let collection_client = database_client.with_collection(&collection_name);
 
-    // list_databases will give us the databases available in our account. If there is
-    // an error (for example, the given key is not valid) you will receive a
-    // specific AzureError. In this example we will look for a specific database
-    // so we chain a filter operation.
-    let db = client
-        .list_databases()
-        .await?
-        .into_iter()
-        .find(|db| db.id == DATABASE);
+    // TASK 1 - Insert 10 documents
+    println!("Inserting 10 documents...");
+    for i in 0..10 {
+        // define the document.
+        let document_to_insert = Document::new(
+            format!("unique_id{}", i), // this is the primary key, AKA "/id".
+            MySampleStruct {
+                a_string: Cow::Borrowed("Something here"),
+                a_number: i * 100, // this is the partition key
+                a_timestamp: chrono::Utc::now().timestamp(),
+            },
+        );
 
-    // If the requested database is not found we create it.
-    let database = match db {
-        Some(db) => db,
-        None => client.create_database(DATABASE).await?,
-    };
-    println!("database == {:?}", database);
+        // insert it!
+        collection_client
+            .create_document()
+            .with_document(&document_to_insert)
+            .with_partition_keys(PartitionKeys::new().push(&document_to_insert.document.a_number)?)
+            .with_is_upsert(true) // this option will overwrite a preexisting document (if any)
+            .execute()
+            .await?;
+    }
+    // wow that was easy and fast, isn'it? :)
+    println!("Done!");
 
-    // Now we look for a specific collection. If is not already present
-    // we will create it. The collection creation is more complex and
-    // has many options (such as indexing and so on).
-    let collection = {
-        let collections = client.list_collections(&database.id).await?;
+    // TASK 2
+    println!("\nStreaming documents");
+    // we limit the number of documents to 3 for each batch as a demonstration. In practice
+    // you will use a more sensible number (or accept the Azure default).
+    let stream = collection_client.list_documents().with_max_item_count(3);
+    let mut stream = Box::pin(stream.stream::<MySampleStruct>());
+    // TODO: As soon as the streaming functionality is stabilized
+    // in Rust we can substitute this while let Some... into
+    // for each (or whatever the Rust team picks).
+    while let Some(res) = stream.next().await {
+        let res = res?;
+        println!("Received {} documents in one batch!", res.documents.len());
+        res.documents.iter().for_each(|doc| println!("{:#?}", doc));
+    }
 
-        if let Some(collection) = collections.into_iter().find(|coll| coll.id == COLLECTION) {
-            collection
-        } else {
-            let indexes = IncludedPathIndex {
-                kind: KeyKind::Hash,
-                data_type: DataType::String,
-                precision: Some(3),
-            };
-
-            let ip = IncludedPath {
-                path: "/*".to_owned(),
-                indexes: vec![indexes],
-            };
-
-            let ip = IndexingPolicy {
-                automatic: true,
-                indexing_mode: IndexingMode::Consistent,
-                included_paths: vec![ip],
-                excluded_paths: vec![],
-            };
-
-            // Notice here we specify the expected performance level.
-            // Performance levels have price impact. Also, higher
-            // performance levels force you to specify an indexing
-            // strategy. Consult the documentation for more details.
-            // you can also use the predefined performance levels. For example:
-            // `Offer::S2`.
-            client
-                .create_collection_builder()
-                .with_id(COLLECTION)
-                .with_database_name(&database.id)
-                .with_offer(Offer::Throughput(400))
-                .with_indexing_policy(ip)
-                .finalize()
-                .await?
-        }
-    };
-
-    println!("collection = {:?}", collection);
-
-    // Now that we have a database and a collection we can insert
-    // data in them. Let's create a struct. The only constraint
-    // is that the struct should be Serializable.
-    let doc = MySampleStruct {
-        id: "unique_id1",
-        a_string: "Something here",
-        a_number: 100,
-        a_timestamp: chrono::Utc::now().timestamp(),
-    };
-
-    // Now we store the struct in Azure Cosmos DB.
-    // Notice how easy it is! :)
-    // The method create_document will return, upon success,
-    // the document attributes.
-    let document_attributes = client
-        .create_document(&database.id, &collection.id, &doc)
-        .execute()
+    // TASK 3
+    println!("\nQuerying documents");
+    let query_documents_response = collection_client
+        .query_documents()
+        .with_query(&("SELECT * FROM A WHERE A.a_number < 600".into()))
+        .with_query_cross_partition(true) // this will perform a cross partition query! notice how simple it is!
+        .execute::<MySampleStruct>()
         .await?;
-    println!("document_attributes == {:?}", document_attributes);
 
-    // We will perform some cleanup. First we delete the collection...
-    client.delete_collection(DATABASE, COLLECTION).await?;
-    println!("collection deleted");
+    println!(
+        "Received {} documents!",
+        query_documents_response.results.len()
+    );
 
-    // And then we delete the database.
-    client.delete_database(DATABASE).await?;
-    println!("database deleted");
+    query_documents_response
+        .results
+        .iter()
+        .for_each(|document| println!("number ==> {}", document.result.a_number));
+
+    // TASK 4
+    for ref document in query_documents_response.results {
+        println!(
+            "deleting id == {}, a_number == {}.",
+            document.document_attributes.id, document.result.a_number
+        );
+
+        // to spice the delete a little we use optimistic concurreny
+        collection_client
+            .with_document(&document.document_attributes.id)
+            .delete_document()
+            .with_partition_keys(PartitionKeys::new().push(&document.result.a_number)?)
+            .with_if_match_condition((&document.document_attributes).into())
+            .execute()
+            .await?;
+    }
+
+    // TASK 5
+    // Now the list documents should return 4 documents!
+    let list_documents_response = collection_client
+        .list_documents()
+        .execute::<serde_json::Value>() // you can use this if you don't know/care about the return type!
+        .await?;
+    assert_eq!(list_documents_response.documents.len(), 4);
 
     Ok(())
 }
@@ -193,103 +197,6 @@ I generally build for the latest nightly and leave to Travis to check the retroc
 
 ## Contributing
 If you want to contribute please do! No formality required! :wink:. Please note that asking for a pull request you accept to yield your code as per [Apache license, version 2.0](LICENSE).
-
-### Implemented methods
-
-#### Storage Account
-
-| Method           | URL                                                                                                                                                                      | Builder pattern
-| ----             | ---                                                                                                                                                                      | ---
-| Get account information | [https://docs.microsoft.com/en-us/rest/api/storageservices/get-account-information](https://docs.microsoft.com/en-us/rest/api/storageservices/get-account-information)                 | yes
-
-
-
-#### Storage Container
-
-| Method           | URL                                                                                                                                                                      | Builder pattern
-| ----             | ---                                                                                                                                                                      | ---
-| Create container | [https://docs.microsoft.com/en-us/rest/api/storageservices/create-container](https://docs.microsoft.com/en-us/rest/api/storageservices/create-container)                 | yes
-| List containers  | [https://docs.microsoft.com/en-us/rest/api/storageservices/list-containers2](https://docs.microsoft.com/en-us/rest/api/storageservices/list-containers2)                 | yes
-| Delete container | [https://docs.microsoft.com/en-us/rest/api/storageservices/delete-container](https://docs.microsoft.com/en-us/rest/api/storageservices/delete-container)                 | yes
-| Get ACLs         | [https://docs.microsoft.com/en-us/rest/api/storageservices/get-container-acl](https://docs.microsoft.com/en-us/rest/api/storageservices/get-container-acl)               | yes
-| Set ACLs         | [https://docs.microsoft.com/en-us/rest/api/storageservices/set-container-acl](https://docs.microsoft.com/en-us/rest/api/storageservices/set-container-acl)               | yes
-| Get properties   | [https://docs.microsoft.com/en-us/rest/api/storageservices/get-container-properties](https://docs.microsoft.com/en-us/rest/api/storageservices/get-container-properties) | yes
-| Acquire lease    | [https://docs.microsoft.com/en-us/rest/api/storageservices/lease-container](https://docs.microsoft.com/en-us/rest/api/storageservices/lease-container)                   | yes
-| Break lease      | [https://docs.microsoft.com/en-us/rest/api/storageservices/lease-container](https://docs.microsoft.com/en-us/rest/api/storageservices/lease-container)                   | yes
-| Release lease    | [https://docs.microsoft.com/en-us/rest/api/storageservices/lease-container](https://docs.microsoft.com/en-us/rest/api/storageservices/lease-container)                   | yes
-| Renew lease      | [https://docs.microsoft.com/en-us/rest/api/storageservices/lease-container](https://docs.microsoft.com/en-us/rest/api/storageservices/lease-container)                   | yes
-
-#### Storage blobs
-
-| Method             | URL                                                                                                                                                  | Builder pattern
-| ----               | ---                                                                                                                                                  | ---
-| List blobs         | [https://docs.microsoft.com/en-us/rest/api/storageservices/list-blobs](https://docs.microsoft.com/en-us/rest/api/storageservices/list-blobs)         | yes
-| Get blob           | [https://docs.microsoft.com/en-us/rest/api/storageservices/get-blob](https://docs.microsoft.com/en-us/rest/api/storageservices/get-blob)             | yes
-| Put block blob     | [https://docs.microsoft.com/en-us/rest/api/storageservices/put-blob](https://docs.microsoft.com/en-us/rest/api/storageservices/put-blob)             | yes
-| Put page blob      | [https://docs.microsoft.com/en-us/rest/api/storageservices/put-blob](https://docs.microsoft.com/en-us/rest/api/storageservices/put-blob)             | yes
-| Put append blob    | [https://docs.microsoft.com/en-us/rest/api/storageservices/put-blob](https://docs.microsoft.com/en-us/rest/api/storageservices/put-blob)             | yes
-| Put blob page      | [https://docs.microsoft.com/en-us/rest/api/storageservices/put-page](https://docs.microsoft.com/en-us/rest/api/storageservices/put-page)             | yes (as `update_page`)
-| Clear blob page    | [https://docs.microsoft.com/en-us/rest/api/storageservices/put-page](https://docs.microsoft.com/en-us/rest/api/storageservices/put-page)             | yes (as `clear_page`)
-| Put block          | [https://docs.microsoft.com/en-us/rest/api/storageservices/put-block](https://docs.microsoft.com/en-us/rest/api/storageservices/put-block)           | yes
-| Get block list     | [https://docs.microsoft.com/en-us/rest/api/storageservices/get-block-list](https://docs.microsoft.com/en-us/rest/api/storageservices/get-block-list) | yes
-| Put block list     | [https://docs.microsoft.com/en-us/rest/api/storageservices/put-block-list](https://docs.microsoft.com/en-us/rest/api/storageservices/put-block-list) | yes
-| Acquire blob lease | [https://docs.microsoft.com/en-us/rest/api/storageservices/lease-blob](https://docs.microsoft.com/en-us/rest/api/storageservices/lease-blob)         | yes
-| Renew blob lease   | [https://docs.microsoft.com/en-us/rest/api/storageservices/lease-blob](https://docs.microsoft.com/en-us/rest/api/storageservices/lease-blob)         | yes
-| Change blob lease  | [https://docs.microsoft.com/en-us/rest/api/storageservices/lease-blob](https://docs.microsoft.com/en-us/rest/api/storageservices/lease-blob)         | yes
-| Release blob lease | [https://docs.microsoft.com/en-us/rest/api/storageservices/lease-blob](https://docs.microsoft.com/en-us/rest/api/storageservices/lease-blob)         | yes
-| Break blob lease   | [https://docs.microsoft.com/en-us/rest/api/storageservices/lease-blob](https://docs.microsoft.com/en-us/rest/api/storageservices/lease-blob)         | yes
-| Delete blob        | [https://docs.microsoft.com/en-us/rest/api/storageservices/delete-blob](https://docs.microsoft.com/en-us/rest/api/storageservices/delete-blob)       | yes
-
-#### Event Hubs
-
-| Method     | URL                                                                                                                          |
-| ----       | ---                                                                                                                          |
-| Send Event | [https://msdn.microsoft.com/en-us/library/azure/dn790664.aspx](https://msdn.microsoft.com/en-us/library/azure/dn790664.aspx) |
-
-#### Cosmos database
-
-##### Database
-
-| Method          | URL                                                                                                                                                |
-| ----            | ---                                                                                                                                                |
-| Create database | [https://docs.microsoft.com/en-us/rest/api/documentdb/create-a-database](https://docs.microsoft.com/en-us/rest/api/documentdb/create-a-database)   |
-| List database   | [https://docs.microsoft.com/en-us/rest/api/documentdb/list-databases](https://docs.microsoft.com/en-us/rest/api/documentdb/list-databases)         |
-| Get database    | [https://docs.microsoft.com/en-us/rest/api/documentdb/get-a-database](https://docs.microsoft.com/en-us/rest/api/documentdb/get-a-database)         |
-| Delete database | [https://docs.microsoft.com/en-us/rest/api/documentdb/delete-a-database1](https://docs.microsoft.com/en-us/rest/api/documentdb/delete-a-database1) |
-
-##### Collection
-
-| Method             | URL                                                                                                                                                    |
-| ----               | ---                                                                                                                                                    |
-| Create collection  | [https://docs.microsoft.com/en-us/rest/api/documentdb/create-a-collection](https://docs.microsoft.com/en-us/rest/api/documentdb/create-a-collection)   |
-| List collections   | [https://docs.microsoft.com/en-us/rest/api/documentdb/list-collections](https://docs.microsoft.com/en-us/rest/api/documentdb/list-collections)         |
-| Get collection     | [https://docs.microsoft.com/en-us/rest/api/documentdb/get-a-collection](https://docs.microsoft.com/en-us/rest/api/documentdb/get-a-collection)         |
-| Delete collection  | [https://docs.microsoft.com/en-us/rest/api/documentdb/delete-a-collection](https://docs.microsoft.com/en-us/rest/api/documentdb/delete-a-collection)   |
-| Replace collection | [https://docs.microsoft.com/en-us/rest/api/documentdb/replace-a-collection](https://docs.microsoft.com/en-us/rest/api/documentdb/replace-a-collection) |
-
-##### Document
-
-| Method             | URL                                                                                                                                                    |
-| ----               | ---                                                                                                                                                    |
-| Create document    | [https://docs.microsoft.com/en-us/rest/api/documentdb/create-a-document](https://docs.microsoft.com/en-us/rest/api/documentdb/create-a-document)       |
-| List documents     | [https://docs.microsoft.com/en-us/rest/api/documentdb/list-documents](https://docs.microsoft.com/en-us/rest/api/documentdb/list-documents)             |
-| Get document       | [https://docs.microsoft.com/en-us/rest/api/documentdb/get-a-document](https://docs.microsoft.com/en-us/rest/api/documentdb/get-a-document)             |
-| Query documents    | [https://docs.microsoft.com/en-us/rest/api/documentdb/query-documents](https://docs.microsoft.com/en-us/rest/api/documentdb/query-documents)	      |
-| Replace document   | [https://docs.microsoft.com/en-us/rest/api/cosmos-db/replace-a-document](https://docs.microsoft.com/en-us/rest/api/cosmos-db/replace-a-document)	      |
-| Delete document    | [https://docs.microsoft.com/en-us/rest/api/cosmos-db/delete-a-document](https://docs.microsoft.com/en-us/rest/api/cosmos-db/delete-a-document)	      |
-
-#### Azure tables
-
-| Method         | URL                                                                                                                                                  |
-| ----           | ---                                                                                                                                                  |
-| Create table   | [https://docs.microsoft.com/en-us/rest/api/storageservices/create-table](https://docs.microsoft.com/en-us/rest/api/storageservices/create-table)     |
-| Query tables   | [https://docs.microsoft.com/en-us/rest/api/storageservices/query-tables](https://docs.microsoft.com/en-us/rest/api/storageservices/query-tables)     |
-| Query entities | [https://docs.microsoft.com/en-us/rest/api/storageservices/query-entities](https://docs.microsoft.com/en-us/rest/api/storageservices/query-entities) |
-| Insert entity  | [https://docs.microsoft.com/en-us/rest/api/storageservices/insert-entity](https://docs.microsoft.com/en-us/rest/api/storageservices/insert-entity)   |
-| Update entity  | [https://docs.microsoft.com/en-us/rest/api/storageservices/update-entity2](https://docs.microsoft.com/en-us/rest/api/storageservices/update-entity2) |
-| Delete entity  | [https://docs.microsoft.com/en-us/rest/api/storageservices/delete-entity1](https://docs.microsoft.com/en-us/rest/api/storageservices/delete-entity1) |
-
-Azure tables entities can be manipulated in batches. The entities are serialized in ```JSON```.
 
 ## Run E2E test 
 

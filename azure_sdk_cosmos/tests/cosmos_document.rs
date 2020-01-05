@@ -1,14 +1,17 @@
 #![cfg(all(test, feature = "test_e2e"))]
 #[macro_use]
 extern crate serde_derive;
+use azure_sdk_core::prelude::*;
 use azure_sdk_cosmos::collection::*;
-use azure_sdk_cosmos::query::Query;
+use azure_sdk_cosmos::prelude::*;
 use azure_sdk_cosmos::Offer;
+use azure_sdk_cosmos::Query;
 mod setup;
 
+// the id will be specified in the azure_sdk_cosmos::Document struct
+// ctor.
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
-struct Document {
-    id: String, // required field
+struct MyDocument {
     hello: u32,
 }
 
@@ -20,67 +23,84 @@ async fn create_and_delete_document() {
 
     let client = setup::initialize().unwrap();
 
-    client.create_database(DATABASE_NAME).await.unwrap();
-
-    // create a new collection
-    let collection_to_create = Collection::new(
-        COLLECTION_NAME,
-        IndexingPolicy {
-            automatic: true,
-            indexing_mode: IndexingMode::Consistent,
-            included_paths: vec![],
-            excluded_paths: vec![],
-        },
-    );
     client
-        .create_collection(DATABASE_NAME, Offer::S2, &collection_to_create)
-        .await
-        .unwrap();
-
-    // create a new document
-    let document_data = Document {
-        id: DOCUMENT_NAME.to_string(),
-        hello: 42,
-    };
-    client
-        .create_document(DATABASE_NAME, COLLECTION_NAME, &document_data)
+        .create_database()
+        .with_database_name(&DATABASE_NAME)
         .execute()
         .await
         .unwrap();
-    let documents = client
-        .list_documents(DATABASE_NAME, COLLECTION_NAME)
-        .execute::<Document>()
+
+    let database_client = client.with_database(&DATABASE_NAME);
+
+    // create a new collection
+    let indexing_policy = IndexingPolicy {
+        automatic: true,
+        indexing_mode: IndexingMode::Consistent,
+        included_paths: vec![],
+        excluded_paths: vec![],
+    };
+
+    database_client
+        .create_collection()
+        .with_collection_name(&COLLECTION_NAME)
+        .with_offer(Offer::Throughput(400))
+        .with_partition_key(&("/id".into()))
+        .with_indexing_policy(&indexing_policy)
+        .execute()
+        .await
+        .unwrap();
+
+    let collection_client = database_client.with_collection(&COLLECTION_NAME);
+
+    // create a new document
+    let document_data = Document::new(DOCUMENT_NAME.to_string(), MyDocument { hello: 42 });
+    collection_client
+        .create_document()
+        .with_document(&document_data)
+        .with_partition_keys(&(&document_data.document_attributes.id as &str).into())
+        .execute()
+        .await
+        .unwrap();
+
+    let documents = collection_client
+        .list_documents()
+        .execute::<MyDocument>()
         .await
         .unwrap()
         .documents;
     assert!(documents.len() == 1);
 
     // try to get the contents of the previously created document
-    let document_after_get = client
-        .get_document(DATABASE_NAME, COLLECTION_NAME, DOCUMENT_NAME)
-        .execute::<Document>()
+    let document_client = collection_client.with_document(&DOCUMENT_NAME);
+
+    let document_after_get = document_client
+        .get_document()
+        .with_partition_keys(&DOCUMENT_NAME.into())
+        .execute::<MyDocument>()
         .await
         .unwrap()
         .document
         .expect("No document found!");
 
-    assert_eq!(document_after_get.entity, document_data);
+    assert_eq!(document_after_get.document, document_data.document);
 
     // delete document
-    client
-        .delete_document(DATABASE_NAME, COLLECTION_NAME, DOCUMENT_NAME)
+    document_client
+        .delete_document()
+        .with_partition_keys(&DOCUMENT_NAME.into())
         .execute()
         .await
         .unwrap();
-    let documents = client
-        .list_documents(DATABASE_NAME, COLLECTION_NAME)
-        .execute::<Document>()
+
+    let documents = collection_client
+        .list_documents()
+        .execute::<MyDocument>()
         .await
         .unwrap()
         .documents;
     assert!(documents.len() == 0);
 
-    client.delete_database(DATABASE_NAME).await.unwrap();
+    database_client.delete_database().execute().await.unwrap();
 }
 
 #[tokio::test]
@@ -91,60 +111,148 @@ async fn query_documents() {
 
     let client = setup::initialize().unwrap();
 
-    client.create_database(DATABASE_NAME).await.unwrap();
-
-    // create a new collection
-    let collection_to_create = Collection::new(
-        COLLECTION_NAME,
-        IndexingPolicy {
-            automatic: true,
-            indexing_mode: IndexingMode::Consistent,
-            included_paths: vec![],
-            excluded_paths: vec![],
-        },
-    );
     client
-        .create_collection(DATABASE_NAME, Offer::S2, &collection_to_create)
-        .await
-        .unwrap();
-
-    // create a new document
-    let document_data = Document {
-        id: DOCUMENT_NAME.to_string(),
-        hello: 42,
-    };
-    let document = client
-        .create_document(DATABASE_NAME, COLLECTION_NAME, &document_data)
+        .create_database()
+        .with_database_name(&DATABASE_NAME)
         .execute()
         .await
         .unwrap();
-    let documents = client
-        .list_documents(DATABASE_NAME, COLLECTION_NAME)
-        .execute::<Document>()
+    let database_client = client.with_database(&DATABASE_NAME);
+
+    // create a new collection
+    let indexing_policy = IndexingPolicy {
+        automatic: true,
+        indexing_mode: IndexingMode::Consistent,
+        included_paths: vec![],
+        excluded_paths: vec![],
+    };
+
+    database_client
+        .create_collection()
+        .with_collection_name(&COLLECTION_NAME)
+        .with_offer(Offer::S2)
+        .with_partition_key(&("/id".into()))
+        .with_indexing_policy(&indexing_policy)
+        .execute()
+        .await
+        .unwrap();
+
+    let collection_client = database_client.with_collection(&COLLECTION_NAME);
+
+    // create a new document
+    let document_data = Document::new(DOCUMENT_NAME.to_string(), MyDocument { hello: 42 });
+    collection_client
+        .create_document()
+        .with_partition_keys(&(&document_data.document_attributes.id as &str).into())
+        .with_document(&document_data)
+        .execute()
+        .await
+        .unwrap();
+
+    let documents = collection_client
+        .list_documents()
+        .execute::<MyDocument>()
         .await
         .unwrap()
         .documents;
     assert!(documents.len() == 1);
 
     // now query all documents and see if we get the correct result
-    let query_result = client
-        .query_documents(
-            DATABASE_NAME,
-            COLLECTION_NAME,
-            Query::new("SELECT * FROM c"),
-        )
-        .execute::<Document>()
+    let query_result = collection_client
+        .query_documents()
+        .with_query(&Query::new("SELECT * FROM c"))
+        .with_query_cross_partition(true)
+        .execute::<MyDocument>()
         .await
         .unwrap()
         .results;
 
     assert!(query_result.len() == 1);
-    assert!(query_result[0].document_attributes.as_ref().unwrap().rid() == document.rid());
-    assert_eq!(query_result[0].result, document_data);
+    assert!(query_result[0].document_attributes.rid() == documents[0].document_attributes.rid());
+    assert_eq!(query_result[0].result, document_data.document);
 
-    client.delete_database(DATABASE_NAME).await.unwrap();
+    database_client.delete_database().execute().await.unwrap();
 }
 
 #[tokio::test]
-#[ignore]
-async fn replace_document() {}
+async fn replace_document() {
+    const DATABASE_NAME: &str = "test-cosmos-db-replace-documents";
+    const COLLECTION_NAME: &str = "test-collection-replace-documents";
+    const DOCUMENT_NAME: &str = "test-document-name-replace-documents";
+
+    let client = setup::initialize().unwrap();
+
+    client
+        .create_database()
+        .with_database_name(&DATABASE_NAME)
+        .execute()
+        .await
+        .unwrap();
+    let database_client = client.with_database(&DATABASE_NAME);
+
+    // create a new collection
+    let indexing_policy = IndexingPolicy {
+        automatic: true,
+        indexing_mode: IndexingMode::Consistent,
+        included_paths: vec![],
+        excluded_paths: vec![],
+    };
+
+    database_client
+        .create_collection()
+        .with_collection_name(&COLLECTION_NAME)
+        .with_offer(Offer::S2)
+        .with_partition_key(&("/id".into()))
+        .with_indexing_policy(&indexing_policy)
+        .execute()
+        .await
+        .unwrap();
+
+    let collection_client = database_client.with_collection(&COLLECTION_NAME);
+
+    // create a new document
+    let mut document_data = Document::new(DOCUMENT_NAME.to_string(), MyDocument { hello: 42 });
+    collection_client
+        .create_document()
+        .with_document(&document_data)
+        .with_partition_keys(&(&document_data.document_attributes.id as &str).into())
+        .execute()
+        .await
+        .unwrap();
+
+    let documents = collection_client
+        .list_documents()
+        .execute::<MyDocument>()
+        .await
+        .unwrap();
+    assert!(documents.documents.len() == 1);
+
+    // replace document with optimistic concurrency and session token
+    document_data.document.hello = 190;
+    collection_client
+        .replace_document()
+        .with_document(&document_data)
+        .with_partition_keys(&(&document_data.document_attributes.id as &str).into())
+        .with_consistency_level(ConsistencyLevel::from(&documents))
+        .with_if_match_condition(IfMatchCondition::Match(
+            &documents.documents[0].document_attributes.etag,
+        ))
+        .execute()
+        .await
+        .unwrap();
+
+    // now get the replaced document
+    let document_client = collection_client.with_document(&DOCUMENT_NAME);
+    let document_after_get = document_client
+        .get_document()
+        .with_partition_keys(&DOCUMENT_NAME.into())
+        .execute::<MyDocument>()
+        .await
+        .unwrap()
+        .document
+        .expect("No document found!");
+
+    assert!(document_after_get.document.hello == 190);
+
+    database_client.delete_database().execute().await.unwrap();
+}

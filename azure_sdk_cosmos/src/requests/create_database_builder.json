@@ -1,0 +1,35 @@
+{
+	"name": "CreateDatabaseBuilder",
+	"derive": "Debug, Clone",
+	"uses": [
+		"crate::client2::{Client2, CosmosUriBuilder, ResourceType}",
+		"crate::database::{DatabaseName, Database}",
+		"crate::request_response::{Document, ListCollectionsResponse, ListDatabasesResponse}",
+		"crate::{Client2Required}",
+		"azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError}",
+		"azure_sdk_core::prelude::*",
+		"crate::prelude::*",
+		"hyper::StatusCode",
+		"std::marker::PhantomData",
+		"azure_sdk_core::{Yes,No,ToAssign}"
+	],
+	"extra_types": [ "'a", "CUB", "DB" ],
+	"extra_wheres": ["CUB: CosmosUriBuilder", "DB: DatabaseName" ],
+	"constructor_fields": [
+		{
+			"name": "client",
+			"field_type": "&'a Client2<CUB>",
+			"trait_get": "Client2Required<'a, CUB>"
+		}
+	],
+	"fields": [
+		{
+			"name": "database_name",
+			"field_type": "&'a DB",
+			"builder_type": "DatabaseNameSet",
+			"optional": false,
+			"trait_get": "DatabaseNameRequired<'a, DB>",
+			"trait_set": "DatabaseNameSupport<'a, DB>"
+		}	
+	]
+}

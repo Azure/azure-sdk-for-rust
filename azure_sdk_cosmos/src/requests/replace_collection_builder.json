@@ -1,0 +1,45 @@
+{
+	"name": "ReplaceCollectionBuilder",
+	"derive": "Debug, Clone",
+	"uses": [
+		"crate::clients::{CosmosUriBuilder}",
+		"crate::CollectionBuilderTrait",
+		"crate::collection::{IndexingPolicy}",
+		"crate::CollectionClient",
+		"azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError}",
+		"crate::responses::CreateCollectionResponse",
+		"crate::prelude::*",
+		"crate::collection::PartitionKey",
+		"std::convert::TryInto",
+		"hyper::StatusCode",
+		"std::marker::PhantomData",
+		"azure_sdk_core::{Yes,No,ToAssign}"
+	],
+	"extra_types": [ "'a", "CUB" ],
+	"extra_wheres": [ "CUB: CosmosUriBuilder" ],
+	"constructor_fields": [
+		{
+			"name": "collection_client",
+			"field_type": "&'a CollectionClient<'a, CUB>",
+			"trait_get": "CollectionClientRequired<'a, CUB>"
+		}
+	],
+	"fields": [
+		{
+			"name": "partition_key",
+			"field_type": "&'a PartitionKey",
+			"optional": false,
+			"builder_type": "PartitionKeysSet",
+			"trait_get": "PartitionKeyRequired<'a>",
+			"trait_set": "PartitionKeySupport<'a>"
+		},
+		{
+			"name": "indexing_policy",
+			"field_type": "&'a IndexingPolicy",
+			"builder_type": "IndexingPolicySet",
+			"optional": false,
+			"trait_get": "IndexingPolicyRequired<'a>",
+			"trait_set": "IndexingPolicySupport<'a>"
+		}
+	]
+}

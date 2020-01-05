@@ -38,3 +38,6 @@ pub const ACCOUNT_KIND: &str = "x-ms-account-kind";
 pub const APPEND_POSITION: &str = "x-ms-blob-condition-appendpos";
 pub const CACHE_CONTROL: &str = "x-ms-blob-cache-control";
 pub const CONTENT_DISPOSITION: &str = "x-ms-blob-content-disposition";
+pub const ACTIVITY_ID: &str = "x-ms-activity-id";
+pub const HEADER_CONTINUATION: &str = "x-ms-continuation";
+pub const SESSION_TOKEN: &str = "x-ms-session-token";

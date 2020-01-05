@@ -1,0 +1,24 @@
+{
+	"name": "DeleteDatabaseBuilder",
+	"derive": "Debug, Clone",
+	"uses": [
+		"crate::client2::{CosmosUriBuilder, ResourceType}",
+		"crate::DatabaseTrait",
+		"crate::{DatabaseClient}",
+		"crate::responses::DeleteDatabaseResponse",
+		"azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError}",
+		"crate::prelude::*",
+		"hyper::StatusCode"
+	],
+	"extra_types": [ "'a", "CUB" ],
+	"extra_wheres": ["CUB: CosmosUriBuilder" ],
+	"constructor_fields": [
+		{
+			"name": "database_client",
+			"field_type": "&'a DatabaseClient<'a, CUB>",
+			"trait_get": "DatabaseClientRequired<'a, CUB>"
+		}
+	],
+	"fields": [
+	]
+}

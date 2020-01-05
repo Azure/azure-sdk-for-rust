@@ -38,7 +38,7 @@ quick_error! {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct UnexpectedHTTPResult {
-    expected: StatusCode,
+    expected: Vec<StatusCode>,
     received: StatusCode,
     body: String,
 }
@@ -46,7 +46,19 @@ pub struct UnexpectedHTTPResult {
 impl UnexpectedHTTPResult {
     pub fn new(expected: StatusCode, received: StatusCode, body: &str) -> UnexpectedHTTPResult {
         UnexpectedHTTPResult {
-            expected,
+            expected: vec![expected],
+            received,
+            body: body.to_owned(),
+        }
+    }
+
+    pub fn new_multiple(
+        allowed: Vec<StatusCode>,
+        received: StatusCode,
+        body: &str,
+    ) -> UnexpectedHTTPResult {
+        UnexpectedHTTPResult {
+            expected: allowed,
             received,
             body: body.to_owned(),
         }
@@ -61,7 +73,7 @@ impl std::fmt::Display for UnexpectedHTTPResult {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "Unexpected HTTP result (expected: {}, received: {})",
+            "Unexpected HTTP result (expected: {:?}, received: {:?})",
             self.expected, self.received
         )
     }
@@ -180,6 +192,11 @@ quick_error! {
             display("Parse int error: {}", err)
             cause(err)
         }
+        ParseFloatError(err: std::num::ParseFloatError) {
+            from()
+            display("Parse float error: {}", err)
+            cause(err)
+        }
         ParseError(err: ParseError){
             from()
             display("Parse error")
@@ -237,6 +254,9 @@ quick_error! {
         }
         MissingHeaderError(header: String) {
             display("A required header is missing: {}", header)
+        }
+        MissingValueError(value: String, expected_type: String) {
+            display("An expected JSON node is missing: {} of expected type {}", value, expected_type)
         }
     }
 }
@@ -308,11 +328,11 @@ pub async fn check_status_extract_headers_and_body(
     if status == expected_status_code {
         Ok((headers, body))
     } else {
-        Err(AzureError::UnexpectedHTTPResult(UnexpectedHTTPResult {
-            expected: expected_status_code,
-            received: status,
-            body: str::from_utf8(&body)?.to_owned(),
-        }))
+        Err(AzureError::UnexpectedHTTPResult(UnexpectedHTTPResult::new(
+            expected_status_code,
+            status,
+            str::from_utf8(&body)?,
+        )))
     }
 }
 
@@ -345,11 +365,11 @@ pub async fn check_status_extract_body(
     if status == expected_status_code {
         Ok(body)
     } else {
-        Err(AzureError::UnexpectedHTTPResult(UnexpectedHTTPResult {
-            expected: expected_status_code,
-            received: status,
-            body,
-        }))
+        Err(AzureError::UnexpectedHTTPResult(UnexpectedHTTPResult::new(
+            expected_status_code,
+            status,
+            &body,
+        )))
     }
 }
 
@@ -363,11 +383,11 @@ pub async fn check_status_extract_body_2(
     let s = String::from_utf8(body.to_vec())?;
     debug!("body: {}", s);
     if received_status != expected_status {
-        Err(AzureError::UnexpectedHTTPResult(UnexpectedHTTPResult {
-            expected: expected_status,
-            received: received_status,
-            body: s,
-        }))
+        Err(AzureError::UnexpectedHTTPResult(UnexpectedHTTPResult::new(
+            expected_status,
+            received_status,
+            &s,
+        )))
     } else {
         Ok(s)
     }

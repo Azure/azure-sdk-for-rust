@@ -1,4 +1,4 @@
-#![recursion_limit = "128"]
+#![recursion_limit = "256"]
 #![warn(rust_2018_idioms)]
 
 #[macro_use]
@@ -26,17 +26,19 @@ use std::str::FromStr;
 pub mod headers;
 pub mod range;
 use self::headers::{
-    ACCOUNT_KIND, APPEND_POSITION, BLOB_ACCESS_TIER, BLOB_CONTENT_LENGTH, BLOB_SEQUENCE_NUMBER,
-    CACHE_CONTROL, CLIENT_REQUEST_ID, CONTENT_DISPOSITION, CONTENT_MD5, DELETE_SNAPSHOTS,
-    DELETE_TYPE_PERMANENT, LEASE_BREAK_PERIOD, LEASE_DURATION, LEASE_ID, LEASE_TIME,
-    PROPOSED_LEASE_ID, REQUEST_ID, REQUEST_SERVER_ENCRYPTED, SKU_NAME,
+    ACCOUNT_KIND, ACTIVITY_ID, APPEND_POSITION, BLOB_ACCESS_TIER, BLOB_CONTENT_LENGTH,
+    BLOB_SEQUENCE_NUMBER, CACHE_CONTROL, CLIENT_REQUEST_ID, CONTENT_DISPOSITION, CONTENT_MD5,
+    DELETE_SNAPSHOTS, DELETE_TYPE_PERMANENT, HEADER_CONTINUATION, LEASE_BREAK_PERIOD,
+    LEASE_DURATION, LEASE_ID, LEASE_TIME, PROPOSED_LEASE_ID, REQUEST_ID, REQUEST_SERVER_ENCRYPTED,
+    SESSION_TOKEN, SKU_NAME,
 };
 use hyper::header::{
     HeaderName, CONTENT_ENCODING, CONTENT_LANGUAGE, CONTENT_LENGTH, CONTENT_TYPE, DATE, ETAG,
-    LAST_MODIFIED, RANGE,
+    IF_MODIFIED_SINCE, LAST_MODIFIED, RANGE, USER_AGENT,
 };
 use uuid::Uuid;
 pub type RequestId = Uuid;
+pub type SessionToken = String;
 use crate::errors::{check_status_extract_body_2, AzureError, TraversingError};
 use crate::lease::LeaseId;
 use crate::parsing::FromStringOptional;
@@ -215,6 +217,51 @@ pub trait ContentTypeOption<'a> {
     fn add_header(&self, builder: &mut Builder) {
         if let Some(content_type) = self.content_type() {
             builder.header(CONTENT_TYPE, content_type);
+        }
+    }
+}
+
+pub trait IfModifiedSinceSupport<'a> {
+    type O;
+    fn with_if_modified_since(self, if_modified_since: &'a DateTime<Utc>) -> Self::O;
+}
+
+pub trait IfModifiedSinceOption<'a> {
+    fn if_modified_since(&self) -> Option<&'a DateTime<Utc>>;
+
+    fn add_header(&self, builder: &mut Builder) {
+        if let Some(if_modified_since) = self.if_modified_since() {
+            builder.header(IF_MODIFIED_SINCE, if_modified_since.to_rfc2822());
+        }
+    }
+}
+
+pub trait UserAgentSupport<'a> {
+    type O;
+    fn with_user_agent(self, user_agent: &'a str) -> Self::O;
+}
+
+pub trait UserAgentOption<'a> {
+    fn user_agent(&self) -> Option<&'a str>;
+
+    fn add_header(&self, builder: &mut Builder) {
+        if let Some(user_agent) = self.user_agent() {
+            builder.header(USER_AGENT, user_agent);
+        }
+    }
+}
+
+pub trait ActivityIdSupport<'a> {
+    type O;
+    fn with_activity_id(self, activity_id: &'a str) -> Self::O;
+}
+
+pub trait ActivityIdOption<'a> {
+    fn activity_id(&self) -> Option<&'a str>;
+
+    fn add_header(&self, builder: &mut Builder) {
+        if let Some(activity_id) = self.activity_id() {
+            builder.header(ACTIVITY_ID, activity_id);
         }
     }
 }
@@ -816,6 +863,16 @@ pub fn last_modified_from_headers(headers: &HeaderMap) -> Result<DateTime<Utc>, 
     Ok(last_modified)
 }
 
+pub fn continuation_token_from_headers_optional(
+    headers: &HeaderMap,
+) -> Result<Option<String>, AzureError> {
+    if let Some(hc) = headers.get(HEADER_CONTINUATION) {
+        Ok(Some(hc.to_str()?.to_owned()))
+    } else {
+        Ok(None)
+    }
+}
+
 pub fn date_from_headers(headers: &HeaderMap) -> Result<DateTime<Utc>, AzureError> {
     let date = headers
         .get(DATE)
@@ -905,6 +962,14 @@ pub fn sequence_number_from_headers(headers: &HeaderMap) -> Result<u64, AzureErr
 
     trace!("sequence_number == {:?}", sequence_number);
     Ok(sequence_number)
+}
+
+pub fn session_token_from_headers(headers: &HeaderMap) -> Result<SessionToken, AzureError> {
+    Ok(headers
+        .get(SESSION_TOKEN)
+        .ok_or_else(|| AzureError::HeaderNotFound(SESSION_TOKEN.to_owned()))?
+        .to_str()?
+        .to_owned())
 }
 
 pub fn request_server_encrypted_from_headers(headers: &HeaderMap) -> Result<bool, AzureError> {
