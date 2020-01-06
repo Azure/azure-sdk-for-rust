@@ -7,6 +7,7 @@ use azure_sdk_core::errors::AzureError;
 use log::debug;
 use oauth2::basic::BasicClient;
 use oauth2::reqwest::async_http_client;
+use oauth2::AsyncCodeTokenRequest;
 use oauth2::{
     AuthType, AuthUrl, AuthorizationCode, ClientId, ClientSecret, CsrfToken, PkceCodeChallenge,
     PkceCodeVerifier, RedirectUrl, TokenUrl,
@@ -18,7 +19,6 @@ pub use login_response::*;
 use std::sync::Arc;
 pub mod errors;
 mod naive_server;
-use futures::compat::Future01CompatExt;
 use futures::TryFutureExt;
 pub use naive_server::naive_server;
 use reqwest;
@@ -38,14 +38,14 @@ pub fn authorize_delegate(
     redirect_url: Url,
     resource: &str,
 ) -> AuthObj {
-    let auth_url = AuthUrl::new(
+    let auth_url = AuthUrl::from_url(
         Url::parse(&format!(
             "https://login.microsoftonline.com/{}/oauth2/authorize",
             tenant_id
         ))
         .expect("Invalid authorization endpoint URL"),
     );
-    let token_url = TokenUrl::new(
+    let token_url = TokenUrl::from_url(
         Url::parse(&format!(
             "https://login.microsoftonline.com/{}/oauth2/v2.0/token",
             tenant_id
@@ -58,7 +58,7 @@ pub fn authorize_delegate(
         // Microsoft Graph requires client_id and client_secret in URL rather than
         // using Basic authentication.
         .set_auth_type(AuthType::RequestBody)
-        .set_redirect_url(RedirectUrl::new(redirect_url));
+        .set_redirect_url(RedirectUrl::from_url(redirect_url));
 
     // Microsoft Graph supports Proof Key for Code Exchange (PKCE - https://oauth.net/2/pkce/).
     // Create a PKCE code verifier and SHA-256 encode it as a code challenge.
@@ -85,7 +85,7 @@ pub async fn exchange(
 ) -> Result<
     oauth2::StandardTokenResponse<oauth2::EmptyExtraTokenFields, oauth2::basic::BasicTokenType>,
     oauth2::RequestTokenError<
-        oauth2::reqwest::Error,
+        oauth2::reqwest::Error<reqwest::Error>,
         oauth2::StandardErrorResponse<oauth2::basic::BasicErrorResponseType>,
     >,
 > {
@@ -96,11 +96,10 @@ pub async fn exchange(
         // Send the PKCE code verifier in the token request
         .set_pkce_verifier(auth_obj.pkce_code_verifier)
         .request_async(async_http_client)
-        .compat()
-        .await;
+        .await?;
 
     debug!("MS Graph returned the following token:\n{:?}\n", token);
-    token
+    Ok(token)
 }
 
 pub async fn authorize_non_interactive(
