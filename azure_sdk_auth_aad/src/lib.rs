@@ -129,8 +129,9 @@ pub async fn authorize_non_interactive(
         .header("ContentType", "Application / WwwFormUrlEncoded")
         .body(encoded)
         .send()
-        .await?
+        .await
+        .map_err(|e| AzureError::GenericErrorWithText(e.to_string()))?
         .json::<LoginResponse>()
-        .map_err(|e| AzureError::from(e))
+        .map_err(|e| AzureError::GenericErrorWithText(e.to_string()))
         .await
 }
