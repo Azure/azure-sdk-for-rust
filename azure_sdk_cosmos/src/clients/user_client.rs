@@ -60,4 +60,8 @@ where
     fn replace_user(&self) -> requests::ReplaceUserBuilder<'_, CUB, No> {
         requests::ReplaceUserBuilder::new(self)
     }
+
+    fn delete_user(&self) -> requests::DeleteUserBuilder<'_, CUB> {
+        requests::DeleteUserBuilder::new(self)
+    }
 }

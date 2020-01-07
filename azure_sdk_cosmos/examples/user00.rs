@@ -43,5 +43,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let user_client = database_client.with_user(&new_user);
 
+    let delete_user_response = user_client.delete_user().execute().await?;
+    println!("delete_user_response == {:#?}", delete_user_response);
+
     Ok(())
 }
