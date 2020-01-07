@@ -1,0 +1,25 @@
+{
+	"name": "ListCollectionsBuilder",
+	"derive": "Debug, Clone",
+	"uses": [
+		"crate::client2::{Client2, CosmosUriBuilder, ResourceType}",
+		"crate::database::Database",
+		"crate::DatabaseClient",
+		"crate::request_response::{Document, ListCollectionsResponse, ListDatabasesResponse}",
+		"crate::{DatabaseClientRequired}",
+		"azure_sdk_core::errors::{check_status_extract_body, AzureError}",
+		"azure_sdk_core::prelude::*",
+		"hyper::StatusCode"
+	],
+	"extra_types": [ "'a", "CUB" ],
+	"extra_wheres": ["CUB: CosmosUriBuilder" ],
+	"constructor_fields": [
+		{
+			"name": "database_client",
+			"field_type": "&'a DatabaseClient<'a, CUB>",
+			"trait_get": "DatabaseClientRequired<'a, CUB>"
+		}
+	],
+	"fields": [
+	]
+}

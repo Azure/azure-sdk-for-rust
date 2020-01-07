@@ -7,34 +7,524 @@ extern crate serde_derive;
 extern crate azure_sdk_core;
 
 mod authorization_token;
-mod client;
+pub mod clients;
 pub mod collection;
-mod create_collection_builder;
+mod consistency_level;
 pub mod database;
-pub mod document;
+mod document;
+mod document_attributes;
+mod headers;
+mod indexing_directive;
 pub mod offer;
-mod partition_key;
+mod partition_keys;
 pub mod prelude;
-pub mod query;
-pub mod request_response;
+mod query;
 mod requests;
+pub mod responses;
+pub mod stored_procedure;
+mod to_json_vector;
 
 pub use self::authorization_token::*;
-pub use self::client::*;
+use self::collection::IndexingPolicy;
+pub use self::consistency_level::ConsistencyLevel;
+pub use self::document::{Document, DocumentAdditionalHeaders, DocumentName};
+pub use self::document_attributes::DocumentAttributes;
+pub use self::indexing_directive::IndexingDirective;
 pub use self::offer::Offer;
-pub use self::partition_key::*;
+pub use self::query::{Param, ParamDef, Query};
 pub use self::requests::*;
+use crate::clients::{
+    Client, CollectionClient, CosmosUriBuilder, DatabaseClient, DocumentClient,
+    StoredProcedureClient,
+};
+use crate::collection::Collection;
+use crate::collection::CollectionName;
+use crate::database::DatabaseName;
+use crate::headers::*;
+pub use crate::partition_keys::PartitionKeys;
+use crate::stored_procedure::{Parameters, StoredProcedureName};
+use azure_sdk_core::No;
+use http::request::Builder;
+use serde::Serialize;
 
-use azure_sdk_core::enumerations;
-use azure_sdk_core::errors::TraversingError;
-use azure_sdk_core::parsing::FromStringOptional;
-use std::fmt;
-use std::str::FromStr;
+pub trait ClientRequired<'a, CUB>
+where
+    CUB: CosmosUriBuilder,
+{
+    fn client(&self) -> &'a Client<CUB>;
+}
 
-create_enum!(
-    ConsistencyLevel,
-    (Strong, "Strong"),
-    (Bounded, "Bounded"),
-    (Session, "Session"),
-    (Eventual, "Eventual")
-);
+pub trait DatabaseRequired<'a> {
+    fn database(&self) -> &'a str;
+}
+
+pub trait QueryCrossPartitionSupport {
+    type O;
+    fn with_query_cross_partition(self, query_cross_partition: bool) -> Self::O;
+}
+
+pub trait QueryCrossPartitionOption {
+    fn query_cross_partition(&self) -> bool;
+
+    fn add_header(&self, builder: &mut Builder) {
+        builder.header(
+            HEADER_DOCUMENTDB_QUERY_ENABLECROSSPARTITION,
+            self.query_cross_partition().to_string(),
+        );
+    }
+}
+
+pub trait ParallelizeCrossPartitionQuerySupport {
+    type O;
+    fn with_parallelize_cross_partition_query(
+        self,
+        parallelize_cross_partition_query: bool,
+    ) -> Self::O;
+}
+
+pub trait ParametersOption<'a> {
+    fn parameters(&self) -> Option<&'a Parameters>;
+
+    fn generate_body(&self) -> String {
+        if let Some(parameters) = self.parameters() {
+            parameters.to_json()
+        } else {
+            String::from("[]")
+        }
+    }
+}
+
+pub trait ParametersSupport<'a> {
+    type O;
+    fn with_parameters(self, parameters: &'a Parameters) -> Self::O;
+}
+
+pub trait ParallelizeCrossPartitionQueryOption {
+    fn parallelize_cross_partition_query(&self) -> bool;
+
+    fn add_header(&self, builder: &mut Builder) {
+        builder.header(
+            HEADER_DOCUMENTDB_QUERY_PARALLELIZECROSSPARTITIONQUERY,
+            self.parallelize_cross_partition_query().to_string(),
+        );
+    }
+}
+
+pub trait IsUpsertSupport {
+    type O;
+    fn with_is_upsert(self, is_upsert: bool) -> Self::O;
+}
+
+pub trait IsUpsertOption {
+    fn is_upsert(&self) -> bool;
+
+    fn add_header(&self, builder: &mut Builder) {
+        builder.header(HEADER_DOCUMENTDB_IS_UPSERT, self.is_upsert().to_string());
+    }
+}
+
+pub trait AIMSupport {
+    type O;
+    fn with_a_im(self, a_im: bool) -> Self::O;
+}
+
+pub trait AIMOption {
+    fn a_im(&self) -> bool;
+
+    fn add_header(&self, builder: &mut Builder) {
+        if self.a_im() {
+            builder.header(HEADER_A_IM, "Incremental feed");
+        }
+    }
+}
+
+pub trait AllowTentativeWritesSupport {
+    type O;
+    fn with_allow_tentative_writes(self, allow_tentative_writes: bool) -> Self::O;
+}
+
+pub trait AllowTentativeWritesOption {
+    fn allow_tentative_writes(&self) -> bool;
+
+    fn add_header(&self, builder: &mut Builder) {
+        builder.header(
+            HEADER_ALLOW_MULTIPLE_WRITES,
+            self.allow_tentative_writes().to_string(),
+        );
+    }
+}
+
+pub trait ConsistencyLevelSupport<'a> {
+    type O;
+    fn with_consistency_level(self, consistency_level: ConsistencyLevel<'a>) -> Self::O;
+}
+
+pub trait ConsistencyLevelOption<'a> {
+    fn consistency_level(&self) -> Option<ConsistencyLevel<'a>>;
+
+    fn add_header(&self, builder: &mut Builder) {
+        if let Some(consistency_level) = self.consistency_level() {
+            builder.header(
+                HEADER_CONSISTENCY_LEVEL,
+                consistency_level.to_consistency_level_header(),
+            );
+
+            // if we have a Session consistency level we make sure to pass
+            // the x-ms-session-token header too.
+            if let ConsistencyLevel::Session(session_token) = consistency_level {
+                builder.header(HEADER_SESSION_TOKEN, session_token);
+            }
+        }
+    }
+}
+
+pub trait PartitionRangeIdSupport<'a> {
+    type O;
+    fn with_partition_range_id(self, partition_range_id: &'a str) -> Self::O;
+}
+
+pub trait PartitionRangeIdOption<'a> {
+    fn partition_range_id(&self) -> Option<&'a str>;
+
+    fn add_header(&self, builder: &mut Builder) {
+        if let Some(partition_range_id) = self.partition_range_id() {
+            builder.header(HEADER_DOCUMENTDB_PARTITIONRANGEID, partition_range_id);
+        }
+    }
+}
+
+pub trait ContinuationSupport<'a> {
+    type O;
+    fn with_continuation(self, continuation: &'a str) -> Self::O;
+}
+
+pub trait ContinuationOption<'a> {
+    fn continuation(&self) -> Option<&'a str>;
+
+    fn add_header(&self, builder: &mut Builder) {
+        if let Some(continuation) = self.continuation() {
+            builder.header(HEADER_CONTINUATION, continuation);
+        }
+    }
+}
+
+pub trait IndexingDirectiveSupport {
+    type O;
+    fn with_indexing_directive(self, indexing_directive: IndexingDirective) -> Self::O;
+}
+
+pub trait IndexingDirectiveOption {
+    fn indexing_directive(&self) -> IndexingDirective;
+
+    fn add_header(&self, builder: &mut Builder) {
+        match self.indexing_directive() {
+            IndexingDirective::Default => {} // nothing to do
+            IndexingDirective::Exclude => {
+                builder.header(HEADER_INDEXING_DIRECTIVE, "Exclude");
+            }
+            IndexingDirective::Include => {
+                builder.header(HEADER_INDEXING_DIRECTIVE, "Include");
+            }
+        }
+    }
+}
+
+pub trait MaxItemCountSupport {
+    type O;
+    fn with_max_item_count(self, max_item_count: i32) -> Self::O;
+}
+
+pub trait MaxItemCountOption {
+    fn max_item_count(&self) -> i32;
+
+    fn add_header(&self, builder: &mut Builder) {
+        if self.max_item_count() <= 0 {
+            builder.header(HEADER_MAX_ITEM_COUNT, -1);
+        } else {
+            builder.header(HEADER_MAX_ITEM_COUNT, self.max_item_count());
+        }
+    }
+}
+
+pub trait PartitionKeySupport<'a> {
+    type O;
+    fn with_partition_key(self, partition_key: &'a self::collection::PartitionKey) -> Self::O;
+}
+
+pub trait PartitionKeyOption<'a> {
+    fn partition_key(&self) -> Option<&'a self::collection::PartitionKey>;
+}
+
+pub trait PartitionKeyRequired<'a> {
+    fn partition_key(&self) -> &'a self::collection::PartitionKey;
+}
+
+pub trait PartitionKeysSupport<'a> {
+    type O;
+    fn with_partition_keys(self, partition_keys: &'a PartitionKeys) -> Self::O;
+}
+
+pub trait PartitionKeysRequired<'a> {
+    fn partition_keys(&self) -> &'a PartitionKeys;
+
+    fn add_header(&self, builder: &mut Builder) {
+        let serialized = self.partition_keys().to_json();
+        builder.header(HEADER_DOCUMENTDB_PARTITIONKEY, serialized);
+    }
+}
+
+pub trait PartitionKeysOption<'a> {
+    fn partition_keys(&self) -> Option<&'a PartitionKeys>;
+
+    fn add_header(&self, builder: &mut Builder) {
+        if let Some(partition_keys) = self.partition_keys() {
+            let serialized = partition_keys.to_json();
+            builder.header(HEADER_DOCUMENTDB_PARTITIONKEY, serialized);
+        }
+    }
+}
+
+pub trait DatabaseClientRequired<'a, CUB>
+where
+    CUB: CosmosUriBuilder,
+{
+    fn database_client(&self) -> &'a DatabaseClient<'a, CUB>;
+}
+
+pub trait DatabaseSupport<'a> {
+    type O;
+    fn with_database(self, database: &'a str) -> Self::O;
+}
+
+pub trait CollectionClientRequired<'a, CUB>
+where
+    CUB: CosmosUriBuilder,
+{
+    fn collection_client(&self) -> &'a CollectionClient<'a, CUB>;
+}
+
+//pub trait CollectionRequired<'a> {
+//    fn collection(&self) -> &'a str;
+//}
+
+pub trait StoredProcedureClientRequired<'a, CUB>
+where
+    CUB: CosmosUriBuilder,
+{
+    fn stored_procedure_client(&self) -> &'a StoredProcedureClient<'a, CUB>;
+}
+
+pub trait StoredProcedureNameRequired<'a> {
+    fn stored_procedure_name(&self) -> &'a str;
+}
+
+pub trait StoredProcedureNameSupport<'a> {
+    type O;
+    fn with_stored_procedure_name(self, stored_procedure_name: &'a str) -> Self::O;
+}
+
+pub trait DocumentClientRequired<'a, CUB>
+where
+    CUB: CosmosUriBuilder,
+{
+    fn document_client(&self) -> &'a DocumentClient<'a, CUB>;
+}
+
+pub trait OfferRequired {
+    fn offer(&self) -> Offer;
+
+    fn add_header(&self, builder: &mut Builder) {
+        match self.offer() {
+            Offer::Throughput(throughput) => builder.header(HEADER_OFFER_THROUGHPUT, throughput),
+            Offer::S1 => builder.header(HEADER_OFFER_TYPE, "S1"),
+            Offer::S2 => builder.header(HEADER_OFFER_TYPE, "S2"),
+            Offer::S3 => builder.header(HEADER_OFFER_TYPE, "S3"),
+        };
+    }
+}
+
+pub trait OfferSupport {
+    type O;
+    fn with_offer(self, offer: Offer) -> Self::O;
+}
+
+pub trait CollectionNameRequired<'a> {
+    fn collection_name(&self) -> &'a dyn CollectionName;
+}
+
+pub trait CollectionNameSupport<'a> {
+    type O;
+    fn with_collection_name(self, collection_name: &'a dyn CollectionName) -> Self::O;
+}
+
+pub trait CollectionRequired<'a> {
+    fn collection(&self) -> &'a Collection;
+}
+
+pub trait CollectionSupport<'a> {
+    type O;
+    fn with_collection(self, collection: &'a Collection) -> Self::O;
+}
+
+pub trait IndexingPolicyRequired<'a> {
+    fn indexing_policy(&self) -> &'a IndexingPolicy;
+}
+
+pub trait IndexingPolicySupport<'a> {
+    type O;
+    fn with_indexing_policy(self, offer: &'a IndexingPolicy) -> Self::O;
+}
+
+pub trait DocumentRequired<'a, T>
+where
+    T: Serialize,
+{
+    fn document(&self) -> &'a Document<T>;
+}
+
+pub trait DocumentSupport<'a, T>
+where
+    T: Serialize,
+{
+    type O;
+    fn with_document(self, document: &'a Document<T>) -> Self::O;
+}
+
+//pub trait CollectionSupport<'a> {
+//    type O;
+//    fn with_collection(self, collection: &'a str) -> Self::O;
+//}
+
+pub trait DocumentIdRequired<'a> {
+    fn document_id(&self) -> &'a str;
+}
+
+pub trait DocumentIdSupport<'a> {
+    type O;
+    fn with_document_id(self, document_id: &'a str) -> Self::O;
+}
+
+pub trait QueryRequired<'a> {
+    fn query(&self) -> &'a Query<'a>;
+}
+
+pub trait QuerySupport<'a> {
+    type O;
+    fn with_query(self, query: &'a Query<'a>) -> Self::O;
+}
+
+pub trait DatabaseNameRequired<'a, DB>
+where
+    DB: DatabaseName,
+{
+    fn database_name(&self) -> &'a DB;
+}
+
+pub trait DatabaseNameSupport<'a, DB>
+where
+    DB: DatabaseName,
+{
+    type O;
+    fn with_database_name(self, database_name: &'a DB) -> Self::O;
+}
+
+//// New implementation
+pub trait CosmosTrait<CUB>
+where
+    CUB: CosmosUriBuilder,
+{
+    fn list_databases(&self) -> requests::ListDatabasesBuilder<'_, CUB>;
+    fn with_database<'d>(&'d self, database_name: &'d dyn DatabaseName) -> DatabaseClient<'d, CUB>;
+    fn create_database<DB>(&self) -> requests::CreateDatabaseBuilder<'_, CUB, DB, No>
+    where
+        DB: DatabaseName;
+}
+
+pub trait DatabaseTrait<'a, CUB>
+where
+    CUB: CosmosUriBuilder,
+{
+    fn database_name(&self) -> &'a dyn DatabaseName;
+    fn list_collections(&self) -> requests::ListCollectionsBuilder<'_, CUB>;
+    fn get_database(&self) -> requests::GetDatabaseBuilder<'_, CUB>;
+    fn delete_database(&self) -> requests::DeleteDatabaseBuilder<'_, CUB>;
+    fn create_collection(&self) -> requests::CreateCollectionBuilder<'_, CUB, No, No, No, No>;
+    fn with_collection<'c>(
+        &'c self,
+        collection_name: &'c dyn CollectionName,
+    ) -> CollectionClient<'c, CUB>;
+}
+
+pub(crate) trait DatabaseBuilderTrait<'a, CUB>: DatabaseTrait<'a, CUB>
+where
+    CUB: CosmosUriBuilder,
+{
+    fn prepare_request(&self, method: hyper::Method) -> http::request::Builder;
+}
+
+pub trait CollectionTrait<'a, CUB>
+where
+    CUB: CosmosUriBuilder,
+{
+    fn database_name(&self) -> &'a dyn DatabaseName;
+    fn collection_name(&self) -> &'a dyn CollectionName;
+    fn get_collection(&self) -> requests::GetCollectionBuilder<'_, CUB>;
+    fn delete_collection(&self) -> requests::DeleteCollectionBuilder<'_, CUB>;
+    fn replace_collection(&self) -> requests::ReplaceCollectionBuilder<'_, CUB, No, No>;
+    fn list_documents(&self) -> requests::ListDocumentsBuilder<'_, '_, CUB>;
+    fn create_document<T>(&self) -> requests::CreateDocumentBuilder<'_, '_, T, CUB, No, No>
+    where
+        T: Serialize;
+    fn replace_document<T>(&self) -> requests::ReplaceDocumentBuilder<'_, '_, T, CUB, No, No>
+    where
+        T: Serialize;
+    fn query_documents(&self) -> requests::QueryDocumentsBuilder<'_, '_, CUB, No>;
+    fn with_stored_procedure<'c>(
+        &'c self,
+        stored_procedure_name: &'c dyn StoredProcedureName,
+    ) -> StoredProcedureClient<'c, CUB>;
+    fn with_document<'c>(&'c self, document_name: &'c dyn DocumentName) -> DocumentClient<'c, CUB>;
+}
+
+pub(crate) trait CollectionBuilderTrait<'a, CUB>: CollectionTrait<'a, CUB>
+where
+    CUB: CosmosUriBuilder,
+{
+    fn prepare_request(&self, method: hyper::Method) -> http::request::Builder;
+}
+
+pub trait DocumentTrait<'a, CUB>
+where
+    CUB: CosmosUriBuilder,
+{
+    fn database_name(&self) -> &'a dyn DatabaseName;
+    fn collection_name(&self) -> &'a dyn CollectionName;
+    fn document_name(&self) -> &'a dyn DocumentName;
+    fn get_document(&self) -> requests::GetDocumentBuilder<'_, '_, CUB, No>;
+    fn delete_document(&self) -> requests::DeleteDocumentBuilder<'_, CUB, No>;
+}
+
+pub(crate) trait DocumentBuilderTrait<'a, CUB>: DocumentTrait<'a, CUB>
+where
+    CUB: CosmosUriBuilder,
+{
+    fn prepare_request(&self, method: hyper::Method) -> http::request::Builder;
+}
+
+pub trait StoredProcedureTrait<'a, CUB>
+where
+    CUB: CosmosUriBuilder,
+{
+    fn database_name(&self) -> &'a dyn DatabaseName;
+    fn collection_name(&self) -> &'a dyn CollectionName;
+    fn stored_procedure_name(&self) -> &'a dyn StoredProcedureName;
+    fn execute_stored_procedure(&self) -> requests::ExecuteStoredProcedureBuilder<'_, '_, CUB>;
+}
+
+pub(crate) trait StoredProcedureBuilderTrait<'a, CUB>:
+    StoredProcedureTrait<'a, CUB>
+where
+    CUB: CosmosUriBuilder,
+{
+    fn prepare_request(&self, method: hyper::Method) -> http::request::Builder;
+}

@@ -1,5 +1,6 @@
 #![cfg(all(test, feature = "test_e2e"))]
 use azure_sdk_cosmos::collection::*;
+use azure_sdk_cosmos::prelude::*;
 use azure_sdk_cosmos::Offer;
 mod setup;
 
@@ -10,72 +11,133 @@ async fn create_and_delete_collection() {
 
     let client = setup::initialize().unwrap();
 
-    client.create_database(DATABASE_NAME).await.unwrap();
+    client
+        .create_database()
+        .with_database_name(&DATABASE_NAME)
+        .execute()
+        .await
+        .unwrap();
+
+    let database_client = client.with_database(&DATABASE_NAME);
 
     // create a new collection
-    let collection_to_create = Collection::new(
-        COLLECTION_NAME,
-        IndexingPolicy {
-            automatic: true,
-            indexing_mode: IndexingMode::Consistent,
-            included_paths: vec![],
-            excluded_paths: vec![],
-        },
-    );
-    let collection = client
-        .create_collection(DATABASE_NAME, Offer::S2, &collection_to_create)
+    let indexing_policy = IndexingPolicy {
+        automatic: true,
+        indexing_mode: IndexingMode::Consistent,
+        included_paths: vec![],
+        excluded_paths: vec![],
+    };
+    let collection = database_client
+        .create_collection()
+        .with_collection_name(&COLLECTION_NAME)
+        .with_offer(Offer::S2)
+        .with_partition_key(&("/id".into()))
+        .with_indexing_policy(&indexing_policy)
+        .execute()
         .await
         .unwrap();
-    let collections = client.list_collections(DATABASE_NAME).await.unwrap();
-    assert!(collections.len() == 1);
+    let collections = database_client.list_collections().execute().await.unwrap();
+    assert!(collections.collections.len() == 1);
 
     // try to get the previously created collection
-    let collection_after_get = client
-        .get_collection(DATABASE_NAME, COLLECTION_NAME)
-        .await
-        .unwrap();
-    assert!(collection.rid == collection_after_get.rid);
+    let collection_client = database_client.with_collection(&COLLECTION_NAME);
+
+    let collection_after_get = collection_client.get_collection().execute().await.unwrap();
+    assert!(collection.collection.rid == collection_after_get.collection.rid);
 
     // delete the collection
-    client
-        .delete_collection(DATABASE_NAME, COLLECTION_NAME)
+    collection_client
+        .delete_collection()
+        .execute()
         .await
         .unwrap();
-    let collections = client.list_collections(DATABASE_NAME).await.unwrap();
-    assert!(collections.len() == 0);
+    let collections = database_client.list_collections().execute().await.unwrap();
+    assert!(collections.collections.len() == 0);
 
-    client.delete_database(DATABASE_NAME).await.unwrap();
+    database_client.delete_database().execute().await.unwrap();
 }
 
-#[ignore]
 #[tokio::test]
 async fn replace_collection() {
     let client = setup::initialize().unwrap();
     const DATABASE_NAME: &str = "test-cosmos-db";
     const COLLECTION_NAME: &str = "test-collection";
 
-    client.create_database(DATABASE_NAME).await.unwrap();
-
-    // create a new collection
-    let collection_to_create = Collection::new(
-        COLLECTION_NAME,
-        IndexingPolicy {
-            automatic: true,
-            indexing_mode: IndexingMode::Consistent,
-            included_paths: vec![],
-            excluded_paths: vec![],
-        },
-    );
     client
-        .create_collection(DATABASE_NAME, Offer::S2, &collection_to_create)
+        .create_database()
+        .with_database_name(&DATABASE_NAME)
+        .execute()
         .await
         .unwrap();
-    let collections = client.list_collections(DATABASE_NAME).await.unwrap();
-    assert!(collections.len() == 1);
-    //assert!(collection.indexing_policy)
 
-    // now try to update the indexing policy of the collection (= change_collection)
-    // TODO: waiting for issue #153
+    let database_client = client.with_database(&DATABASE_NAME);
 
-    client.delete_database(DATABASE_NAME).await.unwrap();
+    // create a new collection
+    let indexing_policy = IndexingPolicy {
+        automatic: true,
+        indexing_mode: IndexingMode::Consistent,
+        included_paths: vec![],
+        excluded_paths: vec![],
+    };
+    let collection = database_client
+        .create_collection()
+        .with_collection_name(&COLLECTION_NAME)
+        .with_offer(Offer::S2)
+        .with_partition_key(&("/id".into()))
+        .with_indexing_policy(&indexing_policy)
+        .execute()
+        .await
+        .unwrap();
+
+    let collection_client = database_client.with_collection(&COLLECTION_NAME);
+
+    let collections = database_client.list_collections().execute().await.unwrap();
+    assert_eq!(collections.collections.len(), 1);
+    assert_eq!(
+        collection.collection.indexing_policy,
+        collections.collections[0].indexing_policy
+    );
+
+    // Let's change the indexing mode!
+    let indexes = IncludedPathIndex {
+        kind: KeyKind::Hash,
+        data_type: DataType::String,
+        precision: Some(3),
+    };
+
+    let ip = IncludedPath {
+        path: "/*".to_owned(),
+        indexes: Some(vec![indexes]),
+    };
+
+    let mut new_ip = IndexingPolicy {
+        automatic: true,
+        indexing_mode: IndexingMode::Consistent,
+        included_paths: vec![ip],
+        excluded_paths: vec![],
+    };
+
+    new_ip
+        .excluded_paths
+        .push("/\"excludeme\"/?".to_owned().into());
+
+    let _replace_collection_reponse = collection_client
+        .replace_collection()
+        .with_indexing_policy(&new_ip)
+        .with_partition_key(&("/id".into()))
+        .execute()
+        .await
+        .unwrap();
+
+    let collections = database_client.list_collections().execute().await.unwrap();
+    assert_eq!(collections.collections.len(), 1);
+    let eps: Vec<&ExcludedPath> = collections.collections[0]
+        .indexing_policy
+        .excluded_paths
+        .iter()
+        .filter(|excluded_path| excluded_path.path == "/\"excludeme\"/?")
+        .collect();
+    assert!(eps.len() > 0);
+
+    database_client.delete_database().execute().await.unwrap();
 }

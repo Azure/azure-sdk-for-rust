@@ -28,18 +28,50 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // The Cosmos' client exposes a lot of methods. This one lists the databases in the specified
     // account. Database do not implement Display but deref to &str so you can pass it to methods
     // both as struct or id.
-    let databases = client.list_databases().await?;
+    let databases = client.list_databases().execute().await?;
 
-    println!("Account {} has {} database(s)", account, databases.len());
+    println!(
+        "Account {} has {} database(s)",
+        account,
+        databases.databases.len()
+    );
+
+    // try get on the first database (if any)
+    if let Some(db) = databases.databases.first() {
+        println!("getting info of database {}", &db.id);
+        let db = client
+            .with_database(&db.id)
+            .get_database()
+            .execute()
+            .await?;
+        println!("db {} found == {:?}", &db.database.id, &db);
+    }
 
     // Each Cosmos' database contains one or more collections. We can enumerate them using the
     // list_collection method.
-    for db in databases {
-        let collections = client.list_collections(&db.id).await?;
-        println!("database {} has {} collection(s)", db.id, collections.len());
+    for db in databases.databases {
+        let collections = client
+            .with_database(&db.id)
+            .list_collections()
+            .execute()
+            .await?;
+        println!(
+            "database {} has {} collection(s)",
+            db.id,
+            collections.collections.len()
+        );
 
-        for collection in collections {
+        for collection in collections.collections {
             println!("\tcollection {}", collection.id);
+
+            let collection_response = client
+                .with_database(&db.id)
+                .with_collection(&collection.id)
+                .get_collection()
+                .execute()
+                .await?;
+
+            println!("\tcollection_response {:?}", collection_response);
         }
     }
 

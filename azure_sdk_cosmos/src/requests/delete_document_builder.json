@@ -1,0 +1,83 @@
+{
+	"name": "DeleteDocumentBuilder",
+	"derive": "Debug, Clone",
+	"uses": [
+		"crate::clients::{DocumentClient, CosmosUriBuilder}",
+		"crate::prelude::*",
+		"azure_sdk_core::{No, ToAssign, Yes}",
+		"crate::DocumentBuilderTrait",
+		"crate::responses::DeleteDocumentResponse",
+		"crate::DocumentClientRequired",
+		"azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError}",
+		"azure_sdk_core::modify_conditions::IfMatchCondition",
+		"azure_sdk_core::prelude::*",
+		"std::marker::PhantomData",
+		"azure_sdk_core::{IfMatchConditionOption, IfMatchConditionSupport}",
+		"chrono::{DateTime, Utc}",
+		"hyper::StatusCode",
+		"std::convert::TryInto"
+	],
+	"inline": true,
+	"extra_types": [ "'a", "CUB" ],
+	"extra_wheres": ["CUB: CosmosUriBuilder" ],
+	"constructor_fields": [
+		{
+			"name": "document_client",
+			"field_type": "&'a DocumentClient<'a, CUB>",
+			"trait_get": "DocumentClientRequired<'a, CUB>"
+		}
+	],
+	"fields": [
+		{
+			"name": "partition_keys",
+			"field_type": "&'a PartitionKeys",
+			"optional": false,
+			"builder_type": "PartitionKeysSet",
+			"trait_get": "PartitionKeysRequired<'a>",
+			"trait_set": "PartitionKeysSupport<'a>"
+		},
+		{
+			"name": "if_match_condition",
+			"field_type": "IfMatchCondition<'a>",
+			"optional": true,
+			"trait_get": "IfMatchConditionOption<'a>",
+			"trait_set": "IfMatchConditionSupport<'a>"
+		},
+		{
+			"name": "if_modified_since",
+			"field_type": "&'a DateTime<Utc>",
+			"optional": true,
+			"trait_get": "IfModifiedSinceOption<'a>",
+			"trait_set": "IfModifiedSinceSupport<'a>"
+		},
+		{
+			"name": "user_agent",
+			"field_type": "&'a str",
+			"optional": true,
+			"trait_get": "UserAgentOption<'a>",
+			"trait_set": "UserAgentSupport<'a>"
+		},
+		{
+			"name": "activity_id",
+			"field_type": "&'a str",
+			"optional": true,
+			"trait_get": "ActivityIdOption<'a>",
+			"trait_set": "ActivityIdSupport<'a>"
+		},
+		{
+			"name": "consistency_level",
+			"field_type": "ConsistencyLevel<'a>",
+			"optional": true,
+			"trait_get": "ConsistencyLevelOption<'a>",
+			"trait_set": "ConsistencyLevelSupport<'a>"
+		},
+		{
+			"name": "allow_tentative_writes",
+			"field_type": "bool",
+			"optional": true,
+			"initializer": "false",
+			"trait_get": "AllowTentativeWritesOption",
+			"trait_set": "AllowTentativeWritesSupport"
+		}
+	]
+}

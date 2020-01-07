@@ -1,148 +1,98 @@
-use std::fmt;
-use std::fmt::{Display, Formatter};
-use std::str::FromStr;
+use crate::DocumentAttributes;
+use crate::{number_of_read_regions_from_headers, request_charge_from_headers};
+use azure_sdk_core::errors::AzureError;
+use azure_sdk_core::session_token_from_headers;
+use hyper::header::HeaderMap;
+use serde::de::DeserializeOwned;
 
-#[derive(Serialize, Deserialize, Debug, Copy, Clone, PartialEq)]
-pub enum IndexingDirective {
-    Include,
-    Exclude,
+pub trait DocumentName: std::fmt::Debug {
+    fn name(&self) -> &str;
 }
 
-impl Display for IndexingDirective {
-    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        match *self {
-            IndexingDirective::Include => write!(f, "Include"),
-            IndexingDirective::Exclude => write!(f, "Exclude"),
-        }
-    }
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Document<T> {
+    #[serde(flatten)]
+    pub document_attributes: DocumentAttributes,
+    #[serde(flatten)]
+    pub document: T, // raw, id not included
 }
 
-impl FromStr for IndexingDirective {
-    type Err = String;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s {
-            "Include" => Ok(IndexingDirective::Include),
-            "Exclude" => Ok(IndexingDirective::Exclude),
-            _ => Err(format!("{} is not valid IndexingDirective value", s)),
-        }
-    }
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct DocumentAttributes {
-    id: String,
-    #[serde(rename = "_rid")]
-    rid: String,
-    #[serde(rename = "_ts")]
-    ts: u64,
-    #[serde(rename = "_self")]
-    _self: String,
-    #[serde(rename = "_etag")]
-    etag: String,
-    #[serde(rename = "_attachments")]
-    attachments: String,
-}
-
-impl DocumentAttributes {
+impl<T> Document<T> {
+    #[inline]
     pub fn id(&self) -> &str {
-        &self.id
+        self.document_attributes.id()
     }
 
-    pub fn rid(&self) -> &str {
-        &self.rid
-    }
+    pub fn new(id: String, t: T) -> Self {
+        let mut document_attributes = DocumentAttributes::default();
+        document_attributes.id = id;
 
-    pub fn ts(&self) -> u64 {
-        self.ts
-    }
-
-    pub fn _self(&self) -> &str {
-        &self._self
-    }
-
-    pub fn etag(&self) -> &str {
-        &self.etag
-    }
-
-    pub fn attachments(&self) -> &str {
-        &self.attachments
-    }
-
-    pub fn set_id<T>(&mut self, value: T)
-    where
-        T: Into<String>,
-    {
-        self.id = value.into();
-    }
-
-    pub fn set_rid<T>(&mut self, value: T)
-    where
-        T: Into<String>,
-    {
-        self.rid = value.into();
-    }
-
-    pub fn set_ts(&mut self, value: u64) {
-        self.ts = value;
-    }
-
-    pub fn set_self<T>(&mut self, value: T)
-    where
-        T: Into<String>,
-    {
-        self._self = value.into();
-    }
-
-    pub fn set_etag<T>(&mut self, value: T)
-    where
-        T: Into<String>,
-    {
-        self.etag = value.into();
-    }
-
-    pub fn set_attachments<T>(&mut self, value: T)
-    where
-        T: Into<String>,
-    {
-        self.attachments = value.into();
-    }
-
-    pub(crate) fn try_extract(from: &mut ::serde_json::Map<String, ::serde_json::Value>) -> Option<DocumentAttributes> {
-        let id = from.get("id")?.as_str()?.to_owned();
-        let rid = from.remove("_rid")?.as_str()?.to_owned();
-        let ts = from.remove("_ts")?.as_u64()?;
-        let _self = from.remove("_self")?.as_str()?.to_owned();
-        let etag = from.remove("_etag")?.as_str()?.to_owned();
-        let attachments = from.remove("_attachments")?.as_str()?.to_owned();
-
-        Some(DocumentAttributes {
-            id,
-            rid,
-            ts,
-            _self,
-            etag,
-            attachments,
-        })
+        Self {
+            document_attributes,
+            document: t,
+        }
     }
 }
 
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn test_mutate() {
-        use super::*;
+impl<T> DocumentName for Document<T>
+where
+    T: std::fmt::Debug,
+{
+    fn name(&self) -> &str {
+        self.id()
+    }
+}
 
-        let mut a = DocumentAttributes {
-            id: "id".to_owned(),
-            rid: "rid".to_owned(),
-            ts: 100,
-            _self: "_self".to_owned(),
-            etag: "etag".to_owned(),
-            attachments: "attachments".to_owned(),
+impl DocumentName for &str {
+    fn name(&self) -> &str {
+        self
+    }
+}
+
+impl DocumentName for String {
+    fn name(&self) -> &str {
+        self.as_ref()
+    }
+}
+
+impl<T> std::convert::TryFrom<(&HeaderMap, &[u8])> for Document<T>
+where
+    T: DeserializeOwned,
+{
+    type Error = AzureError;
+    fn try_from(value: (&HeaderMap, &[u8])) -> Result<Self, Self::Error> {
+        let _headers = value.0;
+        let body = value.1;
+
+        Ok(serde_json::from_slice(body)?)
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct DocumentAdditionalHeaders {
+    pub charge: f64,
+    pub session_token: String,
+    pub number_of_read_regions: u32,
+}
+
+impl std::convert::TryFrom<(&HeaderMap, &[u8])> for DocumentAdditionalHeaders {
+    type Error = AzureError;
+    fn try_from(value: (&HeaderMap, &[u8])) -> Result<Self, Self::Error> {
+        DocumentAdditionalHeaders::try_from(value.0)
+    }
+}
+
+impl std::convert::TryFrom<&HeaderMap> for DocumentAdditionalHeaders {
+    type Error = AzureError;
+    fn try_from(headers: &HeaderMap) -> Result<Self, Self::Error> {
+        debug!("headers == {:?}", headers);
+        let dah = DocumentAdditionalHeaders {
+            charge: request_charge_from_headers(headers)?,
+            session_token: session_token_from_headers(headers)?,
+            number_of_read_regions: number_of_read_regions_from_headers(headers)?,
         };
 
-        a.set_id("new_id");
-        a.set_attachments("new_attachments".to_owned());
+        debug!("dah == {:?}", dah);
+        Ok(dah)
     }
 }
