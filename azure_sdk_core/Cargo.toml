@@ -20,10 +20,10 @@ md5                     = "0.7"
 RustyXML                = "0.1"
 base64                  = "0.11"
 chrono                  = "0.4"
-http                    = "0.2.0"
-http-body               = "0.3.1"
-futures                 = "0.3.1"
-hyper                   = "0.13.0"
+http                    = "0.2"
+http-body               = "0.3"
+futures                 = "0.3"
+hyper                   = "0.13"
 log                     = "0.4"
 mime                    = "0.3"
 quick-error             = "1.2"
@@ -40,7 +40,7 @@ hyper-rustls            = "0.19"
 reqwest                 = { git = "https://github.com/seanmonstar/reqwest.git" }
 
 [dev-dependencies]
-tokio-core              = "0.1"
+tokio                   = "0.2"
 env_logger              = "0.7"
 
 [features]
