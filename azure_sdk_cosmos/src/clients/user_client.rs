@@ -51,4 +51,8 @@ where
     fn create_user(&self) -> requests::CreateUserBuilder<'_, CUB> {
         requests::CreateUserBuilder::new(self)
     }
+
+    fn get_user(&self) -> requests::GetUserBuilder<'_, CUB> {
+        requests::GetUserBuilder::new(self)
+    }
 }

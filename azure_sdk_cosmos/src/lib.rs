@@ -556,4 +556,5 @@ where
     fn database_name(&self) -> &'a dyn DatabaseName;
     fn user_name(&self) -> &'a dyn UserName;
     fn create_user(&self) -> requests::CreateUserBuilder<'_, CUB>;
+    fn get_user(&self) -> requests::GetUserBuilder<'_, CUB>;
 }
