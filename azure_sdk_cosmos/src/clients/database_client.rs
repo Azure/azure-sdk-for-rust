@@ -70,6 +70,10 @@ where
     fn with_user<'c>(&'c self, user_name: &'c dyn UserName) -> UserClient<'c, CUB> {
         UserClient::new(&self, user_name)
     }
+
+    fn list_users<'c>(&'c self) -> requests::ListUsersBuilder<'c, CUB> {
+        requests::ListUsersBuilder::new(self)
+    }
 }
 
 impl<'a, CUB> DatabaseBuilderTrait<'a, CUB> for DatabaseClient<'a, CUB>
