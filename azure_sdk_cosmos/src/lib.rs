@@ -557,4 +557,5 @@ where
     fn user_name(&self) -> &'a dyn UserName;
     fn create_user(&self) -> requests::CreateUserBuilder<'_, CUB>;
     fn get_user(&self) -> requests::GetUserBuilder<'_, CUB>;
+    fn replace_user(&self) -> requests::ReplaceUserBuilder<'_, CUB, No>;
 }

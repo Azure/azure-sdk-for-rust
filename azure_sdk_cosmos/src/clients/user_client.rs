@@ -1,6 +1,7 @@
 use crate::clients::{Client, CosmosUriBuilder, DatabaseClient};
 use crate::database::DatabaseName;
 use crate::{requests, DatabaseTrait, UserName, UserTrait};
+use azure_sdk_core::No;
 
 #[derive(Debug, Clone)]
 pub struct UserClient<'a, CUB>
@@ -54,5 +55,9 @@ where
 
     fn get_user(&self) -> requests::GetUserBuilder<'_, CUB> {
         requests::GetUserBuilder::new(self)
+    }
+
+    fn replace_user(&self) -> requests::ReplaceUserBuilder<'_, CUB, No> {
+        requests::ReplaceUserBuilder::new(self)
     }
 }

@@ -32,5 +32,16 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let get_user_response = user_client.get_user().execute().await?;
     println!("get_user_response == {:#?}", get_user_response);
 
+    let new_user = format!("{}replaced", user_name);
+
+    let replace_user_response = user_client
+        .replace_user()
+        .with_user_name(&new_user)
+        .execute()
+        .await?;
+    println!("replace_user_response == {:#?}", replace_user_response);
+
+    let user_client = database_client.with_user(&new_user);
+
     Ok(())
 }
