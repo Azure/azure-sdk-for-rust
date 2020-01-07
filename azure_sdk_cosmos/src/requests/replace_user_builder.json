@@ -1,0 +1,34 @@
+{
+	"name": "ReplaceUserBuilder",
+	"derive": "Debug, Clone",
+	"uses": [
+			"crate::clients::{CosmosUriBuilder, UserClient, ResourceType}",
+			"crate::prelude::*",
+			"crate::responses::CreateUserResponse",
+			"azure_sdk_core::errors::{UnexpectedHTTPResult, extract_status_headers_and_body, AzureError}",
+			"hyper::StatusCode",
+			"std::convert::TryInto",
+			"std::marker::PhantomData",
+			"azure_sdk_core::{Yes,No,ToAssign}"
+	],
+	"extra_types": [ "'a", "CUB" ],
+	"inline": true,
+	"extra_wheres": [ "CUB: CosmosUriBuilder" ],
+	"constructor_fields": [
+		{
+			"name": "user_client",
+			"field_type": "&'a UserClient<'a, CUB>",
+			"trait_get": "UserClientRequired<'a, CUB>"
+		}
+	],
+	"fields": [
+		{
+			"name": "user_name",
+			"field_type": "&'a dyn UserName",
+			"builder_type": "UserNameSet",
+			"optional": false,
+			"trait_get": "UserNameRequired<'a>",
+			"trait_set": "UserNameSupport<'a>"
+		}
+	]
+}

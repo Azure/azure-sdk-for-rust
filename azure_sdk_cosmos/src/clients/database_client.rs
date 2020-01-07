@@ -1,7 +1,7 @@
-use crate::clients::{Client, CollectionClient, CosmosUriBuilder, ResourceType};
+use crate::clients::{Client, CollectionClient, CosmosUriBuilder, ResourceType, UserClient};
 use crate::database::DatabaseName;
-use crate::requests;
 use crate::DatabaseBuilderTrait;
+use crate::{requests, UserName};
 use crate::{CollectionName, DatabaseTrait};
 use azure_sdk_core::No;
 
@@ -65,6 +65,14 @@ where
         collection_name: &'c dyn CollectionName,
     ) -> CollectionClient<'c, CUB> {
         CollectionClient::new(self, collection_name)
+    }
+
+    fn with_user<'c>(&'c self, user_name: &'c dyn UserName) -> UserClient<'c, CUB> {
+        UserClient::new(&self, user_name)
+    }
+
+    fn list_users<'c>(&'c self) -> requests::ListUsersBuilder<'c, CUB> {
+        requests::ListUsersBuilder::new(self)
     }
 }
 

@@ -1,0 +1,24 @@
+{
+	"name": "ListUsersBuilder",
+	"derive": "Debug, Clone",
+	"uses": [
+		"crate::clients::{CosmosUriBuilder, DatabaseClient, ResourceType}",
+		"crate::responses::ListUsersResponse",
+		"crate::DatabaseClientRequired",
+		"crate::DatabaseTrait",
+		"azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError}",
+		"hyper::StatusCode",
+		"std::convert::TryInto"
+		],
+	"extra_types": [ "'a", "CUB" ],
+	"extra_wheres": ["CUB: CosmosUriBuilder" ],
+	"constructor_fields": [
+		{
+			"name": "database_client",
+			"field_type": "&'a DatabaseClient<'a, CUB>",
+			"trait_get": "DatabaseClientRequired<'a, CUB>"
+		}
+	],
+	"fields": [
+	]
+}

@@ -23,6 +23,7 @@ mod requests;
 pub mod responses;
 pub mod stored_procedure;
 mod to_json_vector;
+mod user;
 
 pub use self::authorization_token::*;
 use self::collection::IndexingPolicy;
@@ -35,7 +36,7 @@ pub use self::query::{Param, ParamDef, Query};
 pub use self::requests::*;
 use crate::clients::{
     Client, CollectionClient, CosmosUriBuilder, DatabaseClient, DocumentClient,
-    StoredProcedureClient,
+    StoredProcedureClient, UserClient,
 };
 use crate::collection::Collection;
 use crate::collection::CollectionName;
@@ -43,6 +44,7 @@ use crate::database::DatabaseName;
 use crate::headers::*;
 pub use crate::partition_keys::PartitionKeys;
 use crate::stored_procedure::{Parameters, StoredProcedureName};
+pub use crate::user::{User, UserName};
 use azure_sdk_core::No;
 use http::request::Builder;
 use serde::Serialize;
@@ -314,6 +316,13 @@ where
     fn stored_procedure_client(&self) -> &'a StoredProcedureClient<'a, CUB>;
 }
 
+pub trait UserClientRequired<'a, CUB>
+where
+    CUB: CosmosUriBuilder,
+{
+    fn user_client(&self) -> &'a UserClient<'a, CUB>;
+}
+
 pub trait StoredProcedureNameRequired<'a> {
     fn stored_procedure_name(&self) -> &'a str;
 }
@@ -428,6 +437,15 @@ where
     fn with_database_name(self, database_name: &'a DB) -> Self::O;
 }
 
+pub trait UserNameRequired<'a> {
+    fn user_name(&self) -> &'a dyn UserName;
+}
+
+pub trait UserNameSupport<'a> {
+    type O;
+    fn with_user_name(self, user_name: &'a dyn UserName) -> Self::O;
+}
+
 //// New implementation
 pub trait CosmosTrait<CUB>
 where
@@ -453,6 +471,8 @@ where
         &'c self,
         collection_name: &'c dyn CollectionName,
     ) -> CollectionClient<'c, CUB>;
+    fn with_user<'c>(&'c self, user_name: &'c dyn UserName) -> UserClient<'c, CUB>;
+    fn list_users<'c>(&'c self) -> requests::ListUsersBuilder<'c, CUB>;
 }
 
 pub(crate) trait DatabaseBuilderTrait<'a, CUB>: DatabaseTrait<'a, CUB>
@@ -527,4 +547,16 @@ where
     CUB: CosmosUriBuilder,
 {
     fn prepare_request(&self, method: hyper::Method) -> http::request::Builder;
+}
+
+pub trait UserTrait<'a, CUB>
+where
+    CUB: CosmosUriBuilder,
+{
+    fn database_name(&self) -> &'a dyn DatabaseName;
+    fn user_name(&self) -> &'a dyn UserName;
+    fn create_user(&self) -> requests::CreateUserBuilder<'_, CUB>;
+    fn get_user(&self) -> requests::GetUserBuilder<'_, CUB>;
+    fn replace_user(&self) -> requests::ReplaceUserBuilder<'_, CUB, No>;
+    fn delete_user(&self) -> requests::DeleteUserBuilder<'_, CUB>;
 }
