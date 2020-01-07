@@ -1,10 +1,8 @@
 use crate::clients::{CosmosUriBuilder, DatabaseClient, ResourceType};
-use crate::database::Database;
 use crate::responses::ListUsersResponse;
 use crate::DatabaseClientRequired;
 use crate::DatabaseTrait;
 use azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError};
-use azure_sdk_core::prelude::*;
 use hyper::StatusCode;
 use std::convert::TryInto;
 

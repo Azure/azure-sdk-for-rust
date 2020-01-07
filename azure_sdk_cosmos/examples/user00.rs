@@ -23,9 +23,11 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let database_client = client.with_database(&database_name);
     let user_client = database_client.with_user(&user_name);
 
-    let create_user_response = user_client.create_user().execute().await?;
+    //let create_user_response = user_client.create_user().execute().await?;
+    //println!("{:#?}", create_user_response);
 
-    println!("{:#?}", create_user_response);
+    let list_users_response = database_client.list_users().execute().await?;
+    println!("{:#?}", list_users_response);
 
     Ok(())
 }
