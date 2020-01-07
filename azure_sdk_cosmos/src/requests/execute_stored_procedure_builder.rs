@@ -227,7 +227,7 @@ where
         //    ResourceType::StoredProcedures,
         //);
 
-        req.header(http::header::CONTENT_TYPE, "application/json");
+        req = req.header(http::header::CONTENT_TYPE, "application/json");
 
         let body = ParametersOption::generate_body(self);
 

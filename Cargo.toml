@@ -7,5 +7,5 @@ members = [
   "azure_sdk_storage_blob",
   "azure_sdk_storage_core",
   "azure_sdk_storage_table",
-  #"azure_sdk_cosmos"
+  "azure_sdk_cosmos"
 ]

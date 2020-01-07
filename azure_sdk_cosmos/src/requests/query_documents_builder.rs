@@ -553,19 +553,19 @@ where
         );
 
         // signal that this is a query
-        req.header(crate::headers::HEADER_DOCUMENTDB_ISQUERY, true.to_string());
-        req.header(http::header::CONTENT_TYPE, "application/query+json");
+        req = req.header(crate::headers::HEADER_DOCUMENTDB_ISQUERY, true.to_string());
+        req = req.header(http::header::CONTENT_TYPE, "application/query+json");
 
         // add trait headers
-        IfMatchConditionOption::add_header(self, &mut req);
-        IfModifiedSinceOption::add_header(self, &mut req);
-        UserAgentOption::add_header(self, &mut req);
-        ActivityIdOption::add_header(self, &mut req);
-        ConsistencyLevelOption::add_header(self, &mut req);
-        ContinuationOption::add_header(self, &mut req);
-        MaxItemCountOption::add_header(self, &mut req);
-        PartitionKeysOption::add_header(self, &mut req);
-        QueryCrossPartitionOption::add_header(self, &mut req);
+        req = IfMatchConditionOption::add_header(self, req);
+        req = IfModifiedSinceOption::add_header(self, req);
+        req = UserAgentOption::add_header(self, req);
+        req = ActivityIdOption::add_header(self, req);
+        req = ConsistencyLevelOption::add_header(self, req);
+        req = ContinuationOption::add_header(self, req);
+        req = MaxItemCountOption::add_header(self, req);
+        req = PartitionKeysOption::add_header(self, req);
+        req = QueryCrossPartitionOption::add_header(self, req);
 
         let body = serde_json::to_string(self.query())?;
         debug!("body == {}", body);

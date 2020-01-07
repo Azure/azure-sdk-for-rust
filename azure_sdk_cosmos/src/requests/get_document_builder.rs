@@ -284,12 +284,12 @@ where
         let mut req = self.document_client.prepare_request(hyper::Method::GET);
 
         // add trait headers
-        IfMatchConditionOption::add_header(self, &mut req);
-        IfModifiedSinceOption::add_header(self, &mut req);
-        UserAgentOption::add_header(self, &mut req);
-        ActivityIdOption::add_header(self, &mut req);
-        ConsistencyLevelOption::add_header(self, &mut req);
-        PartitionKeysRequired::add_header(self, &mut req);
+        req = IfMatchConditionOption::add_header(self, req);
+        req = IfModifiedSinceOption::add_header(self, req);
+        req = UserAgentOption::add_header(self, req);
+        req = ActivityIdOption::add_header(self, req);
+        req = ConsistencyLevelOption::add_header(self, req);
+        req = PartitionKeysRequired::add_header(self, req);
 
         let req = req.body(hyper::Body::empty())?;
 

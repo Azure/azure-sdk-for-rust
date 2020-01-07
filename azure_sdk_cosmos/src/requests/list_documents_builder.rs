@@ -357,14 +357,14 @@ where
         );
 
         // add trait headers
-        IfMatchConditionOption::add_header(self, &mut req);
-        UserAgentOption::add_header(self, &mut req);
-        ActivityIdOption::add_header(self, &mut req);
-        ConsistencyLevelOption::add_header(self, &mut req);
-        ContinuationOption::add_header(self, &mut req);
-        MaxItemCountOption::add_header(self, &mut req);
-        AIMOption::add_header(self, &mut req);
-        PartitionRangeIdOption::add_header(self, &mut req);
+        req = IfMatchConditionOption::add_header(self, req);
+        req = UserAgentOption::add_header(self, req);
+        req = ActivityIdOption::add_header(self, req);
+        req = ConsistencyLevelOption::add_header(self, req);
+        req = ContinuationOption::add_header(self, req);
+        req = MaxItemCountOption::add_header(self, req);
+        req = AIMOption::add_header(self, req);
+        req = PartitionRangeIdOption::add_header(self, req);
 
         let req = req.body(hyper::Body::empty())?;
 

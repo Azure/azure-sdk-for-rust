@@ -137,7 +137,7 @@ where
 
         let mut req = self.collection_client.prepare_request(hyper::Method::PUT);
 
-        req.header(http::header::CONTENT_TYPE, "application/json");
+        req = req.header(http::header::CONTENT_TYPE, "application/json");
 
         #[derive(Debug, Clone, Serialize)]
         struct Request<'k> {
