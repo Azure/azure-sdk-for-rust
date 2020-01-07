@@ -22,10 +22,10 @@ md5                     = "0.7"
 RustyXML                = "0.1"
 base64                  = "0.11"
 chrono                  = "0.4"
-http                    = "0.2.0"
-http-body               = "0.3.1"
-futures                 = "0.3.1"
-hyper                   = "0.13.1"
+http                    = "0.2"
+http-body               = "0.3"
+futures                 = "0.3"
+hyper                   = "0.13"
 log                     = "0.4"
 mime                    = "0.3"
 quick-error             = "1.2"
@@ -42,7 +42,7 @@ hyper-rustls            = "0.19"
 
 [dev-dependencies]
 env_logger              = "0.7"
-tokio                   = "0.2.4"
+tokio                   = "0.2"
 
 [features]
 test_e2e                = []

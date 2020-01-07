@@ -1,6 +1,6 @@
 [workspace]
 members = [
-  #"azure_sdk_auth_aad",
+  "azure_sdk_auth_aad",
   "azure_sdk_core",
   "azure_sdk_service_bus",
   "azure_sdk_storage_account",

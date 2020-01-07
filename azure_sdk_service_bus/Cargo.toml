@@ -21,7 +21,7 @@ md5                  = "0.7"
 RustyXML             = "0.1"
 base64               = "0.11"
 chrono               = "0.4"
-http                 = "0.2.0"
+http                 = "0.2"
 hyper                = "0.13"
 log                  = "0.4"
 mime                 = "0.3"
@@ -38,8 +38,8 @@ bytes                = "0.5"
 hyper-rustls         = "0.19"
 
 [dev-dependencies]
-futures              = "0.3.1"
-tokio                = {version = "0.2.4", features = ["macros"] }
+futures              = "0.3"
+tokio                = { version = "0.2", features = ["macros"] }
 env_logger           = "0.7"
 
 [features]

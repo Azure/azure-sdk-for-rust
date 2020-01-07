@@ -37,7 +37,7 @@ uuid                    = { version = "0.8", features = ["v4"] }
 smallvec                = { version = "1.0", features = ["serde"] }
 bytes                   = "0.5"
 hyper-rustls            = "0.19"
-reqwest                 = { git = "https://github.com/seanmonstar/reqwest.git" }
+reqwest                 = "0.10"
 
 [dev-dependencies]
 tokio                   = "0.2"

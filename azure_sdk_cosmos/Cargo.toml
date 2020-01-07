@@ -41,7 +41,7 @@ hyper-rustls             = "0.19"
 
 [dev-dependencies]
 env_logger               = "0.7"
-tokio                    = "0.2.0"
+tokio                    = "0.2"
 serde                    = { version = "1.0", features = ["derive"] }
 
 [features]
