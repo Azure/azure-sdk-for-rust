@@ -227,12 +227,7 @@ quick_error! {
             display("uuid error: {}", err)
             cause(err)
         }
-        ReqwestError(err: reqwest::Error){
-            from()
-            display("Reqwest error: {}", err)
-            cause(err)
-        }
-        ChronoParserError(err: chrono::ParseError) {
+       ChronoParserError(err: chrono::ParseError) {
             from()
             display("Chrono parser error: {}", err)
             cause(err)
