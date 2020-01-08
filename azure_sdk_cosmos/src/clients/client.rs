@@ -28,6 +28,7 @@ pub(crate) enum ResourceType {
     Documents,
     StoredProcedures,
     Users,
+    Permissions,
 }
 
 pub trait CosmosUriBuilder {
@@ -324,6 +325,7 @@ fn string_to_sign(
             ResourceType::Documents => "docs",
             ResourceType::StoredProcedures => "sprocs",
             ResourceType::Users => "users",
+            ResourceType::Permissions => "permissions",
         },
         resource_link,
         time.to_lowercase()
@@ -331,7 +333,7 @@ fn string_to_sign(
 }
 
 fn generate_resource_link(u: &str) -> &str {
-    static ENDING_STRINGS: &[&str] = &["dbs", "colls", "docs", "users"];
+    static ENDING_STRINGS: &[&str] = &["dbs", "colls", "docs", "users", "permissions"];
 
     // store the element only if it does not end with dbs, colls or docs
     let p = u;

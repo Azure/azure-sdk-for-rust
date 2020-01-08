@@ -1,6 +1,4 @@
-use crate::clients::{
-    Client, CollectionClient, CosmosUriBuilder, PermissionClient, ResourceType, UserClient,
-};
+use crate::clients::{Client, CollectionClient, CosmosUriBuilder, ResourceType, UserClient};
 use crate::database::DatabaseName;
 use crate::DatabaseBuilderTrait;
 use crate::{requests, UserName};
@@ -75,13 +73,6 @@ where
 
     fn list_users<'c>(&'c self) -> requests::ListUsersBuilder<'c, CUB> {
         requests::ListUsersBuilder::new(self)
-    }
-
-    fn with_permission<'c>(
-        &'c self,
-        permission_name: &'c dyn PermissionName,
-    ) -> PermissionClient<'c, CUB> {
-        PermissionClient::new(self, permission_name)
     }
 }
 

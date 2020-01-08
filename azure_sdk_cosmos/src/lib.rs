@@ -343,6 +343,28 @@ where
     fn document_client(&self) -> &'a DocumentClient<'a, CUB>;
 }
 
+pub trait PermissionClientRequired<'a, CUB>
+where
+    CUB: CosmosUriBuilder,
+{
+    fn permission_client(&self) -> &'a PermissionClient<'a, CUB>;
+}
+
+pub trait PermissionModeRequired<'a, R>
+where
+    R: Resource,
+{
+    fn permission_mode(&self) -> &'a PermissionMode<R>;
+}
+
+pub trait PermissionModeSupport<'a, R>
+where
+    R: Resource,
+{
+    type O;
+    fn with_permission_mode(self, permission: &'a PermissionMode<R>) -> Self::O;
+}
+
 pub trait OfferRequired {
     fn offer(&self) -> Offer;
 
@@ -477,10 +499,6 @@ where
     ) -> CollectionClient<'c, CUB>;
     fn with_user<'c>(&'c self, user_name: &'c dyn UserName) -> UserClient<'c, CUB>;
     fn list_users<'c>(&'c self) -> requests::ListUsersBuilder<'c, CUB>;
-    fn with_permission<'c>(
-        &'c self,
-        permission_name: &'c dyn PermissionName,
-    ) -> PermissionClient<'c, CUB>;
 }
 
 pub(crate) trait DatabaseBuilderTrait<'a, CUB>: DatabaseTrait<'a, CUB>
@@ -567,6 +585,10 @@ where
     fn get_user(&self) -> requests::GetUserBuilder<'_, CUB>;
     fn replace_user(&self) -> requests::ReplaceUserBuilder<'_, CUB, No>;
     fn delete_user(&self) -> requests::DeleteUserBuilder<'_, CUB>;
+    fn with_permission<'c>(
+        &'c self,
+        permission_name: &'c dyn PermissionName,
+    ) -> PermissionClient<'c, CUB>;
 }
 
 pub trait PermissionTrait<'a, CUB>
@@ -574,5 +596,9 @@ where
     CUB: CosmosUriBuilder,
 {
     fn database_name(&self) -> &'a dyn DatabaseName;
+    fn user_name(&self) -> &'a dyn UserName;
     fn permission_name(&self) -> &'a dyn PermissionName;
+    fn create_permission<R>(&self) -> requests::CreatePermissionBuilder<'_, CUB, R, No>
+    where
+        R: Resource;
 }

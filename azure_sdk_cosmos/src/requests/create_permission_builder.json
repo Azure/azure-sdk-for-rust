@@ -1,0 +1,35 @@
+{
+	"name": "CreatePermissionBuilder",
+	"derive": "Debug, Clone",
+	"uses": [
+		"crate::clients::{CosmosUriBuilder, PermissionClient, ResourceType}",
+		"crate::prelude::*",
+		"crate::responses::CreateUserResponse",
+		"crate::{PermissionMode, Resource}",
+		"azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError}",
+		"azure_sdk_core::{No, ToAssign, Yes}",
+		"core::marker::PhantomData",
+		"hyper::StatusCode",
+		"std::convert::TryInto"
+	],
+	"extra_types": [ "'a", "CUB", "R" ],
+	"inline": true,
+	"extra_wheres": [ "CUB: CosmosUriBuilder", "R: Resource" ],
+	"constructor_fields": [
+		{
+			"name": "permission_client",
+			"field_type": "&'a PermissionClient<'a, CUB>",
+			"trait_get": "PermissionClientRequired<'a, CUB>"
+		}
+	],
+	"fields": [
+	{
+			"name": "permission_mode",
+			"field_type": "&'a PermissionMode<R>",
+			"builder_type": "PermissionSet",
+			"optional": false,
+			"trait_get": "PermissionModeRequired<'a, R>",
+			"trait_set": "PermissionModeSupport<'a, R>"
+		}
+	]
+}

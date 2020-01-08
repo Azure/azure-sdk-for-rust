@@ -1,6 +1,8 @@
-use crate::clients::{Client, CosmosUriBuilder, DatabaseClient};
+use crate::clients::{Client, CosmosUriBuilder, UserClient};
 use crate::database::DatabaseName;
-use crate::{requests, DatabaseTrait, PermissionName, PermissionTrait};
+use crate::{
+    requests, DatabaseTrait, PermissionName, PermissionTrait, Resource, UserName, UserTrait,
+};
 use azure_sdk_core::No;
 
 #[derive(Debug, Clone)]
@@ -8,7 +10,7 @@ pub struct PermissionClient<'a, CUB>
 where
     CUB: CosmosUriBuilder,
 {
-    database_client: &'a DatabaseClient<'a, CUB>,
+    user_client: &'a UserClient<'a, CUB>,
     permission_name: &'a dyn PermissionName,
 }
 
@@ -17,17 +19,17 @@ where
     CUB: CosmosUriBuilder,
 {
     pub(crate) fn new(
-        database_client: &'a DatabaseClient<'a, CUB>,
+        user_client: &'a UserClient<'a, CUB>,
         permission_name: &'a dyn PermissionName,
     ) -> Self {
         Self {
-            database_client,
+            user_client,
             permission_name,
         }
     }
 
     pub(crate) fn main_client(&self) -> &Client<CUB> {
-        self.database_client.main_client()
+        self.user_client.main_client()
     }
 
     pub(crate) fn hyper_client(
@@ -42,10 +44,21 @@ where
     CUB: CosmosUriBuilder,
 {
     fn database_name(&self) -> &'a dyn DatabaseName {
-        self.database_client.database_name()
+        self.user_client.database_name()
+    }
+
+    fn user_name(&self) -> &'a dyn UserName {
+        self.user_client.user_name()
     }
 
     fn permission_name(&self) -> &'a dyn PermissionName {
         self.permission_name
+    }
+
+    fn create_permission<R>(&self) -> requests::CreatePermissionBuilder<'_, CUB, R, No>
+    where
+        R: Resource,
+    {
+        requests::CreatePermissionBuilder::new(self)
     }
 }
