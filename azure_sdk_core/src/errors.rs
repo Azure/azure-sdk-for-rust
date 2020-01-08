@@ -37,6 +37,28 @@ quick_error! {
 }
 
 #[derive(Debug, Clone, PartialEq)]
+pub struct UnexpectedValue {
+    expected: Vec<String>,
+    received: String,
+}
+
+impl UnexpectedValue {
+    pub fn new(expected: String, received: String) -> UnexpectedValue {
+        Self {
+            expected: vec![expected],
+            received,
+        }
+    }
+
+    pub fn new_multiple(allowed: Vec<String>, received: String) -> Self {
+        UnexpectedValue {
+            expected: allowed,
+            received,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
 pub struct UnexpectedHTTPResult {
     expected: Vec<StatusCode>,
     received: StatusCode,
@@ -177,7 +199,11 @@ quick_error! {
         }
         UnexpectedHTTPResult(err: UnexpectedHTTPResult){
             from()
-            display("UnexpectedHTTPResult error")
+            display("UnexpectedHTTPResult error: {}", err)
+        }
+        UnexpectedValue(err: UnexpectedValue){
+            from()
+            display("UnexpectedValue error: {:?}", err)
         }
         HeaderNotFound(msg: String) {
             display("Header not found: {}", msg)
