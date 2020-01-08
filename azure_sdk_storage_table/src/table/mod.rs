@@ -357,9 +357,11 @@ impl TableService {
                 );
             }
 
-            // since we have already added some headers
-            // this unwrap should be safe
-            add_extra_headers(request.headers_mut().unwrap());
+            // On error during build, headers_mut returns None,
+            // thus we skip extra headers handling and let request fail gracefully
+            if let Some(ref mut headers) = request.headers_mut() {
+                add_extra_headers(headers);
+            }
         })
     }
 
