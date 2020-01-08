@@ -2,6 +2,7 @@ use crate::Resource;
 use azure_sdk_core::errors::{AzureError, UnexpectedValue};
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
+use std::convert::TryInto;
 
 pub trait PermissionName: std::fmt::Debug {
     fn name(&self) -> &str;
@@ -31,10 +32,22 @@ pub enum PermissionMode<T: Resource> {
     Read(T),
 }
 
+impl<T> PermissionMode<T>
+where
+    T: Resource,
+{
+    pub fn to_elements(&self) -> (&'static str, &T) {
+        match self {
+            PermissionMode::Read(resource) => ("Read", resource),
+            PermissionMode::All(resource) => ("All", resource),
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct Permission<'a, T>
 where
-    T: Resource + Clone,
+    T: Resource,
 {
     pub id: Cow<'a, str>,
     pub permission_mode: PermissionMode<T>,
@@ -56,6 +69,14 @@ pub(crate) struct CosmosPermission<'a> {
     pub _self: Cow<'a, str>,
     pub _etag: Cow<'a, str>,
     pub _token: Cow<'a, str>,
+}
+
+impl<'a> std::convert::TryFrom<&[u8]> for Permission<'a, Cow<'a, str>> {
+    type Error = AzureError;
+    fn try_from(slice: &[u8]) -> Result<Self, Self::Error> {
+        let cosmos_permission: CosmosPermission<'_> = serde_json::from_slice(slice)?;
+        cosmos_permission.try_into()
+    }
 }
 
 impl<'a> std::convert::TryFrom<CosmosPermission<'a>> for Permission<'a, Cow<'a, str>> {
@@ -91,10 +112,7 @@ where
     T: Resource + Clone,
 {
     fn from(permission: Permission<'a, T>) -> Self {
-        let (permission_mode, resource) = match permission.permission_mode {
-            PermissionMode::Read(resource) => ("Read", resource),
-            PermissionMode::All(resource) => ("All", resource),
-        };
+        let (permission_mode, resource) = permission.permission_mode.to_elements();
 
         Self {
             id: permission.id,

@@ -1,8 +1,6 @@
 use crate::clients::{Client, CosmosUriBuilder, UserClient};
 use crate::database::DatabaseName;
-use crate::{
-    requests, DatabaseTrait, PermissionName, PermissionTrait, Resource, UserName, UserTrait,
-};
+use crate::{requests, PermissionName, PermissionTrait, Resource, UserName, UserTrait};
 use azure_sdk_core::No;
 
 #[derive(Debug, Clone)]

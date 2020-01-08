@@ -1,6 +1,7 @@
 mod create_collection_response;
 mod create_database_response;
 mod create_document_response;
+mod create_permission_response;
 mod create_user_response;
 mod delete_collection_response;
 mod delete_database_response;
@@ -19,6 +20,7 @@ mod replace_document_response;
 pub use self::create_collection_response::CreateCollectionResponse;
 pub use self::create_database_response::CreateDatabaseResponse;
 pub use self::create_document_response::CreateDocumentResponse;
+pub use self::create_permission_response::CreatePermissionResponse;
 pub use self::create_user_response::CreateUserResponse;
 pub use self::delete_collection_response::DeleteCollectionResponse;
 pub use self::delete_database_response::DeleteDatabaseResponse;
