@@ -27,7 +27,10 @@ where
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum PermissionMode<T: Resource> {
+pub enum PermissionMode<T>
+where
+    T: Resource,
+{
     All(T),
     Read(T),
 }
@@ -109,7 +112,7 @@ impl<'a> std::convert::TryFrom<CosmosPermission<'a>> for Permission<'a, Cow<'a, 
 
 impl<'a, T> std::convert::From<Permission<'a, T>> for CosmosPermission<'a>
 where
-    T: Resource + Clone,
+    T: Resource,
 {
     fn from(permission: Permission<'a, T>) -> Self {
         let (permission_mode, resource) = permission.permission_mode.to_elements();

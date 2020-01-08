@@ -81,22 +81,13 @@ where
     }
 }
 
-// methods callable regardless
-impl<'a, CUB, R, PermissionSet> CreatePermissionBuilder<'a, CUB, R, PermissionSet>
-where
-    PermissionSet: ToAssign,
-    CUB: CosmosUriBuilder,
-    R: Resource,
-{
-}
-
 // methods callable only when every mandatory field has been filled
 impl<'a, CUB, R> CreatePermissionBuilder<'a, CUB, R, Yes>
 where
     CUB: CosmosUriBuilder,
     R: Resource,
 {
-    pub async fn execute(&self) -> Result<CreatePermissionResponse<'_>, AzureError> {
+    pub async fn execute(&self) -> Result<CreatePermissionResponse<'a>, AzureError> {
         trace!("CreatePermissionBuilder::execute called");
 
         let mut req = self.permission_client.main_client().prepare_request(
@@ -119,7 +110,7 @@ where
             resource: &'a str,
         }
 
-        let (permission_mode, resource) = self.permission_mode().clone().to_elements();
+        let (permission_mode, resource) = self.permission_mode().to_elements();
 
         let request_body = RequestBody {
             id: self.permission_client.permission_name().name(),
