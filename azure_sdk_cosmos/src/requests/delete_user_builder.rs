@@ -41,7 +41,7 @@ where
     pub async fn execute(&self) -> Result<DeleteUserResponse, AzureError> {
         trace!("DeleteUserBuilder::execute called");
 
-        let mut req = self.user_client.main_client().prepare_request(
+        let req = self.user_client.main_client().prepare_request(
             &format!(
                 "dbs/{}/users/{}",
                 self.user_client.database_name().name(),
