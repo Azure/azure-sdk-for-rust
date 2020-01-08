@@ -3,6 +3,28 @@ use azure_sdk_core::errors::{AzureError, UnexpectedValue};
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
 
+pub trait PermissionName: std::fmt::Debug {
+    fn name(&self) -> &str;
+}
+
+impl<'a, T> PermissionName for Permission<'a, T>
+where
+    T: Resource + Clone + std::fmt::Debug,
+{
+    fn name(&self) -> &str {
+        &self.id
+    }
+}
+
+impl<R> PermissionName for R
+where
+    R: AsRef<str> + std::fmt::Debug,
+{
+    fn name(&self) -> &str {
+        self.as_ref()
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum PermissionMode<T: Resource> {
     All(T),

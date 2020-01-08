@@ -35,12 +35,12 @@ pub use self::document::{Document, DocumentAdditionalHeaders, DocumentName};
 pub use self::document_attributes::DocumentAttributes;
 pub use self::indexing_directive::IndexingDirective;
 pub use self::offer::Offer;
-pub use self::permission::PermissionMode;
+pub use self::permission::{Permission, PermissionMode, PermissionName};
 pub use self::query::{Param, ParamDef, Query};
 pub use self::requests::*;
 pub use self::resource::Resource;
 use crate::clients::{
-    Client, CollectionClient, CosmosUriBuilder, DatabaseClient, DocumentClient,
+    Client, CollectionClient, CosmosUriBuilder, DatabaseClient, DocumentClient, PermissionClient,
     StoredProcedureClient, UserClient,
 };
 use crate::collection::Collection;
@@ -477,6 +477,10 @@ where
     ) -> CollectionClient<'c, CUB>;
     fn with_user<'c>(&'c self, user_name: &'c dyn UserName) -> UserClient<'c, CUB>;
     fn list_users<'c>(&'c self) -> requests::ListUsersBuilder<'c, CUB>;
+    fn with_permission<'c>(
+        &'c self,
+        permission_name: &'c dyn PermissionName,
+    ) -> PermissionClient<'c, CUB>;
 }
 
 pub(crate) trait DatabaseBuilderTrait<'a, CUB>: DatabaseTrait<'a, CUB>
@@ -563,4 +567,12 @@ where
     fn get_user(&self) -> requests::GetUserBuilder<'_, CUB>;
     fn replace_user(&self) -> requests::ReplaceUserBuilder<'_, CUB, No>;
     fn delete_user(&self) -> requests::DeleteUserBuilder<'_, CUB>;
+}
+
+pub trait PermissionTrait<'a, CUB>
+where
+    CUB: CosmosUriBuilder,
+{
+    fn database_name(&self) -> &'a dyn DatabaseName;
+    fn permission_name(&self) -> &'a dyn PermissionName;
 }
