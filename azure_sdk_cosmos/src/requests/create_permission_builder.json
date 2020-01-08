@@ -4,8 +4,8 @@
 	"uses": [
 		"crate::clients::{CosmosUriBuilder, PermissionClient, ResourceType}",
 		"crate::prelude::*",
-		"crate::responses::CreateUserResponse",
-		"crate::{PermissionMode, Resource}",
+		"crate::responses::CreatePermissionResponse",
+		"crate::{PermissionMode, PermissionResource}",
 		"azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError}",
 		"azure_sdk_core::{No, ToAssign, Yes}",
 		"core::marker::PhantomData",
@@ -14,7 +14,7 @@
 	],
 	"extra_types": [ "'a", "CUB", "R" ],
 	"inline": true,
-	"extra_wheres": [ "CUB: CosmosUriBuilder", "R: Resource" ],
+	"extra_wheres": [ "CUB: CosmosUriBuilder", "R: PermissionResource" ],
 	"constructor_fields": [
 		{
 			"name": "permission_client",

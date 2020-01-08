@@ -1,6 +1,6 @@
 use crate::clients::{Client, CosmosUriBuilder, UserClient};
 use crate::database::DatabaseName;
-use crate::{requests, PermissionName, PermissionTrait, Resource, UserName, UserTrait};
+use crate::{requests, PermissionName, PermissionResource, PermissionTrait, UserName, UserTrait};
 use azure_sdk_core::No;
 
 #[derive(Debug, Clone)]
@@ -55,7 +55,7 @@ where
 
     fn create_permission<R>(&self) -> requests::CreatePermissionBuilder<'_, CUB, R, No>
     where
-        R: Resource,
+        R: PermissionResource,
     {
         requests::CreatePermissionBuilder::new(self)
     }

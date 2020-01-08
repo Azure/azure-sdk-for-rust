@@ -18,6 +18,7 @@ mod indexing_directive;
 pub mod offer;
 mod partition_keys;
 mod permission;
+mod permission_resource;
 pub mod prelude;
 mod query;
 mod requests;
@@ -36,6 +37,7 @@ pub use self::document_attributes::DocumentAttributes;
 pub use self::indexing_directive::IndexingDirective;
 pub use self::offer::Offer;
 pub use self::permission::{Permission, PermissionMode, PermissionName};
+pub use self::permission_resource::PermissionResource;
 pub use self::query::{Param, ParamDef, Query};
 pub use self::requests::*;
 pub use self::resource::Resource;
@@ -352,14 +354,14 @@ where
 
 pub trait PermissionModeRequired<'a, R>
 where
-    R: Resource,
+    R: PermissionResource,
 {
     fn permission_mode(&self) -> &'a PermissionMode<R>;
 }
 
 pub trait PermissionModeSupport<'a, R>
 where
-    R: Resource,
+    R: PermissionResource,
 {
     type O;
     fn with_permission_mode(self, permission: &'a PermissionMode<R>) -> Self::O;
@@ -600,5 +602,5 @@ where
     fn permission_name(&self) -> &'a dyn PermissionName;
     fn create_permission<R>(&self) -> requests::CreatePermissionBuilder<'_, CUB, R, No>
     where
-        R: Resource;
+        R: PermissionResource;
 }

@@ -13,26 +13,33 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let database_name = std::env::args()
         .nth(1)
         .expect("please specify the database name as first command line parameter");
-    let user_name = std::env::args()
+    let collection_name = std::env::args()
         .nth(2)
-        .expect("please specify the user name as second command line parameter");
+        .expect("please specify the collection name as second command line parameter");
+    let user_name = std::env::args()
+        .nth(3)
+        .expect("please specify the user name as third command line parameter");
 
     let authorization_token =
         AuthorizationToken::new(account.clone(), TokenType::Master, &master_key)?;
 
     let client = ClientBuilder::new(authorization_token)?;
     let database_client = client.with_database(&database_name);
+    let collection_client = database_client.with_collection(&collection_name);
     let user_client = database_client.with_user(&user_name);
 
     let get_database_response = database_client.get_database().execute().await?;
     println!("get_database_response == {:#?}", get_database_response);
+
+    let get_collection_response = collection_client.get_collection().execute().await?;
+    println!("get_collection_response == {:#?}", get_collection_response);
 
     let create_user_response = user_client.create_user().execute().await?;
     println!("create_user_response == {:#?}", create_user_response);
 
     // create the permission!
     let permission_client = user_client.with_permission(&"matrix");
-    let permission_mode = PermissionMode::All(get_database_response.database);
+    let permission_mode = PermissionMode::Read(get_collection_response.collection);
 
     let create_permission_response = permission_client
         .create_permission()

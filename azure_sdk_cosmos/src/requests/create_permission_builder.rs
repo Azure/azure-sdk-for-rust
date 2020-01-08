@@ -1,7 +1,7 @@
 use crate::clients::{CosmosUriBuilder, PermissionClient, ResourceType};
 use crate::prelude::*;
 use crate::responses::CreatePermissionResponse;
-use crate::{PermissionMode, PermissionTrait, Resource};
+use crate::{PermissionMode, PermissionResource};
 use azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError};
 use azure_sdk_core::{No, ToAssign, Yes};
 use core::marker::PhantomData;
@@ -13,7 +13,7 @@ pub struct CreatePermissionBuilder<'a, CUB, R, PermissionSet>
 where
     PermissionSet: ToAssign,
     CUB: CosmosUriBuilder,
-    R: Resource,
+    R: PermissionResource,
 {
     permission_client: &'a PermissionClient<'a, CUB>,
     p_permission_mode: PhantomData<PermissionSet>,
@@ -23,7 +23,7 @@ where
 impl<'a, CUB, R> CreatePermissionBuilder<'a, CUB, R, No>
 where
     CUB: CosmosUriBuilder,
-    R: Resource,
+    R: PermissionResource,
 {
     #[inline]
     pub(crate) fn new(
@@ -42,7 +42,7 @@ impl<'a, CUB, R, PermissionSet> PermissionClientRequired<'a, CUB>
 where
     PermissionSet: ToAssign,
     CUB: CosmosUriBuilder,
-    R: Resource,
+    R: PermissionResource,
 {
     #[inline]
     fn permission_client(&self) -> &'a PermissionClient<'a, CUB> {
@@ -56,7 +56,7 @@ where
 impl<'a, CUB, R> PermissionModeRequired<'a, R> for CreatePermissionBuilder<'a, CUB, R, Yes>
 where
     CUB: CosmosUriBuilder,
-    R: Resource,
+    R: PermissionResource,
 {
     #[inline]
     fn permission_mode(&self) -> &'a PermissionMode<R> {
@@ -67,7 +67,7 @@ where
 impl<'a, CUB, R> PermissionModeSupport<'a, R> for CreatePermissionBuilder<'a, CUB, R, No>
 where
     CUB: CosmosUriBuilder,
-    R: Resource,
+    R: PermissionResource,
 {
     type O = CreatePermissionBuilder<'a, CUB, R, Yes>;
 
@@ -85,7 +85,7 @@ where
 impl<'a, CUB, R> CreatePermissionBuilder<'a, CUB, R, Yes>
 where
     CUB: CosmosUriBuilder,
-    R: Resource,
+    R: PermissionResource,
 {
     pub async fn execute(&self) -> Result<CreatePermissionResponse<'a>, AzureError> {
         trace!("CreatePermissionBuilder::execute called");
@@ -120,7 +120,7 @@ where
         let request_body = serde_json::to_string(&request_body)?;
 
         let req = req.body(hyper::Body::from(request_body))?;
-        println!("\nreq == {:?}", req);
+        println!("\nreq == {:#?}", req);
 
         let (headers, body) = check_status_extract_headers_and_body(
             self.permission_client.hyper_client().request(req),

@@ -1,4 +1,4 @@
-use crate::Resource;
+use crate::PermissionResource;
 use azure_sdk_core::errors::{AzureError, UnexpectedValue};
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
@@ -10,7 +10,7 @@ pub trait PermissionName: std::fmt::Debug {
 
 impl<'a, T> PermissionName for Permission<'a, T>
 where
-    T: Resource + Clone + std::fmt::Debug,
+    T: PermissionResource + Clone + std::fmt::Debug,
 {
     fn name(&self) -> &str {
         &self.id
@@ -29,7 +29,7 @@ where
 #[derive(Debug, Clone, PartialEq)]
 pub enum PermissionMode<T>
 where
-    T: Resource,
+    T: PermissionResource,
 {
     All(T),
     Read(T),
@@ -37,7 +37,7 @@ where
 
 impl<T> PermissionMode<T>
 where
-    T: Resource,
+    T: PermissionResource,
 {
     pub fn to_elements(&self) -> (&'static str, &T) {
         match self {
@@ -50,7 +50,7 @@ where
 #[derive(Debug, Clone, PartialEq)]
 pub struct Permission<'a, T>
 where
-    T: Resource,
+    T: PermissionResource,
 {
     pub id: Cow<'a, str>,
     pub permission_mode: PermissionMode<T>,
@@ -112,7 +112,7 @@ impl<'a> std::convert::TryFrom<CosmosPermission<'a>> for Permission<'a, Cow<'a, 
 
 impl<'a, T> std::convert::From<Permission<'a, T>> for CosmosPermission<'a>
 where
-    T: Resource,
+    T: PermissionResource,
 {
     fn from(permission: Permission<'a, T>) -> Self {
         let (permission_mode, resource) = permission.permission_mode.to_elements();
