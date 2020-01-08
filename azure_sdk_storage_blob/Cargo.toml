@@ -42,7 +42,7 @@ hyper-rustls            = "0.19"
 
 [dev-dependencies]
 env_logger              = "0.7"
-tokio                   = "0.2"
+tokio                   = { version = "0.2", features = ["macros"] }
 
 [features]
 test_e2e                = []
