@@ -1,0 +1,25 @@
+{
+	"name": "GetUserBuilder",
+	"derive": "Debug, Clone",
+	"uses": [
+		"crate::clients::{CosmosUriBuilder, ResourceType, UserClient}",
+		"crate::prelude::*",
+		"crate::responses::CreateUserResponse",
+		"azure_sdk_core::errors::UnexpectedHTTPResult",
+		"azure_sdk_core::errors::{extract_status_headers_and_body, AzureError}",
+		"hyper::StatusCode",
+		"std::convert::TryInt"
+	],
+	"extra_types": [ "'a", "CUB" ],
+	"inline": true,
+	"extra_wheres": [ "CUB: CosmosUriBuilder" ],
+	"constructor_fields": [
+		{
+			"name": "user_client",
+			"field_type": "&'a UserClient<'a, CUB>",
+			"trait_get": "UserClientRequired<'a, CUB>"
+		}
+	],
+	"fields": [
+	]
+}
