@@ -21,6 +21,9 @@ impl<'a> std::convert::TryFrom<(&HeaderMap, &[u8])> for CreatePermissionResponse
         let headers = value.0;
         let body = value.1;
 
+        println!("headers == {:#?}", headers);
+        println!("body == {:#?}", std::str::from_utf8(body)?);
+
         Ok(Self {
             permission: body.try_into()?,
             charge: request_charge_from_headers(headers)?,
