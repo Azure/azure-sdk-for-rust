@@ -18,7 +18,10 @@ impl PermissionResource for &str {}
 impl<'a> PermissionResource for std::borrow::Cow<'a, str> {}
 
 impl<T> PermissionResource for Document<T> {}
+impl<T> PermissionResource for &Document<T> {}
 
 impl PermissionResource for Collection {}
+impl PermissionResource for &Collection {}
 
 impl PermissionResource for User {}
+impl PermissionResource for &User {}

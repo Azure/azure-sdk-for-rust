@@ -31,7 +31,19 @@ impl<T> Resource for Document<T> {
     }
 }
 
+impl<T> Resource for &Document<T> {
+    fn uri(&self) -> &str {
+        self.document_attributes._self()
+    }
+}
+
 impl Resource for Database {
+    fn uri(&self) -> &str {
+        &self._self
+    }
+}
+
+impl Resource for &Database {
     fn uri(&self) -> &str {
         &self._self
     }
@@ -43,7 +55,19 @@ impl Resource for Collection {
     }
 }
 
+impl Resource for &Collection {
+    fn uri(&self) -> &str {
+        &self._self
+    }
+}
+
 impl Resource for User {
+    fn uri(&self) -> &str {
+        &self._self
+    }
+}
+
+impl Resource for &User {
     fn uri(&self) -> &str {
         &self._self
     }
