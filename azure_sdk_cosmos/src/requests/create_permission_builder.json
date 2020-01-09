@@ -30,6 +30,14 @@
 			"optional": false,
 			"trait_get": "PermissionModeRequired<'a, R>",
 			"trait_set": "PermissionModeSupport<'a, R>"
+		},
+		{
+			"name": "expiry_seconds",
+			"field_type": "u64",
+			"optional": true,
+			"initializer": "3600",
+			"trait_get": "ExpirySecondsOption",
+			"trait_set": "ExpirySecondsSupport"
 		}
 	]
 }

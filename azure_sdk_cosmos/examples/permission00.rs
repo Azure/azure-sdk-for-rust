@@ -44,6 +44,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let create_permission_response = permission_client
         .create_permission()
         .with_permission_mode(&permission_mode)
+        .with_expiry_seconds(18000) // 5 hours, max!
         .execute()
         .await?;
     println!(

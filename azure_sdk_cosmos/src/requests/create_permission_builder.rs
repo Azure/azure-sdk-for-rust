@@ -18,6 +18,7 @@ where
     permission_client: &'a PermissionClient<'a, CUB>,
     p_permission_mode: PhantomData<PermissionSet>,
     permission_mode: Option<&'a PermissionMode<R>>,
+    expiry_seconds: u64,
 }
 
 impl<'a, CUB, R> CreatePermissionBuilder<'a, CUB, R, No>
@@ -33,6 +34,7 @@ where
             permission_client,
             p_permission_mode: PhantomData {},
             permission_mode: None,
+            expiry_seconds: 3600,
         }
     }
 }
@@ -64,6 +66,19 @@ where
     }
 }
 
+impl<'a, CUB, R, PermissionSet> ExpirySecondsOption
+    for CreatePermissionBuilder<'a, CUB, R, PermissionSet>
+where
+    PermissionSet: ToAssign,
+    CUB: CosmosUriBuilder,
+    R: PermissionResource,
+{
+    #[inline]
+    fn expiry_seconds(&self) -> u64 {
+        self.expiry_seconds
+    }
+}
+
 impl<'a, CUB, R> PermissionModeSupport<'a, R> for CreatePermissionBuilder<'a, CUB, R, No>
 where
     CUB: CosmosUriBuilder,
@@ -77,6 +92,27 @@ where
             permission_client: self.permission_client,
             p_permission_mode: PhantomData {},
             permission_mode: Some(permission_mode),
+            expiry_seconds: self.expiry_seconds,
+        }
+    }
+}
+
+impl<'a, CUB, R, PermissionSet> ExpirySecondsSupport
+    for CreatePermissionBuilder<'a, CUB, R, PermissionSet>
+where
+    PermissionSet: ToAssign,
+    CUB: CosmosUriBuilder,
+    R: PermissionResource,
+{
+    type O = CreatePermissionBuilder<'a, CUB, R, PermissionSet>;
+
+    #[inline]
+    fn with_expiry_seconds(self, expiry_seconds: u64) -> Self::O {
+        CreatePermissionBuilder {
+            permission_client: self.permission_client,
+            p_permission_mode: PhantomData {},
+            permission_mode: self.permission_mode,
+            expiry_seconds,
         }
     }
 }
@@ -120,7 +156,7 @@ where
         let request_body = serde_json::to_string(&request_body)?;
 
         let req = req.body(hyper::Body::from(request_body))?;
-        println!("\nreq == {:#?}", req);
+        debug!("\nreq == {:#?}", req);
 
         let (headers, body) = check_status_extract_headers_and_body(
             self.permission_client.hyper_client().request(req),

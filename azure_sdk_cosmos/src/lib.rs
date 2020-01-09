@@ -295,6 +295,19 @@ pub trait PartitionKeysOption<'a> {
     }
 }
 
+pub trait ExpirySecondsOption {
+    fn expiry_seconds(&self) -> u64;
+
+    fn add_header(&self, builder: &mut Builder) {
+        builder.header(HEADER_DOCUMENTDB_EXPIRY_SECONDS, self.expiry_seconds());
+    }
+}
+
+pub trait ExpirySecondsSupport {
+    type O;
+    fn with_expiry_seconds(self, expiry_seconds: u64) -> Self::O;
+}
+
 pub trait DatabaseClientRequired<'a, CUB>
 where
     CUB: CosmosUriBuilder,
