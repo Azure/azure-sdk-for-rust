@@ -41,6 +41,7 @@ where
     CUB: CosmosUriBuilder,
 {
     hyper_client: hyper::Client<HttpsConnector<hyper::client::HttpConnector>>,
+    account: String,
     auth_token: AuthorizationToken,
     cosmos_uri_builder: CUB,
 }
@@ -107,29 +108,38 @@ pub struct ClientBuilder {}
 
 impl ClientBuilder {
     #[allow(clippy::new_ret_no_self)]
-    pub fn new(auth_token: AuthorizationToken) -> Result<Client<DefaultCosmosUri>, AzureError> {
+    pub fn new(
+        account: String,
+        auth_token: AuthorizationToken,
+    ) -> Result<Client<DefaultCosmosUri>, AzureError> {
         let client = hyper::Client::builder().build(HttpsConnector::new());
-        let cosmos_uri_builder = DefaultCosmosUri::new(auth_token.account());
+        let cosmos_uri_builder = DefaultCosmosUri::new(&account);
 
         Ok(Client {
             hyper_client: client,
+            account,
             auth_token,
             cosmos_uri_builder,
         })
     }
 
-    pub fn new_china(auth_token: AuthorizationToken) -> Result<Client<ChinaCosmosUri>, AzureError> {
+    pub fn new_china(
+        account: String,
+        auth_token: AuthorizationToken,
+    ) -> Result<Client<ChinaCosmosUri>, AzureError> {
         let client = hyper::Client::builder().build(HttpsConnector::new());
-        let cosmos_uri_builder = ChinaCosmosUri::new(auth_token.account());
+        let cosmos_uri_builder = ChinaCosmosUri::new(&account);
 
         Ok(Client {
             hyper_client: client,
+            account,
             auth_token,
             cosmos_uri_builder,
         })
     }
 
     pub fn new_custom(
+        account: String,
         auth_token: AuthorizationToken,
         uri: String,
     ) -> Result<Client<CustomCosmosUri>, AzureError> {
@@ -137,6 +147,7 @@ impl ClientBuilder {
 
         Ok(Client {
             hyper_client: client,
+            account,
             auth_token,
             cosmos_uri_builder: CustomCosmosUri { uri },
         })
@@ -148,12 +159,12 @@ impl ClientBuilder {
         //Account name: localhost:<port>
         //Account key: C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==
         let auth_token = AuthorizationToken::new(
-            format!("{}:{}", address, port),
             TokenType::Master,
             "C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==",
         ).unwrap();
         Ok(Client {
             hyper_client: client,
+            account: format!("{}:{}", address, port),
             auth_token,
             cosmos_uri_builder: CustomCosmosUri {
                 uri: format!("https://{}:{}", address, port),

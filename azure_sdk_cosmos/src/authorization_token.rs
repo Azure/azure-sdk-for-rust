@@ -1,3 +1,4 @@
+use crate::PermissionToken;
 use base64;
 use std::fmt::{Debug, Error, Formatter};
 
@@ -9,27 +10,17 @@ pub enum TokenType {
 
 #[derive(Clone)]
 pub struct AuthorizationToken {
-    account: String,
     token_type: TokenType,
     key: Vec<u8>,
 }
 
 impl AuthorizationToken {
     pub fn new(
-        account: String,
         token_type: TokenType,
         base64_encoded: &str,
     ) -> Result<AuthorizationToken, base64::DecodeError> {
         let key = base64::decode(&base64_encoded)?;
-        Ok(AuthorizationToken {
-            account,
-            token_type,
-            key,
-        })
-    }
-
-    pub fn account(&self) -> &str {
-        &self.account
+        Ok(AuthorizationToken { token_type, key })
     }
 
     pub fn token_type(&self) -> TokenType {
@@ -46,16 +37,15 @@ impl Debug for AuthorizationToken {
     fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
         write!(
             f,
-            "AuthorizationToken(account == {}, token_type == {:?}, key: <hidden>)",
-            self.account, self.token_type
+            "AuthorizationToken(token_type == {:?}, key: <hidden>)",
+            self.token_type
         )
     }
 }
 
-//impl std::convert::From<PermissionToken> for AuthorizationToken {
-//    fn from(permission_token:PermissionToken) -> Self  {
-//        Self::new(
-//
-//
-//    }
-//}
+impl std::convert::TryFrom<PermissionToken> for AuthorizationToken {
+    type Error = base64::DecodeError;
+    fn try_from(permission_token: PermissionToken) -> Result<Self, Self::Error> {
+        Self::new(TokenType::Resource, &permission_token.signature)
+    }
+}

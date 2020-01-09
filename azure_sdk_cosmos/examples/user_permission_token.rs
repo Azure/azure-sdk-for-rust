@@ -1,5 +1,6 @@
 use azure_sdk_cosmos::prelude::*;
 use azure_sdk_cosmos::PermissionMode;
+use std::convert::TryInto;
 use std::error::Error;
 
 #[tokio::main]
@@ -20,10 +21,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .nth(3)
         .expect("please specify the user name as third command line parameter");
 
-    let authorization_token =
-        AuthorizationToken::new(account.clone(), TokenType::Master, &master_key)?;
+    let authorization_token = AuthorizationToken::new(TokenType::Master, &master_key)?;
 
-    let client = ClientBuilder::new(authorization_token)?;
+    let client = ClientBuilder::new(account, authorization_token)?;
     let database_client = client.with_database(&database_name);
     let collection_client = database_client.with_collection(&collection_name);
     let user_client = database_client.with_user(&user_name);
@@ -63,6 +63,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     // change the AuthorizationToken using the token
     // of the permission.
+    let new_authorization_token: AuthorizationToken = create_permission_response
+        .permission
+        .permission_token
+        .try_into()
+        .unwrap();
+    client.set_auth_token(new_authorization_token);
 
     let delete_user_response = user_client.delete_user().execute().await?;
     println!("delete_user_response == {:#?}", delete_user_response);
