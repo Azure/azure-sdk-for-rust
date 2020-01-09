@@ -4,7 +4,7 @@ extern crate log;
 #[macro_use]
 extern crate serde_derive;
 #[macro_use]
-extern crate azure_sdk_core;
+extern crate failure;
 
 mod authorization_token;
 pub mod clients;
@@ -13,6 +13,7 @@ mod consistency_level;
 mod database;
 mod document;
 mod document_attributes;
+mod errors;
 mod headers;
 mod indexing_directive;
 pub mod offer;

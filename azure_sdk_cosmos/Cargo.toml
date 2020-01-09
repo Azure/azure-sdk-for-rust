@@ -42,6 +42,7 @@ smallvec                 = { version        = "1.0"            , features  = ["s
 bytes                    = "0.5"
 hyper-rustls             = { version        = "0.19.0-alpha.3" , features  = [] }
 futures                 = "0.3"
+failure			 = "0.1.6"
 
 [dev-dependencies]
 futures-executor-preview = "0.3.0-alpha.19"

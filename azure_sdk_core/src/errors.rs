@@ -279,6 +279,9 @@ quick_error! {
         MissingValueError(value: String, expected_type: String) {
             display("An expected JSON node is missing: {} of expected type {}", value, expected_type)
         }
+        FailureError(error: failure::Error) {
+            display("failure::Error error {}", error)
+        }
     }
 }
 
@@ -324,6 +327,12 @@ quick_error! {
 impl From<()> for AzureError {
     fn from(_: ()) -> AzureError {
         AzureError::GenericError
+    }
+}
+
+impl From<failure::Error> for AzureError {
+    fn from(error: failure::Error) -> AzureError {
+        AzureError::FailureError(error)
     }
 }
 

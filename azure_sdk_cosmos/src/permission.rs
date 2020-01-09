@@ -1,4 +1,4 @@
-use crate::PermissionResource;
+use crate::{PermissionResource, PermissionToken};
 use azure_sdk_core::errors::{AzureError, UnexpectedValue};
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
@@ -58,7 +58,7 @@ where
     pub ts: u64,
     pub _self: Cow<'a, str>,
     pub etag: Cow<'a, str>,
-    pub token: Cow<'a, str>,
+    pub permission_token: PermissionToken,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -98,6 +98,9 @@ impl<'a> std::convert::TryFrom<CosmosPermission<'a>> for Permission<'a, Cow<'a, 
             }
         };
 
+        let permission_token: &str = &cosmos_permission._token;
+        let permission_token: PermissionToken = permission_token.try_into()?;
+
         Ok(Self {
             id: cosmos_permission.id,
             permission_mode,
@@ -105,7 +108,7 @@ impl<'a> std::convert::TryFrom<CosmosPermission<'a>> for Permission<'a, Cow<'a, 
             ts: cosmos_permission._ts,
             _self: cosmos_permission._self,
             etag: cosmos_permission._etag,
-            token: cosmos_permission._token,
+            permission_token,
         })
     }
 }
@@ -125,7 +128,7 @@ where
             _ts: permission.ts,
             _self: permission._self,
             _etag: permission.etag,
-            _token: permission.token,
+            _token: Cow::Owned(permission.permission_token.to_string()),
         }
     }
 }
