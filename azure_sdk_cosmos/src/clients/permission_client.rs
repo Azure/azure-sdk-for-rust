@@ -60,6 +60,13 @@ where
         requests::CreatePermissionBuilder::new(self)
     }
 
+    fn replace_permission<R>(&self) -> requests::ReplacePermissionBuilder<'_, CUB, R, No>
+    where
+        R: PermissionResource,
+    {
+        requests::ReplacePermissionBuilder::new(self)
+    }
+
     fn get_permission(&self) -> requests::GetPermissionBuilder<'_, CUB> {
         requests::GetPermissionBuilder::new(self)
     }

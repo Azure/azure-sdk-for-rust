@@ -620,5 +620,8 @@ where
     fn create_permission<R>(&self) -> requests::CreatePermissionBuilder<'_, CUB, R, No>
     where
         R: PermissionResource;
+    fn replace_permission<R>(&self) -> requests::ReplacePermissionBuilder<'_, CUB, R, No>
+    where
+        R: PermissionResource;
     fn get_permission(&self) -> requests::GetPermissionBuilder<'_, CUB>;
 }

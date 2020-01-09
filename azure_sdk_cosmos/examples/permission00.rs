@@ -69,7 +69,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let create_permission2_response = permission_client
         .create_permission()
         .with_permission_mode(&permission_mode)
-        .with_expiry_seconds(100) // 100 seconds
         .execute()
         .await?;
     println!(
@@ -85,6 +84,21 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let get_permission_response = permission_client.get_permission().execute().await?;
     println!("get_permission_response == {:#?}", get_permission_response);
+
+    let permission = get_permission_response.unwrap().permission;
+
+    // renew permission extending its validity for 60 seconds more.
+    let replace_permission_response = permission_client
+        .replace_permission()
+        .with_permission_mode(&permission.permission_mode)
+        .with_expiry_seconds(60)
+        .execute()
+        .await?;
+
+    println!(
+        "replace_permission_response == {:#?}",
+        replace_permission_response
+    );
 
     let delete_user_response = user_client.delete_user().execute().await?;
     println!("delete_user_response == {:#?}", delete_user_response);

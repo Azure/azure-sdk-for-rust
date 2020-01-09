@@ -5,7 +5,7 @@
 		"crate::clients::{CosmosUriBuilder, PermissionClient, ResourceType}",
 		"crate::prelude::*",
 		"crate::responses::GetPermissionResponse",
-		"azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError}",
+		"azure_sdk_core::errors::{UnexpectedHTTPResult, extract_status_headers_and_body, AzureError}",
 		"hyper::StatusCode",
 		"std::convert::TryInto"
 	],

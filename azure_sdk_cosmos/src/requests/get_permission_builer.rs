@@ -1,7 +1,7 @@
 use crate::clients::{CosmosUriBuilder, PermissionClient, ResourceType};
 use crate::prelude::*;
 use crate::responses::GetPermissionResponse;
-use azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError};
+use azure_sdk_core::errors::{extract_status_headers_and_body, AzureError, UnexpectedHTTPResult};
 use hyper::StatusCode;
 use std::convert::TryInto;
 
@@ -40,7 +40,7 @@ impl<'a, CUB> GetPermissionBuilder<'a, CUB>
 where
     CUB: CosmosUriBuilder,
 {
-    pub async fn execute(&self) -> Result<GetPermissionResponse<'a>, AzureError> {
+    pub async fn execute(&self) -> Result<Option<GetPermissionResponse<'a>>, AzureError> {
         trace!("GetPermissionBuilder::execute called");
 
         let mut req = self.permission_client.main_client().prepare_request(
@@ -57,12 +57,19 @@ where
         let req = req.body(hyper::Body::empty())?;
         debug!("\nreq == {:#?}", req);
 
-        let (headers, body) = check_status_extract_headers_and_body(
-            self.permission_client.hyper_client().request(req),
-            StatusCode::OK,
-        )
-        .await?;
+        let (status, headers, body) =
+            extract_status_headers_and_body(self.permission_client.hyper_client().request(req))
+                .await?;
 
-        Ok((&headers, &body as &[u8]).try_into()?)
+        match status {
+            StatusCode::OK => Ok(Some((&headers, &body as &[u8]).try_into()?)),
+            StatusCode::NOT_FOUND => Ok(None),
+            _ => Err(UnexpectedHTTPResult::new_multiple(
+                vec![StatusCode::OK, StatusCode::NOT_FOUND],
+                status,
+                std::str::from_utf8(&body)?,
+            )
+            .into()),
+        }
     }
 }
