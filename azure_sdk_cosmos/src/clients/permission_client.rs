@@ -70,4 +70,8 @@ where
     fn get_permission(&self) -> requests::GetPermissionBuilder<'_, CUB> {
         requests::GetPermissionBuilder::new(self)
     }
+
+    fn delete_permission(&self) -> requests::DeletePermissionsBuilder<'_, CUB> {
+        requests::DeletePermissionsBuilder::new(self)
+    }
 }

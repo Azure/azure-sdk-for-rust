@@ -624,4 +624,5 @@ where
     where
         R: PermissionResource;
     fn get_permission(&self) -> requests::GetPermissionBuilder<'_, CUB>;
+    fn delete_permission(&self) -> requests::DeletePermissionsBuilder<'_, CUB>;
 }

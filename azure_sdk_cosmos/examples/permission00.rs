@@ -94,10 +94,15 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .with_expiry_seconds(60)
         .execute()
         .await?;
-
     println!(
         "replace_permission_response == {:#?}",
         replace_permission_response
+    );
+
+    let delete_permission_response = permission_client.delete_permission().execute().await?;
+    println!(
+        "delete_permission_response == {:#?}",
+        delete_permission_response
     );
 
     let delete_user_response = user_client.delete_user().execute().await?;
