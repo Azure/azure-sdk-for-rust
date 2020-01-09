@@ -156,7 +156,10 @@ mod tests {
 
         let permission: Permission<'_, Cow<'_, str>> =
             cosmos_permission.clone().try_into().unwrap();
-        assert_eq!(permission.token, cosmos_permission._token);
+        assert_eq!(
+            permission.permission_token.to_string(),
+            cosmos_permission._token
+        );
         assert_eq!(
             permission.permission_mode,
             PermissionMode::Read(Cow::Borrowed(r#"dbs/volcanodb/colls/volcano1"#))

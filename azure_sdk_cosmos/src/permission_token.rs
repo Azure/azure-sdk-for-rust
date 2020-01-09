@@ -15,7 +15,7 @@ impl std::fmt::Display for PermissionToken {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "{}{}{}{}{}{}",
+            "{}{}&{}{}&{}{}",
             PERMISSION_TYPE_PREFIX,
             &self.permission_type,
             VERSION_PREFIX,
@@ -89,7 +89,7 @@ mod tests {
     #[test]
     fn parse_permission_token() {
         let permission_token: PermissionToken = PERMISSION.try_into().unwrap();
-        assert_eq!(permission_token.ver, "1");
+        assert_eq!(permission_token.version, "1");
         assert_eq!(permission_token.permission_type, "resource");
     }
 }
