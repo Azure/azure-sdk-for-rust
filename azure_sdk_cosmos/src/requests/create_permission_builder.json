@@ -23,7 +23,7 @@
 		}
 	],
 	"fields": [
-	{
+		{
 			"name": "permission_mode",
 			"field_type": "&'a PermissionMode<R>",
 			"builder_type": "PermissionSet",

@@ -607,6 +607,7 @@ where
         &'c self,
         permission_name: &'c dyn PermissionName,
     ) -> PermissionClient<'c, CUB>;
+    fn list_permissions(&self) -> requests::ListPermissionsBuilder<'_, CUB>;
 }
 
 pub trait PermissionTrait<'a, CUB>

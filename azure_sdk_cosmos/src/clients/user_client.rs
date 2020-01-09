@@ -71,4 +71,8 @@ where
     ) -> PermissionClient<'c, CUB> {
         PermissionClient::new(self, permission_name)
     }
+
+    fn list_permissions(&self) -> requests::ListPermissionsBuilder<'_, CUB> {
+        requests::ListPermissionsBuilder::new(self)
+    }
 }

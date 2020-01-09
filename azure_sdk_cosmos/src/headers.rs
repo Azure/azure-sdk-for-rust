@@ -22,3 +22,5 @@ pub(crate) const HEADER_DOCUMENTDB_QUERY_ENABLECROSSPARTITION: &str =
 pub(crate) const HEADER_DOCUMENTDB_QUERY_PARALLELIZECROSSPARTITIONQUERY: &str =
     "x-ms-documentdb-query-parallelizecrosspartitionquery"; // [bool]
 pub(crate) const HEADER_DOCUMENTDB_EXPIRY_SECONDS: &str = "x-ms-documentdb-expiry-seconds"; // [u64]
+pub(crate) const HEADER_CONTENT_PATH: &str = "x-ms-content-path"; // [String]
+pub(crate) const HEADER_ALT_CONTENT_PATH: &str = "x-ms-alt-content-path"; // [String]
