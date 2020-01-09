@@ -45,6 +45,15 @@ where
     cosmos_uri_builder: CUB,
 }
 
+impl<CUB> Client<CUB>
+where
+    CUB: CosmosUriBuilder,
+{
+    pub fn set_auth_token(&mut self, auth_token: AuthorizationToken) {
+        self.auth_token = auth_token
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct DefaultCosmosUri {
     uri: String,

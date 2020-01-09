@@ -15,9 +15,17 @@ pub struct AuthorizationToken {
 }
 
 impl AuthorizationToken {
-    pub fn new(account: String, token_type: TokenType, base64_encoded: &str) -> Result<AuthorizationToken, base64::DecodeError> {
+    pub fn new(
+        account: String,
+        token_type: TokenType,
+        base64_encoded: &str,
+    ) -> Result<AuthorizationToken, base64::DecodeError> {
         let key = base64::decode(&base64_encoded)?;
-        Ok(AuthorizationToken { account, token_type, key })
+        Ok(AuthorizationToken {
+            account,
+            token_type,
+            key,
+        })
     }
 
     pub fn account(&self) -> &str {
@@ -38,8 +46,16 @@ impl Debug for AuthorizationToken {
     fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
         write!(
             f,
-            "AuthorizationToken(account == {}, token_type == {:?})",
+            "AuthorizationToken(account == {}, token_type == {:?}, key: <hidden>)",
             self.account, self.token_type
         )
     }
 }
+
+//impl std::convert::From<PermissionToken> for AuthorizationToken {
+//    fn from(permission_token:PermissionToken) -> Self  {
+//        Self::new(
+//
+//
+//    }
+//}
