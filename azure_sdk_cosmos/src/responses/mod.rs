@@ -11,6 +11,7 @@ mod execute_stored_procedure_response;
 mod get_collection_response;
 mod get_database_response;
 mod get_document_response;
+mod get_permission_response;
 mod list_collections_response;
 mod list_databases_response;
 mod list_documents_response;
@@ -31,6 +32,7 @@ pub use self::execute_stored_procedure_response::ExecuteStoredProcedureResponse;
 pub use self::get_collection_response::GetCollectionResponse;
 pub use self::get_database_response::GetDatabaseResponse;
 pub use self::get_document_response::GetDocumentResponse;
+pub use self::get_permission_response::GetPermissionResponse;
 pub use self::list_collections_response::ListCollectionsResponse;
 pub use self::list_databases_response::ListDatabasesResponse;
 pub use self::list_documents_response::{

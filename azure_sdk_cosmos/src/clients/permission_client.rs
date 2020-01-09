@@ -59,4 +59,8 @@ where
     {
         requests::CreatePermissionBuilder::new(self)
     }
+
+    fn get_permission(&self) -> requests::GetPermissionBuilder<'_, CUB> {
+        requests::GetPermissionBuilder::new(self)
+    }
 }

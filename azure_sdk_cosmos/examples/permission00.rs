@@ -83,6 +83,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
         list_permissions_response
     );
 
+    let get_permission_response = permission_client.get_permission().execute().await?;
+    println!("get_permission_response == {:#?}", get_permission_response);
+
     let delete_user_response = user_client.delete_user().execute().await?;
     println!("delete_user_response == {:#?}", delete_user_response);
 
