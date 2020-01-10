@@ -40,11 +40,13 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .expect("please specify the collection name as first command line parameter");
 
     // First, we create an authorization token. There are two types of tokens, master and resource
-    // constrained. Please check the Azure documentation for details.
-    let authorization_token = AuthorizationToken::new(account, TokenType::Master, &master_key)?;
+    // constrained. This SDK supports both.
+    // Please check the Azure documentation for details or the examples folder
+    // on how to create and use token-based permissions.
+    let authorization_token = AuthorizationToken::new_master(&master_key)?;
 
     // Next we will create a Cosmos client.
-    let client = ClientBuilder::new(authorization_token.clone())?;
+    let client = ClientBuilder::new(account, authorization_token.clone())?;
     // We know the database so we can obtain a database client.
     let database_client = client.with_database(&database_name);
     // We know the collection so we can obtain a collection client.
@@ -72,7 +74,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             .execute()
             .await?;
     }
-    // wow that was easy and fast, isn'it? :)
+    // wow that was easy and fast, wasnt'it? :)
     println!("Done!");
 
     // TASK 2

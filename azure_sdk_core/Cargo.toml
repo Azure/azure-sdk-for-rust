@@ -1,6 +1,6 @@
 [package]
 name          = "azure_sdk_core"
-version       = "0.35.0"
+version       = "0.35.1"
 description   = "Rust wrappers around Microsoft Azure REST APIs - Core crate"
 readme        = "README.md"
 authors       = ["Francesco Cogno <francesco.cogno@outlook.com>", "Max Gortman <mgortman@microsoft.com>", "Dong Liu <doliu@microsoft.com>"]
@@ -40,6 +40,7 @@ uuid                    = { version        = "0.8", features             = ["v4"
 smallvec                = { version        = "1.0"            , features = ["serde"] }
 bytes                   = "0.5"
 hyper-rustls            = { version        = "0.19.0-alpha.3" , features = [] }
+failure			= "0.1.6"
 
 [dev-dependencies]
 tokio-core              = "0.1"

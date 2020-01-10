@@ -5,15 +5,15 @@
 
 [![Build Status](https://travis-ci.org/MindFlavor/AzureSDKForRust.svg?branch=master)](https://travis-ci.org/MindFlavor/AzureSDKForRust) [![Coverage Status](https://coveralls.io/repos/MindFlavor/AzureSDKForRust/badge.svg?branch=master&service=github)](https://coveralls.io/github/MindFlavor/AzureSDKForRust?branch=master) ![stability-unstable](https://img.shields.io/badge/stability-unstable-yellow.svg)
 
-[![tag](https://img.shields.io/github/tag/mindflavor/AzureSDKForRust.svg)](https://github.com/MindFlavor/AzureSDKForRust/tree/cosmos_0.32.2) [![release](https://img.shields.io/github/release/mindflavor/AzureSDKForRust.svg)](https://github.com/MindFlavor/AzureSDKForRust/releases/tag/cosmos_0.32.2) [![commitssince](https://img.shields.io/github/commits-since/mindflavor/AzureSDKForRust/cosmos_0.32.2.svg)](https://github.com/MindFlavor/AzureSDKForRust/commits/master)
+[![tag](https://img.shields.io/github/tag/mindflavor/AzureSDKForRust.svg)](https://github.com/MindFlavor/AzureSDKForRust/tree/cosmos_0.33.0) [![release](https://img.shields.io/github/release/mindflavor/AzureSDKForRust.svg)](https://github.com/MindFlavor/AzureSDKForRust/releases/tag/cosmos_0.33.0) [![commitssince](https://img.shields.io/github/commits-since/mindflavor/AzureSDKForRust/cosmos_0.33.0.svg)](https://github.com/MindFlavor/AzureSDKForRust/commits/master)
 
 [![GitHub contributors](https://img.shields.io/github/contributors/MindFlavor/AzureSDKForRust.svg)](https://github.com/MindFlavor/AzureSDKForRust/graphs/contributors)
 
 Crate | Docs | Crates.io | Downloads | Downloads@Latest |
 -- | -- | -- | -- | -- |
 [azure_sdk_auth_aad](https://github.com/MindFlavor/AzureSDKForRust/tree/master/azure_sdk_auth_aad) | [![docs](https://docs.rs/azure_sdk_auth_aad/badge.svg)](https://docs.rs/azure_sdk_auth_aad/0.35.0/azure_sdk_auth_aad) | [![Crate](https://img.shields.io/crates/v/azure_sdk_auth_aad.svg)](https://crates.io/crates/azure_sdk_auth_aad) | [![cratedown](https://img.shields.io/crates/d/azure_sdk_auth_aad.svg)](https://crates.io/crates/azure_sdk_auth_aad) | [![cratelastdown](https://img.shields.io/crates/dv/azure_sdk_auth_aad.svg)](https://crates.io/crates/azure_sdk_auth_aad)
-[azure_sdk_core](https://github.com/MindFlavor/AzureSDKForRust/tree/master/azure_sdk_core) | [![docs](https://docs.rs/azure_sdk_core/badge.svg)](https://docs.rs/azure_sdk_core/0.35.0/azure_sdk_core) | [![Crate](https://img.shields.io/crates/v/azure_sdk_core.svg)](https://crates.io/crates/azure_sdk_core) | [![cratedown](https://img.shields.io/crates/d/azure_sdk_core.svg)](https://crates.io/crates/azure_sdk_core) | [![cratelastdown](https://img.shields.io/crates/dv/azure_sdk_core.svg)](https://crates.io/crates/azure_sdk_core)
-[azure_sdk_cosmos](https://github.com/MindFlavor/AzureSDKForRust/tree/master/azure_sdk_cosmos) | [![docs](https://docs.rs/azure_sdk_cosmos/badge.svg)](https://docs.rs/azure_sdk_cosmos/0.32.2/azure_sdk_cosmos) | [![Crate](https://img.shields.io/crates/v/azure_sdk_cosmos.svg)](https://crates.io/crates/azure_sdk_cosmos) | [![cratedown](https://img.shields.io/crates/d/azure_sdk_cosmos.svg)](https://crates.io/crates/azure_sdk_cosmos) | [![cratelastdown](https://img.shields.io/crates/dv/azure_sdk_cosmos.svg)](https://crates.io/crates/azure_sdk_cosmos)
+[azure_sdk_core](https://github.com/MindFlavor/AzureSDKForRust/tree/master/azure_sdk_core) | [![docs](https://docs.rs/azure_sdk_core/badge.svg)](https://docs.rs/azure_sdk_core/0.35.1/azure_sdk_core) | [![Crate](https://img.shields.io/crates/v/azure_sdk_core.svg)](https://crates.io/crates/azure_sdk_core) | [![cratedown](https://img.shields.io/crates/d/azure_sdk_core.svg)](https://crates.io/crates/azure_sdk_core) | [![cratelastdown](https://img.shields.io/crates/dv/azure_sdk_core.svg)](https://crates.io/crates/azure_sdk_core)
+[azure_sdk_cosmos](https://github.com/MindFlavor/AzureSDKForRust/tree/master/azure_sdk_cosmos) | [![docs](https://docs.rs/azure_sdk_cosmos/badge.svg)](https://docs.rs/azure_sdk_cosmos/0.33.0/azure_sdk_cosmos) | [![Crate](https://img.shields.io/crates/v/azure_sdk_cosmos.svg)](https://crates.io/crates/azure_sdk_cosmos) | [![cratedown](https://img.shields.io/crates/d/azure_sdk_cosmos.svg)](https://crates.io/crates/azure_sdk_cosmos) | [![cratelastdown](https://img.shields.io/crates/dv/azure_sdk_cosmos.svg)](https://crates.io/crates/azure_sdk_cosmos)
 [azure_sdk_service_bus](https://github.com/MindFlavor/AzureSDKForRust/tree/master/azure_sdk_service_bus) | [![docs](https://docs.rs/azure_sdk_service_bus/badge.svg)](https://docs.rs/azure_sdk_service_bus/0.30.1/azure_sdk_service_bus) | [![Crate](https://img.shields.io/crates/v/azure_sdk_service_bus.svg)](https://crates.io/crates/azure_sdk_service_bus) | [![cratedown](https://img.shields.io/crates/d/azure_sdk_service_bus.svg)](https://crates.io/crates/azure_sdk_service_bus) | [![cratelastdown](https://img.shields.io/crates/dv/azure_sdk_service_bus.svg)](https://crates.io/crates/azure_sdk_service_bus)
 [azure_sdk_storage_account](https://github.com/MindFlavor/AzureSDKForRust/tree/master/azure_sdk_storage_account) | [![docs](https://docs.rs/azure_sdk_storage_account/badge.svg)](https://docs.rs/azure_sdk_storage_account/0.30.1/azure_sdk_storage_account) | [![Crate](https://img.shields.io/crates/v/azure_sdk_storage_account.svg)](https://crates.io/crates/azure_sdk_storage_account) | [![cratedown](https://img.shields.io/crates/d/azure_sdk_storage_account.svg)](https://crates.io/crates/azure_sdk_storage_account) | [![cratelastdown](https://img.shields.io/crates/dv/azure_sdk_storage_account.svg)](https://crates.io/crates/azure_sdk_storage_account)
 [azure_sdk_storage_blob](https://github.com/MindFlavor/AzureSDKForRust/tree/master/azure_sdk_storage_blob) | [![docs](https://docs.rs/azure_sdk_storage_blob/badge.svg)](https://docs.rs/azure_sdk_storage_blob/0.30.1/azure_sdk_storage_blob) | [![Crate](https://img.shields.io/crates/v/azure_sdk_storage_blob.svg)](https://crates.io/crates/azure_sdk_storage_blob) | [![cratedown](https://img.shields.io/crates/d/azure_sdk_storage_blob.svg)](https://crates.io/crates/azure_sdk_storage_blob) | [![cratelastdown](https://img.shields.io/crates/dv/azure_sdk_storage_blob.svg)](https://crates.io/crates/azure_sdk_storage_blob)
@@ -91,11 +91,13 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .expect("please specify the collection name as first command line parameter");
 
     // First, we create an authorization token. There are two types of tokens, master and resource
-    // constrained. Please check the Azure documentation for details.
-    let authorization_token = AuthorizationToken::new(account, TokenType::Master, &master_key)?;
+    // constrained. This SDK supports both.
+    // Please check the Azure documentation for details or the examples folder
+    // on how to create and use token-based permissions.
+    let authorization_token = AuthorizationToken::new_master(&master_key)?;
 
     // Next we will create a Cosmos client.
-    let client = ClientBuilder::new(authorization_token.clone())?;
+    let client = ClientBuilder::new(account, authorization_token.clone())?;
     // We know the database so we can obtain a database client.
     let database_client = client.with_database(&database_name);
     // We know the collection so we can obtain a collection client.
@@ -123,7 +125,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             .execute()
             .await?;
     }
-    // wow that was easy and fast, isn'it? :)
+    // wow that was easy and fast, wasnt'it? :)
     println!("Done!");
 
     // TASK 2
