@@ -46,6 +46,14 @@ impl Debug for AuthorizationToken {
 impl std::convert::TryFrom<PermissionToken> for AuthorizationToken {
     type Error = base64::DecodeError;
     fn try_from(permission_token: PermissionToken) -> Result<Self, Self::Error> {
-        Self::new(TokenType::Resource, &permission_token.signature)
+        trace!(
+            "Converting permission_token into AuthorizationToken: {:#?}",
+            permission_token
+        );
+        Ok(Self {
+            token_type: TokenType::Resource,
+            key: permission_token.signature.as_bytes().to_vec(),
+        })
+        // Self::new(TokenType::Resource, &permission_token.signature)
     }
 }

@@ -14,6 +14,7 @@ use hyper::{
 };
 use hyper_rustls::HttpsConnector;
 use ring::hmac;
+use std::cell::RefCell;
 use url::form_urlencoded;
 
 const AZURE_VERSION: &str = "2018-12-31";
@@ -42,7 +43,7 @@ where
 {
     hyper_client: hyper::Client<HttpsConnector<hyper::client::HttpConnector>>,
     account: String,
-    auth_token: AuthorizationToken,
+    auth_token: RefCell<AuthorizationToken>,
     cosmos_uri_builder: CUB,
 }
 
@@ -50,8 +51,8 @@ impl<CUB> Client<CUB>
 where
     CUB: CosmosUriBuilder,
 {
-    pub fn set_auth_token(&mut self, auth_token: AuthorizationToken) {
-        self.auth_token = auth_token
+    pub fn replace_auth_token(&self, auth_token: AuthorizationToken) -> AuthorizationToken {
+        self.auth_token.replace(auth_token)
     }
 }
 
@@ -118,7 +119,7 @@ impl ClientBuilder {
         Ok(Client {
             hyper_client: client,
             account,
-            auth_token,
+            auth_token: RefCell::new(auth_token),
             cosmos_uri_builder,
         })
     }
@@ -133,7 +134,7 @@ impl ClientBuilder {
         Ok(Client {
             hyper_client: client,
             account,
-            auth_token,
+            auth_token: RefCell::new(auth_token),
             cosmos_uri_builder,
         })
     }
@@ -148,7 +149,7 @@ impl ClientBuilder {
         Ok(Client {
             hyper_client: client,
             account,
-            auth_token,
+            auth_token: RefCell::new(auth_token),
             cosmos_uri_builder: CustomCosmosUri { uri },
         })
     }
@@ -165,7 +166,7 @@ impl ClientBuilder {
         Ok(Client {
             hyper_client: client,
             account: format!("{}:{}", address, port),
-            auth_token,
+            auth_token: RefCell::new(auth_token),
             cosmos_uri_builder: CustomCosmosUri {
                 uri: format!("https://{}:{}", address, port),
             },
@@ -216,7 +217,7 @@ where
         let auth = {
             let resource_link = generate_resource_link(&uri_path);
             generate_authorization(
-                &self.auth_token,
+                &self.auth_token.borrow(),
                 &http_method,
                 resource_type,
                 resource_link,
@@ -281,7 +282,7 @@ fn generate_authorization(
     time: &str,
 ) -> String {
     let string_to_sign = string_to_sign(http_method, resource_type, resource_link, time);
-    trace!(
+    println!(
         "generate_authorization::string_to_sign == {:?}",
         string_to_sign
     );
@@ -296,7 +297,7 @@ fn generate_authorization(
         encode_str_to_sign(&string_to_sign, auth_token)
     );
 
-    trace!(
+    println!(
         "generate_authorization::str_unencoded == {:?}",
         str_unencoded
     );
@@ -416,7 +417,6 @@ mon, 01 jan 1900 01:00:00 gmt
         let time = format!("{}", time.format(TIME_FORMAT));
 
         let auth_token = AuthorizationToken::new(
-            "mindflavor".to_owned(),
             TokenType::Master,
             "8F8xXXOptJxkblM1DBXW7a6NMI5oE8NnwPGYBmwxLCKfejOK7B7yhcCHMGvN3PBrlMLIOeol1Hv9RCdzAZR5sg==",
         )
@@ -443,7 +443,6 @@ mon, 01 jan 1900 01:00:00 gmt
         let time = format!("{}", time.format(TIME_FORMAT));
 
         let auth_token = AuthorizationToken::new(
-            "mindflavor".to_owned(),
             TokenType::Master,
             "dsZQi3KtZmCv1ljt3VNWNm7sQUF1y5rJfC6kv5JiwvW0EndXdDku/dkKBp8/ufDToSxL",
         )

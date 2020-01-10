@@ -41,10 +41,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     // First, we create an authorization token. There are two types of tokens, master and resource
     // constrained. Please check the Azure documentation for details.
-    let authorization_token = AuthorizationToken::new(account, TokenType::Master, &master_key)?;
+    let authorization_token = AuthorizationToken::new(TokenType::Master, &master_key)?;
 
     // Next we will create a Cosmos client.
-    let client = ClientBuilder::new(authorization_token.clone())?;
+    let client = ClientBuilder::new(account, authorization_token.clone())?;
     // We know the database so we can obtain a database client.
     let database_client = client.with_database(&database_name);
     // We know the collection so we can obtain a collection client.

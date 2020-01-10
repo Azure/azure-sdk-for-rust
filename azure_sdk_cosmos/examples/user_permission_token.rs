@@ -68,8 +68,23 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .permission_token
         .try_into()
         .unwrap();
-    client.set_auth_token(new_authorization_token);
 
+    println!("Replacing authorization_token.");
+    let old_authorization_token = client.replace_auth_token(new_authorization_token);
+
+    let list_documents_response = collection_client
+        .list_documents()
+        .execute::<serde_json::Value>()
+        .await
+        .unwrap();
+    println!(
+        "second list_documents_response got {} document(s).",
+        list_documents_response.documents.len()
+    );
+
+    client.replace_auth_token(old_authorization_token);
+
+    println!("Cleaning up user.");
     let delete_user_response = user_client.delete_user().execute().await?;
     println!("delete_user_response == {:#?}", delete_user_response);
 

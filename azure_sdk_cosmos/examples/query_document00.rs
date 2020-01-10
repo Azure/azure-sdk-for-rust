@@ -37,9 +37,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let master_key =
         std::env::var("COSMOS_MASTER_KEY").expect("Set env variable COSMOS_MASTER_KEY first!");
 
-    let authorization_token = AuthorizationToken::new(account, TokenType::Master, &master_key)?;
+    let authorization_token = AuthorizationToken::new(TokenType::Master, &master_key)?;
 
-    let client = ClientBuilder::new(authorization_token)?;
+    let client = ClientBuilder::new(account, authorization_token)?;
     let client = client.with_database(&database_name);
     let client = client.with_collection(&collection_name);
 

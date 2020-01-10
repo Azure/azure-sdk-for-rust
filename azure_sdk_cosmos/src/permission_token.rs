@@ -29,6 +29,8 @@ impl std::fmt::Display for PermissionToken {
 impl std::convert::TryFrom<&str> for PermissionToken {
     type Error = failure::Error;
     fn try_from(s: &str) -> Result<Self, Self::Error> {
+        trace!("converting {} into PermissionToken", s);
+
         let tokens: Vec<&str> = s.split("&").collect();
 
         if tokens.len() < 3 {
