@@ -21,7 +21,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .nth(3)
         .expect("please specify the user name as third command line parameter");
 
-    let authorization_token = AuthorizationToken::new(TokenType::Master, &master_key)?;
+    let authorization_token = AuthorizationToken::new_master(&master_key)?;
 
     let client = ClientBuilder::new(account, authorization_token)?;
     let database_client = client.with_database(&database_name);
@@ -48,7 +48,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // create the first permission!
     let permission_client = user_client.with_permission(&"matrix");
 
-    let permission_mode = PermissionMode::Read(get_collection_response.collection);
+    let permission_mode = PermissionMode::Read(get_collection_response.clone().collection);
 
     let create_permission_response = permission_client
         .create_permission()
@@ -69,9 +69,13 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .try_into()
         .unwrap();
 
-    println!("Replacing authorization_token.");
-    let old_authorization_token = client.replace_auth_token(new_authorization_token);
+    println!(
+        "Replacing authorization_token with {:?}.",
+        new_authorization_token
+    );
+    let original_authorization_token = client.replace_auth_token(new_authorization_token);
 
+    // let's list the documents with the new auth token
     let list_documents_response = collection_client
         .list_documents()
         .execute::<serde_json::Value>()
@@ -82,7 +86,96 @@ async fn main() -> Result<(), Box<dyn Error>> {
         list_documents_response.documents.len()
     );
 
-    client.replace_auth_token(old_authorization_token);
+    // Now we try to insert a document with the "read-only"
+    // authorization_token just created. It will fail.
+    // The collection should have /id as partition key
+    // for this example to work.
+    let data = r#"
+        {
+            "age": 43,
+            "phones": [
+                "+39 1234567",
+                "+39 2345678"
+            ]
+        }"#;
+    let document = Document::new(
+        "Gianluigi Bombatomica".to_owned(),
+        serde_json::from_str::<serde_json::Value>(data)?,
+    );
+    println!(
+        "Trying to insert {:#?} into the collection with a read-only authorization_token.",
+        document
+    );
+
+    match collection_client
+        .create_document()
+        .with_document(&document)
+        .with_is_upsert(true)
+        .with_partition_keys(PartitionKeys::new().push(document.document_attributes.id())?)
+        .execute()
+        .await
+    {
+        Ok(_) => panic!("this should not happen!"),
+        Err(error) => println!("Insert failed: {:#?}", error),
+    }
+
+    // noe let's replace the permission with a
+    // read-write one.
+    println!(
+        "Replacing authorization_token with {:?}.",
+        original_authorization_token
+    );
+    client.replace_auth_token(original_authorization_token);
+
+    permission_client.delete_permission().execute().await?;
+
+    // All includes read and write.
+    let permission_mode = PermissionMode::All(get_collection_response.collection);
+    let create_permission_response = permission_client
+        .create_permission()
+        .with_permission_mode(&permission_mode)
+        .with_expiry_seconds(18000) // 5 hours, max!
+        .execute()
+        .await?;
+    println!(
+        "create_permission_response == {:#?}",
+        create_permission_response
+    );
+
+    let new_authorization_token: AuthorizationToken = create_permission_response
+        .permission
+        .permission_token
+        .try_into()
+        .unwrap();
+
+    println!(
+        "Replacing authorization_token with {:?}.",
+        new_authorization_token
+    );
+    let original_authorization_token = client.replace_auth_token(new_authorization_token);
+
+    // now we have an "All" authorization_token
+    // so the create_document should succeed!
+    let create_document_response = collection_client
+        .create_document()
+        .with_document(&document)
+        .with_is_upsert(true)
+        .with_partition_keys(PartitionKeys::new().push(document.document_attributes.id())?)
+        .execute()
+        .await?;
+    println!(
+        "create_document_response == {:#?}",
+        create_document_response
+    );
+
+    // set the original (master) authorization token
+    // so we can delete the user and finally finish
+    // this long exmaple :).
+    println!(
+        "Replacing authorization_token with {:?}.",
+        original_authorization_token
+    );
+    client.replace_auth_token(original_authorization_token);
 
     println!("Cleaning up user.");
     let delete_user_response = user_client.delete_user().execute().await?;

@@ -2,7 +2,7 @@ use crate::clients::DatabaseClient;
 use crate::database::DatabaseName;
 use crate::headers::*;
 use crate::requests;
-use crate::{requests::*, AuthorizationToken, CosmosTrait, TokenType};
+use crate::{requests::*, AuthorizationToken, CosmosTrait};
 use azure_sdk_core::errors::AzureError;
 use azure_sdk_core::No;
 use base64;
@@ -14,6 +14,7 @@ use hyper::{
 };
 use hyper_rustls::HttpsConnector;
 use ring::hmac;
+use std::borrow::Cow;
 use std::cell::RefCell;
 use url::form_urlencoded;
 
@@ -159,8 +160,7 @@ impl ClientBuilder {
 
         //Account name: localhost:<port>
         //Account key: C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==
-        let auth_token = AuthorizationToken::new(
-            TokenType::Master,
+        let auth_token = AuthorizationToken::new_master(
             "C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==",
         ).unwrap();
         Ok(Client {
@@ -227,28 +227,6 @@ where
         self.prepare_request_with_signature(uri_path, http_method, &time, &auth)
     }
 
-    //#[inline]
-    //fn prepare_request_with_resource_link(
-    //    &self,
-    //    uri_path: &str,
-    //    http_method: hyper::Method,
-    //    resource_type: ResourceType,
-    //    resource_link: &str,
-    //) -> RequestBuilder {
-    //    let time = format!("{}", chrono::Utc::now().format(TIME_FORMAT));
-
-    //    let sig = {
-    //        generate_authorization(
-    //            &self.auth_token,
-    //            &http_method,
-    //            resource_type,
-    //            resource_link,
-    //            &time,
-    //        )
-    //    };
-    //    self.prepare_request_with_signature(uri_path, http_method, &time, &sig)
-    //}
-
     #[inline]
     fn prepare_request_with_signature(
         &self,
@@ -282,22 +260,25 @@ fn generate_authorization(
     time: &str,
 ) -> String {
     let string_to_sign = string_to_sign(http_method, resource_type, resource_link, time);
-    println!(
+    debug!(
         "generate_authorization::string_to_sign == {:?}",
         string_to_sign
     );
 
     let str_unencoded = format!(
         "type={}&ver={}&sig={}",
-        match auth_token.token_type() {
-            TokenType::Master => "master",
-            TokenType::Resource => "resource",
+        match auth_token {
+            AuthorizationToken::Master(_) => "master",
+            AuthorizationToken::Resource(_) => "resource",
         },
         VERSION,
-        encode_str_to_sign(&string_to_sign, auth_token)
+        match auth_token {
+            AuthorizationToken::Master(key) => Cow::Owned(encode_str_to_sign(&string_to_sign, key)),
+            AuthorizationToken::Resource(key) => Cow::Borrowed(key),
+        },
     );
 
-    println!(
+    debug!(
         "generate_authorization::str_unencoded == {:?}",
         str_unencoded
     );
@@ -305,8 +286,8 @@ fn generate_authorization(
     form_urlencoded::byte_serialize(&str_unencoded.as_bytes()).collect::<String>()
 }
 
-fn encode_str_to_sign(str_to_sign: &str, auth_token: &AuthorizationToken) -> String {
-    let key = hmac::Key::new(ring::hmac::HMAC_SHA256, auth_token.key());
+fn encode_str_to_sign(str_to_sign: &str, key: &[u8]) -> String {
+    let key = hmac::Key::new(ring::hmac::HMAC_SHA256, key);
     let sig = hmac::sign(&key, str_to_sign.as_bytes());
     base64::encode(sig.as_ref())
 }
