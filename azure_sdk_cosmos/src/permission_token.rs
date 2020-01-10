@@ -31,7 +31,7 @@ impl std::convert::TryFrom<&str> for PermissionToken {
     fn try_from(s: &str) -> Result<Self, Self::Error> {
         trace!("converting {} into PermissionToken", s);
 
-        let tokens: Vec<&str> = s.split("&").collect();
+        let tokens: Vec<&str> = s.split('&').collect();
 
         if tokens.len() < 3 {
             return Err(PermissionTokenParsingError::UnsufficientTokens {
@@ -61,7 +61,7 @@ fn item_or_error<'a>(
         .filter(|t| t.starts_with(token))
         .collect::<Vec<_>>();
 
-    if tokens.len() < 1 {
+    if tokens.is_empty() {
         return Err(PermissionTokenParsingError::MissingToken {
             s: s.to_owned(),
             missing_token: token.to_owned(),

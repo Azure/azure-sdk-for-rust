@@ -516,7 +516,7 @@ where
         collection_name: &'c dyn CollectionName,
     ) -> CollectionClient<'c, CUB>;
     fn with_user<'c>(&'c self, user_name: &'c dyn UserName) -> UserClient<'c, CUB>;
-    fn list_users<'c>(&'c self) -> requests::ListUsersBuilder<'c, CUB>;
+    fn list_users(&self) -> requests::ListUsersBuilder<'_, CUB>;
 }
 
 pub(crate) trait DatabaseBuilderTrait<'a, CUB>: DatabaseTrait<'a, CUB>

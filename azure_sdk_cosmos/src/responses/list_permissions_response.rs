@@ -45,7 +45,7 @@ impl<'a> std::convert::TryFrom<(&HeaderMap, &[u8])> for ListPermissionsResponse<
         let permissions = response
             .permissions
             .into_iter()
-            .map(|cosmos_permission| Permission::try_from(cosmos_permission))
+            .map(Permission::try_from)
             .collect::<Result<Vec<Permission<'_, Cow<'_, str>>>, AzureError>>()?;
 
         Ok(Self {
