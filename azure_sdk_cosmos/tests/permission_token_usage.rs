@@ -41,10 +41,8 @@ async fn permissions() {
         .await
         .unwrap();
 
-    let collection_client = database_client.with_collection(&COLLECTION_NAME);
-
     let user_client = database_client.with_user(&USER_NAME);
-    let _create_user_response = user_client.create_user().execute().await.unwrap();
+    user_client.create_user().execute().await.unwrap();
 
     // create the RO permission
     let permission_client = user_client.with_permission(&PERMISSION);
@@ -64,10 +62,21 @@ async fn permissions() {
         .permission
         .permission_token
         .into();
-    let original_authorization_token = client.replace_auth_token(new_authorization_token);
+    let new_client = client.with_auth_token(new_authorization_token);
+    let new_database_client = new_client.with_database(&DATABASE_NAME);
+    let new_collection_client = new_database_client.with_collection(&COLLECTION_NAME);
+
+    // let's list the collection content.
+    // This must succeed.
+    new_database_client
+        .with_collection(&COLLECTION_NAME)
+        .list_documents()
+        .execute::<serde_json::Value>()
+        .await
+        .unwrap();
 
     // Now we try to insert a document with the "read-only"
-    // authorization_token just created. It will fail.
+    // authorization_token just created. It must fail.
     let data = r#"
         {
             "age": 43,
@@ -80,7 +89,7 @@ async fn permissions() {
         "Gianluigi Bombatomica".to_owned(),
         serde_json::from_str::<serde_json::Value>(data).unwrap(),
     );
-    collection_client
+    new_collection_client
         .create_document()
         .with_document(&document)
         .with_is_upsert(true)
@@ -92,14 +101,6 @@ async fn permissions() {
         .execute()
         .await
         .unwrap_err();
-
-    // noe let's replace the permission with a
-    // read-write one.
-    println!(
-        "Replacing authorization_token with {:?}.",
-        original_authorization_token
-    );
-    client.replace_auth_token(original_authorization_token);
 
     permission_client
         .delete_permission()
@@ -121,11 +122,13 @@ async fn permissions() {
         .permission
         .permission_token
         .into();
-    let original_authorization_token = client.replace_auth_token(new_authorization_token);
+    let new_client = client.with_auth_token(new_authorization_token);
+    let new_database_client = new_client.with_database(&DATABASE_NAME);
+    let new_collection_client = new_database_client.with_collection(&COLLECTION_NAME);
 
     // now we have an "All" authorization_token
     // so the create_document should succeed!
-    let create_document_response = collection_client
+    let create_document_response = new_collection_client
         .create_document()
         .with_document(&document)
         .with_is_upsert(true)
@@ -142,10 +145,6 @@ async fn permissions() {
         create_document_response
     );
 
-    // set the original (master) authorization token
-    // so we can delete the user and finally finish
-    // this long exmaple :).
-    client.replace_auth_token(original_authorization_token);
-
+    // cleanup
     database_client.delete_database().execute().await.unwrap();
 }

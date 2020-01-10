@@ -71,10 +71,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
         "Replacing authorization_token with {:?}.",
         new_authorization_token
     );
-    let original_authorization_token = client.replace_auth_token(new_authorization_token);
+    let new_client = client.with_auth_token(new_authorization_token);
 
     // let's list the documents with the new auth token
-    let list_documents_response = collection_client
+    let list_documents_response = new_client
+        .with_database(&database_name)
+        .with_collection(&collection_name)
         .list_documents()
         .execute::<serde_json::Value>()
         .await
@@ -105,7 +107,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
         document
     );
 
-    match collection_client
+    match new_client
+        .with_database(&database_name)
+        .with_collection(&collection_name)
         .create_document()
         .with_document(&document)
         .with_is_upsert(true)
@@ -116,14 +120,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
         Ok(_) => panic!("this should not happen!"),
         Err(error) => println!("Insert failed: {:#?}", error),
     }
-
-    // noe let's replace the permission with a
-    // read-write one.
-    println!(
-        "Replacing authorization_token with {:?}.",
-        original_authorization_token
-    );
-    client.replace_auth_token(original_authorization_token);
 
     permission_client.delete_permission().execute().await?;
 
@@ -149,11 +145,13 @@ async fn main() -> Result<(), Box<dyn Error>> {
         "Replacing authorization_token with {:?}.",
         new_authorization_token
     );
-    let original_authorization_token = client.replace_auth_token(new_authorization_token);
+    let new_client = client.with_auth_token(new_authorization_token);
 
     // now we have an "All" authorization_token
     // so the create_document should succeed!
-    let create_document_response = collection_client
+    let create_document_response = new_client
+        .with_database(&database_name)
+        .with_collection(&collection_name)
         .create_document()
         .with_document(&document)
         .with_is_upsert(true)
@@ -164,15 +162,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
         "create_document_response == {:#?}",
         create_document_response
     );
-
-    // set the original (master) authorization token
-    // so we can delete the user and finally finish
-    // this long exmaple :).
-    println!(
-        "Replacing authorization_token with {:?}.",
-        original_authorization_token
-    );
-    client.replace_auth_token(original_authorization_token);
 
     println!("Cleaning up user.");
     let delete_user_response = user_client.delete_user().execute().await?;

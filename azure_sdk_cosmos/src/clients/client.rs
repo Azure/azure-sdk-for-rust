@@ -15,7 +15,6 @@ use hyper::{
 use hyper_rustls::HttpsConnector;
 use ring::hmac;
 use std::borrow::Cow;
-use std::cell::RefCell;
 use url::form_urlencoded;
 
 const AZURE_VERSION: &str = "2018-12-31";
@@ -44,16 +43,21 @@ where
 {
     hyper_client: hyper::Client<HttpsConnector<hyper::client::HttpConnector>>,
     account: String,
-    auth_token: RefCell<AuthorizationToken>,
+    auth_token: AuthorizationToken,
     cosmos_uri_builder: CUB,
 }
 
 impl<CUB> Client<CUB>
 where
-    CUB: CosmosUriBuilder,
+    CUB: CosmosUriBuilder + Clone,
 {
-    pub fn replace_auth_token(&self, auth_token: AuthorizationToken) -> AuthorizationToken {
-        self.auth_token.replace(auth_token)
+    pub fn with_auth_token(&self, auth_token: AuthorizationToken) -> Self {
+        Self {
+            hyper_client: self.hyper_client.clone(),
+            account: self.account.clone(),
+            auth_token,
+            cosmos_uri_builder: self.cosmos_uri_builder.clone(),
+        }
     }
 }
 
@@ -120,7 +124,7 @@ impl ClientBuilder {
         Ok(Client {
             hyper_client: client,
             account,
-            auth_token: RefCell::new(auth_token),
+            auth_token,
             cosmos_uri_builder,
         })
     }
@@ -135,7 +139,7 @@ impl ClientBuilder {
         Ok(Client {
             hyper_client: client,
             account,
-            auth_token: RefCell::new(auth_token),
+            auth_token,
             cosmos_uri_builder,
         })
     }
@@ -150,7 +154,7 @@ impl ClientBuilder {
         Ok(Client {
             hyper_client: client,
             account,
-            auth_token: RefCell::new(auth_token),
+            auth_token,
             cosmos_uri_builder: CustomCosmosUri { uri },
         })
     }
@@ -166,7 +170,7 @@ impl ClientBuilder {
         Ok(Client {
             hyper_client: client,
             account: format!("{}:{}", address, port),
-            auth_token: RefCell::new(auth_token),
+            auth_token,
             cosmos_uri_builder: CustomCosmosUri {
                 uri: format!("https://{}:{}", address, port),
             },
@@ -217,7 +221,7 @@ where
         let auth = {
             let resource_link = generate_resource_link(&uri_path);
             generate_authorization(
-                &self.auth_token.borrow(),
+                &self.auth_token,
                 &http_method,
                 resource_type,
                 resource_link,
