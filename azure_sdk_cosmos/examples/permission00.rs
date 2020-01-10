@@ -23,7 +23,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .nth(4)
         .expect("please specify the user name as fourth command line parameter");
 
-    let authorization_token = AuthorizationToken::new(TokenType::Master, &master_key)?;
+    let authorization_token = AuthorizationToken::new_master(&master_key)?;
 
     let client = ClientBuilder::new(account.clone(), authorization_token)?;
     let database_client = client.with_database(&database_name);

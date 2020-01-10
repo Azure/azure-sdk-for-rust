@@ -397,8 +397,7 @@ mon, 01 jan 1900 01:00:00 gmt
         let time = time.with_timezone(&chrono::Utc);
         let time = format!("{}", time.format(TIME_FORMAT));
 
-        let auth_token = AuthorizationToken::new(
-            TokenType::Master,
+        let auth_token = AuthorizationToken::new_master(
             "8F8xXXOptJxkblM1DBXW7a6NMI5oE8NnwPGYBmwxLCKfejOK7B7yhcCHMGvN3PBrlMLIOeol1Hv9RCdzAZR5sg==",
         )
         .unwrap();
@@ -423,8 +422,7 @@ mon, 01 jan 1900 01:00:00 gmt
         let time = time.with_timezone(&chrono::Utc);
         let time = format!("{}", time.format(TIME_FORMAT));
 
-        let auth_token = AuthorizationToken::new(
-            TokenType::Master,
+        let auth_token = AuthorizationToken::new_master(
             "dsZQi3KtZmCv1ljt3VNWNm7sQUF1y5rJfC6kv5JiwvW0EndXdDku/dkKBp8/ufDToSxL",
         )
         .unwrap();

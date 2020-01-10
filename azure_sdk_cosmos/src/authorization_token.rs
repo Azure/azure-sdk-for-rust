@@ -2,19 +2,7 @@ use crate::PermissionToken;
 use base64;
 use std::fmt::{Debug, Error, Formatter};
 
-//#[derive(Copy, Clone, Debug)]
-//pub enum TokenType {
-//    Master,
-//    Resource,
-//}
-//
-//#[derive(Clone)]
-//pub struct AuthorizationToken {
-//    token_type: TokenType,
-//    key: Vec<u8>,
-//}
-
-#[derive(Clone)]
+#[derive(PartialEq, Clone)]
 pub enum AuthorizationToken {
     Master(Vec<u8>),
     Resource(String),
