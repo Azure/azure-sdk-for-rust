@@ -123,7 +123,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             .execute()
             .await?;
     }
-    // wow that was easy and fast, isn'it? :)
+    // wow that was easy and fast, wasnt'it? :)
     println!("Done!");
 
     // TASK 2

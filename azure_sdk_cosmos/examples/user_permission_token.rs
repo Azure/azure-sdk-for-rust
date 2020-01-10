@@ -1,6 +1,5 @@
 use azure_sdk_cosmos::prelude::*;
 use azure_sdk_cosmos::PermissionMode;
-use std::convert::TryInto;
 use std::error::Error;
 
 #[tokio::main]
@@ -66,8 +65,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let new_authorization_token: AuthorizationToken = create_permission_response
         .permission
         .permission_token
-        .try_into()
-        .unwrap();
+        .into();
 
     println!(
         "Replacing authorization_token with {:?}.",
@@ -145,8 +143,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let new_authorization_token: AuthorizationToken = create_permission_response
         .permission
         .permission_token
-        .try_into()
-        .unwrap();
+        .into();
 
     println!(
         "Replacing authorization_token with {:?}.",
