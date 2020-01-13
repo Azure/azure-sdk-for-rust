@@ -54,6 +54,31 @@ impl<'a> BlobStreamBuilder<'a, No, No, No> {
     }
 }
 
+impl<'a, ContainerNameSet, BlobNameSet, RangeSet> BlobStreamBuilder<'a, ContainerNameSet, BlobNameSet, RangeSet>
+where
+    ContainerNameSet: ToAssign,
+    BlobNameSet: ToAssign,
+    RangeSet: ToAssign,
+{
+    #[inline]
+    pub fn with_chunk_size(self, increment: u64) -> Self {
+        BlobStreamBuilder {
+            client: self.client,
+            p_container_name: PhantomData {},
+            p_blob_name: PhantomData {},
+            p_range: PhantomData {},
+            container_name: self.container_name,
+            blob_name: self.blob_name,
+            range: self.range,
+            snapshot: self.snapshot,
+            timeout: self.timeout,
+            lease_id: self.lease_id,
+            client_request_id: self.client_request_id,
+            increment: increment,
+        }
+    }
+}
+
 impl<'a, ContainerNameSet, BlobNameSet, RangeSet> ClientRequired<'a>
     for BlobStreamBuilder<'a, ContainerNameSet, BlobNameSet, RangeSet>
 where
