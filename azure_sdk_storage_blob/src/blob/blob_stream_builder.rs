@@ -54,6 +54,31 @@ impl<'a> BlobStreamBuilder<'a, No, No, No> {
     }
 }
 
+impl<'a, ContainerNameSet, BlobNameSet, RangeSet> BlobStreamBuilder<'a, ContainerNameSet, BlobNameSet, RangeSet>
+where
+    ContainerNameSet: ToAssign,
+    BlobNameSet: ToAssign,
+    RangeSet: ToAssign,
+{
+    #[inline]
+    pub fn with_chunk_size(self, increment: u64) -> Self {
+        BlobStreamBuilder {
+            client: self.client,
+            p_container_name: PhantomData {},
+            p_blob_name: PhantomData {},
+            p_range: PhantomData {},
+            container_name: self.container_name,
+            blob_name: self.blob_name,
+            range: self.range,
+            snapshot: self.snapshot,
+            timeout: self.timeout,
+            lease_id: self.lease_id,
+            client_request_id: self.client_request_id,
+            increment: increment,
+        }
+    }
+}
+
 impl<'a, ContainerNameSet, BlobNameSet, RangeSet> ClientRequired<'a>
     for BlobStreamBuilder<'a, ContainerNameSet, BlobNameSet, RangeSet>
 where
@@ -372,7 +397,7 @@ impl<'a> BlobStreamBuilder<'a, Yes, Yes, Yes> {
         let snapshot = self.snapshot.to_owned();
         let timeout = self.timeout.to_owned();
         let lease_id = self.lease_id.cloned();
-        let increment = self.increment;
+        let increment = self.increment - 1;
 
         futures::stream::unfold(Some(range), move |remaining| {
             let client = client.clone();
@@ -416,7 +441,7 @@ impl<'a> BlobStreamBuilder<'a, Yes, Yes, Yes> {
                 Some((
                     Ok(response.data),
                     if remaining.end > range.end {
-                        Some(Range::new(range.end, remaining.end))
+                        Some(Range::new(range.end + 1, remaining.end))
                     } else {
                         None
                     },
