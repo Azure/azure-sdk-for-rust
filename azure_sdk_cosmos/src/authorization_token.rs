@@ -1,35 +1,21 @@
+use crate::PermissionToken;
 use base64;
 use std::fmt::{Debug, Error, Formatter};
 
-#[derive(Copy, Clone, Debug)]
-pub enum TokenType {
-    Master,
-    Resource,
-}
-
-#[derive(Clone)]
-pub struct AuthorizationToken {
-    account: String,
-    token_type: TokenType,
-    key: Vec<u8>,
+#[derive(PartialEq, Clone)]
+pub enum AuthorizationToken {
+    Master(Vec<u8>),
+    Resource(String),
 }
 
 impl AuthorizationToken {
-    pub fn new(account: String, token_type: TokenType, base64_encoded: &str) -> Result<AuthorizationToken, base64::DecodeError> {
+    pub fn new_master(base64_encoded: &str) -> Result<AuthorizationToken, base64::DecodeError> {
         let key = base64::decode(&base64_encoded)?;
-        Ok(AuthorizationToken { account, token_type, key })
+        Ok(AuthorizationToken::Master(key))
     }
 
-    pub fn account(&self) -> &str {
-        &self.account
-    }
-
-    pub fn token_type(&self) -> TokenType {
-        self.token_type
-    }
-
-    pub fn key(&self) -> &[u8] {
-        &self.key
+    pub fn new_resource(resource: String) -> AuthorizationToken {
+        AuthorizationToken::Resource(resource)
     }
 }
 
@@ -38,8 +24,21 @@ impl Debug for AuthorizationToken {
     fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
         write!(
             f,
-            "AuthorizationToken(account == {}, token_type == {:?})",
-            self.account, self.token_type
+            "{}",
+            match self {
+                AuthorizationToken::Master(_) => "AuthorizationToken::Master(***hidden***)",
+                AuthorizationToken::Resource(_) => "AuthorizationToken::Resource(***hidden***)",
+            }
         )
+    }
+}
+
+impl std::convert::From<PermissionToken> for AuthorizationToken {
+    fn from(permission_token: PermissionToken) -> Self {
+        trace!(
+            "Converting permission_token into AuthorizationToken: {:#?}",
+            permission_token
+        );
+        Self::new_resource(permission_token.signature)
     }
 }

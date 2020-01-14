@@ -21,13 +21,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // errors, plus Azure specific ones. For example if a REST call returns the
     // unexpected result (ie NotFound instead of Ok) we return an Err telling
     // you that.
-    let authorization_token =
-        AuthorizationToken::new(account.clone(), TokenType::Master, &master_key)?;
+    let authorization_token = AuthorizationToken::new_master(&master_key)?;
 
     // Once we have an authorization token you can create a client instance. You can change the
     // authorization token at later time if you need, for example, to escalate the privileges for a
     // single operation.
-    let client = ClientBuilder::new(authorization_token)?;
+    let client = ClientBuilder::new(account.clone(), authorization_token)?;
 
     // The Cosmos' client exposes a lot of methods. This one lists the databases in the specified
     // account. Database do not implement Display but deref to &str so you can pass it to methods

@@ -96,7 +96,7 @@ where
                     serde_json::from_value(doc.to_owned())?;
                 let result: T = serde_json::from_value(doc.to_owned())?;
                 results.push(QueryResult {
-                    document_attributes: document_attributes,
+                    document_attributes,
                     result,
                 });
             }

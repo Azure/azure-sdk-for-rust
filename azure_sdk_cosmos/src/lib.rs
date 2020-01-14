@@ -4,22 +4,27 @@ extern crate log;
 #[macro_use]
 extern crate serde_derive;
 #[macro_use]
-extern crate azure_sdk_core;
+extern crate failure;
 
 mod authorization_token;
 pub mod clients;
 pub mod collection;
 mod consistency_level;
-pub mod database;
+mod database;
 mod document;
 mod document_attributes;
+mod errors;
 mod headers;
 mod indexing_directive;
 pub mod offer;
 mod partition_keys;
+mod permission;
+mod permission_resource;
+mod permission_token;
 pub mod prelude;
 mod query;
 mod requests;
+mod resource;
 pub mod responses;
 pub mod stored_procedure;
 mod to_json_vector;
@@ -28,19 +33,23 @@ mod user;
 pub use self::authorization_token::*;
 use self::collection::IndexingPolicy;
 pub use self::consistency_level::ConsistencyLevel;
+pub use self::database::{Database, DatabaseName};
 pub use self::document::{Document, DocumentAdditionalHeaders, DocumentName};
 pub use self::document_attributes::DocumentAttributes;
 pub use self::indexing_directive::IndexingDirective;
 pub use self::offer::Offer;
+pub use self::permission::{Permission, PermissionMode, PermissionName};
+pub use self::permission_resource::PermissionResource;
+pub use self::permission_token::PermissionToken;
 pub use self::query::{Param, ParamDef, Query};
 pub use self::requests::*;
+pub use self::resource::Resource;
 use crate::clients::{
-    Client, CollectionClient, CosmosUriBuilder, DatabaseClient, DocumentClient,
+    Client, CollectionClient, CosmosUriBuilder, DatabaseClient, DocumentClient, PermissionClient,
     StoredProcedureClient, UserClient,
 };
 use crate::collection::Collection;
 use crate::collection::CollectionName;
-use crate::database::DatabaseName;
 use crate::headers::*;
 pub use crate::partition_keys::PartitionKeys;
 use crate::stored_procedure::{Parameters, StoredProcedureName};
@@ -299,6 +308,19 @@ pub trait PartitionKeysOption<'a> {
     }
 }
 
+pub trait ExpirySecondsOption {
+    fn expiry_seconds(&self) -> u64;
+
+    fn add_header(&self, builder: &mut Builder) {
+        builder.header(HEADER_DOCUMENTDB_EXPIRY_SECONDS, self.expiry_seconds());
+    }
+}
+
+pub trait ExpirySecondsSupport {
+    type O;
+    fn with_expiry_seconds(self, expiry_seconds: u64) -> Self::O;
+}
+
 pub trait DatabaseClientRequired<'a, CUB>
 where
     CUB: CosmosUriBuilder,
@@ -350,6 +372,28 @@ where
     CUB: CosmosUriBuilder,
 {
     fn document_client(&self) -> &'a DocumentClient<'a, CUB>;
+}
+
+pub trait PermissionClientRequired<'a, CUB>
+where
+    CUB: CosmosUriBuilder,
+{
+    fn permission_client(&self) -> &'a PermissionClient<'a, CUB>;
+}
+
+pub trait PermissionModeRequired<'a, R>
+where
+    R: PermissionResource,
+{
+    fn permission_mode(&self) -> &'a PermissionMode<R>;
+}
+
+pub trait PermissionModeSupport<'a, R>
+where
+    R: PermissionResource,
+{
+    type O;
+    fn with_permission_mode(self, permission: &'a PermissionMode<R>) -> Self::O;
 }
 
 pub trait OfferRequired {
@@ -486,7 +530,7 @@ where
         collection_name: &'c dyn CollectionName,
     ) -> CollectionClient<'c, CUB>;
     fn with_user<'c>(&'c self, user_name: &'c dyn UserName) -> UserClient<'c, CUB>;
-    fn list_users<'c>(&'c self) -> requests::ListUsersBuilder<'c, CUB>;
+    fn list_users(&self) -> requests::ListUsersBuilder<'_, CUB>;
 }
 
 pub(crate) trait DatabaseBuilderTrait<'a, CUB>: DatabaseTrait<'a, CUB>
@@ -573,4 +617,26 @@ where
     fn get_user(&self) -> requests::GetUserBuilder<'_, CUB>;
     fn replace_user(&self) -> requests::ReplaceUserBuilder<'_, CUB, No>;
     fn delete_user(&self) -> requests::DeleteUserBuilder<'_, CUB>;
+    fn with_permission<'c>(
+        &'c self,
+        permission_name: &'c dyn PermissionName,
+    ) -> PermissionClient<'c, CUB>;
+    fn list_permissions(&self) -> requests::ListPermissionsBuilder<'_, CUB>;
+}
+
+pub trait PermissionTrait<'a, CUB>
+where
+    CUB: CosmosUriBuilder,
+{
+    fn database_name(&self) -> &'a dyn DatabaseName;
+    fn user_name(&self) -> &'a dyn UserName;
+    fn permission_name(&self) -> &'a dyn PermissionName;
+    fn create_permission<R>(&self) -> requests::CreatePermissionBuilder<'_, CUB, R, No>
+    where
+        R: PermissionResource;
+    fn replace_permission<R>(&self) -> requests::ReplacePermissionBuilder<'_, CUB, R, No>
+    where
+        R: PermissionResource;
+    fn get_permission(&self) -> requests::GetPermissionBuilder<'_, CUB>;
+    fn delete_permission(&self) -> requests::DeletePermissionsBuilder<'_, CUB>;
 }

@@ -2,7 +2,7 @@ use crate::clients::DatabaseClient;
 use crate::database::DatabaseName;
 use crate::headers::*;
 use crate::requests;
-use crate::{requests::*, AuthorizationToken, CosmosTrait, TokenType};
+use crate::{requests::*, AuthorizationToken, CosmosTrait};
 use azure_sdk_core::errors::AzureError;
 use azure_sdk_core::No;
 use base64;
@@ -14,6 +14,7 @@ use hyper::{
 };
 use hyper_rustls::HttpsConnector;
 use ring::hmac;
+use std::borrow::Cow;
 use url::form_urlencoded;
 
 const AZURE_VERSION: &str = "2018-12-31";
@@ -28,6 +29,7 @@ pub(crate) enum ResourceType {
     Documents,
     StoredProcedures,
     Users,
+    Permissions,
 }
 
 pub trait CosmosUriBuilder {
@@ -40,8 +42,23 @@ where
     CUB: CosmosUriBuilder,
 {
     hyper_client: hyper::Client<HttpsConnector<hyper::client::HttpConnector>>,
+    account: String,
     auth_token: AuthorizationToken,
     cosmos_uri_builder: CUB,
+}
+
+impl<CUB> Client<CUB>
+where
+    CUB: CosmosUriBuilder + Clone,
+{
+    pub fn with_auth_token(&self, auth_token: AuthorizationToken) -> Self {
+        Self {
+            hyper_client: self.hyper_client.clone(),
+            account: self.account.clone(),
+            auth_token,
+            cosmos_uri_builder: self.cosmos_uri_builder.clone(),
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -97,29 +114,38 @@ pub struct ClientBuilder {}
 
 impl ClientBuilder {
     #[allow(clippy::new_ret_no_self)]
-    pub fn new(auth_token: AuthorizationToken) -> Result<Client<DefaultCosmosUri>, AzureError> {
+    pub fn new(
+        account: String,
+        auth_token: AuthorizationToken,
+    ) -> Result<Client<DefaultCosmosUri>, AzureError> {
         let client = hyper::Client::builder().build(HttpsConnector::new());
-        let cosmos_uri_builder = DefaultCosmosUri::new(auth_token.account());
+        let cosmos_uri_builder = DefaultCosmosUri::new(&account);
 
         Ok(Client {
             hyper_client: client,
+            account,
             auth_token,
             cosmos_uri_builder,
         })
     }
 
-    pub fn new_china(auth_token: AuthorizationToken) -> Result<Client<ChinaCosmosUri>, AzureError> {
+    pub fn new_china(
+        account: String,
+        auth_token: AuthorizationToken,
+    ) -> Result<Client<ChinaCosmosUri>, AzureError> {
         let client = hyper::Client::builder().build(HttpsConnector::new());
-        let cosmos_uri_builder = ChinaCosmosUri::new(auth_token.account());
+        let cosmos_uri_builder = ChinaCosmosUri::new(&account);
 
         Ok(Client {
             hyper_client: client,
+            account,
             auth_token,
             cosmos_uri_builder,
         })
     }
 
     pub fn new_custom(
+        account: String,
         auth_token: AuthorizationToken,
         uri: String,
     ) -> Result<Client<CustomCosmosUri>, AzureError> {
@@ -127,6 +153,7 @@ impl ClientBuilder {
 
         Ok(Client {
             hyper_client: client,
+            account,
             auth_token,
             cosmos_uri_builder: CustomCosmosUri { uri },
         })
@@ -137,13 +164,12 @@ impl ClientBuilder {
 
         //Account name: localhost:<port>
         //Account key: C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==
-        let auth_token = AuthorizationToken::new(
-            format!("{}:{}", address, port),
-            TokenType::Master,
+        let auth_token = AuthorizationToken::new_master(
             "C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==",
         ).unwrap();
         Ok(Client {
             hyper_client: client,
+            account: format!("{}:{}", address, port),
             auth_token,
             cosmos_uri_builder: CustomCosmosUri {
                 uri: format!("https://{}:{}", address, port),
@@ -205,28 +231,6 @@ where
         self.prepare_request_with_signature(uri_path, http_method, &time, &auth)
     }
 
-    //#[inline]
-    //fn prepare_request_with_resource_link(
-    //    &self,
-    //    uri_path: &str,
-    //    http_method: hyper::Method,
-    //    resource_type: ResourceType,
-    //    resource_link: &str,
-    //) -> RequestBuilder {
-    //    let time = format!("{}", chrono::Utc::now().format(TIME_FORMAT));
-
-    //    let sig = {
-    //        generate_authorization(
-    //            &self.auth_token,
-    //            &http_method,
-    //            resource_type,
-    //            resource_link,
-    //            &time,
-    //        )
-    //    };
-    //    self.prepare_request_with_signature(uri_path, http_method, &time, &sig)
-    //}
-
     #[inline]
     fn prepare_request_with_signature(
         &self,
@@ -258,22 +262,25 @@ fn generate_authorization(
     time: &str,
 ) -> String {
     let string_to_sign = string_to_sign(http_method, resource_type, resource_link, time);
-    trace!(
+    debug!(
         "generate_authorization::string_to_sign == {:?}",
         string_to_sign
     );
 
     let str_unencoded = format!(
         "type={}&ver={}&sig={}",
-        match auth_token.token_type() {
-            TokenType::Master => "master",
-            TokenType::Resource => "resource",
+        match auth_token {
+            AuthorizationToken::Master(_) => "master",
+            AuthorizationToken::Resource(_) => "resource",
         },
         VERSION,
-        encode_str_to_sign(&string_to_sign, auth_token)
+        match auth_token {
+            AuthorizationToken::Master(key) => Cow::Owned(encode_str_to_sign(&string_to_sign, key)),
+            AuthorizationToken::Resource(key) => Cow::Borrowed(key),
+        },
     );
 
-    trace!(
+    debug!(
         "generate_authorization::str_unencoded == {:?}",
         str_unencoded
     );
@@ -281,8 +288,8 @@ fn generate_authorization(
     form_urlencoded::byte_serialize(&str_unencoded.as_bytes()).collect::<String>()
 }
 
-fn encode_str_to_sign(str_to_sign: &str, auth_token: &AuthorizationToken) -> String {
-    let key = hmac::Key::new(ring::hmac::HMAC_SHA256, auth_token.key());
+fn encode_str_to_sign(str_to_sign: &str, key: &[u8]) -> String {
+    let key = hmac::Key::new(ring::hmac::HMAC_SHA256, key);
     let sig = hmac::sign(&key, str_to_sign.as_bytes());
     base64::encode(sig.as_ref())
 }
@@ -322,6 +329,7 @@ fn string_to_sign(
             ResourceType::Documents => "docs",
             ResourceType::StoredProcedures => "sprocs",
             ResourceType::Users => "users",
+            ResourceType::Permissions => "permissions",
         },
         resource_link,
         time.to_lowercase()
@@ -329,7 +337,7 @@ fn string_to_sign(
 }
 
 fn generate_resource_link(u: &str) -> &str {
-    static ENDING_STRINGS: &[&str] = &["dbs", "colls", "docs", "users"];
+    static ENDING_STRINGS: &[&str] = &["dbs", "colls", "docs", "users", "permissions"];
 
     // store the element only if it does not end with dbs, colls or docs
     let p = u;
@@ -391,9 +399,7 @@ mon, 01 jan 1900 01:00:00 gmt
         let time = time.with_timezone(&chrono::Utc);
         let time = format!("{}", time.format(TIME_FORMAT));
 
-        let auth_token = AuthorizationToken::new(
-            "mindflavor".to_owned(),
-            TokenType::Master,
+        let auth_token = AuthorizationToken::new_master(
             "8F8xXXOptJxkblM1DBXW7a6NMI5oE8NnwPGYBmwxLCKfejOK7B7yhcCHMGvN3PBrlMLIOeol1Hv9RCdzAZR5sg==",
         )
         .unwrap();
@@ -418,9 +424,7 @@ mon, 01 jan 1900 01:00:00 gmt
         let time = time.with_timezone(&chrono::Utc);
         let time = format!("{}", time.format(TIME_FORMAT));
 
-        let auth_token = AuthorizationToken::new(
-            "mindflavor".to_owned(),
-            TokenType::Master,
+        let auth_token = AuthorizationToken::new_master(
             "dsZQi3KtZmCv1ljt3VNWNm7sQUF1y5rJfC6kv5JiwvW0EndXdDku/dkKBp8/ufDToSxL",
         )
         .unwrap();

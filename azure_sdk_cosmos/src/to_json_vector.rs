@@ -40,10 +40,16 @@ impl ToJsonVector {
 
     #[allow(dead_code)]
     pub(crate) fn last_serialized_string(&self) -> Option<&str> {
-        match self.last_serialized_string {
-            Some(ref last_serialized_str) => Some(last_serialized_str),
+        match self.last_serialized_string.as_ref() {
+            Some(last_serialized_str) => Some(last_serialized_str),
             None => None,
         }
+    }
+}
+
+impl std::default::Default for ToJsonVector {
+    fn default() -> Self {
+        Self::new()
     }
 }
 

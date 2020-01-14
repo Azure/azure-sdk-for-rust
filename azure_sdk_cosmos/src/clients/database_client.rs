@@ -71,7 +71,7 @@ where
         UserClient::new(&self, user_name)
     }
 
-    fn list_users<'c>(&'c self) -> requests::ListUsersBuilder<'c, CUB> {
+    fn list_users(&self) -> requests::ListUsersBuilder<'_, CUB> {
         requests::ListUsersBuilder::new(self)
     }
 }
