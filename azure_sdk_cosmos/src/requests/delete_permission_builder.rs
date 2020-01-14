@@ -43,7 +43,7 @@ where
     pub async fn execute(&self) -> Result<DeletePermissionResponse, AzureError> {
         trace!("DeletePermissionBuilder::execute called");
 
-        let mut req = self.permission_client.main_client().prepare_request(
+        let req = self.permission_client.main_client().prepare_request(
             &format!(
                 "dbs/{}/users/{}/permissions/{}",
                 self.permission_client.database_name().name(),

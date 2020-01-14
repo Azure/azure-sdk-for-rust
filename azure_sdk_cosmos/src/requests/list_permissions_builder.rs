@@ -41,7 +41,7 @@ where
     pub async fn execute(&self) -> Result<ListPermissionsResponse<'a>, AzureError> {
         trace!("ListPermissionsBuilder::execute called");
 
-        let mut req = self.user_client.main_client().prepare_request(
+        let req = self.user_client.main_client().prepare_request(
             &format!(
                 "dbs/{}/users/{}/permissions",
                 self.user_client.database_name().name(),

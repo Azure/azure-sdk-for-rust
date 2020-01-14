@@ -137,7 +137,7 @@ where
             ResourceType::Permissions,
         );
 
-        req.header(http::header::CONTENT_TYPE, "application/json");
+        req = req.header(http::header::CONTENT_TYPE, "application/json");
 
         #[derive(Serialize, Deserialize)]
         struct RequestBody<'a> {

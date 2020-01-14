@@ -311,8 +311,8 @@ pub trait PartitionKeysOption<'a> {
 pub trait ExpirySecondsOption {
     fn expiry_seconds(&self) -> u64;
 
-    fn add_header(&self, builder: &mut Builder) {
-        builder.header(HEADER_DOCUMENTDB_EXPIRY_SECONDS, self.expiry_seconds());
+    fn add_header(&self, builder: Builder) -> Builder {
+        builder.header(HEADER_DOCUMENTDB_EXPIRY_SECONDS, self.expiry_seconds())
     }
 }
 
