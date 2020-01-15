@@ -39,6 +39,33 @@ impl<'a> From<&'a BA512Range> for Range {
     }
 }
 
+impl From<std::ops::Range<u64>> for Range {
+    fn from(r: std::ops::Range<u64>) -> Self {
+        Self {
+            start: r.start,
+            end: r.end,
+        }
+    }
+}
+
+impl From<std::ops::Range<i32>> for Range {
+    fn from(r: std::ops::Range<i32>) -> Self {
+        Self {
+            start: r.start as u64,
+            end: r.end as u64,
+        }
+    }
+}
+
+impl From<std::ops::Range<usize>> for Range {
+    fn from(r: std::ops::Range<usize>) -> Self {
+        Self {
+            start: r.start as u64,
+            end: r.end as u64,
+        }
+    }
+}
+
 impl From<ParseIntError> for ParseError {
     fn from(pie: ParseIntError) -> ParseError {
         ParseError::ParseIntError(pie)
@@ -54,7 +81,7 @@ impl FromStr for Range {
         }
 
         let cp_start = v[0].parse::<u64>()?;
-        let cp_end = v[1].parse::<u64>()?;
+        let cp_end = v[1].parse::<u64>()? + 1;
 
         Ok(Range {
             start: cp_start,
@@ -65,7 +92,7 @@ impl FromStr for Range {
 
 impl fmt::Display for Range {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "bytes={}-{}", self.start, self.end)
+        write!(f, "bytes={}-{}", self.start, self.end - 1)
     }
 }
 
@@ -78,7 +105,7 @@ mod test {
         let range = "1000/2000".parse::<Range>().unwrap();
 
         assert_eq!(range.start, 1000);
-        assert_eq!(range.end, 2000);
+        assert_eq!(range.end, 2001);
     }
 
     #[test]
@@ -97,7 +124,7 @@ mod test {
     fn test_range_display() {
         let range = Range {
             start: 100,
-            end: 500,
+            end: 501,
         };
 
         let txt = format!("{}", range);
