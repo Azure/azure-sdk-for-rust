@@ -15,7 +15,7 @@ categories    = ["api-bindings"]
 edition       = "2018"
 
 [dependencies]
-azure_sdk_core       = { path = "../azure_sdk_core", version = "0.35.0" }
+azure_sdk_core       = { path = "../azure_sdk_core", version = "0.36.0" }
 ring                 = "0.16"
 md5                  = "0.7"
 RustyXML             = "0.1"

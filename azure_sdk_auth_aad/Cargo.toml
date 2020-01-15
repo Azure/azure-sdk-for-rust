@@ -15,7 +15,7 @@ categories         = ["api-bindings"]
 edition            = "2018"
 
 [dependencies]
-azure_sdk_core       = { path = "../azure_sdk_core", version = "0.35.0" }
+azure_sdk_core       = { path = "../azure_sdk_core", version = "0.36.0" }
 oauth2               = { git = "https://github.com/gzp-crey/oauth2-rs.git", branch = "http_hack", features = ["reqwest-010", "futures-03"], default-features = false}
 base64               = "0.11"
 url                  = "2.1"

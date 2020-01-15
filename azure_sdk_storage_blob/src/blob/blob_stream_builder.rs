@@ -31,7 +31,7 @@ where
     range: Option<&'a Range>,
     lease_id: Option<&'a LeaseId>,
     client_request_id: Option<&'a str>,
-    increment: u64,
+    chunk_size: u64,
 }
 
 impl<'a> BlobStreamBuilder<'a, No, No, No> {
@@ -49,19 +49,20 @@ impl<'a> BlobStreamBuilder<'a, No, No, No> {
             timeout: None,
             lease_id: None,
             client_request_id: None,
-            increment: 1024 * 1024,
+            chunk_size: 1024 * 1024,
         }
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, RangeSet> BlobStreamBuilder<'a, ContainerNameSet, BlobNameSet, RangeSet>
+impl<'a, ContainerNameSet, BlobNameSet, RangeSet>
+    BlobStreamBuilder<'a, ContainerNameSet, BlobNameSet, RangeSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     RangeSet: ToAssign,
 {
     #[inline]
-    pub fn with_chunk_size(self, increment: u64) -> Self {
+    pub fn with_chunk_size(self, chunk_size: u64) -> Self {
         BlobStreamBuilder {
             client: self.client,
             p_container_name: PhantomData {},
@@ -74,8 +75,13 @@ where
             timeout: self.timeout,
             lease_id: self.lease_id,
             client_request_id: self.client_request_id,
-            increment: increment,
+            chunk_size,
         }
+    }
+
+    #[inline]
+    pub fn chunk_size(&self) -> u64 {
+        self.chunk_size
     }
 }
 
@@ -203,7 +209,7 @@ where
             timeout: self.timeout,
             lease_id: self.lease_id,
             client_request_id: self.client_request_id,
-            increment: self.increment,
+            chunk_size: self.chunk_size,
         }
     }
 }
@@ -231,7 +237,7 @@ where
             timeout: self.timeout,
             lease_id: self.lease_id,
             client_request_id: self.client_request_id,
-            increment: self.increment,
+            chunk_size: self.chunk_size,
         }
     }
 }
@@ -259,7 +265,7 @@ where
             timeout: self.timeout,
             lease_id: self.lease_id,
             client_request_id: self.client_request_id,
-            increment: self.increment,
+            chunk_size: self.chunk_size,
         }
     }
 }
@@ -287,7 +293,7 @@ where
             range: self.range,
             lease_id: self.lease_id,
             client_request_id: self.client_request_id,
-            increment: self.increment,
+            chunk_size: self.chunk_size,
         }
     }
 }
@@ -315,7 +321,7 @@ where
             range: self.range,
             lease_id: self.lease_id,
             client_request_id: self.client_request_id,
-            increment: self.increment,
+            chunk_size: self.chunk_size,
         }
     }
 }
@@ -343,7 +349,7 @@ where
             range: self.range,
             lease_id: Some(lease_id),
             client_request_id: self.client_request_id,
-            increment: self.increment,
+            chunk_size: self.chunk_size,
         }
     }
 }
@@ -371,7 +377,7 @@ where
             range: self.range,
             lease_id: self.lease_id,
             client_request_id: Some(client_request_id),
-            increment: self.increment,
+            chunk_size: self.chunk_size,
         }
     }
 }
@@ -390,14 +396,14 @@ impl<'a> BlobStreamBuilder<'a, Yes, Yes, Yes> {
     #[inline]
     pub fn finalize(self) -> impl Stream<Item = Result<Vec<u8>, AzureError>> + 'a {
         let client = self.client().clone();
-        let container_name = self.container_name().clone();
+        let container_name = self.container_name();
         let client_request_id = self.client_request_id.map(|v| v.to_owned());
-        let blob_name = self.blob_name().clone();
+        let blob_name = self.blob_name();
         let range = self.range().to_owned();
         let snapshot = self.snapshot.to_owned();
         let timeout = self.timeout.to_owned();
         let lease_id = self.lease_id.cloned();
-        let increment = self.increment - 1;
+        let chunk_size = self.chunk_size;
 
         futures::stream::unfold(Some(range), move |remaining| {
             let client = client.clone();
@@ -409,10 +415,10 @@ impl<'a> BlobStreamBuilder<'a, Yes, Yes, Yes> {
                     None => return None,
                 };
 
-                let range = if remaining.start + increment > remaining.end {
+                let range = if remaining.start + chunk_size > remaining.end {
                     Range::new(remaining.start, remaining.end)
                 } else {
-                    Range::new(remaining.start, remaining.start + increment)
+                    Range::new(remaining.start, remaining.start + chunk_size)
                 };
 
                 let mut req = GetBlobBuilder::new(&client)
@@ -441,7 +447,7 @@ impl<'a> BlobStreamBuilder<'a, Yes, Yes, Yes> {
                 Some((
                     Ok(response.data),
                     if remaining.end > range.end {
-                        Some(Range::new(range.end + 1, remaining.end))
+                        Some(Range::new(range.end, remaining.end))
                     } else {
                         None
                     },
