@@ -36,6 +36,28 @@ quick_error! {
 }
 
 #[derive(Debug, Clone, PartialEq)]
+pub struct UnexpectedValue {
+    expected: Vec<String>,
+    received: String,
+}
+
+impl UnexpectedValue {
+    pub fn new(expected: String, received: String) -> UnexpectedValue {
+        Self {
+            expected: vec![expected],
+            received,
+        }
+    }
+
+    pub fn new_multiple(allowed: Vec<String>, received: String) -> Self {
+        UnexpectedValue {
+            expected: allowed,
+            received,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
 pub struct UnexpectedHTTPResult {
     expected: Vec<StatusCode>,
     received: StatusCode,
@@ -176,7 +198,11 @@ quick_error! {
         }
         UnexpectedHTTPResult(err: UnexpectedHTTPResult){
             from()
-            display("UnexpectedHTTPResult error")
+            display("UnexpectedHTTPResult error: {}", err)
+        }
+        UnexpectedValue(err: UnexpectedValue){
+            from()
+            display("UnexpectedValue error: {:?}", err)
         }
         HeaderNotFound(msg: String) {
             display("Header not found: {}", msg)
@@ -252,6 +278,9 @@ quick_error! {
         MissingValueError(value: String, expected_type: String) {
             display("An expected JSON node is missing: {} of expected type {}", value, expected_type)
         }
+        FailureError(error: failure::Error) {
+            display("failure::Error error {}", error)
+        }
     }
 }
 
@@ -297,6 +326,12 @@ quick_error! {
 impl From<()> for AzureError {
     fn from(_: ()) -> AzureError {
         AzureError::GenericError
+    }
+}
+
+impl From<failure::Error> for AzureError {
+    fn from(error: failure::Error) -> AzureError {
+        AzureError::FailureError(error)
     }
 }
 

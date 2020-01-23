@@ -213,7 +213,7 @@ pub(crate) fn generate_storage_sas(
 
     let token = format!(
         "{}{}{}{}{}{}{}{}{}{}{}{}se={}&sp={}&sr={}&spr={}&sv={}&sig={}",
-        if let Some(_) = start {
+        if start.is_some() {
             format!(
                 "st={}&",
                 form_urlencoded::byte_serialize(start_string.as_bytes()).collect::<String>()
@@ -221,7 +221,7 @@ pub(crate) fn generate_storage_sas(
         } else {
             "".to_owned()
         },
-        if let Some(_) = snapshot_time {
+        if snapshot_time.is_some() {
             // sst is guessed, I haven't been able to find the correct one in
             // the docs.
             format!(
@@ -232,7 +232,7 @@ pub(crate) fn generate_storage_sas(
         } else {
             "".to_owned()
         },
-        if let Some(_) = ip_range {
+        if ip_range.is_some() {
             format!(
                 "sip={}&",
                 form_urlencoded::byte_serialize(ip_range_string.as_bytes()).collect::<String>()

@@ -1,6 +1,6 @@
-use crate::clients::{Client, CosmosUriBuilder, DatabaseClient};
+use crate::clients::{Client, CosmosUriBuilder, DatabaseClient, PermissionClient};
 use crate::database::DatabaseName;
-use crate::{requests, DatabaseTrait, UserName, UserTrait};
+use crate::{requests, DatabaseTrait, PermissionName, UserName, UserTrait};
 use azure_sdk_core::No;
 
 #[derive(Debug, Clone)]
@@ -63,5 +63,16 @@ where
 
     fn delete_user(&self) -> requests::DeleteUserBuilder<'_, CUB> {
         requests::DeleteUserBuilder::new(self)
+    }
+
+    fn with_permission<'c>(
+        &'c self,
+        permission_name: &'c dyn PermissionName,
+    ) -> PermissionClient<'c, CUB> {
+        PermissionClient::new(self, permission_name)
+    }
+
+    fn list_permissions(&self) -> requests::ListPermissionsBuilder<'_, CUB> {
+        requests::ListPermissionsBuilder::new(self)
     }
 }

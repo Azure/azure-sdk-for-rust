@@ -576,15 +576,13 @@ where
                 std::str::from_utf8(&whole_body)?,
             )
             .into());
-        } else {
-            if status_code != StatusCode::CREATED && status_code != StatusCode::OK {
-                return Err(UnexpectedHTTPResult::new_multiple(
-                    vec![StatusCode::CREATED, StatusCode::OK],
-                    status_code,
-                    std::str::from_utf8(&whole_body)?,
-                )
-                .into());
-            }
+        } else if status_code != StatusCode::CREATED && status_code != StatusCode::OK {
+            return Err(UnexpectedHTTPResult::new_multiple(
+                vec![StatusCode::CREATED, StatusCode::OK],
+                status_code,
+                std::str::from_utf8(&whole_body)?,
+            )
+            .into());
         }
 
         CreateDocumentResponse::try_from((status_code, &headers, &whole_body as &[u8]))

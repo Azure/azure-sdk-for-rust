@@ -18,6 +18,8 @@ impl GetBlobResponse {
         blob: Blob,
         body: &[u8],
     ) -> Result<GetBlobResponse, AzureError> {
+        debug!("headers == {:#?}", headers);
+
         let request_id = request_id_from_headers(headers)?;
         let date = date_from_headers(headers)?;
 

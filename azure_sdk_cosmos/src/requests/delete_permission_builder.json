@@ -1,0 +1,24 @@
+{
+	"name": "DeletePermissionsBuilder",
+	"derive": "Debug, Clone",
+	"uses": [
+		"crate::clients::{CosmosUriBuilder, PermissionClient, ResourceType}",
+		"crate::prelude::*",
+		"crate::responses::DeletePermissionResponse",
+		"azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError}",
+		"hyper::StatusCode",
+		"std::convert::TryInto"
+	],
+	"extra_types": [ "'a", "CUB" ],
+	"inline": true,
+	"extra_wheres": [ "CUB: CosmosUriBuilder" ],
+	"constructor_fields": [
+		{
+			"name": "permission_client",
+			"field_type": "&'a PermissionClient<'a, CUB>",
+			"trait_get": "PermissionClientRequired<'a, CUB>"
+		}
+	],
+	"fields": [
+	]
+}

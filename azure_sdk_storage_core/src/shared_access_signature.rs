@@ -161,9 +161,9 @@ impl SharedAccessSignature {
                     self.signed_resource,
                     self.signed_resource_type,
                     self.signed_start
-                        .map_or("".to_string(), |v| SharedAccessSignature::format_date(v)),
+                        .map_or("".to_string(), SharedAccessSignature::format_date),
                     SharedAccessSignature::format_date(self.signed_expiry),
-                    self.signed_ip.clone().unwrap_or("".to_string()),
+                    self.signed_ip.clone().unwrap_or_else(|| "".to_string()),
                     self.signed_protocol
                         .as_ref()
                         .map_or("".to_string(), |v| v.to_string()),
@@ -294,7 +294,7 @@ impl<'a> SharedAccessSignatureBuilder<'a, No, No, No, No> {
             signed_expiry: self.signed_expiry.unwrap(),
             signed_permissions: self.signed_permissions.unwrap(),
             signed_ip: self.signed_ip.clone(),
-            signed_protocol: self.signed_protocol.clone(),
+            signed_protocol: self.signed_protocol,
         }
     }
 }
@@ -320,12 +320,12 @@ where
 }
 
 pub trait ClientSharedAccessSignature {
-    fn shared_access_signature<'a>(&'a self) -> SharedAccessSignatureBuilder<'a, No, No, No, No>;
+    fn shared_access_signature(&self) -> SharedAccessSignatureBuilder<'_, No, No, No, No>;
 }
 
 impl ClientSharedAccessSignature for Client {
     /// Grant restricted access rights to Azure Storage resources ([Azure documentation](https://docs.microsoft.com/en-us/rest/api/storageservices/delegate-access-with-shared-access-signature)).
-    fn shared_access_signature<'a>(&'a self) -> SharedAccessSignatureBuilder<'a, No, No, No, No> {
+    fn shared_access_signature(&self) -> SharedAccessSignatureBuilder<'_, No, No, No, No> {
         SharedAccessSignature::new(self)
     }
 }
