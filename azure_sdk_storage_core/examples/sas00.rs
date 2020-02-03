@@ -3,12 +3,14 @@ use chrono::*;
 use url::Url;
 
 pub fn main() {
-    let master_key = std::env::var("STORAGE_MASTER_KEY").expect("Set env variable STORAGE_MASTER_KEY first!");
+    let master_key =
+        std::env::var("STORAGE_MASTER_KEY").expect("Set env variable STORAGE_MASTER_KEY first!");
 
     let start = Utc::now() - Duration::days(1);
     let end = Utc::now() + Duration::days(1);
 
-    let path = Url::parse("https://azureskdforrust.blob.core.windows.net/test/ERRORLOG.1.cut").unwrap();
+    let path =
+        Url::parse("https://azureskdforrust.blob.core.windows.net/test/ERRORLOG.1.cut").unwrap();
 
     let ip_range = IPRange {
         start: std::net::IpAddr::V4(<std::net::Ipv4Addr>::new(0, 0, 0, 0)),
@@ -26,7 +28,10 @@ pub fn main() {
 
     println!("SAS == {}", sas);
 
-    let path = Url::parse("https://azureskdforrust.blob.core.windows.net/test?restype=container&comp=list").unwrap();
+    let path = Url::parse(
+        "https://azureskdforrust.blob.core.windows.net/test?restype=container&comp=list",
+    )
+    .unwrap();
 
     let sas = ContainerSASBuilder::new(&path)
         .with_key(&master_key)

@@ -477,14 +477,15 @@ impl<'a> ClearPageBuilder<'a, Yes, Yes, Yes> {
         let future_response = self.client().perform_request(
             &uri,
             &Method::PUT,
-            |ref mut request| {
-                BA512RangeRequired::add_header(&self, request);
-                request.header(PAGE_WRITE, "clear");
-                LeaseIdOption::add_header(&self, request);
-                SequenceNumberConditionOption::add_header(&self, request);
-                IfSinceConditionOption::add_header(&self, request);
-                IfMatchConditionOption::add_header(&self, request);
-                ClientRequestIdOption::add_header(&self, request);
+            |mut request| {
+                request = BA512RangeRequired::add_header(&self, request);
+                request = request.header(PAGE_WRITE, "clear");
+                request = LeaseIdOption::add_header(&self, request);
+                request = SequenceNumberConditionOption::add_header(&self, request);
+                request = IfSinceConditionOption::add_header(&self, request);
+                request = IfMatchConditionOption::add_header(&self, request);
+                request = ClientRequestIdOption::add_header(&self, request);
+                request
             },
             None,
         )?;

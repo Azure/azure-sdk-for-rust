@@ -25,10 +25,15 @@ impl<'a> ClientRequired<'a> for GetAccountInformationBuilder<'a> {
 impl<'a> GetAccountInformationBuilder<'a> {
     #[inline]
     pub async fn finalize(self) -> Result<GetAccountInformationResponse, AzureError> {
-        let uri = format!("{}/?restype=account&comp=properties", self.client.blob_uri());
+        let uri = format!(
+            "{}/?restype=account&comp=properties",
+            self.client.blob_uri()
+        );
         trace!("uri == {:?}", uri);
 
-        let req = self.client().perform_request(&uri, &Method::GET, |ref mut _request| {}, None);
+        let req = self
+            .client()
+            .perform_request(&uri, &Method::GET, |request| request, None);
         let (headers, _) = check_status_extract_headers_and_body(req?, StatusCode::OK).await?;
         GetAccountInformationResponse::from_headers(&headers)
     }

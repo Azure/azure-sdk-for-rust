@@ -517,7 +517,7 @@ pub fn perform_request<F>(
     service_type: ServiceType,
 ) -> Result<hyper::client::ResponseFuture, AzureError>
 where
-    F: FnOnce(&mut ::http::request::Builder),
+    F: FnOnce(::http::request::Builder) -> ::http::request::Builder,
 {
     let dt = chrono::Utc::now();
     let time = format!("{}", dt.format("%a, %d %h %Y %T GMT"));
@@ -529,20 +529,22 @@ where
     //     h.set();
     // }
     let mut request = hyper::Request::builder();
-    request.method(http_method.clone()).uri(uri);
+    request = request.method(http_method.clone()).uri(uri);
 
     // let's add content length to avoid "chunking" errors.
     match request_body {
-        Some(ref b) => request.header(header::CONTENT_LENGTH, &b.len().to_string() as &str),
-        None => request.header_static(header::CONTENT_LENGTH, "0"),
+        Some(ref b) => {
+            request = request.header(header::CONTENT_LENGTH, &b.len().to_string() as &str)
+        }
+        None => request = request.header_static(header::CONTENT_LENGTH, "0"),
     };
 
     // This will give the caller the ability to add custom headers.
     // The closure is needed to because request.headers_mut().set_raw(...) requires
     // a Cow with 'static lifetime...
-    headers_func(&mut request);
+    request = headers_func(request);
 
-    request
+    request = request
         .header_bytes(HEADER_DATE, time)
         .header_static(HEADER_VERSION, AZURE_VERSION);
 

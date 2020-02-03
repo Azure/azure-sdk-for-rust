@@ -1,6 +1,6 @@
-use azure_sdk_core::errors::AzureError;
 use crate::blob::BlobBlockType;
 use crate::blob::BlobBlockWithSize;
+use azure_sdk_core::errors::AzureError;
 use base64;
 use std::borrow::Borrow;
 
@@ -56,7 +56,9 @@ impl BlockWithSizeList<Vec<u8>> {
         if let Some(b) = bl.committed_blocks.block {
             for b_val in b {
                 lbs.blocks.push(BlobBlockWithSize {
-                    block_list_type: BlobBlockType::Committed(base64::decode(&b_val.name.value)?.to_owned()),
+                    block_list_type: BlobBlockType::Committed(
+                        base64::decode(&b_val.name.value)?.to_owned(),
+                    ),
                     size_in_bytes: b_val.size.value,
                 });
             }
@@ -65,7 +67,9 @@ impl BlockWithSizeList<Vec<u8>> {
         if let Some(b) = bl.uncommitted_blocks.block {
             for b_val in b {
                 lbs.blocks.push(BlobBlockWithSize {
-                    block_list_type: BlobBlockType::Uncommitted(base64::decode(&b_val.name.value)?.to_owned()),
+                    block_list_type: BlobBlockType::Uncommitted(
+                        base64::decode(&b_val.name.value)?.to_owned(),
+                    ),
                     size_in_bytes: b_val.size.value,
                 });
             }
@@ -102,7 +106,10 @@ mod test {
         assert!(bl.blocks[0].size_in_bytes == 200);
         assert!(bl.blocks[1].size_in_bytes == 4096);
 
-        assert!(bl.blocks[0].block_list_type == BlobBlockType::Committed(Vec::from(b"base64-encoded-block-id" as &[u8])));
+        assert!(
+            bl.blocks[0].block_list_type
+                == BlobBlockType::Committed(Vec::from(b"base64-encoded-block-id" as &[u8]))
+        );
         let b2 = BlobBlockType::Uncommitted(Vec::from(b"base64-encoded-block-id-number2" as &[u8]));
         assert!(
             bl.blocks[1].block_list_type == b2,

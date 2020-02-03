@@ -240,10 +240,11 @@ impl<'a> CreateBuilder<'a, Yes, Yes> {
         let future_response = self.client().perform_request(
             &uri,
             &Method::PUT,
-            |ref mut request| {
-                ClientRequestIdOption::add_header(&self, request);
-                PublicAccessRequired::add_header(&self, request);
-                MetadataOption::add_header(&self, request);
+            |mut request| {
+                request = ClientRequestIdOption::add_header(&self, request);
+                request = PublicAccessRequired::add_header(&self, request);
+                request = MetadataOption::add_header(&self, request);
+                request
             },
             Some(&[]),
         )?;

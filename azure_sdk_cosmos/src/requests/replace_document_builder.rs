@@ -483,14 +483,14 @@ where
         );
 
         // add trait headers
-        IndexingDirectiveOption::add_header(self, &mut req);
-        IfMatchConditionOption::add_header(self, &mut req);
-        IfModifiedSinceOption::add_header(self, &mut req);
-        UserAgentOption::add_header(self, &mut req);
-        ActivityIdOption::add_header(self, &mut req);
-        ConsistencyLevelOption::add_header(self, &mut req);
-        PartitionKeysRequired::add_header(self, &mut req);
-        AllowTentativeWritesOption::add_header(self, &mut req);
+        req = IndexingDirectiveOption::add_header(self, req);
+        req = IfMatchConditionOption::add_header(self, req);
+        req = IfModifiedSinceOption::add_header(self, req);
+        req = UserAgentOption::add_header(self, req);
+        req = ActivityIdOption::add_header(self, req);
+        req = ConsistencyLevelOption::add_header(self, req);
+        req = PartitionKeysRequired::add_header(self, req);
+        req = AllowTentativeWritesOption::add_header(self, req);
 
         let serialized = serde_json::to_string(self.document())?;
 

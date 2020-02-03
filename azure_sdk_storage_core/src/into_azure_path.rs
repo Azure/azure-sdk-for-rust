@@ -113,5 +113,4 @@ mod test {
         assert!(p.container_name().unwrap() == "container");
         assert!(path.blob_name().unwrap() == "blob");
     }
-
 }

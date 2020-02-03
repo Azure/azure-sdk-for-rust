@@ -245,14 +245,12 @@ where
             "cosmos::client::prepare_request_with_resource_signature::uri == {:?}",
             uri
         );
-        let mut request = hyper::Request::builder();
-        request
+        hyper::Request::builder()
             .method(http_method)
             .uri(uri)
             .header(HEADER_DATE, time)
             .header(HEADER_VERSION, HeaderValue::from_static(AZURE_VERSION))
-            .header(header::AUTHORIZATION, signature);
-        request
+            .header(header::AUTHORIZATION, signature)
     }
 }
 

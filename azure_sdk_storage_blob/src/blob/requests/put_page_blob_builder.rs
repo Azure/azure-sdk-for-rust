@@ -768,19 +768,20 @@ impl<'a> PutPageBlobBuilder<'a, Yes, Yes, Yes> {
         let future_response = self.client().perform_request(
             &uri,
             &Method::PUT,
-            |ref mut request| {
-                PageBlobLengthRequired::add_header(&self, request);
-                SequenceNumberOption::add_header(&self, request);
-                AccessTierOption::add_header(&self, request);
-                ContentTypeOption::add_header(&self, request);
-                ContentEncodingOption::add_header(&self, request);
-                ContentLanguageOption::add_header(&self, request);
-                CacheControlOption::add_header(&self, request);
-                ContentDispositionOption::add_header(&self, request);
-                MetadataOption::add_header(&self, request);
-                request.header(BLOB_TYPE, "PageBlob");
-                LeaseIdOption::add_header(&self, request);
-                ClientRequestIdOption::add_header(&self, request);
+            |mut request| {
+                request = PageBlobLengthRequired::add_header(&self, request);
+                request = SequenceNumberOption::add_header(&self, request);
+                request = AccessTierOption::add_header(&self, request);
+                request = ContentTypeOption::add_header(&self, request);
+                request = ContentEncodingOption::add_header(&self, request);
+                request = ContentLanguageOption::add_header(&self, request);
+                request = CacheControlOption::add_header(&self, request);
+                request = ContentDispositionOption::add_header(&self, request);
+                request = MetadataOption::add_header(&self, request);
+                request = request.header(BLOB_TYPE, "PageBlob");
+                request = LeaseIdOption::add_header(&self, request);
+                request = ClientRequestIdOption::add_header(&self, request);
+                request
             },
             None,
         )?;

@@ -287,12 +287,14 @@ impl TableService {
             None => "*",
         };
 
-        let future_response = self.request(path, &Method::DELETE, None, |ref mut request| {
-            request.header(
+        let future_response = self.request(path, &Method::DELETE, None, |mut request| {
+            request = request.header(
                 header::ACCEPT,
                 HeaderValue::from_static(get_json_mime_nometadata()),
             );
-            request.header(header::IF_MATCH, etag);
+            request = request.header(header::IF_MATCH, etag);
+            
+            request
         })?;
         check_status_extract_body(future_response, StatusCode::NO_CONTENT).await?;
         Ok(())
@@ -314,13 +316,12 @@ impl TableService {
             batch_items,
         );
 
-        let future_response =
-            self.request("$batch", &Method::POST, Some(payload), |ref mut request| {
-                request.header(
-                    header::CONTENT_TYPE,
-                    header::HeaderValue::from_static(get_batch_mime()),
-                );
-            })?;
+        let future_response = self.request("$batch", &Method::POST, Some(payload), |request| {
+            request.header(
+                header::CONTENT_TYPE,
+                header::HeaderValue::from_static(get_batch_mime()),
+            )
+        })?;
         check_status_extract_body(future_response, StatusCode::ACCEPTED).await?;
         // TODO deal with body response, handle batch failure.
         // let ref body = get_response_body(&mut response)?;
@@ -339,24 +340,24 @@ impl TableService {
     where
         H: FnOnce(&mut HeaderMap),
     {
-        self.request(segment, method, request_str, |ref mut request| {
+        self.request(segment, method, request_str, |mut request| {
             if fullmetadata {
-                request.header(
+                request = request.header(
                     header::ACCEPT,
                     HeaderValue::from_static(get_json_mime_fullmetadata()),
                 );
             } else {
-                request.header(
+                request = request.header(
                     header::ACCEPT,
                     HeaderValue::from_static(get_json_mime_nometadata()),
                 );
             }
-            request.header(
+            request = request.header(
                 header::ACCEPT,
                 HeaderValue::from_static(get_json_mime_nometadata()),
             );
             if request_str.is_some() {
-                request.header(
+                request = request.header(
                     header::CONTENT_TYPE,
                     HeaderValue::from_static(get_default_json_mime()),
                 );
@@ -367,6 +368,8 @@ impl TableService {
             if let Some(ref mut headers) = request.headers_mut() {
                 add_extra_headers(headers);
             }
+
+            request
         })
     }
 
@@ -378,7 +381,7 @@ impl TableService {
         headers_func: F,
     ) -> Result<ResponseFuture, AzureError>
     where
-        F: FnOnce(&mut ::http::request::Builder),
+        F: FnOnce(::http::request::Builder) -> ::http::request::Builder,
     {
         trace!("{:?} {}", method, segment);
         if let Some(body) = request_str {

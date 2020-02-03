@@ -265,10 +265,10 @@ where
             ResourceType::Collections,
         );
 
-        req.header(http::header::CONTENT_TYPE, "application/json");
+        req = req.header(http::header::CONTENT_TYPE, "application/json");
 
         // add trait headers
-        OfferRequired::add_header(self, &mut req);
+        req = OfferRequired::add_header(self, req);
 
         let mut collection = Collection::new(
             self.collection_name().name(),

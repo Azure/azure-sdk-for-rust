@@ -40,7 +40,7 @@ where
     pub async fn execute(&self) -> Result<ListUsersResponse, AzureError> {
         trace!("ListUsersBuilder::execute called");
 
-        let mut req = self.database_client.main_client().prepare_request(
+        let req = self.database_client.main_client().prepare_request(
             &format!("dbs/{}/users", self.database_client.database_name().name()),
             hyper::Method::GET,
             ResourceType::Users,

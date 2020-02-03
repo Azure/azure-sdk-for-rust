@@ -320,10 +320,11 @@ impl<'a> DeleteBlobBuilder<'a, Yes, Yes, Yes> {
         let future_response = self.client().perform_request(
             &uri,
             &Method::DELETE,
-            |ref mut request| {
-                DeleteSnapshotsMethodRequired::add_header(&self, request);
-                LeaseIdOption::add_header(&self, request);
-                ClientRequestIdOption::add_header(&self, request);
+            |mut request| {
+                request = DeleteSnapshotsMethodRequired::add_header(&self, request);
+                request = LeaseIdOption::add_header(&self, request);
+                request = ClientRequestIdOption::add_header(&self, request);
+                request
             },
             None,
         )?;

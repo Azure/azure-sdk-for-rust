@@ -1,7 +1,7 @@
 use azure_sdk_core::errors::AzureError;
 use azure_sdk_core::{
-    content_md5_from_headers, date_from_headers, etag_from_headers, last_modified_from_headers, request_id_from_headers,
-    request_server_encrypted_from_headers, RequestId,
+    content_md5_from_headers, date_from_headers, etag_from_headers, last_modified_from_headers,
+    request_id_from_headers, request_server_encrypted_from_headers, RequestId,
 };
 use chrono::{DateTime, Utc};
 use http::HeaderMap;

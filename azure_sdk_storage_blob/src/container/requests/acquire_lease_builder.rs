@@ -282,12 +282,13 @@ impl<'a> AcquireLeaseBuilder<'a, Yes, Yes> {
         let future_response = self.client().perform_request(
             &uri,
             &Method::PUT,
-            |ref mut request| {
-                ClientRequestIdOption::add_header(&self, request);
-                LeaseIdOption::add_header(&self, request);
-                request.header(LEASE_ACTION, "acquire");
-                LeaseDurationRequired::add_header(&self, request);
-                ProposedLeaseIdOption::add_header(&self, request);
+            |mut request| {
+                request = ClientRequestIdOption::add_header(&self, request);
+                request = LeaseIdOption::add_header(&self, request);
+                request = request.header(LEASE_ACTION, "acquire");
+                request = LeaseDurationRequired::add_header(&self, request);
+                request = ProposedLeaseIdOption::add_header(&self, request);
+                request
             },
             Some(&[]),
         )?;

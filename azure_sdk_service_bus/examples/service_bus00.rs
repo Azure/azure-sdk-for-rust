@@ -58,7 +58,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         ))
     }
 
-    futures_util::future::join_all(v).await;
+    futures::future::join_all(v).await;
 
     Ok(())
 }

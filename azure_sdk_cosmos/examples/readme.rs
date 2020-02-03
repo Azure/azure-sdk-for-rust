@@ -4,7 +4,7 @@ extern crate serde_derive;
 // DB.
 use azure_sdk_core::prelude::*;
 use azure_sdk_cosmos::prelude::*;
-use futures_util::stream::StreamExt;
+use futures::stream::StreamExt;
 use std::borrow::Cow;
 use std::error::Error;
 

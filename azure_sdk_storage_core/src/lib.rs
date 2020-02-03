@@ -4,7 +4,10 @@
 extern crate log;
 pub mod client;
 mod rest_client;
-pub use self::rest_client::{get_default_json_mime, get_json_mime_fullmetadata, get_json_mime_nometadata, perform_request, ServiceType};
+pub use self::rest_client::{
+    get_default_json_mime, get_json_mime_fullmetadata, get_json_mime_nometadata, perform_request,
+    ServiceType,
+};
 use crate::client::Client;
 mod into_azure_path;
 pub mod prelude;
@@ -19,7 +22,10 @@ pub trait ClientRequired<'a> {
 
 pub trait SharedAccessSignatureSupport<'a> {
     type O;
-    fn with_shared_access_signature(self, signature: &'a shared_access_signature::SharedAccessSignature) -> Self::O;
+    fn with_shared_access_signature(
+        self,
+        signature: &'a shared_access_signature::SharedAccessSignature,
+    ) -> Self::O;
 }
 
 pub trait SharedAccessSignatureRequired<'a> {

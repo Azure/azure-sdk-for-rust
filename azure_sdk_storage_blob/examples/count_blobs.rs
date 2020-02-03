@@ -1,7 +1,7 @@
 use azure_sdk_core::prelude::*;
 use azure_sdk_storage_blob::prelude::*;
 use azure_sdk_storage_core::prelude::*;
-use futures_util::stream::StreamExt;
+use futures::stream::StreamExt;
 use std::error::Error;
 
 #[tokio::main]

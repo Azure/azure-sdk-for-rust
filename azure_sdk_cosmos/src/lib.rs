@@ -77,11 +77,12 @@ pub trait QueryCrossPartitionSupport {
 pub trait QueryCrossPartitionOption {
     fn query_cross_partition(&self) -> bool;
 
-    fn add_header(&self, builder: &mut Builder) {
+    #[must_use]
+    fn add_header(&self, builder: Builder) -> Builder {
         builder.header(
             HEADER_DOCUMENTDB_QUERY_ENABLECROSSPARTITION,
             self.query_cross_partition().to_string(),
-        );
+        )
     }
 }
 
@@ -113,11 +114,12 @@ pub trait ParametersSupport<'a> {
 pub trait ParallelizeCrossPartitionQueryOption {
     fn parallelize_cross_partition_query(&self) -> bool;
 
-    fn add_header(&self, builder: &mut Builder) {
+    #[must_use]
+    fn add_header(&self, builder: Builder) -> Builder {
         builder.header(
             HEADER_DOCUMENTDB_QUERY_PARALLELIZECROSSPARTITIONQUERY,
             self.parallelize_cross_partition_query().to_string(),
-        );
+        )
     }
 }
 
@@ -129,8 +131,9 @@ pub trait IsUpsertSupport {
 pub trait IsUpsertOption {
     fn is_upsert(&self) -> bool;
 
-    fn add_header(&self, builder: &mut Builder) {
-        builder.header(HEADER_DOCUMENTDB_IS_UPSERT, self.is_upsert().to_string());
+    #[must_use]
+    fn add_header(&self, builder: Builder) -> Builder {
+        builder.header(HEADER_DOCUMENTDB_IS_UPSERT, self.is_upsert().to_string())
     }
 }
 
@@ -142,10 +145,12 @@ pub trait AIMSupport {
 pub trait AIMOption {
     fn a_im(&self) -> bool;
 
-    fn add_header(&self, builder: &mut Builder) {
+    #[must_use]
+    fn add_header(&self, mut builder: Builder) -> Builder {
         if self.a_im() {
-            builder.header(HEADER_A_IM, "Incremental feed");
+            builder = builder.header(HEADER_A_IM, "Incremental feed");
         }
+        builder
     }
 }
 
@@ -157,11 +162,12 @@ pub trait AllowTentativeWritesSupport {
 pub trait AllowTentativeWritesOption {
     fn allow_tentative_writes(&self) -> bool;
 
-    fn add_header(&self, builder: &mut Builder) {
+    #[must_use]
+    fn add_header(&self, builder: Builder) -> Builder {
         builder.header(
             HEADER_ALLOW_MULTIPLE_WRITES,
             self.allow_tentative_writes().to_string(),
-        );
+        )
     }
 }
 
@@ -173,9 +179,10 @@ pub trait ConsistencyLevelSupport<'a> {
 pub trait ConsistencyLevelOption<'a> {
     fn consistency_level(&self) -> Option<ConsistencyLevel<'a>>;
 
-    fn add_header(&self, builder: &mut Builder) {
+    #[must_use]
+    fn add_header(&self, mut builder: Builder) -> Builder {
         if let Some(consistency_level) = self.consistency_level() {
-            builder.header(
+            builder = builder.header(
                 HEADER_CONSISTENCY_LEVEL,
                 consistency_level.to_consistency_level_header(),
             );
@@ -183,9 +190,10 @@ pub trait ConsistencyLevelOption<'a> {
             // if we have a Session consistency level we make sure to pass
             // the x-ms-session-token header too.
             if let ConsistencyLevel::Session(session_token) = consistency_level {
-                builder.header(HEADER_SESSION_TOKEN, session_token);
+                builder = builder.header(HEADER_SESSION_TOKEN, session_token);
             }
         }
+        builder
     }
 }
 
@@ -197,10 +205,12 @@ pub trait PartitionRangeIdSupport<'a> {
 pub trait PartitionRangeIdOption<'a> {
     fn partition_range_id(&self) -> Option<&'a str>;
 
-    fn add_header(&self, builder: &mut Builder) {
+    #[must_use]
+    fn add_header(&self, mut builder: Builder) -> Builder {
         if let Some(partition_range_id) = self.partition_range_id() {
-            builder.header(HEADER_DOCUMENTDB_PARTITIONRANGEID, partition_range_id);
+            builder = builder.header(HEADER_DOCUMENTDB_PARTITIONRANGEID, partition_range_id);
         }
+        builder
     }
 }
 
@@ -212,10 +222,12 @@ pub trait ContinuationSupport<'a> {
 pub trait ContinuationOption<'a> {
     fn continuation(&self) -> Option<&'a str>;
 
-    fn add_header(&self, builder: &mut Builder) {
+    #[must_use]
+    fn add_header(&self, mut builder: Builder) -> Builder {
         if let Some(continuation) = self.continuation() {
-            builder.header(HEADER_CONTINUATION, continuation);
+            builder = builder.header(HEADER_CONTINUATION, continuation);
         }
+        builder
     }
 }
 
@@ -227,15 +239,12 @@ pub trait IndexingDirectiveSupport {
 pub trait IndexingDirectiveOption {
     fn indexing_directive(&self) -> IndexingDirective;
 
-    fn add_header(&self, builder: &mut Builder) {
+    #[must_use]
+    fn add_header(&self, builder: Builder) -> Builder {
         match self.indexing_directive() {
-            IndexingDirective::Default => {} // nothing to do
-            IndexingDirective::Exclude => {
-                builder.header(HEADER_INDEXING_DIRECTIVE, "Exclude");
-            }
-            IndexingDirective::Include => {
-                builder.header(HEADER_INDEXING_DIRECTIVE, "Include");
-            }
+            IndexingDirective::Default => builder, // nothing to do
+            IndexingDirective::Exclude => builder.header(HEADER_INDEXING_DIRECTIVE, "Exclude"),
+            IndexingDirective::Include => builder.header(HEADER_INDEXING_DIRECTIVE, "Include"),
         }
     }
 }
@@ -248,11 +257,12 @@ pub trait MaxItemCountSupport {
 pub trait MaxItemCountOption {
     fn max_item_count(&self) -> i32;
 
-    fn add_header(&self, builder: &mut Builder) {
+    #[must_use]
+    fn add_header(&self, builder: Builder) -> Builder {
         if self.max_item_count() <= 0 {
-            builder.header(HEADER_MAX_ITEM_COUNT, -1);
+            builder.header(HEADER_MAX_ITEM_COUNT, -1)
         } else {
-            builder.header(HEADER_MAX_ITEM_COUNT, self.max_item_count());
+            builder.header(HEADER_MAX_ITEM_COUNT, self.max_item_count())
         }
     }
 }
@@ -278,28 +288,31 @@ pub trait PartitionKeysSupport<'a> {
 pub trait PartitionKeysRequired<'a> {
     fn partition_keys(&self) -> &'a PartitionKeys;
 
-    fn add_header(&self, builder: &mut Builder) {
+    #[must_use]
+    fn add_header(&self, builder: Builder) -> Builder {
         let serialized = self.partition_keys().to_json();
-        builder.header(HEADER_DOCUMENTDB_PARTITIONKEY, serialized);
+        builder.header(HEADER_DOCUMENTDB_PARTITIONKEY, serialized)
     }
 }
 
 pub trait PartitionKeysOption<'a> {
     fn partition_keys(&self) -> Option<&'a PartitionKeys>;
 
-    fn add_header(&self, builder: &mut Builder) {
+    #[must_use]
+    fn add_header(&self, mut builder: Builder) -> Builder {
         if let Some(partition_keys) = self.partition_keys() {
             let serialized = partition_keys.to_json();
-            builder.header(HEADER_DOCUMENTDB_PARTITIONKEY, serialized);
+            builder = builder.header(HEADER_DOCUMENTDB_PARTITIONKEY, serialized);
         }
+        builder
     }
 }
 
 pub trait ExpirySecondsOption {
     fn expiry_seconds(&self) -> u64;
 
-    fn add_header(&self, builder: &mut Builder) {
-        builder.header(HEADER_DOCUMENTDB_EXPIRY_SECONDS, self.expiry_seconds());
+    fn add_header(&self, builder: Builder) -> Builder {
+        builder.header(HEADER_DOCUMENTDB_EXPIRY_SECONDS, self.expiry_seconds())
     }
 }
 
@@ -386,13 +399,14 @@ where
 pub trait OfferRequired {
     fn offer(&self) -> Offer;
 
-    fn add_header(&self, builder: &mut Builder) {
+    #[must_use]
+    fn add_header(&self, builder: Builder) -> Builder {
         match self.offer() {
             Offer::Throughput(throughput) => builder.header(HEADER_OFFER_THROUGHPUT, throughput),
             Offer::S1 => builder.header(HEADER_OFFER_TYPE, "S1"),
             Offer::S2 => builder.header(HEADER_OFFER_TYPE, "S2"),
             Offer::S3 => builder.header(HEADER_OFFER_TYPE, "S3"),
-        };
+        }
     }
 }
 

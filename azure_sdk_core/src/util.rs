@@ -1,7 +1,8 @@
 use bytes::{Bytes, BytesMut};
-use http::{self, request::Builder, HttpTryFrom};
+use http::{self, request::Builder};
 use hyper::header::{AsHeaderName, HeaderMap, HeaderName, HeaderValue};
 use std::{
+    convert::TryFrom,
     fmt::Display,
     io::{self, Write},
     str::FromStr,
@@ -66,38 +67,50 @@ impl HeaderMapExt for HeaderMap {
 }
 
 pub trait RequestBuilderExt {
-    fn header<K, V>(&mut self, key: K, value: V) -> &mut Self
+    fn set_header<K, V>(self, key: K, value: V) -> Self
     where
-        HeaderName: HttpTryFrom<K>,
-        HeaderValue: HttpTryFrom<V>;
+        HeaderName: TryFrom<K>,
+        <HeaderName as TryFrom<K>>::Error: Into<http::Error>,
+        HeaderValue: TryFrom<V>,
+        <HeaderValue as TryFrom<V>>::Error: Into<http::Error>,
+        Self: Sized;
 
-    fn header_formatted<K, D: Display>(&mut self, key: K, value: D) -> &mut Self
+    fn header_formatted<K, D: Display>(self, key: K, value: D) -> Self
     where
-        HeaderName: HttpTryFrom<K>,
+        HeaderName: TryFrom<K>,
+        <HeaderName as TryFrom<K>>::Error: Into<http::Error>,
+        Self: Sized,
     {
-        self.header(key, &format_as_bytes(value) as &[u8])
+        self.set_header(key, &format_as_bytes(value) as &[u8])
     }
 
-    fn header_static<K>(&mut self, key: K, value: &'static str) -> &mut Self
+    fn header_static<K>(self, key: K, value: &'static str) -> Self
     where
-        HeaderName: HttpTryFrom<K>,
+        HeaderName: TryFrom<K>,
+        <HeaderName as TryFrom<K>>::Error: Into<http::Error>,
+        Self: Sized,
     {
-        self.header(key, HeaderValue::from_static(value))
+        self.set_header(key, HeaderValue::from_static(value))
     }
 
-    fn header_bytes<K, B: Into<Bytes>>(&mut self, key: K, value: B) -> &mut Self
+    fn header_bytes<K, B: Into<Bytes>>(self, key: K, value: B) -> Self
     where
-        HeaderName: HttpTryFrom<K>,
+        HeaderName: TryFrom<K>,
+        <HeaderName as TryFrom<K>>::Error: Into<http::Error>,
+        Self: Sized,
     {
-        self.header(key, &value.into() as &[u8])
+        self.set_header(key, &value.into() as &[u8])
     }
 }
 
 impl RequestBuilderExt for Builder {
-    fn header<K, V>(&mut self, key: K, value: V) -> &mut Self
+    fn set_header<K, V>(self, key: K, value: V) -> Self
     where
-        HeaderName: HttpTryFrom<K>,
-        HeaderValue: HttpTryFrom<V>,
+        HeaderName: TryFrom<K>,
+        <HeaderName as TryFrom<K>>::Error: Into<http::Error>,
+        HeaderValue: TryFrom<V>,
+        <HeaderValue as TryFrom<V>>::Error: Into<http::Error>,
+        Self: Sized,
     {
         self.header(key, value)
     }

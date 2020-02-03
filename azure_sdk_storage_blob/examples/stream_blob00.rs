@@ -1,7 +1,7 @@
 use azure_sdk_core::prelude::*;
 use azure_sdk_storage_blob::prelude::*;
 use azure_sdk_storage_core::prelude::*;
-use futures_util::stream::StreamExt;
+use futures::stream::StreamExt;
 
 // This example shows how to stream data from a blob. We will create a simple blob first, the we
 // ask it back using streaming features of the future crate. In this simple example we just
