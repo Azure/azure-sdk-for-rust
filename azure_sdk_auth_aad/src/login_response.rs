@@ -31,7 +31,26 @@ impl FromStr for LoginResponse {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let r: _LoginResponse = serde_json::from_str(s)?;
+        LoginResponse::from_base_response(r)
+    }
+}
 
+impl<'de> Deserialize<'de> for LoginResponse {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let resp = _LoginResponse::deserialize(deserializer)?;
+        LoginResponse::from_base_response(resp).map_err(de::Error::custom)
+    }
+}
+
+impl LoginResponse {
+    pub fn access_token(&self) -> &AccessToken {
+        &self.access_token
+    }
+
+    fn from_base_response(r: _LoginResponse) -> Result<LoginResponse, AzureError> {
         let expires_on: i64 = r.expires_on.parse()?;
         let expires_on: DateTime<Utc> = Utc.timestamp(expires_on, 0);
 
@@ -47,21 +66,5 @@ impl FromStr for LoginResponse {
             resource: r.resource,
             access_token: AccessToken::new(r.access_token),
         })
-    }
-}
-
-impl<'de> Deserialize<'de> for LoginResponse {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        let s = String::deserialize(deserializer)?;
-        FromStr::from_str(&s).map_err(de::Error::custom)
-    }
-}
-
-impl LoginResponse {
-    pub fn access_token(&self) -> &AccessToken {
-        &self.access_token
     }
 }
