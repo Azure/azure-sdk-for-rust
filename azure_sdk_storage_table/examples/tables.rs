@@ -1,5 +1,4 @@
-use azure_sdk_storage_core::client::Client;
-use azure_sdk_storage_table::table::TableService;
+use azure_sdk_storage_table::TableClient;
 use std::error::Error;
 
 #[tokio::main]
@@ -10,10 +9,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let master_key =
         std::env::var("STORAGE_MASTER_KEY").expect("Set env variable STORAGE_MASTER_KEY first!");
 
-    let client = Client::new(&account, &master_key)?;
-    let table_service = TableService::new(client);
-
-    let tables = table_service.list_tables().await?;
+    let client = TableClient::new(&account, &master_key)?;
+    let tables = client.list_tables().await?;
 
     println!("Account {} has {} tables(s)", account, tables.len());
     for ref table in tables {

@@ -1,9 +1,17 @@
 #![recursion_limit = "128"]
 
-#[macro_use]
 extern crate log;
 #[macro_use]
 extern crate serde_derive;
-pub mod table;
-mod table_entry;
-pub use table_entry::TableEntry;
+#[macro_use]
+extern crate quick_error;
+
+pub mod table_client;
+pub use table_client::*;
+mod cloud_table;
+pub use cloud_table::*;
+mod table_entity;
+pub use table_entity::*;
+mod batch;
+pub use batch::*;
+pub mod de;
