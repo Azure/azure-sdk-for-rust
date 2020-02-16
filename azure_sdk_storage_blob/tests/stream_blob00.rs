@@ -3,7 +3,7 @@ use azure_sdk_core::prelude::*;
 use azure_sdk_core::{range::Range, DeleteSnapshotsMethod};
 use azure_sdk_storage_blob::prelude::*;
 use azure_sdk_storage_core::prelude::*;
-use futures_util::stream::StreamExt;
+use futures::stream::StreamExt;
 
 #[tokio::test]
 async fn create_blob_and_stream_back() {

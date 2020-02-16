@@ -13,8 +13,12 @@ mod into_azure_path;
 pub mod prelude;
 pub use self::into_azure_path::IntoAzurePath;
 mod blob_sas_builder;
+mod client_endpoint;
 mod container_sas_builder;
+mod hyper_client_endpoint;
 pub mod shared_access_signature;
+pub use client_endpoint::ClientEndpoint;
+pub use hyper_client_endpoint::HyperClientEndpoint;
 
 pub trait ClientRequired<'a> {
     fn client(&self) -> &'a Client;

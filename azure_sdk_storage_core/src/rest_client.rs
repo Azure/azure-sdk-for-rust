@@ -1,4 +1,5 @@
 use crate::IPRange;
+use crate::{ClientEndpoint, HyperClientEndpoint};
 use azure_sdk_core::errors::AzureError;
 use azure_sdk_core::headers;
 use azure_sdk_core::util::{format_header_value, HeaderMapExt, RequestBuilderExt};
@@ -6,7 +7,6 @@ use base64;
 use chrono;
 use chrono::{DateTime, Utc};
 use hyper::{self, header, HeaderMap, Method};
-use hyper_rustls::HttpsConnector;
 use ring::hmac;
 use std::fmt::Write;
 use url;
@@ -26,22 +26,22 @@ const SAS_VERSION: &str = "2019-02-02";
 pub const HEADER_VERSION: &str = "x-ms-version"; //=> [String] }
 pub const HEADER_DATE: &str = "x-ms-date"; //=> [String] }
 
-fn generate_authorization(
+fn generate_authorization<CE: ClientEndpoint>(
+    client_endpoint: &CE,
     h: &HeaderMap,
     u: &url::Url,
     method: &Method,
-    hmac_key: &str,
     service_type: ServiceType,
 ) -> String {
-    let str_to_sign = string_to_sign(h, u, method, service_type);
+    let str_to_sign = string_to_sign(client_endpoint, h, u, method, service_type);
 
     // debug!("\nstr_to_sign == {:?}\n", str_to_sign);
     // debug!("str_to_sign == {}", str_to_sign);
 
-    let auth = encode_str_to_sign(&str_to_sign, hmac_key);
+    let auth = encode_str_to_sign(&str_to_sign, client_endpoint.key());
     // debug!("auth == {:?}", auth);
 
-    format!("SharedKey {}:{}", get_account(u), auth)
+    format!("SharedKey {}:{}", client_endpoint.account(), auth)
 }
 
 fn encode_str_to_sign(str_to_sign: &str, hmac_key: &str) -> String {
@@ -73,8 +73,8 @@ pub(crate) enum SASType {
     Table,
 }
 
-pub(crate) fn generate_storage_sas(
-    key: &str,
+pub(crate) fn generate_storage_sas<CE: ClientEndpoint>(
+    client_endpoint: &CE,
     start: Option<&DateTime<Utc>>,
     end: &DateTime<Utc>,
     path: &url::Url,
@@ -93,7 +93,7 @@ pub(crate) fn generate_storage_sas(
     starting_rk: &str,
     ending_rk: &str,
 ) -> String {
-    let canonicalized_resource = canonicalized_resource(path);
+    let canonicalized_resource = canonicalized_resource(client_endpoint, path);
     debug!("canonicalized_resource == {}", canonicalized_resource);
 
     // if it's multiline take the first line only
@@ -206,7 +206,10 @@ pub(crate) fn generate_storage_sas(
 
     debug!("string_to_sign == \n{}", string_to_sign);
 
-    let key = hmac::Key::new(ring::hmac::HMAC_SHA256, &base64::decode(key).unwrap());
+    let key = hmac::Key::new(
+        ring::hmac::HMAC_SHA256,
+        &base64::decode(client_endpoint.key()).unwrap(),
+    );
     let sig = hmac::sign(&key, string_to_sign.as_bytes());
 
     let result = base64::encode(sig.as_ref());
@@ -324,7 +327,8 @@ pub(crate) fn generate_storage_sas(
 }
 
 #[allow(unknown_lints)]
-fn string_to_sign(
+fn string_to_sign<CE: ClientEndpoint>(
+    client_endpoint: &CE,
     h: &HeaderMap,
     u: &url::Url,
     method: &Method,
@@ -340,7 +344,7 @@ fn string_to_sign(
                 add_if_exists(h, headers::CONTENT_MD5),
                 add_if_exists(h, header::CONTENT_TYPE),
                 add_if_exists(h, HEADER_DATE),
-                canonicalized_resource_table(u)
+                canonicalized_resource_table(client_endpoint, u)
             )
             .unwrap();
             s
@@ -369,7 +373,7 @@ fn string_to_sign(
                 add_if_exists(h, header::IF_UNMODIFIED_SINCE),
                 add_if_exists(h, header::RANGE),
                 canonicalize_header(h),
-                canonicalized_resource(u)
+                canonicalized_resource(client_endpoint, u)
             )
             .unwrap();
             s
@@ -414,33 +418,16 @@ fn canonicalize_header(h: &HeaderMap) -> String {
     can
 }
 
-#[inline]
-fn get_account(u: &url::Url) -> &str {
-    match u.host().unwrap().clone() {
-        url::Host::Domain(dm) => {
-            // debug!("dom == {:?}", dm);
-
-            let first_dot = dm.find('.').unwrap();
-            &dm[0..first_dot]
-        }
-        url::Host::Ipv4(_) => {
-            // this must be the emulator
-            "devstoreaccount1"
-        }
-        _ => panic!("only Domains are supported in canonicalized_resource"),
-    }
-}
-
 // For table
-fn canonicalized_resource_table(u: &url::Url) -> String {
-    format!("/{}{}", get_account(u), u.path())
+fn canonicalized_resource_table<CE: ClientEndpoint>(client_endpoint: &CE, u: &url::Url) -> String {
+    format!("/{}{}", client_endpoint.account(), u.path())
 }
 
-fn canonicalized_resource(u: &url::Url) -> String {
+fn canonicalized_resource<CE: ClientEndpoint>(client_endpoint: &CE, u: &url::Url) -> String {
     let mut can_res: String = String::new();
     can_res += "/";
 
-    let account = get_account(u);
+    let account = client_endpoint.account();
     can_res += &account;
 
     let paths = u.path_segments().unwrap();
@@ -507,11 +494,10 @@ fn lexy_sort(vec: &url::form_urlencoded::Parse, query_param: &str) -> Vec<String
 }
 
 #[allow(unknown_lints)]
-pub fn perform_request<F>(
-    client: &hyper::Client<HttpsConnector<hyper::client::HttpConnector>>,
+pub fn perform_request<F, HCE: HyperClientEndpoint>(
+    hyper_client_endpoint: &HCE,
     uri: &str,
     http_method: &Method,
-    azure_key: &str,
     headers_func: F,
     request_body: Option<&[u8]>,
     service_type: ServiceType,
@@ -557,10 +543,10 @@ where
     // SAS token for example)
     if url.query_pairs().find(|p| p.0 == "sig").is_none() {
         let auth = generate_authorization(
+            hyper_client_endpoint,
             request.headers(),
             &url,
             http_method,
-            azure_key,
             service_type,
         );
         request
@@ -568,7 +554,7 @@ where
             .insert(header::AUTHORIZATION, format_header_value(auth)?);
     }
 
-    Ok(client.request(request))
+    Ok(hyper_client_endpoint.hyper_client().request(request))
 }
 
 #[inline]
@@ -587,6 +573,22 @@ pub fn get_json_mime_fullmetadata() -> &'static str {
 }
 
 mod test {
+    use super::*;
+
+    struct MockClientEndpoint {
+        account: String,
+        key: String,
+    }
+
+    impl ClientEndpoint for MockClientEndpoint {
+        fn account(&self) -> &str {
+            &self.account
+        }
+        fn key(&self) -> &str {
+            &self.key
+        }
+    }
+
     extern crate chrono;
     extern crate hyper;
     extern crate url;
@@ -642,7 +644,16 @@ mod test {
             header::HeaderValue::from_static(AZURE_VERSION),
         );
 
-        let s = string_to_sign(&headers, &u, &method, service_type);
+        let s = string_to_sign(
+            &MockClientEndpoint {
+                account: "mindrust".to_owned(),
+                key: "useless".to_owned(),
+            },
+            &headers,
+            &u,
+            &method,
+            service_type,
+        );
 
         assert_eq!(
             s,
@@ -657,7 +668,16 @@ Wed, 03 May 2017 14:04:56 GMT
     #[test]
     fn test_canonicalize_resource_10() {
         let url = url::Url::parse("https://mindrust.table.core.windows.net/TABLES").unwrap();
-        assert_eq!(super::canonicalized_resource(&url), "/mindrust/TABLES");
+        assert_eq!(
+            super::canonicalized_resource(
+                &MockClientEndpoint {
+                    account: "mindrust".to_owned(),
+                    key: "useless".to_owned(),
+                },
+                &url
+            ),
+            "/mindrust/TABLES"
+        );
     }
 
     #[test]
@@ -668,7 +688,13 @@ Wed, 03 May 2017 14:04:56 GMT
         )
         .unwrap();
         assert_eq!(
-            super::canonicalized_resource(&url),
+            super::canonicalized_resource(
+                &MockClientEndpoint {
+                    account: "myaccount".to_owned(),
+                    key: "useless".to_owned(),
+                },
+                &url
+            ),
             "/myaccount/mycontainer\ncomp:metadata\nrestype:container"
         );
     }
@@ -682,7 +708,13 @@ Wed, 03 May 2017 14:04:56 GMT
         )
         .unwrap();
         assert_eq!(
-            super::canonicalized_resource(&url),
+            super::canonicalized_resource(
+                &MockClientEndpoint {
+                    account: "myaccount".to_owned(),
+                    key: "useless".to_owned(),
+                },
+                &url
+            ),
             "/myaccount/mycontainer\ncomp:list\ninclude:metadata,snapshots,\
              uncommittedblobs\nrestype:container"
         );
@@ -696,7 +728,13 @@ Wed, 03 May 2017 14:04:56 GMT
         )
         .unwrap();
         assert_eq!(
-            super::canonicalized_resource(&url),
+            super::canonicalized_resource(
+                &MockClientEndpoint {
+                    account: "myaccount-secondary".to_owned(),
+                    key: "useless".to_owned(),
+                },
+                &url
+            ),
             "/myaccount-secondary/mycontainer/myblob"
         );
     }

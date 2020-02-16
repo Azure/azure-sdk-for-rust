@@ -1,4 +1,5 @@
 use crate::rest_client::{perform_request, ServiceType};
+use crate::{ClientEndpoint, HyperClientEndpoint};
 use azure_sdk_core::errors::AzureError;
 use hyper::{self, Method};
 use hyper_rustls::HttpsConnector;
@@ -72,14 +73,6 @@ impl Client {
         })
     }
 
-    pub fn account(&self) -> &str {
-        &self.account
-    }
-
-    pub fn key(&self) -> &str {
-        &self.key
-    }
-
     #[inline]
     pub fn blob_uri(&self) -> &str {
         &self.blob_uri
@@ -110,10 +103,9 @@ impl Client {
         let uri = self.add_sas_token_to_uri(uri);
 
         perform_request(
-            &self.hc,
+            self,
             &uri,
             method,
-            &self.key,
             headers_func,
             request_body,
             ServiceType::Blob,
@@ -136,10 +128,9 @@ impl Client {
             self.add_sas_token_to_uri((self.get_uri_prefix(ServiceType::Table) + segment).as_str());
 
         perform_request(
-            &self.hc,
+            self,
             &uri,
             method,
-            &self.key,
             headers_func,
             request_str,
             ServiceType::Table,
@@ -152,5 +143,21 @@ impl Client {
             ServiceType::Blob => format!("{}/", self.blob_uri()),
             ServiceType::Table => format!("{}/", self.table_uri()),
         }
+    }
+}
+
+impl ClientEndpoint for Client {
+    fn account(&self) -> &str {
+        &self.account
+    }
+
+    fn key(&self) -> &str {
+        &self.key
+    }
+}
+
+impl HyperClientEndpoint for Client {
+    fn hyper_client(&self) -> &hyper::Client<HttpsConnector<hyper::client::HttpConnector>> {
+        &self.hc
     }
 }

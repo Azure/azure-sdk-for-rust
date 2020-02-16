@@ -1,4 +1,5 @@
 use crate::rest_client::{generate_storage_sas, SASType};
+use crate::ClientEndpoint;
 use crate::IPRange;
 use azure_sdk_core::{No, ToAssign, Yes};
 use chrono::{DateTime, Utc};
@@ -14,6 +15,30 @@ impl ToAssign for ValidityEndSet {}
 #[derive(Debug, Clone)]
 pub struct AtLeastOnePermission {}
 impl ToAssign for AtLeastOnePermission {}
+
+impl<'a, ValidityEndSet, AtLeastOnePermission> ClientEndpoint
+    for ContainerSASBuilder<'a, Yes, ValidityEndSet, AtLeastOnePermission>
+where
+    ValidityEndSet: ToAssign,
+    AtLeastOnePermission: ToAssign,
+{
+    fn account(&self) -> &str {
+        match self.path.host().unwrap().clone() {
+            url::Host::Domain(dm) => {
+                let first_dot = dm.find('.').unwrap();
+                &dm[0..first_dot]
+            }
+            url::Host::Ipv4(_) => {
+                panic!("IP addresses are not supported in SAS tokens right now");
+            }
+            _ => panic!("only Domains are supported in canonicalized_resource"),
+        }
+    }
+
+    fn key(&self) -> &str {
+        &self.key()
+    }
+}
 
 #[derive(Debug, Clone)]
 pub struct ContainerSASBuilder<'a, KeySet, ValidityEndSet, AtLeastOnePermission>
@@ -673,7 +698,7 @@ where
 impl<'a> ContainerSASBuilder<'a, Yes, Yes, Yes> {
     pub fn finalize(self) -> Url {
         let sas = generate_storage_sas(
-            self.key(),
+            &self,
             self.validity_start(),
             self.validity_end(),
             self.path(),

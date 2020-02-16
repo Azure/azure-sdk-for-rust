@@ -1,9 +1,9 @@
 [package]
 name          = "azure_sdk_storage_table"
-version       = "0.31.1"
+version       = "0.40.0"
 description   = "Rust wrappers around Microsoft Azure REST APIs - Table storage crate"
 readme        = "README.md"
-authors       = ["Francesco Cogno <francesco.cogno@outlook.com>", "Max Gortman <mgortman@microsoft.com>", "Dong Liu <doliu@microsoft.com>"]
+authors       = ["Francesco Cogno <francesco.cogno@outlook.com>", "gzp-crey", "Max Gortman <mgortman@microsoft.com>", "Dong Liu <doliu@microsoft.com>"]
 license       = "Apache-2.0"
 repository    = "https://github.com/MindFlavor/AzureSDKForRust"
 documentation = "http://mindflavor.github.io/AzureSDKForRust/azure_sdk_for_rust/index.html"
@@ -15,8 +15,8 @@ categories    = ["api-bindings"]
 edition       = "2018"
 
 [dependencies]
-azure_sdk_core         = { path = "../azure_sdk_core", version = "0.36.0" }
-azure_sdk_storage_core = { path = "../azure_sdk_storage_core", version = "0.35.1" }
+azure_sdk_core         = { path = "../azure_sdk_core", version = "0.40.0" }
+azure_sdk_storage_core = { path = "../azure_sdk_storage_core", version = "0.40.0" }
 ring                   = "0.16"
 md5                    = "0.7"
 RustyXML               = "0.1"

@@ -1,4 +1,5 @@
 use super::{Client, ClientRequired};
+use crate::client_endpoint::ClientEndpoint;
 use azure_sdk_core::{No, ToAssign};
 use base64::encode;
 use chrono::{DateTime, Utc};
