@@ -5,6 +5,7 @@ use crate::prelude::*;
 use crate::responses::CreateCollectionResponse;
 use crate::Offer;
 use azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError};
+use azure_sdk_core::prelude::*;
 use azure_sdk_core::{No, ToAssign, Yes};
 use hyper::StatusCode;
 use std::convert::TryInto;
@@ -34,6 +35,9 @@ pub struct CreateCollectionBuilder<
     collection_name: Option<&'a dyn CollectionName>,
     indexing_policy: Option<&'a IndexingPolicy>,
     partition_key: Option<&'a PartitionKey>,
+    user_agent: Option<&'a str>,
+    activity_id: Option<&'a str>,
+    consistency_level: Option<ConsistencyLevel<'a>>,
 }
 
 impl<'a, CUB> CreateCollectionBuilder<'a, CUB, No, No, No, No>
@@ -54,6 +58,9 @@ where
             indexing_policy: None,
             p_partition_key: PhantomData {},
             partition_key: None,
+            user_agent: None,
+            activity_id: None,
+            consistency_level: None,
         }
     }
 }
@@ -140,6 +147,73 @@ where
     }
 }
 
+impl<'a, CUB, OfferSet, CollectionNameSet, IndexingPolicySet, PartitionKeySet> UserAgentOption<'a>
+    for CreateCollectionBuilder<
+        'a,
+        CUB,
+        OfferSet,
+        CollectionNameSet,
+        IndexingPolicySet,
+        PartitionKeySet,
+    >
+where
+    OfferSet: ToAssign,
+    CollectionNameSet: ToAssign,
+    IndexingPolicySet: ToAssign,
+    PartitionKeySet: ToAssign,
+    CUB: CosmosUriBuilder,
+{
+    #[inline]
+    fn user_agent(&self) -> Option<&'a str> {
+        self.user_agent
+    }
+}
+
+impl<'a, CUB, OfferSet, CollectionNameSet, IndexingPolicySet, PartitionKeySet> ActivityIdOption<'a>
+    for CreateCollectionBuilder<
+        'a,
+        CUB,
+        OfferSet,
+        CollectionNameSet,
+        IndexingPolicySet,
+        PartitionKeySet,
+    >
+where
+    OfferSet: ToAssign,
+    CollectionNameSet: ToAssign,
+    IndexingPolicySet: ToAssign,
+    PartitionKeySet: ToAssign,
+    CUB: CosmosUriBuilder,
+{
+    #[inline]
+    fn activity_id(&self) -> Option<&'a str> {
+        self.activity_id
+    }
+}
+
+impl<'a, CUB, OfferSet, CollectionNameSet, IndexingPolicySet, PartitionKeySet>
+    ConsistencyLevelOption<'a>
+    for CreateCollectionBuilder<
+        'a,
+        CUB,
+        OfferSet,
+        CollectionNameSet,
+        IndexingPolicySet,
+        PartitionKeySet,
+    >
+where
+    OfferSet: ToAssign,
+    CollectionNameSet: ToAssign,
+    IndexingPolicySet: ToAssign,
+    PartitionKeySet: ToAssign,
+    CUB: CosmosUriBuilder,
+{
+    #[inline]
+    fn consistency_level(&self) -> Option<ConsistencyLevel<'a>> {
+        self.consistency_level
+    }
+}
+
 impl<'a, CUB, CollectionNameSet, IndexingPolicySet, PartitionKeySet> OfferSupport
     for CreateCollectionBuilder<'a, CUB, No, CollectionNameSet, IndexingPolicySet, PartitionKeySet>
 where
@@ -169,6 +243,9 @@ where
             collection_name: self.collection_name,
             indexing_policy: self.indexing_policy,
             partition_key: self.partition_key,
+            user_agent: self.user_agent,
+            activity_id: self.activity_id,
+            consistency_level: self.consistency_level,
         }
     }
 }
@@ -195,6 +272,9 @@ where
             collection_name: Some(collection_name),
             indexing_policy: self.indexing_policy,
             partition_key: self.partition_key,
+            user_agent: self.user_agent,
+            activity_id: self.activity_id,
+            consistency_level: self.consistency_level,
         }
     }
 }
@@ -221,6 +301,9 @@ where
             collection_name: self.collection_name,
             indexing_policy: Some(indexing_policy),
             partition_key: self.partition_key,
+            user_agent: self.user_agent,
+            activity_id: self.activity_id,
+            consistency_level: self.consistency_level,
         }
     }
 }
@@ -247,8 +330,163 @@ where
             collection_name: self.collection_name,
             indexing_policy: self.indexing_policy,
             partition_key: Some(partition_key),
+            user_agent: self.user_agent,
+            activity_id: self.activity_id,
+            consistency_level: self.consistency_level,
         }
     }
+}
+
+impl<'a, CUB, OfferSet, CollectionNameSet, IndexingPolicySet, PartitionKeySet> UserAgentSupport<'a>
+    for CreateCollectionBuilder<
+        'a,
+        CUB,
+        OfferSet,
+        CollectionNameSet,
+        IndexingPolicySet,
+        PartitionKeySet,
+    >
+where
+    OfferSet: ToAssign,
+    CollectionNameSet: ToAssign,
+    IndexingPolicySet: ToAssign,
+    PartitionKeySet: ToAssign,
+    CUB: CosmosUriBuilder,
+{
+    type O = CreateCollectionBuilder<
+        'a,
+        CUB,
+        OfferSet,
+        CollectionNameSet,
+        IndexingPolicySet,
+        PartitionKeySet,
+    >;
+
+    #[inline]
+    fn with_user_agent(self, user_agent: &'a str) -> Self::O {
+        CreateCollectionBuilder {
+            database_client: self.database_client,
+            p_offer: PhantomData {},
+            p_collection_name: PhantomData {},
+            p_indexing_policy: PhantomData {},
+            p_partition_key: PhantomData {},
+            offer: self.offer,
+            collection_name: self.collection_name,
+            indexing_policy: self.indexing_policy,
+            partition_key: self.partition_key,
+            user_agent: Some(user_agent),
+            activity_id: self.activity_id,
+            consistency_level: self.consistency_level,
+        }
+    }
+}
+
+impl<'a, CUB, OfferSet, CollectionNameSet, IndexingPolicySet, PartitionKeySet> ActivityIdSupport<'a>
+    for CreateCollectionBuilder<
+        'a,
+        CUB,
+        OfferSet,
+        CollectionNameSet,
+        IndexingPolicySet,
+        PartitionKeySet,
+    >
+where
+    OfferSet: ToAssign,
+    CollectionNameSet: ToAssign,
+    IndexingPolicySet: ToAssign,
+    PartitionKeySet: ToAssign,
+    CUB: CosmosUriBuilder,
+{
+    type O = CreateCollectionBuilder<
+        'a,
+        CUB,
+        OfferSet,
+        CollectionNameSet,
+        IndexingPolicySet,
+        PartitionKeySet,
+    >;
+
+    #[inline]
+    fn with_activity_id(self, activity_id: &'a str) -> Self::O {
+        CreateCollectionBuilder {
+            database_client: self.database_client,
+            p_offer: PhantomData {},
+            p_collection_name: PhantomData {},
+            p_indexing_policy: PhantomData {},
+            p_partition_key: PhantomData {},
+            offer: self.offer,
+            collection_name: self.collection_name,
+            indexing_policy: self.indexing_policy,
+            partition_key: self.partition_key,
+            user_agent: self.user_agent,
+            activity_id: Some(activity_id),
+            consistency_level: self.consistency_level,
+        }
+    }
+}
+
+impl<'a, CUB, OfferSet, CollectionNameSet, IndexingPolicySet, PartitionKeySet>
+    ConsistencyLevelSupport<'a>
+    for CreateCollectionBuilder<
+        'a,
+        CUB,
+        OfferSet,
+        CollectionNameSet,
+        IndexingPolicySet,
+        PartitionKeySet,
+    >
+where
+    OfferSet: ToAssign,
+    CollectionNameSet: ToAssign,
+    IndexingPolicySet: ToAssign,
+    PartitionKeySet: ToAssign,
+    CUB: CosmosUriBuilder,
+{
+    type O = CreateCollectionBuilder<
+        'a,
+        CUB,
+        OfferSet,
+        CollectionNameSet,
+        IndexingPolicySet,
+        PartitionKeySet,
+    >;
+
+    #[inline]
+    fn with_consistency_level(self, consistency_level: ConsistencyLevel<'a>) -> Self::O {
+        CreateCollectionBuilder {
+            database_client: self.database_client,
+            p_offer: PhantomData {},
+            p_collection_name: PhantomData {},
+            p_indexing_policy: PhantomData {},
+            p_partition_key: PhantomData {},
+            offer: self.offer,
+            collection_name: self.collection_name,
+            indexing_policy: self.indexing_policy,
+            partition_key: self.partition_key,
+            user_agent: self.user_agent,
+            activity_id: self.activity_id,
+            consistency_level: Some(consistency_level),
+        }
+    }
+}
+
+// methods callable regardless
+impl<'a, CUB, OfferSet, CollectionNameSet, IndexingPolicySet, PartitionKeySet>
+    CreateCollectionBuilder<
+        'a,
+        CUB,
+        OfferSet,
+        CollectionNameSet,
+        IndexingPolicySet,
+        PartitionKeySet,
+    >
+where
+    OfferSet: ToAssign,
+    CollectionNameSet: ToAssign,
+    IndexingPolicySet: ToAssign,
+    PartitionKeySet: ToAssign,
+    CUB: CosmosUriBuilder,
+{
 }
 
 // methods callable only when every mandatory field has been filled
@@ -268,7 +506,10 @@ where
         req = req.header(http::header::CONTENT_TYPE, "application/json");
 
         // add trait headers
-        req = OfferRequired::add_header(self, req);
+        let req = OfferRequired::add_header(self, req);
+        let req = UserAgentOption::add_header(self, req);
+        let req = ActivityIdOption::add_header(self, req);
+        let req = ConsistencyLevelOption::add_header(self, req);
 
         let mut collection = Collection::new(
             self.collection_name().name(),

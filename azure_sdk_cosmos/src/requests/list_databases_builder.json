@@ -2,26 +2,61 @@
 	"name": "ListDatabasesBuilder",
 	"derive": "Debug, Clone",
 	"uses": [
-		"crate::client2::{Client2, CosmosUriBuilder, ResourceType}",
-		"crate::database::Databas}",
-		"crate::request_response::{Document, ListCollectionsResponse, ListDatabasesResponse}",
-		"crate::{ClientRequired, CollectionRequired, CollectionSupport, DatabaseRequired, DatabaseSupport, DocumentIDRequired, DocumentIDSupport}",
-		"azure_sdk_core::errors::{check_status_extract_body, AzureError}",
-		"azure_sdk_core::modify_conditions::IfMatchConditio}",
-		"azure_sdk_core::prelude::}",
-		"azure_sdk_core::{No, ToAssign, Yes}",
-		"hyper::StatusCod}",
-		"std::marker::PhantomData"
+		"crate::clients::{Client, CosmosUriBuilder, ResourceType}",
+		"crate::responses::ListDatabasesResponse",
+		"crate::ClientRequired",
+		"azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError}",
+		"hyper::StatusCode",
+		"azure_sdk_core::prelude::*",
+		"std::convert::TryInto",
+		"futures::stream::{unfold, Stream}",
+		"crate::prelude::*"
 	],
 	"extra_types": [ "'a", "CUB" ],
 	"extra_wheres": ["CUB: CosmosUriBuilder" ],
 	"constructor_fields": [
 		{
 			"name": "client",
-			"field_type": "&'a Client2<CUB>",
-			"trait_get": "Client2Required<'a, CUB>"
+			"field_type": "&'a Client<CUB>",
+			"trait_get": "ClientRequired<'a, CUB>"
 		}
 	],
 	"fields": [
+		{
+			"name": "user_agent",
+			"field_type": "&'a str",
+			"optional": true,
+			"trait_get": "UserAgentOption<'a>",
+			"trait_set": "UserAgentSupport<'a>"
+		},
+		{
+			"name": "activity_id",
+			"field_type": "&'a str",
+			"optional": true,
+			"trait_get": "ActivityIdOption<'a>",
+			"trait_set": "ActivityIdSupport<'a>"
+		},
+		{
+			"name": "consistency_level",
+			"field_type": "ConsistencyLevel<'a>",
+			"optional": true,
+			"trait_get": "ConsistencyLevelOption<'a>",
+			"trait_set": "ConsistencyLevelSupport<'a>"
+		},
+		{
+			"name": "continuation",
+			"field_type": "&'a str",
+			"optional": true,
+			"trait_get": "ContinuationOption<'a>",
+			"trait_set": "ContinuationSupport<'a>"
+		},
+		{
+			"name": "max_item_count",
+			"field_type": "i32",
+			"optional": true,
+			"initializer": "-1",
+			"trait_get": "MaxItemCountOption",
+			"trait_set": "MaxItemCountSupport"
+		}
 	]
 }

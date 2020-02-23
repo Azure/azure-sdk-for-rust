@@ -1,12 +1,11 @@
-use crate::{
-    number_of_read_regions_from_headers, request_charge_from_headers,
-    request_item_count_from_headers, Document, DocumentAttributes,
-};
+use crate::from_headers::*;
+use crate::ResourceQuota;
+use crate::{Document, DocumentAttributes};
 use azure_sdk_core::errors::AzureError;
 use azure_sdk_core::{
-    continuation_token_from_headers_optional, etag_from_headers_optional,
-    session_token_from_headers, SessionToken,
+    continuation_token_from_headers_optional, session_token_from_headers, SessionToken,
 };
+use chrono::{DateTime, Utc};
 use hyper::header::HeaderMap;
 use serde::de::DeserializeOwned;
 
@@ -19,20 +18,35 @@ pub struct ListDocumentsResponseAttributes {
 }
 
 #[derive(Debug, Clone)]
-pub struct ListDocumentsResponseAdditionalHeaders {
-    pub continuation_token: Option<String>,
-    pub charge: f64,
-    pub etag: Option<String>,
-    pub session_token: SessionToken,
-    pub item_count: u64,
-    pub number_of_read_regions: u32,
-}
-
-#[derive(Debug, Clone)]
 pub struct ListDocumentsResponse<T> {
     pub rid: String,
     pub documents: Vec<Document<T>>,
-    pub additional_headers: ListDocumentsResponseAdditionalHeaders,
+
+    pub content_location: String,
+    pub last_state_change: DateTime<Utc>,
+    pub resource_quota: Vec<ResourceQuota>,
+    pub resource_usage: Vec<ResourceQuota>,
+    pub lsn: u64,
+    pub request_item_count: u32,
+    pub schema_version: String,
+    pub alt_content_path: String,
+    pub content_path: String,
+    pub quorum_acked_lsn: Option<u64>,
+    pub current_write_quorum: Option<u64>,
+    pub current_replica_set_size: Option<u64>,
+    pub role: u32,
+    pub global_committed_lsn: u64,
+    pub number_of_read_regions: u32,
+    pub transport_request_id: u64,
+    pub cosmos_llsn: u64,
+    pub cosmos_quorum_acked_llsn: Option<u64>,
+    pub session_token: SessionToken,
+    pub charge: f64,
+    pub service_version: String,
+    pub activity_id: uuid::Uuid,
+    pub gateway_version: String,
+    pub date: DateTime<Utc>,
+    pub continuation_token: Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -41,25 +55,6 @@ pub struct ListDocumentsResponseEntities<T> {
     pub rid: String,
     #[serde(rename = "Documents")]
     pub entities: Vec<T>,
-}
-
-impl std::convert::TryFrom<&HeaderMap> for ListDocumentsResponseAdditionalHeaders {
-    type Error = AzureError;
-    fn try_from(headers: &HeaderMap) -> Result<Self, Self::Error> {
-        debug!("headers == {:?}", headers);
-
-        let ado = ListDocumentsResponseAdditionalHeaders {
-            continuation_token: continuation_token_from_headers_optional(headers)?,
-            charge: request_charge_from_headers(headers)?,
-            etag: etag_from_headers_optional(headers)?,
-            session_token: session_token_from_headers(headers)?,
-            item_count: request_item_count_from_headers(headers)?,
-            number_of_read_regions: number_of_read_regions_from_headers(headers)?,
-        };
-        debug!("ado == {:?}", ado);
-
-        Ok(ado)
-    }
 }
 
 impl std::convert::TryFrom<&[u8]> for ListDocumentsResponseAttributes {
@@ -87,9 +82,8 @@ where
     fn try_from(value: (&HeaderMap, &[u8])) -> Result<Self, Self::Error> {
         let headers = value.0;
         let body = value.1;
-        debug!("headers == {:?}", headers);
 
-        let ado = ListDocumentsResponseAdditionalHeaders::try_from(headers)?;
+        debug!("headers == {:#?}", headers);
 
         // we will proceed in three steps:
         // 1- Deserialize the result as DocumentAttributes. The extra field will be ignored.
@@ -113,7 +107,31 @@ where
         Ok(ListDocumentsResponse {
             rid: document_attributes.rid,
             documents,
-            additional_headers: ado,
+            content_location: content_location_from_headers(headers)?.to_owned(),
+            last_state_change: last_state_change_from_headers(headers)?,
+            resource_quota: resource_quota_from_headers(headers)?,
+            resource_usage: resource_usage_from_headers(headers)?,
+            lsn: lsn_from_headers(headers)?,
+            request_item_count: request_item_count_from_headers(headers)?,
+            schema_version: schema_version_from_headers(headers)?.to_owned(),
+            alt_content_path: alt_content_path_from_headers(headers)?.to_owned(),
+            content_path: content_path_from_headers(headers)?.to_owned(),
+            quorum_acked_lsn: quorum_acked_lsn_from_headers_optional(headers)?,
+            current_write_quorum: current_write_quorum_from_headers_optional(headers)?,
+            current_replica_set_size: current_replica_set_size_from_headers_optional(headers)?,
+            role: role_from_headers(headers)?,
+            global_committed_lsn: global_committed_lsn_from_headers(headers)?,
+            number_of_read_regions: number_of_read_regions_from_headers(headers)?,
+            transport_request_id: transport_request_id_from_headers(headers)?,
+            cosmos_llsn: cosmos_llsn_from_headers(headers)?,
+            cosmos_quorum_acked_llsn: cosmos_quorum_acked_llsn_from_headers_optional(headers)?,
+            session_token: session_token_from_headers(headers)?,
+            charge: request_charge_from_headers(headers)?,
+            service_version: service_version_from_headers(headers)?.to_owned(),
+            activity_id: activity_id_from_headers(headers)?,
+            gateway_version: gateway_version_from_headers(headers)?.to_owned(),
+            continuation_token: continuation_token_from_headers_optional(headers)?,
+            date: date_from_headers(headers)?,
         })
     }
 }

@@ -1,15 +1,16 @@
 {
-	"name": "GetCollectionBuilder",
+	"name": "ListStoredProceduresBuilder",
 	"derive": "Debug, Clone",
 	"uses": [
-		"crate::clients::{CollectionClient, CosmosUriBuilder, ResourceType}",
-		"crate::prelude::*",
-		"crate::responses::GetCollectionResponse",
-		"crate::CollectionClientRequired",
-		"azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError}",
-		"hyper::StatusCode",
-		"azure_sdk_core::prelude::*",
-		"std::convert::TryInto"
+			"crate::clients::{ResourceType, CosmosUriBuilder}",
+			"crate::prelude::*",
+			"crate::CollectionClient",
+			"crate::CollectionClientRequired",
+			"azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError}",
+			"azure_sdk_core::prelude::*",
+			"hyper::StatusCode",
+			"crate::responses::ListStoredProceduresResponse",
+			"std::convert::TryInto"
 	],
 	"inline": true,
 	"extra_types": [ "'a", "CUB" ],

@@ -155,7 +155,7 @@ where
         };
 
         let body = serde_json::to_string(&request)?;
-        println!("body == {}", body);
+        debug!("body == {}", body);
 
         let req = req.body(hyper::Body::from(body))?;
         debug!("\nreq == {:?}", req);

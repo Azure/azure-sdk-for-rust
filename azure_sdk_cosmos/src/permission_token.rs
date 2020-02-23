@@ -1,4 +1,4 @@
-use crate::errors::PermissionTokenParsingError;
+use crate::errors::{item_or_error, TokenParsingError};
 
 const PERMISSION_TYPE_PREFIX: &str = "type=";
 const VERSION_PREFIX: &str = "ver=";
@@ -34,7 +34,7 @@ impl std::convert::TryFrom<&str> for PermissionToken {
         let tokens: Vec<&str> = s.split('&').collect();
 
         if tokens.len() < 3 {
-            return Err(PermissionTokenParsingError::UnsufficientTokens {
+            return Err(TokenParsingError::UnsufficientTokens {
                 s: s.to_owned(),
                 required: 3,
                 found: tokens.len() as u32,
@@ -48,37 +48,6 @@ impl std::convert::TryFrom<&str> for PermissionToken {
             signature: item_or_error(s, &tokens, SIGNATURE_PREFIX)?.to_owned(),
         })
     }
-}
-
-#[inline]
-fn item_or_error<'a>(
-    s: &'a str,
-    tokens: &[&'a str],
-    token: &'a str,
-) -> Result<&'a str, PermissionTokenParsingError> {
-    let tokens = tokens
-        .iter()
-        .filter(|t| t.starts_with(token))
-        .collect::<Vec<_>>();
-
-    if tokens.is_empty() {
-        return Err(PermissionTokenParsingError::MissingToken {
-            s: s.to_owned(),
-            missing_token: token.to_owned(),
-        });
-    }
-
-    if tokens.len() > 1 {
-        return Err(PermissionTokenParsingError::ReplicatedToken {
-            s: s.to_owned(),
-            token: token.to_owned(),
-            occurrencies: tokens.len() as u32,
-        });
-    }
-
-    // we checked for < 1 and > 1 so this is == 1
-    // Unwrap is safe.
-    Ok(&tokens.first().unwrap()[token.len()..])
 }
 
 #[cfg(test)]

@@ -2,25 +2,38 @@
 	"name": "GetDatabaseBuilder",
 	"derive": "Debug, Clone",
 	"uses": [
-		"crate::client2::{Client2, CosmosUriBuilder, ResourceType}",
-		"crate::database::{DatabaseName, Database}",
-		"crate::{Client2Required}",
-		"azure_sdk_core::errors::{UnexpectedHTTPResult, extract_status_headers_and_body, AzureError}",
-		"azure_sdk_core::prelude::*",
-		"crate::prelude::*",
+		"crate::clients::{CosmosUriBuilder, DatabaseClient, ResourceType}",
+		"crate::responses::GetDatabaseResponse",
+		"crate::DatabaseClientRequired",
+		"crate::DatabaseTrait",
+		"azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError}",
 		"hyper::StatusCode",
-		"std::marker::PhantomData",
-		"azure_sdk_core::{Yes,No,ToAssign}"
+		"std::convert::TryFrom",
+		"azure_sdk_core::prelude::*"
 	],
 	"extra_types": [ "'a", "CUB" ],
 	"extra_wheres": ["CUB: CosmosUriBuilder" ],
 	"constructor_fields": [
 		{
 			"name": "database_client",
-			"field_type": "&'a DatabaseClient<CUB>",
+			"field_type": "&'a DatabaseClient<'a, CUB>",
 			"trait_get": "DatabaseClientRequired<'a, CUB>"
 		}
 	],
 	"fields": [
+		{
+			"name": "user_agent",
+			"field_type": "&'a str",
+			"optional": true,
+			"trait_get": "UserAgentOption<'a>",
+			"trait_set": "UserAgentSupport<'a>"
+		},
+		{
+			"name": "activity_id",
+			"field_type": "&'a str",
+			"optional": true,
+			"trait_get": "ActivityIdOption<'a>",
+			"trait_set": "ActivityIdSupport<'a>"
+		}
 	]
 }

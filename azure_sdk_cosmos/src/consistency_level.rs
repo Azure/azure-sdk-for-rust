@@ -28,31 +28,38 @@ impl<'a> ConsistencyLevel<'a> {
 
 impl<'a, T> From<&'a ListDocumentsResponse<T>> for ConsistencyLevel<'a> {
     fn from(list_documents_response: &'a ListDocumentsResponse<T>) -> Self {
-        ConsistencyLevel::Session(&list_documents_response.additional_headers.session_token)
+        ConsistencyLevel::Session(&list_documents_response.session_token)
     }
 }
 
 impl<'a, T> From<&'a QueryDocumentsResponse<T>> for ConsistencyLevel<'a> {
     fn from(query_documents_response: &'a QueryDocumentsResponse<T>) -> Self {
-        ConsistencyLevel::Session(&query_documents_response.additional_headers.session_token)
+        ConsistencyLevel::Session(&query_documents_response.session_token)
     }
 }
 
 impl<'a, T> From<&'a GetDocumentResponse<T>> for ConsistencyLevel<'a> {
     fn from(get_document_response: &'a GetDocumentResponse<T>) -> Self {
-        ConsistencyLevel::Session(&get_document_response.additional_headers.session_token)
+        match get_document_response {
+            GetDocumentResponse::Found(response) => {
+                ConsistencyLevel::Session(&response.session_token)
+            }
+            GetDocumentResponse::NotFound(response) => {
+                ConsistencyLevel::Session(&response.session_token)
+            }
+        }
     }
 }
 
 impl<'a> From<&'a CreateDocumentResponse> for ConsistencyLevel<'a> {
     fn from(create_document_response: &'a CreateDocumentResponse) -> Self {
-        ConsistencyLevel::Session(&create_document_response.additional_headers.session_token)
+        ConsistencyLevel::Session(&create_document_response.session_token)
     }
 }
 
 impl<'a> From<&'a ReplaceDocumentResponse> for ConsistencyLevel<'a> {
     fn from(replace_document_response: &'a ReplaceDocumentResponse) -> Self {
-        ConsistencyLevel::Session(&replace_document_response.additional_headers.session_token)
+        ConsistencyLevel::Session(&replace_document_response.session_token)
     }
 }
 

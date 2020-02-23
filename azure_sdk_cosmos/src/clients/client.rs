@@ -337,7 +337,7 @@ fn string_to_sign(
 }
 
 fn generate_resource_link(u: &str) -> &str {
-    static ENDING_STRINGS: &[&str] = &["dbs", "colls", "docs", "users", "permissions"];
+    static ENDING_STRINGS: &[&str] = &["dbs", "colls", "docs", "sprocs", "users", "permissions"];
 
     // store the element only if it does not end with dbs, colls or docs
     let p = u;

@@ -4,6 +4,7 @@ extern crate serde_derive;
 use azure_sdk_core::prelude::*;
 use azure_sdk_cosmos::collection::*;
 use azure_sdk_cosmos::prelude::*;
+use azure_sdk_cosmos::responses::GetDocumentResponse;
 use azure_sdk_cosmos::Offer;
 use azure_sdk_cosmos::Query;
 mod setup;
@@ -78,11 +79,13 @@ async fn create_and_delete_document() {
         .with_partition_keys(&DOCUMENT_NAME.into())
         .execute::<MyDocument>()
         .await
-        .unwrap()
-        .document
-        .expect("No document found!");
+        .unwrap();
 
-    assert_eq!(document_after_get.document, document_data.document);
+    if let GetDocumentResponse::Found(document) = document_after_get {
+        assert_eq!(document.document.document, document_data.document);
+    } else {
+        panic!("document not found");
+    }
 
     // delete document
     document_client
@@ -248,11 +251,13 @@ async fn replace_document() {
         .with_partition_keys(&DOCUMENT_NAME.into())
         .execute::<MyDocument>()
         .await
-        .unwrap()
-        .document
-        .expect("No document found!");
+        .unwrap();
 
-    assert!(document_after_get.document.hello == 190);
+    if let GetDocumentResponse::Found(document) = document_after_get {
+        assert!(document.document.document.hello == 190);
+    } else {
+        panic!("document not found");
+    }
 
     database_client.delete_database().execute().await.unwrap();
 }

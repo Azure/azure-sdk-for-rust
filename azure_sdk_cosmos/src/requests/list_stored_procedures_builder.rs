@@ -1,6 +1,7 @@
-use crate::clients::{CollectionClient, CosmosUriBuilder, ResourceType};
+use crate::clients::{CosmosUriBuilder, ResourceType};
 use crate::prelude::*;
-use crate::responses::GetCollectionResponse;
+use crate::responses::ListStoredProceduresResponse;
+use crate::CollectionClient;
 use crate::CollectionClientRequired;
 use azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError};
 use azure_sdk_core::prelude::*;
@@ -8,7 +9,7 @@ use hyper::StatusCode;
 use std::convert::TryInto;
 
 #[derive(Debug, Clone)]
-pub struct GetCollectionBuilder<'a, CUB>
+pub struct ListStoredProceduresBuilder<'a, CUB>
 where
     CUB: CosmosUriBuilder,
 {
@@ -18,15 +19,15 @@ where
     consistency_level: Option<ConsistencyLevel<'a>>,
 }
 
-impl<'a, CUB> GetCollectionBuilder<'a, CUB>
+impl<'a, CUB> ListStoredProceduresBuilder<'a, CUB>
 where
     CUB: CosmosUriBuilder,
 {
     #[inline]
     pub(crate) fn new(
         collection_client: &'a CollectionClient<'a, CUB>,
-    ) -> GetCollectionBuilder<'a, CUB> {
-        GetCollectionBuilder {
+    ) -> ListStoredProceduresBuilder<'a, CUB> {
+        ListStoredProceduresBuilder {
             collection_client,
             user_agent: None,
             activity_id: None,
@@ -35,7 +36,7 @@ where
     }
 }
 
-impl<'a, CUB> CollectionClientRequired<'a, CUB> for GetCollectionBuilder<'a, CUB>
+impl<'a, CUB> CollectionClientRequired<'a, CUB> for ListStoredProceduresBuilder<'a, CUB>
 where
     CUB: CosmosUriBuilder,
 {
@@ -48,7 +49,7 @@ where
 //get mandatory no traits methods
 
 //set mandatory no traits methods
-impl<'a, CUB> UserAgentOption<'a> for GetCollectionBuilder<'a, CUB>
+impl<'a, CUB> UserAgentOption<'a> for ListStoredProceduresBuilder<'a, CUB>
 where
     CUB: CosmosUriBuilder,
 {
@@ -58,7 +59,7 @@ where
     }
 }
 
-impl<'a, CUB> ActivityIdOption<'a> for GetCollectionBuilder<'a, CUB>
+impl<'a, CUB> ActivityIdOption<'a> for ListStoredProceduresBuilder<'a, CUB>
 where
     CUB: CosmosUriBuilder,
 {
@@ -68,7 +69,7 @@ where
     }
 }
 
-impl<'a, CUB> ConsistencyLevelOption<'a> for GetCollectionBuilder<'a, CUB>
+impl<'a, CUB> ConsistencyLevelOption<'a> for ListStoredProceduresBuilder<'a, CUB>
 where
     CUB: CosmosUriBuilder,
 {
@@ -78,15 +79,15 @@ where
     }
 }
 
-impl<'a, CUB> UserAgentSupport<'a> for GetCollectionBuilder<'a, CUB>
+impl<'a, CUB> UserAgentSupport<'a> for ListStoredProceduresBuilder<'a, CUB>
 where
     CUB: CosmosUriBuilder,
 {
-    type O = GetCollectionBuilder<'a, CUB>;
+    type O = ListStoredProceduresBuilder<'a, CUB>;
 
     #[inline]
     fn with_user_agent(self, user_agent: &'a str) -> Self::O {
-        GetCollectionBuilder {
+        ListStoredProceduresBuilder {
             collection_client: self.collection_client,
             user_agent: Some(user_agent),
             activity_id: self.activity_id,
@@ -95,15 +96,15 @@ where
     }
 }
 
-impl<'a, CUB> ActivityIdSupport<'a> for GetCollectionBuilder<'a, CUB>
+impl<'a, CUB> ActivityIdSupport<'a> for ListStoredProceduresBuilder<'a, CUB>
 where
     CUB: CosmosUriBuilder,
 {
-    type O = GetCollectionBuilder<'a, CUB>;
+    type O = ListStoredProceduresBuilder<'a, CUB>;
 
     #[inline]
     fn with_activity_id(self, activity_id: &'a str) -> Self::O {
-        GetCollectionBuilder {
+        ListStoredProceduresBuilder {
             collection_client: self.collection_client,
             user_agent: self.user_agent,
             activity_id: Some(activity_id),
@@ -112,15 +113,15 @@ where
     }
 }
 
-impl<'a, CUB> ConsistencyLevelSupport<'a> for GetCollectionBuilder<'a, CUB>
+impl<'a, CUB> ConsistencyLevelSupport<'a> for ListStoredProceduresBuilder<'a, CUB>
 where
     CUB: CosmosUriBuilder,
 {
-    type O = GetCollectionBuilder<'a, CUB>;
+    type O = ListStoredProceduresBuilder<'a, CUB>;
 
     #[inline]
     fn with_consistency_level(self, consistency_level: ConsistencyLevel<'a>) -> Self::O {
-        GetCollectionBuilder {
+        ListStoredProceduresBuilder {
             collection_client: self.collection_client,
             user_agent: self.user_agent,
             activity_id: self.activity_id,
@@ -130,32 +131,35 @@ where
 }
 
 // methods callable only when every mandatory field has been filled
-impl<'a, CUB> GetCollectionBuilder<'a, CUB>
+impl<'a, CUB> ListStoredProceduresBuilder<'a, CUB>
 where
     CUB: CosmosUriBuilder,
 {
-    pub async fn execute(&self) -> Result<GetCollectionResponse, AzureError> {
-        trace!("GetCollectionResponse::execute called");
+    pub async fn execute(&self) -> Result<ListStoredProceduresResponse, AzureError> {
+        trace!("ListStoredProceduresBuilder::execute called");
 
-        let request = self.collection_client().main_client().prepare_request(
+        let req = self.collection_client.main_client().prepare_request(
             &format!(
-                "dbs/{}/colls/{}",
+                "dbs/{}/colls/{}/sprocs",
                 self.collection_client.database_name().name(),
-                self.collection_client.collection_name().name()
+                self.collection_client.collection_name().name(),
             ),
             hyper::Method::GET,
-            ResourceType::Collections,
+            ResourceType::StoredProcedures,
         );
 
-        let request = UserAgentOption::add_header(self, request);
-        let request = ActivityIdOption::add_header(self, request);
-        let request = ConsistencyLevelOption::add_header(self, request);
+        // add trait headers
+        let req = UserAgentOption::add_header(self, req);
+        let req = ActivityIdOption::add_header(self, req);
+        let req = ConsistencyLevelOption::add_header(self, req);
 
-        let request = request.body(hyper::Body::empty())?;
+        let request = req.body(hyper::Body::empty())?;
 
-        let future_response = self.collection_client().hyper_client().request(request);
-        let (headers, body) =
-            check_status_extract_headers_and_body(future_response, StatusCode::OK).await?;
+        let (headers, body) = check_status_extract_headers_and_body(
+            self.collection_client().hyper_client().request(request),
+            StatusCode::OK,
+        )
+        .await?;
 
         Ok((&headers, &body as &[u8]).try_into()?)
     }

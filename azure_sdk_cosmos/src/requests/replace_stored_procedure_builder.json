@@ -1,0 +1,58 @@
+{
+	"name": "ReplaceStoredProcedureBuilder",
+	"derive": "Debug, Clone",
+	"uses": [
+			"crate::clients::{ResourceType, CosmosUriBuilder}",
+			"crate::prelude::*",
+			"crate::StoredProcedureClient",
+			"crate::StoredProcedureClientRequired",
+			"azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError}",
+			"azure_sdk_core::prelude::*",
+			"azure_sdk_core::{Yes,No,ToAssign}",
+			"std::marker::PhantomData",
+			"hyper::StatusCode",
+			"crate::responses::ReplaceStoredProcedureResponse",
+			"std::convert::TryInto"
+	],
+	"inline": true,
+	"extra_types": [ "'a", "CUB" ],
+	"extra_wheres": ["CUB: CosmosUriBuilder" ],
+	"constructor_fields": [
+		{
+			"name": "stored_procedure_client",
+			"field_type": "&'a StoredProcedureClient<'a, CUB>",
+			"trait_get": "StoredProcedureClientRequired<'a, CUB>"
+		}
+	],
+	"fields": [
+		{
+			"name": "body",
+			"field_type": "&'a str",
+			"builder_type": "BodySet",
+			"optional": false,
+			"trait_get": "StoredProcedureBodyRequired<'a>",
+			"trait_set": "StoredProcedureBodySupport<'a>"
+		},
+		{
+			"name": "user_agent",
+			"field_type": "&'a str",
+			"optional": true,
+			"trait_get": "UserAgentOption<'a>",
+			"trait_set": "UserAgentSupport<'a>"
+		},
+		{
+			"name": "activity_id",
+			"field_type": "&'a str",
+			"optional": true,
+			"trait_get": "ActivityIdOption<'a>",
+			"trait_set": "ActivityIdSupport<'a>"
+		},
+		{
+			"name": "consistency_level",
+			"field_type": "ConsistencyLevel<'a>",
+			"optional": true,
+			"trait_get": "ConsistencyLevelOption<'a>",
+			"trait_set": "ConsistencyLevelSupport<'a>"
+		}
+	]
+}

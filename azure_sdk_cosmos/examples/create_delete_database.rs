@@ -1,4 +1,5 @@
 use azure_sdk_cosmos::prelude::*;
+use futures::stream::StreamExt;
 use std::error::Error;
 
 #[tokio::main]
@@ -32,12 +33,15 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // account. Database do not implement Display but deref to &str so you can pass it to methods
     // both as struct or id.
 
+    let list_databases_response = client.list_databases().execute().await?;
+    println!("list_databases_response = {:#?}", list_databases_response);
+
     let db = client
         .create_database()
         .with_database_name(&database_name)
         .execute()
         .await?;
-    println!("created database = {:?}", db);
+    println!("created database = {:#?}", db);
 
     // create collection!
     {
@@ -71,13 +75,24 @@ async fn main() -> Result<(), Box<dyn Error>> {
             .await?;
 
         println!(
-            "create_collection_response == {:?}",
+            "create_collection_response == {:#?}",
             create_collection_response
         );
 
         let db_collection = db_client.with_collection(&"panzadoro");
+
+        let get_collection_response = db_collection.get_collection().execute().await?;
+        println!("get_collection_response == {:#?}", get_collection_response);
+
+        let stream = db_client.list_collections();
+        let mut stream = Box::pin(stream.stream());
+        while let Some(res) = stream.next().await {
+            let res = res?;
+            println!("res == {:#?}", res);
+        }
+
         let delete_response = db_collection.delete_collection().execute().await?;
-        println!("collection deleted: {:?}", delete_response);
+        println!("collection deleted: {:#?}", delete_response);
     }
 
     let resp = client
@@ -85,7 +100,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .delete_database()
         .execute()
         .await?;
-    println!("database deleted. resp == {:?}", resp);
+    println!("database deleted. resp == {:#?}", resp);
 
     Ok(())
 }

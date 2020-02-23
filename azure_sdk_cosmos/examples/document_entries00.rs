@@ -1,6 +1,7 @@
 use azure_sdk_core::modify_conditions::IfMatchCondition;
 use azure_sdk_core::prelude::*;
 use azure_sdk_cosmos::prelude::*;
+use azure_sdk_cosmos::responses::GetDocumentResponse;
 use futures::stream::StreamExt;
 use std::borrow::Cow;
 use std::error::Error;
@@ -74,12 +75,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     // we inserted 5 documents and retrieved the first 3.
     // continuation_token must be present
-    assert_eq!(
-        response.additional_headers.continuation_token.is_some(),
-        true
-    );
+    assert!(response.continuation_token.is_some());
 
-    let ct = response.additional_headers.continuation_token.unwrap();
+    let ct = response.continuation_token.unwrap();
     println!("ct == {}", ct);
 
     let response = client
@@ -93,10 +91,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     // we got the last 2 entries. Now continuation_token
     // must be absent
-    assert_eq!(
-        response.additional_headers.continuation_token.is_some(),
-        false
-    );
+    assert!(response.continuation_token.is_none());
 
     // we can have Rust pass the continuation_token for
     // us if we call the stream function. Here we
@@ -123,17 +118,24 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .execute::<MySampleStruct>()
         .await?;
 
-    assert_eq!(response.document.is_some(), true);
+    assert!(match response {
+        GetDocumentResponse::Found(_) => true,
+        _ => false,
+    });
     println!("response == {:#?}", response);
-    let mut doc = response.clone().document.unwrap();
-    doc.document.a_string = "Something else here".into();
 
-    let etag = doc.document_attributes.etag().to_owned();
+    let mut doc = match response {
+        GetDocumentResponse::Found(ref resp) => resp.clone(),
+        GetDocumentResponse::NotFound(_) => panic!(),
+    };
+    doc.document.document.a_string = "Something else here".into();
+
+    let etag = doc.etag.to_owned();
 
     println!("\n\nReplacing document");
     let replace_document_response = client
         .replace_document()
-        .with_document(&doc)
+        .with_document(&doc.document)
         .with_partition_keys(PartitionKeys::new().push(&id)?)
         .with_consistency_level(ConsistencyLevel::from(&response))
         .with_if_match_condition(IfMatchCondition::Match(&etag)) // use optimistic concurrency check
@@ -157,8 +159,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .execute::<MySampleStruct>()
         .await?;
 
-    assert_eq!(response.document.is_some(), false);
-    assert_eq!(response.has_been_found, false);
+    assert!(match response {
+        GetDocumentResponse::NotFound(_) => true,
+        _ => false,
+    });
     println!("response == {:#?}", response);
 
     for i in 0u64..5 {

@@ -619,7 +619,7 @@ where
                         Err(err) => return Some((Err(err), None)),
                     };
 
-                    let continuation_token = match &response.additional_headers.continuation_token {
+                    let continuation_token = match &response.continuation_token {
                         Some(ct) => Some(States::Continuation(ct.to_owned())),
                         None => None,
                     };

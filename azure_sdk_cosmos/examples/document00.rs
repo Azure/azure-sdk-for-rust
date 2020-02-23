@@ -4,6 +4,7 @@ extern crate serde_derive;
 // DB.
 use azure_sdk_core::prelude::*;
 use azure_sdk_cosmos::prelude::*;
+use azure_sdk_cosmos::responses::GetDocumentResponse;
 use std::borrow::Cow;
 use std::error::Error;
 
@@ -177,7 +178,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     // The document can be no longer there so the result is
     // an Option<Document<T>>
-    if let Some(document) = get_document_response.document {
+    if let GetDocumentResponse::Found(document) = get_document_response {
         // Now, for the sake of experimentation, we will update (replace) the
         // document created. We do this only if the original document has not been
         // modified in the meantime. This is called optimistic concurrency.
@@ -189,7 +190,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             .replace_document()
             .with_document(&doc)
             .with_partition_keys(&(&doc.document_attributes.id).into())
-            .with_if_match_condition(IfMatchCondition::Match(&document.document_attributes.etag))
+            .with_if_match_condition(IfMatchCondition::Match(&document.etag))
             .execute()
             .await?;
         println!(

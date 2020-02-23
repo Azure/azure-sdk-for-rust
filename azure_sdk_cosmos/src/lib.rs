@@ -14,6 +14,7 @@ mod database;
 mod document;
 mod document_attributes;
 mod errors;
+pub(crate) mod from_headers;
 mod headers;
 mod indexing_directive;
 pub mod offer;
@@ -25,6 +26,7 @@ pub mod prelude;
 mod query;
 mod requests;
 mod resource;
+mod resource_quota;
 pub mod responses;
 pub mod stored_procedure;
 mod to_json_vector;
@@ -34,7 +36,7 @@ pub use self::authorization_token::*;
 use self::collection::IndexingPolicy;
 pub use self::consistency_level::ConsistencyLevel;
 pub use self::database::{Database, DatabaseName};
-pub use self::document::{Document, DocumentAdditionalHeaders, DocumentName};
+pub use self::document::{Document, DocumentName};
 pub use self::document_attributes::DocumentAttributes;
 pub use self::indexing_directive::IndexingDirective;
 pub use self::offer::Offer;
@@ -44,6 +46,7 @@ pub use self::permission_token::PermissionToken;
 pub use self::query::{Param, ParamDef, Query};
 pub use self::requests::*;
 pub use self::resource::Resource;
+pub use self::resource_quota::ResourceQuota;
 use crate::clients::{
     Client, CollectionClient, CosmosUriBuilder, DatabaseClient, DocumentClient, PermissionClient,
     StoredProcedureClient, UserClient,
@@ -146,11 +149,12 @@ pub trait AIMOption {
     fn a_im(&self) -> bool;
 
     #[must_use]
-    fn add_header(&self, mut builder: Builder) -> Builder {
+    fn add_header(&self, builder: Builder) -> Builder {
         if self.a_im() {
-            builder = builder.header(HEADER_A_IM, "Incremental feed");
+            builder.header(HEADER_A_IM, "Incremental feed")
+        } else {
+            builder
         }
-        builder
     }
 }
 
@@ -180,9 +184,9 @@ pub trait ConsistencyLevelOption<'a> {
     fn consistency_level(&self) -> Option<ConsistencyLevel<'a>>;
 
     #[must_use]
-    fn add_header(&self, mut builder: Builder) -> Builder {
+    fn add_header(&self, builder: Builder) -> Builder {
         if let Some(consistency_level) = self.consistency_level() {
-            builder = builder.header(
+            let builder = builder.header(
                 HEADER_CONSISTENCY_LEVEL,
                 consistency_level.to_consistency_level_header(),
             );
@@ -190,10 +194,13 @@ pub trait ConsistencyLevelOption<'a> {
             // if we have a Session consistency level we make sure to pass
             // the x-ms-session-token header too.
             if let ConsistencyLevel::Session(session_token) = consistency_level {
-                builder = builder.header(HEADER_SESSION_TOKEN, session_token);
+                builder.header(HEADER_SESSION_TOKEN, session_token)
+            } else {
+                builder
             }
+        } else {
+            builder
         }
-        builder
     }
 }
 
@@ -206,11 +213,12 @@ pub trait PartitionRangeIdOption<'a> {
     fn partition_range_id(&self) -> Option<&'a str>;
 
     #[must_use]
-    fn add_header(&self, mut builder: Builder) -> Builder {
+    fn add_header(&self, builder: Builder) -> Builder {
         if let Some(partition_range_id) = self.partition_range_id() {
-            builder = builder.header(HEADER_DOCUMENTDB_PARTITIONRANGEID, partition_range_id);
+            builder.header(HEADER_DOCUMENTDB_PARTITIONRANGEID, partition_range_id)
+        } else {
+            builder
         }
-        builder
     }
 }
 
@@ -223,11 +231,12 @@ pub trait ContinuationOption<'a> {
     fn continuation(&self) -> Option<&'a str>;
 
     #[must_use]
-    fn add_header(&self, mut builder: Builder) -> Builder {
+    fn add_header(&self, builder: Builder) -> Builder {
         if let Some(continuation) = self.continuation() {
-            builder = builder.header(HEADER_CONTINUATION, continuation);
+            builder.header(HEADER_CONTINUATION, continuation)
+        } else {
+            builder
         }
-        builder
     }
 }
 
@@ -299,18 +308,29 @@ pub trait PartitionKeysOption<'a> {
     fn partition_keys(&self) -> Option<&'a PartitionKeys>;
 
     #[must_use]
-    fn add_header(&self, mut builder: Builder) -> Builder {
+    fn add_header(&self, builder: Builder) -> Builder {
         if let Some(partition_keys) = self.partition_keys() {
             let serialized = partition_keys.to_json();
-            builder = builder.header(HEADER_DOCUMENTDB_PARTITIONKEY, serialized);
+            builder.header(HEADER_DOCUMENTDB_PARTITIONKEY, serialized)
+        } else {
+            builder
         }
-        builder
     }
+}
+
+pub trait StoredProcedureBodyRequired<'a> {
+    fn body(&self) -> &'a str;
+}
+
+pub trait StoredProcedureBodySupport<'a> {
+    type O;
+    fn with_body(self, partition_keys: &'a str) -> Self::O;
 }
 
 pub trait ExpirySecondsOption {
     fn expiry_seconds(&self) -> u64;
 
+    #[must_use]
     fn add_header(&self, builder: Builder) -> Builder {
         builder.header(HEADER_DOCUMENTDB_EXPIRY_SECONDS, self.expiry_seconds())
     }
@@ -561,6 +581,7 @@ where
         &'c self,
         stored_procedure_name: &'c dyn StoredProcedureName,
     ) -> StoredProcedureClient<'c, CUB>;
+    fn list_stored_procedures(&self) -> requests::ListStoredProceduresBuilder<'_, CUB>;
     fn with_document<'c>(&'c self, document_name: &'c dyn DocumentName) -> DocumentClient<'c, CUB>;
 }
 
@@ -596,7 +617,10 @@ where
     fn database_name(&self) -> &'a dyn DatabaseName;
     fn collection_name(&self) -> &'a dyn CollectionName;
     fn stored_procedure_name(&self) -> &'a dyn StoredProcedureName;
+    fn create_stored_procedure(&self) -> requests::CreateStoredProcedureBuilder<'_, CUB, No>;
+    fn replace_stored_procedure(&self) -> requests::ReplaceStoredProcedureBuilder<'_, CUB, No>;
     fn execute_stored_procedure(&self) -> requests::ExecuteStoredProcedureBuilder<'_, '_, CUB>;
+    fn delete_stored_procedure(&self) -> requests::DeleteStoredProcedureBuilder<'_, CUB>;
 }
 
 pub(crate) trait StoredProcedureBuilderTrait<'a, CUB>:

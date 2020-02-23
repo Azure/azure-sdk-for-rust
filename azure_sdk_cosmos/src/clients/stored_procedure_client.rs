@@ -4,6 +4,7 @@ use crate::database::DatabaseName;
 use crate::requests;
 use crate::stored_procedure::StoredProcedureName;
 use crate::{CollectionTrait, StoredProcedureBuilderTrait, StoredProcedureTrait};
+use azure_sdk_core::No;
 
 #[derive(Debug, Clone)]
 pub struct StoredProcedureClient<'a, CUB>
@@ -55,8 +56,20 @@ where
         self.stored_procedure_name
     }
 
+    fn create_stored_procedure(&self) -> requests::CreateStoredProcedureBuilder<'_, CUB, No> {
+        requests::CreateStoredProcedureBuilder::new(self)
+    }
+
+    fn replace_stored_procedure(&self) -> requests::ReplaceStoredProcedureBuilder<'_, CUB, No> {
+        requests::ReplaceStoredProcedureBuilder::new(self)
+    }
+
     fn execute_stored_procedure(&self) -> requests::ExecuteStoredProcedureBuilder<'_, '_, CUB> {
         requests::ExecuteStoredProcedureBuilder::new(self)
+    }
+
+    fn delete_stored_procedure(&self) -> requests::DeleteStoredProcedureBuilder<'_, CUB> {
+        requests::DeleteStoredProcedureBuilder::new(self)
     }
 }
 

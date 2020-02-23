@@ -1,11 +1,16 @@
-use crate::{activity_id_from_headers, request_charge_from_headers};
+use crate::from_headers::*;
+use crate::ResourceQuota;
 use azure_sdk_core::errors::AzureError;
+use azure_sdk_core::session_token_from_headers;
 use hyper::header::HeaderMap;
 
 #[derive(Debug, Clone)]
 pub struct DeleteDatabaseResponse {
     pub charge: f64,
     pub activity_id: uuid::Uuid,
+    pub session_token: String,
+    pub resource_quota: Vec<ResourceQuota>,
+    pub resource_usage: Vec<ResourceQuota>,
 }
 
 impl std::convert::TryFrom<(&HeaderMap, &[u8])> for DeleteDatabaseResponse {
@@ -20,6 +25,9 @@ impl std::convert::TryFrom<(&HeaderMap, &[u8])> for DeleteDatabaseResponse {
         Ok(Self {
             charge,
             activity_id,
+            session_token: session_token_from_headers(headers)?,
+            resource_quota: resource_quota_from_headers(headers)?,
+            resource_usage: resource_usage_from_headers(headers)?,
         })
     }
 }

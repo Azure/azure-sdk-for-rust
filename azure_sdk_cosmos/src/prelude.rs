@@ -21,6 +21,7 @@ pub use crate::{
     PartitionKeysRequired, PartitionKeysSupport, PartitionRangeIdOption, PartitionRangeIdSupport,
     PermissionClientRequired, PermissionModeRequired, PermissionModeSupport, PermissionTrait,
     QueryCrossPartitionOption, QueryCrossPartitionSupport, QueryRequired, QuerySupport,
-    StoredProcedureNameRequired, StoredProcedureNameSupport, StoredProcedureTrait,
-    UserClientRequired, UserName, UserNameRequired, UserNameSupport, UserTrait,
+    StoredProcedureBodyRequired, StoredProcedureBodySupport, StoredProcedureNameRequired,
+    StoredProcedureNameSupport, StoredProcedureTrait, UserClientRequired, UserName,
+    UserNameRequired, UserNameSupport, UserTrait,
 };

@@ -97,6 +97,10 @@ where
         StoredProcedureClient::new(&self, stored_procedure_name)
     }
 
+    fn list_stored_procedures(&self) -> requests::ListStoredProceduresBuilder<'_, CUB> {
+        requests::ListStoredProceduresBuilder::new(self)
+    }
+
     fn with_document<'c>(&'c self, document_name: &'c dyn DocumentName) -> DocumentClient<'c, CUB> {
         DocumentClient::new(&self, document_name)
     }

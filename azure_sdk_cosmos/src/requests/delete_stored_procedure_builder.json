@@ -1,24 +1,25 @@
 {
-	"name": "GetCollectionBuilder",
+	"name": "DeleteStoredProcedureBuilder",
 	"derive": "Debug, Clone",
 	"uses": [
-		"crate::clients::{CollectionClient, CosmosUriBuilder, ResourceType}",
-		"crate::prelude::*",
-		"crate::responses::GetCollectionResponse",
-		"crate::CollectionClientRequired",
-		"azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError}",
-		"hyper::StatusCode",
-		"azure_sdk_core::prelude::*",
-		"std::convert::TryInto"
+			"crate::clients::{ResourceType, CosmosUriBuilder}",
+			"crate::prelude::*",
+			"crate::StoredProcedureClient",
+			"crate::StoredProcedureClientRequired",
+			"azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError}",
+			"azure_sdk_core::prelude::*",
+			"hyper::StatusCode",
+			"crate::responses::CreateStoredProcedureResponse",
+			"std::convert::TryInto"
 	],
 	"inline": true,
 	"extra_types": [ "'a", "CUB" ],
 	"extra_wheres": ["CUB: CosmosUriBuilder" ],
 	"constructor_fields": [
 		{
-			"name": "collection_client",
-			"field_type": "&'a CollectionClient<'a, CUB>",
-			"trait_get": "CollectionClientRequired<'a, CUB>"
+			"name": "stored_procedure_client",
+			"field_type": "&'a StoredProcedureClient<'a, CUB>",
+			"trait_get": "StoredProcedureClientRequired<'a, CUB>"
 		}
 	],
 	"fields": [
