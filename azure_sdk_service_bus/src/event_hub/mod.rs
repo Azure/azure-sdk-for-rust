@@ -73,7 +73,7 @@ async fn peek_lock(
     policy_name: &str,
     hmac: &hmac::Key,
     duration: Duration,
-) -> Result<(), AzureError> {
+) -> Result<String, AzureError> {
     let req = peek_lock_prepare(
         http_client,
         namespace,
@@ -83,8 +83,7 @@ async fn peek_lock(
         duration,
     );
 
-    check_status_extract_body(req?, StatusCode::CREATED).await?;
-    Ok(())
+    check_status_extract_body(req?, StatusCode::CREATED).await
 }
 
 fn receive_and_delete_prepare(
@@ -120,7 +119,7 @@ async fn receive_and_delete(
     policy_name: &str,
     hmac: &hmac::Key,
     duration: Duration,
-) -> Result<(), AzureError> {
+) -> Result<String, AzureError> {
     let req = receive_and_delete_prepare(
         http_client,
         namespace,
@@ -130,8 +129,7 @@ async fn receive_and_delete(
         duration,
     );
 
-    check_status_extract_body(req?, StatusCode::OK).await?;
-    Ok(())
+    check_status_extract_body(req?, StatusCode::OK).await
 }
 
 fn delete_message_prepare(

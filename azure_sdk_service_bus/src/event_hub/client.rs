@@ -46,46 +46,40 @@ impl Client {
         event_body: &str,
         duration: Duration,
     ) -> Result<(), AzureError> {
-        {
-            send_event(
-                &self.http_client,
-                &self.namespace,
-                &self.event_hub,
-                &self.policy_name,
-                &self.signing_key,
-                event_body,
-                duration,
-            )
-            .await
-        }
+        send_event(
+            &self.http_client,
+            &self.namespace,
+            &self.event_hub,
+            &self.policy_name,
+            &self.signing_key,
+            event_body,
+            duration,
+        )
+        .await
     }
 
-    pub async fn peek_lock(&mut self, duration: Duration) -> Result<(), AzureError> {
-        {
-            peek_lock(
-                &self.http_client,
-                &self.namespace,
-                &self.event_hub,
-                &self.policy_name,
-                &self.signing_key,
-                duration,
-            )
-            .await
-        }
+    pub async fn peek_lock(&mut self, duration: Duration) -> Result<String, AzureError> {
+        peek_lock(
+            &self.http_client,
+            &self.namespace,
+            &self.event_hub,
+            &self.policy_name,
+            &self.signing_key,
+            duration,
+        )
+        .await
     }
 
-    pub async fn receive_and_delete(&mut self, duration: Duration) -> Result<(), AzureError> {
-        {
-            receive_and_delete(
-                &self.http_client,
-                &self.namespace,
-                &self.event_hub,
-                &self.policy_name,
-                &self.signing_key,
-                duration,
-            )
-            .await
-        }
+    pub async fn receive_and_delete(&mut self, duration: Duration) -> Result<String, AzureError> {
+        receive_and_delete(
+            &self.http_client,
+            &self.namespace,
+            &self.event_hub,
+            &self.policy_name,
+            &self.signing_key,
+            duration,
+        )
+        .await
     }
 
     pub async fn unlock_message(
@@ -94,19 +88,17 @@ impl Client {
         lock_token: &str,
         duration: Duration,
     ) -> Result<(), AzureError> {
-        {
-            unlock_message(
-                &self.http_client,
-                &self.namespace,
-                &self.event_hub,
-                &self.policy_name,
-                &self.signing_key,
-                duration,
-                message_id,
-                lock_token,
-            )
-            .await
-        }
+        unlock_message(
+            &self.http_client,
+            &self.namespace,
+            &self.event_hub,
+            &self.policy_name,
+            &self.signing_key,
+            duration,
+            message_id,
+            lock_token,
+        )
+        .await
     }
 
     pub async fn delete_message(
@@ -115,19 +107,17 @@ impl Client {
         lock_token: &str,
         duration: Duration,
     ) -> Result<(), AzureError> {
-        {
-            delete_message(
-                &self.http_client,
-                &self.namespace,
-                &self.event_hub,
-                &self.policy_name,
-                &self.signing_key,
-                duration,
-                message_id,
-                lock_token,
-            )
-            .await
-        }
+        delete_message(
+            &self.http_client,
+            &self.namespace,
+            &self.event_hub,
+            &self.policy_name,
+            &self.signing_key,
+            duration,
+            message_id,
+            lock_token,
+        )
+        .await
     }
 
     pub async fn renew_lock(
@@ -136,19 +126,17 @@ impl Client {
         lock_token: &str,
         duration: Duration,
     ) -> Result<(), AzureError> {
-        {
-            renew_lock(
-                &self.http_client,
-                &self.namespace,
-                &self.event_hub,
-                &self.policy_name,
-                &self.signing_key,
-                duration,
-                message_id,
-                lock_token,
-            )
-            .await
-        }
+        renew_lock(
+            &self.http_client,
+            &self.namespace,
+            &self.event_hub,
+            &self.policy_name,
+            &self.signing_key,
+            duration,
+            message_id,
+            lock_token,
+        )
+        .await
     }
 }
 
