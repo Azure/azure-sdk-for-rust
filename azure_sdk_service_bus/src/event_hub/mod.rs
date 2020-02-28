@@ -40,7 +40,7 @@ fn send_event_prepare<B: Into<String>>(
     Ok(http_client.request(request))
 }
 
-fn peek_lock_event_prepare(
+fn peek_lock_prepare(
     http_client: &HttpClient,
     namespace: &str,
     event_hub: &str,
@@ -66,7 +66,28 @@ fn peek_lock_event_prepare(
     Ok(http_client.request(request))
 }
 
-fn receive_delete_event_prepare(
+async fn peek_lock(
+    http_client: &HttpClient,
+    namespace: &str,
+    event_hub: &str,
+    policy_name: &str,
+    hmac: &hmac::Key,
+    duration: Duration,
+) -> Result<(), AzureError> {
+    let req = peek_lock_prepare(
+        http_client,
+        namespace,
+        event_hub,
+        policy_name,
+        hmac,
+        duration,
+    );
+
+    check_status_extract_body(req?, StatusCode::CREATED).await?;
+    Ok(())
+}
+
+fn receive_and_delete_prepare(
     http_client: &HttpClient,
     namespace: &str,
     event_hub: &str,
@@ -90,6 +111,27 @@ fn receive_delete_event_prepare(
         .body(Body::empty())?;
 
     Ok(http_client.request(request))
+}
+
+async fn receive_and_delete(
+    http_client: &HttpClient,
+    namespace: &str,
+    event_hub: &str,
+    policy_name: &str,
+    hmac: &hmac::Key,
+    duration: Duration,
+) -> Result<(), AzureError> {
+    let req = receive_and_delete_prepare(
+        http_client,
+        namespace,
+        event_hub,
+        policy_name,
+        hmac,
+        duration,
+    );
+
+    check_status_extract_body(req?, StatusCode::OK).await?;
+    Ok(())
 }
 
 async fn send_event(

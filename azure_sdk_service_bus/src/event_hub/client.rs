@@ -1,6 +1,5 @@
-use crate::event_hub::send_event;
+use crate::event_hub::{peek_lock, receive_and_delete, send_event};
 use azure_sdk_core::errors::AzureError;
-use hyper;
 use hyper_rustls::HttpsConnector;
 use ring::hmac::Key;
 use time::Duration;
@@ -53,6 +52,34 @@ impl Client {
                 &self.policy_name,
                 &self.signing_key,
                 event_body,
+                duration,
+            )
+            .await
+        }
+    }
+
+    pub async fn peek_lock(&mut self, duration: Duration) -> Result<(), AzureError> {
+        {
+            peek_lock(
+                &self.http_client,
+                &self.namespace,
+                &self.event_hub,
+                &self.policy_name,
+                &self.signing_key,
+                duration,
+            )
+            .await
+        }
+    }
+
+    pub async fn receive_and_delete(&mut self, duration: Duration) -> Result<(), AzureError> {
+        {
+            receive_and_delete(
+                &self.http_client,
+                &self.namespace,
+                &self.event_hub,
+                &self.policy_name,
+                &self.signing_key,
                 duration,
             )
             .await
