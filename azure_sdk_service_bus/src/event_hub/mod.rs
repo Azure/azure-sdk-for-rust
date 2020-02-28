@@ -134,6 +134,61 @@ async fn receive_and_delete(
     Ok(())
 }
 
+fn unlock_message_prepare(
+    http_client: &HttpClient,
+    namespace: &str,
+    event_hub: &str,
+    policy_name: &str,
+    signing_key: &hmac::Key,
+    duration: Duration,
+    message_id: &str,
+    lock_token: &str,
+) -> Result<hyper::client::ResponseFuture, AzureError> {
+    // prepare the url to call
+    let url = format!(
+        "https://{}.servicebus.windows.net/{}/messages/{}/{}",
+        namespace, event_hub, message_id, lock_token
+    );
+    debug!("url == {:?}", url);
+
+    // generate sas signature based on key name, key value, url and duration.
+    let sas = generate_signature(policy_name, signing_key, &url, duration);
+    debug!("sas == {}", sas);
+
+    let request = hyper::Request::put(url)
+        .header(header::AUTHORIZATION, sas)
+        .body(Body::empty())?;
+
+    Ok(http_client.request(request))
+}
+
+async fn unlock_message(
+    http_client: &HttpClient,
+    namespace: &str,
+    event_hub: &str,
+    policy_name: &str,
+    hmac: &hmac::Key,
+    duration: Duration,
+    message_id: &str,
+    lock_token: &str,
+) -> Result<(), AzureError> {
+    check_status_extract_body(
+        unlock_message_prepare(
+            http_client,
+            namespace,
+            event_hub,
+            policy_name,
+            hmac,
+            duration,
+            message_id,
+            lock_token,
+        )?,
+        StatusCode::OK,
+    )
+    .await?;
+    Ok(())
+}
+
 async fn send_event(
     http_client: &HttpClient,
     namespace: &str,
