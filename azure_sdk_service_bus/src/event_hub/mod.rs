@@ -1,5 +1,5 @@
 use azure_sdk_core::errors::{check_status_extract_body, AzureError};
-use hyper::{self, header, StatusCode};
+use hyper::{self, header, Body, StatusCode};
 use hyper_rustls::HttpsConnector;
 use ring::hmac;
 use std::ops::Add;
@@ -36,6 +36,58 @@ fn send_event_prepare<B: Into<String>>(
     let request = hyper::Request::post(url)
         .header(header::AUTHORIZATION, sas)
         .body(event_body.into())?;
+
+    Ok(http_client.request(request))
+}
+
+fn peek_lock_event_prepare(
+    http_client: &HttpClient,
+    namespace: &str,
+    event_hub: &str,
+    policy_name: &str,
+    signing_key: &hmac::Key,
+    duration: Duration,
+) -> Result<hyper::client::ResponseFuture, AzureError> {
+    // prepare the url to call
+    let url = format!(
+        "https://{}.servicebus.windows.net/{}/messages/head",
+        namespace, event_hub
+    );
+    debug!("url == {:?}", url);
+
+    // generate sas signature based on key name, key value, url and duration.
+    let sas = generate_signature(policy_name, signing_key, &url, duration);
+    debug!("sas == {}", sas);
+
+    let request = hyper::Request::post(url)
+        .header(header::AUTHORIZATION, sas)
+        .body(Body::empty())?;
+
+    Ok(http_client.request(request))
+}
+
+fn receive_delete_event_prepare(
+    http_client: &HttpClient,
+    namespace: &str,
+    event_hub: &str,
+    policy_name: &str,
+    signing_key: &hmac::Key,
+    duration: Duration,
+) -> Result<hyper::client::ResponseFuture, AzureError> {
+    // prepare the url to call
+    let url = format!(
+        "https://{}.servicebus.windows.net/{}/messages/head",
+        namespace, event_hub
+    );
+    debug!("url == {:?}", url);
+
+    // generate sas signature based on key name, key value, url and duration.
+    let sas = generate_signature(policy_name, signing_key, &url, duration);
+    debug!("sas == {}", sas);
+
+    let request = hyper::Request::delete(url)
+        .header(header::AUTHORIZATION, sas)
+        .body(Body::empty())?;
 
     Ok(http_client.request(request))
 }
