@@ -1,4 +1,4 @@
-use crate::event_hub::{peek_lock, receive_and_delete, send_event, unlock_message};
+use crate::event_hub::{delete_message, peek_lock, receive_and_delete, send_event, unlock_message};
 use azure_sdk_core::errors::AzureError;
 use hyper_rustls::HttpsConnector;
 use ring::hmac::Key;
@@ -87,6 +87,27 @@ impl Client {
     }
 
     pub async fn unlock_message(
+        &mut self,
+        message_id: &str,
+        lock_token: &str,
+        duration: Duration,
+    ) -> Result<(), AzureError> {
+        {
+            unlock_message(
+                &self.http_client,
+                &self.namespace,
+                &self.event_hub,
+                &self.policy_name,
+                &self.signing_key,
+                duration,
+                message_id,
+                lock_token,
+            )
+            .await
+        }
+    }
+
+    pub async fn delete_message(
         &mut self,
         message_id: &str,
         lock_token: &str,
