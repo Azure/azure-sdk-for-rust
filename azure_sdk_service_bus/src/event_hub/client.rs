@@ -1,6 +1,7 @@
-use crate::event_hub::send_event;
+use crate::event_hub::{
+    delete_message, peek_lock, receive_and_delete, renew_lock, send_event, unlock_message,
+};
 use azure_sdk_core::errors::AzureError;
-use hyper;
 use hyper_rustls::HttpsConnector;
 use ring::hmac::Key;
 use time::Duration;
@@ -45,18 +46,97 @@ impl Client {
         event_body: &str,
         duration: Duration,
     ) -> Result<(), AzureError> {
-        {
-            send_event(
-                &self.http_client,
-                &self.namespace,
-                &self.event_hub,
-                &self.policy_name,
-                &self.signing_key,
-                event_body,
-                duration,
-            )
-            .await
-        }
+        send_event(
+            &self.http_client,
+            &self.namespace,
+            &self.event_hub,
+            &self.policy_name,
+            &self.signing_key,
+            event_body,
+            duration,
+        )
+        .await
+    }
+
+    pub async fn peek_lock(&mut self, duration: Duration) -> Result<String, AzureError> {
+        peek_lock(
+            &self.http_client,
+            &self.namespace,
+            &self.event_hub,
+            &self.policy_name,
+            &self.signing_key,
+            duration,
+        )
+        .await
+    }
+
+    pub async fn receive_and_delete(&mut self, duration: Duration) -> Result<String, AzureError> {
+        receive_and_delete(
+            &self.http_client,
+            &self.namespace,
+            &self.event_hub,
+            &self.policy_name,
+            &self.signing_key,
+            duration,
+        )
+        .await
+    }
+
+    pub async fn unlock_message(
+        &mut self,
+        message_id: &str,
+        lock_token: &str,
+        duration: Duration,
+    ) -> Result<(), AzureError> {
+        unlock_message(
+            &self.http_client,
+            &self.namespace,
+            &self.event_hub,
+            &self.policy_name,
+            &self.signing_key,
+            duration,
+            message_id,
+            lock_token,
+        )
+        .await
+    }
+
+    pub async fn delete_message(
+        &mut self,
+        message_id: &str,
+        lock_token: &str,
+        duration: Duration,
+    ) -> Result<(), AzureError> {
+        delete_message(
+            &self.http_client,
+            &self.namespace,
+            &self.event_hub,
+            &self.policy_name,
+            &self.signing_key,
+            duration,
+            message_id,
+            lock_token,
+        )
+        .await
+    }
+
+    pub async fn renew_lock(
+        &mut self,
+        message_id: &str,
+        lock_token: &str,
+        duration: Duration,
+    ) -> Result<(), AzureError> {
+        renew_lock(
+            &self.http_client,
+            &self.namespace,
+            &self.event_hub,
+            &self.policy_name,
+            &self.signing_key,
+            duration,
+            message_id,
+            lock_token,
+        )
+        .await
     }
 }
 
