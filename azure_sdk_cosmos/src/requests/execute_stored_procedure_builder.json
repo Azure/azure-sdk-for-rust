@@ -2,7 +2,7 @@
 	"name": "ExecuteStoredProcedureBuilder",
 	"derive": "Debug, Clone",
 	"uses": [
-			"crate::client::{CosmosUriBuilder}",
+			"crate::clients::{CosmosUriBuilder}",
 			"crate::prelude::*",
 			"crate::StoredProcedureClient",
 			"crate::stored_procedure::Parameters",
@@ -61,6 +61,13 @@
 			"initializer": "false",
 			"trait_get": "AllowTentativeWritesOption",
 			"trait_set": "AllowTentativeWritesSupport"
+		},
+		{
+			"name": "partition_keys",
+			"field_type": "&'b PartitionKeys",
+			"optional": true,
+			"trait_get": "PartitionKeysOption<'b>",
+			"trait_set": "PartitionKeysSupport<'b>"
 		}
 	]
 }

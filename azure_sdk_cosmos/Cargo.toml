@@ -1,6 +1,6 @@
 [package]
 name          = "azure_sdk_cosmos"
-version       = "0.41.0"
+version       = "0.41.1"
 description   = "Rust wrappers around Microsoft Azure REST APIs - Azure Cosmos DB crate"
 readme        = "README.md"
 authors       = ["Francesco Cogno <francesco.cogno@outlook.com>", "Max Gortman <mgortman@microsoft.com>"]

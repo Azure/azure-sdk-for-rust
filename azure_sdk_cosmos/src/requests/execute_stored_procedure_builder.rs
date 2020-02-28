@@ -1,8 +1,9 @@
-use crate::clients::{CosmosUriBuilder, StoredProcedureClient};
+use crate::clients::CosmosUriBuilder;
 use crate::prelude::*;
 use crate::responses::ExecuteStoredProcedureResponse;
 use crate::stored_procedure::Parameters;
 use crate::StoredProcedureBuilderTrait;
+use crate::StoredProcedureClient;
 use crate::StoredProcedureClientRequired;
 use azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError};
 use azure_sdk_core::prelude::*;
@@ -21,6 +22,7 @@ where
     activity_id: Option<&'b str>,
     consistency_level: Option<ConsistencyLevel<'b>>,
     allow_tentative_writes: bool,
+    partition_keys: Option<&'b PartitionKeys>,
 }
 
 impl<'a, 'b, CUB> ExecuteStoredProcedureBuilder<'a, 'b, CUB>
@@ -38,6 +40,7 @@ where
             activity_id: None,
             consistency_level: None,
             allow_tentative_writes: false,
+            partition_keys: None,
         }
     }
 }
@@ -106,6 +109,16 @@ where
     }
 }
 
+impl<'a, 'b, CUB> PartitionKeysOption<'b> for ExecuteStoredProcedureBuilder<'a, 'b, CUB>
+where
+    CUB: CosmosUriBuilder,
+{
+    #[inline]
+    fn partition_keys(&self) -> Option<&'b PartitionKeys> {
+        self.partition_keys
+    }
+}
+
 impl<'a, 'b, CUB> ParametersSupport<'b> for ExecuteStoredProcedureBuilder<'a, 'b, CUB>
 where
     CUB: CosmosUriBuilder,
@@ -121,6 +134,7 @@ where
             activity_id: self.activity_id,
             consistency_level: self.consistency_level,
             allow_tentative_writes: self.allow_tentative_writes,
+            partition_keys: self.partition_keys,
         }
     }
 }
@@ -140,6 +154,7 @@ where
             activity_id: self.activity_id,
             consistency_level: self.consistency_level,
             allow_tentative_writes: self.allow_tentative_writes,
+            partition_keys: self.partition_keys,
         }
     }
 }
@@ -159,6 +174,7 @@ where
             activity_id: Some(activity_id),
             consistency_level: self.consistency_level,
             allow_tentative_writes: self.allow_tentative_writes,
+            partition_keys: self.partition_keys,
         }
     }
 }
@@ -178,6 +194,7 @@ where
             activity_id: self.activity_id,
             consistency_level: Some(consistency_level),
             allow_tentative_writes: self.allow_tentative_writes,
+            partition_keys: self.partition_keys,
         }
     }
 }
@@ -197,11 +214,31 @@ where
             activity_id: self.activity_id,
             consistency_level: self.consistency_level,
             allow_tentative_writes,
+            partition_keys: self.partition_keys,
         }
     }
 }
 
-// methods callable only when every mandatory field has been filled
+impl<'a, 'b, CUB> PartitionKeysSupport<'b> for ExecuteStoredProcedureBuilder<'a, 'b, CUB>
+where
+    CUB: CosmosUriBuilder,
+{
+    type O = ExecuteStoredProcedureBuilder<'a, 'b, CUB>;
+
+    #[inline]
+    fn with_partition_keys(self, partition_keys: &'b PartitionKeys) -> Self::O {
+        ExecuteStoredProcedureBuilder {
+            stored_procedure_client: self.stored_procedure_client,
+            parameters: self.parameters,
+            user_agent: self.user_agent,
+            activity_id: self.activity_id,
+            consistency_level: self.consistency_level,
+            allow_tentative_writes: self.allow_tentative_writes,
+            partition_keys: Some(partition_keys),
+        }
+    }
+}
+
 impl<'a, 'b, CUB> ExecuteStoredProcedureBuilder<'a, 'b, CUB>
 where
     CUB: CosmosUriBuilder,
@@ -221,6 +258,7 @@ where
         let req = ActivityIdOption::add_header(self, req);
         let req = ConsistencyLevelOption::add_header(self, req);
         let req = AllowTentativeWritesOption::add_header(self, req);
+        let req = PartitionKeysOption::add_header(self, req);
 
         let req = req.header(http::header::CONTENT_TYPE, "application/json");
 
