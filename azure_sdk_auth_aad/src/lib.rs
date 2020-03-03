@@ -9,9 +9,10 @@ use oauth2::basic::BasicClient;
 use oauth2::reqwest::async_http_client;
 use oauth2::AsyncCodeTokenRequest;
 use oauth2::{
-    AuthType, AuthUrl, AuthorizationCode, ClientId, ClientSecret, CsrfToken, PkceCodeChallenge,
+    AuthType, AuthUrl, AuthorizationCode, CsrfToken, PkceCodeChallenge,
     PkceCodeVerifier, RedirectUrl, TokenUrl,
 };
+pub use oauth2::{ClientId, ClientSecret};
 use url::form_urlencoded;
 use url::Url;
 mod login_response;
