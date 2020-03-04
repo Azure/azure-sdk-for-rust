@@ -18,7 +18,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // Create URL to browse for initial authorization
     let c = authorize_delegate(
         client_id,
-        client_secret,
+        Some(client_secret),
         &tenant_id,
         Url::parse("http://localhost:3003/redirect").unwrap(),
         "https://management.azure.com/",

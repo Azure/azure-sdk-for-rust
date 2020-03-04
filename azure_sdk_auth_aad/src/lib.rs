@@ -9,9 +9,10 @@ use oauth2::basic::BasicClient;
 use oauth2::reqwest::async_http_client;
 use oauth2::AsyncCodeTokenRequest;
 use oauth2::{
-    AuthType, AuthUrl, AuthorizationCode, ClientId, ClientSecret, CsrfToken, PkceCodeChallenge,
+    AuthType, AuthUrl, AuthorizationCode, CsrfToken, PkceCodeChallenge,
     PkceCodeVerifier, RedirectUrl, TokenUrl,
 };
+pub use oauth2::{ClientId, ClientSecret};
 use url::form_urlencoded;
 use url::Url;
 mod login_response;
@@ -33,7 +34,7 @@ pub struct AuthObj {
 
 pub fn authorize_delegate(
     client_id: ClientId,
-    client_secret: ClientSecret,
+    client_secret: Option<ClientSecret>,
     tenant_id: &str,
     redirect_url: Url,
     resource: &str,
@@ -54,7 +55,7 @@ pub fn authorize_delegate(
     );
 
     // Set up the config for the Microsoft Graph OAuth2 process.
-    let client = BasicClient::new(client_id, Some(client_secret), auth_url, Some(token_url))
+    let client = BasicClient::new(client_id, client_secret, auth_url, Some(token_url))
         // Microsoft Graph requires client_id and client_secret in URL rather than
         // using Basic authentication.
         .set_auth_type(AuthType::RequestBody)

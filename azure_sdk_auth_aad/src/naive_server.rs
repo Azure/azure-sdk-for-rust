@@ -1,5 +1,6 @@
 use crate::errors::ServerReceiveError;
 use crate::AuthObj;
+use log::debug;
 use oauth2::{AuthorizationCode, CsrfToken};
 use std::io::{BufRead, BufReader, Write};
 use std::net::TcpListener;
@@ -24,7 +25,7 @@ pub fn naive_server(auth_obj: &AuthObj, port: u32) -> Result<AuthorizationCode, 
                 };
                 let url = Url::parse(&("http://localhost".to_string() + redirect_url)).unwrap();
 
-                println!("url == {}", url);
+                debug!("url == {}", url);
 
                 let code = match url.query_pairs().find(|pair| {
                     let &(ref key, _) = pair;
