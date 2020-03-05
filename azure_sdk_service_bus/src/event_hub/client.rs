@@ -58,7 +58,11 @@ impl Client {
         .await
     }
 
-    pub async fn peek_lock(&mut self, duration: Duration) -> Result<String, AzureError> {
+    pub async fn peek_lock(
+        &mut self,
+        duration: Duration,
+        timeout: Option<Duration>,
+    ) -> Result<String, AzureError> {
         peek_lock(
             &self.http_client,
             &self.namespace,
@@ -66,6 +70,7 @@ impl Client {
             &self.policy_name,
             &self.signing_key,
             duration,
+            timeout,
         )
         .await
     }

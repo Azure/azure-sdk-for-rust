@@ -4,7 +4,7 @@ use hyper_rustls::HttpsConnector;
 use ring::hmac;
 use std::ops::Add;
 use time::Duration;
-use url::form_urlencoded;
+use url::{form_urlencoded, Url};
 
 mod client;
 pub use self::client::Client;
@@ -47,19 +47,24 @@ fn peek_lock_prepare(
     policy_name: &str,
     signing_key: &hmac::Key,
     duration: Duration,
+    timeout: Option<Duration>,
 ) -> Result<hyper::client::ResponseFuture, AzureError> {
     // prepare the url to call
-    let url = format!(
+    let mut url = Url::parse(&format!(
         "https://{}.servicebus.windows.net/{}/messages/head",
         namespace, event_hub
-    );
+    ))?;
+    if let Some(t) = timeout {
+        url.query_pairs_mut()
+            .append_pair("timeout", &t.num_seconds().to_string());
+    }
     debug!("url == {:?}", url);
 
     // generate sas signature based on key name, key value, url and duration.
-    let sas = generate_signature(policy_name, signing_key, &url, duration);
+    let sas = generate_signature(policy_name, signing_key, &url.as_str(), duration);
     debug!("sas == {}", sas);
 
-    let request = hyper::Request::post(url)
+    let request = hyper::Request::post(url.into_string())
         .header(header::AUTHORIZATION, sas)
         .body(Body::empty())?;
 
@@ -73,6 +78,7 @@ async fn peek_lock(
     policy_name: &str,
     hmac: &hmac::Key,
     duration: Duration,
+    timeout: Option<Duration>,
 ) -> Result<String, AzureError> {
     let req = peek_lock_prepare(
         http_client,
@@ -81,6 +87,7 @@ async fn peek_lock(
         policy_name,
         hmac,
         duration,
+        timeout,
     );
 
     check_status_extract_body(req?, StatusCode::CREATED).await
