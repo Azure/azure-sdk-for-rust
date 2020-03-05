@@ -66,6 +66,7 @@ fn peek_lock_prepare(
 
     let request = hyper::Request::post(url.into_string())
         .header(header::AUTHORIZATION, sas)
+        .header(header::CONTENT_LENGTH, 0)
         .body(Body::empty())?;
 
     Ok(http_client.request(request))
