@@ -13,3 +13,13 @@ pub enum ServerReceiveError {
         received_state_secret: String,
     },
 }
+
+#[derive(Debug, Fail, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum ErrorResponse {
+    #[fail(
+        display = "Unrecognized Azure error response:\n{}\n",
+        error_description
+    )]
+    GenericError { error_description: String },
+}
