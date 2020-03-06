@@ -26,9 +26,17 @@ pub struct TableClient {
 }
 
 impl TableClient {
+    /// Create a new `TableClient` using a key.
     pub fn new(account: &str, key: &str) -> Result<Self, AzureError> {
         Ok(TableClient {
             client: Client::new(account, key)?,
+        })
+    }
+
+    /// Create a new `TableClient` using a SAS token.
+    pub fn azure_sas(account: &str, sas_token: &str) -> Result<Self, AzureError> {
+        Ok(TableClient {
+            client: Client::azure_sas(account, sas_token)?,
         })
     }
 
