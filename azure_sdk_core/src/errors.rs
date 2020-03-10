@@ -386,6 +386,20 @@ pub async fn extract_status_and_body(
 }
 
 #[inline]
+pub async fn extract_location_status_and_body(
+    resp: hyper::client::ResponseFuture,
+) -> Result<(http::StatusCode, String, String), AzureError> {
+    let res = resp.await?;
+    let status = res.status();
+    let location: String = match res.headers().get("Location") {
+        Some(header_value) => header_value.to_str()?.to_owned(),
+        _ => "".to_owned(),
+    };
+    let body = body::to_bytes(res.into_body()).await?;
+    Ok((status, location, str::from_utf8(&body)?.to_owned()))
+}
+
+#[inline]
 pub async fn check_status_extract_body(
     resp: hyper::client::ResponseFuture,
     expected_status_code: hyper::StatusCode,

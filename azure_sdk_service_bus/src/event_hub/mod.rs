@@ -1,4 +1,6 @@
-use azure_sdk_core::errors::{check_status_extract_body, AzureError};
+use azure_sdk_core::errors::{
+    check_status_extract_body, extract_location_status_and_body, AzureError,
+};
 use hyper::{self, header, Body, StatusCode};
 use hyper_rustls::HttpsConnector;
 use ring::hmac;
@@ -92,6 +94,28 @@ async fn peek_lock(
     );
 
     check_status_extract_body(req?, StatusCode::CREATED).await
+}
+
+async fn peek_lock_with_location(
+    http_client: &HttpClient,
+    namespace: &str,
+    event_hub: &str,
+    policy_name: &str,
+    hmac: &hmac::Key,
+    duration: Duration,
+    timeout: Option<Duration>,
+) -> Result<(StatusCode, String, String), AzureError> {
+    let req = peek_lock_prepare(
+        http_client,
+        namespace,
+        event_hub,
+        policy_name,
+        hmac,
+        duration,
+        timeout,
+    );
+
+    extract_location_status_and_body(req?).await
 }
 
 fn receive_and_delete_prepare(

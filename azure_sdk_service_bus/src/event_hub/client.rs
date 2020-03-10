@@ -1,5 +1,6 @@
 use crate::event_hub::{
-    delete_message, peek_lock, receive_and_delete, renew_lock, send_event, unlock_message,
+    delete_message, peek_lock, peek_lock_with_location, receive_and_delete, renew_lock, send_event,
+    unlock_message,
 };
 use azure_sdk_core::errors::AzureError;
 use hyper_rustls::HttpsConnector;
@@ -64,6 +65,23 @@ impl Client {
         timeout: Option<Duration>,
     ) -> Result<String, AzureError> {
         peek_lock(
+            &self.http_client,
+            &self.namespace,
+            &self.event_hub,
+            &self.policy_name,
+            &self.signing_key,
+            duration,
+            timeout,
+        )
+        .await
+    }
+
+    pub async fn peek_lock_with_location(
+        &mut self,
+        duration: Duration,
+        timeout: Option<Duration>,
+    ) -> Result<(http::StatusCode, String, String), AzureError> {
+        peek_lock_with_location(
             &self.http_client,
             &self.namespace,
             &self.event_hub,
