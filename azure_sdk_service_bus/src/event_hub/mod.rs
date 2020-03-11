@@ -96,7 +96,7 @@ async fn peek_lock(
     check_status_extract_body(req?, StatusCode::CREATED).await
 }
 
-async fn peek_lock_with_location(
+async fn peek_lock_full(
     http_client: &HttpClient,
     namespace: &str,
     event_hub: &str,
@@ -104,7 +104,7 @@ async fn peek_lock_with_location(
     hmac: &hmac::Key,
     duration: Duration,
     timeout: Option<Duration>,
-) -> Result<(StatusCode, String, String), AzureError> {
+) -> Result<PeekLockResponse, AzureError> {
     let req = peek_lock_prepare(
         http_client,
         namespace,
@@ -115,7 +115,47 @@ async fn peek_lock_with_location(
         timeout,
     );
 
-    extract_location_status_and_body(req?).await
+    let a = extract_location_status_and_body(req?).await?;
+
+    Ok(PeekLockResponse {
+        http_client: http_client.to_owned(),
+        status: a.0,
+        delete_location: a.1,
+        body: a.2,
+        duration: duration.clone(),
+        policy_name: policy_name.to_owned(),
+        signing_key: hmac.to_owned(),
+    })
+}
+
+pub struct PeekLockResponse {
+    http_client: HttpClient,
+    status: StatusCode,
+    delete_location: String,
+    body: String,
+    policy_name: String,
+    signing_key: hmac::Key,
+    duration: Duration,
+}
+
+impl PeekLockResponse {
+    pub fn body(&self) -> String {
+        self.body.clone()
+    }
+    pub fn status(&self) -> StatusCode {
+        self.status
+    }
+    pub async fn delete_message(&self) -> Result<String, AzureError> {
+        let req = delete_message_get_request(
+            &self.http_client,
+            &self.policy_name,
+            &self.signing_key,
+            self.duration,
+            self.delete_location.clone(),
+        );
+
+        check_status_extract_body(req?, StatusCode::OK).await
+    }
 }
 
 fn receive_and_delete_prepare(
@@ -182,6 +222,17 @@ fn delete_message_prepare(
     debug!("url == {:?}", url);
 
     // generate sas signature based on key name, key value, url and duration.
+
+    delete_message_get_request(http_client, policy_name, signing_key, duration, url)
+}
+
+fn delete_message_get_request(
+    http_client: &HttpClient,
+    policy_name: &str,
+    signing_key: &hmac::Key,
+    duration: Duration,
+    url: String,
+) -> Result<hyper::client::ResponseFuture, AzureError> {
     let sas = generate_signature(policy_name, signing_key, &url, duration);
     debug!("sas == {}", sas);
 
