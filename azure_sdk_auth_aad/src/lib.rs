@@ -9,8 +9,8 @@ use oauth2::basic::BasicClient;
 use oauth2::reqwest::async_http_client;
 use oauth2::AsyncCodeTokenRequest;
 use oauth2::{
-    AuthType, AuthUrl, AuthorizationCode, CsrfToken, PkceCodeChallenge,
-    PkceCodeVerifier, RedirectUrl, TokenUrl,
+    AuthType, AuthUrl, AuthorizationCode, CsrfToken, PkceCodeChallenge, PkceCodeVerifier,
+    RedirectUrl, TokenUrl,
 };
 pub use oauth2::{ClientId, ClientSecret};
 use url::form_urlencoded;
@@ -131,7 +131,19 @@ pub async fn authorize_non_interactive(
         .send()
         .await
         .map_err(|e| AzureError::GenericErrorWithText(e.to_string()))?
-        .json::<LoginResponse>()
+        .text()
         .map_err(|e| AzureError::GenericErrorWithText(e.to_string()))
         .await
+        .and_then(|s| {
+            serde_json::from_str::<LoginResponse>(&s).map_err(|e| {
+                serde_json::from_str::<errors::ErrorResponse>(&s)
+                    .map(|er| AzureError::GenericErrorWithText(er.to_string()))
+                    .unwrap_or_else(|_| {
+                        AzureError::GenericErrorWithText(format!(
+                            "Failed to parse Azure response: {}",
+                            e.to_string()
+                        ))
+                    })
+            })
+        })
 }
