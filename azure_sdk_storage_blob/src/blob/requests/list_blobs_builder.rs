@@ -548,20 +548,23 @@ impl<'a> ListBlobBuilder<'a, Yes> {
         ListBlobsResponse::from_response(&container_name, &headers, &body_as_str)
     }
 
-    pub fn stream(&self) -> impl Stream<Item = Result<ListBlobsResponse, AzureError>> + '_ {
+    pub fn stream(self) -> impl Stream<Item = Result<ListBlobsResponse, AzureError>> + 'a {
         #[derive(Debug, Clone, PartialEq)]
         enum States {
             Init,
             NextMarker(String),
         };
 
+        let req = self.clone();
+
         unfold(Some(States::Init), move |next_marker: Option<States>| {
+            let req = req.clone();
             async move {
                 debug!("next_marker == {:?}", &next_marker);
                 let response = match next_marker {
-                    Some(States::Init) => self.clone().finalize().await,
+                    Some(States::Init) => req.finalize().await,
                     Some(States::NextMarker(next_marker)) => {
-                        self.clone().with_next_marker(&next_marker).finalize().await
+                        req.with_next_marker(&next_marker).finalize().await
                     }
                     None => return None,
                 };
