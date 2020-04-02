@@ -555,10 +555,8 @@ impl<'a> ListBlobBuilder<'a, Yes> {
             NextMarker(String),
         };
 
-        let req = self.clone();
-
         unfold(Some(States::Init), move |next_marker: Option<States>| {
-            let req = req.clone();
+            let req = self.clone();
             async move {
                 debug!("next_marker == {:?}", &next_marker);
                 let response = match next_marker {
