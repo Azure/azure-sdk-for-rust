@@ -1,17 +1,11 @@
 use crate::blob::responses::ListBlobsResponse;
 use crate::container::generate_container_uri;
 use azure_sdk_core::errors::{check_status_extract_headers_and_body_as_string, AzureError};
-use azure_sdk_core::{
-    ClientRequestIdOption, ClientRequestIdSupport, ContainerNameRequired, ContainerNameSupport,
-    DelimiterOption, DelimiterSupport, IncludeCopyOption, IncludeCopySupport, IncludeDeletedOption,
-    IncludeDeletedSupport, IncludeListOptions, IncludeMetadataOption, IncludeMetadataSupport,
-    IncludeSnapshotsOption, IncludeSnapshotsSupport, IncludeUncommittedBlobsOption,
-    IncludeUncommittedBlobsSupport, MaxResultsOption, MaxResultsSupport, NextMarkerOption,
-    NextMarkerSupport, No, PrefixOption, PrefixSupport, TimeoutOption, TimeoutSupport, ToAssign,
-    Yes,
-};
+use azure_sdk_core::prelude::*;
+use azure_sdk_core::{No, ToAssign, Yes};
 use azure_sdk_storage_core::client::Client;
 use azure_sdk_storage_core::ClientRequired;
+use futures::stream::{unfold, Stream};
 use hyper::{Method, StatusCode};
 use std::marker::PhantomData;
 
@@ -552,5 +546,41 @@ impl<'a> ListBlobBuilder<'a, Yes> {
             check_status_extract_headers_and_body_as_string(future_response, StatusCode::OK)
                 .await?;
         ListBlobsResponse::from_response(&container_name, &headers, &body_as_str)
+    }
+
+    pub fn stream(self) -> impl Stream<Item = Result<ListBlobsResponse, AzureError>> + 'a {
+        #[derive(Debug, Clone, PartialEq)]
+        enum States {
+            Init,
+            NextMarker(String),
+        };
+
+        unfold(Some(States::Init), move |next_marker: Option<States>| {
+            let req = self.clone();
+            async move {
+                debug!("next_marker == {:?}", &next_marker);
+                let response = match next_marker {
+                    Some(States::Init) => req.finalize().await,
+                    Some(States::NextMarker(next_marker)) => {
+                        req.with_next_marker(&next_marker).finalize().await
+                    }
+                    None => return None,
+                };
+
+                // the ? operator does not work in async move (yet?)
+                // so we have to resort to this boilerplate
+                let response = match response {
+                    Ok(response) => response,
+                    Err(err) => return Some((Err(err), None)),
+                };
+
+                let next_marker = match response.incomplete_vector.token() {
+                    Some(ct) => Some(States::NextMarker(ct.to_owned())),
+                    None => None,
+                };
+
+                Some((Ok(response), next_marker))
+            }
+        })
     }
 }
