@@ -2,14 +2,13 @@ pub mod requests;
 pub mod responses;
 
 use azure_sdk_core::{
-    enumerations,
-    errors::{AzureError, TraversingError},
+    errors::{AzureError},
     headers::{
         BLOB_PUBLIC_ACCESS, HAS_IMMUTABILITY_POLICY, HAS_LEGAL_HOLD, LEASE_DURATION, LEASE_STATE,
         LEASE_STATUS, META_PREFIX,
     },
     lease::{LeaseDuration, LeaseState, LeaseStatus},
-    parsing::{cast_must, cast_optional, traverse, FromStringOptional},
+    parsing::{cast_must, cast_optional, traverse},
     ContainerNameRequired,
 };
 use azure_sdk_storage_core::ClientRequired;
@@ -19,7 +18,7 @@ use http::HeaderMap;
 use hyper::header;
 use hyper::header::HeaderName;
 use std::collections::HashMap;
-use std::{fmt, str::FromStr};
+use std::str::FromStr;
 use url::form_urlencoded;
 use xml::{Element, Xml};
 

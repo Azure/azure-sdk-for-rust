@@ -21,8 +21,6 @@ pub mod ba512_range;
 use base64::encode;
 pub mod modify_conditions;
 use self::modify_conditions::{IfMatchCondition, IfSinceCondition, SequenceNumberCondition};
-use std::fmt;
-use std::str::FromStr;
 pub mod headers;
 pub mod range;
 use self::headers::{
@@ -39,9 +37,8 @@ use hyper::header::{
 use uuid::Uuid;
 pub type RequestId = Uuid;
 pub type SessionToken = String;
-use crate::errors::{check_status_extract_body_2, AzureError, TraversingError};
+use crate::errors::{check_status_extract_body_2, AzureError};
 use crate::lease::LeaseId;
-use crate::parsing::FromStringOptional;
 use http::request::Builder;
 use http::HeaderMap;
 use std::collections::HashMap;

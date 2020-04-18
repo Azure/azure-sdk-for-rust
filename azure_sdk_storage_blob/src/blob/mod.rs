@@ -28,18 +28,17 @@ use chrono::{DateTime, Utc};
 use hyper::header;
 use std::borrow::Borrow;
 use std::collections::HashMap;
-use std::{fmt, str::FromStr};
+use std::{str::FromStr};
 use url::form_urlencoded;
 use xml::Element;
 use xml::Xml::ElementNode;
 
 use azure_sdk_core::{
-    enumerations,
     errors::{AzureError, TraversingError},
     incompletevector::IncompleteVector,
     lease::{LeaseDuration, LeaseState, LeaseStatus},
     parsing::{
-        cast_must, cast_optional, from_azure_time, inner_text, traverse, FromStringOptional,
+        cast_must, cast_optional, from_azure_time, inner_text, traverse,
     },
     range::Range,
     util::HeaderMapExt,

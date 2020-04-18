@@ -25,29 +25,29 @@ macro_rules! create_enum {
             }
         }
 
-        impl FromStringOptional<$en> for $en {
-            fn from_str_optional(s : &str) -> Result<$en, TraversingError> {
+        impl $crate::parsing::FromStringOptional<$en> for $en {
+            fn from_str_optional(s : &str) -> Result<$en, $crate::errors::TraversingError> {
                 match s.parse::<$en>() {
-                    Err(e) => Err(TraversingError::ParsingError(e)),
+                    Err(e) => Err($crate::errors::TraversingError::ParsingError(e)),
                     Ok(v) => Ok(v)
                 }
             }
         }
 
-        impl FromStr for $en {
-            type Err = enumerations::ParsingError;
+        impl ::std::str::FromStr for $en {
+            type Err = $crate::enumerations::ParsingError;
 
-            fn from_str(s: &str) -> Result<$en, enumerations::ParsingError> {
+            fn from_str(s: &str) -> Result<$en, $crate::enumerations::ParsingError> {
                 match s {
                     $(
                         $x => Ok($en::$na),
                     )*
-                    _ => Err(enumerations::ParsingError::ElementNotFound(s.to_owned())),
+                    _ => Err($crate::enumerations::ParsingError::ElementNotFound(s.to_owned())),
                 }
             }
         }
 
-        impl AsRef<str> for $en {
+        impl ::std::convert::AsRef<str> for $en {
             fn as_ref(&self) -> &str {
                  match *self {
                     $(
@@ -57,8 +57,8 @@ macro_rules! create_enum {
             }
         }
 
-        impl fmt::Display for $en {
-            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        impl ::std::fmt::Display for $en {
+            fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
                 match *self {
                     $(
                         $en::$na => write!(f, "{}", $x),
@@ -71,12 +71,6 @@ macro_rules! create_enum {
 
 #[cfg(test)]
 mod test {
-    use crate::enumerations;
-    use crate::errors::TraversingError;
-    use crate::parsing::FromStringOptional;
-    use std::fmt;
-    use std::str::FromStr;
-
     create_enum!(Colors, (Black, "Black"), (White, "White"), (Red, "Red"));
     create_enum!(ColorsMonochrome, (Black, "Black"), (White, "White"));
 
