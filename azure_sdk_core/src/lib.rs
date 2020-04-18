@@ -63,7 +63,7 @@ macro_rules! response_from_headers {
         }
 
         impl $cn {
-            pub(crate) fn from_headers(headers: &HeaderMap) -> Result<$cn, AzureError> {
+            pub(crate) fn from_headers(headers: &HeaderMap) -> Result<$cn, $crate::errors::AzureError> {
                $(
                     let $na = $fh(headers)?;
                 )+
