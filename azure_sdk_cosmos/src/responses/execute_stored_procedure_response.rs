@@ -42,7 +42,7 @@ where
         let headers = value.0;
         let body = value.1;
 
-        println!("headers == {:#?}", headers);
+        debug!("headers == {:#?}", headers);
         debug!("body == {:#?}", body);
 
         Ok(Self {

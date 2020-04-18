@@ -13,10 +13,8 @@
 		"chrono::{DateTime, Utc}",
 		"hyper::StatusCode",
 		"crate::DocumentBuilderTrait",
-		"azure_sdk_core::{No, ToAssign, Yes}",
 		"serde::de::DeserializeOwned",
-		"std::convert::TryFrom",
-		"std::marker::PhantomData"
+		"std::convert::TryFrom"
 	],
 	"inline": true,
 	"extra_types": [ "'a", "'b", "CUB" ],
@@ -29,14 +27,6 @@
 		}
 	],
 	"fields": [
-		{
-			"name": "partition_keys",
-			"field_type": "&'b PartitionKeys",
-			"optional": false,
-			"builder_type": "PartitionKeysSet",
-			"trait_get": "PartitionKeysRequired<'b>",
-			"trait_set": "PartitionKeysSupport<'b>"
-		},
 		{
 			"name": "if_match_condition",
 			"field_type": "IfMatchCondition<'b>",

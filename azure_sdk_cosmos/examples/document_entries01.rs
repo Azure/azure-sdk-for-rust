@@ -58,20 +58,18 @@ async fn main() -> Result<(), Box<dyn Error>> {
         create_document_response
     );
 
-    let document_client = client.with_document(&doc);
+    let document_client = client.with_document(&doc, &partition_keys);
 
     let get_document_response = document_client
         .get_document()
-        .with_partition_keys(&partition_keys)
         .execute::<serde_json::Value>()
         .await?;
     println!("get_document_response == {:#?}", get_document_response);
 
-    let document_client = client.with_document(&"ciccia");
+    let document_client = client.with_document(&"ciccia", &partition_keys);
 
     let get_document_response = document_client
         .get_document()
-        .with_partition_keys(&partition_keys)
         .execute::<serde_json::Value>()
         .await?;
     println!(

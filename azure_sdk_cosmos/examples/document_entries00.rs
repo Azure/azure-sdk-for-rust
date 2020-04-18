@@ -112,9 +112,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let id = format!("unique_id{}", 3);
 
     let response = client
-        .with_document(&id)
+        .with_document(&id, PartitionKeys::new().push(&id)?)
         .get_document()
-        .with_partition_keys(PartitionKeys::new().push(&id)?)
         .execute::<MySampleStruct>()
         .await?;
 
@@ -153,9 +152,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let id = format!("unique_id{}", 100);
 
     let response = client
-        .with_document(&id)
+        .with_document(&id, PartitionKeys::new().push(&id)?)
         .get_document()
-        .with_partition_keys(PartitionKeys::new().push(&id)?)
         .execute::<MySampleStruct>()
         .await?;
 
@@ -168,9 +166,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
     for i in 0u64..5 {
         let id = format!("unique_id{}", i);
         client
-            .with_document(&id)
+            .with_document(&id, PartitionKeys::new().push(&id)?)
             .delete_document()
-            .with_partition_keys(PartitionKeys::new().push(&id)?)
             .execute()
             .await?;
     }

@@ -10,8 +10,8 @@ use serde::de::DeserializeOwned;
 
 #[derive(Debug, Clone)]
 pub enum GetDocumentResponse<T> {
-    Found(FoundDocumentResponse<T>),
-    NotFound(NotFoundDocumentResponse),
+    Found(Box<FoundDocumentResponse<T>>),
+    NotFound(Box<NotFoundDocumentResponse>),
 }
 
 impl<T> std::convert::TryFrom<(StatusCode, &HeaderMap, &[u8])> for GetDocumentResponse<T>
@@ -32,13 +32,13 @@ where
             status_code == StatusCode::OK || status_code == StatusCode::NOT_MODIFIED;
 
         if has_been_found {
-            Ok(GetDocumentResponse::Found(FoundDocumentResponse::try_from(
-                (headers, body),
-            )?))
+            Ok(GetDocumentResponse::Found(Box::new(
+                FoundDocumentResponse::try_from((headers, body))?,
+            )))
         } else {
-            Ok(GetDocumentResponse::NotFound(
+            Ok(GetDocumentResponse::NotFound(Box::new(
                 NotFoundDocumentResponse::try_from((headers, body))?,
-            ))
+            )))
         }
     }
 }

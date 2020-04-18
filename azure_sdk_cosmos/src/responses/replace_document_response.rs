@@ -42,8 +42,8 @@ impl std::convert::TryFrom<(&HeaderMap, &[u8])> for ReplaceDocumentResponse {
         let headers = value.0;
         let body = value.1;
 
-        println!("headers == {:#?}", headers);
-        println!("body == {:#?}", body);
+        debug!("headers == {:#?}", headers);
+        debug!("body == {:#?}", body);
 
         Ok(Self {
             document_attributes: value.try_into()?,

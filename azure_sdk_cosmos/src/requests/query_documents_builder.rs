@@ -50,7 +50,7 @@ where
             if_modified_since: self.if_modified_since,
             user_agent: self.user_agent,
             activity_id: self.activity_id,
-            consistency_level: self.consistency_level,
+            consistency_level: self.consistency_level.clone(),
             continuation: self.continuation,
             max_item_count: self.max_item_count,
             partition_keys: self.partition_keys,
@@ -165,7 +165,7 @@ where
 {
     #[inline]
     fn consistency_level(&self) -> Option<ConsistencyLevel<'b>> {
-        self.consistency_level
+        self.consistency_level.clone()
     }
 }
 
@@ -600,32 +600,30 @@ where
 
         unfold(
             Some(States::Init),
-            move |continuation_token: Option<States>| {
-                async move {
-                    debug!("continuation_token == {:?}", &continuation_token);
-                    let response = match continuation_token {
-                        Some(States::Init) => self.execute().await,
-                        Some(States::Continuation(continuation_token)) => {
-                            self.clone()
-                                .with_continuation(&continuation_token)
-                                .execute()
-                                .await
-                        }
-                        None => return None,
-                    };
+            move |continuation_token: Option<States>| async move {
+                debug!("continuation_token == {:?}", &continuation_token);
+                let response = match continuation_token {
+                    Some(States::Init) => self.execute().await,
+                    Some(States::Continuation(continuation_token)) => {
+                        self.clone()
+                            .with_continuation(&continuation_token)
+                            .execute()
+                            .await
+                    }
+                    None => return None,
+                };
 
-                    let response = match response {
-                        Ok(response) => response,
-                        Err(err) => return Some((Err(err), None)),
-                    };
+                let response = match response {
+                    Ok(response) => response,
+                    Err(err) => return Some((Err(err), None)),
+                };
 
-                    let continuation_token = match &response.continuation_token {
-                        Some(ct) => Some(States::Continuation(ct.to_owned())),
-                        None => None,
-                    };
+                let continuation_token = match &response.continuation_token {
+                    Some(ct) => Some(States::Continuation(ct.to_owned())),
+                    None => None,
+                };
 
-                    Some((Ok(response), continuation_token))
-                }
+                Some((Ok(response), continuation_token))
             },
         )
     }

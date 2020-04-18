@@ -235,6 +235,15 @@ pub trait ContentTypeOption<'a> {
     }
 }
 
+pub trait ContentTypeRequired<'a> {
+    fn content_type(&self) -> &'a str;
+
+    #[must_use]
+    fn add_header(&self, builder: Builder) -> Builder {
+        builder.header(CONTENT_TYPE, self.content_type())
+    }
+}
+
 pub trait IfModifiedSinceSupport<'a> {
     type O;
     fn with_if_modified_since(self, if_modified_since: &'a DateTime<Utc>) -> Self::O;
@@ -712,7 +721,7 @@ pub trait ContentMD5Option<'a> {
 
 #[inline]
 #[must_use]
-pub fn add_content_md5_header<'a>(content_md5: &'a [u8], builder: Builder) -> Builder {
+pub fn add_content_md5_header(content_md5: &[u8], builder: Builder) -> Builder {
     let s = encode(content_md5);
     builder.header(CONTENT_MD5, &s as &str)
 }

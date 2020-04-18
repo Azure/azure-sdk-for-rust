@@ -1,6 +1,6 @@
 use crate::headers::*;
 use crate::resource_quota::resource_quotas_from_str;
-use crate::ResourceQuota;
+use crate::{IndexingDirective, ResourceQuota};
 use azure_sdk_core::errors::AzureError;
 use chrono::{DateTime, Utc};
 use http::HeaderMap;
@@ -13,7 +13,15 @@ pub(crate) fn request_charge_from_headers(headers: &HeaderMap) -> Result<f64, Az
         .parse()?)
 }
 
-pub(crate) fn request_item_count_from_headers(headers: &HeaderMap) -> Result<u32, AzureError> {
+//pub(crate) fn request_item_count_from_headers(headers: &HeaderMap) -> Result<u32, AzureError> {
+//    Ok(headers
+//        .get(HEADER_ITEM_COUNT)
+//        .ok_or_else(|| AzureError::HeaderNotFound(HEADER_ITEM_COUNT.to_owned()))?
+//        .to_str()?
+//        .parse()?)
+//}
+
+pub(crate) fn item_count_from_headers(headers: &HeaderMap) -> Result<u32, AzureError> {
     Ok(headers
         .get(HEADER_ITEM_COUNT)
         .ok_or_else(|| AzureError::HeaderNotFound(HEADER_ITEM_COUNT.to_owned()))?
@@ -142,6 +150,16 @@ pub(crate) fn collection_partition_index_from_headers(
         .parse()?)
 }
 
+pub(crate) fn indexing_directive_from_headers(
+    headers: &HeaderMap,
+) -> Result<IndexingDirective, AzureError> {
+    Ok(headers
+        .get(HEADER_INDEXING_DIRECTIVE)
+        .ok_or_else(|| AzureError::HeaderNotFound(HEADER_INDEXING_DIRECTIVE.to_owned()))?
+        .to_str()?
+        .parse()?)
+}
+
 pub(crate) fn collection_service_index_from_headers(
     headers: &HeaderMap,
 ) -> Result<u64, AzureError> {
@@ -237,7 +255,18 @@ pub(crate) fn content_location_from_headers(headers: &HeaderMap) -> Result<&str,
     Ok(headers
         .get(http::header::CONTENT_LOCATION)
         .ok_or_else(|| {
-            AzureError::HeaderNotFound(http::header::CONTENT_LOCATION.as_str().to_owned())
+            let header = http::header::CONTENT_LOCATION;
+            AzureError::HeaderNotFound(header.as_str().to_owned())
+        })?
+        .to_str()?)
+}
+
+pub(crate) fn content_type_from_headers(headers: &HeaderMap) -> Result<&str, AzureError> {
+    Ok(headers
+        .get(http::header::CONTENT_TYPE)
+        .ok_or_else(|| {
+            let header = http::header::CONTENT_TYPE;
+            AzureError::HeaderNotFound(header.as_str().to_owned())
         })?
         .to_str()?)
 }
@@ -247,6 +276,24 @@ pub(crate) fn gateway_version_from_headers(headers: &HeaderMap) -> Result<&str, 
         .get(HEADER_GATEWAY_VERSION)
         .ok_or_else(|| AzureError::HeaderNotFound(HEADER_GATEWAY_VERSION.to_owned()))?
         .to_str()?)
+}
+
+pub(crate) fn max_media_storage_usage_mb_from_headers(
+    headers: &HeaderMap,
+) -> Result<u64, AzureError> {
+    Ok(headers
+        .get(HEADER_MAX_MEDIA_STORAGE_USAGE_MB)
+        .ok_or_else(|| AzureError::HeaderNotFound(HEADER_MAX_MEDIA_STORAGE_USAGE_MB.to_owned()))?
+        .to_str()?
+        .parse()?)
+}
+
+pub(crate) fn media_storage_usage_mb_from_headers(headers: &HeaderMap) -> Result<u64, AzureError> {
+    Ok(headers
+        .get(HEADER_MEDIA_STORAGE_USAGE_MB)
+        .ok_or_else(|| AzureError::HeaderNotFound(HEADER_MEDIA_STORAGE_USAGE_MB.to_owned()))?
+        .to_str()?
+        .parse()?)
 }
 
 fn _date_from_headers(headers: &HeaderMap, header_name: &str) -> Result<DateTime<Utc>, AzureError> {
@@ -278,5 +325,6 @@ pub(crate) fn last_state_change_from_headers(
 }
 
 pub(crate) fn date_from_headers(headers: &HeaderMap) -> Result<DateTime<Utc>, AzureError> {
-    _date_from_headers(headers, http::header::DATE.as_str())
+    let header = http::header::DATE;
+    _date_from_headers(headers, header.as_str())
 }

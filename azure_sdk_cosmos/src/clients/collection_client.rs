@@ -6,7 +6,7 @@ use crate::database::DatabaseName;
 use crate::document::DocumentName;
 use crate::requests;
 use crate::stored_procedure::StoredProcedureName;
-use crate::{CollectionBuilderTrait, CollectionTrait, DatabaseTrait};
+use crate::{CollectionBuilderTrait, CollectionTrait, DatabaseTrait, PartitionKeys};
 use azure_sdk_core::No;
 use serde::Serialize;
 
@@ -101,8 +101,12 @@ where
         requests::ListStoredProceduresBuilder::new(self)
     }
 
-    fn with_document<'c>(&'c self, document_name: &'c dyn DocumentName) -> DocumentClient<'c, CUB> {
-        DocumentClient::new(&self, document_name)
+    fn with_document<'c>(
+        &'c self,
+        document_name: &'c dyn DocumentName,
+        partition_keys: &'c PartitionKeys,
+    ) -> DocumentClient<'c, CUB> {
+        DocumentClient::new(&self, document_name, partition_keys)
     }
 }
 

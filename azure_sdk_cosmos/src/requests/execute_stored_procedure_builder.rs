@@ -95,7 +95,7 @@ where
 {
     #[inline]
     fn consistency_level(&self) -> Option<ConsistencyLevel<'b>> {
-        self.consistency_level
+        self.consistency_level.clone()
     }
 }
 

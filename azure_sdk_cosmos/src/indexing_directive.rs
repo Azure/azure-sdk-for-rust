@@ -1,3 +1,4 @@
+use azure_sdk_core::enumerations::ParsingError;
 use std::fmt;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -13,6 +14,19 @@ impl std::convert::Into<&str> for &IndexingDirective {
             IndexingDirective::Default => "Default",
             IndexingDirective::Exclude => "Exclude",
             IndexingDirective::Include => "Include",
+        }
+    }
+}
+
+impl std::str::FromStr for IndexingDirective {
+    type Err = ParsingError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "Default" => Ok(IndexingDirective::Default),
+            "Exclude" => Ok(IndexingDirective::Exclude),
+            "Include" => Ok(IndexingDirective::Include),
+            _ => Err(ParsingError::ElementNotFound(s.to_owned())),
         }
     }
 }

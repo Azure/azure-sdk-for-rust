@@ -37,7 +37,7 @@ where
             if_match_condition: self.if_match_condition,
             user_agent: self.user_agent,
             activity_id: self.activity_id,
-            consistency_level: self.consistency_level,
+            consistency_level: self.consistency_level.clone(),
             continuation: self.continuation,
             max_item_count: self.max_item_count,
             a_im: self.a_im,
@@ -117,7 +117,7 @@ where
 {
     #[inline]
     fn consistency_level(&self) -> Option<ConsistencyLevel<'b>> {
-        self.consistency_level
+        self.consistency_level.clone()
     }
 }
 

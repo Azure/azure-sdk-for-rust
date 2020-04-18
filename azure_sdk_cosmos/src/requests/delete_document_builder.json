@@ -4,14 +4,12 @@
 	"uses": [
 		"crate::clients::{DocumentClient, CosmosUriBuilder}",
 		"crate::prelude::*",
-		"azure_sdk_core::{No, ToAssign, Yes}",
 		"crate::DocumentBuilderTrait",
 		"crate::responses::DeleteDocumentResponse",
 		"crate::DocumentClientRequired",
 		"azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError}",
 		"azure_sdk_core::modify_conditions::IfMatchCondition",
 		"azure_sdk_core::prelude::*",
-		"std::marker::PhantomData",
 		"azure_sdk_core::{IfMatchConditionOption, IfMatchConditionSupport}",
 		"chrono::{DateTime, Utc}",
 		"hyper::StatusCode",
@@ -28,14 +26,6 @@
 		}
 	],
 	"fields": [
-		{
-			"name": "partition_keys",
-			"field_type": "&'a PartitionKeys",
-			"optional": false,
-			"builder_type": "PartitionKeysSet",
-			"trait_get": "PartitionKeysRequired<'a>",
-			"trait_set": "PartitionKeysSupport<'a>"
-		},
 		{
 			"name": "if_match_condition",
 			"field_type": "IfMatchCondition<'a>",

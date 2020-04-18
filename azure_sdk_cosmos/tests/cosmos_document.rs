@@ -72,11 +72,11 @@ async fn create_and_delete_document() {
     assert!(documents.len() == 1);
 
     // try to get the contents of the previously created document
-    let document_client = collection_client.with_document(&DOCUMENT_NAME);
+    let partition_keys = DOCUMENT_NAME.into();
+    let document_client = collection_client.with_document(&DOCUMENT_NAME, &partition_keys);
 
     let document_after_get = document_client
         .get_document()
-        .with_partition_keys(&DOCUMENT_NAME.into())
         .execute::<MyDocument>()
         .await
         .unwrap();
@@ -88,12 +88,7 @@ async fn create_and_delete_document() {
     }
 
     // delete document
-    document_client
-        .delete_document()
-        .with_partition_keys(&DOCUMENT_NAME.into())
-        .execute()
-        .await
-        .unwrap();
+    document_client.delete_document().execute().await.unwrap();
 
     let documents = collection_client
         .list_documents()
@@ -245,10 +240,10 @@ async fn replace_document() {
         .unwrap();
 
     // now get the replaced document
-    let document_client = collection_client.with_document(&DOCUMENT_NAME);
+    let partition_keys = DOCUMENT_NAME.into();
+    let document_client = collection_client.with_document(&DOCUMENT_NAME, &partition_keys);
     let document_after_get = document_client
         .get_document()
-        .with_partition_keys(&DOCUMENT_NAME.into())
         .execute::<MyDocument>()
         .await
         .unwrap();

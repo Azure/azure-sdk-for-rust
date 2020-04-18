@@ -46,7 +46,7 @@ where
             client: self.client,
             user_agent: self.user_agent,
             activity_id: self.activity_id,
-            consistency_level: self.consistency_level,
+            consistency_level: self.consistency_level.clone(),
             continuation: self.continuation,
             max_item_count: self.max_item_count,
         }
@@ -85,7 +85,7 @@ where
     CUB: CosmosUriBuilder,
 {
     fn consistency_level(&self) -> Option<ConsistencyLevel<'a>> {
-        self.consistency_level
+        self.consistency_level.clone()
     }
 }
 

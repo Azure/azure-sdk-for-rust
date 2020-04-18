@@ -120,9 +120,11 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
         // to spice the delete a little we use optimistic concurreny
         collection_client
-            .with_document(&document.document_attributes.id)
+            .with_document(
+                &document.document_attributes.id,
+                PartitionKeys::new().push(&document.result.a_number)?,
+            )
             .delete_document()
-            .with_partition_keys(PartitionKeys::new().push(&document.result.a_number)?)
             .with_if_match_condition((&document.document_attributes).into())
             .execute()
             .await?;

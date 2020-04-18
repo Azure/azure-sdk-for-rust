@@ -169,9 +169,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     // Now we get the same document by id.
     let get_document_response = collection_client
-        .with_document(&doc)
+        .with_document(&doc, &(&doc.document_attributes.id).into())
         .get_document()
-        .with_partition_keys(&(&doc.document_attributes.id).into())
         .execute::<MySampleStruct>()
         .await?;
     println!("get_document_response == {:#?}", get_document_response);

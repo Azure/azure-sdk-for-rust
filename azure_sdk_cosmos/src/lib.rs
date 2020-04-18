@@ -6,6 +6,7 @@ extern crate serde_derive;
 #[macro_use]
 extern crate failure;
 
+pub mod attachment;
 mod authorization_token;
 pub mod clients;
 pub mod collection;
@@ -32,6 +33,7 @@ pub mod stored_procedure;
 mod to_json_vector;
 mod user;
 
+pub use self::attachment::Attachment;
 pub use self::authorization_token::*;
 use self::collection::IndexingPolicy;
 pub use self::consistency_level::ConsistencyLevel;
@@ -48,8 +50,8 @@ pub use self::requests::*;
 pub use self::resource::Resource;
 pub use self::resource_quota::ResourceQuota;
 use crate::clients::{
-    Client, CollectionClient, CosmosUriBuilder, DatabaseClient, DocumentClient, PermissionClient,
-    StoredProcedureClient, UserClient,
+    AttachmentClient, Client, CollectionClient, CosmosUriBuilder, DatabaseClient, DocumentClient,
+    PermissionClient, StoredProcedureClient, UserClient,
 };
 use crate::collection::Collection;
 use crate::collection::CollectionName;
@@ -57,6 +59,7 @@ use crate::headers::*;
 pub use crate::partition_keys::PartitionKeys;
 use crate::stored_procedure::{Parameters, StoredProcedureName};
 pub use crate::user::{User, UserName};
+use attachment::AttachmentName;
 use azure_sdk_core::No;
 use http::request::Builder;
 use serde::Serialize;
@@ -194,7 +197,7 @@ pub trait ConsistencyLevelOption<'a> {
             // if we have a Session consistency level we make sure to pass
             // the x-ms-session-token header too.
             if let ConsistencyLevel::Session(session_token) = consistency_level {
-                builder.header(HEADER_SESSION_TOKEN, session_token)
+                builder.header(HEADER_SESSION_TOKEN, session_token.as_ref())
             } else {
                 builder
             }
@@ -294,13 +297,20 @@ pub trait PartitionKeysSupport<'a> {
     fn with_partition_keys(self, partition_keys: &'a PartitionKeys) -> Self::O;
 }
 
+pub(crate) fn add_partition_keys_header(
+    partition_keys: &PartitionKeys,
+    builder: Builder,
+) -> Builder {
+    let serialized = partition_keys.to_json();
+    builder.header(HEADER_DOCUMENTDB_PARTITIONKEY, serialized)
+}
+
 pub trait PartitionKeysRequired<'a> {
     fn partition_keys(&self) -> &'a PartitionKeys;
 
     #[must_use]
     fn add_header(&self, builder: Builder) -> Builder {
-        let serialized = self.partition_keys().to_json();
-        builder.header(HEADER_DOCUMENTDB_PARTITIONKEY, serialized)
+        add_partition_keys_header(self.partition_keys(), builder)
     }
 }
 
@@ -316,6 +326,15 @@ pub trait PartitionKeysOption<'a> {
             builder
         }
     }
+}
+
+pub trait MediaRequired<'a> {
+    fn media(&self) -> &'a str;
+}
+
+pub trait MediaSupport<'a> {
+    type O;
+    fn with_media(self, media: &'a str) -> Self::O;
 }
 
 pub trait StoredProcedureBodyRequired<'a> {
@@ -363,6 +382,13 @@ where
 //pub trait CollectionRequired<'a> {
 //    fn collection(&self) -> &'a str;
 //}
+
+pub trait AttachmentClientRequired<'a, CUB>
+where
+    CUB: CosmosUriBuilder,
+{
+    fn attachment_client(&self) -> &'a AttachmentClient<'a, CUB>;
+}
 
 pub trait StoredProcedureClientRequired<'a, CUB>
 where
@@ -582,7 +608,11 @@ where
         stored_procedure_name: &'c dyn StoredProcedureName,
     ) -> StoredProcedureClient<'c, CUB>;
     fn list_stored_procedures(&self) -> requests::ListStoredProceduresBuilder<'_, CUB>;
-    fn with_document<'c>(&'c self, document_name: &'c dyn DocumentName) -> DocumentClient<'c, CUB>;
+    fn with_document<'c>(
+        &'c self,
+        document_name: &'c dyn DocumentName,
+        partition_keys: &'c PartitionKeys,
+    ) -> DocumentClient<'c, CUB>;
 }
 
 pub(crate) trait CollectionBuilderTrait<'a, CUB>: CollectionTrait<'a, CUB>
@@ -599,8 +629,14 @@ where
     fn database_name(&self) -> &'a dyn DatabaseName;
     fn collection_name(&self) -> &'a dyn CollectionName;
     fn document_name(&self) -> &'a dyn DocumentName;
-    fn get_document(&self) -> requests::GetDocumentBuilder<'_, '_, CUB, No>;
-    fn delete_document(&self) -> requests::DeleteDocumentBuilder<'_, CUB, No>;
+    fn partition_keys(&self) -> &'a PartitionKeys;
+    fn get_document(&self) -> requests::GetDocumentBuilder<'_, '_, CUB>;
+    fn delete_document(&self) -> requests::DeleteDocumentBuilder<'_, CUB>;
+    fn list_attachments(&self) -> requests::ListAttachmentsBuilder<'_, '_, CUB>;
+    fn with_attachment(
+        &'a self,
+        attachment_name: &'a dyn AttachmentName,
+    ) -> AttachmentClient<'_, CUB>;
 }
 
 pub(crate) trait DocumentBuilderTrait<'a, CUB>: DocumentTrait<'a, CUB>
@@ -625,6 +661,30 @@ where
 
 pub(crate) trait StoredProcedureBuilderTrait<'a, CUB>:
     StoredProcedureTrait<'a, CUB>
+where
+    CUB: CosmosUriBuilder,
+{
+    fn prepare_request(&self, method: hyper::Method) -> http::request::Builder;
+}
+
+pub trait AttachmentTrait<'a, CUB>
+where
+    CUB: CosmosUriBuilder,
+{
+    fn database_name(&self) -> &'a dyn DatabaseName;
+    fn collection_name(&self) -> &'a dyn CollectionName;
+    fn document_name(&self) -> &'a dyn DocumentName;
+    fn attachment_name(&self) -> &'a dyn AttachmentName;
+    fn create_slug(&self) -> requests::CreateSlugAttachmentBuilder<'_, '_, CUB, No, No>;
+    fn replace_slug(&self) -> requests::ReplaceSlugAttachmentBuilder<'_, '_, CUB, No, No>;
+    fn create_reference(&self) -> requests::CreateReferenceAttachmentBuilder<'_, '_, CUB, No, No>;
+    fn replace_reference(&self)
+        -> requests::ReplaceReferenceAttachmentBuilder<'_, '_, CUB, No, No>;
+    fn delete(&self) -> requests::DeleteAttachmentBuilder<'_, '_, CUB>;
+    fn get(&self) -> requests::GetAttachmentBuilder<'_, '_, CUB>;
+}
+
+pub(crate) trait AttachmentBuilderTrait<'a, CUB>: AttachmentTrait<'a, CUB>
 where
     CUB: CosmosUriBuilder,
 {

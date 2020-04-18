@@ -75,7 +75,7 @@ where
 {
     #[inline]
     fn consistency_level(&self) -> Option<ConsistencyLevel<'a>> {
-        self.consistency_level
+        self.consistency_level.clone()
     }
 }
 

@@ -1,3 +1,4 @@
+mod attachment_client;
 mod client;
 mod collection_client;
 mod database_client;
@@ -5,6 +6,7 @@ mod document_client;
 mod permission_client;
 mod stored_procedure_client;
 mod user_client;
+pub use attachment_client::AttachmentClient;
 pub use client::*;
 pub use collection_client::CollectionClient;
 pub use database_client::DatabaseClient;
