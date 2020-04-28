@@ -34,3 +34,5 @@ mod renew_blob_lease_builder;
 pub use self::renew_blob_lease_builder::RenewBlobLeaseBuilder;
 mod update_page_builder;
 pub use self::update_page_builder::UpdatePageBuilder;
+mod copy_blob_from_url_builder;
+pub use copy_blob_from_url_builder::CopyBlobFromUrlBuilder;

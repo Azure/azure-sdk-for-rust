@@ -42,6 +42,7 @@ pub trait Blob {
     fn stream_list_blobs<'a>(&'a self) -> blob::ListBlobStreamBuilder<'a, No>;
     fn stream_blob<'a>(&'a self) -> blob::BlobStreamBuilder<'a, No, No, No>;
     fn generate_signed_blob_url<'a>(&'a self) -> blob::SignedUrlBuilder<'a, No, No, No>;
+    fn copy_blob_from_url<'a>(&'a self) -> blob::requests::CopyBlobFromUrlBuilder<'a, No, No, No>;
 }
 
 pub trait Container {
@@ -149,6 +150,10 @@ impl Blob for Client {
     }
     fn generate_signed_blob_url<'a>(&'a self) -> blob::SignedUrlBuilder<'a, No, No, No> {
         blob::SignedUrlBuilder::new(self)
+    }
+
+    fn copy_blob_from_url<'a>(&'a self) -> blob::requests::CopyBlobFromUrlBuilder<'a, No, No, No> {
+        blob::requests::CopyBlobFromUrlBuilder::new(self)
     }
 }
 

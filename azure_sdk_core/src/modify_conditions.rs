@@ -3,7 +3,7 @@ use chrono::{DateTime, Utc};
 use http::request::Builder;
 use hyper::header::{IF_MATCH, IF_MODIFIED_SINCE, IF_NONE_MATCH, IF_UNMODIFIED_SINCE};
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum IfSinceCondition {
     Modified(DateTime<Utc>),
     Unmodified(DateTime<Utc>),

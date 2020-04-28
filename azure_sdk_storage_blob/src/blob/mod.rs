@@ -28,7 +28,7 @@ use chrono::{DateTime, Utc};
 use hyper::header;
 use std::borrow::Borrow;
 use std::collections::HashMap;
-use std::{str::FromStr};
+use std::str::FromStr;
 use url::form_urlencoded;
 use xml::Element;
 use xml::Xml::ElementNode;
@@ -37,9 +37,7 @@ use azure_sdk_core::{
     errors::{AzureError, TraversingError},
     incompletevector::IncompleteVector,
     lease::{LeaseDuration, LeaseState, LeaseStatus},
-    parsing::{
-        cast_must, cast_optional, from_azure_time, inner_text, traverse,
-    },
+    parsing::{cast_must, cast_optional, from_azure_time, inner_text, traverse},
     range::Range,
     util::HeaderMapExt,
     BlobNameRequired, ContainerNameRequired,
@@ -447,4 +445,15 @@ where
             form_urlencoded::byte_serialize(t.blob_name().as_bytes()).collect::<String>(),
         ),
     }
+}
+
+pub(crate) fn copy_status_from_headers(
+    headers: &http::HeaderMap,
+) -> Result<CopyStatus, AzureError> {
+    let val = headers
+        .get_as_str(azure_sdk_core::headers::COPY_STATUS)
+        .ok_or_else(|| {
+            AzureError::HeaderNotFound(azure_sdk_core::headers::COPY_STATUS.to_owned())
+        })?;
+    Ok(CopyStatus::from_str(val)?)
 }

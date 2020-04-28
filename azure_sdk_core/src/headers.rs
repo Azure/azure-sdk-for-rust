@@ -1,3 +1,4 @@
+pub const SERVER: &str = "server"; // -> [String]
 pub const RANGE_GET_CONTENT_MD5: &str = "x-ms-range-get-content-md5"; //=> [bool] }
 pub const LEASE_ID: &str = "x-ms-lease-id"; //=> [LeaseId] }
 pub const CLIENT_REQUEST_ID: &str = "x-ms-client-request-id"; //=> [String] }
@@ -21,6 +22,7 @@ pub const COPY_PROGRESS: &str = "x-ms-copy-progress";
 pub const COPY_SOURCE: &str = "x-ms-copy-source";
 pub const COPY_STATUS: &str = "x-ms-copy-status";
 pub const CONTENT_MD5: &str = "Content-MD5"; //=> [String] }
+pub const SOURCE_CONTENT_MD5: &str = "x-ms-source-content-md5"; //=> [String] }
 pub const SERVER_ENCRYPTED: &str = "x-ms-server-encrypted";
 pub const BLOB_TYPE: &str = "x-ms-blob-type";
 pub const BLOB_CONTENT_LENGTH: &str = "x-ms-blob-content-length";
@@ -41,3 +43,5 @@ pub const CONTENT_DISPOSITION: &str = "x-ms-blob-content-disposition";
 pub const ACTIVITY_ID: &str = "x-ms-activity-id";
 pub const HEADER_CONTINUATION: &str = "x-ms-continuation";
 pub const SESSION_TOKEN: &str = "x-ms-session-token";
+pub const REQUIRES_SYNC: &str = "x-ms-requires-sync";
+pub const VERSION: &str = "x-ms-version";

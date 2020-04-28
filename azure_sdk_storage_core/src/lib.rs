@@ -9,10 +9,14 @@ pub use self::rest_client::{
     ServiceType,
 };
 use crate::client::Client;
+use azure_sdk_core::errors::AzureError;
+use azure_sdk_core::headers::COPY_ID;
+use azure_sdk_core::util::HeaderMapExt;
 mod into_azure_path;
 pub mod prelude;
 pub use self::into_azure_path::IntoAzurePath;
 mod blob_sas_builder;
+use http::HeaderMap;
 mod client_endpoint;
 mod container_sas_builder;
 mod hyper_client_endpoint;
@@ -40,4 +44,13 @@ pub trait SharedAccessSignatureRequired<'a> {
 pub struct IPRange {
     pub start: std::net::IpAddr,
     pub end: std::net::IpAddr,
+}
+
+pub type CopyId = uuid::Uuid;
+
+pub fn copy_id_from_headers(headers: &HeaderMap) -> Result<CopyId, AzureError> {
+    let copy_id = headers
+        .get_as_str(COPY_ID)
+        .ok_or_else(|| AzureError::HeaderNotFound(COPY_ID.to_owned()))?;
+    Ok(uuid::Uuid::parse_str(copy_id)?)
 }

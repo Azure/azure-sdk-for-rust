@@ -28,3 +28,5 @@ mod update_page_response;
 pub use self::update_page_response::UpdatePageResponse;
 mod break_blob_lease_response;
 pub use self::break_blob_lease_response::BreakBlobLeaseResponse;
+mod copy_blob_from_url_response;
+pub use copy_blob_from_url_response::CopyBlobFromUrlResponse;

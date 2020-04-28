@@ -188,7 +188,7 @@ where
 {
     #[inline]
     fn if_since_condition(&self) -> Option<IfSinceCondition> {
-        self.if_since_condition.clone()
+        self.if_since_condition
     }
 }
 

@@ -1,5 +1,5 @@
 pub use crate::ba512_range::BA512Range;
-pub use crate::modify_conditions::{IfMatchCondition, SequenceNumberCondition};
+pub use crate::modify_conditions::{IfMatchCondition, IfSinceCondition, SequenceNumberCondition};
 pub use crate::range::Range;
 pub use crate::{
     AccessTierOption, AccessTierSupport, ActivityIdOption, ActivityIdSupport, AppendPositionOption,
@@ -16,13 +16,15 @@ pub use crate::{
     IncludeCopyOption, IncludeCopySupport, IncludeDeletedOption, IncludeDeletedSupport,
     IncludeListOptions, IncludeMetadataOption, IncludeMetadataSupport, IncludeSnapshotsOption,
     IncludeSnapshotsSupport, IncludeUncommittedBlobsOption, IncludeUncommittedBlobsSupport,
-    LeaseBreakPeriodOption, LeaseBreakPeriodRequired, LeaseBreakPeriodSupport,
-    LeaseDurationRequired, LeaseDurationSupport, LeaseIdOption, LeaseIdRequired, LeaseIdSupport,
-    MaxResultsOption, MaxResultsSupport, MetadataOption, MetadataSupport, NextMarkerOption,
-    NextMarkerSupport, PageBlobLengthRequired, PageBlobLengthSupport, PrefixOption, PrefixSupport,
-    ProposedLeaseIdOption, ProposedLeaseIdRequired, ProposedLeaseIdSupport, RangeOption,
-    RangeSupport, SequenceNumberConditionOption, SequenceNumberConditionSupport,
-    SequenceNumberOption, SequenceNumberSupport, SnapshotOption, SnapshotRequired, SnapshotSupport,
+    IsSynchronousOption, IsSynchronousSupport, LeaseBreakPeriodOption, LeaseBreakPeriodRequired,
+    LeaseBreakPeriodSupport, LeaseDurationRequired, LeaseDurationSupport, LeaseIdOption,
+    LeaseIdRequired, LeaseIdSupport, MaxResultsOption, MaxResultsSupport, MetadataOption,
+    MetadataSupport, NextMarkerOption, NextMarkerSupport, PageBlobLengthRequired,
+    PageBlobLengthSupport, PrefixOption, PrefixSupport, ProposedLeaseIdOption,
+    ProposedLeaseIdRequired, ProposedLeaseIdSupport, RangeOption, RangeSupport,
+    SequenceNumberConditionOption, SequenceNumberConditionSupport, SequenceNumberOption,
+    SequenceNumberSupport, SnapshotOption, SnapshotRequired, SnapshotSupport,
+    SourceContentMD5Option, SourceContentMD5Support, SourceUrlRequired, SourceUrlSupport,
     StoredAccessPolicy, StoredAccessPolicyList, TimeoutOption, TimeoutSupport, UserAgentOption,
     UserAgentSupport,
 };
