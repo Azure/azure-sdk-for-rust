@@ -547,7 +547,7 @@ pub trait IncludeListOptions:
             s.push_str("deleted");
         }
 
-        if s.is_empty() {
+        if !s.is_empty() {
             Some(format!("include={}", s))
         } else {
             None
