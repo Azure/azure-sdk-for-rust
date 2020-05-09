@@ -6,8 +6,8 @@ readme        = "README.md"
 authors       = ["Francesco Cogno <francesco.cogno@outlook.com>", "gzp-crey", "Max Gortman <mgortman@microsoft.com>", "Dong Liu <doliu@microsoft.com>"]
 license       = "Apache-2.0"
 repository    = "https://github.com/MindFlavor/AzureSDKForRust"
-documentation = "http://mindflavor.github.io/AzureSDKForRust/azure_sdk_for_rust/index.html"
-homepage      = "https://github.com/MindFlavor/AzureSDKForRust"
+documentation = "https://docs.rs/azure_sdk_storage_table/"
+homepage      = "https://mindflavor.github.io/AzureSDKForRust/"
 
 keywords      = ["sdk", "azure", "rest", "iot", "cloud"]
 categories    = ["api-bindings"]
