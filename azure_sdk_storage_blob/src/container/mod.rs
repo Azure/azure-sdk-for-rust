@@ -2,7 +2,7 @@ pub mod requests;
 pub mod responses;
 
 use azure_sdk_core::{
-    errors::{AzureError},
+    errors::AzureError,
     headers::{
         BLOB_PUBLIC_ACCESS, HAS_IMMUTABILITY_POLICY, HAS_LEGAL_HOLD, LEASE_DURATION, LEASE_STATE,
         LEASE_STATUS, META_PREFIX,
