@@ -13,6 +13,7 @@ pub enum ResourceQuota {
     Permissions(u64),
     Triggers(u64),
     Functions(u64),
+    ClientEncryptionKeys(u64),
 }
 
 const DATABASES: &str = "databases=";
@@ -26,6 +27,7 @@ const USERS: &str = "users=";
 const PERMISSIONS: &str = "permissions=";
 const TRIGGERS: &str = "triggers=";
 const FUNCTIONS: &str = "functions=";
+const CLIENT_ENCRYPTION_KEYS: &str = "clientEncryptionKeys=";
 
 pub(crate) fn resource_quotas_from_str(s: &str) -> Result<Vec<ResourceQuota>, failure::Error> {
     debug!("resource_quotas_from_str(\"{}\") called", s);
@@ -77,6 +79,10 @@ pub(crate) fn resource_quotas_from_str(s: &str) -> Result<Vec<ResourceQuota>, fa
             v.push(ResourceQuota::Functions(str::parse(
                 &token[FUNCTIONS.len()..],
             )?));
+        } else if token.starts_with(CLIENT_ENCRYPTION_KEYS) {
+            v.push(ResourceQuota::ClientEncryptionKeys(str::parse(
+                &token[CLIENT_ENCRYPTION_KEYS.len()..],
+            )?));
         } else {
             return Err(TokenParsingError::UnsupportedToken {
                 token: token.to_string(),
@@ -101,7 +107,7 @@ mod tests {
         assert_eq!(resource_quota, vec![ResourceQuota::StoredProcedures(25)]);
 
         let resource_quota = resource_quotas_from_str(
-            "databases=100;collections=5000;users=500000;permissions=2000000;",
+            "databases=100;collections=5000;users=500000;permissions=2000000;clientEncryptionKeys=13;",
         )
         .unwrap();
 
@@ -111,7 +117,8 @@ mod tests {
                 ResourceQuota::Databases(100),
                 ResourceQuota::Collections(5000),
                 ResourceQuota::Users(500000),
-                ResourceQuota::Permissions(2000000)
+                ResourceQuota::Permissions(2000000),
+                ResourceQuota::ClientEncryptionKeys(13)
             ]
         );
 
@@ -141,5 +148,8 @@ mod tests {
 
         let resource_quota = resource_quotas_from_str("functions=26;").unwrap();
         assert_eq!(resource_quota, vec![ResourceQuota::Functions(26)]);
+
+        let resource_quota = resource_quotas_from_str("clientEncryptionKeys=13;").unwrap();
+        assert_eq!(resource_quota, vec![ResourceQuota::ClientEncryptionKeys(13)]);
     }
 }
