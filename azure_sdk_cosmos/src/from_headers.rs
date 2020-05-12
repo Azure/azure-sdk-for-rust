@@ -195,11 +195,11 @@ pub(crate) fn transport_request_id_from_headers(headers: &HeaderMap) -> Result<u
 }
 
 pub(crate) fn global_committed_lsn_from_headers(headers: &HeaderMap) -> Result<u64, AzureError> {
-    Ok(headers
+    let s = headers
         .get(HEADER_GLOBAL_COMMITTED_LSN)
         .ok_or_else(|| AzureError::HeaderNotFound(HEADER_GLOBAL_COMMITTED_LSN.to_owned()))?
-        .to_str()?
-        .parse()?)
+        .to_str()?;
+    Ok(if s == "-1" { 0 } else { s.parse()? })
 }
 
 pub(crate) fn cosmos_llsn_from_headers(headers: &HeaderMap) -> Result<u64, AzureError> {
