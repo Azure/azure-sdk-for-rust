@@ -1,4 +1,5 @@
 use azure_sdk_service_bus::prelude::*;
+use chrono::Duration;
 use std::error::Error;
 
 async fn send(
@@ -16,7 +17,7 @@ async fn send(
     )?;
 
     println!("before {:?} message send!", s);
-    match client.send_event(&s, time::Duration::days(1)).await {
+    match client.send_event(&s, Duration::days(1)).await {
         Ok(_) => println!("{:?} message sent!", s),
 
         Err(error) => println!("{:?} failed to send message", error),

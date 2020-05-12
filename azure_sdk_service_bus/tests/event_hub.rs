@@ -4,7 +4,7 @@ extern crate log;
 
 use azure_sdk_core::errors::AzureError;
 use azure_sdk_service_bus::event_hub::Client;
-use time::Duration;
+use chrono::Duration;
 
 #[tokio::test]
 async fn send_events_to_event_hub() {

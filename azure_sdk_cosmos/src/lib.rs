@@ -1,3 +1,4 @@
+#![warn(unused_extern_crates)]
 #![recursion_limit = "128"]
 #[macro_use]
 extern crate log;

@@ -1,6 +1,6 @@
 [package]
 name               = "azure_sdk_auth_aad"
-version            = "0.42.2"
+version            = "0.42.3"
 description        = "Rust wrappers around Microsoft Azure REST APIs - Azure OAuth2 helper crate"
 readme             = "README.md"
 authors            = ["Francesco Cogno <francesco.cogno@outlook.com>"]
@@ -15,14 +15,11 @@ categories         = ["api-bindings"]
 edition            = "2018"
 
 [dependencies]
-azure_sdk_core       = { path = "../azure_sdk_core", version = "0.43.1" }
+azure_sdk_core       = { path = "../azure_sdk_core", version = "0.43.2" }
 oauth2               = { version = "3.0.0-alpha.9", features = ["reqwest-010", "futures-03"], default-features = false}
-base64               = "0.11"
 url                  = "2.1"
-rand                 = "0.7"
 failure              = "0.1"
 futures              = "0.3"
-http                 = "0.2"
 serde                = "1.0"
 serde_derive         = "1.0"
 chrono               = "0.4"

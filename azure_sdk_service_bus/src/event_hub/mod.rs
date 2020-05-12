@@ -1,11 +1,11 @@
 use azure_sdk_core::errors::{
     check_status_extract_body, extract_location_status_and_body, AzureError,
 };
+use chrono::Duration;
 use hyper::{self, header, Body, StatusCode};
 use hyper_rustls::HttpsConnector;
 use ring::hmac;
 use std::ops::Add;
-use time::Duration;
 use url::{form_urlencoded, Url};
 
 mod client;

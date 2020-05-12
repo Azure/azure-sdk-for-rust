@@ -3,9 +3,9 @@ use crate::event_hub::{
     unlock_message, PeekLockResponse,
 };
 use azure_sdk_core::errors::AzureError;
+use chrono::Duration;
 use hyper_rustls::HttpsConnector;
 use ring::hmac::Key;
-use time::Duration;
 
 type HttpClient = hyper::Client<HttpsConnector<hyper::client::HttpConnector>>;
 

@@ -589,10 +589,6 @@ mod test {
         }
     }
 
-    extern crate chrono;
-    extern crate hyper;
-    extern crate url;
-
     #[test]
     fn test_canonicalize_header() {
         use super::*;
