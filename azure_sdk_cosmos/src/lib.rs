@@ -20,6 +20,7 @@ pub(crate) mod from_headers;
 mod headers;
 mod indexing_directive;
 pub mod offer;
+mod partition_key_range;
 mod partition_keys;
 mod permission;
 mod permission_resource;
@@ -43,6 +44,7 @@ pub use self::document::{Document, DocumentName};
 pub use self::document_attributes::DocumentAttributes;
 pub use self::indexing_directive::IndexingDirective;
 pub use self::offer::Offer;
+pub use self::partition_key_range::PartitionKeyRange;
 pub use self::permission::{Permission, PermissionMode, PermissionName};
 pub use self::permission_resource::PermissionResource;
 pub use self::permission_token::PermissionToken;
@@ -609,6 +611,7 @@ where
         stored_procedure_name: &'c dyn StoredProcedureName,
     ) -> StoredProcedureClient<'c, CUB>;
     fn list_stored_procedures(&self) -> requests::ListStoredProceduresBuilder<'_, CUB>;
+    fn get_partition_key_ranges(&self) -> requests::GetPartitionKeyRangesBuilder<'_, '_, CUB>;
     fn with_document<'c>(
         &'c self,
         document_name: &'c dyn DocumentName,

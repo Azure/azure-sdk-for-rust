@@ -101,6 +101,10 @@ where
         requests::ListStoredProceduresBuilder::new(self)
     }
 
+    fn get_partition_key_ranges(&self) -> requests::GetPartitionKeyRangesBuilder<'_, '_, CUB> {
+        requests::GetPartitionKeyRangesBuilder::new(self)
+    }
+
     fn with_document<'c>(
         &'c self,
         document_name: &'c dyn DocumentName,
