@@ -435,3 +435,46 @@ pub async fn check_status_extract_body_2(
         Ok(s)
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    fn send_fn<T>(_t: T)
+    where
+        T: Send,
+    {
+    }
+
+    fn sync_fn<T>(_t: T)
+    where
+        T: Sync,
+    {
+    }
+
+    #[test]
+    fn test_azure_error_send() {
+        let e = AzureError::HeaderNotFound("Content-Length".to_owned());
+        send_fn(e);
+    }
+
+    #[test]
+    fn test_azure_error_sync() {
+        let e = AzureError::HeaderNotFound("Content-Length".to_owned());
+        sync_fn(e);
+    }
+
+    // This does not compile
+    //#[test]
+    //fn test_not_send() {
+    //    let a = std::rc::Rc::new(100);
+    //    send_fn(a);
+    //}
+
+    // This does not compile
+    //#[test]
+    //fn test_not_sync() {
+    //    let a = std::cell::Cell::new(500);
+    //    sync_fn(a);
+    //}
+}
