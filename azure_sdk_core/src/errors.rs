@@ -452,16 +452,18 @@ mod test {
     {
     }
 
+    fn error_generator() -> Result<(), AzureError> {
+        Ok(())
+    }
+
     #[test]
     fn test_azure_error_send() {
-        let e = AzureError::HeaderNotFound("Content-Length".to_owned());
-        send_fn(e);
+        error_generator().map_err(send_fn).unwrap();
     }
 
     #[test]
     fn test_azure_error_sync() {
-        let e = AzureError::HeaderNotFound("Content-Length".to_owned());
-        sync_fn(e);
+        error_generator().map_err(sync_fn).unwrap();
     }
 
     // This does not compile
