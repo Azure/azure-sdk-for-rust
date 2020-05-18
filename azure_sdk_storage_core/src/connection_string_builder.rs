@@ -35,70 +35,70 @@ impl<'a> ConnectionStringBuilder<'a> {
             kv_pairs.push(format!(
                 "{}={}",
                 ENDPOINT_SUFFIX_KEY_NAME,
-                endpoint_suffix.to_string()
+                endpoint_suffix
             ));
         }
         if let Some(default_endpoints_protocol) = self.0.default_endpoints_protocol.as_ref() {
             kv_pairs.push(format!(
                 "{}={}",
                 DEFAULT_ENDPOINTS_PROTOCOL_KEY_NAME,
-                default_endpoints_protocol.to_string()
+                default_endpoints_protocol
             ));
         }
         if let Some(blob_endpoint) = self.0.blob_endpoint {
             kv_pairs.push(format!(
                 "{}={}",
                 BLOB_ENDPOINT_KEY_NAME,
-                blob_endpoint.to_string()
+                blob_endpoint
             ));
         }
         if let Some(blob_secondary_endpoint) = self.0.blob_secondary_endpoint {
             kv_pairs.push(format!(
                 "{}={}",
                 BLOB_SECONDARY_ENDPOINT_KEY_NAME,
-                blob_secondary_endpoint.to_string()
+                blob_secondary_endpoint
             ));
         }
         if let Some(table_endpoint) = self.0.table_endpoint {
             kv_pairs.push(format!(
                 "{}={}",
                 TABLE_ENDPOINT_KEY_NAME,
-                table_endpoint.to_string()
+                table_endpoint
             ));
         }
         if let Some(table_secondary_endpoint) = self.0.table_secondary_endpoint {
             kv_pairs.push(format!(
                 "{}={}",
                 TABLE_SECONDARY_ENDPOINT_KEY_NAME,
-                table_secondary_endpoint.to_string()
+                table_secondary_endpoint
             ));
         }
         if let Some(queue_endpoint) = self.0.queue_endpoint {
             kv_pairs.push(format!(
                 "{}={}",
                 QUEUE_ENDPOINT_KEY_NAME,
-                queue_endpoint.to_string()
+                queue_endpoint
             ));
         }
         if let Some(queue_secondary_endpoint) = self.0.queue_secondary_endpoint {
             kv_pairs.push(format!(
                 "{}={}",
                 QUEUE_SECONDARY_ENDPOINT_KEY_NAME,
-                queue_secondary_endpoint.to_string()
+                queue_secondary_endpoint
             ));
         }
         if let Some(file_endpoint) = self.0.file_endpoint {
             kv_pairs.push(format!(
                 "{}={}",
                 FILE_ENDPOINT_KEY_NAME,
-                file_endpoint.to_string()
+                file_endpoint
             ));
         }
         if let Some(file_secondary_endpoint) = self.0.file_secondary_endpoint {
             kv_pairs.push(format!(
                 "{}={}",
                 FILE_SECONDARY_ENDPOINT_KEY_NAME,
-                file_secondary_endpoint.to_string()
+                file_secondary_endpoint
             ));
         }
 
