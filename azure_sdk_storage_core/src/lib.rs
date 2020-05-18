@@ -2,6 +2,8 @@
 
 #[macro_use]
 extern crate log;
+#[macro_use]
+extern crate quick_error;
 pub mod client;
 mod rest_client;
 pub use self::rest_client::{
@@ -17,6 +19,8 @@ pub mod prelude;
 pub use self::into_azure_path::IntoAzurePath;
 mod blob_sas_builder;
 use http::HeaderMap;
+mod connection_string;
+pub use self::connection_string::{ConnectionString, EndpointProtocol};
 mod client_endpoint;
 mod container_sas_builder;
 mod hyper_client_endpoint;

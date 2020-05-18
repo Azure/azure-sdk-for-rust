@@ -1,7 +1,8 @@
 use azure_sdk_core::errors::{check_status_extract_body, AzureError};
 use azure_sdk_storage_core::client::Client;
 use azure_sdk_storage_core::{
-    get_default_json_mime, get_json_mime_fullmetadata, get_json_mime_nometadata, ServiceType,
+    get_default_json_mime, get_json_mime_fullmetadata, get_json_mime_nometadata, ConnectionString,
+    ServiceType,
 };
 use hyper::{
     client::ResponseFuture,
@@ -38,6 +39,42 @@ impl TableClient {
         Ok(TableClient {
             client: Client::azure_sas(account, sas_token)?,
         })
+    }
+
+    pub fn from_connection_string(connection_string: &str) -> Result<Self, AzureError> {
+        match ConnectionString::new(connection_string)? {
+            ConnectionString {
+                account_name: Some(account),
+                account_key: Some(_),
+                sas: Some(sas_token),
+                ..
+            } => {
+                log::warn!("Both account key and SAS defined in connection string. Using only the provided SAS.");
+                Ok(TableClient {
+                    client: Client::azure_sas(account, sas_token)?,
+                })
+            }
+            ConnectionString {
+                account_name: Some(account),
+                sas: Some(sas_token),
+                ..
+            } => Ok(TableClient {
+                client: Client::azure_sas(account, sas_token)?,
+            }),
+            ConnectionString {
+                account_name: Some(account),
+                account_key: Some(key),
+                ..
+            } => Ok(TableClient {
+                client: Client::azure(account, key)?,
+            }),
+            _ => {
+                return Err(AzureError::GenericErrorWithText(
+                    "Could not create an Azure Table client from the provided connection string. Please validate that you have specified the account name and means of authentication (key, SAS, etc.)."
+                        .to_owned(),
+                ))
+            }
+        }
     }
 
     pub async fn list_tables(&self) -> Result<Vec<String>, AzureError> {

@@ -1,5 +1,5 @@
 use crate::rest_client::{perform_request, ServiceType};
-use crate::{ClientEndpoint, HyperClientEndpoint};
+use crate::{ClientEndpoint, ConnectionString, HyperClientEndpoint};
 use azure_sdk_core::errors::AzureError;
 use hyper::{self, Method};
 use hyper_rustls::HttpsConnector;
@@ -22,15 +22,7 @@ impl Client {
 
     pub fn azure_sas(account: &str, sas_token: &str) -> Result<Client, AzureError> {
         let client = hyper::Client::builder().build(HttpsConnector::new());
-        let params: Vec<(String, String)> = Url::options()
-            // Any base url will do: we just need to parse the SAS token
-            // to get its query pairs.
-            .base_url(Some(&Url::parse("https://blob.core.windows.net").unwrap()))
-            .parse(sas_token)
-            .unwrap()
-            .query_pairs()
-            .map(|p| (String::from(p.0), String::from(p.1)))
-            .collect();
+        let params = Client::get_sas_token_parms(sas_token);
 
         Ok(Client {
             account: account.to_owned(),
@@ -53,6 +45,59 @@ impl Client {
             blob_uri: format!("https://{}.blob.core.windows.net", account),
             table_uri: format!("https://{}.table.core.windows.net", account),
         })
+    }
+
+    pub fn from_connection_string(connection_string: &str) -> Result<Self, AzureError> {
+        let client = hyper::Client::builder().build(HttpsConnector::new());
+
+        match ConnectionString::new(connection_string)? {
+            ConnectionString {
+                account_name: Some(account),
+                account_key: Some(_),
+                sas: Some(sas_token),
+                ..
+            } => {
+                log::warn!("Both account key and SAS defined in connection string. Using only the provided SAS.");
+                Ok(Client {
+                    account: account.to_owned(),
+                    key: String::new(),
+                    sas_token: Some(Client::get_sas_token_parms(sas_token)),
+                    hc: client,
+                    blob_uri: format!("https://{}.blob.core.windows.net", account),
+                    table_uri: format!("https://{}.table.core.windows.net", account), 
+                })
+            }
+            ConnectionString {
+                account_name: Some(account),
+                sas: Some(sas_token),
+                ..
+            } => Ok(Client {
+                account: account.to_owned(),
+                key: String::new(),
+                sas_token: Some(Client::get_sas_token_parms(sas_token)),
+                hc: client,
+                blob_uri: format!("https://{}.blob.core.windows.net", account),
+                table_uri: format!("https://{}.table.core.windows.net", account), 
+            }),
+            ConnectionString {
+                account_name: Some(account),
+                account_key: Some(key),
+                ..
+            } => Ok(Client {
+                account: account.to_owned(),
+                key: key.to_owned(),
+                sas_token: None,
+                hc: client,
+                blob_uri: format!("https://{}.blob.core.windows.net", account),
+                table_uri: format!("https://{}.table.core.windows.net", account), 
+            }),
+            _ => {
+                return Err(AzureError::GenericErrorWithText(
+                    "Could not create an Azure Table client from the provided connection string. Please validate that you have specified the account name and means of authentication (key, SAS, etc.)."
+                        .to_owned(),
+                ))
+            }
+        }
     }
 
     pub fn emulator(blob_storage_url: &Url, table_storage_url: &Url) -> Result<Client, AzureError> {
@@ -88,6 +133,18 @@ impl Client {
             Some(token) => Url::parse_with_params(uri, token).unwrap().to_string(),
             None => String::from(uri),
         }
+    }
+
+    fn get_sas_token_parms(sas_token: &str) -> Vec<(String, String)> {
+        Url::options()
+            // Any base url will do: we just need to parse the SAS token
+            // to get its query pairs.
+            .base_url(Some(&Url::parse("https://blob.core.windows.net").unwrap()))
+            .parse(sas_token)
+            .unwrap()
+            .query_pairs()
+            .map(|p| (String::from(p.0), String::from(p.1)))
+            .collect()
     }
 
     pub fn perform_request<F>(
