@@ -93,7 +93,7 @@ impl Client {
             }),
             _ => {
                 return Err(AzureError::GenericErrorWithText(
-                    "Could not create an Azure Table client from the provided connection string. Please validate that you have specified the account name and means of authentication (key, SAS, etc.)."
+                    "Could not create a storage client from the provided connection string. Please validate that you have specified the account name and means of authentication (key, SAS, etc.)."
                         .to_owned(),
                 ))
             }
