@@ -9,10 +9,9 @@ use azure_sdk_cosmos::Offer;
 use azure_sdk_cosmos::Query;
 mod setup;
 
-// the id will be specified in the azure_sdk_cosmos::Document struct
-// ctor.
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 struct MyDocument {
+    id: String,
     hello: u32,
 }
 
@@ -54,11 +53,14 @@ async fn create_and_delete_document() {
     let collection_client = database_client.with_collection(&COLLECTION_NAME);
 
     // create a new document
-    let document_data = Document::new(DOCUMENT_NAME.to_string(), MyDocument { hello: 42 });
+    let document_data = Document::new(MyDocument {
+        id: DOCUMENT_NAME.to_owned(),
+        hello: 42,
+    });
     collection_client
         .create_document()
         .with_document(&document_data)
-        .with_partition_keys(&(&document_data.document_attributes.id as &str).into())
+        .with_partition_keys(&DOCUMENT_NAME.into())
         .execute()
         .await
         .unwrap();
@@ -138,10 +140,13 @@ async fn query_documents() {
     let collection_client = database_client.with_collection(&COLLECTION_NAME);
 
     // create a new document
-    let document_data = Document::new(DOCUMENT_NAME.to_string(), MyDocument { hello: 42 });
+    let document_data = Document::new(MyDocument {
+        id: DOCUMENT_NAME.to_owned(),
+        hello: 42,
+    });
     collection_client
         .create_document()
-        .with_partition_keys(&(&document_data.document_attributes.id as &str).into())
+        .with_partition_keys(&(&document_data.document.id).into())
         .with_document(&document_data)
         .execute()
         .await
@@ -162,6 +167,8 @@ async fn query_documents() {
         .with_query_cross_partition(true)
         .execute::<MyDocument>()
         .await
+        .unwrap()
+        .into_documents()
         .unwrap()
         .results;
 
@@ -209,11 +216,14 @@ async fn replace_document() {
     let collection_client = database_client.with_collection(&COLLECTION_NAME);
 
     // create a new document
-    let mut document_data = Document::new(DOCUMENT_NAME.to_string(), MyDocument { hello: 42 });
+    let mut document_data = Document::new(MyDocument {
+        id: DOCUMENT_NAME.to_owned(),
+        hello: 42,
+    });
     collection_client
         .create_document()
         .with_document(&document_data)
-        .with_partition_keys(&(&document_data.document_attributes.id as &str).into())
+        .with_partition_keys(&(&document_data.document.id).into())
         .execute()
         .await
         .unwrap();
@@ -230,7 +240,8 @@ async fn replace_document() {
     collection_client
         .replace_document()
         .with_document(&document_data)
-        .with_partition_keys(&(&document_data.document_attributes.id as &str).into())
+        .with_document_id(&document_data.document.id)
+        .with_partition_keys(&(&document_data.document.id).into())
         .with_consistency_level(ConsistencyLevel::from(&documents))
         .with_if_match_condition(IfMatchCondition::Match(
             &documents.documents[0].document_attributes.etag,

@@ -10,6 +10,7 @@ use std::error::Error;
 
 #[derive(Serialize, Deserialize, Debug)]
 struct MySampleStruct<'a> {
+    id: Cow<'a, str>,
     a_string: Cow<'a, str>,
     a_number: u64,
     a_timestamp: i64,
@@ -126,14 +127,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // Now that we have a database and a collection we can insert
     // data in them. Let's create a Document. The only constraint
     // is that we need an id and an arbitrary, Serializable type.
-    let doc = Document::new(
-        "unique_id100".to_owned(),
-        MySampleStruct {
-            a_string: Cow::Borrowed("Something here"),
-            a_number: 100,
-            a_timestamp: chrono::Utc::now().timestamp(),
-        },
-    );
+    let doc = Document::new(MySampleStruct {
+        id: Cow::Owned("unique_id100".to_owned()),
+        a_string: Cow::Borrowed("Something here"),
+        a_number: 100,
+        a_timestamp: chrono::Utc::now().timestamp(),
+    });
 
     // Now we store the struct in Azure Cosmos DB.
     // Notice how easy it is! :)
@@ -147,7 +146,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let create_document_response = collection_client
         .create_document()
         .with_document(&doc)
-        .with_partition_keys(&(&doc.document_attributes.id).into())
+        .with_partition_keys(&(&doc.document.id).into())
         .execute()
         .await?;
     println!(
@@ -169,7 +168,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     // Now we get the same document by id.
     let get_document_response = collection_client
-        .with_document(&doc, &(&doc.document_attributes.id).into())
+        .with_document(&doc.document.id, &(&doc.document.id).into())
         .get_document()
         .execute::<MySampleStruct>()
         .await?;
@@ -188,7 +187,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
         let replace_document_response = collection_client
             .replace_document()
             .with_document(&doc)
-            .with_partition_keys(&(&doc.document_attributes.id).into())
+            .with_document_id(&doc.document.id)
+            .with_partition_keys(&(&doc.document.id).into())
             .with_if_match_condition(IfMatchCondition::Match(&document.etag))
             .execute()
             .await?;

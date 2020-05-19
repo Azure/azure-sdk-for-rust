@@ -46,6 +46,14 @@
 			"trait_set": "PartitionKeysSupport<'b>"
 		},
 		{
+			"name": "document_id",
+			"field_type": "&'b str",
+			"optional": false,
+			"builder_type": "DocumentIdSet",
+			"trait_get": "DocumentIdRequired<'b>",
+			"trait_set": "DocumentIdSupport<'b>"
+		},
+		{
 			"name": "indexing_directive",
 			"field_type": "IndexingDirective",
 			"optional": true,
@@ -86,7 +94,8 @@
 			"field_type": "ConsistencyLevel<'b>",
 			"optional": true,
 			"trait_get": "ConsistencyLevelOption<'b>",
-			"trait_set": "ConsistencyLevelSupport<'b>"
+			"trait_set": "ConsistencyLevelSupport<'b>",
+			"get_via_clone": true
 		},
 		{
 			"name": "allow_tentative_writes",

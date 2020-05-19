@@ -32,6 +32,7 @@ pub(crate) enum ResourceType {
     Permissions,
     Attachments,
     PartitionKeyRanges,
+    UserDefinedFunctions,
 }
 
 pub trait CosmosUriBuilder {
@@ -334,6 +335,7 @@ fn string_to_sign(
             ResourceType::Permissions => "permissions",
             ResourceType::Attachments => "attachments",
             ResourceType::PartitionKeyRanges => "pkranges",
+            ResourceType::UserDefinedFunctions => "udfs",
         },
         resource_link,
         time.to_lowercase()
@@ -350,6 +352,7 @@ fn generate_resource_link(u: &str) -> &str {
         "permissions",
         "attachments",
         "pkranges",
+        "udfs",
     ];
 
     // store the element only if it does not end with dbs, colls or docs

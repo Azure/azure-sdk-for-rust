@@ -15,18 +15,21 @@ use std::convert::TryInto;
 use std::marker::PhantomData;
 
 #[derive(Debug, Clone)]
-pub struct ReplaceDocumentBuilder<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet>
+pub struct ReplaceDocumentBuilder<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet, DocumentIdSet>
 where
     DocumentSet: ToAssign,
     PartitionKeysSet: ToAssign,
+    DocumentIdSet: ToAssign,
     T: Serialize,
     CUB: CosmosUriBuilder,
 {
     collection_client: &'a CollectionClient<'a, CUB>,
     p_document: PhantomData<DocumentSet>,
     p_partition_keys: PhantomData<PartitionKeysSet>,
+    p_document_id: PhantomData<DocumentIdSet>,
     document: Option<&'b Document<T>>,
     partition_keys: Option<&'b PartitionKeys>,
+    document_id: Option<&'b str>,
     indexing_directive: IndexingDirective,
     if_match_condition: Option<IfMatchCondition<'b>>,
     if_modified_since: Option<&'b DateTime<Utc>>,
@@ -36,7 +39,7 @@ where
     allow_tentative_writes: bool,
 }
 
-impl<'a, 'b, T, CUB> ReplaceDocumentBuilder<'a, 'b, T, CUB, No, No>
+impl<'a, 'b, T, CUB> ReplaceDocumentBuilder<'a, 'b, T, CUB, No, No, No>
 where
     T: Serialize,
     CUB: CosmosUriBuilder,
@@ -44,13 +47,15 @@ where
     #[inline]
     pub(crate) fn new(
         collection_client: &'a CollectionClient<'a, CUB>,
-    ) -> ReplaceDocumentBuilder<'a, 'b, T, CUB, No, No> {
+    ) -> ReplaceDocumentBuilder<'a, 'b, T, CUB, No, No, No> {
         ReplaceDocumentBuilder {
             collection_client,
             p_document: PhantomData {},
             document: None,
             p_partition_keys: PhantomData {},
             partition_keys: None,
+            p_document_id: PhantomData {},
+            document_id: None,
             indexing_directive: IndexingDirective::Default,
             if_match_condition: None,
             if_modified_since: None,
@@ -62,11 +67,12 @@ where
     }
 }
 
-impl<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet> CollectionClientRequired<'a, CUB>
-    for ReplaceDocumentBuilder<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet>
+impl<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet, DocumentIdSet> CollectionClientRequired<'a, CUB>
+    for ReplaceDocumentBuilder<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet, DocumentIdSet>
 where
     DocumentSet: ToAssign,
     PartitionKeysSet: ToAssign,
+    DocumentIdSet: ToAssign,
     T: Serialize,
     CUB: CosmosUriBuilder,
 {
@@ -79,10 +85,11 @@ where
 //get mandatory no traits methods
 
 //set mandatory no traits methods
-impl<'a, 'b, T, CUB, PartitionKeysSet> DocumentRequired<'b, T>
-    for ReplaceDocumentBuilder<'a, 'b, T, CUB, Yes, PartitionKeysSet>
+impl<'a, 'b, T, CUB, PartitionKeysSet, DocumentIdSet> DocumentRequired<'b, T>
+    for ReplaceDocumentBuilder<'a, 'b, T, CUB, Yes, PartitionKeysSet, DocumentIdSet>
 where
     PartitionKeysSet: ToAssign,
+    DocumentIdSet: ToAssign,
     T: Serialize,
     CUB: CosmosUriBuilder,
 {
@@ -92,10 +99,11 @@ where
     }
 }
 
-impl<'a, 'b, T, CUB, DocumentSet> PartitionKeysRequired<'b>
-    for ReplaceDocumentBuilder<'a, 'b, T, CUB, DocumentSet, Yes>
+impl<'a, 'b, T, CUB, DocumentSet, DocumentIdSet> PartitionKeysRequired<'b>
+    for ReplaceDocumentBuilder<'a, 'b, T, CUB, DocumentSet, Yes, DocumentIdSet>
 where
     DocumentSet: ToAssign,
+    DocumentIdSet: ToAssign,
     T: Serialize,
     CUB: CosmosUriBuilder,
 {
@@ -105,11 +113,26 @@ where
     }
 }
 
-impl<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet> IndexingDirectiveOption
-    for ReplaceDocumentBuilder<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet>
+impl<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet> DocumentIdRequired<'b>
+    for ReplaceDocumentBuilder<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet, Yes>
 where
     DocumentSet: ToAssign,
     PartitionKeysSet: ToAssign,
+    T: Serialize,
+    CUB: CosmosUriBuilder,
+{
+    #[inline]
+    fn document_id(&self) -> &'b str {
+        self.document_id.unwrap()
+    }
+}
+
+impl<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet, DocumentIdSet> IndexingDirectiveOption
+    for ReplaceDocumentBuilder<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet, DocumentIdSet>
+where
+    DocumentSet: ToAssign,
+    PartitionKeysSet: ToAssign,
+    DocumentIdSet: ToAssign,
     T: Serialize,
     CUB: CosmosUriBuilder,
 {
@@ -119,11 +142,12 @@ where
     }
 }
 
-impl<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet> IfMatchConditionOption<'b>
-    for ReplaceDocumentBuilder<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet>
+impl<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet, DocumentIdSet> IfMatchConditionOption<'b>
+    for ReplaceDocumentBuilder<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet, DocumentIdSet>
 where
     DocumentSet: ToAssign,
     PartitionKeysSet: ToAssign,
+    DocumentIdSet: ToAssign,
     T: Serialize,
     CUB: CosmosUriBuilder,
 {
@@ -133,11 +157,12 @@ where
     }
 }
 
-impl<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet> IfModifiedSinceOption<'b>
-    for ReplaceDocumentBuilder<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet>
+impl<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet, DocumentIdSet> IfModifiedSinceOption<'b>
+    for ReplaceDocumentBuilder<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet, DocumentIdSet>
 where
     DocumentSet: ToAssign,
     PartitionKeysSet: ToAssign,
+    DocumentIdSet: ToAssign,
     T: Serialize,
     CUB: CosmosUriBuilder,
 {
@@ -147,11 +172,12 @@ where
     }
 }
 
-impl<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet> UserAgentOption<'b>
-    for ReplaceDocumentBuilder<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet>
+impl<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet, DocumentIdSet> UserAgentOption<'b>
+    for ReplaceDocumentBuilder<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet, DocumentIdSet>
 where
     DocumentSet: ToAssign,
     PartitionKeysSet: ToAssign,
+    DocumentIdSet: ToAssign,
     T: Serialize,
     CUB: CosmosUriBuilder,
 {
@@ -161,11 +187,12 @@ where
     }
 }
 
-impl<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet> ActivityIdOption<'b>
-    for ReplaceDocumentBuilder<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet>
+impl<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet, DocumentIdSet> ActivityIdOption<'b>
+    for ReplaceDocumentBuilder<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet, DocumentIdSet>
 where
     DocumentSet: ToAssign,
     PartitionKeysSet: ToAssign,
+    DocumentIdSet: ToAssign,
     T: Serialize,
     CUB: CosmosUriBuilder,
 {
@@ -175,11 +202,12 @@ where
     }
 }
 
-impl<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet> ConsistencyLevelOption<'b>
-    for ReplaceDocumentBuilder<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet>
+impl<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet, DocumentIdSet> ConsistencyLevelOption<'b>
+    for ReplaceDocumentBuilder<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet, DocumentIdSet>
 where
     DocumentSet: ToAssign,
     PartitionKeysSet: ToAssign,
+    DocumentIdSet: ToAssign,
     T: Serialize,
     CUB: CosmosUriBuilder,
 {
@@ -189,11 +217,12 @@ where
     }
 }
 
-impl<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet> AllowTentativeWritesOption
-    for ReplaceDocumentBuilder<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet>
+impl<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet, DocumentIdSet> AllowTentativeWritesOption
+    for ReplaceDocumentBuilder<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet, DocumentIdSet>
 where
     DocumentSet: ToAssign,
     PartitionKeysSet: ToAssign,
+    DocumentIdSet: ToAssign,
     T: Serialize,
     CUB: CosmosUriBuilder,
 {
@@ -203,14 +232,15 @@ where
     }
 }
 
-impl<'a, 'b, T, CUB, PartitionKeysSet> DocumentSupport<'b, T>
-    for ReplaceDocumentBuilder<'a, 'b, T, CUB, No, PartitionKeysSet>
+impl<'a, 'b, T, CUB, PartitionKeysSet, DocumentIdSet> DocumentSupport<'b, T>
+    for ReplaceDocumentBuilder<'a, 'b, T, CUB, No, PartitionKeysSet, DocumentIdSet>
 where
     PartitionKeysSet: ToAssign,
+    DocumentIdSet: ToAssign,
     T: Serialize,
     CUB: CosmosUriBuilder,
 {
-    type O = ReplaceDocumentBuilder<'a, 'b, T, CUB, Yes, PartitionKeysSet>;
+    type O = ReplaceDocumentBuilder<'a, 'b, T, CUB, Yes, PartitionKeysSet, DocumentIdSet>;
 
     #[inline]
     fn with_document(self, document: &'b Document<T>) -> Self::O {
@@ -218,8 +248,10 @@ where
             collection_client: self.collection_client,
             p_document: PhantomData {},
             p_partition_keys: PhantomData {},
+            p_document_id: PhantomData {},
             document: Some(document),
             partition_keys: self.partition_keys,
+            document_id: self.document_id,
             indexing_directive: self.indexing_directive,
             if_match_condition: self.if_match_condition,
             if_modified_since: self.if_modified_since,
@@ -231,14 +263,15 @@ where
     }
 }
 
-impl<'a, 'b, T, CUB, DocumentSet> PartitionKeysSupport<'b>
-    for ReplaceDocumentBuilder<'a, 'b, T, CUB, DocumentSet, No>
+impl<'a, 'b, T, CUB, DocumentSet, DocumentIdSet> PartitionKeysSupport<'b>
+    for ReplaceDocumentBuilder<'a, 'b, T, CUB, DocumentSet, No, DocumentIdSet>
 where
     DocumentSet: ToAssign,
+    DocumentIdSet: ToAssign,
     T: Serialize,
     CUB: CosmosUriBuilder,
 {
-    type O = ReplaceDocumentBuilder<'a, 'b, T, CUB, DocumentSet, Yes>;
+    type O = ReplaceDocumentBuilder<'a, 'b, T, CUB, DocumentSet, Yes, DocumentIdSet>;
 
     #[inline]
     fn with_partition_keys(self, partition_keys: &'b PartitionKeys) -> Self::O {
@@ -246,8 +279,10 @@ where
             collection_client: self.collection_client,
             p_document: PhantomData {},
             p_partition_keys: PhantomData {},
+            p_document_id: PhantomData {},
             document: self.document,
             partition_keys: Some(partition_keys),
+            document_id: self.document_id,
             indexing_directive: self.indexing_directive,
             if_match_condition: self.if_match_condition,
             if_modified_since: self.if_modified_since,
@@ -259,15 +294,47 @@ where
     }
 }
 
-impl<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet> IndexingDirectiveSupport
-    for ReplaceDocumentBuilder<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet>
+impl<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet> DocumentIdSupport<'b>
+    for ReplaceDocumentBuilder<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet, No>
 where
     DocumentSet: ToAssign,
     PartitionKeysSet: ToAssign,
     T: Serialize,
     CUB: CosmosUriBuilder,
 {
-    type O = ReplaceDocumentBuilder<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet>;
+    type O = ReplaceDocumentBuilder<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet, Yes>;
+
+    #[inline]
+    fn with_document_id(self, document_id: &'b str) -> Self::O {
+        ReplaceDocumentBuilder {
+            collection_client: self.collection_client,
+            p_document: PhantomData {},
+            p_partition_keys: PhantomData {},
+            p_document_id: PhantomData {},
+            document: self.document,
+            partition_keys: self.partition_keys,
+            document_id: Some(document_id),
+            indexing_directive: self.indexing_directive,
+            if_match_condition: self.if_match_condition,
+            if_modified_since: self.if_modified_since,
+            user_agent: self.user_agent,
+            activity_id: self.activity_id,
+            consistency_level: self.consistency_level,
+            allow_tentative_writes: self.allow_tentative_writes,
+        }
+    }
+}
+
+impl<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet, DocumentIdSet> IndexingDirectiveSupport
+    for ReplaceDocumentBuilder<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet, DocumentIdSet>
+where
+    DocumentSet: ToAssign,
+    PartitionKeysSet: ToAssign,
+    DocumentIdSet: ToAssign,
+    T: Serialize,
+    CUB: CosmosUriBuilder,
+{
+    type O = ReplaceDocumentBuilder<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet, DocumentIdSet>;
 
     #[inline]
     fn with_indexing_directive(self, indexing_directive: IndexingDirective) -> Self::O {
@@ -275,8 +342,10 @@ where
             collection_client: self.collection_client,
             p_document: PhantomData {},
             p_partition_keys: PhantomData {},
+            p_document_id: PhantomData {},
             document: self.document,
             partition_keys: self.partition_keys,
+            document_id: self.document_id,
             indexing_directive,
             if_match_condition: self.if_match_condition,
             if_modified_since: self.if_modified_since,
@@ -288,15 +357,16 @@ where
     }
 }
 
-impl<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet> IfMatchConditionSupport<'b>
-    for ReplaceDocumentBuilder<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet>
+impl<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet, DocumentIdSet> IfMatchConditionSupport<'b>
+    for ReplaceDocumentBuilder<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet, DocumentIdSet>
 where
     DocumentSet: ToAssign,
     PartitionKeysSet: ToAssign,
+    DocumentIdSet: ToAssign,
     T: Serialize,
     CUB: CosmosUriBuilder,
 {
-    type O = ReplaceDocumentBuilder<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet>;
+    type O = ReplaceDocumentBuilder<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet, DocumentIdSet>;
 
     #[inline]
     fn with_if_match_condition(self, if_match_condition: IfMatchCondition<'b>) -> Self::O {
@@ -304,8 +374,10 @@ where
             collection_client: self.collection_client,
             p_document: PhantomData {},
             p_partition_keys: PhantomData {},
+            p_document_id: PhantomData {},
             document: self.document,
             partition_keys: self.partition_keys,
+            document_id: self.document_id,
             indexing_directive: self.indexing_directive,
             if_match_condition: Some(if_match_condition),
             if_modified_since: self.if_modified_since,
@@ -317,15 +389,16 @@ where
     }
 }
 
-impl<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet> IfModifiedSinceSupport<'b>
-    for ReplaceDocumentBuilder<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet>
+impl<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet, DocumentIdSet> IfModifiedSinceSupport<'b>
+    for ReplaceDocumentBuilder<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet, DocumentIdSet>
 where
     DocumentSet: ToAssign,
     PartitionKeysSet: ToAssign,
+    DocumentIdSet: ToAssign,
     T: Serialize,
     CUB: CosmosUriBuilder,
 {
-    type O = ReplaceDocumentBuilder<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet>;
+    type O = ReplaceDocumentBuilder<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet, DocumentIdSet>;
 
     #[inline]
     fn with_if_modified_since(self, if_modified_since: &'b DateTime<Utc>) -> Self::O {
@@ -333,8 +406,10 @@ where
             collection_client: self.collection_client,
             p_document: PhantomData {},
             p_partition_keys: PhantomData {},
+            p_document_id: PhantomData {},
             document: self.document,
             partition_keys: self.partition_keys,
+            document_id: self.document_id,
             indexing_directive: self.indexing_directive,
             if_match_condition: self.if_match_condition,
             if_modified_since: Some(if_modified_since),
@@ -346,15 +421,16 @@ where
     }
 }
 
-impl<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet> UserAgentSupport<'b>
-    for ReplaceDocumentBuilder<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet>
+impl<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet, DocumentIdSet> UserAgentSupport<'b>
+    for ReplaceDocumentBuilder<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet, DocumentIdSet>
 where
     DocumentSet: ToAssign,
     PartitionKeysSet: ToAssign,
+    DocumentIdSet: ToAssign,
     T: Serialize,
     CUB: CosmosUriBuilder,
 {
-    type O = ReplaceDocumentBuilder<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet>;
+    type O = ReplaceDocumentBuilder<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet, DocumentIdSet>;
 
     #[inline]
     fn with_user_agent(self, user_agent: &'b str) -> Self::O {
@@ -362,8 +438,10 @@ where
             collection_client: self.collection_client,
             p_document: PhantomData {},
             p_partition_keys: PhantomData {},
+            p_document_id: PhantomData {},
             document: self.document,
             partition_keys: self.partition_keys,
+            document_id: self.document_id,
             indexing_directive: self.indexing_directive,
             if_match_condition: self.if_match_condition,
             if_modified_since: self.if_modified_since,
@@ -375,15 +453,16 @@ where
     }
 }
 
-impl<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet> ActivityIdSupport<'b>
-    for ReplaceDocumentBuilder<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet>
+impl<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet, DocumentIdSet> ActivityIdSupport<'b>
+    for ReplaceDocumentBuilder<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet, DocumentIdSet>
 where
     DocumentSet: ToAssign,
     PartitionKeysSet: ToAssign,
+    DocumentIdSet: ToAssign,
     T: Serialize,
     CUB: CosmosUriBuilder,
 {
-    type O = ReplaceDocumentBuilder<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet>;
+    type O = ReplaceDocumentBuilder<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet, DocumentIdSet>;
 
     #[inline]
     fn with_activity_id(self, activity_id: &'b str) -> Self::O {
@@ -391,8 +470,10 @@ where
             collection_client: self.collection_client,
             p_document: PhantomData {},
             p_partition_keys: PhantomData {},
+            p_document_id: PhantomData {},
             document: self.document,
             partition_keys: self.partition_keys,
+            document_id: self.document_id,
             indexing_directive: self.indexing_directive,
             if_match_condition: self.if_match_condition,
             if_modified_since: self.if_modified_since,
@@ -404,15 +485,16 @@ where
     }
 }
 
-impl<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet> ConsistencyLevelSupport<'b>
-    for ReplaceDocumentBuilder<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet>
+impl<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet, DocumentIdSet> ConsistencyLevelSupport<'b>
+    for ReplaceDocumentBuilder<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet, DocumentIdSet>
 where
     DocumentSet: ToAssign,
     PartitionKeysSet: ToAssign,
+    DocumentIdSet: ToAssign,
     T: Serialize,
     CUB: CosmosUriBuilder,
 {
-    type O = ReplaceDocumentBuilder<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet>;
+    type O = ReplaceDocumentBuilder<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet, DocumentIdSet>;
 
     #[inline]
     fn with_consistency_level(self, consistency_level: ConsistencyLevel<'b>) -> Self::O {
@@ -420,8 +502,10 @@ where
             collection_client: self.collection_client,
             p_document: PhantomData {},
             p_partition_keys: PhantomData {},
+            p_document_id: PhantomData {},
             document: self.document,
             partition_keys: self.partition_keys,
+            document_id: self.document_id,
             indexing_directive: self.indexing_directive,
             if_match_condition: self.if_match_condition,
             if_modified_since: self.if_modified_since,
@@ -433,15 +517,16 @@ where
     }
 }
 
-impl<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet> AllowTentativeWritesSupport
-    for ReplaceDocumentBuilder<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet>
+impl<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet, DocumentIdSet> AllowTentativeWritesSupport
+    for ReplaceDocumentBuilder<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet, DocumentIdSet>
 where
     DocumentSet: ToAssign,
     PartitionKeysSet: ToAssign,
+    DocumentIdSet: ToAssign,
     T: Serialize,
     CUB: CosmosUriBuilder,
 {
-    type O = ReplaceDocumentBuilder<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet>;
+    type O = ReplaceDocumentBuilder<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet, DocumentIdSet>;
 
     #[inline]
     fn with_allow_tentative_writes(self, allow_tentative_writes: bool) -> Self::O {
@@ -449,8 +534,10 @@ where
             collection_client: self.collection_client,
             p_document: PhantomData {},
             p_partition_keys: PhantomData {},
+            p_document_id: PhantomData {},
             document: self.document,
             partition_keys: self.partition_keys,
+            document_id: self.document_id,
             indexing_directive: self.indexing_directive,
             if_match_condition: self.if_match_condition,
             if_modified_since: self.if_modified_since,
@@ -463,7 +550,7 @@ where
 }
 
 // methods callable only when every mandatory field has been filled
-impl<'a, 'b, T, CUB> ReplaceDocumentBuilder<'a, 'b, T, CUB, Yes, Yes>
+impl<'a, 'b, T, CUB> ReplaceDocumentBuilder<'a, 'b, T, CUB, Yes, Yes, Yes>
 where
     T: Serialize,
     CUB: CosmosUriBuilder,
@@ -476,7 +563,7 @@ where
                 "dbs/{}/colls/{}/docs/{}",
                 self.collection_client.database_name().name(),
                 self.collection_client.collection_name().name(),
-                self.document().id()
+                self.document_id()
             ),
             hyper::Method::PUT,
             ResourceType::Documents,

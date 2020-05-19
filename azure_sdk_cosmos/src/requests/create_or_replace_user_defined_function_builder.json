@@ -1,0 +1,64 @@
+{
+	"name": "CreateOrReplaceUserDefinedFunctionBuilder",
+	"derive": "Debug, Clone",
+	"uses": [
+			"crate::clients::{CosmosUriBuilder}",
+			"crate::prelude::*",
+			"crate::UserDefinedFunctionClient",
+			"crate::UserDefinedFunctionClientRequired",
+			"crate::{UserDefinedFunctionBuilderTrait, UserDefinedFunctionTrait}",
+			"azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError}",
+			"azure_sdk_core::prelude::*",
+			"azure_sdk_core::{Yes,No,ToAssign}",
+			"std::marker::PhantomData",
+			"hyper::StatusCode",
+			"crate::responses::CreateUserDefinedFunctionResponse",
+			"std::convert::TryInto"
+	],
+	"inline": true,
+	"extra_types": [ "'a", "CUB" ],
+	"extra_wheres": ["CUB: CosmosUriBuilder" ],
+	"constructor_fields": [
+		{
+			"name": "user_defined_function_client",
+			"field_type": "&'a UserDefinedFunctionClient<'a, CUB>",
+			"trait_get": "UserDefinedFunctionClientRequired<'a, CUB>"
+		},
+		{
+			"name": "is_create",
+			"field_type": "bool"
+		}
+	],
+	"fields": [
+		{
+			"name": "body",
+			"field_type": "&'a str",
+			"builder_type": "BodySet",
+			"optional": false,
+			"trait_get": "UserDefinedFunctionBodyRequired<'a>",
+			"trait_set": "UserDefinedFunctionBodySupport<'a>"
+		},
+		{
+			"name": "user_agent",
+			"field_type": "&'a str",
+			"optional": true,
+			"trait_get": "UserAgentOption<'a>",
+			"trait_set": "UserAgentSupport<'a>"
+		},
+		{
+			"name": "activity_id",
+			"field_type": "&'a str",
+			"optional": true,
+			"trait_get": "ActivityIdOption<'a>",
+			"trait_set": "ActivityIdSupport<'a>"
+		},
+		{
+			"name": "consistency_level",
+			"field_type": "ConsistencyLevel<'a>",
+			"optional": true,
+			"trait_get": "ConsistencyLevelOption<'a>",
+			"trait_set": "ConsistencyLevelSupport<'a>",
+			"get_via_clone": true
+		}
+	]
+}

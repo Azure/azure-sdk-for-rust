@@ -16,6 +16,7 @@ extern crate serde_derive;
 // specified in the Document struct below.
 #[derive(Serialize, Deserialize, Clone, Debug)]
 struct MySampleStruct<'a> {
+    id: Cow<'a, str>,
     a_string: Cow<'a, str>,
     a_number: u64,
     a_timestamp: i64,
@@ -43,20 +44,18 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let client = client.with_collection(&collection_name);
 
     for i in 0u64..5 {
-        let doc = Document::new(
-            format!("unique_id{}", i),
-            MySampleStruct {
-                a_string: Cow::Borrowed("Something here"),
-                a_number: i,
-                a_timestamp: chrono::Utc::now().timestamp(),
-            },
-        );
+        let doc = Document::new(MySampleStruct {
+            id: Cow::Owned(format!("unique_id{}", i)),
+            a_string: Cow::Borrowed("Something here"),
+            a_number: i,
+            a_timestamp: chrono::Utc::now().timestamp(),
+        });
 
         // let's add an entity.
         client
             .create_document()
             .with_document(&doc)
-            .with_partition_keys(PartitionKeys::new().push(doc.document_attributes.id())?)
+            .with_partition_keys(PartitionKeys::new().push(&doc.document.id)?)
             .execute()
             .await?;
     }
@@ -136,6 +135,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .replace_document()
         .with_document(&doc.document)
         .with_partition_keys(PartitionKeys::new().push(&id)?)
+        .with_document_id(&id)
         .with_consistency_level(ConsistencyLevel::from(&response))
         .with_if_match_condition(IfMatchCondition::Match(&etag)) // use optimistic concurrency check
         .execute()

@@ -150,14 +150,23 @@ pub(crate) fn collection_partition_index_from_headers(
         .parse()?)
 }
 
-pub(crate) fn indexing_directive_from_headers(
+//pub(crate) fn indexing_directive_from_headers(
+//    headers: &HeaderMap,
+//) -> Result<IndexingDirective, AzureError> {
+//    Ok(headers
+//        .get(HEADER_INDEXING_DIRECTIVE)
+//        .ok_or_else(|| AzureError::HeaderNotFound(HEADER_INDEXING_DIRECTIVE.to_owned()))?
+//        .to_str()?
+//        .parse()?)
+//}
+
+pub(crate) fn indexing_directive_from_headers_optional(
     headers: &HeaderMap,
-) -> Result<IndexingDirective, AzureError> {
-    Ok(headers
-        .get(HEADER_INDEXING_DIRECTIVE)
-        .ok_or_else(|| AzureError::HeaderNotFound(HEADER_INDEXING_DIRECTIVE.to_owned()))?
-        .to_str()?
-        .parse()?)
+) -> Result<Option<IndexingDirective>, AzureError> {
+    match headers.get(HEADER_INDEXING_DIRECTIVE) {
+        Some(header) => Ok(Some(header.to_str()?.parse()?)),
+        None => Ok(None),
+    }
 }
 
 pub(crate) fn collection_service_index_from_headers(

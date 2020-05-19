@@ -44,15 +44,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let client = client.with_collection(&collection_name);
 
     let query_obj = Query::new(&query);
-    let respo: QueryDocumentsResponse<MySecondSampleStructOwned> = client
-        .query_documents()
-        .with_query(&query_obj)
-        .with_query_cross_partition(true)
-        .with_parallelize_cross_partition_query(true)
-        .with_max_item_count(2)
-        .execute()
-        .await?;
-    println!("as items == {:?}", respo);
 
     let respo: QueryDocumentsResponse<serde_json::Value> = client
         .query_documents()
@@ -62,6 +53,16 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .execute()
         .await?;
     println!("as json == {:?}", respo);
+
+    let respo: QueryDocumentsResponse<MySecondSampleStructOwned> = client
+        .query_documents()
+        .with_query(&query_obj)
+        .with_query_cross_partition(true)
+        .with_parallelize_cross_partition_query(true)
+        .with_max_item_count(2)
+        .execute()
+        .await?;
+    println!("as items == {:?}", respo);
 
     //let ret = client
     //    .query_documents(

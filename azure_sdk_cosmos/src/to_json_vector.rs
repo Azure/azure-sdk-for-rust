@@ -1,5 +1,6 @@
 use azure_sdk_core::errors::AzureError;
 use serde::ser::Serialize;
+use std::borrow::Cow;
 
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub struct ToJsonVector {
@@ -85,6 +86,22 @@ where
 
 impl std::convert::From<&str> for ToJsonVector {
     fn from(t: &str) -> Self {
+        let mut pk = Self::new();
+        let _ = pk.push(t).unwrap();
+        pk
+    }
+}
+
+impl std::convert::From<Cow<'_, str>> for ToJsonVector {
+    fn from(t: Cow<'_, str>) -> Self {
+        let mut pk = Self::new();
+        let _ = pk.push(t).unwrap();
+        pk
+    }
+}
+
+impl std::convert::From<&Cow<'_, str>> for ToJsonVector {
+    fn from(t: &Cow<'_, str>) -> Self {
         let mut pk = Self::new();
         let _ = pk.push(t).unwrap();
         pk

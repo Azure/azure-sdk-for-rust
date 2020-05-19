@@ -4,7 +4,6 @@ use http::HeaderMap;
 
 #[derive(Default, Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct DocumentAttributes {
-    pub id: String,
     #[serde(rename = "_rid")]
     pub rid: String,
     #[serde(rename = "_ts")]
@@ -18,10 +17,6 @@ pub struct DocumentAttributes {
 }
 
 impl DocumentAttributes {
-    pub fn id(&self) -> &str {
-        &self.id
-    }
-
     pub fn rid(&self) -> &str {
         &self.rid
     }
@@ -40,13 +35,6 @@ impl DocumentAttributes {
 
     pub fn attachments(&self) -> &str {
         &self.attachments
-    }
-
-    pub fn set_id<T>(&mut self, value: T)
-    where
-        T: Into<String>,
-    {
-        self.id = value.into();
     }
 
     pub fn set_rid<T>(&mut self, value: T)
@@ -103,7 +91,6 @@ mod tests {
         use super::*;
 
         let mut a = DocumentAttributes {
-            id: "id".to_owned(),
             rid: "rid".to_owned(),
             ts: 100,
             _self: "_self".to_owned(),
@@ -111,7 +98,6 @@ mod tests {
             attachments: "attachments".to_owned(),
         };
 
-        a.set_id("new_id");
         a.set_attachments("new_attachments".to_owned());
     }
 }

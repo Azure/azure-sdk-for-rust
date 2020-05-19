@@ -79,25 +79,19 @@ async fn permissions() {
     // authorization_token just created. It must fail.
     let data = r#"
         {
+            "id": "Gianluigi Bombatomica",
             "age": 43,
             "phones": [
                 "+39 1234567",
                 "+39 2345678"
             ]
         }"#;
-    let document = Document::new(
-        "Gianluigi Bombatomica".to_owned(),
-        serde_json::from_str::<serde_json::Value>(data).unwrap(),
-    );
+    let document = Document::new(serde_json::from_str::<serde_json::Value>(data).unwrap());
     new_collection_client
         .create_document()
         .with_document(&document)
         .with_is_upsert(true)
-        .with_partition_keys(
-            PartitionKeys::new()
-                .push(document.document_attributes.id())
-                .unwrap(),
-        )
+        .with_partition_keys(PartitionKeys::new().push(&"Gianluigi Bombatomica").unwrap())
         .execute()
         .await
         .unwrap_err();
@@ -132,11 +126,7 @@ async fn permissions() {
         .create_document()
         .with_document(&document)
         .with_is_upsert(true)
-        .with_partition_keys(
-            PartitionKeys::new()
-                .push(document.document_attributes.id())
-                .unwrap(),
-        )
+        .with_partition_keys(PartitionKeys::new().push(&"Gianluigi Bombatomica").unwrap())
         .execute()
         .await
         .unwrap();

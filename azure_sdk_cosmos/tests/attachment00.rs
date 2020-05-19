@@ -16,6 +16,7 @@ mod setup;
 // specified in the Document struct below.
 #[derive(Serialize, Deserialize, Clone, Debug)]
 struct MySampleStruct<'a> {
+    id: Cow<'a, str>,
     a_string: Cow<'a, str>,
     a_number: u64,
     a_timestamp: i64,
@@ -73,26 +74,24 @@ async fn attachment() -> Result<(), Box<dyn Error>> {
 
     let id = format!("unique_id{}", 100);
 
-    let doc = Document::new(
-        id.clone(),
-        MySampleStruct {
-            a_string: Cow::Borrowed("Something here"),
-            a_number: 100,
-            a_timestamp: chrono::Utc::now().timestamp(),
-        },
-    );
+    let doc = Document::new(MySampleStruct {
+        id: Cow::Borrowed(&id),
+        a_string: Cow::Borrowed("Something here"),
+        a_number: 100,
+        a_timestamp: chrono::Utc::now().timestamp(),
+    });
 
     // let's add an entity.
     let session_token: ConsistencyLevel = collection_client
         .create_document()
         .with_document(&doc)
-        .with_partition_keys(PartitionKeys::new().push(doc.document_attributes.id())?)
+        .with_partition_keys(PartitionKeys::new().push(&doc.document.id)?)
         .execute()
         .await?
         .into();
 
     let mut partition_keys = PartitionKeys::new();
-    partition_keys.push(doc.document_attributes.id())?;
+    partition_keys.push(doc.document.id)?;
     let document_client = collection_client.with_document(&id, &partition_keys);
 
     // list attachments, there must be none.
@@ -105,9 +104,9 @@ async fn attachment() -> Result<(), Box<dyn Error>> {
 
     // create reference attachment
     let attachment_client = document_client.with_attachment(&"reference");
-    let _resp = attachment_client
+    let resp = attachment_client
         .create_reference()
-        .with_consistency_level(session_token.clone())
+        .with_consistency_level((&ret).into())
         .with_content_type("image/jpeg")
         .with_media("https://www.bing.com")
         .execute()
@@ -115,9 +114,9 @@ async fn attachment() -> Result<(), Box<dyn Error>> {
 
     // replace reference attachment
     let attachment_client = document_client.with_attachment(&"reference");
-    let _resp = attachment_client
+    let resp = attachment_client
         .replace_reference()
-        .with_consistency_level(session_token.clone())
+        .with_consistency_level((&resp).into())
         .with_content_type("image/jpeg")
         .with_media("https://www.microsoft.com")
         .execute()
@@ -125,9 +124,9 @@ async fn attachment() -> Result<(), Box<dyn Error>> {
 
     // create slug attachment
     let attachment_client = document_client.with_attachment(&"slug");
-    let _resp = attachment_client
+    let resp = attachment_client
         .create_slug()
-        .with_consistency_level(session_token.clone())
+        .with_consistency_level((&resp).into())
         .with_content_type("text/plain")
         .with_body(b"something cool here")
         .execute()
@@ -136,7 +135,7 @@ async fn attachment() -> Result<(), Box<dyn Error>> {
     // list attachments, there must be two.
     let ret = document_client
         .list_attachments()
-        .with_consistency_level(session_token.clone())
+        .with_consistency_level((&resp).into())
         .execute()
         .await?;
     assert_eq!(2, ret.attachments.len());
@@ -145,7 +144,7 @@ async fn attachment() -> Result<(), Box<dyn Error>> {
     let reference_attachment = document_client
         .with_attachment(&"reference")
         .get()
-        .with_consistency_level(session_token.clone())
+        .with_consistency_level((&ret).into())
         .execute()
         .await?;
     assert_eq!(
@@ -158,23 +157,23 @@ async fn attachment() -> Result<(), Box<dyn Error>> {
     let slug_attachment = document_client
         .with_attachment(&"slug")
         .get()
-        .with_consistency_level(session_token.clone())
+        .with_consistency_level((&reference_attachment).into())
         .execute()
         .await
         .unwrap();
     assert_eq!("text/plain", slug_attachment.attachment.content_type);
 
     // delete slug attachment
-    let _resp_delete = attachment_client
+    let resp_delete = attachment_client
         .delete()
-        .with_consistency_level(session_token.clone())
+        .with_consistency_level((&slug_attachment).into())
         .execute()
         .await?;
 
     // list attachments, there must be one.
     let ret = document_client
         .list_attachments()
-        .with_consistency_level(session_token.clone())
+        .with_consistency_level((&resp_delete).into())
         .execute()
         .await?;
     assert_eq!(1, ret.attachments.len());

@@ -13,6 +13,7 @@ extern crate serde_derive;
 // specified in the Document struct below.
 #[derive(Serialize, Deserialize, Clone, Debug)]
 struct MySampleStruct<'a> {
+    id: Cow<'a, str>,
     a_string: Cow<'a, str>,
     a_number: u64,
     a_timestamp: i64,
@@ -41,20 +42,18 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let id = format!("unique_id{}", 100);
 
-    let doc = Document::new(
-        id.clone(),
-        MySampleStruct {
-            a_string: Cow::Borrowed("Something here"),
-            a_number: 100,
-            a_timestamp: chrono::Utc::now().timestamp(),
-        },
-    );
+    let doc = Document::new(MySampleStruct {
+        id: Cow::Borrowed(&id),
+        a_string: Cow::Borrowed("Something here"),
+        a_number: 100,
+        a_timestamp: chrono::Utc::now().timestamp(),
+    });
 
     // let's add an entity.
     match client
         .create_document()
         .with_document(&doc)
-        .with_partition_keys(PartitionKeys::new().push(doc.document_attributes.id())?)
+        .with_partition_keys(PartitionKeys::new().push(&doc.document.id)?)
         .execute()
         .await
     {
@@ -67,7 +66,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     };
 
     let mut partition_keys = PartitionKeys::new();
-    partition_keys.push(doc.document_attributes.id())?;
+    partition_keys.push(&doc.document.id)?;
     let document_client = client.with_document(&id, &partition_keys);
 
     // list attachments
@@ -79,6 +78,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let attachment_client = document_client.with_attachment(&"myref03");
     let resp = attachment_client
         .create_reference()
+        .with_consistency_level((&ret).into())
         .with_content_type("image/jpeg")
         .with_media(
             "https://cdn.pixabay.com/photo/2020/01/11/09/30/abstract-background-4756987__340.jpg",
@@ -95,7 +95,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let attachment_client = document_client.with_attachment(&"myref03");
     let resp = attachment_client
         .replace_reference()
-        .with_consistency_level(session_token.clone())
+        .with_consistency_level(session_token)
         .with_content_type("image/jpeg")
         .with_media(
             "https://Adn.pixabay.com/photo/2020/01/11/09/30/abstract-background-4756987__340.jpg",
@@ -107,7 +107,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     println!("deleting");
     let resp_delete = attachment_client
         .delete()
-        .with_consistency_level(session_token.clone())
+        .with_consistency_level((&resp).into())
         .execute()
         .await?;
     println!("delete attachment == {:#?}", resp_delete);
@@ -117,6 +117,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let attachment_client = document_client.with_attachment(&"slug00");
     let resp = attachment_client
         .create_slug()
+        .with_consistency_level((&resp_delete).into())
         .with_content_type("text/plain")
         .with_body(b"FFFFF")
         .execute()
@@ -127,7 +128,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     println!("deleting");
     let resp_delete = attachment_client
         .delete()
-        .with_consistency_level(session_token)
+        .with_consistency_level((&resp).into())
         .execute()
         .await?;
     println!("delete attachment == {:#?}", resp_delete);

@@ -40,6 +40,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
                 let data = r#"
                 {
+                    "id": "my_id",
                     "name": "John Tonno7",
                     "age": 43,
                     "phones": [
@@ -49,7 +50,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 }"#;
                 let v: Value = serde_json::from_str(data)?;
 
-                let document = Document::new("my_id".to_owned(), v);
+                let document = Document::new(v);
                 let resp = collection_client
                     .create_document()
                     .with_document(&document)

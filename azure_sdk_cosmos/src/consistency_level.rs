@@ -1,7 +1,10 @@
 use crate::responses::{
     CreateDocumentResponse, CreateReferenceAttachmentResponse, CreateSlugAttachmentResponse,
-    DeleteDocumentResponse, ExecuteStoredProcedureResponse, GetDocumentResponse,
-    ListDocumentsResponse, QueryDocumentsResponse, ReplaceDocumentResponse,
+    CreateUserDefinedFunctionResponse, DeleteAttachmentResponse, DeleteDocumentResponse,
+    DeleteUserDefinedFunctionResponse, ExecuteStoredProcedureResponse, GetAttachmentResponse,
+    GetDocumentResponse, ListAttachmentsResponse, ListDocumentsResponse,
+    ListUserDefinedFunctionsResponse, QueryDocumentsResponse, QueryDocumentsResponseDocuments,
+    QueryDocumentsResponseRaw, ReplaceDocumentResponse, ReplaceReferenceAttachmentResponse,
 };
 use serde::de::DeserializeOwned;
 use std::borrow::Cow;
@@ -28,41 +31,51 @@ impl<'a> ConsistencyLevel<'a> {
     }
 }
 
-impl<'a> From<&'a CreateSlugAttachmentResponse> for ConsistencyLevel<'a> {
-    fn from(a: &'a CreateSlugAttachmentResponse) -> Self {
-        ConsistencyLevel::Session(Cow::from(&a.session_token))
-    }
+macro_rules! implement_from {
+    ($response_type:ident) => {
+        impl<'a> From<&'a $response_type> for ConsistencyLevel<'a> {
+            fn from(a: &'a $response_type) -> Self {
+                ConsistencyLevel::Session(Cow::from(&a.session_token))
+            }
+        }
+
+        impl<'a> From<$response_type> for ConsistencyLevel<'a> {
+            fn from(a: $response_type) -> Self {
+                ConsistencyLevel::Session(Cow::from(a.session_token))
+            }
+        }
+    };
+    ($response_type:ident, $generic:tt) => {
+        impl<'a, $generic> From<&'a $response_type<$generic>> for ConsistencyLevel<'a> {
+            fn from(a: &'a $response_type<$generic>) -> Self {
+                ConsistencyLevel::Session(Cow::from(&a.session_token))
+            }
+        }
+
+        impl<'a, $generic> From<$response_type<$generic>> for ConsistencyLevel<'a> {
+            fn from(a: $response_type<$generic>) -> Self {
+                ConsistencyLevel::Session(Cow::from(a.session_token))
+            }
+        }
+    };
 }
 
-impl<'a> From<CreateSlugAttachmentResponse> for ConsistencyLevel<'a> {
-    fn from(a: CreateSlugAttachmentResponse) -> Self {
-        ConsistencyLevel::Session(Cow::from(a.session_token))
-    }
-}
-
-impl<'a> From<&'a CreateReferenceAttachmentResponse> for ConsistencyLevel<'a> {
-    fn from(a: &'a CreateReferenceAttachmentResponse) -> Self {
-        ConsistencyLevel::Session(Cow::from(&a.session_token))
-    }
-}
-
-impl<'a> From<CreateReferenceAttachmentResponse> for ConsistencyLevel<'a> {
-    fn from(a: CreateReferenceAttachmentResponse) -> Self {
-        ConsistencyLevel::Session(Cow::from(a.session_token))
-    }
-}
-
-impl<'a, T> From<&'a ListDocumentsResponse<T>> for ConsistencyLevel<'a> {
-    fn from(list_documents_response: &'a ListDocumentsResponse<T>) -> Self {
-        ConsistencyLevel::Session(Cow::from(&list_documents_response.session_token))
-    }
-}
-
-impl<'a, T> From<&'a QueryDocumentsResponse<T>> for ConsistencyLevel<'a> {
-    fn from(query_documents_response: &'a QueryDocumentsResponse<T>) -> Self {
-        ConsistencyLevel::Session(Cow::from(&query_documents_response.session_token))
-    }
-}
+implement_from!(CreateSlugAttachmentResponse);
+implement_from!(DeleteAttachmentResponse);
+implement_from!(ReplaceReferenceAttachmentResponse);
+implement_from!(CreateReferenceAttachmentResponse);
+implement_from!(ListAttachmentsResponse);
+implement_from!(GetAttachmentResponse);
+implement_from!(CreateDocumentResponse);
+implement_from!(ReplaceDocumentResponse);
+implement_from!(DeleteDocumentResponse);
+implement_from!(CreateUserDefinedFunctionResponse);
+implement_from!(DeleteUserDefinedFunctionResponse);
+implement_from!(ListUserDefinedFunctionsResponse);
+implement_from!(ListDocumentsResponse, T);
+implement_from!(QueryDocumentsResponse, T);
+implement_from!(QueryDocumentsResponseRaw, T);
+implement_from!(QueryDocumentsResponseDocuments, T);
 
 impl<'a, T> From<&'a GetDocumentResponse<T>> for ConsistencyLevel<'a> {
     fn from(get_document_response: &'a GetDocumentResponse<T>) -> Self {
@@ -74,30 +87,6 @@ impl<'a, T> From<&'a GetDocumentResponse<T>> for ConsistencyLevel<'a> {
                 ConsistencyLevel::Session(Cow::from(&response.session_token))
             }
         }
-    }
-}
-
-impl<'a> From<&'a CreateDocumentResponse> for ConsistencyLevel<'a> {
-    fn from(create_document_response: &'a CreateDocumentResponse) -> Self {
-        ConsistencyLevel::Session(Cow::from(&create_document_response.session_token))
-    }
-}
-
-impl<'a> From<CreateDocumentResponse> for ConsistencyLevel<'a> {
-    fn from(create_document_response: CreateDocumentResponse) -> Self {
-        ConsistencyLevel::Session(Cow::from(create_document_response.session_token))
-    }
-}
-
-impl<'a> From<&'a ReplaceDocumentResponse> for ConsistencyLevel<'a> {
-    fn from(replace_document_response: &'a ReplaceDocumentResponse) -> Self {
-        ConsistencyLevel::Session(Cow::from(&replace_document_response.session_token))
-    }
-}
-
-impl<'a> From<&'a DeleteDocumentResponse> for ConsistencyLevel<'a> {
-    fn from(delete_document_response: &'a DeleteDocumentResponse) -> Self {
-        ConsistencyLevel::Session(Cow::from(&delete_document_response.session_token))
     }
 }
 

@@ -34,6 +34,7 @@ pub mod responses;
 pub mod stored_procedure;
 mod to_json_vector;
 mod user;
+mod user_defined_function;
 
 pub use self::attachment::Attachment;
 pub use self::authorization_token::*;
@@ -54,7 +55,7 @@ pub use self::resource::Resource;
 pub use self::resource_quota::ResourceQuota;
 use crate::clients::{
     AttachmentClient, Client, CollectionClient, CosmosUriBuilder, DatabaseClient, DocumentClient,
-    PermissionClient, StoredProcedureClient, UserClient,
+    PermissionClient, StoredProcedureClient, UserClient, UserDefinedFunctionClient,
 };
 use crate::collection::Collection;
 use crate::collection::CollectionName;
@@ -62,6 +63,7 @@ use crate::headers::*;
 pub use crate::partition_keys::PartitionKeys;
 use crate::stored_procedure::{Parameters, StoredProcedureName};
 pub use crate::user::{User, UserName};
+pub use crate::user_defined_function::UserDefinedFunctionName;
 use attachment::AttachmentName;
 use azure_sdk_core::No;
 use http::request::Builder;
@@ -346,7 +348,16 @@ pub trait StoredProcedureBodyRequired<'a> {
 
 pub trait StoredProcedureBodySupport<'a> {
     type O;
-    fn with_body(self, partition_keys: &'a str) -> Self::O;
+    fn with_body(self, body: &'a str) -> Self::O;
+}
+
+pub trait UserDefinedFunctionBodyRequired<'a> {
+    fn body(&self) -> &'a str;
+}
+
+pub trait UserDefinedFunctionBodySupport<'a> {
+    type O;
+    fn with_body(self, body: &'a str) -> Self::O;
 }
 
 pub trait ExpirySecondsOption {
@@ -398,6 +409,13 @@ where
     CUB: CosmosUriBuilder,
 {
     fn stored_procedure_client(&self) -> &'a StoredProcedureClient<'a, CUB>;
+}
+
+pub trait UserDefinedFunctionClientRequired<'a, CUB>
+where
+    CUB: CosmosUriBuilder,
+{
+    fn user_defined_function_client(&self) -> &'a UserDefinedFunctionClient<'a, CUB>;
 }
 
 pub trait UserClientRequired<'a, CUB>
@@ -602,7 +620,7 @@ where
     fn create_document<T>(&self) -> requests::CreateDocumentBuilder<'_, '_, T, CUB, No, No>
     where
         T: Serialize;
-    fn replace_document<T>(&self) -> requests::ReplaceDocumentBuilder<'_, '_, T, CUB, No, No>
+    fn replace_document<T>(&self) -> requests::ReplaceDocumentBuilder<'_, '_, T, CUB, No, No, No>
     where
         T: Serialize;
     fn query_documents(&self) -> requests::QueryDocumentsBuilder<'_, '_, CUB, No>;
@@ -610,7 +628,13 @@ where
         &'c self,
         stored_procedure_name: &'c dyn StoredProcedureName,
     ) -> StoredProcedureClient<'c, CUB>;
+    fn with_user_defined_function<'c>(
+        &'c self,
+        user_defined_function_name: &'c dyn UserDefinedFunctionName,
+    ) -> UserDefinedFunctionClient<'c, CUB>;
     fn list_stored_procedures(&self) -> requests::ListStoredProceduresBuilder<'_, CUB>;
+    fn list_user_defined_functions(&self)
+        -> requests::ListUserDefinedFunctionsBuilder<'_, '_, CUB>;
     fn get_partition_key_ranges(&self) -> requests::GetPartitionKeyRangesBuilder<'_, '_, CUB>;
     fn with_document<'c>(
         &'c self,
@@ -669,6 +693,34 @@ where
     CUB: CosmosUriBuilder,
 {
     fn prepare_request(&self, method: hyper::Method) -> http::request::Builder;
+}
+
+pub trait UserDefinedFunctionTrait<'a, CUB>
+where
+    CUB: CosmosUriBuilder,
+{
+    fn database_name(&self) -> &'a dyn DatabaseName;
+    fn collection_name(&self) -> &'a dyn CollectionName;
+    fn user_defined_function_name(&self) -> &'a dyn UserDefinedFunctionName;
+    fn create_user_defined_function(
+        &self,
+    ) -> requests::CreateOrReplaceUserDefinedFunctionBuilder<'_, CUB, No>;
+    fn replace_user_defined_function(
+        &self,
+    ) -> requests::CreateOrReplaceUserDefinedFunctionBuilder<'_, CUB, No>;
+    fn delete_user_defined_function(&self) -> requests::DeleteUserDefinedFunctionBuilder<'_, CUB>;
+}
+
+pub(crate) trait UserDefinedFunctionBuilderTrait<'a, CUB>:
+    UserDefinedFunctionTrait<'a, CUB>
+where
+    CUB: CosmosUriBuilder,
+{
+    fn prepare_request(
+        &self,
+        method: hyper::Method,
+        specify_user_defined_function_name: bool,
+    ) -> http::request::Builder;
 }
 
 pub trait AttachmentTrait<'a, CUB>

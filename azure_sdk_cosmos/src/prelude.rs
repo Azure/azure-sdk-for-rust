@@ -5,6 +5,7 @@ pub use crate::collection::{
 pub use crate::database::DatabaseName;
 pub use crate::document::Document;
 pub use crate::query::Query;
+pub use crate::responses::{QueryDocumentsResponse, QueryDocumentsResponseRaw, QueryResult};
 pub use crate::{
     AIMOption, AIMSupport, AllowTentativeWritesOption, AllowTentativeWritesSupport,
     AttachmentTrait, AuthorizationToken, ClientRequired, CollectionClientRequired,
@@ -23,6 +24,7 @@ pub use crate::{
     PermissionClientRequired, PermissionModeRequired, PermissionModeSupport, PermissionTrait,
     QueryCrossPartitionOption, QueryCrossPartitionSupport, QueryRequired, QuerySupport,
     StoredProcedureBodyRequired, StoredProcedureBodySupport, StoredProcedureNameRequired,
-    StoredProcedureNameSupport, StoredProcedureTrait, UserClientRequired, UserName,
-    UserNameRequired, UserNameSupport, UserTrait,
+    StoredProcedureNameSupport, StoredProcedureTrait, UserClientRequired,
+    UserDefinedFunctionBodyRequired, UserDefinedFunctionBodySupport, UserDefinedFunctionTrait,
+    UserName, UserNameRequired, UserNameSupport, UserTrait,
 };

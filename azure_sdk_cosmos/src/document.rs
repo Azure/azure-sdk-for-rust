@@ -16,28 +16,13 @@ pub struct Document<T> {
 }
 
 impl<T> Document<T> {
-    #[inline]
-    pub fn id(&self) -> &str {
-        self.document_attributes.id()
-    }
-
-    pub fn new(id: String, t: T) -> Self {
-        let mut document_attributes = DocumentAttributes::default();
-        document_attributes.id = id;
+    pub fn new(t: T) -> Self {
+        let document_attributes = DocumentAttributes::default();
 
         Self {
             document_attributes,
             document: t,
         }
-    }
-}
-
-impl<T> DocumentName for Document<T>
-where
-    T: std::fmt::Debug,
-{
-    fn name(&self) -> &str {
-        self.id()
     }
 }
 
@@ -48,6 +33,12 @@ impl DocumentName for &str {
 }
 
 impl DocumentName for String {
+    fn name(&self) -> &str {
+        self.as_ref()
+    }
+}
+
+impl DocumentName for std::borrow::Cow<'_, str> {
     fn name(&self) -> &str {
         self.as_ref()
     }

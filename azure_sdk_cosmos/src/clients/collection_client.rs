@@ -1,11 +1,13 @@
 use crate::clients::{
     Client, CosmosUriBuilder, DatabaseClient, DocumentClient, ResourceType, StoredProcedureClient,
+    UserDefinedFunctionClient,
 };
 use crate::collection::CollectionName;
 use crate::database::DatabaseName;
 use crate::document::DocumentName;
 use crate::requests;
 use crate::stored_procedure::StoredProcedureName;
+use crate::user_defined_function::UserDefinedFunctionName;
 use crate::{CollectionBuilderTrait, CollectionTrait, DatabaseTrait, PartitionKeys};
 use azure_sdk_core::No;
 use serde::Serialize;
@@ -79,7 +81,7 @@ where
         requests::CreateDocumentBuilder::new(self)
     }
 
-    fn replace_document<T>(&self) -> requests::ReplaceDocumentBuilder<'_, '_, T, CUB, No, No>
+    fn replace_document<T>(&self) -> requests::ReplaceDocumentBuilder<'_, '_, T, CUB, No, No, No>
     where
         T: Serialize,
     {
@@ -97,8 +99,21 @@ where
         StoredProcedureClient::new(&self, stored_procedure_name)
     }
 
+    fn with_user_defined_function<'c>(
+        &'c self,
+        user_defined_function_name: &'c dyn UserDefinedFunctionName,
+    ) -> UserDefinedFunctionClient<'c, CUB> {
+        UserDefinedFunctionClient::new(&self, user_defined_function_name)
+    }
+
     fn list_stored_procedures(&self) -> requests::ListStoredProceduresBuilder<'_, CUB> {
         requests::ListStoredProceduresBuilder::new(self)
+    }
+
+    fn list_user_defined_functions(
+        &self,
+    ) -> requests::ListUserDefinedFunctionsBuilder<'_, '_, CUB> {
+        requests::ListUserDefinedFunctionsBuilder::new(self)
     }
 
     fn get_partition_key_ranges(&self) -> requests::GetPartitionKeyRangesBuilder<'_, '_, CUB> {

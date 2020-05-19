@@ -32,6 +32,12 @@ pub enum TokenParsingError {
     },
 }
 
+#[derive(Debug, Fail)]
+pub enum ConversionToDocumentError {
+    #[fail(display = "Conversion to document failed because at lease one element is raw.")]
+    RawElementFound {},
+}
+
 #[inline]
 pub(crate) fn item_or_error<'a>(
     s: &'a str,

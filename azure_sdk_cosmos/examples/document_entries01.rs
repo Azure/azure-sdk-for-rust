@@ -6,6 +6,7 @@ extern crate serde_derive;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 struct MySampleStruct<'a> {
+    id: Cow<'a, str>,
     a_string: Cow<'a, str>,
     a_number: u64,
     a_timestamp: i64,
@@ -32,17 +33,15 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let client = client.with_database(&database_name);
     let client = client.with_collection(&collection_name);
 
-    let mut doc = Document::new(
-        format!("unique_id{}", 500),
-        MySampleStruct {
-            a_string: Cow::Borrowed("Something here"),
-            a_number: 600,
-            a_timestamp: chrono::Utc::now().timestamp(),
-        },
-    );
+    let mut doc = Document::new(MySampleStruct {
+        id: Cow::Owned(format!("unique_id{}", 500)),
+        a_string: Cow::Borrowed("Something here"),
+        a_number: 600,
+        a_timestamp: chrono::Utc::now().timestamp(),
+    });
 
     let mut partition_keys = PartitionKeys::new();
-    partition_keys.push(doc.document_attributes.id())?;
+    partition_keys.push(&doc.document.id)?;
 
     // let's add an entity.
     let create_document_response = client
@@ -58,7 +57,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         create_document_response
     );
 
-    let document_client = client.with_document(&doc, &partition_keys);
+    let document_client = client.with_document(&doc.document.id, &partition_keys);
 
     let get_document_response = document_client
         .get_document()
@@ -99,6 +98,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let replace_document_response = client
         .replace_document()
         .with_document(&doc)
+        .with_document_id(&doc.document.id)
         .with_partition_keys(&partition_keys)
         .execute()
         .await?;

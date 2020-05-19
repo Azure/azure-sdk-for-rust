@@ -92,16 +92,14 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // for this example to work.
     let data = r#"
         {
+            "id": "Gianluigi Bombatomica",
             "age": 43,
             "phones": [
                 "+39 1234567",
                 "+39 2345678"
             ]
         }"#;
-    let document = Document::new(
-        "Gianluigi Bombatomica".to_owned(),
-        serde_json::from_str::<serde_json::Value>(data)?,
-    );
+    let document = Document::new(serde_json::from_str::<serde_json::Value>(data)?);
     println!(
         "Trying to insert {:#?} into the collection with a read-only authorization_token.",
         document
@@ -113,7 +111,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .create_document()
         .with_document(&document)
         .with_is_upsert(true)
-        .with_partition_keys(PartitionKeys::new().push(document.document_attributes.id())?)
+        .with_partition_keys(PartitionKeys::new().push("Gianluigi Bombatomica")?)
         .execute()
         .await
     {
@@ -155,7 +153,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .create_document()
         .with_document(&document)
         .with_is_upsert(true)
-        .with_partition_keys(PartitionKeys::new().push(document.document_attributes.id())?)
+        .with_partition_keys(PartitionKeys::new().push("Gianluigi Bombatomica")?)
         .execute()
         .await?;
     println!(
