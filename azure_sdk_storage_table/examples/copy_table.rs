@@ -4,6 +4,7 @@ extern crate serde_derive;
 use azure_sdk_storage_table::{CloudTable, TableClient};
 use futures::stream::StreamExt;
 use std::error::Error;
+use azure_sdk_storage_core::ConnectionString;
 
 #[derive(Debug, Serialize, Deserialize)]
 struct MyEntity {
@@ -13,12 +14,8 @@ struct MyEntity {
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     // First we retrieve the account names and master keys from environment variables.
-    let account =
-        std::env::var("STORAGE_ACCOUNT").expect("Set env variable STORAGE_ACCOUNT first!");
-    let master_key =
-        std::env::var("STORAGE_MASTER_KEY").expect("Set env variable STORAGE_MASTER_KEY first!");
-    let to_account = std::env::var("TO_STORAGE_ACCOUNT").unwrap_or(account.clone());
-    let to_master_key = std::env::var("TO_STORAGE_MASTER_KEY").unwrap_or(master_key.clone());
+    let source_account_connection_string = std::env::var("STORAGE_ACCOUNT_CONNECTION_STRING").expect("Set env variable STORAGE_ACCOUNT_CONNECTION_STRING first!");
+    let to_account_connection_string = std::env::var("TO_STORAGE_ACCOUNT_CONNECTION_STRING").expect("Set env variable TO_STORAGE_ACCOUNT_CONNECTION_STRING first!");
 
     let from_table_name = std::env::args()
         .nth(1)
@@ -27,11 +24,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .nth(2)
         .expect("please specify destination table name as second command line parameter");
 
-    let from_table = CloudTable::new(TableClient::new(&account, &master_key)?, from_table_name);
-    let to_table = CloudTable::new(
-        TableClient::new(&to_account, &to_master_key)?,
-        to_table_name.clone(),
-    );
+    let from_table = CloudTable::new(TableClient::from_connection_string(&source_account_connection_string)?, from_table_name);
+    let to_table = CloudTable::new(TableClient::from_connection_string(&to_account_connection_string)?, to_table_name.clone());
 
     println!("creating table {}", &to_table_name);
     to_table.create_if_not_exists().await?;
@@ -51,7 +45,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     }
     println!(
         "copied {} entities to table {} in {}",
-        count, &to_table_name, to_account,
+        count, &to_table_name, ConnectionString::new(&to_account_connection_string).unwrap().account_name.unwrap(),
     );
 
     Ok(())
