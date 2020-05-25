@@ -8,7 +8,7 @@ pub enum ParsingError {
 #[macro_export]
 macro_rules! create_enum {
     ($en:ident, $(($na:ident, $x:expr)), *) => (
-        #[derive(Debug, PartialEq, PartialOrd, Clone, Copy)]
+        #[derive(Debug, PartialEq, PartialOrd, Clone, Copy, Serialize, Deserialize)]
         pub enum $en {
             $(
                 $na,

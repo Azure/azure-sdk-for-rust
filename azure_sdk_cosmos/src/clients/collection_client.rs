@@ -1,12 +1,13 @@
 use crate::clients::{
     Client, CosmosUriBuilder, DatabaseClient, DocumentClient, ResourceType, StoredProcedureClient,
-    UserDefinedFunctionClient,
+    TriggerClient, UserDefinedFunctionClient,
 };
 use crate::collection::CollectionName;
 use crate::database::DatabaseName;
 use crate::document::DocumentName;
 use crate::requests;
 use crate::stored_procedure::StoredProcedureName;
+use crate::trigger::TriggerName;
 use crate::user_defined_function::UserDefinedFunctionName;
 use crate::{CollectionBuilderTrait, CollectionTrait, DatabaseTrait, PartitionKeys};
 use azure_sdk_core::No;
@@ -106,6 +107,10 @@ where
         UserDefinedFunctionClient::new(&self, user_defined_function_name)
     }
 
+    fn with_trigger<'c>(&'c self, trigger_name: &'c dyn TriggerName) -> TriggerClient<'c, CUB> {
+        TriggerClient::new(&self, trigger_name)
+    }
+
     fn list_stored_procedures(&self) -> requests::ListStoredProceduresBuilder<'_, CUB> {
         requests::ListStoredProceduresBuilder::new(self)
     }
@@ -114,6 +119,10 @@ where
         &self,
     ) -> requests::ListUserDefinedFunctionsBuilder<'_, '_, CUB> {
         requests::ListUserDefinedFunctionsBuilder::new(self)
+    }
+
+    fn list_triggers(&self) -> requests::ListTriggersBuilder<'_, '_, CUB> {
+        requests::ListTriggersBuilder::new(self)
     }
 
     fn get_partition_key_ranges(&self) -> requests::GetPartitionKeyRangesBuilder<'_, '_, CUB> {

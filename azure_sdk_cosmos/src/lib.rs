@@ -6,6 +6,8 @@ extern crate log;
 extern crate serde_derive;
 #[macro_use]
 extern crate failure;
+#[macro_use]
+extern crate azure_sdk_core;
 
 pub mod attachment;
 mod authorization_token;
@@ -33,6 +35,7 @@ mod resource_quota;
 pub mod responses;
 pub mod stored_procedure;
 mod to_json_vector;
+pub mod trigger;
 mod user;
 mod user_defined_function;
 
@@ -53,9 +56,10 @@ pub use self::query::{Param, ParamDef, Query};
 pub use self::requests::*;
 pub use self::resource::Resource;
 pub use self::resource_quota::ResourceQuota;
+pub use self::trigger::{Trigger, TriggerName};
 use crate::clients::{
     AttachmentClient, Client, CollectionClient, CosmosUriBuilder, DatabaseClient, DocumentClient,
-    PermissionClient, StoredProcedureClient, UserClient, UserDefinedFunctionClient,
+    PermissionClient, StoredProcedureClient, TriggerClient, UserClient, UserDefinedFunctionClient,
 };
 use crate::collection::Collection;
 use crate::collection::CollectionName;
@@ -302,6 +306,24 @@ pub trait PartitionKeysSupport<'a> {
     fn with_partition_keys(self, partition_keys: &'a PartitionKeys) -> Self::O;
 }
 
+pub trait TriggerOperationRequired {
+    fn trigger_operation(&self) -> self::trigger::TriggerOperation;
+}
+
+pub trait TriggerOperationSupport {
+    type O;
+    fn with_trigger_operation(self, a: self::trigger::TriggerOperation) -> Self::O;
+}
+
+pub trait TriggerTypeRequired {
+    fn trigger_type(&self) -> self::trigger::TriggerType;
+}
+
+pub trait TriggerTypeSupport {
+    type O;
+    fn with_trigger_type(self, a: self::trigger::TriggerType) -> Self::O;
+}
+
 pub(crate) fn add_partition_keys_header(
     partition_keys: &PartitionKeys,
     builder: Builder,
@@ -356,6 +378,15 @@ pub trait UserDefinedFunctionBodyRequired<'a> {
 }
 
 pub trait UserDefinedFunctionBodySupport<'a> {
+    type O;
+    fn with_body(self, body: &'a str) -> Self::O;
+}
+
+pub trait TriggerBodyRequired<'a> {
+    fn body(&self) -> &'a str;
+}
+
+pub trait TriggerBodySupport<'a> {
     type O;
     fn with_body(self, body: &'a str) -> Self::O;
 }
@@ -416,6 +447,13 @@ where
     CUB: CosmosUriBuilder,
 {
     fn user_defined_function_client(&self) -> &'a UserDefinedFunctionClient<'a, CUB>;
+}
+
+pub trait TriggerClientRequired<'a, CUB>
+where
+    CUB: CosmosUriBuilder,
+{
+    fn trigger_client(&self) -> &'a TriggerClient<'a, CUB>;
 }
 
 pub trait UserClientRequired<'a, CUB>
@@ -632,9 +670,11 @@ where
         &'c self,
         user_defined_function_name: &'c dyn UserDefinedFunctionName,
     ) -> UserDefinedFunctionClient<'c, CUB>;
+    fn with_trigger<'c>(&'c self, trigger_name: &'c dyn TriggerName) -> TriggerClient<'c, CUB>;
     fn list_stored_procedures(&self) -> requests::ListStoredProceduresBuilder<'_, CUB>;
     fn list_user_defined_functions(&self)
         -> requests::ListUserDefinedFunctionsBuilder<'_, '_, CUB>;
+    fn list_triggers(&self) -> requests::ListTriggersBuilder<'_, '_, CUB>;
     fn get_partition_key_ranges(&self) -> requests::GetPartitionKeyRangesBuilder<'_, '_, CUB>;
     fn with_document<'c>(
         &'c self,
@@ -720,6 +760,29 @@ where
         &self,
         method: hyper::Method,
         specify_user_defined_function_name: bool,
+    ) -> http::request::Builder;
+}
+
+pub trait TriggerTrait<'a, CUB>
+where
+    CUB: CosmosUriBuilder,
+{
+    fn database_name(&self) -> &'a dyn DatabaseName;
+    fn collection_name(&self) -> &'a dyn CollectionName;
+    fn trigger_name(&self) -> &'a dyn TriggerName;
+    fn create_trigger(&self) -> requests::CreateOrReplaceTriggerBuilder<'_, CUB, No, No, No>;
+    fn replace_trigger(&self) -> requests::CreateOrReplaceTriggerBuilder<'_, CUB, No, No, No>;
+    fn delete_trigger(&self) -> requests::DeleteTriggerBuilder<'_, CUB>;
+}
+
+pub(crate) trait TriggerBuilderTrait<'a, CUB>: TriggerTrait<'a, CUB>
+where
+    CUB: CosmosUriBuilder,
+{
+    fn prepare_request(
+        &self,
+        method: hyper::Method,
+        specify_trigger_name: bool,
     ) -> http::request::Builder;
 }
 

@@ -24,7 +24,9 @@ pub use crate::{
     PermissionClientRequired, PermissionModeRequired, PermissionModeSupport, PermissionTrait,
     QueryCrossPartitionOption, QueryCrossPartitionSupport, QueryRequired, QuerySupport,
     StoredProcedureBodyRequired, StoredProcedureBodySupport, StoredProcedureNameRequired,
-    StoredProcedureNameSupport, StoredProcedureTrait, UserClientRequired,
-    UserDefinedFunctionBodyRequired, UserDefinedFunctionBodySupport, UserDefinedFunctionTrait,
-    UserName, UserNameRequired, UserNameSupport, UserTrait,
+    StoredProcedureNameSupport, StoredProcedureTrait, TriggerBodyRequired, TriggerBodySupport,
+    TriggerOperationRequired, TriggerOperationSupport, TriggerTrait, TriggerTypeRequired,
+    TriggerTypeSupport, UserClientRequired, UserDefinedFunctionBodyRequired,
+    UserDefinedFunctionBodySupport, UserDefinedFunctionTrait, UserName, UserNameRequired,
+    UserNameSupport, UserTrait,
 };

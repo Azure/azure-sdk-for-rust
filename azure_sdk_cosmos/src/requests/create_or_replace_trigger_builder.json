@@ -1,0 +1,83 @@
+{
+	"name": "CreateOrReplaceTriggerBuilder",
+	"derive": "Debug, Clone",
+	"uses": [
+			"crate::clients::{CosmosUriBuilder}",
+			"crate::trigger::*",
+			"crate::prelude::*",
+			"crate::TriggerClient",
+			"crate::TriggerClientRequired",
+			"crate::{TriggerBuilderTrait, TriggerTrait}",
+			"azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError}",
+			"azure_sdk_core::prelude::*",
+			"azure_sdk_core::{Yes,No,ToAssign}",
+			"std::marker::PhantomData",
+			"hyper::StatusCode",
+			"crate::responses::CreateTriggerResponse",
+			"std::convert::TryInto"
+	],
+	"inline": true,
+	"extra_types": [ "'a", "CUB" ],
+	"extra_wheres": ["CUB: CosmosUriBuilder" ],
+	"constructor_fields": [
+		{
+			"name": "trigger_client",
+			"field_type": "&'a TriggerClient<'a, CUB>",
+			"trait_get": "TriggerClientRequired<'a, CUB>"
+		},
+		{
+			"name": "is_create",
+			"field_type": "bool"
+		}
+	],
+	"fields": [
+		{
+			"name": "trigger_operation",
+			"field_type": "TriggerOperation",
+			"builder_type": "TriggerOperationSet",
+			"optional": false,
+			"initializer": "TriggerOperation::All",
+			"trait_get": "TriggerOperationRequired",
+			"trait_set": "TriggerOperationSupport"
+		},
+		{
+			"name": "trigger_type",
+			"field_type": "TriggerType",
+			"builder_type": "TriggerTypeSet",
+			"optional": false,
+			"initializer": "TriggerType::Pre",
+			"trait_get": "TriggerTypeRequired",
+			"trait_set": "TriggerTypeSupport"
+		},
+		{
+			"name": "body",
+			"field_type": "&'a str",
+			"builder_type": "BodySet",
+			"optional": false,
+			"trait_get": "TriggerBodyRequired<'a>",
+			"trait_set": "TriggerBodySupport<'a>"
+		},
+		{
+			"name": "user_agent",
+			"field_type": "&'a str",
+			"optional": true,
+			"trait_get": "UserAgentOption<'a>",
+			"trait_set": "UserAgentSupport<'a>"
+		},
+		{
+			"name": "activity_id",
+			"field_type": "&'a str",
+			"optional": true,
+			"trait_get": "ActivityIdOption<'a>",
+			"trait_set": "ActivityIdSupport<'a>"
+		},
+		{
+			"name": "consistency_level",
+			"field_type": "ConsistencyLevel<'a>",
+			"optional": true,
+			"trait_get": "ConsistencyLevelOption<'a>",
+			"trait_set": "ConsistencyLevelSupport<'a>",
+			"get_via_clone": true
+		}
+	]
+}
