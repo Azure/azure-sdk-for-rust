@@ -4,10 +4,11 @@ use crate::DocumentClientRequired;
 use crate::{DocumentClient, ResourceType};
 use azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError};
 use azure_sdk_core::prelude::*;
+use futures::stream::{unfold, Stream};
 use hyper::StatusCode;
 use std::convert::TryInto;
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct ListAttachmentsBuilder<'a, 'b, C, D, COLL>
 where
     C: CosmosClient,
@@ -43,6 +44,26 @@ where
             continuation: None,
             max_item_count: -1,
             a_im: false,
+        }
+    }
+}
+
+impl<'a, 'b, C, D, COLL> Clone for ListAttachmentsBuilder<'a, 'b, C, D, COLL>
+where
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    COLL: CollectionClient<C, D>,
+{
+    fn clone(&self) -> Self {
+        Self {
+            document_client: self.document_client,
+            if_match_condition: self.if_match_condition,
+            user_agent: self.user_agent,
+            activity_id: self.activity_id,
+            consistency_level: self.consistency_level.clone(),
+            continuation: self.continuation,
+            max_item_count: self.max_item_count,
+            a_im: self.a_im,
         }
     }
 }
@@ -350,5 +371,46 @@ where
         debug!("\nwhole body == {:#?}", whole_body);
 
         Ok((&headers, &whole_body as &[u8]).try_into()?)
+    }
+
+    pub fn stream(&self) -> impl Stream<Item = Result<ListAttachmentsResponse, AzureError>> + '_ {
+        #[derive(Debug, Clone, PartialEq)]
+        enum States {
+            Init,
+            Continuation(String),
+        };
+
+        unfold(
+            Some(States::Init),
+            move |continuation_token: Option<States>| {
+                async move {
+                    debug!("continuation_token == {:?}", &continuation_token);
+                    let response = match continuation_token {
+                        Some(States::Init) => self.execute().await,
+                        Some(States::Continuation(continuation_token)) => {
+                            self.clone()
+                                .with_continuation(&continuation_token)
+                                .execute()
+                                .await
+                        }
+                        None => return None,
+                    };
+
+                    // the ? operator does not work in async move (yet?)
+                    // so we have to resort to this boilerplate
+                    let response = match response {
+                        Ok(response) => response,
+                        Err(err) => return Some((Err(err), None)),
+                    };
+
+                    let continuation_token = match &response.continuation_token {
+                        Some(ct) => Some(States::Continuation(ct.to_owned())),
+                        None => None,
+                    };
+
+                    Some((Ok(response), continuation_token))
+                }
+            },
+        )
     }
 }
