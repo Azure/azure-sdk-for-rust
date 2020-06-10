@@ -2,27 +2,23 @@
 	"name": "ExecuteStoredProcedureBuilder",
 	"derive": "Debug, Clone",
 	"uses": [
-			"crate::clients::{CosmosUriBuilder}",
 			"crate::prelude::*",
-			"crate::StoredProcedureClient",
-			"crate::stored_procedure::Parameters",
-			"crate::StoredProcedureClientRequired",
-			"azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError}",
 			"azure_sdk_core::prelude::*",
+			"crate::stored_procedure::Parameters",
+			"azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError}",
 			"hyper::StatusCode",
-			"crate::StoredProcedureBuilderTrait",
 			"crate::responses::ExecuteStoredProcedureResponse",
 			"serde::de::DeserializeOwned",
 			"std::convert::TryInto"
 	],
 	"inline": true,
-	"extra_types": [ "'a", "'b", "CUB" ],
-	"extra_wheres": ["CUB: CosmosUriBuilder" ],
+	"extra_types": [ "'a", "'b", "C", "D", "COLL" ],
+	"extra_wheres": [ "C: CosmosClient", "D: DatabaseClient<C>", "COLL: CollectionClient<C, D>" ],
 	"constructor_fields": [
 		{
 			"name": "stored_procedure_client",
-			"field_type": "&'a StoredProcedureClient<'a, CUB>",
-			"trait_get": "StoredProcedureClientRequired<'a, CUB>"
+			"field_type": "&'a dyn StoredProcedureClient<C, D, COLL>",
+			"trait_get": "StoredProcedureClientRequired<'a, C, D, COLL>"
 		}
 	],
 	"fields": [
@@ -52,7 +48,8 @@
 			"field_type": "ConsistencyLevel<'b>",
 			"optional": true,
 			"trait_get": "ConsistencyLevelOption<'b>",
-			"trait_set": "ConsistencyLevelSupport<'b>"
+			"trait_set": "ConsistencyLevelSupport<'b>",
+			"get_via_clone": true
 		},
 		{
 			"name": "allow_tentative_writes",

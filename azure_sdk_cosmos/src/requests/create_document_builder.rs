@@ -1,12 +1,8 @@
-use crate::clients::{CollectionClient, CosmosUriBuilder, ResourceType};
-use crate::document::Document;
 use crate::prelude::*;
 use crate::responses::CreateDocumentResponse;
-use crate::CollectionClientRequired;
+use crate::ResourceType;
 use azure_sdk_core::errors::{extract_status_headers_and_body, AzureError, UnexpectedHTTPResult};
-use azure_sdk_core::modify_conditions::IfMatchCondition;
 use azure_sdk_core::prelude::*;
-use azure_sdk_core::{IfMatchConditionOption, IfMatchConditionSupport};
 use azure_sdk_core::{No, ToAssign, Yes};
 use chrono::{DateTime, Utc};
 use hyper::StatusCode;
@@ -15,17 +11,14 @@ use std::convert::TryFrom;
 use std::marker::PhantomData;
 
 #[derive(Debug, Clone)]
-pub struct CreateDocumentBuilder<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet>
+pub struct CreateDocumentBuilder<'a, 'b, C, D, PartitionKeysSet>
 where
-    DocumentSet: ToAssign,
     PartitionKeysSet: ToAssign,
-    T: Serialize,
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
 {
-    collection_client: &'a CollectionClient<'a, CUB>,
-    p_document: PhantomData<DocumentSet>,
+    collection_client: &'a dyn CollectionClient<C, D>,
     p_partition_keys: PhantomData<PartitionKeysSet>,
-    document: Option<&'b Document<T>>,
     partition_keys: Option<&'b PartitionKeys>,
     is_upsert: bool,
     indexing_directive: IndexingDirective,
@@ -37,19 +30,17 @@ where
     allow_tentative_writes: bool,
 }
 
-impl<'a, 'b, T, CUB> CreateDocumentBuilder<'a, 'b, T, CUB, No, No>
+impl<'a, 'b, C, D> CreateDocumentBuilder<'a, 'b, C, D, No>
 where
-    T: Serialize,
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
 {
     #[inline]
     pub(crate) fn new(
-        collection_client: &'a CollectionClient<'a, CUB>,
-    ) -> CreateDocumentBuilder<'a, 'b, T, CUB, No, No> {
+        collection_client: &'a dyn CollectionClient<C, D>,
+    ) -> CreateDocumentBuilder<'a, 'b, C, D, No> {
         CreateDocumentBuilder {
             collection_client,
-            p_document: PhantomData {},
-            document: None,
             p_partition_keys: PhantomData {},
             partition_keys: None,
             is_upsert: false,
@@ -64,16 +55,15 @@ where
     }
 }
 
-impl<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet> CollectionClientRequired<'a, CUB>
-    for CreateDocumentBuilder<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet>
+impl<'a, 'b, C, D, PartitionKeysSet> CollectionClientRequired<'a, C, D>
+    for CreateDocumentBuilder<'a, 'b, C, D, PartitionKeysSet>
 where
-    DocumentSet: ToAssign,
     PartitionKeysSet: ToAssign,
-    T: Serialize,
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
 {
     #[inline]
-    fn collection_client(&self) -> &'a CollectionClient<'a, CUB> {
+    fn collection_client(&self) -> &'a dyn CollectionClient<C, D> {
         self.collection_client
     }
 }
@@ -81,25 +71,10 @@ where
 //get mandatory no traits methods
 
 //set mandatory no traits methods
-impl<'a, 'b, T, CUB, PartitionKeysSet> DocumentRequired<'b, T>
-    for CreateDocumentBuilder<'a, 'b, T, CUB, Yes, PartitionKeysSet>
+impl<'a, 'b, C, D> PartitionKeysRequired<'b> for CreateDocumentBuilder<'a, 'b, C, D, Yes>
 where
-    PartitionKeysSet: ToAssign,
-    T: Serialize,
-    CUB: CosmosUriBuilder,
-{
-    #[inline]
-    fn document(&self) -> &'b Document<T> {
-        self.document.unwrap()
-    }
-}
-
-impl<'a, 'b, T, CUB, DocumentSet> PartitionKeysRequired<'b>
-    for CreateDocumentBuilder<'a, 'b, T, CUB, DocumentSet, Yes>
-where
-    DocumentSet: ToAssign,
-    T: Serialize,
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
 {
     #[inline]
     fn partition_keys(&self) -> &'b PartitionKeys {
@@ -107,13 +82,12 @@ where
     }
 }
 
-impl<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet> IsUpsertOption
-    for CreateDocumentBuilder<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet>
+impl<'a, 'b, C, D, PartitionKeysSet> IsUpsertOption
+    for CreateDocumentBuilder<'a, 'b, C, D, PartitionKeysSet>
 where
-    DocumentSet: ToAssign,
     PartitionKeysSet: ToAssign,
-    T: Serialize,
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
 {
     #[inline]
     fn is_upsert(&self) -> bool {
@@ -121,13 +95,12 @@ where
     }
 }
 
-impl<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet> IndexingDirectiveOption
-    for CreateDocumentBuilder<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet>
+impl<'a, 'b, C, D, PartitionKeysSet> IndexingDirectiveOption
+    for CreateDocumentBuilder<'a, 'b, C, D, PartitionKeysSet>
 where
-    DocumentSet: ToAssign,
     PartitionKeysSet: ToAssign,
-    T: Serialize,
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
 {
     #[inline]
     fn indexing_directive(&self) -> IndexingDirective {
@@ -135,13 +108,12 @@ where
     }
 }
 
-impl<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet> IfMatchConditionOption<'b>
-    for CreateDocumentBuilder<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet>
+impl<'a, 'b, C, D, PartitionKeysSet> IfMatchConditionOption<'b>
+    for CreateDocumentBuilder<'a, 'b, C, D, PartitionKeysSet>
 where
-    DocumentSet: ToAssign,
     PartitionKeysSet: ToAssign,
-    T: Serialize,
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
 {
     #[inline]
     fn if_match_condition(&self) -> Option<IfMatchCondition<'b>> {
@@ -149,13 +121,12 @@ where
     }
 }
 
-impl<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet> IfModifiedSinceOption<'b>
-    for CreateDocumentBuilder<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet>
+impl<'a, 'b, C, D, PartitionKeysSet> IfModifiedSinceOption<'b>
+    for CreateDocumentBuilder<'a, 'b, C, D, PartitionKeysSet>
 where
-    DocumentSet: ToAssign,
     PartitionKeysSet: ToAssign,
-    T: Serialize,
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
 {
     #[inline]
     fn if_modified_since(&self) -> Option<&'b DateTime<Utc>> {
@@ -163,13 +134,12 @@ where
     }
 }
 
-impl<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet> UserAgentOption<'b>
-    for CreateDocumentBuilder<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet>
+impl<'a, 'b, C, D, PartitionKeysSet> UserAgentOption<'b>
+    for CreateDocumentBuilder<'a, 'b, C, D, PartitionKeysSet>
 where
-    DocumentSet: ToAssign,
     PartitionKeysSet: ToAssign,
-    T: Serialize,
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
 {
     #[inline]
     fn user_agent(&self) -> Option<&'b str> {
@@ -177,13 +147,12 @@ where
     }
 }
 
-impl<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet> ActivityIdOption<'b>
-    for CreateDocumentBuilder<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet>
+impl<'a, 'b, C, D, PartitionKeysSet> ActivityIdOption<'b>
+    for CreateDocumentBuilder<'a, 'b, C, D, PartitionKeysSet>
 where
-    DocumentSet: ToAssign,
     PartitionKeysSet: ToAssign,
-    T: Serialize,
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
 {
     #[inline]
     fn activity_id(&self) -> Option<&'b str> {
@@ -191,13 +160,12 @@ where
     }
 }
 
-impl<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet> ConsistencyLevelOption<'b>
-    for CreateDocumentBuilder<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet>
+impl<'a, 'b, C, D, PartitionKeysSet> ConsistencyLevelOption<'b>
+    for CreateDocumentBuilder<'a, 'b, C, D, PartitionKeysSet>
 where
-    DocumentSet: ToAssign,
     PartitionKeysSet: ToAssign,
-    T: Serialize,
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
 {
     #[inline]
     fn consistency_level(&self) -> Option<ConsistencyLevel<'b>> {
@@ -205,13 +173,12 @@ where
     }
 }
 
-impl<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet> AllowTentativeWritesOption
-    for CreateDocumentBuilder<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet>
+impl<'a, 'b, C, D, PartitionKeysSet> AllowTentativeWritesOption
+    for CreateDocumentBuilder<'a, 'b, C, D, PartitionKeysSet>
 where
-    DocumentSet: ToAssign,
     PartitionKeysSet: ToAssign,
-    T: Serialize,
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
 {
     #[inline]
     fn allow_tentative_writes(&self) -> bool {
@@ -219,51 +186,18 @@ where
     }
 }
 
-impl<'a, 'b, T, CUB, PartitionKeysSet> DocumentSupport<'b, T>
-    for CreateDocumentBuilder<'a, 'b, T, CUB, No, PartitionKeysSet>
+impl<'a, 'b, C, D> PartitionKeysSupport<'b> for CreateDocumentBuilder<'a, 'b, C, D, No>
 where
-    PartitionKeysSet: ToAssign,
-    T: Serialize,
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
 {
-    type O = CreateDocumentBuilder<'a, 'b, T, CUB, Yes, PartitionKeysSet>;
-
-    #[inline]
-    fn with_document(self, document: &'b Document<T>) -> Self::O {
-        CreateDocumentBuilder {
-            collection_client: self.collection_client,
-            p_document: PhantomData {},
-            p_partition_keys: PhantomData {},
-            document: Some(document),
-            partition_keys: self.partition_keys,
-            is_upsert: self.is_upsert,
-            indexing_directive: self.indexing_directive,
-            if_match_condition: self.if_match_condition,
-            if_modified_since: self.if_modified_since,
-            user_agent: self.user_agent,
-            activity_id: self.activity_id,
-            consistency_level: self.consistency_level,
-            allow_tentative_writes: self.allow_tentative_writes,
-        }
-    }
-}
-
-impl<'a, 'b, T, CUB, DocumentSet> PartitionKeysSupport<'b>
-    for CreateDocumentBuilder<'a, 'b, T, CUB, DocumentSet, No>
-where
-    DocumentSet: ToAssign,
-    T: Serialize,
-    CUB: CosmosUriBuilder,
-{
-    type O = CreateDocumentBuilder<'a, 'b, T, CUB, DocumentSet, Yes>;
+    type O = CreateDocumentBuilder<'a, 'b, C, D, Yes>;
 
     #[inline]
     fn with_partition_keys(self, partition_keys: &'b PartitionKeys) -> Self::O {
         CreateDocumentBuilder {
             collection_client: self.collection_client,
-            p_document: PhantomData {},
             p_partition_keys: PhantomData {},
-            document: self.document,
             partition_keys: Some(partition_keys),
             is_upsert: self.is_upsert,
             indexing_directive: self.indexing_directive,
@@ -277,23 +211,20 @@ where
     }
 }
 
-impl<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet> IsUpsertSupport
-    for CreateDocumentBuilder<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet>
+impl<'a, 'b, C, D, PartitionKeysSet> IsUpsertSupport
+    for CreateDocumentBuilder<'a, 'b, C, D, PartitionKeysSet>
 where
-    DocumentSet: ToAssign,
     PartitionKeysSet: ToAssign,
-    T: Serialize,
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
 {
-    type O = CreateDocumentBuilder<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet>;
+    type O = CreateDocumentBuilder<'a, 'b, C, D, PartitionKeysSet>;
 
     #[inline]
     fn with_is_upsert(self, is_upsert: bool) -> Self::O {
         CreateDocumentBuilder {
             collection_client: self.collection_client,
-            p_document: PhantomData {},
             p_partition_keys: PhantomData {},
-            document: self.document,
             partition_keys: self.partition_keys,
             is_upsert,
             indexing_directive: self.indexing_directive,
@@ -307,23 +238,20 @@ where
     }
 }
 
-impl<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet> IndexingDirectiveSupport
-    for CreateDocumentBuilder<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet>
+impl<'a, 'b, C, D, PartitionKeysSet> IndexingDirectiveSupport
+    for CreateDocumentBuilder<'a, 'b, C, D, PartitionKeysSet>
 where
-    DocumentSet: ToAssign,
     PartitionKeysSet: ToAssign,
-    T: Serialize,
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
 {
-    type O = CreateDocumentBuilder<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet>;
+    type O = CreateDocumentBuilder<'a, 'b, C, D, PartitionKeysSet>;
 
     #[inline]
     fn with_indexing_directive(self, indexing_directive: IndexingDirective) -> Self::O {
         CreateDocumentBuilder {
             collection_client: self.collection_client,
-            p_document: PhantomData {},
             p_partition_keys: PhantomData {},
-            document: self.document,
             partition_keys: self.partition_keys,
             is_upsert: self.is_upsert,
             indexing_directive,
@@ -337,23 +265,20 @@ where
     }
 }
 
-impl<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet> IfMatchConditionSupport<'b>
-    for CreateDocumentBuilder<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet>
+impl<'a, 'b, C, D, PartitionKeysSet> IfMatchConditionSupport<'b>
+    for CreateDocumentBuilder<'a, 'b, C, D, PartitionKeysSet>
 where
-    DocumentSet: ToAssign,
     PartitionKeysSet: ToAssign,
-    T: Serialize,
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
 {
-    type O = CreateDocumentBuilder<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet>;
+    type O = CreateDocumentBuilder<'a, 'b, C, D, PartitionKeysSet>;
 
     #[inline]
     fn with_if_match_condition(self, if_match_condition: IfMatchCondition<'b>) -> Self::O {
         CreateDocumentBuilder {
             collection_client: self.collection_client,
-            p_document: PhantomData {},
             p_partition_keys: PhantomData {},
-            document: self.document,
             partition_keys: self.partition_keys,
             is_upsert: self.is_upsert,
             indexing_directive: self.indexing_directive,
@@ -367,23 +292,20 @@ where
     }
 }
 
-impl<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet> IfModifiedSinceSupport<'b>
-    for CreateDocumentBuilder<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet>
+impl<'a, 'b, C, D, PartitionKeysSet> IfModifiedSinceSupport<'b>
+    for CreateDocumentBuilder<'a, 'b, C, D, PartitionKeysSet>
 where
-    DocumentSet: ToAssign,
     PartitionKeysSet: ToAssign,
-    T: Serialize,
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
 {
-    type O = CreateDocumentBuilder<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet>;
+    type O = CreateDocumentBuilder<'a, 'b, C, D, PartitionKeysSet>;
 
     #[inline]
     fn with_if_modified_since(self, if_modified_since: &'b DateTime<Utc>) -> Self::O {
         CreateDocumentBuilder {
             collection_client: self.collection_client,
-            p_document: PhantomData {},
             p_partition_keys: PhantomData {},
-            document: self.document,
             partition_keys: self.partition_keys,
             is_upsert: self.is_upsert,
             indexing_directive: self.indexing_directive,
@@ -397,23 +319,20 @@ where
     }
 }
 
-impl<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet> UserAgentSupport<'b>
-    for CreateDocumentBuilder<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet>
+impl<'a, 'b, C, D, PartitionKeysSet> UserAgentSupport<'b>
+    for CreateDocumentBuilder<'a, 'b, C, D, PartitionKeysSet>
 where
-    DocumentSet: ToAssign,
     PartitionKeysSet: ToAssign,
-    T: Serialize,
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
 {
-    type O = CreateDocumentBuilder<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet>;
+    type O = CreateDocumentBuilder<'a, 'b, C, D, PartitionKeysSet>;
 
     #[inline]
     fn with_user_agent(self, user_agent: &'b str) -> Self::O {
         CreateDocumentBuilder {
             collection_client: self.collection_client,
-            p_document: PhantomData {},
             p_partition_keys: PhantomData {},
-            document: self.document,
             partition_keys: self.partition_keys,
             is_upsert: self.is_upsert,
             indexing_directive: self.indexing_directive,
@@ -427,23 +346,20 @@ where
     }
 }
 
-impl<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet> ActivityIdSupport<'b>
-    for CreateDocumentBuilder<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet>
+impl<'a, 'b, C, D, PartitionKeysSet> ActivityIdSupport<'b>
+    for CreateDocumentBuilder<'a, 'b, C, D, PartitionKeysSet>
 where
-    DocumentSet: ToAssign,
     PartitionKeysSet: ToAssign,
-    T: Serialize,
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
 {
-    type O = CreateDocumentBuilder<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet>;
+    type O = CreateDocumentBuilder<'a, 'b, C, D, PartitionKeysSet>;
 
     #[inline]
     fn with_activity_id(self, activity_id: &'b str) -> Self::O {
         CreateDocumentBuilder {
             collection_client: self.collection_client,
-            p_document: PhantomData {},
             p_partition_keys: PhantomData {},
-            document: self.document,
             partition_keys: self.partition_keys,
             is_upsert: self.is_upsert,
             indexing_directive: self.indexing_directive,
@@ -457,23 +373,20 @@ where
     }
 }
 
-impl<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet> ConsistencyLevelSupport<'b>
-    for CreateDocumentBuilder<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet>
+impl<'a, 'b, C, D, PartitionKeysSet> ConsistencyLevelSupport<'b>
+    for CreateDocumentBuilder<'a, 'b, C, D, PartitionKeysSet>
 where
-    DocumentSet: ToAssign,
     PartitionKeysSet: ToAssign,
-    T: Serialize,
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
 {
-    type O = CreateDocumentBuilder<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet>;
+    type O = CreateDocumentBuilder<'a, 'b, C, D, PartitionKeysSet>;
 
     #[inline]
     fn with_consistency_level(self, consistency_level: ConsistencyLevel<'b>) -> Self::O {
         CreateDocumentBuilder {
             collection_client: self.collection_client,
-            p_document: PhantomData {},
             p_partition_keys: PhantomData {},
-            document: self.document,
             partition_keys: self.partition_keys,
             is_upsert: self.is_upsert,
             indexing_directive: self.indexing_directive,
@@ -487,23 +400,20 @@ where
     }
 }
 
-impl<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet> AllowTentativeWritesSupport
-    for CreateDocumentBuilder<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet>
+impl<'a, 'b, C, D, PartitionKeysSet> AllowTentativeWritesSupport
+    for CreateDocumentBuilder<'a, 'b, C, D, PartitionKeysSet>
 where
-    DocumentSet: ToAssign,
     PartitionKeysSet: ToAssign,
-    T: Serialize,
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
 {
-    type O = CreateDocumentBuilder<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet>;
+    type O = CreateDocumentBuilder<'a, 'b, C, D, PartitionKeysSet>;
 
     #[inline]
     fn with_allow_tentative_writes(self, allow_tentative_writes: bool) -> Self::O {
         CreateDocumentBuilder {
             collection_client: self.collection_client,
-            p_document: PhantomData {},
             p_partition_keys: PhantomData {},
-            document: self.document,
             partition_keys: self.partition_keys,
             is_upsert: self.is_upsert,
             indexing_directive: self.indexing_directive,
@@ -518,28 +428,32 @@ where
 }
 
 // methods callable regardless
-impl<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet>
-    CreateDocumentBuilder<'a, 'b, T, CUB, DocumentSet, PartitionKeysSet>
+impl<'a, 'b, C, D, PartitionKeysSet> CreateDocumentBuilder<'a, 'b, C, D, PartitionKeysSet>
 where
-    DocumentSet: ToAssign,
     PartitionKeysSet: ToAssign,
-    T: Serialize,
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
 {
 }
 
 // methods callable only when every mandatory field has been filled
-impl<'a, 'b, T, CUB> CreateDocumentBuilder<'a, 'b, T, CUB, Yes, Yes>
+impl<'a, 'b, C, D> CreateDocumentBuilder<'a, 'b, C, D, Yes>
 where
-    T: Serialize,
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
 {
-    pub async fn execute(&self) -> Result<CreateDocumentResponse, AzureError> {
-        let mut req = self.collection_client.main_client().prepare_request(
+    pub async fn execute_with_document<T>(
+        &self,
+        document: &T,
+    ) -> Result<CreateDocumentResponse, AzureError>
+    where
+        T: Serialize,
+    {
+        let mut req = self.collection_client.cosmos_client().prepare_request(
             &format!(
                 "dbs/{}/colls/{}/docs",
-                self.collection_client.database_name().name(),
-                self.collection_client.collection_name().name()
+                self.collection_client.database_client().database_name(),
+                self.collection_client.collection_name()
             ),
             hyper::Method::POST,
             ResourceType::Documents,
@@ -556,7 +470,7 @@ where
         req = IndexingDirectiveOption::add_header(self, req);
         req = AllowTentativeWritesOption::add_header(self, req);
 
-        let serialized = serde_json::to_string(self.document())?;
+        let serialized = serde_json::to_string(document)?;
         let req = req.body(hyper::Body::from(serialized))?;
 
         let (status_code, headers, whole_body) =

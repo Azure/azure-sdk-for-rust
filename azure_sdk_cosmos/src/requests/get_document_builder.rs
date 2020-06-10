@@ -1,7 +1,5 @@
-use crate::clients::{CosmosUriBuilder, DocumentClient};
 use crate::prelude::*;
 use crate::responses::GetDocumentResponse;
-use crate::DocumentBuilderTrait;
 use crate::DocumentClientRequired;
 use azure_sdk_core::errors::{extract_status_headers_and_body, AzureError, UnexpectedHTTPResult};
 use azure_sdk_core::modify_conditions::IfMatchCondition;
@@ -13,11 +11,13 @@ use serde::de::DeserializeOwned;
 use std::convert::TryFrom;
 
 #[derive(Debug, Clone)]
-pub struct GetDocumentBuilder<'a, 'b, CUB>
+pub struct GetDocumentBuilder<'a, 'b, C, D, COLL>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    COLL: CollectionClient<C, D>,
 {
-    document_client: &'a DocumentClient<'a, CUB>,
+    document_client: &'a dyn DocumentClient<C, D, COLL>,
     if_match_condition: Option<IfMatchCondition<'b>>,
     if_modified_since: Option<&'b DateTime<Utc>>,
     user_agent: Option<&'b str>,
@@ -25,14 +25,16 @@ where
     consistency_level: Option<ConsistencyLevel<'b>>,
 }
 
-impl<'a, 'b, CUB> GetDocumentBuilder<'a, 'b, CUB>
+impl<'a, 'b, C, D, COLL> GetDocumentBuilder<'a, 'b, C, D, COLL>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    COLL: CollectionClient<C, D>,
 {
     #[inline]
     pub(crate) fn new(
-        document_client: &'a DocumentClient<'a, CUB>,
-    ) -> GetDocumentBuilder<'a, 'b, CUB> {
+        document_client: &'a dyn DocumentClient<C, D, COLL>,
+    ) -> GetDocumentBuilder<'a, 'b, C, D, COLL> {
         GetDocumentBuilder {
             document_client,
             if_match_condition: None,
@@ -44,12 +46,15 @@ where
     }
 }
 
-impl<'a, 'b, CUB> DocumentClientRequired<'a, CUB> for GetDocumentBuilder<'a, 'b, CUB>
+impl<'a, 'b, C, D, COLL> DocumentClientRequired<'a, C, D, COLL>
+    for GetDocumentBuilder<'a, 'b, C, D, COLL>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    COLL: CollectionClient<C, D>,
 {
     #[inline]
-    fn document_client(&self) -> &'a DocumentClient<'a, CUB> {
+    fn document_client(&self) -> &'a dyn DocumentClient<C, D, COLL> {
         self.document_client
     }
 }
@@ -57,9 +62,11 @@ where
 //get mandatory no traits methods
 
 //set mandatory no traits methods
-impl<'a, 'b, CUB> IfMatchConditionOption<'b> for GetDocumentBuilder<'a, 'b, CUB>
+impl<'a, 'b, C, D, COLL> IfMatchConditionOption<'b> for GetDocumentBuilder<'a, 'b, C, D, COLL>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    COLL: CollectionClient<C, D>,
 {
     #[inline]
     fn if_match_condition(&self) -> Option<IfMatchCondition<'b>> {
@@ -67,9 +74,11 @@ where
     }
 }
 
-impl<'a, 'b, CUB> IfModifiedSinceOption<'b> for GetDocumentBuilder<'a, 'b, CUB>
+impl<'a, 'b, C, D, COLL> IfModifiedSinceOption<'b> for GetDocumentBuilder<'a, 'b, C, D, COLL>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    COLL: CollectionClient<C, D>,
 {
     #[inline]
     fn if_modified_since(&self) -> Option<&'b DateTime<Utc>> {
@@ -77,9 +86,11 @@ where
     }
 }
 
-impl<'a, 'b, CUB> UserAgentOption<'b> for GetDocumentBuilder<'a, 'b, CUB>
+impl<'a, 'b, C, D, COLL> UserAgentOption<'b> for GetDocumentBuilder<'a, 'b, C, D, COLL>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    COLL: CollectionClient<C, D>,
 {
     #[inline]
     fn user_agent(&self) -> Option<&'b str> {
@@ -87,9 +98,11 @@ where
     }
 }
 
-impl<'a, 'b, CUB> ActivityIdOption<'b> for GetDocumentBuilder<'a, 'b, CUB>
+impl<'a, 'b, C, D, COLL> ActivityIdOption<'b> for GetDocumentBuilder<'a, 'b, C, D, COLL>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    COLL: CollectionClient<C, D>,
 {
     #[inline]
     fn activity_id(&self) -> Option<&'b str> {
@@ -97,9 +110,11 @@ where
     }
 }
 
-impl<'a, 'b, CUB> ConsistencyLevelOption<'b> for GetDocumentBuilder<'a, 'b, CUB>
+impl<'a, 'b, C, D, COLL> ConsistencyLevelOption<'b> for GetDocumentBuilder<'a, 'b, C, D, COLL>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    COLL: CollectionClient<C, D>,
 {
     #[inline]
     fn consistency_level(&self) -> Option<ConsistencyLevel<'b>> {
@@ -107,11 +122,13 @@ where
     }
 }
 
-impl<'a, 'b, CUB> IfMatchConditionSupport<'b> for GetDocumentBuilder<'a, 'b, CUB>
+impl<'a, 'b, C, D, COLL> IfMatchConditionSupport<'b> for GetDocumentBuilder<'a, 'b, C, D, COLL>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    COLL: CollectionClient<C, D>,
 {
-    type O = GetDocumentBuilder<'a, 'b, CUB>;
+    type O = GetDocumentBuilder<'a, 'b, C, D, COLL>;
 
     #[inline]
     fn with_if_match_condition(self, if_match_condition: IfMatchCondition<'b>) -> Self::O {
@@ -126,11 +143,13 @@ where
     }
 }
 
-impl<'a, 'b, CUB> IfModifiedSinceSupport<'b> for GetDocumentBuilder<'a, 'b, CUB>
+impl<'a, 'b, C, D, COLL> IfModifiedSinceSupport<'b> for GetDocumentBuilder<'a, 'b, C, D, COLL>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    COLL: CollectionClient<C, D>,
 {
-    type O = GetDocumentBuilder<'a, 'b, CUB>;
+    type O = GetDocumentBuilder<'a, 'b, C, D, COLL>;
 
     #[inline]
     fn with_if_modified_since(self, if_modified_since: &'b DateTime<Utc>) -> Self::O {
@@ -145,11 +164,13 @@ where
     }
 }
 
-impl<'a, 'b, CUB> UserAgentSupport<'b> for GetDocumentBuilder<'a, 'b, CUB>
+impl<'a, 'b, C, D, COLL> UserAgentSupport<'b> for GetDocumentBuilder<'a, 'b, C, D, COLL>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    COLL: CollectionClient<C, D>,
 {
-    type O = GetDocumentBuilder<'a, 'b, CUB>;
+    type O = GetDocumentBuilder<'a, 'b, C, D, COLL>;
 
     #[inline]
     fn with_user_agent(self, user_agent: &'b str) -> Self::O {
@@ -164,11 +185,13 @@ where
     }
 }
 
-impl<'a, 'b, CUB> ActivityIdSupport<'b> for GetDocumentBuilder<'a, 'b, CUB>
+impl<'a, 'b, C, D, COLL> ActivityIdSupport<'b> for GetDocumentBuilder<'a, 'b, C, D, COLL>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    COLL: CollectionClient<C, D>,
 {
-    type O = GetDocumentBuilder<'a, 'b, CUB>;
+    type O = GetDocumentBuilder<'a, 'b, C, D, COLL>;
 
     #[inline]
     fn with_activity_id(self, activity_id: &'b str) -> Self::O {
@@ -183,11 +206,13 @@ where
     }
 }
 
-impl<'a, 'b, CUB> ConsistencyLevelSupport<'b> for GetDocumentBuilder<'a, 'b, CUB>
+impl<'a, 'b, C, D, COLL> ConsistencyLevelSupport<'b> for GetDocumentBuilder<'a, 'b, C, D, COLL>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    COLL: CollectionClient<C, D>,
 {
-    type O = GetDocumentBuilder<'a, 'b, CUB>;
+    type O = GetDocumentBuilder<'a, 'b, C, D, COLL>;
 
     #[inline]
     fn with_consistency_level(self, consistency_level: ConsistencyLevel<'b>) -> Self::O {
@@ -203,15 +228,19 @@ where
 }
 
 // methods callable only when every mandatory field has been filled
-impl<'a, 'b, CUB> GetDocumentBuilder<'a, 'b, CUB>
+impl<'a, 'b, C, D, COLL> GetDocumentBuilder<'a, 'b, C, D, COLL>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    COLL: CollectionClient<C, D>,
 {
     pub async fn execute<T>(&self) -> Result<GetDocumentResponse<T>, AzureError>
     where
         T: DeserializeOwned,
     {
-        let mut req = self.document_client.prepare_request(hyper::Method::GET);
+        let mut req = self
+            .document_client
+            .prepare_request_with_document_name(hyper::Method::GET);
 
         // add trait headers
         req = IfMatchConditionOption::add_header(self, req);

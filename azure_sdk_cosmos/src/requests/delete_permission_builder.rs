@@ -1,64 +1,175 @@
-use crate::clients::{CosmosUriBuilder, PermissionClient, ResourceType};
 use crate::prelude::*;
 use crate::responses::DeletePermissionResponse;
 use azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError};
+use azure_sdk_core::prelude::*;
 use hyper::StatusCode;
 use std::convert::TryInto;
 
 #[derive(Debug, Clone)]
-pub struct DeletePermissionsBuilder<'a, CUB>
+pub struct DeletePermissionsBuilder<'a, 'b, C, D, USER>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    USER: UserClient<C, D>,
 {
-    permission_client: &'a PermissionClient<'a, CUB>,
+    permission_client: &'a dyn PermissionClient<C, D, USER>,
+    user_agent: Option<&'b str>,
+    activity_id: Option<&'b str>,
+    consistency_level: Option<ConsistencyLevel<'b>>,
 }
 
-impl<'a, CUB> DeletePermissionsBuilder<'a, CUB>
+impl<'a, 'b, C, D, USER> DeletePermissionsBuilder<'a, 'b, C, D, USER>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    USER: UserClient<C, D>,
 {
     #[inline]
     pub(crate) fn new(
-        permission_client: &'a PermissionClient<'a, CUB>,
-    ) -> DeletePermissionsBuilder<'a, CUB> {
-        DeletePermissionsBuilder { permission_client }
+        permission_client: &'a dyn PermissionClient<C, D, USER>,
+    ) -> DeletePermissionsBuilder<'a, 'b, C, D, USER> {
+        DeletePermissionsBuilder {
+            permission_client,
+            user_agent: None,
+            activity_id: None,
+            consistency_level: None,
+        }
     }
 }
 
-impl<'a, CUB> PermissionClientRequired<'a, CUB> for DeletePermissionsBuilder<'a, CUB>
+impl<'a, 'b, C, D, USER> PermissionClientRequired<'a, C, D, USER>
+    for DeletePermissionsBuilder<'a, 'b, C, D, USER>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    USER: UserClient<C, D>,
 {
     #[inline]
-    fn permission_client(&self) -> &'a PermissionClient<'a, CUB> {
+    fn permission_client(&self) -> &'a dyn PermissionClient<C, D, USER> {
         self.permission_client
     }
 }
 
-// methods callable only when every mandatory field has been filled
-impl<'a, CUB> DeletePermissionsBuilder<'a, CUB>
+//get mandatory no traits methods
+
+//set mandatory no traits methods
+impl<'a, 'b, C, D, USER> UserAgentOption<'b> for DeletePermissionsBuilder<'a, 'b, C, D, USER>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    USER: UserClient<C, D>,
+{
+    #[inline]
+    fn user_agent(&self) -> Option<&'b str> {
+        self.user_agent
+    }
+}
+
+impl<'a, 'b, C, D, USER> ActivityIdOption<'b> for DeletePermissionsBuilder<'a, 'b, C, D, USER>
+where
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    USER: UserClient<C, D>,
+{
+    #[inline]
+    fn activity_id(&self) -> Option<&'b str> {
+        self.activity_id
+    }
+}
+
+impl<'a, 'b, C, D, USER> ConsistencyLevelOption<'b> for DeletePermissionsBuilder<'a, 'b, C, D, USER>
+where
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    USER: UserClient<C, D>,
+{
+    #[inline]
+    fn consistency_level(&self) -> Option<ConsistencyLevel<'b>> {
+        self.consistency_level.clone()
+    }
+}
+
+impl<'a, 'b, C, D, USER> UserAgentSupport<'b> for DeletePermissionsBuilder<'a, 'b, C, D, USER>
+where
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    USER: UserClient<C, D>,
+{
+    type O = DeletePermissionsBuilder<'a, 'b, C, D, USER>;
+
+    #[inline]
+    fn with_user_agent(self, user_agent: &'b str) -> Self::O {
+        DeletePermissionsBuilder {
+            permission_client: self.permission_client,
+            user_agent: Some(user_agent),
+            activity_id: self.activity_id,
+            consistency_level: self.consistency_level,
+        }
+    }
+}
+
+impl<'a, 'b, C, D, USER> ActivityIdSupport<'b> for DeletePermissionsBuilder<'a, 'b, C, D, USER>
+where
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    USER: UserClient<C, D>,
+{
+    type O = DeletePermissionsBuilder<'a, 'b, C, D, USER>;
+
+    #[inline]
+    fn with_activity_id(self, activity_id: &'b str) -> Self::O {
+        DeletePermissionsBuilder {
+            permission_client: self.permission_client,
+            user_agent: self.user_agent,
+            activity_id: Some(activity_id),
+            consistency_level: self.consistency_level,
+        }
+    }
+}
+
+impl<'a, 'b, C, D, USER> ConsistencyLevelSupport<'b>
+    for DeletePermissionsBuilder<'a, 'b, C, D, USER>
+where
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    USER: UserClient<C, D>,
+{
+    type O = DeletePermissionsBuilder<'a, 'b, C, D, USER>;
+
+    #[inline]
+    fn with_consistency_level(self, consistency_level: ConsistencyLevel<'b>) -> Self::O {
+        DeletePermissionsBuilder {
+            permission_client: self.permission_client,
+            user_agent: self.user_agent,
+            activity_id: self.activity_id,
+            consistency_level: Some(consistency_level),
+        }
+    }
+}
+
+// methods callable only when every mandatory field has been filled
+impl<'a, 'b, C, D, USER> DeletePermissionsBuilder<'a, 'b, C, D, USER>
+where
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    USER: UserClient<C, D>,
 {
     pub async fn execute(&self) -> Result<DeletePermissionResponse, AzureError> {
         trace!("DeletePermissionBuilder::execute called");
 
-        let req = self.permission_client.main_client().prepare_request(
-            &format!(
-                "dbs/{}/users/{}/permissions/{}",
-                self.permission_client.database_name().name(),
-                self.permission_client.user_name().id(),
-                self.permission_client.permission_name().name()
-            ),
-            hyper::Method::DELETE,
-            ResourceType::Permissions,
-        );
+        let request = self
+            .permission_client
+            .prepare_request_with_permission_name(hyper::Method::DELETE);
 
-        let req = req.body(hyper::Body::empty())?;
-        debug!("\nreq == {:#?}", req);
+        let request = UserAgentOption::add_header(self, request);
+        let request = ActivityIdOption::add_header(self, request);
+        let request = ConsistencyLevelOption::add_header(self, request);
+
+        let request = request.body(hyper::Body::empty())?;
+        debug!("\nrequest == {:#?}", request);
 
         let (headers, body) = check_status_extract_headers_and_body(
-            self.permission_client.hyper_client().request(req),
+            self.permission_client.hyper_client().request(request),
             StatusCode::NO_CONTENT,
         )
         .await?;

@@ -1,22 +1,20 @@
-use crate::clients::{CollectionClient, CosmosUriBuilder, ResourceType};
 use crate::prelude::*;
 use crate::responses::ListDocumentsResponse;
-use crate::CollectionClientRequired;
+use crate::ResourceType;
 use azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError};
-use azure_sdk_core::modify_conditions::IfMatchCondition;
 use azure_sdk_core::prelude::*;
-use azure_sdk_core::{IfMatchConditionOption, IfMatchConditionSupport};
 use futures::stream::{unfold, Stream};
 use hyper::StatusCode;
 use serde::de::DeserializeOwned;
-use std::convert::TryFrom;
+use std::convert::TryInto;
 
 #[derive(Debug)]
-pub struct ListDocumentsBuilder<'a, 'b, CUB>
+pub struct ListDocumentsBuilder<'a, 'b, C, D>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
 {
-    collection_client: &'a CollectionClient<'a, CUB>,
+    collection_client: &'a dyn CollectionClient<C, D>,
     if_match_condition: Option<IfMatchCondition<'b>>,
     user_agent: Option<&'b str>,
     activity_id: Option<&'b str>,
@@ -27,12 +25,13 @@ where
     partition_range_id: Option<&'b str>,
 }
 
-impl<'a, 'b, CUB> Clone for ListDocumentsBuilder<'a, 'b, CUB>
+impl<'a, 'b, C, D> Clone for ListDocumentsBuilder<'a, 'b, C, D>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
 {
     fn clone(&self) -> Self {
-        ListDocumentsBuilder {
+        Self {
             collection_client: self.collection_client,
             if_match_condition: self.if_match_condition,
             user_agent: self.user_agent,
@@ -46,14 +45,15 @@ where
     }
 }
 
-impl<'a, 'b, CUB> ListDocumentsBuilder<'a, 'b, CUB>
+impl<'a, 'b, C, D> ListDocumentsBuilder<'a, 'b, C, D>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
 {
     #[inline]
     pub(crate) fn new(
-        collection_client: &'a CollectionClient<'a, CUB>,
-    ) -> ListDocumentsBuilder<'a, 'b, CUB> {
+        collection_client: &'a dyn CollectionClient<C, D>,
+    ) -> ListDocumentsBuilder<'a, 'b, C, D> {
         ListDocumentsBuilder {
             collection_client,
             if_match_condition: None,
@@ -68,12 +68,13 @@ where
     }
 }
 
-impl<'a, 'b, CUB> CollectionClientRequired<'a, CUB> for ListDocumentsBuilder<'a, 'b, CUB>
+impl<'a, 'b, C, D> CollectionClientRequired<'a, C, D> for ListDocumentsBuilder<'a, 'b, C, D>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
 {
     #[inline]
-    fn collection_client(&self) -> &'a CollectionClient<'a, CUB> {
+    fn collection_client(&self) -> &'a dyn CollectionClient<C, D> {
         self.collection_client
     }
 }
@@ -81,9 +82,10 @@ where
 //get mandatory no traits methods
 
 //set mandatory no traits methods
-impl<'a, 'b, CUB> IfMatchConditionOption<'b> for ListDocumentsBuilder<'a, 'b, CUB>
+impl<'a, 'b, C, D> IfMatchConditionOption<'b> for ListDocumentsBuilder<'a, 'b, C, D>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
 {
     #[inline]
     fn if_match_condition(&self) -> Option<IfMatchCondition<'b>> {
@@ -91,9 +93,10 @@ where
     }
 }
 
-impl<'a, 'b, CUB> UserAgentOption<'b> for ListDocumentsBuilder<'a, 'b, CUB>
+impl<'a, 'b, C, D> UserAgentOption<'b> for ListDocumentsBuilder<'a, 'b, C, D>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
 {
     #[inline]
     fn user_agent(&self) -> Option<&'b str> {
@@ -101,9 +104,10 @@ where
     }
 }
 
-impl<'a, 'b, CUB> ActivityIdOption<'b> for ListDocumentsBuilder<'a, 'b, CUB>
+impl<'a, 'b, C, D> ActivityIdOption<'b> for ListDocumentsBuilder<'a, 'b, C, D>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
 {
     #[inline]
     fn activity_id(&self) -> Option<&'b str> {
@@ -111,9 +115,10 @@ where
     }
 }
 
-impl<'a, 'b, CUB> ConsistencyLevelOption<'b> for ListDocumentsBuilder<'a, 'b, CUB>
+impl<'a, 'b, C, D> ConsistencyLevelOption<'b> for ListDocumentsBuilder<'a, 'b, C, D>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
 {
     #[inline]
     fn consistency_level(&self) -> Option<ConsistencyLevel<'b>> {
@@ -121,9 +126,10 @@ where
     }
 }
 
-impl<'a, 'b, CUB> ContinuationOption<'b> for ListDocumentsBuilder<'a, 'b, CUB>
+impl<'a, 'b, C, D> ContinuationOption<'b> for ListDocumentsBuilder<'a, 'b, C, D>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
 {
     #[inline]
     fn continuation(&self) -> Option<&'b str> {
@@ -131,9 +137,10 @@ where
     }
 }
 
-impl<'a, 'b, CUB> MaxItemCountOption for ListDocumentsBuilder<'a, 'b, CUB>
+impl<'a, 'b, C, D> MaxItemCountOption for ListDocumentsBuilder<'a, 'b, C, D>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
 {
     #[inline]
     fn max_item_count(&self) -> i32 {
@@ -141,9 +148,10 @@ where
     }
 }
 
-impl<'a, 'b, CUB> AIMOption for ListDocumentsBuilder<'a, 'b, CUB>
+impl<'a, 'b, C, D> AIMOption for ListDocumentsBuilder<'a, 'b, C, D>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
 {
     #[inline]
     fn a_im(&self) -> bool {
@@ -151,9 +159,10 @@ where
     }
 }
 
-impl<'a, 'b, CUB> PartitionRangeIdOption<'b> for ListDocumentsBuilder<'a, 'b, CUB>
+impl<'a, 'b, C, D> PartitionRangeIdOption<'b> for ListDocumentsBuilder<'a, 'b, C, D>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
 {
     #[inline]
     fn partition_range_id(&self) -> Option<&'b str> {
@@ -161,11 +170,12 @@ where
     }
 }
 
-impl<'a, 'b, CUB> IfMatchConditionSupport<'b> for ListDocumentsBuilder<'a, 'b, CUB>
+impl<'a, 'b, C, D> IfMatchConditionSupport<'b> for ListDocumentsBuilder<'a, 'b, C, D>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
 {
-    type O = ListDocumentsBuilder<'a, 'b, CUB>;
+    type O = ListDocumentsBuilder<'a, 'b, C, D>;
 
     #[inline]
     fn with_if_match_condition(self, if_match_condition: IfMatchCondition<'b>) -> Self::O {
@@ -183,11 +193,12 @@ where
     }
 }
 
-impl<'a, 'b, CUB> UserAgentSupport<'b> for ListDocumentsBuilder<'a, 'b, CUB>
+impl<'a, 'b, C, D> UserAgentSupport<'b> for ListDocumentsBuilder<'a, 'b, C, D>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
 {
-    type O = ListDocumentsBuilder<'a, 'b, CUB>;
+    type O = ListDocumentsBuilder<'a, 'b, C, D>;
 
     #[inline]
     fn with_user_agent(self, user_agent: &'b str) -> Self::O {
@@ -205,11 +216,12 @@ where
     }
 }
 
-impl<'a, 'b, CUB> ActivityIdSupport<'b> for ListDocumentsBuilder<'a, 'b, CUB>
+impl<'a, 'b, C, D> ActivityIdSupport<'b> for ListDocumentsBuilder<'a, 'b, C, D>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
 {
-    type O = ListDocumentsBuilder<'a, 'b, CUB>;
+    type O = ListDocumentsBuilder<'a, 'b, C, D>;
 
     #[inline]
     fn with_activity_id(self, activity_id: &'b str) -> Self::O {
@@ -227,11 +239,12 @@ where
     }
 }
 
-impl<'a, 'b, CUB> ConsistencyLevelSupport<'b> for ListDocumentsBuilder<'a, 'b, CUB>
+impl<'a, 'b, C, D> ConsistencyLevelSupport<'b> for ListDocumentsBuilder<'a, 'b, C, D>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
 {
-    type O = ListDocumentsBuilder<'a, 'b, CUB>;
+    type O = ListDocumentsBuilder<'a, 'b, C, D>;
 
     #[inline]
     fn with_consistency_level(self, consistency_level: ConsistencyLevel<'b>) -> Self::O {
@@ -249,11 +262,12 @@ where
     }
 }
 
-impl<'a, 'b, CUB> ContinuationSupport<'b> for ListDocumentsBuilder<'a, 'b, CUB>
+impl<'a, 'b, C, D> ContinuationSupport<'b> for ListDocumentsBuilder<'a, 'b, C, D>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
 {
-    type O = ListDocumentsBuilder<'a, 'b, CUB>;
+    type O = ListDocumentsBuilder<'a, 'b, C, D>;
 
     #[inline]
     fn with_continuation(self, continuation: &'b str) -> Self::O {
@@ -271,11 +285,12 @@ where
     }
 }
 
-impl<'a, 'b, CUB> MaxItemCountSupport for ListDocumentsBuilder<'a, 'b, CUB>
+impl<'a, 'b, C, D> MaxItemCountSupport for ListDocumentsBuilder<'a, 'b, C, D>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
 {
-    type O = ListDocumentsBuilder<'a, 'b, CUB>;
+    type O = ListDocumentsBuilder<'a, 'b, C, D>;
 
     #[inline]
     fn with_max_item_count(self, max_item_count: i32) -> Self::O {
@@ -293,11 +308,12 @@ where
     }
 }
 
-impl<'a, 'b, CUB> AIMSupport for ListDocumentsBuilder<'a, 'b, CUB>
+impl<'a, 'b, C, D> AIMSupport for ListDocumentsBuilder<'a, 'b, C, D>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
 {
-    type O = ListDocumentsBuilder<'a, 'b, CUB>;
+    type O = ListDocumentsBuilder<'a, 'b, C, D>;
 
     #[inline]
     fn with_a_im(self, a_im: bool) -> Self::O {
@@ -315,11 +331,12 @@ where
     }
 }
 
-impl<'a, 'b, CUB> PartitionRangeIdSupport<'b> for ListDocumentsBuilder<'a, 'b, CUB>
+impl<'a, 'b, C, D> PartitionRangeIdSupport<'b> for ListDocumentsBuilder<'a, 'b, C, D>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
 {
-    type O = ListDocumentsBuilder<'a, 'b, CUB>;
+    type O = ListDocumentsBuilder<'a, 'b, C, D>;
 
     #[inline]
     fn with_partition_range_id(self, partition_range_id: &'b str) -> Self::O {
@@ -338,33 +355,34 @@ where
 }
 
 // methods callable only when every mandatory field has been filled
-impl<'a, 'b, CUB> ListDocumentsBuilder<'a, 'b, CUB>
+impl<'a, 'b, C, D> ListDocumentsBuilder<'a, 'b, C, D>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
 {
     pub async fn execute<T>(&self) -> Result<ListDocumentsResponse<T>, AzureError>
     where
         T: DeserializeOwned,
     {
-        let mut req = self.collection_client.main_client().prepare_request(
+        let req = self.collection_client.cosmos_client().prepare_request(
             &format!(
                 "dbs/{}/colls/{}/docs",
-                self.collection_client.database_name().name(),
-                self.collection_client.collection_name().name()
+                self.collection_client.database_client().database_name(),
+                self.collection_client.collection_name()
             ),
             hyper::Method::GET,
             ResourceType::Documents,
         );
 
         // add trait headers
-        req = IfMatchConditionOption::add_header(self, req);
-        req = UserAgentOption::add_header(self, req);
-        req = ActivityIdOption::add_header(self, req);
-        req = ConsistencyLevelOption::add_header(self, req);
-        req = ContinuationOption::add_header(self, req);
-        req = MaxItemCountOption::add_header(self, req);
-        req = AIMOption::add_header(self, req);
-        req = PartitionRangeIdOption::add_header(self, req);
+        let req = IfMatchConditionOption::add_header(self, req);
+        let req = UserAgentOption::add_header(self, req);
+        let req = ActivityIdOption::add_header(self, req);
+        let req = ConsistencyLevelOption::add_header(self, req);
+        let req = ContinuationOption::add_header(self, req);
+        let req = MaxItemCountOption::add_header(self, req);
+        let req = AIMOption::add_header(self, req);
+        let req = PartitionRangeIdOption::add_header(self, req);
 
         let req = req.body(hyper::Body::empty())?;
 
@@ -377,8 +395,7 @@ where
         debug!("\nheaders == {:?}", headers);
         debug!("\nwhole body == {:#?}", whole_body);
 
-        let resp = ListDocumentsResponse::try_from((&headers, &whole_body as &[u8]))?;
-        Ok(resp)
+        Ok((&headers, &whole_body as &[u8]).try_into()?)
     }
 
     pub fn stream<T>(&self) -> impl Stream<Item = Result<ListDocumentsResponse<T>, AzureError>> + '_

@@ -23,9 +23,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let authorization_token = AuthorizationToken::new_master(&master_key)?;
 
     let client = ClientBuilder::new(account, authorization_token)?;
-    let database_client = client.with_database(&database_name);
-    let collection_client = database_client.with_collection(&collection_name);
-    let user_client = database_client.with_user(&user_name);
+    let database_client = client.with_database_client(&database_name);
+    let collection_client = database_client.with_collection_client(&collection_name);
+    let user_client = database_client.with_user_client(&user_name);
 
     let get_collection_response = collection_client.get_collection().execute().await?;
     println!("get_collection_response == {:#?}", get_collection_response);
@@ -45,15 +45,14 @@ async fn main() -> Result<(), Box<dyn Error>> {
     );
 
     // create the first permission!
-    let permission_client = user_client.with_permission(&"matrix");
+    let permission_client = user_client.with_permission_client("matrix");
 
     let permission_mode = PermissionMode::Read(get_collection_response.clone().collection);
 
     let create_permission_response = permission_client
         .create_permission()
-        .with_permission_mode(&permission_mode)
         .with_expiry_seconds(18000) // 5 hours, max!
-        .execute()
+        .execute_with_permission(&permission_mode)
         .await?;
     println!(
         "create_permission_response == {:#?}",
@@ -75,8 +74,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     // let's list the documents with the new auth token
     let list_documents_response = new_client
-        .with_database(&database_name)
-        .with_collection(&collection_name)
+        .with_database_client(&database_name)
+        .with_collection_client(&collection_name)
         .list_documents()
         .execute::<serde_json::Value>()
         .await
@@ -106,13 +105,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
     );
 
     match new_client
-        .with_database(&database_name)
-        .with_collection(&collection_name)
+        .with_database_client(&database_name)
+        .with_collection_client(&collection_name)
         .create_document()
-        .with_document(&document)
         .with_is_upsert(true)
         .with_partition_keys(PartitionKeys::new().push("Gianluigi Bombatomica")?)
-        .execute()
+        .execute_with_document(&document)
         .await
     {
         Ok(_) => panic!("this should not happen!"),
@@ -125,9 +123,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let permission_mode = PermissionMode::All(get_collection_response.collection);
     let create_permission_response = permission_client
         .create_permission()
-        .with_permission_mode(&permission_mode)
         .with_expiry_seconds(18000) // 5 hours, max!
-        .execute()
+        .execute_with_permission(&permission_mode)
         .await?;
     println!(
         "create_permission_response == {:#?}",
@@ -148,13 +145,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // now we have an "All" authorization_token
     // so the create_document should succeed!
     let create_document_response = new_client
-        .with_database(&database_name)
-        .with_collection(&collection_name)
+        .with_database_client(&database_name)
+        .with_collection_client(&collection_name)
         .create_document()
-        .with_document(&document)
         .with_is_upsert(true)
         .with_partition_keys(PartitionKeys::new().push("Gianluigi Bombatomica")?)
-        .execute()
+        .execute_with_document(&document)
         .await?;
     println!(
         "create_document_response == {:#?}",

@@ -22,18 +22,18 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let authorization_token = AuthorizationToken::new_master(&master_key)?;
 
-    let client = ClientBuilder::new(account.clone(), authorization_token)?;
+    let client = ClientBuilder::new(&account, authorization_token)?;
 
     let dbs = client.list_databases().execute().await?;
 
     for db in dbs.databases {
         println!("database == {:?}", db);
-        let database = client.with_database(&db);
+        let database = client.with_database_client(db.name());
 
         let collections = database.list_collections().execute().await?;
         for collection in collections.collections {
             println!("collection == {:?}", collection);
-            let collection_client = database.with_collection(&collection);
+            let collection_client = database.with_collection_client(collection.id);
 
             if collection_client.collection_name().name() == "democ" {
                 println!("democ!");
@@ -53,10 +53,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 let document = Document::new(v);
                 let resp = collection_client
                     .create_document()
-                    .with_document(&document)
                     .with_partition_keys(PartitionKeys::new().push(&43u32)?)
                     .with_is_upsert(true)
-                    .execute()
+                    .execute_with_document(&document)
                     .await?;
 
                 println!("resp == {:?}", resp);

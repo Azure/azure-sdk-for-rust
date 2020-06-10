@@ -40,8 +40,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let authorization_token = AuthorizationToken::new_master(&master_key)?;
 
     let client = ClientBuilder::new(account, authorization_token)?;
-    let client = client.with_database(&database_name);
-    let client = client.with_collection(&collection_name);
+    let client = client.with_database_client(database_name);
+    let client = client.with_collection_client(collection_name);
 
     let query_obj = Query::new(&query);
 

@@ -39,10 +39,11 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let authorization_token = AuthorizationToken::new_master(&master_key)?;
 
-    let client = ClientBuilder::new(account, authorization_token)?;
-    let client = client.with_database(&database_name);
-    let client = client.with_collection(&collection_name);
+    let client = ClientBuilder::new(&account, authorization_token)?;
+    let client = client.with_database_client(&database_name);
+    let client = client.with_collection_client(&collection_name);
 
+    let mut response = None;
     for i in 0u64..5 {
         let doc = Document::new(MySampleStruct {
             id: Cow::Owned(format!("unique_id{}", i)),
@@ -52,12 +53,13 @@ async fn main() -> Result<(), Box<dyn Error>> {
         });
 
         // let's add an entity.
-        client
-            .create_document()
-            .with_document(&doc)
-            .with_partition_keys(PartitionKeys::new().push(&doc.document.id)?)
-            .execute()
-            .await?;
+        response = Some(
+            client
+                .create_document()
+                .with_partition_keys(PartitionKeys::new().push(&doc.document.id)?)
+                .execute_with_document(&doc)
+                .await?,
+        );
     }
 
     println!("Created 5 documents.");
@@ -65,6 +67,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // Let's get 3 entries at a time.
     let response = client
         .list_documents()
+        .with_consistency_level(response.unwrap().into())
         .with_max_item_count(3)
         .execute::<MySampleStruct>()
         .await?;
@@ -76,11 +79,13 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // continuation_token must be present
     assert!(response.continuation_token.is_some());
 
-    let ct = response.continuation_token.unwrap();
+    let session_token = (&response).into();
+    let ct = response.continuation_token.clone().unwrap();
     println!("ct == {}", ct);
 
     let response = client
         .list_documents()
+        .with_consistency_level(session_token)
         .with_continuation(&ct)
         .execute::<MySampleStruct>()
         .await?;
@@ -96,23 +101,31 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // us if we call the stream function. Here we
     // ask for 3 items at the time but of course you don't have to do that, the
     // stream function will work regardless of the limits imposed.
-    println!("\nStreaming documents");
-    let stream = client.list_documents().with_max_item_count(3);
-    let mut stream = Box::pin(stream.stream::<MySampleStruct>());
-    // TODO: As soon as the streaming functionality is completed
-    // in Rust substitute this while let Some... into
-    // for each (or whatever the Rust team picks).
-    while let Some(res) = stream.next().await {
-        let res = res?;
-        println!("Received {} documents in one batch!", res.documents.len());
+    let session_token: ConsistencyLevel = (&response).into();
+    {
+        println!("\nStreaming documents");
+        let stream = client
+            .list_documents()
+            .with_consistency_level(session_token.clone())
+            .with_max_item_count(3);
+        let mut stream = Box::pin(stream.stream::<MySampleStruct>());
+        // TODO: As soon as the streaming functionality is completed
+        // in Rust substitute this while let Some... into
+        // for each (or whatever the Rust team picks).
+        while let Some(res) = stream.next().await {
+            let res = res?;
+            println!("Received {} documents in one batch!", res.documents.len());
+        }
     }
 
     println!("\n\nLooking for a specific item");
     let id = format!("unique_id{}", 3);
+    let partition_keys: PartitionKeys = (&id).into();
 
     let response = client
-        .with_document(&id, PartitionKeys::new().push(&id)?)
+        .with_document_client(&id, partition_keys.clone())
         .get_document()
+        .with_consistency_level(session_token)
         .execute::<MySampleStruct>()
         .await?;
 
@@ -128,17 +141,14 @@ async fn main() -> Result<(), Box<dyn Error>> {
     };
     doc.document.document.a_string = "Something else here".into();
 
-    let etag = doc.etag.to_owned();
-
     println!("\n\nReplacing document");
     let replace_document_response = client
         .replace_document()
-        .with_document(&doc.document)
-        .with_partition_keys(PartitionKeys::new().push(&id)?)
+        .with_partition_keys(&partition_keys)
         .with_document_id(&id)
         .with_consistency_level(ConsistencyLevel::from(&response))
-        .with_if_match_condition(IfMatchCondition::Match(&etag)) // use optimistic concurrency check
-        .execute()
+        .with_if_match_condition(IfMatchCondition::Match(&doc.etag)) // use optimistic concurrency check
+        .execute_with_document(&doc.document)
         .await?;
 
     println!(
@@ -150,10 +160,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // has_been_found == false
     println!("\n\nLooking for non-existing item");
     let id = format!("unique_id{}", 100);
+    let partition_keys: PartitionKeys = (&id).into();
 
     let response = client
-        .with_document(&id, PartitionKeys::new().push(&id)?)
+        .with_document_client(&id, partition_keys)
         .get_document()
+        .with_consistency_level((&response).into())
         .execute::<MySampleStruct>()
         .await?;
 
@@ -165,9 +177,11 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     for i in 0u64..5 {
         let id = format!("unique_id{}", i);
+        let partition_keys: PartitionKeys = (&id).into();
         client
-            .with_document(&id, PartitionKeys::new().push(&id)?)
+            .with_document_client(&id, partition_keys)
             .delete_document()
+            .with_consistency_level((&response).into())
             .execute()
             .await?;
     }

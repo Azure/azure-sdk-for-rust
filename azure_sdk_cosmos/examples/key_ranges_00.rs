@@ -16,8 +16,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let authorization_token = AuthorizationToken::new_master(&master_key)?;
     let client = ClientBuilder::new(account, authorization_token.clone())?;
-    let client = client.with_database(&database);
-    let client = client.with_collection(&collection);
+    let client = client.into_database_client(database);
+    let client = client.into_collection_client(collection);
 
     let resp = client.get_partition_key_ranges().execute().await?;
     println!("resp == {:#?}", resp);

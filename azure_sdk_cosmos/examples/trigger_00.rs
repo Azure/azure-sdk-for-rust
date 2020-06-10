@@ -52,9 +52,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let authorization_token = AuthorizationToken::new_master(&master_key)?;
 
     let client = ClientBuilder::new(account, authorization_token)?;
-    let database_client = client.with_database(&database);
-    let collection_client = database_client.with_collection(&collection);
-    let trigger_client = collection_client.with_trigger(&trigger_name);
+    let database_client = client.with_database_client(&database);
+    let collection_client = database_client.with_collection_client(&collection);
+    let trigger_client = collection_client.with_trigger_client(&trigger_name);
 
     let ret = trigger_client
         .create_trigger()

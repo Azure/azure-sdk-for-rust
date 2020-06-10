@@ -2,7 +2,7 @@ use crate::from_headers::*;
 use crate::permission::CosmosPermission;
 use crate::Permission;
 use azure_sdk_core::errors::AzureError;
-use azure_sdk_core::session_token_from_headers;
+use azure_sdk_core::{continuation_token_from_headers_optional, session_token_from_headers};
 use http::HeaderMap;
 use std::borrow::Cow;
 
@@ -14,6 +14,7 @@ pub struct ListPermissionsResponse<'a> {
     pub session_token: String,
     pub content_path: String,
     pub alt_content_path: String,
+    pub continuation_token: Option<String>,
 }
 
 impl<'a> std::convert::TryFrom<(&HeaderMap, &[u8])> for ListPermissionsResponse<'a> {
@@ -52,6 +53,7 @@ impl<'a> std::convert::TryFrom<(&HeaderMap, &[u8])> for ListPermissionsResponse<
             session_token: session_token_from_headers(headers)?,
             content_path: content_path_from_headers(headers)?.to_owned(),
             alt_content_path: alt_content_path_from_headers(headers)?.to_owned(),
+            continuation_token: continuation_token_from_headers_optional(headers)?,
         })
     }
 }

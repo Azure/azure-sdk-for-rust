@@ -1,33 +1,35 @@
-use crate::clients::CosmosUriBuilder;
 use crate::prelude::*;
-use crate::AttachmentBuilderTrait;
-use crate::AttachmentClient;
-use crate::AttachmentClientRequired;
 use azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError};
 use azure_sdk_core::prelude::*;
 use hyper::StatusCode;
 use std::convert::TryInto;
 
 #[derive(Debug, Clone)]
-pub struct GetAttachmentBuilder<'a, 'b, CUB>
+pub struct GetAttachmentBuilder<'a, 'b, C, D, COLL, DOC>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    COLL: CollectionClient<C, D>,
+    DOC: DocumentClient<C, D, COLL>,
 {
-    attachment_client: &'a AttachmentClient<'a, CUB>,
+    attachment_client: &'a dyn AttachmentClient<C, D, COLL, DOC>,
     if_match_condition: Option<IfMatchCondition<'b>>,
     user_agent: Option<&'b str>,
     activity_id: Option<&'b str>,
     consistency_level: Option<ConsistencyLevel<'b>>,
 }
 
-impl<'a, 'b, CUB> GetAttachmentBuilder<'a, 'b, CUB>
+impl<'a, 'b, C, D, COLL, DOC> GetAttachmentBuilder<'a, 'b, C, D, COLL, DOC>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    COLL: CollectionClient<C, D>,
+    DOC: DocumentClient<C, D, COLL>,
 {
     #[inline]
     pub(crate) fn new(
-        attachment_client: &'a AttachmentClient<'a, CUB>,
-    ) -> GetAttachmentBuilder<'a, 'b, CUB> {
+        attachment_client: &'a dyn AttachmentClient<C, D, COLL, DOC>,
+    ) -> GetAttachmentBuilder<'a, 'b, C, D, COLL, DOC> {
         GetAttachmentBuilder {
             attachment_client,
             if_match_condition: None,
@@ -38,12 +40,16 @@ where
     }
 }
 
-impl<'a, 'b, CUB> AttachmentClientRequired<'a, CUB> for GetAttachmentBuilder<'a, 'b, CUB>
+impl<'a, 'b, C, D, COLL, DOC> AttachmentClientRequired<'a, C, D, COLL, DOC>
+    for GetAttachmentBuilder<'a, 'b, C, D, COLL, DOC>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    COLL: CollectionClient<C, D>,
+    DOC: DocumentClient<C, D, COLL>,
 {
     #[inline]
-    fn attachment_client(&self) -> &'a AttachmentClient<'a, CUB> {
+    fn attachment_client(&self) -> &'a dyn AttachmentClient<C, D, COLL, DOC> {
         self.attachment_client
     }
 }
@@ -51,9 +57,13 @@ where
 //get mandatory no traits methods
 
 //set mandatory no traits methods
-impl<'a, 'b, CUB> IfMatchConditionOption<'b> for GetAttachmentBuilder<'a, 'b, CUB>
+impl<'a, 'b, C, D, COLL, DOC> IfMatchConditionOption<'b>
+    for GetAttachmentBuilder<'a, 'b, C, D, COLL, DOC>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    COLL: CollectionClient<C, D>,
+    DOC: DocumentClient<C, D, COLL>,
 {
     #[inline]
     fn if_match_condition(&self) -> Option<IfMatchCondition<'b>> {
@@ -61,9 +71,12 @@ where
     }
 }
 
-impl<'a, 'b, CUB> UserAgentOption<'b> for GetAttachmentBuilder<'a, 'b, CUB>
+impl<'a, 'b, C, D, COLL, DOC> UserAgentOption<'b> for GetAttachmentBuilder<'a, 'b, C, D, COLL, DOC>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    COLL: CollectionClient<C, D>,
+    DOC: DocumentClient<C, D, COLL>,
 {
     #[inline]
     fn user_agent(&self) -> Option<&'b str> {
@@ -71,9 +84,12 @@ where
     }
 }
 
-impl<'a, 'b, CUB> ActivityIdOption<'b> for GetAttachmentBuilder<'a, 'b, CUB>
+impl<'a, 'b, C, D, COLL, DOC> ActivityIdOption<'b> for GetAttachmentBuilder<'a, 'b, C, D, COLL, DOC>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    COLL: CollectionClient<C, D>,
+    DOC: DocumentClient<C, D, COLL>,
 {
     #[inline]
     fn activity_id(&self) -> Option<&'b str> {
@@ -81,9 +97,13 @@ where
     }
 }
 
-impl<'a, 'b, CUB> ConsistencyLevelOption<'b> for GetAttachmentBuilder<'a, 'b, CUB>
+impl<'a, 'b, C, D, COLL, DOC> ConsistencyLevelOption<'b>
+    for GetAttachmentBuilder<'a, 'b, C, D, COLL, DOC>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    COLL: CollectionClient<C, D>,
+    DOC: DocumentClient<C, D, COLL>,
 {
     #[inline]
     fn consistency_level(&self) -> Option<ConsistencyLevel<'b>> {
@@ -91,11 +111,15 @@ where
     }
 }
 
-impl<'a, 'b, CUB> IfMatchConditionSupport<'b> for GetAttachmentBuilder<'a, 'b, CUB>
+impl<'a, 'b, C, D, COLL, DOC> IfMatchConditionSupport<'b>
+    for GetAttachmentBuilder<'a, 'b, C, D, COLL, DOC>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    COLL: CollectionClient<C, D>,
+    DOC: DocumentClient<C, D, COLL>,
 {
-    type O = GetAttachmentBuilder<'a, 'b, CUB>;
+    type O = GetAttachmentBuilder<'a, 'b, C, D, COLL, DOC>;
 
     #[inline]
     fn with_if_match_condition(self, if_match_condition: IfMatchCondition<'b>) -> Self::O {
@@ -109,11 +133,14 @@ where
     }
 }
 
-impl<'a, 'b, CUB> UserAgentSupport<'b> for GetAttachmentBuilder<'a, 'b, CUB>
+impl<'a, 'b, C, D, COLL, DOC> UserAgentSupport<'b> for GetAttachmentBuilder<'a, 'b, C, D, COLL, DOC>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    COLL: CollectionClient<C, D>,
+    DOC: DocumentClient<C, D, COLL>,
 {
-    type O = GetAttachmentBuilder<'a, 'b, CUB>;
+    type O = GetAttachmentBuilder<'a, 'b, C, D, COLL, DOC>;
 
     #[inline]
     fn with_user_agent(self, user_agent: &'b str) -> Self::O {
@@ -127,11 +154,15 @@ where
     }
 }
 
-impl<'a, 'b, CUB> ActivityIdSupport<'b> for GetAttachmentBuilder<'a, 'b, CUB>
+impl<'a, 'b, C, D, COLL, DOC> ActivityIdSupport<'b>
+    for GetAttachmentBuilder<'a, 'b, C, D, COLL, DOC>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    COLL: CollectionClient<C, D>,
+    DOC: DocumentClient<C, D, COLL>,
 {
-    type O = GetAttachmentBuilder<'a, 'b, CUB>;
+    type O = GetAttachmentBuilder<'a, 'b, C, D, COLL, DOC>;
 
     #[inline]
     fn with_activity_id(self, activity_id: &'b str) -> Self::O {
@@ -145,11 +176,15 @@ where
     }
 }
 
-impl<'a, 'b, CUB> ConsistencyLevelSupport<'b> for GetAttachmentBuilder<'a, 'b, CUB>
+impl<'a, 'b, C, D, COLL, DOC> ConsistencyLevelSupport<'b>
+    for GetAttachmentBuilder<'a, 'b, C, D, COLL, DOC>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    COLL: CollectionClient<C, D>,
+    DOC: DocumentClient<C, D, COLL>,
 {
-    type O = GetAttachmentBuilder<'a, 'b, CUB>;
+    type O = GetAttachmentBuilder<'a, 'b, C, D, COLL, DOC>;
 
     #[inline]
     fn with_consistency_level(self, consistency_level: ConsistencyLevel<'b>) -> Self::O {
@@ -164,12 +199,17 @@ where
 }
 
 // methods callable only when every mandatory field has been filled
-impl<'a, 'b, CUB> GetAttachmentBuilder<'a, 'b, CUB>
+impl<'a, 'b, C, D, COLL, DOC> GetAttachmentBuilder<'a, 'b, C, D, COLL, DOC>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    COLL: CollectionClient<C, D>,
+    DOC: DocumentClient<C, D, COLL>,
 {
     pub async fn execute(&self) -> Result<crate::responses::GetAttachmentResponse, AzureError> {
-        let mut req = self.attachment_client.prepare_request(hyper::Method::GET);
+        let mut req = self
+            .attachment_client
+            .prepare_request_with_attachment_name(hyper::Method::GET);
 
         // add trait headers
         req = IfMatchConditionOption::add_header(self, req);

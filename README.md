@@ -5,7 +5,7 @@
 
 [![Build Status](https://travis-ci.org/MindFlavor/AzureSDKForRust.svg?branch=master)](https://travis-ci.org/MindFlavor/AzureSDKForRust) [![Coverage Status](https://coveralls.io/repos/MindFlavor/AzureSDKForRust/badge.svg?branch=master&service=github)](https://coveralls.io/github/MindFlavor/AzureSDKForRust?branch=master) ![stability-unstable](https://img.shields.io/badge/stability-unstable-yellow.svg)
 
-[![tag](https://img.shields.io/github/tag/mindflavor/AzureSDKForRust.svg)](https://github.com/MindFlavor/AzureSDKForRust/tree/cosmos_0.43.1) [![release](https://img.shields.io/github/release/mindflavor/AzureSDKForRust.svg)](https://github.com/MindFlavor/AzureSDKForRust/releases/tag/cosmos_0.43.1) [![commitssince](https://img.shields.io/github/commits-since/mindflavor/AzureSDKForRust/cosmos_0.43.1)](https://github.com/MindFlavor/AzureSDKForRust/commits/master)
+[![tag](https://img.shields.io/github/tag/mindflavor/AzureSDKForRust.svg)](https://github.com/MindFlavor/AzureSDKForRust/tree/cosmos_0.100.0) [![release](https://img.shields.io/github/release/mindflavor/AzureSDKForRust.svg)](https://github.com/MindFlavor/AzureSDKForRust/releases/tag/cosmos_0.100.0) [![commitssince](https://img.shields.io/github/commits-since/mindflavor/AzureSDKForRust/cosmos_0.100.0)](https://github.com/MindFlavor/AzureSDKForRust/commits/master)
 
 [![GitHub contributors](https://img.shields.io/github/contributors/MindFlavor/AzureSDKForRust.svg)](https://github.com/MindFlavor/AzureSDKForRust/graphs/contributors)
 
@@ -50,7 +50,7 @@ You can find examples in the [```examples```](https://github.com/MindFlavor/Azur
 ```rust
 #[macro_use]
 extern crate serde_derive;
-// Using the prelude module of the CosmosDB crate makes easier to use the Rust Azure SDK for Cosmos
+// Using the prelude module of the Cosmos crate makes easier to use the Rust Azure SDK for Cosmos
 // DB.
 use azure_sdk_core::prelude::*;
 use azure_sdk_cosmos::prelude::*;
@@ -97,14 +97,15 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let authorization_token = AuthorizationToken::new_master(&master_key)?;
 
     // Next we will create a Cosmos client.
-    let client = ClientBuilder::new(account, authorization_token.clone())?;
+    let client = ClientBuilder::new(account, authorization_token)?;
     // We know the database so we can obtain a database client.
-    let database_client = client.with_database(&database_name);
+    let database_client = client.with_database_client(database_name);
     // We know the collection so we can obtain a collection client.
-    let collection_client = database_client.with_collection(&collection_name);
+    let collection_client = database_client.with_collection_client(collection_name);
 
     // TASK 1 - Insert 10 documents
     println!("Inserting 10 documents...");
+    let mut session_token = None;
     for i in 0..10 {
         // define the document.
         let document_to_insert = Document::new(MySampleStruct {
@@ -114,31 +115,42 @@ async fn main() -> Result<(), Box<dyn Error>> {
             a_timestamp: chrono::Utc::now().timestamp(),
         });
 
-        // insert it!
-        collection_client
-            .create_document()
-            .with_document(&document_to_insert)
-            .with_partition_keys(PartitionKeys::new().push(&document_to_insert.document.a_number)?)
-            .with_is_upsert(true) // this option will overwrite a preexisting document (if any)
-            .execute()
-            .await?;
+        // insert it and store the returned session token for later use!
+        session_token = Some(
+            collection_client
+                .create_document()
+                .with_partition_keys(
+                    PartitionKeys::new().push(&document_to_insert.document.a_number)?,
+                )
+                .with_is_upsert(true) // this option will overwrite a preexisting document (if any)
+                .execute_with_document(&document_to_insert)
+                .await?
+                .session_token, // get only the session token, if everything else was ok!
+        );
     }
     // wow that was easy and fast, wasnt'it? :)
     println!("Done!");
 
+    let session_token = ConsistencyLevel::from(session_token.unwrap());
+
     // TASK 2
-    println!("\nStreaming documents");
-    // we limit the number of documents to 3 for each batch as a demonstration. In practice
-    // you will use a more sensible number (or accept the Azure default).
-    let stream = collection_client.list_documents().with_max_item_count(3);
-    let mut stream = Box::pin(stream.stream::<MySampleStruct>());
-    // TODO: As soon as the streaming functionality is stabilized
-    // in Rust we can substitute this while let Some... into
-    // for each (or whatever the Rust team picks).
-    while let Some(res) = stream.next().await {
-        let res = res?;
-        println!("Received {} documents in one batch!", res.documents.len());
-        res.documents.iter().for_each(|doc| println!("{:#?}", doc));
+    {
+        println!("\nStreaming documents");
+        // we limit the number of documents to 3 for each batch as a demonstration. In practice
+        // you will use a more sensible number (or accept the Azure default).
+        let stream = collection_client
+            .list_documents()
+            .with_consistency_level(session_token.clone())
+            .with_max_item_count(3);
+        let mut stream = Box::pin(stream.stream::<MySampleStruct>());
+        // TODO: As soon as the streaming functionality is stabilized
+        // in Rust we can substitute this while let Some... into
+        // for each (or whatever the Rust team picks).
+        while let Some(res) = stream.next().await {
+            let res = res?;
+            println!("Received {} documents in one batch!", res.documents.len());
+            res.documents.iter().for_each(|doc| println!("{:#?}", doc));
+        }
     }
 
     // TASK 3
@@ -147,6 +159,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .query_documents()
         .with_query(&("SELECT * FROM A WHERE A.a_number < 600".into())) // there are other ways to construct a query, this is the simplest.
         .with_query_cross_partition(true) // this will perform a cross partition query! notice how simple it is!
+        .with_consistency_level(session_token)
         .execute::<MySampleStruct>() // This will make sure the result is our custom struct!
         .await?
         .into_documents() // queries can return Documents or Raw json (ie without etag, _rid, etc...). Since our query return docs we convert with this function.
@@ -165,6 +178,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         });
 
     // TASK 4
+    let session_token = ConsistencyLevel::from(query_documents_response.session_token.clone());
     for ref document in query_documents_response.results {
         // From our query above we are sure to receive a Document.
         println!(
@@ -174,11 +188,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
         // to spice the delete a little we use optimistic concurreny
         collection_client
-            .with_document(
-                &document.result.id,
-                PartitionKeys::new().push(&document.result.a_number)?,
-            )
+            .with_document_client(&document.result.id as &str, document.result.a_number.into())
             .delete_document()
+            .with_consistency_level(session_token.clone())
             .with_if_match_condition((&document.document_attributes).into())
             .execute()
             .await?;
@@ -188,6 +200,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // Now the list documents should return 4 documents!
     let list_documents_response = collection_client
         .list_documents()
+        .with_consistency_level(session_token)
         .execute::<serde_json::Value>() // you can use this if you don't know/care about the return type!
         .await?;
     assert_eq!(list_documents_response.documents.len(), 4);

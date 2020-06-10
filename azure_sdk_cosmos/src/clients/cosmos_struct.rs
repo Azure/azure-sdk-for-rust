@@ -1,8 +1,10 @@
-use crate::clients::DatabaseClient;
-use crate::database::DatabaseName;
+use crate::clients::DatabaseStruct;
 use crate::headers::*;
 use crate::requests;
-use crate::{requests::*, AuthorizationToken, CosmosTrait};
+use crate::{
+    AuthorizationToken, CosmosClient, HasHyperClient, IntoDatabaseClient, ResourceType,
+    WithDatabaseClient,
+};
 use azure_sdk_core::errors::AzureError;
 use azure_sdk_core::No;
 use base64;
@@ -15,43 +17,29 @@ use hyper::{
 use hyper_rustls::HttpsConnector;
 use ring::hmac;
 use std::borrow::Cow;
+use std::fmt::Debug;
 use url::form_urlencoded;
 
 const AZURE_VERSION: &str = "2018-12-31";
 const VERSION: &str = "1.0";
 const TIME_FORMAT: &str = "%a, %d %h %Y %T GMT";
 
-#[allow(dead_code)]
-#[derive(Debug, Clone, Copy)]
-pub(crate) enum ResourceType {
-    Databases,
-    Collections,
-    Documents,
-    StoredProcedures,
-    Users,
-    Permissions,
-    Attachments,
-    PartitionKeyRanges,
-    UserDefinedFunctions,
-    Triggers,
-}
-
 pub trait CosmosUriBuilder {
     fn build_base_uri(&self) -> &str;
 }
 
 #[derive(Debug, Clone)]
-pub struct Client<CUB>
+pub struct CosmosStruct<'a, CUB>
 where
     CUB: CosmosUriBuilder,
 {
     hyper_client: hyper::Client<HttpsConnector<hyper::client::HttpConnector>>,
-    account: String,
+    account: Cow<'a, str>,
     auth_token: AuthorizationToken,
     cosmos_uri_builder: CUB,
 }
 
-impl<CUB> Client<CUB>
+impl<'a, CUB> CosmosStruct<'a, CUB>
 where
     CUB: CosmosUriBuilder + Clone,
 {
@@ -109,6 +97,7 @@ pub struct CustomCosmosUri {
 }
 
 impl CosmosUriBuilder for CustomCosmosUri {
+    #[inline]
     fn build_base_uri(&self) -> &str {
         &self.uri
     }
@@ -118,14 +107,37 @@ pub struct ClientBuilder {}
 
 impl ClientBuilder {
     #[allow(clippy::new_ret_no_self)]
-    pub fn new(
-        account: String,
+    pub fn new<'a, IntoCowStr>(
+        account: IntoCowStr,
         auth_token: AuthorizationToken,
-    ) -> Result<Client<DefaultCosmosUri>, AzureError> {
+    ) -> Result<CosmosStruct<'a, DefaultCosmosUri>, AzureError>
+    where
+        IntoCowStr: Into<Cow<'a, str>>,
+    {
+        let account = account.into();
         let client = hyper::Client::builder().build(HttpsConnector::new());
-        let cosmos_uri_builder = DefaultCosmosUri::new(&account);
+        let cosmos_uri_builder = DefaultCosmosUri::new(account.as_ref());
 
-        Ok(Client {
+        Ok(CosmosStruct {
+            hyper_client: client,
+            account: account,
+            auth_token,
+            cosmos_uri_builder,
+        })
+    }
+
+    pub fn new_china<'a, IntoCowStr>(
+        account: IntoCowStr,
+        auth_token: AuthorizationToken,
+    ) -> Result<CosmosStruct<'a, ChinaCosmosUri>, AzureError>
+    where
+        IntoCowStr: Into<Cow<'a, str>>,
+    {
+        let account = account.into();
+        let client = hyper::Client::builder().build(HttpsConnector::new());
+        let cosmos_uri_builder = ChinaCosmosUri::new(account.as_ref());
+
+        Ok(CosmosStruct {
             hyper_client: client,
             account,
             auth_token,
@@ -133,37 +145,28 @@ impl ClientBuilder {
         })
     }
 
-    pub fn new_china(
-        account: String,
-        auth_token: AuthorizationToken,
-    ) -> Result<Client<ChinaCosmosUri>, AzureError> {
-        let client = hyper::Client::builder().build(HttpsConnector::new());
-        let cosmos_uri_builder = ChinaCosmosUri::new(&account);
-
-        Ok(Client {
-            hyper_client: client,
-            account,
-            auth_token,
-            cosmos_uri_builder,
-        })
-    }
-
-    pub fn new_custom(
-        account: String,
+    pub fn new_custom<'a, IntoCowStr>(
+        account: IntoCowStr,
         auth_token: AuthorizationToken,
         uri: String,
-    ) -> Result<Client<CustomCosmosUri>, AzureError> {
+    ) -> Result<CosmosStruct<'a, CustomCosmosUri>, AzureError>
+    where
+        IntoCowStr: Into<Cow<'a, str>>,
+    {
         let client = hyper::Client::builder().build(HttpsConnector::new());
 
-        Ok(Client {
+        Ok(CosmosStruct {
             hyper_client: client,
-            account,
+            account: account.into(),
             auth_token,
             cosmos_uri_builder: CustomCosmosUri { uri },
         })
     }
 
-    pub fn new_emulator(address: &str, port: u16) -> Result<Client<CustomCosmosUri>, AzureError> {
+    pub fn new_emulator(
+        address: &str,
+        port: u16,
+    ) -> Result<CosmosStruct<CustomCosmosUri>, AzureError> {
         let client = hyper::Client::builder().build(HttpsConnector::new());
 
         //Account name: localhost:<port>
@@ -171,9 +174,9 @@ impl ClientBuilder {
         let auth_token = AuthorizationToken::new_master(
             "C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==",
         ).unwrap();
-        Ok(Client {
+        Ok(CosmosStruct {
             hyper_client: client,
-            account: format!("{}:{}", address, port),
+            account: Cow::Owned(format!("{}:{}", address, port)),
             auth_token,
             cosmos_uri_builder: CustomCosmosUri {
                 uri: format!("https://{}:{}", address, port),
@@ -182,39 +185,30 @@ impl ClientBuilder {
     }
 }
 
-impl<CUB> CosmosTrait<CUB> for Client<CUB>
+impl<'a, CUB> HasHyperClient for CosmosStruct<'a, CUB>
 where
-    CUB: CosmosUriBuilder,
+    CUB: CosmosUriBuilder + Debug,
 {
-    fn list_databases(&self) -> ListDatabasesBuilder<'_, CUB> {
-        ListDatabasesBuilder::new(self)
-    }
-
-    fn with_database<'a>(&'a self, database_name: &'a dyn DatabaseName) -> DatabaseClient<'a, CUB> {
-        DatabaseClient::new(self, database_name)
-    }
-
-    fn create_database<DB>(&self) -> requests::CreateDatabaseBuilder<'_, CUB, DB, No>
-    where
-        DB: DatabaseName,
-    {
-        CreateDatabaseBuilder::new(self)
+    #[inline]
+    fn hyper_client(&self) -> &hyper::Client<HttpsConnector<hyper::client::HttpConnector>> {
+        &self.hyper_client
     }
 }
 
-impl<CUB> Client<CUB>
+impl<'a, CUB> CosmosClient for CosmosStruct<'a, CUB>
 where
-    CUB: CosmosUriBuilder,
+    CUB: CosmosUriBuilder + Debug,
 {
-    #[inline]
-    pub(crate) fn hyper_client(
-        &self,
-    ) -> &hyper::Client<HttpsConnector<hyper::client::HttpConnector>> {
-        &self.hyper_client
+    fn create_database(&self) -> requests::CreateDatabaseBuilder<'_, No> {
+        requests::CreateDatabaseBuilder::new(self)
+    }
+
+    fn list_databases(&self) -> requests::ListDatabasesBuilder<'_> {
+        requests::ListDatabasesBuilder::new(self)
     }
 
     #[inline]
-    pub(crate) fn prepare_request(
+    fn prepare_request(
         &self,
         uri_path: &str,
         http_method: hyper::Method,
@@ -234,7 +228,59 @@ where
         };
         self.prepare_request_with_signature(uri_path, http_method, &time, &auth)
     }
+}
 
+impl<'a, CUB> IntoDatabaseClient<'a, Self, DatabaseStruct<'a, Self>> for CosmosStruct<'a, CUB>
+where
+    CUB: CosmosUriBuilder + Debug + Clone,
+{
+    fn into_database_client<IntoCowStr>(self, database_name: IntoCowStr) -> DatabaseStruct<'a, Self>
+    where
+        IntoCowStr: Into<Cow<'a, str>>,
+    {
+        DatabaseStruct::new(Cow::Owned(self), database_name.into())
+    }
+}
+
+impl<'a, CUB> WithDatabaseClient<'a, Self, DatabaseStruct<'a, Self>> for CosmosStruct<'a, CUB>
+where
+    CUB: CosmosUriBuilder + Debug + Clone,
+{
+    fn with_database_client<IntoCowStr>(
+        &'a self,
+        database_name: IntoCowStr,
+    ) -> DatabaseStruct<'a, Self>
+    where
+        IntoCowStr: Into<Cow<'a, str>>,
+    {
+        DatabaseStruct::new(Cow::Borrowed(self), database_name.into())
+    }
+}
+
+//impl<CUB> Cosmos for CosmosStruct<CUB>
+//where
+//    CUB: CosmosUriBuilder,
+//{
+//    //fn list_databases(&self) -> ListDatabasesBuilder<'_, CUB> {
+//    //    ListDatabasesBuilder::new(self)
+//    //}
+//
+//    //fn with_database<'a>(&'a self, database_name: &'a dyn DatabaseName) -> DatabaseClient<'a, CUB> {
+//    //    DatabaseClient::new(self, database_name)
+//    //}
+//
+//    //fn create_database<DB>(&self) -> requests::CreateDatabaseBuilder<'_, CUB, DB, No>
+//    //where
+//    //    DB: DatabaseName,
+//    //{
+//    //    CreateDatabaseBuilder::new(self)
+//    //}
+//}
+
+impl<'a, CUB> CosmosStruct<'a, CUB>
+where
+    CUB: CosmosUriBuilder + Debug,
+{
     #[inline]
     fn prepare_request_with_signature(
         &self,

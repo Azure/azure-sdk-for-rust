@@ -2,27 +2,26 @@
 	"name": "CreateCollectionBuilder",
 	"derive": "Debug, Clone",
 	"uses": [
-			"crate::clients::{CosmosUriBuilder, DatabaseClient, ResourceType}",
 			"crate::collection::{Collection, IndexingPolicy, PartitionKey}",
 			"azure_sdk_core::prelude::*",
 			"crate::prelude::*",
 			"crate::collection::CollectionName",
 			"crate::responses::CreateCollectionResponse",
-			"crate::Offer",
+			"crate::{ResourceType, Offer}",
 			"azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError}",
 			"azure_sdk_core::{No, ToAssign, Yes}",
 			"hyper::StatusCode",
 			"std::convert::TryInto",
 			"std::marker::PhantomData"
 	],
-	"extra_types": [ "'a", "CUB" ],
+	"extra_types": [ "'a", "C" ],
 	"inline": true,
-	"extra_wheres": [ "CUB: CosmosUriBuilder" ],
+	"extra_wheres": [ "C: CosmosClient" ],
 	"constructor_fields": [
 		{
 			"name": "database_client",
-			"field_type": "&'a DatabaseClient<'a, CUB>",
-			"trait_get": "DatabaseClientRequired<'a, CUB>"
+			"field_type": "&'a dyn DatabaseClient<C>",
+			"trait_get": "DatabaseClientRequired<'a, C>"
 		}
 	],
 	"fields": [
@@ -77,7 +76,8 @@
 			"field_type": "ConsistencyLevel<'a>",
 			"optional": true,
 			"trait_get": "ConsistencyLevelOption<'a>",
-			"trait_set": "ConsistencyLevelSupport<'a>"
+			"trait_set": "ConsistencyLevelSupport<'a>",
+			"get_via_clone": true
 		}
 	]
 }

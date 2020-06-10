@@ -27,7 +27,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // Once we have an authorization token you can create a client instance. You can change the
     // authorization token at later time if you need, for example, to escalate the privileges for a
     // single operation.
-    let client = ClientBuilder::new(account.clone(), authorization_token)?;
+    let client = ClientBuilder::new(&account, authorization_token)?;
 
     // The Cosmos' client exposes a lot of methods. This one lists the databases in the specified
     // account. Database do not implement Display but deref to &str so you can pass it to methods
@@ -45,7 +45,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     // create collection!
     {
-        let db_client = client.with_database(&database_name);
+        let db_client = client.with_database_client(&database_name);
 
         let indexes = IncludedPathIndex {
             kind: KeyKind::Hash,
@@ -79,7 +79,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             create_collection_response
         );
 
-        let db_collection = db_client.with_collection(&"panzadoro");
+        let db_collection = db_client.with_collection_client("panzadoro");
 
         let get_collection_response = db_collection.get_collection().execute().await?;
         println!("get_collection_response == {:#?}", get_collection_response);
@@ -96,7 +96,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     }
 
     let resp = client
-        .with_database(&database_name)
+        .with_database_client(&database_name)
         .delete_database()
         .execute()
         .await?;

@@ -1,10 +1,6 @@
-use crate::clients::CosmosUriBuilder;
 use crate::prelude::*;
 use crate::responses::ExecuteStoredProcedureResponse;
 use crate::stored_procedure::Parameters;
-use crate::StoredProcedureBuilderTrait;
-use crate::StoredProcedureClient;
-use crate::StoredProcedureClientRequired;
 use azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError};
 use azure_sdk_core::prelude::*;
 use hyper::StatusCode;
@@ -12,11 +8,13 @@ use serde::de::DeserializeOwned;
 use std::convert::TryInto;
 
 #[derive(Debug, Clone)]
-pub struct ExecuteStoredProcedureBuilder<'a, 'b, CUB>
+pub struct ExecuteStoredProcedureBuilder<'a, 'b, C, D, COLL>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    COLL: CollectionClient<C, D>,
 {
-    stored_procedure_client: &'a StoredProcedureClient<'a, CUB>,
+    stored_procedure_client: &'a dyn StoredProcedureClient<C, D, COLL>,
     parameters: Option<&'b Parameters>,
     user_agent: Option<&'b str>,
     activity_id: Option<&'b str>,
@@ -25,14 +23,16 @@ where
     partition_keys: Option<&'b PartitionKeys>,
 }
 
-impl<'a, 'b, CUB> ExecuteStoredProcedureBuilder<'a, 'b, CUB>
+impl<'a, 'b, C, D, COLL> ExecuteStoredProcedureBuilder<'a, 'b, C, D, COLL>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    COLL: CollectionClient<C, D>,
 {
     #[inline]
     pub(crate) fn new(
-        stored_procedure_client: &'a StoredProcedureClient<'a, CUB>,
-    ) -> ExecuteStoredProcedureBuilder<'a, 'b, CUB> {
+        stored_procedure_client: &'a dyn StoredProcedureClient<C, D, COLL>,
+    ) -> ExecuteStoredProcedureBuilder<'a, 'b, C, D, COLL> {
         ExecuteStoredProcedureBuilder {
             stored_procedure_client,
             parameters: None,
@@ -45,13 +45,15 @@ where
     }
 }
 
-impl<'a, 'b, CUB> StoredProcedureClientRequired<'a, CUB>
-    for ExecuteStoredProcedureBuilder<'a, 'b, CUB>
+impl<'a, 'b, C, D, COLL> StoredProcedureClientRequired<'a, C, D, COLL>
+    for ExecuteStoredProcedureBuilder<'a, 'b, C, D, COLL>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    COLL: CollectionClient<C, D>,
 {
     #[inline]
-    fn stored_procedure_client(&self) -> &'a StoredProcedureClient<'a, CUB> {
+    fn stored_procedure_client(&self) -> &'a dyn StoredProcedureClient<C, D, COLL> {
         self.stored_procedure_client
     }
 }
@@ -59,9 +61,11 @@ where
 //get mandatory no traits methods
 
 //set mandatory no traits methods
-impl<'a, 'b, CUB> ParametersOption<'b> for ExecuteStoredProcedureBuilder<'a, 'b, CUB>
+impl<'a, 'b, C, D, COLL> ParametersOption<'b> for ExecuteStoredProcedureBuilder<'a, 'b, C, D, COLL>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    COLL: CollectionClient<C, D>,
 {
     #[inline]
     fn parameters(&self) -> Option<&'b Parameters> {
@@ -69,9 +73,11 @@ where
     }
 }
 
-impl<'a, 'b, CUB> UserAgentOption<'b> for ExecuteStoredProcedureBuilder<'a, 'b, CUB>
+impl<'a, 'b, C, D, COLL> UserAgentOption<'b> for ExecuteStoredProcedureBuilder<'a, 'b, C, D, COLL>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    COLL: CollectionClient<C, D>,
 {
     #[inline]
     fn user_agent(&self) -> Option<&'b str> {
@@ -79,9 +85,11 @@ where
     }
 }
 
-impl<'a, 'b, CUB> ActivityIdOption<'b> for ExecuteStoredProcedureBuilder<'a, 'b, CUB>
+impl<'a, 'b, C, D, COLL> ActivityIdOption<'b> for ExecuteStoredProcedureBuilder<'a, 'b, C, D, COLL>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    COLL: CollectionClient<C, D>,
 {
     #[inline]
     fn activity_id(&self) -> Option<&'b str> {
@@ -89,9 +97,12 @@ where
     }
 }
 
-impl<'a, 'b, CUB> ConsistencyLevelOption<'b> for ExecuteStoredProcedureBuilder<'a, 'b, CUB>
+impl<'a, 'b, C, D, COLL> ConsistencyLevelOption<'b>
+    for ExecuteStoredProcedureBuilder<'a, 'b, C, D, COLL>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    COLL: CollectionClient<C, D>,
 {
     #[inline]
     fn consistency_level(&self) -> Option<ConsistencyLevel<'b>> {
@@ -99,9 +110,12 @@ where
     }
 }
 
-impl<'a, 'b, CUB> AllowTentativeWritesOption for ExecuteStoredProcedureBuilder<'a, 'b, CUB>
+impl<'a, 'b, C, D, COLL> AllowTentativeWritesOption
+    for ExecuteStoredProcedureBuilder<'a, 'b, C, D, COLL>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    COLL: CollectionClient<C, D>,
 {
     #[inline]
     fn allow_tentative_writes(&self) -> bool {
@@ -109,9 +123,12 @@ where
     }
 }
 
-impl<'a, 'b, CUB> PartitionKeysOption<'b> for ExecuteStoredProcedureBuilder<'a, 'b, CUB>
+impl<'a, 'b, C, D, COLL> PartitionKeysOption<'b>
+    for ExecuteStoredProcedureBuilder<'a, 'b, C, D, COLL>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    COLL: CollectionClient<C, D>,
 {
     #[inline]
     fn partition_keys(&self) -> Option<&'b PartitionKeys> {
@@ -119,11 +136,13 @@ where
     }
 }
 
-impl<'a, 'b, CUB> ParametersSupport<'b> for ExecuteStoredProcedureBuilder<'a, 'b, CUB>
+impl<'a, 'b, C, D, COLL> ParametersSupport<'b> for ExecuteStoredProcedureBuilder<'a, 'b, C, D, COLL>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    COLL: CollectionClient<C, D>,
 {
-    type O = ExecuteStoredProcedureBuilder<'a, 'b, CUB>;
+    type O = ExecuteStoredProcedureBuilder<'a, 'b, C, D, COLL>;
 
     #[inline]
     fn with_parameters(self, parameters: &'b Parameters) -> Self::O {
@@ -139,11 +158,13 @@ where
     }
 }
 
-impl<'a, 'b, CUB> UserAgentSupport<'b> for ExecuteStoredProcedureBuilder<'a, 'b, CUB>
+impl<'a, 'b, C, D, COLL> UserAgentSupport<'b> for ExecuteStoredProcedureBuilder<'a, 'b, C, D, COLL>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    COLL: CollectionClient<C, D>,
 {
-    type O = ExecuteStoredProcedureBuilder<'a, 'b, CUB>;
+    type O = ExecuteStoredProcedureBuilder<'a, 'b, C, D, COLL>;
 
     #[inline]
     fn with_user_agent(self, user_agent: &'b str) -> Self::O {
@@ -159,11 +180,13 @@ where
     }
 }
 
-impl<'a, 'b, CUB> ActivityIdSupport<'b> for ExecuteStoredProcedureBuilder<'a, 'b, CUB>
+impl<'a, 'b, C, D, COLL> ActivityIdSupport<'b> for ExecuteStoredProcedureBuilder<'a, 'b, C, D, COLL>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    COLL: CollectionClient<C, D>,
 {
-    type O = ExecuteStoredProcedureBuilder<'a, 'b, CUB>;
+    type O = ExecuteStoredProcedureBuilder<'a, 'b, C, D, COLL>;
 
     #[inline]
     fn with_activity_id(self, activity_id: &'b str) -> Self::O {
@@ -179,11 +202,14 @@ where
     }
 }
 
-impl<'a, 'b, CUB> ConsistencyLevelSupport<'b> for ExecuteStoredProcedureBuilder<'a, 'b, CUB>
+impl<'a, 'b, C, D, COLL> ConsistencyLevelSupport<'b>
+    for ExecuteStoredProcedureBuilder<'a, 'b, C, D, COLL>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    COLL: CollectionClient<C, D>,
 {
-    type O = ExecuteStoredProcedureBuilder<'a, 'b, CUB>;
+    type O = ExecuteStoredProcedureBuilder<'a, 'b, C, D, COLL>;
 
     #[inline]
     fn with_consistency_level(self, consistency_level: ConsistencyLevel<'b>) -> Self::O {
@@ -199,11 +225,14 @@ where
     }
 }
 
-impl<'a, 'b, CUB> AllowTentativeWritesSupport for ExecuteStoredProcedureBuilder<'a, 'b, CUB>
+impl<'a, 'b, C, D, COLL> AllowTentativeWritesSupport
+    for ExecuteStoredProcedureBuilder<'a, 'b, C, D, COLL>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    COLL: CollectionClient<C, D>,
 {
-    type O = ExecuteStoredProcedureBuilder<'a, 'b, CUB>;
+    type O = ExecuteStoredProcedureBuilder<'a, 'b, C, D, COLL>;
 
     #[inline]
     fn with_allow_tentative_writes(self, allow_tentative_writes: bool) -> Self::O {
@@ -219,11 +248,14 @@ where
     }
 }
 
-impl<'a, 'b, CUB> PartitionKeysSupport<'b> for ExecuteStoredProcedureBuilder<'a, 'b, CUB>
+impl<'a, 'b, C, D, COLL> PartitionKeysSupport<'b>
+    for ExecuteStoredProcedureBuilder<'a, 'b, C, D, COLL>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    COLL: CollectionClient<C, D>,
 {
-    type O = ExecuteStoredProcedureBuilder<'a, 'b, CUB>;
+    type O = ExecuteStoredProcedureBuilder<'a, 'b, C, D, COLL>;
 
     #[inline]
     fn with_partition_keys(self, partition_keys: &'b PartitionKeys) -> Self::O {
@@ -239,9 +271,12 @@ where
     }
 }
 
-impl<'a, 'b, CUB> ExecuteStoredProcedureBuilder<'a, 'b, CUB>
+// methods callable only when every mandatory field has been filled
+impl<'a, 'b, C, D, COLL> ExecuteStoredProcedureBuilder<'a, 'b, C, D, COLL>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    COLL: CollectionClient<C, D>,
 {
     pub async fn execute<T>(&self) -> Result<ExecuteStoredProcedureResponse<T>, AzureError>
     where
@@ -249,25 +284,27 @@ where
     {
         trace!("ExecuteStoredProcedureBuilder::execute called");
 
-        let req = self
+        let request = self
             .stored_procedure_client()
-            .prepare_request(hyper::Method::POST);
+            .prepare_request_with_stored_procedure_name(hyper::Method::POST);
 
         // add trait headers
-        let req = UserAgentOption::add_header(self, req);
-        let req = ActivityIdOption::add_header(self, req);
-        let req = ConsistencyLevelOption::add_header(self, req);
-        let req = AllowTentativeWritesOption::add_header(self, req);
-        let req = PartitionKeysOption::add_header(self, req);
+        let request = UserAgentOption::add_header(self, request);
+        let request = ActivityIdOption::add_header(self, request);
+        let request = ConsistencyLevelOption::add_header(self, request);
+        let request = AllowTentativeWritesOption::add_header(self, request);
+        let request = PartitionKeysOption::add_header(self, request);
 
-        let req = req.header(http::header::CONTENT_TYPE, "application/json");
+        let request = request.header(http::header::CONTENT_TYPE, "application/json");
 
         let body = ParametersOption::generate_body(self);
 
-        let req = req.body(hyper::Body::from(body))?;
+        let request = request.body(hyper::Body::from(body))?;
 
         let (headers, body) = check_status_extract_headers_and_body(
-            self.stored_procedure_client().hyper_client().request(req),
+            self.stored_procedure_client()
+                .hyper_client()
+                .request(request),
             StatusCode::OK,
         )
         .await?;

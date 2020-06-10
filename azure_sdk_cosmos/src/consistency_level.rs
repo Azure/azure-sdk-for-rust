@@ -36,6 +36,12 @@ impl<'a> From<&'a str> for ConsistencyLevel<'a> {
     }
 }
 
+impl<'a> From<&'a String> for ConsistencyLevel<'a> {
+    fn from(session_token: &'a String) -> Self {
+        ConsistencyLevel::Session(Cow::from(session_token))
+    }
+}
+
 macro_rules! implement_from {
     ($response_type:ident) => {
         impl<'a> From<&'a $response_type> for ConsistencyLevel<'a> {
@@ -66,6 +72,9 @@ macro_rules! implement_from {
 }
 
 implement_from!(CreateSlugAttachmentResponse);
+implement_from!(GetDatabaseResponse);
+implement_from!(GetCollectionResponse);
+implement_from!(CreateUserResponse);
 implement_from!(DeleteAttachmentResponse);
 implement_from!(ReplaceReferenceAttachmentResponse);
 implement_from!(CreateReferenceAttachmentResponse);

@@ -2,10 +2,7 @@
 	"name": "CreateSlugAttachmentBuilder",
 	"derive": "Debug, Clone",
 	"uses": [
-			"crate::clients::{ResourceType, CosmosUriBuilder}",
 			"crate::prelude::*",
-			"crate::AttachmentClient",
-			"crate::AttachmentClientRequired",
 			"azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError}",
 			"azure_sdk_core::prelude::*",
 			"azure_sdk_core::{Yes, No, ToAssign}",
@@ -15,13 +12,13 @@
 			"std::convert::TryInto"
 	],
 	"inline": true,
-	"extra_types": [ "'a", "'b", "CUB" ],
-	"extra_wheres": ["CUB: CosmosUriBuilder" ],
+	"extra_types": [ "'a", "'b", "C", "D", "COLL", "DOC" ],
+	"extra_wheres": [ "C: CosmosClient", "D: DatabaseClient<C>", "COLL: CollectionClient<C, D>", "DOC: DocumentClient<C, D, COLL>" ],
 	"constructor_fields": [
 		{
 			"name": "attachment_client",
-			"field_type": "&'a AttachmentClient<'a, CUB>",
-			"trait_get": "AttachmentClientRequired<'a, CUB>"
+			"field_type": "&'a dyn AttachmentClient<C, D, COLL, DOC>",
+			"trait_get": "AttachmentClientRequired<'a, C, D, COLL, DOC>"
 		}
 	],
 	"fields": [
@@ -67,7 +64,8 @@
 			"field_type": "ConsistencyLevel<'b>",
 			"optional": true,
 			"trait_get": "ConsistencyLevelOption<'b>",
-			"trait_set": "ConsistencyLevelSupport<'b>"
+			"trait_set": "ConsistencyLevelSupport<'b>",
+			"get_via_clone": true
 		}
 	]
 }

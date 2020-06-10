@@ -2,15 +2,11 @@
 	"name": "ReplaceDocumentBuilder",
 	"derive": "Debug, Clone",
 	"uses": [
-			"crate::clients::{CollectionClient, CosmosUriBuilder, ResourceType}",
-			"crate::document::Document",
 			"crate::prelude::*",
-			"crate::responses::ReplaceDocumentResponse",
-			"crate::CollectionClientRequired",
-			"azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError}",
-			"azure_sdk_core::modify_conditions::IfMatchCondition",
 			"azure_sdk_core::prelude::*",
-			"azure_sdk_core::{IfMatchConditionOption, IfMatchConditionSupport}",
+			"crate::ResourceType",
+			"crate::responses::ReplaceDocumentResponse",
+			"azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError}",
 			"azure_sdk_core::{No, ToAssign, Yes}",
 			"chrono::{DateTime, Utc}",
 			"hyper::StatusCode",
@@ -19,24 +15,16 @@
 			"std::marker::PhantomData"
 	],
 	"inline": true,
-	"extra_types": [ "'a", "'b", "T", "CUB" ],
-	"extra_wheres": ["T: Serialize", "CUB: CosmosUriBuilder"],
+	"extra_types": [ "'a", "'b", "C", "D" ],
+	"extra_wheres": [ "C: CosmosClient", "D: DatabaseClient<C>" ],
 	"constructor_fields": [
 		{
 			"name": "collection_client",
-			"field_type": "&'a CollectionClient<'a, CUB>",
-			"trait_get": "CollectionClientRequired<'a, CUB>"
+			"field_type": "&'a dyn CollectionClient<C, D>",
+			"trait_get": "CollectionClientRequired<'a, C, D>"
 		}
 	],
 	"fields": [
-		{
-			"name": "document",
-			"field_type": "&'b Document<T>",
-			"builder_type": "DocumentSet",
-			"optional": false,
-			"trait_get": "DocumentRequired<'b, T>",
-			"trait_set": "DocumentSupport<'b, T>"
-		},
 		{
 			"name": "partition_keys",
 			"field_type": "&'b PartitionKeys",

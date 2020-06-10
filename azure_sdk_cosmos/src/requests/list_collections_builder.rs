@@ -1,8 +1,6 @@
-use crate::clients::{CosmosUriBuilder, DatabaseClient, ResourceType};
 use crate::prelude::*;
 use crate::responses::ListCollectionsResponse;
-use crate::DatabaseClientRequired;
-use crate::DatabaseTrait;
+use crate::{DatabaseClientRequired, ResourceType};
 use azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError};
 use azure_sdk_core::prelude::*;
 use futures::stream::{unfold, Stream};
@@ -10,11 +8,11 @@ use hyper::StatusCode;
 use std::convert::TryInto;
 
 #[derive(Debug)]
-pub struct ListCollectionsBuilder<'a, CUB>
+pub struct ListCollectionsBuilder<'a, C>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
 {
-    database_client: &'a DatabaseClient<'a, CUB>,
+    database_client: &'a dyn DatabaseClient<C>,
     user_agent: Option<&'a str>,
     activity_id: Option<&'a str>,
     consistency_level: Option<ConsistencyLevel<'a>>,
@@ -22,27 +20,9 @@ where
     max_item_count: i32,
 }
 
-impl<'a, CUB> ListCollectionsBuilder<'a, CUB>
+impl<'a, C> Clone for ListCollectionsBuilder<'a, C>
 where
-    CUB: CosmosUriBuilder,
-{
-    pub(crate) fn new(
-        database_client: &'a DatabaseClient<'a, CUB>,
-    ) -> ListCollectionsBuilder<'a, CUB> {
-        ListCollectionsBuilder {
-            database_client,
-            user_agent: None,
-            activity_id: None,
-            consistency_level: None,
-            continuation: None,
-            max_item_count: -1,
-        }
-    }
-}
-
-impl<'a, CUB> Clone for ListCollectionsBuilder<'a, CUB>
-where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
 {
     fn clone(&self) -> Self {
         Self {
@@ -56,65 +36,84 @@ where
     }
 }
 
-impl<'a, CUB> DatabaseClientRequired<'a, CUB> for ListCollectionsBuilder<'a, CUB>
+impl<'a, C> ListCollectionsBuilder<'a, C>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
 {
-    fn database_client(&self) -> &'a DatabaseClient<'a, CUB> {
+    pub(crate) fn new(database_client: &'a dyn DatabaseClient<C>) -> ListCollectionsBuilder<'a, C> {
+        ListCollectionsBuilder {
+            database_client,
+            user_agent: None,
+            activity_id: None,
+            consistency_level: None,
+            continuation: None,
+            max_item_count: -1,
+        }
+    }
+}
+
+impl<'a, C> DatabaseClientRequired<'a, C> for ListCollectionsBuilder<'a, C>
+where
+    C: CosmosClient,
+{
+    fn database_client(&self) -> &'a dyn DatabaseClient<C> {
         self.database_client
     }
 }
 
-impl<'a, CUB> UserAgentOption<'a> for ListCollectionsBuilder<'a, CUB>
+//get mandatory no traits methods
+
+//set mandatory no traits methods
+impl<'a, C> UserAgentOption<'a> for ListCollectionsBuilder<'a, C>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
 {
     fn user_agent(&self) -> Option<&'a str> {
         self.user_agent
     }
 }
 
-impl<'a, CUB> ActivityIdOption<'a> for ListCollectionsBuilder<'a, CUB>
+impl<'a, C> ActivityIdOption<'a> for ListCollectionsBuilder<'a, C>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
 {
     fn activity_id(&self) -> Option<&'a str> {
         self.activity_id
     }
 }
 
-impl<'a, CUB> ConsistencyLevelOption<'a> for ListCollectionsBuilder<'a, CUB>
+impl<'a, C> ConsistencyLevelOption<'a> for ListCollectionsBuilder<'a, C>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
 {
     fn consistency_level(&self) -> Option<ConsistencyLevel<'a>> {
         self.consistency_level.clone()
     }
 }
 
-impl<'a, CUB> ContinuationOption<'a> for ListCollectionsBuilder<'a, CUB>
+impl<'a, C> ContinuationOption<'a> for ListCollectionsBuilder<'a, C>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
 {
     fn continuation(&self) -> Option<&'a str> {
         self.continuation
     }
 }
 
-impl<'a, CUB> MaxItemCountOption for ListCollectionsBuilder<'a, CUB>
+impl<'a, C> MaxItemCountOption for ListCollectionsBuilder<'a, C>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
 {
     fn max_item_count(&self) -> i32 {
         self.max_item_count
     }
 }
 
-impl<'a, CUB> UserAgentSupport<'a> for ListCollectionsBuilder<'a, CUB>
+impl<'a, C> UserAgentSupport<'a> for ListCollectionsBuilder<'a, C>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
 {
-    type O = ListCollectionsBuilder<'a, CUB>;
+    type O = ListCollectionsBuilder<'a, C>;
 
     fn with_user_agent(self, user_agent: &'a str) -> Self::O {
         ListCollectionsBuilder {
@@ -128,11 +127,11 @@ where
     }
 }
 
-impl<'a, CUB> ActivityIdSupport<'a> for ListCollectionsBuilder<'a, CUB>
+impl<'a, C> ActivityIdSupport<'a> for ListCollectionsBuilder<'a, C>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
 {
-    type O = ListCollectionsBuilder<'a, CUB>;
+    type O = ListCollectionsBuilder<'a, C>;
 
     fn with_activity_id(self, activity_id: &'a str) -> Self::O {
         ListCollectionsBuilder {
@@ -146,11 +145,11 @@ where
     }
 }
 
-impl<'a, CUB> ConsistencyLevelSupport<'a> for ListCollectionsBuilder<'a, CUB>
+impl<'a, C> ConsistencyLevelSupport<'a> for ListCollectionsBuilder<'a, C>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
 {
-    type O = ListCollectionsBuilder<'a, CUB>;
+    type O = ListCollectionsBuilder<'a, C>;
 
     fn with_consistency_level(self, consistency_level: ConsistencyLevel<'a>) -> Self::O {
         ListCollectionsBuilder {
@@ -164,11 +163,11 @@ where
     }
 }
 
-impl<'a, CUB> ContinuationSupport<'a> for ListCollectionsBuilder<'a, CUB>
+impl<'a, C> ContinuationSupport<'a> for ListCollectionsBuilder<'a, C>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
 {
-    type O = ListCollectionsBuilder<'a, CUB>;
+    type O = ListCollectionsBuilder<'a, C>;
 
     fn with_continuation(self, continuation: &'a str) -> Self::O {
         ListCollectionsBuilder {
@@ -182,11 +181,11 @@ where
     }
 }
 
-impl<'a, CUB> MaxItemCountSupport for ListCollectionsBuilder<'a, CUB>
+impl<'a, C> MaxItemCountSupport for ListCollectionsBuilder<'a, C>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
 {
-    type O = ListCollectionsBuilder<'a, CUB>;
+    type O = ListCollectionsBuilder<'a, C>;
 
     fn with_max_item_count(self, max_item_count: i32) -> Self::O {
         ListCollectionsBuilder {
@@ -201,13 +200,13 @@ where
 }
 
 // methods callable only when every mandatory field has been filled
-impl<'a, CUB> ListCollectionsBuilder<'a, CUB>
+impl<'a, C> ListCollectionsBuilder<'a, C>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
 {
     pub async fn execute(&self) -> Result<ListCollectionsResponse, AzureError> {
         trace!("ListCollectionsBuilder::execute called");
-        let request = self.database_client.main_client().prepare_request(
+        let request = self.database_client.cosmos_client().prepare_request(
             &format!("dbs/{}/colls", self.database_client.database_name().name()),
             hyper::Method::GET,
             ResourceType::Collections,

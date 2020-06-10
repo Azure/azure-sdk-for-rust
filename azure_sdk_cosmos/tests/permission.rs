@@ -23,12 +23,12 @@ async fn permissions() {
         .await
         .unwrap();
 
-    let database_client = client.with_database(&DATABASE_NAME);
+    let database_client = client.with_database_client(DATABASE_NAME);
 
     // create two users
-    let user1_client = database_client.with_user(&USER_NAME1);
+    let user1_client = database_client.with_user_client(USER_NAME1);
     let _create_user_response = user1_client.create_user().execute().await.unwrap();
-    let user2_client = database_client.with_user(&USER_NAME2);
+    let user2_client = database_client.with_user_client(USER_NAME2);
     let _create_user_response = user2_client.create_user().execute().await.unwrap();
 
     // create a temp collection
@@ -63,22 +63,20 @@ async fn permissions() {
     };
 
     // create two permissions
-    let permission_client_user1 = user1_client.with_permission(&PERMISSION1);
-    let permission_client_user2 = user2_client.with_permission(&PERMISSION2);
+    let permission_client_user1 = user1_client.with_permission_client(PERMISSION1);
+    let permission_client_user2 = user2_client.with_permission_client(PERMISSION2);
 
     let _create_permission_user1_response = permission_client_user1
         .create_permission()
-        .with_permission_mode(&PermissionMode::All(&create_collection_response.collection))
         .with_expiry_seconds(18000) // 5 hours, max!
-        .execute()
+        .execute_with_permission(&PermissionMode::All(&create_collection_response.collection))
         .await
         .unwrap();
 
     let _create_permission_user2_response = permission_client_user2
         .create_permission()
-        .with_permission_mode(&PermissionMode::Read(create_collection_response.collection))
         .with_expiry_seconds(18000) // 5 hours, max!
-        .execute()
+        .execute_with_permission(&PermissionMode::Read(create_collection_response.collection))
         .await
         .unwrap();
 

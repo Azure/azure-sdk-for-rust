@@ -1,9 +1,8 @@
-use crate::clients::{CosmosUriBuilder, DatabaseClient, ResourceType};
 use crate::collection::CollectionName;
 use crate::collection::{Collection, IndexingPolicy, PartitionKey};
 use crate::prelude::*;
 use crate::responses::CreateCollectionResponse;
-use crate::Offer;
+use crate::{Offer, ResourceType};
 use azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError};
 use azure_sdk_core::prelude::*;
 use azure_sdk_core::{No, ToAssign, Yes};
@@ -14,7 +13,7 @@ use std::marker::PhantomData;
 #[derive(Debug, Clone)]
 pub struct CreateCollectionBuilder<
     'a,
-    CUB,
+    C,
     OfferSet,
     CollectionNameSet,
     IndexingPolicySet,
@@ -24,9 +23,9 @@ pub struct CreateCollectionBuilder<
     CollectionNameSet: ToAssign,
     IndexingPolicySet: ToAssign,
     PartitionKeySet: ToAssign,
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
 {
-    database_client: &'a DatabaseClient<'a, CUB>,
+    database_client: &'a dyn DatabaseClient<C>,
     p_offer: PhantomData<OfferSet>,
     p_collection_name: PhantomData<CollectionNameSet>,
     p_indexing_policy: PhantomData<IndexingPolicySet>,
@@ -40,14 +39,14 @@ pub struct CreateCollectionBuilder<
     consistency_level: Option<ConsistencyLevel<'a>>,
 }
 
-impl<'a, CUB> CreateCollectionBuilder<'a, CUB, No, No, No, No>
+impl<'a, C> CreateCollectionBuilder<'a, C, No, No, No, No>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
 {
     #[inline]
     pub(crate) fn new(
-        database_client: &'a DatabaseClient<'a, CUB>,
-    ) -> CreateCollectionBuilder<'a, CUB, No, No, No, No> {
+        database_client: &'a dyn DatabaseClient<C>,
+    ) -> CreateCollectionBuilder<'a, C, No, No, No, No> {
         CreateCollectionBuilder {
             database_client,
             p_offer: PhantomData {},
@@ -65,11 +64,11 @@ where
     }
 }
 
-impl<'a, CUB, OfferSet, CollectionNameSet, IndexingPolicySet, PartitionKeySet>
-    DatabaseClientRequired<'a, CUB>
+impl<'a, C, OfferSet, CollectionNameSet, IndexingPolicySet, PartitionKeySet>
+    DatabaseClientRequired<'a, C>
     for CreateCollectionBuilder<
         'a,
-        CUB,
+        C,
         OfferSet,
         CollectionNameSet,
         IndexingPolicySet,
@@ -80,10 +79,10 @@ where
     CollectionNameSet: ToAssign,
     IndexingPolicySet: ToAssign,
     PartitionKeySet: ToAssign,
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
 {
     #[inline]
-    fn database_client(&self) -> &'a DatabaseClient<'a, CUB> {
+    fn database_client(&self) -> &'a dyn DatabaseClient<C> {
         self.database_client
     }
 }
@@ -91,13 +90,13 @@ where
 //get mandatory no traits methods
 
 //set mandatory no traits methods
-impl<'a, CUB, CollectionNameSet, IndexingPolicySet, PartitionKeySet> OfferRequired
-    for CreateCollectionBuilder<'a, CUB, Yes, CollectionNameSet, IndexingPolicySet, PartitionKeySet>
+impl<'a, C, CollectionNameSet, IndexingPolicySet, PartitionKeySet> OfferRequired
+    for CreateCollectionBuilder<'a, C, Yes, CollectionNameSet, IndexingPolicySet, PartitionKeySet>
 where
     CollectionNameSet: ToAssign,
     IndexingPolicySet: ToAssign,
     PartitionKeySet: ToAssign,
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
 {
     #[inline]
     fn offer(&self) -> Offer {
@@ -105,13 +104,13 @@ where
     }
 }
 
-impl<'a, CUB, OfferSet, IndexingPolicySet, PartitionKeySet> CollectionNameRequired<'a>
-    for CreateCollectionBuilder<'a, CUB, OfferSet, Yes, IndexingPolicySet, PartitionKeySet>
+impl<'a, C, OfferSet, IndexingPolicySet, PartitionKeySet> CollectionNameRequired<'a>
+    for CreateCollectionBuilder<'a, C, OfferSet, Yes, IndexingPolicySet, PartitionKeySet>
 where
     OfferSet: ToAssign,
     IndexingPolicySet: ToAssign,
     PartitionKeySet: ToAssign,
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
 {
     #[inline]
     fn collection_name(&self) -> &'a dyn CollectionName {
@@ -119,13 +118,13 @@ where
     }
 }
 
-impl<'a, CUB, OfferSet, CollectionNameSet, PartitionKeySet> IndexingPolicyRequired<'a>
-    for CreateCollectionBuilder<'a, CUB, OfferSet, CollectionNameSet, Yes, PartitionKeySet>
+impl<'a, C, OfferSet, CollectionNameSet, PartitionKeySet> IndexingPolicyRequired<'a>
+    for CreateCollectionBuilder<'a, C, OfferSet, CollectionNameSet, Yes, PartitionKeySet>
 where
     OfferSet: ToAssign,
     CollectionNameSet: ToAssign,
     PartitionKeySet: ToAssign,
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
 {
     #[inline]
     fn indexing_policy(&self) -> &'a IndexingPolicy {
@@ -133,13 +132,13 @@ where
     }
 }
 
-impl<'a, CUB, OfferSet, CollectionNameSet, IndexingPolicySet> PartitionKeyRequired<'a>
-    for CreateCollectionBuilder<'a, CUB, OfferSet, CollectionNameSet, IndexingPolicySet, Yes>
+impl<'a, C, OfferSet, CollectionNameSet, IndexingPolicySet> PartitionKeyRequired<'a>
+    for CreateCollectionBuilder<'a, C, OfferSet, CollectionNameSet, IndexingPolicySet, Yes>
 where
     OfferSet: ToAssign,
     CollectionNameSet: ToAssign,
     IndexingPolicySet: ToAssign,
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
 {
     #[inline]
     fn partition_key(&self) -> &'a PartitionKey {
@@ -147,10 +146,10 @@ where
     }
 }
 
-impl<'a, CUB, OfferSet, CollectionNameSet, IndexingPolicySet, PartitionKeySet> UserAgentOption<'a>
+impl<'a, C, OfferSet, CollectionNameSet, IndexingPolicySet, PartitionKeySet> UserAgentOption<'a>
     for CreateCollectionBuilder<
         'a,
-        CUB,
+        C,
         OfferSet,
         CollectionNameSet,
         IndexingPolicySet,
@@ -161,7 +160,7 @@ where
     CollectionNameSet: ToAssign,
     IndexingPolicySet: ToAssign,
     PartitionKeySet: ToAssign,
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
 {
     #[inline]
     fn user_agent(&self) -> Option<&'a str> {
@@ -169,10 +168,10 @@ where
     }
 }
 
-impl<'a, CUB, OfferSet, CollectionNameSet, IndexingPolicySet, PartitionKeySet> ActivityIdOption<'a>
+impl<'a, C, OfferSet, CollectionNameSet, IndexingPolicySet, PartitionKeySet> ActivityIdOption<'a>
     for CreateCollectionBuilder<
         'a,
-        CUB,
+        C,
         OfferSet,
         CollectionNameSet,
         IndexingPolicySet,
@@ -183,7 +182,7 @@ where
     CollectionNameSet: ToAssign,
     IndexingPolicySet: ToAssign,
     PartitionKeySet: ToAssign,
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
 {
     #[inline]
     fn activity_id(&self) -> Option<&'a str> {
@@ -191,11 +190,11 @@ where
     }
 }
 
-impl<'a, CUB, OfferSet, CollectionNameSet, IndexingPolicySet, PartitionKeySet>
+impl<'a, C, OfferSet, CollectionNameSet, IndexingPolicySet, PartitionKeySet>
     ConsistencyLevelOption<'a>
     for CreateCollectionBuilder<
         'a,
-        CUB,
+        C,
         OfferSet,
         CollectionNameSet,
         IndexingPolicySet,
@@ -206,7 +205,7 @@ where
     CollectionNameSet: ToAssign,
     IndexingPolicySet: ToAssign,
     PartitionKeySet: ToAssign,
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
 {
     #[inline]
     fn consistency_level(&self) -> Option<ConsistencyLevel<'a>> {
@@ -214,22 +213,16 @@ where
     }
 }
 
-impl<'a, CUB, CollectionNameSet, IndexingPolicySet, PartitionKeySet> OfferSupport
-    for CreateCollectionBuilder<'a, CUB, No, CollectionNameSet, IndexingPolicySet, PartitionKeySet>
+impl<'a, C, CollectionNameSet, IndexingPolicySet, PartitionKeySet> OfferSupport
+    for CreateCollectionBuilder<'a, C, No, CollectionNameSet, IndexingPolicySet, PartitionKeySet>
 where
     CollectionNameSet: ToAssign,
     IndexingPolicySet: ToAssign,
     PartitionKeySet: ToAssign,
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
 {
-    type O = CreateCollectionBuilder<
-        'a,
-        CUB,
-        Yes,
-        CollectionNameSet,
-        IndexingPolicySet,
-        PartitionKeySet,
-    >;
+    type O =
+        CreateCollectionBuilder<'a, C, Yes, CollectionNameSet, IndexingPolicySet, PartitionKeySet>;
 
     #[inline]
     fn with_offer(self, offer: Offer) -> Self::O {
@@ -250,15 +243,15 @@ where
     }
 }
 
-impl<'a, CUB, OfferSet, IndexingPolicySet, PartitionKeySet> CollectionNameSupport<'a>
-    for CreateCollectionBuilder<'a, CUB, OfferSet, No, IndexingPolicySet, PartitionKeySet>
+impl<'a, C, OfferSet, IndexingPolicySet, PartitionKeySet> CollectionNameSupport<'a>
+    for CreateCollectionBuilder<'a, C, OfferSet, No, IndexingPolicySet, PartitionKeySet>
 where
     OfferSet: ToAssign,
     IndexingPolicySet: ToAssign,
     PartitionKeySet: ToAssign,
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
 {
-    type O = CreateCollectionBuilder<'a, CUB, OfferSet, Yes, IndexingPolicySet, PartitionKeySet>;
+    type O = CreateCollectionBuilder<'a, C, OfferSet, Yes, IndexingPolicySet, PartitionKeySet>;
 
     #[inline]
     fn with_collection_name(self, collection_name: &'a dyn CollectionName) -> Self::O {
@@ -279,15 +272,15 @@ where
     }
 }
 
-impl<'a, CUB, OfferSet, CollectionNameSet, PartitionKeySet> IndexingPolicySupport<'a>
-    for CreateCollectionBuilder<'a, CUB, OfferSet, CollectionNameSet, No, PartitionKeySet>
+impl<'a, C, OfferSet, CollectionNameSet, PartitionKeySet> IndexingPolicySupport<'a>
+    for CreateCollectionBuilder<'a, C, OfferSet, CollectionNameSet, No, PartitionKeySet>
 where
     OfferSet: ToAssign,
     CollectionNameSet: ToAssign,
     PartitionKeySet: ToAssign,
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
 {
-    type O = CreateCollectionBuilder<'a, CUB, OfferSet, CollectionNameSet, Yes, PartitionKeySet>;
+    type O = CreateCollectionBuilder<'a, C, OfferSet, CollectionNameSet, Yes, PartitionKeySet>;
 
     #[inline]
     fn with_indexing_policy(self, indexing_policy: &'a IndexingPolicy) -> Self::O {
@@ -308,15 +301,15 @@ where
     }
 }
 
-impl<'a, CUB, OfferSet, CollectionNameSet, IndexingPolicySet> PartitionKeySupport<'a>
-    for CreateCollectionBuilder<'a, CUB, OfferSet, CollectionNameSet, IndexingPolicySet, No>
+impl<'a, C, OfferSet, CollectionNameSet, IndexingPolicySet> PartitionKeySupport<'a>
+    for CreateCollectionBuilder<'a, C, OfferSet, CollectionNameSet, IndexingPolicySet, No>
 where
     OfferSet: ToAssign,
     CollectionNameSet: ToAssign,
     IndexingPolicySet: ToAssign,
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
 {
-    type O = CreateCollectionBuilder<'a, CUB, OfferSet, CollectionNameSet, IndexingPolicySet, Yes>;
+    type O = CreateCollectionBuilder<'a, C, OfferSet, CollectionNameSet, IndexingPolicySet, Yes>;
 
     #[inline]
     fn with_partition_key(self, partition_key: &'a PartitionKey) -> Self::O {
@@ -337,10 +330,10 @@ where
     }
 }
 
-impl<'a, CUB, OfferSet, CollectionNameSet, IndexingPolicySet, PartitionKeySet> UserAgentSupport<'a>
+impl<'a, C, OfferSet, CollectionNameSet, IndexingPolicySet, PartitionKeySet> UserAgentSupport<'a>
     for CreateCollectionBuilder<
         'a,
-        CUB,
+        C,
         OfferSet,
         CollectionNameSet,
         IndexingPolicySet,
@@ -351,11 +344,11 @@ where
     CollectionNameSet: ToAssign,
     IndexingPolicySet: ToAssign,
     PartitionKeySet: ToAssign,
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
 {
     type O = CreateCollectionBuilder<
         'a,
-        CUB,
+        C,
         OfferSet,
         CollectionNameSet,
         IndexingPolicySet,
@@ -381,10 +374,10 @@ where
     }
 }
 
-impl<'a, CUB, OfferSet, CollectionNameSet, IndexingPolicySet, PartitionKeySet> ActivityIdSupport<'a>
+impl<'a, C, OfferSet, CollectionNameSet, IndexingPolicySet, PartitionKeySet> ActivityIdSupport<'a>
     for CreateCollectionBuilder<
         'a,
-        CUB,
+        C,
         OfferSet,
         CollectionNameSet,
         IndexingPolicySet,
@@ -395,11 +388,11 @@ where
     CollectionNameSet: ToAssign,
     IndexingPolicySet: ToAssign,
     PartitionKeySet: ToAssign,
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
 {
     type O = CreateCollectionBuilder<
         'a,
-        CUB,
+        C,
         OfferSet,
         CollectionNameSet,
         IndexingPolicySet,
@@ -425,11 +418,11 @@ where
     }
 }
 
-impl<'a, CUB, OfferSet, CollectionNameSet, IndexingPolicySet, PartitionKeySet>
+impl<'a, C, OfferSet, CollectionNameSet, IndexingPolicySet, PartitionKeySet>
     ConsistencyLevelSupport<'a>
     for CreateCollectionBuilder<
         'a,
-        CUB,
+        C,
         OfferSet,
         CollectionNameSet,
         IndexingPolicySet,
@@ -440,11 +433,11 @@ where
     CollectionNameSet: ToAssign,
     IndexingPolicySet: ToAssign,
     PartitionKeySet: ToAssign,
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
 {
     type O = CreateCollectionBuilder<
         'a,
-        CUB,
+        C,
         OfferSet,
         CollectionNameSet,
         IndexingPolicySet,
@@ -470,35 +463,16 @@ where
     }
 }
 
-// methods callable regardless
-impl<'a, CUB, OfferSet, CollectionNameSet, IndexingPolicySet, PartitionKeySet>
-    CreateCollectionBuilder<
-        'a,
-        CUB,
-        OfferSet,
-        CollectionNameSet,
-        IndexingPolicySet,
-        PartitionKeySet,
-    >
-where
-    OfferSet: ToAssign,
-    CollectionNameSet: ToAssign,
-    IndexingPolicySet: ToAssign,
-    PartitionKeySet: ToAssign,
-    CUB: CosmosUriBuilder,
-{
-}
-
 // methods callable only when every mandatory field has been filled
-impl<'a, CUB> CreateCollectionBuilder<'a, CUB, Yes, Yes, Yes, Yes>
+impl<'a, C> CreateCollectionBuilder<'a, C, Yes, Yes, Yes, Yes>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
 {
     pub async fn execute(&self) -> Result<CreateCollectionResponse, AzureError> {
         trace!("CreateCollectionBuilder::execute called");
 
-        let mut req = self.database_client.main_client().prepare_request(
-            &format!("dbs/{}/colls", self.database_client.database_name().name()),
+        let mut req = self.database_client.cosmos_client().prepare_request(
+            &format!("dbs/{}/colls", self.database_client.database_name()),
             hyper::Method::POST,
             ResourceType::Collections,
         );

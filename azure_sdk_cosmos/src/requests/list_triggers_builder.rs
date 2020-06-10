@@ -1,22 +1,19 @@
-use crate::clients::{CollectionClient, CosmosUriBuilder};
 use crate::prelude::*;
 use crate::responses::ListTriggersResponse;
-use crate::CollectionClientRequired;
-use crate::TriggerBuilderTrait;
+use crate::ResourceType;
 use azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError};
-use azure_sdk_core::modify_conditions::IfMatchCondition;
 use azure_sdk_core::prelude::*;
-use azure_sdk_core::{IfMatchConditionOption, IfMatchConditionSupport};
 use futures::stream::{unfold, Stream};
 use hyper::StatusCode;
 use std::convert::TryInto;
 
 #[derive(Debug)]
-pub struct ListTriggersBuilder<'a, 'b, CUB>
+pub struct ListTriggersBuilder<'a, 'b, C, D>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
 {
-    collection_client: &'a CollectionClient<'a, CUB>,
+    collection_client: &'a dyn CollectionClient<C, D>,
     if_match_condition: Option<IfMatchCondition<'b>>,
     user_agent: Option<&'b str>,
     activity_id: Option<&'b str>,
@@ -25,9 +22,10 @@ where
     max_item_count: i32,
 }
 
-impl<'a, 'b, CUB> Clone for ListTriggersBuilder<'a, 'b, CUB>
+impl<'a, 'b, C, D> Clone for ListTriggersBuilder<'a, 'b, C, D>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
 {
     fn clone(&self) -> Self {
         Self {
@@ -42,14 +40,15 @@ where
     }
 }
 
-impl<'a, 'b, CUB> ListTriggersBuilder<'a, 'b, CUB>
+impl<'a, 'b, C, D> ListTriggersBuilder<'a, 'b, C, D>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
 {
     #[inline]
     pub(crate) fn new(
-        collection_client: &'a CollectionClient<'a, CUB>,
-    ) -> ListTriggersBuilder<'a, 'b, CUB> {
+        collection_client: &'a dyn CollectionClient<C, D>,
+    ) -> ListTriggersBuilder<'a, 'b, C, D> {
         ListTriggersBuilder {
             collection_client,
             if_match_condition: None,
@@ -62,12 +61,13 @@ where
     }
 }
 
-impl<'a, 'b, CUB> CollectionClientRequired<'a, CUB> for ListTriggersBuilder<'a, 'b, CUB>
+impl<'a, 'b, C, D> CollectionClientRequired<'a, C, D> for ListTriggersBuilder<'a, 'b, C, D>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
 {
     #[inline]
-    fn collection_client(&self) -> &'a CollectionClient<'a, CUB> {
+    fn collection_client(&self) -> &'a dyn CollectionClient<C, D> {
         self.collection_client
     }
 }
@@ -75,9 +75,10 @@ where
 //get mandatory no traits methods
 
 //set mandatory no traits methods
-impl<'a, 'b, CUB> IfMatchConditionOption<'b> for ListTriggersBuilder<'a, 'b, CUB>
+impl<'a, 'b, C, D> IfMatchConditionOption<'b> for ListTriggersBuilder<'a, 'b, C, D>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
 {
     #[inline]
     fn if_match_condition(&self) -> Option<IfMatchCondition<'b>> {
@@ -85,9 +86,10 @@ where
     }
 }
 
-impl<'a, 'b, CUB> UserAgentOption<'b> for ListTriggersBuilder<'a, 'b, CUB>
+impl<'a, 'b, C, D> UserAgentOption<'b> for ListTriggersBuilder<'a, 'b, C, D>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
 {
     #[inline]
     fn user_agent(&self) -> Option<&'b str> {
@@ -95,9 +97,10 @@ where
     }
 }
 
-impl<'a, 'b, CUB> ActivityIdOption<'b> for ListTriggersBuilder<'a, 'b, CUB>
+impl<'a, 'b, C, D> ActivityIdOption<'b> for ListTriggersBuilder<'a, 'b, C, D>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
 {
     #[inline]
     fn activity_id(&self) -> Option<&'b str> {
@@ -105,9 +108,10 @@ where
     }
 }
 
-impl<'a, 'b, CUB> ConsistencyLevelOption<'b> for ListTriggersBuilder<'a, 'b, CUB>
+impl<'a, 'b, C, D> ConsistencyLevelOption<'b> for ListTriggersBuilder<'a, 'b, C, D>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
 {
     #[inline]
     fn consistency_level(&self) -> Option<ConsistencyLevel<'b>> {
@@ -115,9 +119,10 @@ where
     }
 }
 
-impl<'a, 'b, CUB> ContinuationOption<'b> for ListTriggersBuilder<'a, 'b, CUB>
+impl<'a, 'b, C, D> ContinuationOption<'b> for ListTriggersBuilder<'a, 'b, C, D>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
 {
     #[inline]
     fn continuation(&self) -> Option<&'b str> {
@@ -125,9 +130,10 @@ where
     }
 }
 
-impl<'a, 'b, CUB> MaxItemCountOption for ListTriggersBuilder<'a, 'b, CUB>
+impl<'a, 'b, C, D> MaxItemCountOption for ListTriggersBuilder<'a, 'b, C, D>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
 {
     #[inline]
     fn max_item_count(&self) -> i32 {
@@ -135,11 +141,12 @@ where
     }
 }
 
-impl<'a, 'b, CUB> IfMatchConditionSupport<'b> for ListTriggersBuilder<'a, 'b, CUB>
+impl<'a, 'b, C, D> IfMatchConditionSupport<'b> for ListTriggersBuilder<'a, 'b, C, D>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
 {
-    type O = ListTriggersBuilder<'a, 'b, CUB>;
+    type O = ListTriggersBuilder<'a, 'b, C, D>;
 
     #[inline]
     fn with_if_match_condition(self, if_match_condition: IfMatchCondition<'b>) -> Self::O {
@@ -155,11 +162,12 @@ where
     }
 }
 
-impl<'a, 'b, CUB> UserAgentSupport<'b> for ListTriggersBuilder<'a, 'b, CUB>
+impl<'a, 'b, C, D> UserAgentSupport<'b> for ListTriggersBuilder<'a, 'b, C, D>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
 {
-    type O = ListTriggersBuilder<'a, 'b, CUB>;
+    type O = ListTriggersBuilder<'a, 'b, C, D>;
 
     #[inline]
     fn with_user_agent(self, user_agent: &'b str) -> Self::O {
@@ -175,11 +183,12 @@ where
     }
 }
 
-impl<'a, 'b, CUB> ActivityIdSupport<'b> for ListTriggersBuilder<'a, 'b, CUB>
+impl<'a, 'b, C, D> ActivityIdSupport<'b> for ListTriggersBuilder<'a, 'b, C, D>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
 {
-    type O = ListTriggersBuilder<'a, 'b, CUB>;
+    type O = ListTriggersBuilder<'a, 'b, C, D>;
 
     #[inline]
     fn with_activity_id(self, activity_id: &'b str) -> Self::O {
@@ -195,11 +204,12 @@ where
     }
 }
 
-impl<'a, 'b, CUB> ConsistencyLevelSupport<'b> for ListTriggersBuilder<'a, 'b, CUB>
+impl<'a, 'b, C, D> ConsistencyLevelSupport<'b> for ListTriggersBuilder<'a, 'b, C, D>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
 {
-    type O = ListTriggersBuilder<'a, 'b, CUB>;
+    type O = ListTriggersBuilder<'a, 'b, C, D>;
 
     #[inline]
     fn with_consistency_level(self, consistency_level: ConsistencyLevel<'b>) -> Self::O {
@@ -215,11 +225,12 @@ where
     }
 }
 
-impl<'a, 'b, CUB> ContinuationSupport<'b> for ListTriggersBuilder<'a, 'b, CUB>
+impl<'a, 'b, C, D> ContinuationSupport<'b> for ListTriggersBuilder<'a, 'b, C, D>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
 {
-    type O = ListTriggersBuilder<'a, 'b, CUB>;
+    type O = ListTriggersBuilder<'a, 'b, C, D>;
 
     #[inline]
     fn with_continuation(self, continuation: &'b str) -> Self::O {
@@ -235,11 +246,12 @@ where
     }
 }
 
-impl<'a, 'b, CUB> MaxItemCountSupport for ListTriggersBuilder<'a, 'b, CUB>
+impl<'a, 'b, C, D> MaxItemCountSupport for ListTriggersBuilder<'a, 'b, C, D>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
 {
-    type O = ListTriggersBuilder<'a, 'b, CUB>;
+    type O = ListTriggersBuilder<'a, 'b, C, D>;
 
     #[inline]
     fn with_max_item_count(self, max_item_count: i32) -> Self::O {
@@ -256,27 +268,33 @@ where
 }
 
 // methods callable only when every mandatory field has been filled
-impl<'a, 'b, CUB> ListTriggersBuilder<'a, 'b, CUB>
+impl<'a, 'b, C, D> ListTriggersBuilder<'a, 'b, C, D>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
 {
     pub async fn execute(&self) -> Result<ListTriggersResponse, AzureError> {
         trace!("ListTriggersBuilder::execute called");
 
-        let req = self
-            .collection_client
-            .with_trigger(&"dummy")
-            .prepare_request(hyper::Method::GET, false);
+        let request = self.collection_client().cosmos_client().prepare_request(
+            &format!(
+                "dbs/{}/colls/{}/triggers",
+                self.collection_client.database_client().database_name(),
+                self.collection_client.collection_name()
+            ),
+            hyper::Method::GET,
+            ResourceType::Triggers,
+        );
 
         // add trait headers
-        let req = IfMatchConditionOption::add_header(self, req);
-        let req = UserAgentOption::add_header(self, req);
-        let req = ActivityIdOption::add_header(self, req);
-        let req = ConsistencyLevelOption::add_header(self, req);
-        let req = ContinuationOption::add_header(self, req);
-        let req = MaxItemCountOption::add_header(self, req);
+        let request = IfMatchConditionOption::add_header(self, request);
+        let request = UserAgentOption::add_header(self, request);
+        let request = ActivityIdOption::add_header(self, request);
+        let request = ConsistencyLevelOption::add_header(self, request);
+        let request = ContinuationOption::add_header(self, request);
+        let request = MaxItemCountOption::add_header(self, request);
 
-        let request = req.body(hyper::Body::empty())?;
+        let request = request.body(hyper::Body::empty())?;
 
         let (headers, body) = check_status_extract_headers_and_body(
             self.collection_client().hyper_client().request(request),

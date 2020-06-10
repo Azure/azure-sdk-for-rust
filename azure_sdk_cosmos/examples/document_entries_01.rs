@@ -30,8 +30,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let authorization_token = AuthorizationToken::new_master(&master_key)?;
 
     let client = ClientBuilder::new(account, authorization_token)?;
-    let client = client.with_database(&database_name);
-    let client = client.with_collection(&collection_name);
+    let client = client.into_database_client(&database_name);
+    let client = client.into_collection_client(&collection_name);
 
     let mut doc = Document::new(MySampleStruct {
         id: Cow::Owned(format!("unique_id{}", 500)),
@@ -46,10 +46,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // let's add an entity.
     let create_document_response = client
         .create_document()
-        .with_document(&doc)
         .with_partition_keys(&partition_keys)
         .with_is_upsert(true)
-        .execute()
+        .execute_with_document(&doc)
         .await?;
 
     println!(
@@ -57,18 +56,21 @@ async fn main() -> Result<(), Box<dyn Error>> {
         create_document_response
     );
 
-    let document_client = client.with_document(&doc.document.id, &partition_keys);
+    let document_client =
+        client.with_document_client(&doc.document.id as &str, partition_keys.clone());
 
     let get_document_response = document_client
         .get_document()
+        .with_consistency_level((&create_document_response).into())
         .execute::<serde_json::Value>()
         .await?;
     println!("get_document_response == {:#?}", get_document_response);
 
-    let document_client = client.with_document(&"ciccia", &partition_keys);
+    let document_client = client.with_document_client("ciccia", partition_keys.clone());
 
     let get_document_response = document_client
         .get_document()
+        .with_consistency_level((&get_document_response).into())
         .execute::<serde_json::Value>()
         .await?;
     println!(
@@ -78,6 +80,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let list_documents_response = client
         .list_documents()
+        .with_consistency_level((&get_document_response).into())
         .execute::<serde_json::Value>()
         .await?;
     println!("list_documents_response == {:#?}", list_documents_response);
@@ -85,6 +88,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let query_documents_response = client
         .query_documents()
         .with_query(&("SELECT * FROM c WHERE c.a_number = 600".into()))
+        .with_consistency_level((&list_documents_response).into())
         .with_query_cross_partition(true)
         .execute::<serde_json::Value>()
         .await?;
@@ -97,10 +101,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let replace_document_response = client
         .replace_document()
-        .with_document(&doc)
+        .with_consistency_level((&query_documents_response).into())
         .with_document_id(&doc.document.id)
         .with_partition_keys(&partition_keys)
-        .execute()
+        .execute_with_document(&doc)
         .await?;
     println!(
         "replace_document_response == {:#?}",

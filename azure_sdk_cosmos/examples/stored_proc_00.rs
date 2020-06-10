@@ -27,9 +27,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let client = ClientBuilder::new(account, authorization_token)?;
 
     let ret = client
-        .with_database(&database)
-        .with_collection(&collection)
-        .with_stored_procedure(&"test_proc")
+        .into_database_client(&database)
+        .into_collection_client(&collection)
+        .into_stored_procedure_client("test_proc")
         .execute_stored_procedure()
         .with_parameters(Parameters::new().push("Robert")?)
         .execute::<serde_json::Value>()

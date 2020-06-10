@@ -1,8 +1,4 @@
-use crate::clients::CosmosUriBuilder;
 use crate::prelude::*;
-use crate::AttachmentBuilderTrait;
-use crate::AttachmentClient;
-use crate::AttachmentClientRequired;
 use azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError};
 use azure_sdk_core::prelude::*;
 use azure_sdk_core::{No, ToAssign, Yes};
@@ -11,13 +7,16 @@ use std::convert::TryInto;
 use std::marker::PhantomData;
 
 #[derive(Debug, Clone)]
-pub struct ReplaceReferenceAttachmentBuilder<'a, 'b, CUB, ContentTypeSet, MediaSet>
+pub struct ReplaceReferenceAttachmentBuilder<'a, 'b, C, D, COLL, DOC, ContentTypeSet, MediaSet>
 where
     ContentTypeSet: ToAssign,
     MediaSet: ToAssign,
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    COLL: CollectionClient<C, D>,
+    DOC: DocumentClient<C, D, COLL>,
 {
-    attachment_client: &'a AttachmentClient<'a, CUB>,
+    attachment_client: &'a dyn AttachmentClient<C, D, COLL, DOC>,
     p_content_type: PhantomData<ContentTypeSet>,
     p_media: PhantomData<MediaSet>,
     content_type: Option<&'b str>,
@@ -28,14 +27,17 @@ where
     consistency_level: Option<ConsistencyLevel<'b>>,
 }
 
-impl<'a, 'b, CUB> ReplaceReferenceAttachmentBuilder<'a, 'b, CUB, No, No>
+impl<'a, 'b, C, D, COLL, DOC> ReplaceReferenceAttachmentBuilder<'a, 'b, C, D, COLL, DOC, No, No>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    COLL: CollectionClient<C, D>,
+    DOC: DocumentClient<C, D, COLL>,
 {
     #[inline]
     pub(crate) fn new(
-        attachment_client: &'a AttachmentClient<'a, CUB>,
-    ) -> ReplaceReferenceAttachmentBuilder<'a, 'b, CUB, No, No> {
+        attachment_client: &'a dyn AttachmentClient<C, D, COLL, DOC>,
+    ) -> ReplaceReferenceAttachmentBuilder<'a, 'b, C, D, COLL, DOC, No, No> {
         ReplaceReferenceAttachmentBuilder {
             attachment_client,
             p_content_type: PhantomData {},
@@ -50,15 +52,19 @@ where
     }
 }
 
-impl<'a, 'b, CUB, ContentTypeSet, MediaSet> AttachmentClientRequired<'a, CUB>
-    for ReplaceReferenceAttachmentBuilder<'a, 'b, CUB, ContentTypeSet, MediaSet>
+impl<'a, 'b, C, D, COLL, DOC, ContentTypeSet, MediaSet>
+    AttachmentClientRequired<'a, C, D, COLL, DOC>
+    for ReplaceReferenceAttachmentBuilder<'a, 'b, C, D, COLL, DOC, ContentTypeSet, MediaSet>
 where
     ContentTypeSet: ToAssign,
     MediaSet: ToAssign,
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    COLL: CollectionClient<C, D>,
+    DOC: DocumentClient<C, D, COLL>,
 {
     #[inline]
-    fn attachment_client(&self) -> &'a AttachmentClient<'a, CUB> {
+    fn attachment_client(&self) -> &'a dyn AttachmentClient<C, D, COLL, DOC> {
         self.attachment_client
     }
 }
@@ -66,11 +72,14 @@ where
 //get mandatory no traits methods
 
 //set mandatory no traits methods
-impl<'a, 'b, CUB, MediaSet> ContentTypeRequired<'b>
-    for ReplaceReferenceAttachmentBuilder<'a, 'b, CUB, Yes, MediaSet>
+impl<'a, 'b, C, D, COLL, DOC, MediaSet> ContentTypeRequired<'b>
+    for ReplaceReferenceAttachmentBuilder<'a, 'b, C, D, COLL, DOC, Yes, MediaSet>
 where
     MediaSet: ToAssign,
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    COLL: CollectionClient<C, D>,
+    DOC: DocumentClient<C, D, COLL>,
 {
     #[inline]
     fn content_type(&self) -> &'b str {
@@ -78,12 +87,15 @@ where
     }
 }
 
-impl<'a, 'b, CUB, ContentTypeSet, MediaSet> IfMatchConditionOption<'b>
-    for ReplaceReferenceAttachmentBuilder<'a, 'b, CUB, ContentTypeSet, MediaSet>
+impl<'a, 'b, C, D, COLL, DOC, ContentTypeSet, MediaSet> IfMatchConditionOption<'b>
+    for ReplaceReferenceAttachmentBuilder<'a, 'b, C, D, COLL, DOC, ContentTypeSet, MediaSet>
 where
     ContentTypeSet: ToAssign,
     MediaSet: ToAssign,
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    COLL: CollectionClient<C, D>,
+    DOC: DocumentClient<C, D, COLL>,
 {
     #[inline]
     fn if_match_condition(&self) -> Option<IfMatchCondition<'b>> {
@@ -91,11 +103,14 @@ where
     }
 }
 
-impl<'a, 'b, CUB, ContentTypeSet> MediaRequired<'b>
-    for ReplaceReferenceAttachmentBuilder<'a, 'b, CUB, ContentTypeSet, Yes>
+impl<'a, 'b, C, D, COLL, DOC, ContentTypeSet> MediaRequired<'b>
+    for ReplaceReferenceAttachmentBuilder<'a, 'b, C, D, COLL, DOC, ContentTypeSet, Yes>
 where
     ContentTypeSet: ToAssign,
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    COLL: CollectionClient<C, D>,
+    DOC: DocumentClient<C, D, COLL>,
 {
     #[inline]
     fn media(&self) -> &'b str {
@@ -103,12 +118,15 @@ where
     }
 }
 
-impl<'a, 'b, CUB, ContentTypeSet, MediaSet> UserAgentOption<'b>
-    for ReplaceReferenceAttachmentBuilder<'a, 'b, CUB, ContentTypeSet, MediaSet>
+impl<'a, 'b, C, D, COLL, DOC, ContentTypeSet, MediaSet> UserAgentOption<'b>
+    for ReplaceReferenceAttachmentBuilder<'a, 'b, C, D, COLL, DOC, ContentTypeSet, MediaSet>
 where
     ContentTypeSet: ToAssign,
     MediaSet: ToAssign,
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    COLL: CollectionClient<C, D>,
+    DOC: DocumentClient<C, D, COLL>,
 {
     #[inline]
     fn user_agent(&self) -> Option<&'b str> {
@@ -116,12 +134,15 @@ where
     }
 }
 
-impl<'a, 'b, CUB, ContentTypeSet, MediaSet> ActivityIdOption<'b>
-    for ReplaceReferenceAttachmentBuilder<'a, 'b, CUB, ContentTypeSet, MediaSet>
+impl<'a, 'b, C, D, COLL, DOC, ContentTypeSet, MediaSet> ActivityIdOption<'b>
+    for ReplaceReferenceAttachmentBuilder<'a, 'b, C, D, COLL, DOC, ContentTypeSet, MediaSet>
 where
     ContentTypeSet: ToAssign,
     MediaSet: ToAssign,
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    COLL: CollectionClient<C, D>,
+    DOC: DocumentClient<C, D, COLL>,
 {
     #[inline]
     fn activity_id(&self) -> Option<&'b str> {
@@ -129,12 +150,15 @@ where
     }
 }
 
-impl<'a, 'b, CUB, ContentTypeSet, MediaSet> ConsistencyLevelOption<'b>
-    for ReplaceReferenceAttachmentBuilder<'a, 'b, CUB, ContentTypeSet, MediaSet>
+impl<'a, 'b, C, D, COLL, DOC, ContentTypeSet, MediaSet> ConsistencyLevelOption<'b>
+    for ReplaceReferenceAttachmentBuilder<'a, 'b, C, D, COLL, DOC, ContentTypeSet, MediaSet>
 where
     ContentTypeSet: ToAssign,
     MediaSet: ToAssign,
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    COLL: CollectionClient<C, D>,
+    DOC: DocumentClient<C, D, COLL>,
 {
     #[inline]
     fn consistency_level(&self) -> Option<ConsistencyLevel<'b>> {
@@ -142,13 +166,16 @@ where
     }
 }
 
-impl<'a, 'b, CUB, MediaSet> ContentTypeSupport<'b>
-    for ReplaceReferenceAttachmentBuilder<'a, 'b, CUB, No, MediaSet>
+impl<'a, 'b, C, D, COLL, DOC, MediaSet> ContentTypeSupport<'b>
+    for ReplaceReferenceAttachmentBuilder<'a, 'b, C, D, COLL, DOC, No, MediaSet>
 where
     MediaSet: ToAssign,
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    COLL: CollectionClient<C, D>,
+    DOC: DocumentClient<C, D, COLL>,
 {
-    type O = ReplaceReferenceAttachmentBuilder<'a, 'b, CUB, Yes, MediaSet>;
+    type O = ReplaceReferenceAttachmentBuilder<'a, 'b, C, D, COLL, DOC, Yes, MediaSet>;
 
     #[inline]
     fn with_content_type(self, content_type: &'b str) -> Self::O {
@@ -166,14 +193,17 @@ where
     }
 }
 
-impl<'a, 'b, CUB, ContentTypeSet, MediaSet> IfMatchConditionSupport<'b>
-    for ReplaceReferenceAttachmentBuilder<'a, 'b, CUB, ContentTypeSet, MediaSet>
+impl<'a, 'b, C, D, COLL, DOC, ContentTypeSet, MediaSet> IfMatchConditionSupport<'b>
+    for ReplaceReferenceAttachmentBuilder<'a, 'b, C, D, COLL, DOC, ContentTypeSet, MediaSet>
 where
     ContentTypeSet: ToAssign,
     MediaSet: ToAssign,
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    COLL: CollectionClient<C, D>,
+    DOC: DocumentClient<C, D, COLL>,
 {
-    type O = ReplaceReferenceAttachmentBuilder<'a, 'b, CUB, ContentTypeSet, MediaSet>;
+    type O = ReplaceReferenceAttachmentBuilder<'a, 'b, C, D, COLL, DOC, ContentTypeSet, MediaSet>;
 
     #[inline]
     fn with_if_match_condition(self, if_match_condition: IfMatchCondition<'b>) -> Self::O {
@@ -191,13 +221,16 @@ where
     }
 }
 
-impl<'a, 'b, CUB, ContentTypeSet> MediaSupport<'b>
-    for ReplaceReferenceAttachmentBuilder<'a, 'b, CUB, ContentTypeSet, No>
+impl<'a, 'b, C, D, COLL, DOC, ContentTypeSet> MediaSupport<'b>
+    for ReplaceReferenceAttachmentBuilder<'a, 'b, C, D, COLL, DOC, ContentTypeSet, No>
 where
     ContentTypeSet: ToAssign,
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    COLL: CollectionClient<C, D>,
+    DOC: DocumentClient<C, D, COLL>,
 {
-    type O = ReplaceReferenceAttachmentBuilder<'a, 'b, CUB, ContentTypeSet, Yes>;
+    type O = ReplaceReferenceAttachmentBuilder<'a, 'b, C, D, COLL, DOC, ContentTypeSet, Yes>;
 
     #[inline]
     fn with_media(self, media: &'b str) -> Self::O {
@@ -215,14 +248,17 @@ where
     }
 }
 
-impl<'a, 'b, CUB, ContentTypeSet, MediaSet> UserAgentSupport<'b>
-    for ReplaceReferenceAttachmentBuilder<'a, 'b, CUB, ContentTypeSet, MediaSet>
+impl<'a, 'b, C, D, COLL, DOC, ContentTypeSet, MediaSet> UserAgentSupport<'b>
+    for ReplaceReferenceAttachmentBuilder<'a, 'b, C, D, COLL, DOC, ContentTypeSet, MediaSet>
 where
     ContentTypeSet: ToAssign,
     MediaSet: ToAssign,
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    COLL: CollectionClient<C, D>,
+    DOC: DocumentClient<C, D, COLL>,
 {
-    type O = ReplaceReferenceAttachmentBuilder<'a, 'b, CUB, ContentTypeSet, MediaSet>;
+    type O = ReplaceReferenceAttachmentBuilder<'a, 'b, C, D, COLL, DOC, ContentTypeSet, MediaSet>;
 
     #[inline]
     fn with_user_agent(self, user_agent: &'b str) -> Self::O {
@@ -240,14 +276,17 @@ where
     }
 }
 
-impl<'a, 'b, CUB, ContentTypeSet, MediaSet> ActivityIdSupport<'b>
-    for ReplaceReferenceAttachmentBuilder<'a, 'b, CUB, ContentTypeSet, MediaSet>
+impl<'a, 'b, C, D, COLL, DOC, ContentTypeSet, MediaSet> ActivityIdSupport<'b>
+    for ReplaceReferenceAttachmentBuilder<'a, 'b, C, D, COLL, DOC, ContentTypeSet, MediaSet>
 where
     ContentTypeSet: ToAssign,
     MediaSet: ToAssign,
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    COLL: CollectionClient<C, D>,
+    DOC: DocumentClient<C, D, COLL>,
 {
-    type O = ReplaceReferenceAttachmentBuilder<'a, 'b, CUB, ContentTypeSet, MediaSet>;
+    type O = ReplaceReferenceAttachmentBuilder<'a, 'b, C, D, COLL, DOC, ContentTypeSet, MediaSet>;
 
     #[inline]
     fn with_activity_id(self, activity_id: &'b str) -> Self::O {
@@ -265,14 +304,17 @@ where
     }
 }
 
-impl<'a, 'b, CUB, ContentTypeSet, MediaSet> ConsistencyLevelSupport<'b>
-    for ReplaceReferenceAttachmentBuilder<'a, 'b, CUB, ContentTypeSet, MediaSet>
+impl<'a, 'b, C, D, COLL, DOC, ContentTypeSet, MediaSet> ConsistencyLevelSupport<'b>
+    for ReplaceReferenceAttachmentBuilder<'a, 'b, C, D, COLL, DOC, ContentTypeSet, MediaSet>
 where
     ContentTypeSet: ToAssign,
     MediaSet: ToAssign,
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    COLL: CollectionClient<C, D>,
+    DOC: DocumentClient<C, D, COLL>,
 {
-    type O = ReplaceReferenceAttachmentBuilder<'a, 'b, CUB, ContentTypeSet, MediaSet>;
+    type O = ReplaceReferenceAttachmentBuilder<'a, 'b, C, D, COLL, DOC, ContentTypeSet, MediaSet>;
 
     #[inline]
     fn with_consistency_level(self, consistency_level: ConsistencyLevel<'b>) -> Self::O {
@@ -291,14 +333,19 @@ where
 }
 
 // methods callable only when every mandatory field has been filled
-impl<'a, 'b, CUB> ReplaceReferenceAttachmentBuilder<'a, 'b, CUB, Yes, Yes>
+impl<'a, 'b, C, D, COLL, DOC> ReplaceReferenceAttachmentBuilder<'a, 'b, C, D, COLL, DOC, Yes, Yes>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    COLL: CollectionClient<C, D>,
+    DOC: DocumentClient<C, D, COLL>,
 {
     pub async fn execute(
         &self,
     ) -> Result<crate::responses::ReplaceReferenceAttachmentResponse, AzureError> {
-        let mut req = self.attachment_client.prepare_request(hyper::Method::PUT);
+        let mut req = self
+            .attachment_client
+            .prepare_request_with_attachment_name(hyper::Method::PUT);
 
         // add trait headers
         req = IfMatchConditionOption::add_header(self, req);

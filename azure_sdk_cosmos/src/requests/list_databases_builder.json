@@ -2,23 +2,22 @@
 	"name": "ListDatabasesBuilder",
 	"derive": "Debug, Clone",
 	"uses": [
-		"crate::clients::{Client, CosmosUriBuilder, ResourceType}",
 		"crate::responses::ListDatabasesResponse",
-		"crate::ClientRequired",
 		"azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError}",
 		"hyper::StatusCode",
+		"crate::prelude::*",
+		"crate::ResourceType",
 		"azure_sdk_core::prelude::*",
 		"std::convert::TryInto",
-		"futures::stream::{unfold, Stream}",
-		"crate::prelude::*"
+		"futures::stream::{unfold, Stream}"
 	],
-	"extra_types": [ "'a", "CUB" ],
-	"extra_wheres": ["CUB: CosmosUriBuilder" ],
+	"extra_types": [ "'a" ],
+	"extra_wheres": [ ],
 	"constructor_fields": [
 		{
-			"name": "client",
-			"field_type": "&'a Client<CUB>",
-			"trait_get": "ClientRequired<'a, CUB>"
+			"name": "cosmos_client",
+			"field_type": "&'a dyn CosmosClient",
+			"trait_get": "CosmosClientRequired<'a>"
 		}
 	],
 	"fields": [
@@ -41,7 +40,8 @@
 			"field_type": "ConsistencyLevel<'a>",
 			"optional": true,
 			"trait_get": "ConsistencyLevelOption<'a>",
-			"trait_set": "ConsistencyLevelSupport<'a>"
+			"trait_set": "ConsistencyLevelSupport<'a>",
+			"get_via_clone": true
 		},
 		{
 			"name": "continuation",

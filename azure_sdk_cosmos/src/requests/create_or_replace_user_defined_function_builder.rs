@@ -1,9 +1,5 @@
-use crate::clients::CosmosUriBuilder;
 use crate::prelude::*;
 use crate::responses::CreateUserDefinedFunctionResponse;
-use crate::UserDefinedFunctionClient;
-use crate::UserDefinedFunctionClientRequired;
-use crate::{UserDefinedFunctionBuilderTrait, UserDefinedFunctionTrait};
 use azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError};
 use azure_sdk_core::prelude::*;
 use azure_sdk_core::{No, ToAssign, Yes};
@@ -12,29 +8,33 @@ use std::convert::TryInto;
 use std::marker::PhantomData;
 
 #[derive(Debug, Clone)]
-pub struct CreateOrReplaceUserDefinedFunctionBuilder<'a, CUB, BodySet>
+pub struct CreateOrReplaceUserDefinedFunctionBuilder<'a, 'b, C, D, COLL, BodySet>
 where
     BodySet: ToAssign,
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    COLL: CollectionClient<C, D>,
 {
-    user_defined_function_client: &'a UserDefinedFunctionClient<'a, CUB>,
+    user_defined_function_client: &'a dyn UserDefinedFunctionClient<C, D, COLL>,
     is_create: bool,
     p_body: PhantomData<BodySet>,
-    body: Option<&'a str>,
-    user_agent: Option<&'a str>,
-    activity_id: Option<&'a str>,
-    consistency_level: Option<ConsistencyLevel<'a>>,
+    body: Option<&'b str>,
+    user_agent: Option<&'b str>,
+    activity_id: Option<&'b str>,
+    consistency_level: Option<ConsistencyLevel<'b>>,
 }
 
-impl<'a, CUB> CreateOrReplaceUserDefinedFunctionBuilder<'a, CUB, No>
+impl<'a, 'b, C, D, COLL> CreateOrReplaceUserDefinedFunctionBuilder<'a, 'b, C, D, COLL, No>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    COLL: CollectionClient<C, D>,
 {
     #[inline]
     pub(crate) fn new(
-        user_defined_function_client: &'a UserDefinedFunctionClient<'a, CUB>,
+        user_defined_function_client: &'a dyn UserDefinedFunctionClient<C, D, COLL>,
         is_create: bool,
-    ) -> CreateOrReplaceUserDefinedFunctionBuilder<'a, CUB, No> {
+    ) -> CreateOrReplaceUserDefinedFunctionBuilder<'a, 'b, C, D, COLL, No> {
         CreateOrReplaceUserDefinedFunctionBuilder {
             user_defined_function_client,
             is_create,
@@ -47,75 +47,87 @@ where
     }
 }
 
-impl<'a, CUB, BodySet> UserDefinedFunctionClientRequired<'a, CUB>
-    for CreateOrReplaceUserDefinedFunctionBuilder<'a, CUB, BodySet>
+impl<'a, 'b, C, D, COLL, BodySet> UserDefinedFunctionClientRequired<'a, C, D, COLL>
+    for CreateOrReplaceUserDefinedFunctionBuilder<'a, 'b, C, D, COLL, BodySet>
 where
     BodySet: ToAssign,
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    COLL: CollectionClient<C, D>,
 {
     #[inline]
-    fn user_defined_function_client(&self) -> &'a UserDefinedFunctionClient<'a, CUB> {
+    fn user_defined_function_client(&self) -> &'a dyn UserDefinedFunctionClient<C, D, COLL> {
         self.user_defined_function_client
     }
 }
 
 //set mandatory no traits methods
-impl<'a, CUB> UserDefinedFunctionBodyRequired<'a>
-    for CreateOrReplaceUserDefinedFunctionBuilder<'a, CUB, Yes>
+impl<'a, 'b, C, D, COLL> UserDefinedFunctionBodyRequired<'b>
+    for CreateOrReplaceUserDefinedFunctionBuilder<'a, 'b, C, D, COLL, Yes>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    COLL: CollectionClient<C, D>,
 {
     #[inline]
-    fn body(&self) -> &'a str {
+    fn body(&self) -> &'b str {
         self.body.unwrap()
     }
 }
 
-impl<'a, CUB, BodySet> UserAgentOption<'a>
-    for CreateOrReplaceUserDefinedFunctionBuilder<'a, CUB, BodySet>
+impl<'a, 'b, C, D, COLL, BodySet> UserAgentOption<'b>
+    for CreateOrReplaceUserDefinedFunctionBuilder<'a, 'b, C, D, COLL, BodySet>
 where
     BodySet: ToAssign,
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    COLL: CollectionClient<C, D>,
 {
     #[inline]
-    fn user_agent(&self) -> Option<&'a str> {
+    fn user_agent(&self) -> Option<&'b str> {
         self.user_agent
     }
 }
 
-impl<'a, CUB, BodySet> ActivityIdOption<'a>
-    for CreateOrReplaceUserDefinedFunctionBuilder<'a, CUB, BodySet>
+impl<'a, 'b, C, D, COLL, BodySet> ActivityIdOption<'b>
+    for CreateOrReplaceUserDefinedFunctionBuilder<'a, 'b, C, D, COLL, BodySet>
 where
     BodySet: ToAssign,
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    COLL: CollectionClient<C, D>,
 {
     #[inline]
-    fn activity_id(&self) -> Option<&'a str> {
+    fn activity_id(&self) -> Option<&'b str> {
         self.activity_id
     }
 }
 
-impl<'a, CUB, BodySet> ConsistencyLevelOption<'a>
-    for CreateOrReplaceUserDefinedFunctionBuilder<'a, CUB, BodySet>
+impl<'a, 'b, C, D, COLL, BodySet> ConsistencyLevelOption<'b>
+    for CreateOrReplaceUserDefinedFunctionBuilder<'a, 'b, C, D, COLL, BodySet>
 where
     BodySet: ToAssign,
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    COLL: CollectionClient<C, D>,
 {
     #[inline]
-    fn consistency_level(&self) -> Option<ConsistencyLevel<'a>> {
+    fn consistency_level(&self) -> Option<ConsistencyLevel<'b>> {
         self.consistency_level.clone()
     }
 }
 
-impl<'a, CUB> UserDefinedFunctionBodySupport<'a>
-    for CreateOrReplaceUserDefinedFunctionBuilder<'a, CUB, No>
+impl<'a, 'b, C, D, COLL> UserDefinedFunctionBodySupport<'b>
+    for CreateOrReplaceUserDefinedFunctionBuilder<'a, 'b, C, D, COLL, No>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    COLL: CollectionClient<C, D>,
 {
-    type O = CreateOrReplaceUserDefinedFunctionBuilder<'a, CUB, Yes>;
+    type O = CreateOrReplaceUserDefinedFunctionBuilder<'a, 'b, C, D, COLL, Yes>;
 
     #[inline]
-    fn with_body(self, body: &'a str) -> Self::O {
+    fn with_body(self, body: &'b str) -> Self::O {
         CreateOrReplaceUserDefinedFunctionBuilder {
             user_defined_function_client: self.user_defined_function_client,
             is_create: self.is_create,
@@ -128,16 +140,18 @@ where
     }
 }
 
-impl<'a, CUB, BodySet> UserAgentSupport<'a>
-    for CreateOrReplaceUserDefinedFunctionBuilder<'a, CUB, BodySet>
+impl<'a, 'b, C, D, COLL, BodySet> UserAgentSupport<'b>
+    for CreateOrReplaceUserDefinedFunctionBuilder<'a, 'b, C, D, COLL, BodySet>
 where
     BodySet: ToAssign,
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    COLL: CollectionClient<C, D>,
 {
-    type O = CreateOrReplaceUserDefinedFunctionBuilder<'a, CUB, BodySet>;
+    type O = CreateOrReplaceUserDefinedFunctionBuilder<'a, 'b, C, D, COLL, BodySet>;
 
     #[inline]
-    fn with_user_agent(self, user_agent: &'a str) -> Self::O {
+    fn with_user_agent(self, user_agent: &'b str) -> Self::O {
         CreateOrReplaceUserDefinedFunctionBuilder {
             user_defined_function_client: self.user_defined_function_client,
             is_create: self.is_create,
@@ -150,16 +164,18 @@ where
     }
 }
 
-impl<'a, CUB, BodySet> ActivityIdSupport<'a>
-    for CreateOrReplaceUserDefinedFunctionBuilder<'a, CUB, BodySet>
+impl<'a, 'b, C, D, COLL, BodySet> ActivityIdSupport<'b>
+    for CreateOrReplaceUserDefinedFunctionBuilder<'a, 'b, C, D, COLL, BodySet>
 where
     BodySet: ToAssign,
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    COLL: CollectionClient<C, D>,
 {
-    type O = CreateOrReplaceUserDefinedFunctionBuilder<'a, CUB, BodySet>;
+    type O = CreateOrReplaceUserDefinedFunctionBuilder<'a, 'b, C, D, COLL, BodySet>;
 
     #[inline]
-    fn with_activity_id(self, activity_id: &'a str) -> Self::O {
+    fn with_activity_id(self, activity_id: &'b str) -> Self::O {
         CreateOrReplaceUserDefinedFunctionBuilder {
             user_defined_function_client: self.user_defined_function_client,
             is_create: self.is_create,
@@ -172,16 +188,18 @@ where
     }
 }
 
-impl<'a, CUB, BodySet> ConsistencyLevelSupport<'a>
-    for CreateOrReplaceUserDefinedFunctionBuilder<'a, CUB, BodySet>
+impl<'a, 'b, C, D, COLL, BodySet> ConsistencyLevelSupport<'b>
+    for CreateOrReplaceUserDefinedFunctionBuilder<'a, 'b, C, D, COLL, BodySet>
 where
     BodySet: ToAssign,
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    COLL: CollectionClient<C, D>,
 {
-    type O = CreateOrReplaceUserDefinedFunctionBuilder<'a, CUB, BodySet>;
+    type O = CreateOrReplaceUserDefinedFunctionBuilder<'a, 'b, C, D, COLL, BodySet>;
 
     #[inline]
-    fn with_consistency_level(self, consistency_level: ConsistencyLevel<'a>) -> Self::O {
+    fn with_consistency_level(self, consistency_level: ConsistencyLevel<'b>) -> Self::O {
         CreateOrReplaceUserDefinedFunctionBuilder {
             user_defined_function_client: self.user_defined_function_client,
             is_create: self.is_create,
@@ -194,22 +212,12 @@ where
     }
 }
 
-// methods callable regardless
-impl<'a, CUB, BodySet> CreateOrReplaceUserDefinedFunctionBuilder<'a, CUB, BodySet>
-where
-    BodySet: ToAssign,
-    CUB: CosmosUriBuilder,
-{
-    #[inline]
-    pub fn is_create(&self) -> bool {
-        self.is_create
-    }
-}
-
 // methods callable only when every mandatory field has been filled
-impl<'a, CUB> CreateOrReplaceUserDefinedFunctionBuilder<'a, CUB, Yes>
+impl<'a, 'b, C, D, COLL> CreateOrReplaceUserDefinedFunctionBuilder<'a, 'b, C, D, COLL, Yes>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    COLL: CollectionClient<C, D>,
 {
     pub async fn execute(&self) -> Result<CreateUserDefinedFunctionResponse, AzureError> {
         trace!("CreateOrReplaceUserDefinedFunctionBuilder::execute called");
@@ -221,10 +229,10 @@ where
         let req = match self.is_create {
             true => self
                 .user_defined_function_client
-                .prepare_request(hyper::Method::POST, false),
+                .prepare_request(hyper::Method::POST),
             false => self
                 .user_defined_function_client
-                .prepare_request(hyper::Method::PUT, true),
+                .prepare_request_with_user_defined_function_name(hyper::Method::PUT),
         };
 
         // add trait headers
@@ -243,8 +251,7 @@ where
             body: self.body(),
             id: self
                 .user_defined_function_client
-                .user_defined_function_name()
-                .name(),
+                .user_defined_function_name(),
         };
 
         let request = serde_json::to_string(&request)?;

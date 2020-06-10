@@ -2,23 +2,45 @@
 	"name": "DeleteUserBuilder",
 	"derive": "Debug, Clone",
 	"uses": [
-		"crate::clients::{CosmosUriBuilder, ResourceType, UserClient}",
-		"crate::prelude::*",
-		"crate::responses::DeleteUserResponse",
-		"azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError}",
-		"hyper::StatusCode",
-		"std::convert::TryInto"
+			"crate::prelude::*",
+			"azure_sdk_core::prelude::*",
+			"crate::responses::DeleteUserResponse",
+			"azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError}",
+			"hyper::StatusCode",
+			"std::convert::TryInto"
 	],
-	"extra_types": [ "'a", "CUB" ],
 	"inline": true,
-	"extra_wheres": [ "CUB: CosmosUriBuilder" ],
+	"extra_types": [ "'a", "'b", "C", "D" ],
+	"extra_wheres": [ "C: CosmosClient", "D: DatabaseClient<C>" ],
 	"constructor_fields": [
 		{
 			"name": "user_client",
-			"field_type": "&'a UserClient<'a, CUB>",
-			"trait_get": "UserClientRequired<'a, CUB>"
+			"field_type": "&'a dyn UserClient<C, D>",
+			"trait_get": "UserClientRequired<'a, C, D>"
 		}
 	],
 	"fields": [
+		{
+			"name": "user_agent",
+			"field_type": "&'b str",
+			"optional": true,
+			"trait_get": "UserAgentOption<'b>",
+			"trait_set": "UserAgentSupport<'b>"
+		},
+		{
+			"name": "activity_id",
+			"field_type": "&'b str",
+			"optional": true,
+			"trait_get": "ActivityIdOption<'b>",
+			"trait_set": "ActivityIdSupport<'b>"
+		},
+		{
+			"name": "consistency_level",
+			"field_type": "ConsistencyLevel<'b>",
+			"optional": true,
+			"trait_get": "ConsistencyLevelOption<'b>",
+			"trait_set": "ConsistencyLevelSupport<'b>",
+			"get_via_clone": true
+		}
 	]
 }

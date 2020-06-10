@@ -1,10 +1,6 @@
-use crate::clients::CosmosUriBuilder;
 use crate::prelude::*;
 use crate::responses::CreateTriggerResponse;
 use crate::trigger::*;
-use crate::TriggerClient;
-use crate::TriggerClientRequired;
-use crate::{TriggerBuilderTrait, TriggerTrait};
 use azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError};
 use azure_sdk_core::prelude::*;
 use azure_sdk_core::{No, ToAssign, Yes};
@@ -13,14 +9,23 @@ use std::convert::TryInto;
 use std::marker::PhantomData;
 
 #[derive(Debug, Clone)]
-pub struct CreateOrReplaceTriggerBuilder<'a, CUB, TriggerOperationSet, TriggerTypeSet, BodySet>
-where
+pub struct CreateOrReplaceTriggerBuilder<
+    'a,
+    C,
+    D,
+    COLL,
+    TriggerOperationSet,
+    TriggerTypeSet,
+    BodySet,
+> where
     TriggerOperationSet: ToAssign,
     TriggerTypeSet: ToAssign,
     BodySet: ToAssign,
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    COLL: CollectionClient<C, D>,
 {
-    trigger_client: &'a TriggerClient<'a, CUB>,
+    trigger_client: &'a dyn TriggerClient<C, D, COLL>,
     is_create: bool,
     p_trigger_operation: PhantomData<TriggerOperationSet>,
     p_trigger_type: PhantomData<TriggerTypeSet>,
@@ -33,15 +38,17 @@ where
     consistency_level: Option<ConsistencyLevel<'a>>,
 }
 
-impl<'a, CUB> CreateOrReplaceTriggerBuilder<'a, CUB, No, No, No>
+impl<'a, C, D, COLL> CreateOrReplaceTriggerBuilder<'a, C, D, COLL, No, No, No>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    COLL: CollectionClient<C, D>,
 {
     #[inline]
     pub(crate) fn new(
-        trigger_client: &'a TriggerClient<'a, CUB>,
+        trigger_client: &'a dyn TriggerClient<C, D, COLL>,
         is_create: bool,
-    ) -> CreateOrReplaceTriggerBuilder<'a, CUB, No, No, No> {
+    ) -> CreateOrReplaceTriggerBuilder<'a, C, D, COLL, No, No, No> {
         CreateOrReplaceTriggerBuilder {
             trigger_client,
             is_create,
@@ -58,27 +65,32 @@ where
     }
 }
 
-impl<'a, CUB, TriggerOperationSet, TriggerTypeSet, BodySet> TriggerClientRequired<'a, CUB>
-    for CreateOrReplaceTriggerBuilder<'a, CUB, TriggerOperationSet, TriggerTypeSet, BodySet>
+impl<'a, C, D, COLL, TriggerOperationSet, TriggerTypeSet, BodySet>
+    TriggerClientRequired<'a, C, D, COLL>
+    for CreateOrReplaceTriggerBuilder<'a, C, D, COLL, TriggerOperationSet, TriggerTypeSet, BodySet>
 where
     TriggerOperationSet: ToAssign,
     TriggerTypeSet: ToAssign,
     BodySet: ToAssign,
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    COLL: CollectionClient<C, D>,
 {
     #[inline]
-    fn trigger_client(&self) -> &'a TriggerClient<'a, CUB> {
+    fn trigger_client(&self) -> &'a dyn TriggerClient<C, D, COLL> {
         self.trigger_client
     }
 }
 
 //set mandatory no traits methods
-impl<'a, CUB, TriggerTypeSet, BodySet> TriggerOperationRequired
-    for CreateOrReplaceTriggerBuilder<'a, CUB, Yes, TriggerTypeSet, BodySet>
+impl<'a, C, D, COLL, TriggerTypeSet, BodySet> TriggerOperationRequired
+    for CreateOrReplaceTriggerBuilder<'a, C, D, COLL, Yes, TriggerTypeSet, BodySet>
 where
     TriggerTypeSet: ToAssign,
     BodySet: ToAssign,
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    COLL: CollectionClient<C, D>,
 {
     #[inline]
     fn trigger_operation(&self) -> TriggerOperation {
@@ -86,12 +98,14 @@ where
     }
 }
 
-impl<'a, CUB, TriggerOperationSet, BodySet> TriggerTypeRequired
-    for CreateOrReplaceTriggerBuilder<'a, CUB, TriggerOperationSet, Yes, BodySet>
+impl<'a, C, D, COLL, TriggerOperationSet, BodySet> TriggerTypeRequired
+    for CreateOrReplaceTriggerBuilder<'a, C, D, COLL, TriggerOperationSet, Yes, BodySet>
 where
     TriggerOperationSet: ToAssign,
     BodySet: ToAssign,
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    COLL: CollectionClient<C, D>,
 {
     #[inline]
     fn trigger_type(&self) -> TriggerType {
@@ -99,12 +113,14 @@ where
     }
 }
 
-impl<'a, CUB, TriggerOperationSet, TriggerTypeSet> TriggerBodyRequired<'a>
-    for CreateOrReplaceTriggerBuilder<'a, CUB, TriggerOperationSet, TriggerTypeSet, Yes>
+impl<'a, C, D, COLL, TriggerOperationSet, TriggerTypeSet> TriggerBodyRequired<'a>
+    for CreateOrReplaceTriggerBuilder<'a, C, D, COLL, TriggerOperationSet, TriggerTypeSet, Yes>
 where
     TriggerOperationSet: ToAssign,
     TriggerTypeSet: ToAssign,
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    COLL: CollectionClient<C, D>,
 {
     #[inline]
     fn body(&self) -> &'a str {
@@ -112,13 +128,15 @@ where
     }
 }
 
-impl<'a, CUB, TriggerOperationSet, TriggerTypeSet, BodySet> UserAgentOption<'a>
-    for CreateOrReplaceTriggerBuilder<'a, CUB, TriggerOperationSet, TriggerTypeSet, BodySet>
+impl<'a, C, D, COLL, TriggerOperationSet, TriggerTypeSet, BodySet> UserAgentOption<'a>
+    for CreateOrReplaceTriggerBuilder<'a, C, D, COLL, TriggerOperationSet, TriggerTypeSet, BodySet>
 where
     TriggerOperationSet: ToAssign,
     TriggerTypeSet: ToAssign,
     BodySet: ToAssign,
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    COLL: CollectionClient<C, D>,
 {
     #[inline]
     fn user_agent(&self) -> Option<&'a str> {
@@ -126,13 +144,15 @@ where
     }
 }
 
-impl<'a, CUB, TriggerOperationSet, TriggerTypeSet, BodySet> ActivityIdOption<'a>
-    for CreateOrReplaceTriggerBuilder<'a, CUB, TriggerOperationSet, TriggerTypeSet, BodySet>
+impl<'a, C, D, COLL, TriggerOperationSet, TriggerTypeSet, BodySet> ActivityIdOption<'a>
+    for CreateOrReplaceTriggerBuilder<'a, C, D, COLL, TriggerOperationSet, TriggerTypeSet, BodySet>
 where
     TriggerOperationSet: ToAssign,
     TriggerTypeSet: ToAssign,
     BodySet: ToAssign,
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    COLL: CollectionClient<C, D>,
 {
     #[inline]
     fn activity_id(&self) -> Option<&'a str> {
@@ -140,13 +160,15 @@ where
     }
 }
 
-impl<'a, CUB, TriggerOperationSet, TriggerTypeSet, BodySet> ConsistencyLevelOption<'a>
-    for CreateOrReplaceTriggerBuilder<'a, CUB, TriggerOperationSet, TriggerTypeSet, BodySet>
+impl<'a, C, D, COLL, TriggerOperationSet, TriggerTypeSet, BodySet> ConsistencyLevelOption<'a>
+    for CreateOrReplaceTriggerBuilder<'a, C, D, COLL, TriggerOperationSet, TriggerTypeSet, BodySet>
 where
     TriggerOperationSet: ToAssign,
     TriggerTypeSet: ToAssign,
     BodySet: ToAssign,
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    COLL: CollectionClient<C, D>,
 {
     #[inline]
     fn consistency_level(&self) -> Option<ConsistencyLevel<'a>> {
@@ -154,14 +176,16 @@ where
     }
 }
 
-impl<'a, CUB, TriggerTypeSet, BodySet> TriggerOperationSupport
-    for CreateOrReplaceTriggerBuilder<'a, CUB, No, TriggerTypeSet, BodySet>
+impl<'a, C, D, COLL, TriggerTypeSet, BodySet> TriggerOperationSupport
+    for CreateOrReplaceTriggerBuilder<'a, C, D, COLL, No, TriggerTypeSet, BodySet>
 where
     TriggerTypeSet: ToAssign,
     BodySet: ToAssign,
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    COLL: CollectionClient<C, D>,
 {
-    type O = CreateOrReplaceTriggerBuilder<'a, CUB, Yes, TriggerTypeSet, BodySet>;
+    type O = CreateOrReplaceTriggerBuilder<'a, C, D, COLL, Yes, TriggerTypeSet, BodySet>;
 
     #[inline]
     fn with_trigger_operation(self, trigger_operation: TriggerOperation) -> Self::O {
@@ -181,14 +205,16 @@ where
     }
 }
 
-impl<'a, CUB, TriggerOperationSet, BodySet> TriggerTypeSupport
-    for CreateOrReplaceTriggerBuilder<'a, CUB, TriggerOperationSet, No, BodySet>
+impl<'a, C, D, COLL, TriggerOperationSet, BodySet> TriggerTypeSupport
+    for CreateOrReplaceTriggerBuilder<'a, C, D, COLL, TriggerOperationSet, No, BodySet>
 where
     TriggerOperationSet: ToAssign,
     BodySet: ToAssign,
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    COLL: CollectionClient<C, D>,
 {
-    type O = CreateOrReplaceTriggerBuilder<'a, CUB, TriggerOperationSet, Yes, BodySet>;
+    type O = CreateOrReplaceTriggerBuilder<'a, C, D, COLL, TriggerOperationSet, Yes, BodySet>;
 
     #[inline]
     fn with_trigger_type(self, trigger_type: TriggerType) -> Self::O {
@@ -208,14 +234,17 @@ where
     }
 }
 
-impl<'a, CUB, TriggerOperationSet, TriggerTypeSet> TriggerBodySupport<'a>
-    for CreateOrReplaceTriggerBuilder<'a, CUB, TriggerOperationSet, TriggerTypeSet, No>
+impl<'a, C, D, COLL, TriggerOperationSet, TriggerTypeSet> TriggerBodySupport<'a>
+    for CreateOrReplaceTriggerBuilder<'a, C, D, COLL, TriggerOperationSet, TriggerTypeSet, No>
 where
     TriggerOperationSet: ToAssign,
     TriggerTypeSet: ToAssign,
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    COLL: CollectionClient<C, D>,
 {
-    type O = CreateOrReplaceTriggerBuilder<'a, CUB, TriggerOperationSet, TriggerTypeSet, Yes>;
+    type O =
+        CreateOrReplaceTriggerBuilder<'a, C, D, COLL, TriggerOperationSet, TriggerTypeSet, Yes>;
 
     #[inline]
     fn with_body(self, body: &'a str) -> Self::O {
@@ -235,15 +264,18 @@ where
     }
 }
 
-impl<'a, CUB, TriggerOperationSet, TriggerTypeSet, BodySet> UserAgentSupport<'a>
-    for CreateOrReplaceTriggerBuilder<'a, CUB, TriggerOperationSet, TriggerTypeSet, BodySet>
+impl<'a, C, D, COLL, TriggerOperationSet, TriggerTypeSet, BodySet> UserAgentSupport<'a>
+    for CreateOrReplaceTriggerBuilder<'a, C, D, COLL, TriggerOperationSet, TriggerTypeSet, BodySet>
 where
     TriggerOperationSet: ToAssign,
     TriggerTypeSet: ToAssign,
     BodySet: ToAssign,
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    COLL: CollectionClient<C, D>,
 {
-    type O = CreateOrReplaceTriggerBuilder<'a, CUB, TriggerOperationSet, TriggerTypeSet, BodySet>;
+    type O =
+        CreateOrReplaceTriggerBuilder<'a, C, D, COLL, TriggerOperationSet, TriggerTypeSet, BodySet>;
 
     #[inline]
     fn with_user_agent(self, user_agent: &'a str) -> Self::O {
@@ -263,15 +295,18 @@ where
     }
 }
 
-impl<'a, CUB, TriggerOperationSet, TriggerTypeSet, BodySet> ActivityIdSupport<'a>
-    for CreateOrReplaceTriggerBuilder<'a, CUB, TriggerOperationSet, TriggerTypeSet, BodySet>
+impl<'a, C, D, COLL, TriggerOperationSet, TriggerTypeSet, BodySet> ActivityIdSupport<'a>
+    for CreateOrReplaceTriggerBuilder<'a, C, D, COLL, TriggerOperationSet, TriggerTypeSet, BodySet>
 where
     TriggerOperationSet: ToAssign,
     TriggerTypeSet: ToAssign,
     BodySet: ToAssign,
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    COLL: CollectionClient<C, D>,
 {
-    type O = CreateOrReplaceTriggerBuilder<'a, CUB, TriggerOperationSet, TriggerTypeSet, BodySet>;
+    type O =
+        CreateOrReplaceTriggerBuilder<'a, C, D, COLL, TriggerOperationSet, TriggerTypeSet, BodySet>;
 
     #[inline]
     fn with_activity_id(self, activity_id: &'a str) -> Self::O {
@@ -291,15 +326,18 @@ where
     }
 }
 
-impl<'a, CUB, TriggerOperationSet, TriggerTypeSet, BodySet> ConsistencyLevelSupport<'a>
-    for CreateOrReplaceTriggerBuilder<'a, CUB, TriggerOperationSet, TriggerTypeSet, BodySet>
+impl<'a, C, D, COLL, TriggerOperationSet, TriggerTypeSet, BodySet> ConsistencyLevelSupport<'a>
+    for CreateOrReplaceTriggerBuilder<'a, C, D, COLL, TriggerOperationSet, TriggerTypeSet, BodySet>
 where
     TriggerOperationSet: ToAssign,
     TriggerTypeSet: ToAssign,
     BodySet: ToAssign,
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    COLL: CollectionClient<C, D>,
 {
-    type O = CreateOrReplaceTriggerBuilder<'a, CUB, TriggerOperationSet, TriggerTypeSet, BodySet>;
+    type O =
+        CreateOrReplaceTriggerBuilder<'a, C, D, COLL, TriggerOperationSet, TriggerTypeSet, BodySet>;
 
     #[inline]
     fn with_consistency_level(self, consistency_level: ConsistencyLevel<'a>) -> Self::O {
@@ -320,13 +358,15 @@ where
 }
 
 // methods callable regardless
-impl<'a, CUB, TriggerOperationSet, TriggerTypeSet, BodySet>
-    CreateOrReplaceTriggerBuilder<'a, CUB, TriggerOperationSet, TriggerTypeSet, BodySet>
+impl<'a, C, D, COLL, TriggerOperationSet, TriggerTypeSet, BodySet>
+    CreateOrReplaceTriggerBuilder<'a, C, D, COLL, TriggerOperationSet, TriggerTypeSet, BodySet>
 where
     TriggerOperationSet: ToAssign,
     TriggerTypeSet: ToAssign,
     BodySet: ToAssign,
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    COLL: CollectionClient<C, D>,
 {
     fn is_create(&self) -> bool {
         self.is_create
@@ -334,18 +374,20 @@ where
 }
 
 // methods callable only when every mandatory field has been filled
-impl<'a, CUB> CreateOrReplaceTriggerBuilder<'a, CUB, Yes, Yes, Yes>
+impl<'a, C, D, COLL> CreateOrReplaceTriggerBuilder<'a, C, D, COLL, Yes, Yes, Yes>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    COLL: CollectionClient<C, D>,
 {
     pub async fn execute(&self) -> Result<CreateTriggerResponse, AzureError> {
         trace!("CreateOrReplaceTriggerBuilder::execute called");
 
         let req = self.trigger_client;
         let req = if self.is_create() {
-            req.prepare_request(hyper::Method::POST, false)
+            req.prepare_request(hyper::Method::POST)
         } else {
-            req.prepare_request(hyper::Method::PUT, true)
+            req.prepare_request_with_trigger_name(hyper::Method::PUT)
         };
 
         // add trait headers
@@ -366,7 +408,7 @@ where
         }
 
         let request = _Request {
-            id: self.trigger_client.trigger_name().name(),
+            id: self.trigger_client.trigger_name(),
             trigger_operation: self.trigger_operation(),
             trigger_type: self.trigger_type(),
             body: self.body(),

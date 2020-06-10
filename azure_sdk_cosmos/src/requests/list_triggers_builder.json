@@ -2,27 +2,23 @@
 	"name": "ListTriggersBuilder",
 	"derive": "Debug, Clone",
 	"uses": [
-			"crate::clients::{CollectionClient, CosmosUriBuilder}",
 			"crate::prelude::*",
-			"crate::TriggerBuilderTrait",
-			"crate::responses::ListTriggersResponse",
-			"crate::CollectionClientRequired",
-			"azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError}",
-			"azure_sdk_core::modify_conditions::IfMatchCondition",
 			"azure_sdk_core::prelude::*",
-			"azure_sdk_core::{IfMatchConditionOption, IfMatchConditionSupport}",
+			"crate::ResourceType",
+			"crate::responses::ListTriggersResponse",
+			"azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError}",
 			"futures::stream::{unfold, Stream}",
 			"hyper::StatusCode",
 			"std::convert::TryInto"
 	],
 	"inline": true,
-	"extra_types": [ "'a", "'b", "CUB" ],
-	"extra_wheres": ["CUB: CosmosUriBuilder" ],
+	"extra_types": [ "'a", "'b", "C", "D" ],
+	"extra_wheres": [ "C: CosmosClient", "D: DatabaseClient<C>" ],
 	"constructor_fields": [
 		{
 			"name": "collection_client",
-			"field_type": "&'a CollectionClient<'a, CUB>",
-			"trait_get": "CollectionClientRequired<'a, CUB>"
+			"field_type": "&'a dyn CollectionClient<C, D>",
+			"trait_get": "CollectionClientRequired<'a, C, D>"
 		}
 	],
 	"fields": [

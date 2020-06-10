@@ -2,7 +2,6 @@
 	"name": "GetDocumentBuilder",
 	"derive": "Debug, Clone",
 	"uses": [
-		"crate::clients::{DocumentClient, CosmosUriBuilder}",
 		"crate::prelude::*",
 		"crate::responses::GetDocumentResponse",
 		"crate::DocumentClientRequired",
@@ -12,18 +11,17 @@
 		"azure_sdk_core::{IfMatchConditionOption, IfMatchConditionSupport}",
 		"chrono::{DateTime, Utc}",
 		"hyper::StatusCode",
-		"crate::DocumentBuilderTrait",
 		"serde::de::DeserializeOwned",
 		"std::convert::TryFrom"
 	],
 	"inline": true,
-	"extra_types": [ "'a", "'b", "CUB" ],
-	"extra_wheres": ["CUB: CosmosUriBuilder" ],
+	"extra_types": [ "'a", "'b", "C", "D", "COLL" ],
+	"extra_wheres": [ "C: CosmosClient", "D: DatabaseClient<C>", "COLL: CollectionClient<C, D>" ],
 	"constructor_fields": [
 		{
 			"name": "document_client",
-			"field_type": "&'a DocumentClient<'a, CUB>",
-			"trait_get": "DocumentClientRequired<'a, CUB>"
+			"field_type": "&'a dyn DocumentClient<C, D, COLL>",
+			"trait_get": "DocumentClientRequired<'a, C, D, COLL>"
 		}
 	],
 	"fields": [
@@ -60,7 +58,8 @@
 			"field_type": "ConsistencyLevel<'b>",
 			"optional": true,
 			"trait_get": "ConsistencyLevelOption<'b>",
-			"trait_set": "ConsistencyLevelSupport<'b>"
+			"trait_set": "ConsistencyLevelSupport<'b>",
+			"get_via_clone": true
 		}
 	]
 }

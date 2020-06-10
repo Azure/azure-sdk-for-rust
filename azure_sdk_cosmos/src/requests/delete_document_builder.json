@@ -2,9 +2,7 @@
 	"name": "DeleteDocumentBuilder",
 	"derive": "Debug, Clone",
 	"uses": [
-		"crate::clients::{DocumentClient, CosmosUriBuilder}",
 		"crate::prelude::*",
-		"crate::DocumentBuilderTrait",
 		"crate::responses::DeleteDocumentResponse",
 		"crate::DocumentClientRequired",
 		"azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError}",
@@ -16,13 +14,13 @@
 		"std::convert::TryInto"
 	],
 	"inline": true,
-	"extra_types": [ "'a", "CUB" ],
-	"extra_wheres": ["CUB: CosmosUriBuilder" ],
+	"extra_types": [ "'a", "C", "D", "COLL" ],
+	"extra_wheres": [ "C: CosmosClient", "D: DatabaseClient<C>", "COLL: CollectionClient<C, D>" ],
 	"constructor_fields": [
 		{
 			"name": "document_client",
-			"field_type": "&'a DocumentClient<'a, CUB>",
-			"trait_get": "DocumentClientRequired<'a, CUB>"
+			"field_type": "&'a dyn DocumentClient<C, D, COLL>",
+			"trait_get": "DocumentClientRequired<'a, C, D, COLL>"
 		}
 	],
 	"fields": [
@@ -59,7 +57,8 @@
 			"field_type": "ConsistencyLevel<'a>",
 			"optional": true,
 			"trait_get": "ConsistencyLevelOption<'a>",
-			"trait_set": "ConsistencyLevelSupport<'a>"
+			"trait_set": "ConsistencyLevelSupport<'a>",
+			"get_via_clone": true
 		},
 		{
 			"name": "allow_tentative_writes",

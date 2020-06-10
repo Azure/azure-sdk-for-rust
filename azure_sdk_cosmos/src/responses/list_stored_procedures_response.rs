@@ -2,7 +2,7 @@ use crate::from_headers::*;
 use crate::stored_procedure::StoredProcedure;
 use crate::ResourceQuota;
 use azure_sdk_core::errors::AzureError;
-use azure_sdk_core::session_token_from_headers;
+use azure_sdk_core::{continuation_token_from_headers_optional, session_token_from_headers};
 use chrono::{DateTime, Utc};
 use http::HeaderMap;
 
@@ -15,6 +15,8 @@ pub struct ListStoredProceduresResponse {
     pub last_change: DateTime<Utc>,
     pub resource_quota: Vec<ResourceQuota>,
     pub resource_usage: Vec<ResourceQuota>,
+    pub gateway_version: String,
+    pub continuation_token: Option<String>,
 }
 
 impl std::convert::TryFrom<(&HeaderMap, &[u8])> for ListStoredProceduresResponse {
@@ -39,6 +41,8 @@ impl std::convert::TryFrom<(&HeaderMap, &[u8])> for ListStoredProceduresResponse
             last_change: last_state_change_from_headers(headers)?,
             resource_quota: resource_quota_from_headers(headers)?,
             resource_usage: resource_usage_from_headers(headers)?,
+            gateway_version: gateway_version_from_headers(headers)?.to_owned(),
+            continuation_token: continuation_token_from_headers_optional(headers)?,
         })
     }
 }

@@ -30,7 +30,7 @@ async fn create_and_delete_document() {
         .await
         .unwrap();
 
-    let database_client = client.with_database(&DATABASE_NAME);
+    let database_client = client.with_database_client(DATABASE_NAME);
 
     // create a new collection
     let indexing_policy = IndexingPolicy {
@@ -50,7 +50,7 @@ async fn create_and_delete_document() {
         .await
         .unwrap();
 
-    let collection_client = database_client.with_collection(&COLLECTION_NAME);
+    let collection_client = database_client.with_collection_client(COLLECTION_NAME);
 
     // create a new document
     let document_data = Document::new(MyDocument {
@@ -59,9 +59,8 @@ async fn create_and_delete_document() {
     });
     collection_client
         .create_document()
-        .with_document(&document_data)
         .with_partition_keys(&DOCUMENT_NAME.into())
-        .execute()
+        .execute_with_document(&document_data)
         .await
         .unwrap();
 
@@ -75,7 +74,7 @@ async fn create_and_delete_document() {
 
     // try to get the contents of the previously created document
     let partition_keys = DOCUMENT_NAME.into();
-    let document_client = collection_client.with_document(&DOCUMENT_NAME, &partition_keys);
+    let document_client = collection_client.with_document_client(DOCUMENT_NAME, partition_keys);
 
     let document_after_get = document_client
         .get_document()
@@ -117,7 +116,7 @@ async fn query_documents() {
         .execute()
         .await
         .unwrap();
-    let database_client = client.with_database(&DATABASE_NAME);
+    let database_client = client.with_database_client(DATABASE_NAME);
 
     // create a new collection
     let indexing_policy = IndexingPolicy {
@@ -137,7 +136,7 @@ async fn query_documents() {
         .await
         .unwrap();
 
-    let collection_client = database_client.with_collection(&COLLECTION_NAME);
+    let collection_client = database_client.with_collection_client(COLLECTION_NAME);
 
     // create a new document
     let document_data = Document::new(MyDocument {
@@ -147,8 +146,7 @@ async fn query_documents() {
     collection_client
         .create_document()
         .with_partition_keys(&(&document_data.document.id).into())
-        .with_document(&document_data)
-        .execute()
+        .execute_with_document(&document_data)
         .await
         .unwrap();
 
@@ -193,7 +191,7 @@ async fn replace_document() {
         .execute()
         .await
         .unwrap();
-    let database_client = client.with_database(&DATABASE_NAME);
+    let database_client = client.with_database_client(DATABASE_NAME);
 
     // create a new collection
     let indexing_policy = IndexingPolicy {
@@ -213,7 +211,7 @@ async fn replace_document() {
         .await
         .unwrap();
 
-    let collection_client = database_client.with_collection(&COLLECTION_NAME);
+    let collection_client = database_client.with_collection_client(COLLECTION_NAME);
 
     // create a new document
     let mut document_data = Document::new(MyDocument {
@@ -222,9 +220,8 @@ async fn replace_document() {
     });
     collection_client
         .create_document()
-        .with_document(&document_data)
         .with_partition_keys(&(&document_data.document.id).into())
-        .execute()
+        .execute_with_document(&document_data)
         .await
         .unwrap();
 
@@ -239,20 +236,19 @@ async fn replace_document() {
     document_data.document.hello = 190;
     collection_client
         .replace_document()
-        .with_document(&document_data)
         .with_document_id(&document_data.document.id)
         .with_partition_keys(&(&document_data.document.id).into())
         .with_consistency_level(ConsistencyLevel::from(&documents))
         .with_if_match_condition(IfMatchCondition::Match(
             &documents.documents[0].document_attributes.etag,
         ))
-        .execute()
+        .execute_with_document(&document_data)
         .await
         .unwrap();
 
     // now get the replaced document
     let partition_keys = DOCUMENT_NAME.into();
-    let document_client = collection_client.with_document(&DOCUMENT_NAME, &partition_keys);
+    let document_client = collection_client.with_document_client(DOCUMENT_NAME, partition_keys);
     let document_after_get = document_client
         .get_document()
         .execute::<MyDocument>()

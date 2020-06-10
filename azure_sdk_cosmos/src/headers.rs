@@ -16,6 +16,7 @@ pub(crate) const HEADER_NUMBER_OF_READ_REGIONS: &str = "x-ms-number-of-read-regi
 pub(crate) const HEADER_REQUEST_CHARGE: &str = "x-ms-request-charge"; // [f64]
 pub(crate) const HEADER_OFFER_THROUGHPUT: &str = "x-ms-offer-throughput"; // [u64]
 pub(crate) const HEADER_OFFER_TYPE: &str = "x-ms-offer-type"; // [&str]
+#[allow(dead_code)]
 pub(crate) const HEADER_DOCUMENTDB_ISQUERY: &str = "x-ms-documentdb-isquery"; // [bool]
 pub(crate) const HEADER_DOCUMENTDB_QUERY_ENABLECROSSPARTITION: &str =
     "x-ms-documentdb-query-enablecrosspartition"; // [bool]

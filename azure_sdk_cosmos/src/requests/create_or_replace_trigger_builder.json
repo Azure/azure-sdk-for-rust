@@ -2,14 +2,10 @@
 	"name": "CreateOrReplaceTriggerBuilder",
 	"derive": "Debug, Clone",
 	"uses": [
-			"crate::clients::{CosmosUriBuilder}",
 			"crate::trigger::*",
 			"crate::prelude::*",
-			"crate::TriggerClient",
-			"crate::TriggerClientRequired",
-			"crate::{TriggerBuilderTrait, TriggerTrait}",
-			"azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError}",
 			"azure_sdk_core::prelude::*",
+			"azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError}",
 			"azure_sdk_core::{Yes,No,ToAssign}",
 			"std::marker::PhantomData",
 			"hyper::StatusCode",
@@ -17,13 +13,13 @@
 			"std::convert::TryInto"
 	],
 	"inline": true,
-	"extra_types": [ "'a", "CUB" ],
-	"extra_wheres": ["CUB: CosmosUriBuilder" ],
+	"extra_types": [ "'a", "C", "D", "COLL" ],
+	"extra_wheres": [ "C: CosmosClient", "D: DatabaseClient<C>", "COLL: CollectionClient<C,D>" ],
 	"constructor_fields": [
 		{
 			"name": "trigger_client",
-			"field_type": "&'a TriggerClient<'a, CUB>",
-			"trait_get": "TriggerClientRequired<'a, CUB>"
+			"field_type": "&'a dyn TriggerClient<C, D, COLL>",
+			"trait_get": "TriggerClientRequired<'a, C, D, COLL>"
 		},
 		{
 			"name": "is_create",

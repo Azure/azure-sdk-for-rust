@@ -1,27 +1,24 @@
-use crate::clients::{CollectionClient, CosmosUriBuilder, ResourceType};
 use crate::prelude::*;
 use crate::responses::QueryDocumentsResponse;
-use crate::CollectionClientRequired;
-use crate::Query;
+use crate::{Query, ResourceType};
 use azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError};
-use azure_sdk_core::modify_conditions::IfMatchCondition;
 use azure_sdk_core::prelude::*;
-use azure_sdk_core::{IfMatchConditionOption, IfMatchConditionSupport};
 use azure_sdk_core::{No, ToAssign, Yes};
 use chrono::{DateTime, Utc};
 use futures::stream::{unfold, Stream};
 use hyper::StatusCode;
 use serde::de::DeserializeOwned;
-use std::convert::TryFrom;
+use std::convert::TryInto;
 use std::marker::PhantomData;
 
 #[derive(Debug)]
-pub struct QueryDocumentsBuilder<'a, 'b, CUB, QuerySet>
+pub struct QueryDocumentsBuilder<'a, 'b, C, D, QuerySet>
 where
     QuerySet: ToAssign,
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
 {
-    collection_client: &'a CollectionClient<'a, CUB>,
+    collection_client: &'a dyn CollectionClient<C, D>,
     p_query: PhantomData<QuerySet>,
     query: Option<&'b Query<'b>>,
     if_match_condition: Option<IfMatchCondition<'b>>,
@@ -36,13 +33,14 @@ where
     parallelize_cross_partition_query: bool,
 }
 
-impl<'a, 'b, CUB, QuerySet> Clone for QueryDocumentsBuilder<'a, 'b, CUB, QuerySet>
+impl<'a, 'b, C, D, QuerySet> Clone for QueryDocumentsBuilder<'a, 'b, C, D, QuerySet>
 where
     QuerySet: ToAssign,
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
 {
     fn clone(&self) -> Self {
-        QueryDocumentsBuilder {
+        Self {
             collection_client: self.collection_client,
             p_query: PhantomData {},
             query: self.query,
@@ -60,14 +58,15 @@ where
     }
 }
 
-impl<'a, 'b, CUB> QueryDocumentsBuilder<'a, 'b, CUB, No>
+impl<'a, 'b, C, D> QueryDocumentsBuilder<'a, 'b, C, D, No>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
 {
     #[inline]
     pub(crate) fn new(
-        collection_client: &'a CollectionClient<'a, CUB>,
-    ) -> QueryDocumentsBuilder<'a, 'b, CUB, No> {
+        collection_client: &'a dyn CollectionClient<C, D>,
+    ) -> QueryDocumentsBuilder<'a, 'b, C, D, No> {
         QueryDocumentsBuilder {
             collection_client,
             p_query: PhantomData {},
@@ -86,14 +85,15 @@ where
     }
 }
 
-impl<'a, 'b, CUB, QuerySet> CollectionClientRequired<'a, CUB>
-    for QueryDocumentsBuilder<'a, 'b, CUB, QuerySet>
+impl<'a, 'b, C, D, QuerySet> CollectionClientRequired<'a, C, D>
+    for QueryDocumentsBuilder<'a, 'b, C, D, QuerySet>
 where
     QuerySet: ToAssign,
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
 {
     #[inline]
-    fn collection_client(&self) -> &'a CollectionClient<'a, CUB> {
+    fn collection_client(&self) -> &'a dyn CollectionClient<C, D> {
         self.collection_client
     }
 }
@@ -101,9 +101,10 @@ where
 //get mandatory no traits methods
 
 //set mandatory no traits methods
-impl<'a, 'b, CUB> QueryRequired<'b> for QueryDocumentsBuilder<'a, 'b, CUB, Yes>
+impl<'a, 'b, C, D> QueryRequired<'b> for QueryDocumentsBuilder<'a, 'b, C, D, Yes>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
 {
     #[inline]
     fn query(&self) -> &'b Query<'b> {
@@ -111,11 +112,12 @@ where
     }
 }
 
-impl<'a, 'b, CUB, QuerySet> IfMatchConditionOption<'b>
-    for QueryDocumentsBuilder<'a, 'b, CUB, QuerySet>
+impl<'a, 'b, C, D, QuerySet> IfMatchConditionOption<'b>
+    for QueryDocumentsBuilder<'a, 'b, C, D, QuerySet>
 where
     QuerySet: ToAssign,
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
 {
     #[inline]
     fn if_match_condition(&self) -> Option<IfMatchCondition<'b>> {
@@ -123,11 +125,12 @@ where
     }
 }
 
-impl<'a, 'b, CUB, QuerySet> IfModifiedSinceOption<'b>
-    for QueryDocumentsBuilder<'a, 'b, CUB, QuerySet>
+impl<'a, 'b, C, D, QuerySet> IfModifiedSinceOption<'b>
+    for QueryDocumentsBuilder<'a, 'b, C, D, QuerySet>
 where
     QuerySet: ToAssign,
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
 {
     #[inline]
     fn if_modified_since(&self) -> Option<&'b DateTime<Utc>> {
@@ -135,10 +138,11 @@ where
     }
 }
 
-impl<'a, 'b, CUB, QuerySet> UserAgentOption<'b> for QueryDocumentsBuilder<'a, 'b, CUB, QuerySet>
+impl<'a, 'b, C, D, QuerySet> UserAgentOption<'b> for QueryDocumentsBuilder<'a, 'b, C, D, QuerySet>
 where
     QuerySet: ToAssign,
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
 {
     #[inline]
     fn user_agent(&self) -> Option<&'b str> {
@@ -146,10 +150,11 @@ where
     }
 }
 
-impl<'a, 'b, CUB, QuerySet> ActivityIdOption<'b> for QueryDocumentsBuilder<'a, 'b, CUB, QuerySet>
+impl<'a, 'b, C, D, QuerySet> ActivityIdOption<'b> for QueryDocumentsBuilder<'a, 'b, C, D, QuerySet>
 where
     QuerySet: ToAssign,
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
 {
     #[inline]
     fn activity_id(&self) -> Option<&'b str> {
@@ -157,11 +162,12 @@ where
     }
 }
 
-impl<'a, 'b, CUB, QuerySet> ConsistencyLevelOption<'b>
-    for QueryDocumentsBuilder<'a, 'b, CUB, QuerySet>
+impl<'a, 'b, C, D, QuerySet> ConsistencyLevelOption<'b>
+    for QueryDocumentsBuilder<'a, 'b, C, D, QuerySet>
 where
     QuerySet: ToAssign,
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
 {
     #[inline]
     fn consistency_level(&self) -> Option<ConsistencyLevel<'b>> {
@@ -169,10 +175,12 @@ where
     }
 }
 
-impl<'a, 'b, CUB, QuerySet> ContinuationOption<'b> for QueryDocumentsBuilder<'a, 'b, CUB, QuerySet>
+impl<'a, 'b, C, D, QuerySet> ContinuationOption<'b>
+    for QueryDocumentsBuilder<'a, 'b, C, D, QuerySet>
 where
     QuerySet: ToAssign,
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
 {
     #[inline]
     fn continuation(&self) -> Option<&'b str> {
@@ -180,10 +188,11 @@ where
     }
 }
 
-impl<'a, 'b, CUB, QuerySet> MaxItemCountOption for QueryDocumentsBuilder<'a, 'b, CUB, QuerySet>
+impl<'a, 'b, C, D, QuerySet> MaxItemCountOption for QueryDocumentsBuilder<'a, 'b, C, D, QuerySet>
 where
     QuerySet: ToAssign,
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
 {
     #[inline]
     fn max_item_count(&self) -> i32 {
@@ -191,10 +200,12 @@ where
     }
 }
 
-impl<'a, 'b, CUB, QuerySet> PartitionKeysOption<'b> for QueryDocumentsBuilder<'a, 'b, CUB, QuerySet>
+impl<'a, 'b, C, D, QuerySet> PartitionKeysOption<'b>
+    for QueryDocumentsBuilder<'a, 'b, C, D, QuerySet>
 where
     QuerySet: ToAssign,
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
 {
     #[inline]
     fn partition_keys(&self) -> Option<&'b PartitionKeys> {
@@ -202,11 +213,12 @@ where
     }
 }
 
-impl<'a, 'b, CUB, QuerySet> QueryCrossPartitionOption
-    for QueryDocumentsBuilder<'a, 'b, CUB, QuerySet>
+impl<'a, 'b, C, D, QuerySet> QueryCrossPartitionOption
+    for QueryDocumentsBuilder<'a, 'b, C, D, QuerySet>
 where
     QuerySet: ToAssign,
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
 {
     #[inline]
     fn query_cross_partition(&self) -> bool {
@@ -214,11 +226,12 @@ where
     }
 }
 
-impl<'a, 'b, CUB, QuerySet> ParallelizeCrossPartitionQueryOption
-    for QueryDocumentsBuilder<'a, 'b, CUB, QuerySet>
+impl<'a, 'b, C, D, QuerySet> ParallelizeCrossPartitionQueryOption
+    for QueryDocumentsBuilder<'a, 'b, C, D, QuerySet>
 where
     QuerySet: ToAssign,
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
 {
     #[inline]
     fn parallelize_cross_partition_query(&self) -> bool {
@@ -226,11 +239,12 @@ where
     }
 }
 
-impl<'a, 'b, CUB> QuerySupport<'b> for QueryDocumentsBuilder<'a, 'b, CUB, No>
+impl<'a, 'b, C, D> QuerySupport<'b> for QueryDocumentsBuilder<'a, 'b, C, D, No>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
 {
-    type O = QueryDocumentsBuilder<'a, 'b, CUB, Yes>;
+    type O = QueryDocumentsBuilder<'a, 'b, C, D, Yes>;
 
     #[inline]
     fn with_query(self, query: &'b Query<'b>) -> Self::O {
@@ -252,13 +266,14 @@ where
     }
 }
 
-impl<'a, 'b, CUB, QuerySet> IfMatchConditionSupport<'b>
-    for QueryDocumentsBuilder<'a, 'b, CUB, QuerySet>
+impl<'a, 'b, C, D, QuerySet> IfMatchConditionSupport<'b>
+    for QueryDocumentsBuilder<'a, 'b, C, D, QuerySet>
 where
     QuerySet: ToAssign,
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
 {
-    type O = QueryDocumentsBuilder<'a, 'b, CUB, QuerySet>;
+    type O = QueryDocumentsBuilder<'a, 'b, C, D, QuerySet>;
 
     #[inline]
     fn with_if_match_condition(self, if_match_condition: IfMatchCondition<'b>) -> Self::O {
@@ -280,13 +295,14 @@ where
     }
 }
 
-impl<'a, 'b, CUB, QuerySet> IfModifiedSinceSupport<'b>
-    for QueryDocumentsBuilder<'a, 'b, CUB, QuerySet>
+impl<'a, 'b, C, D, QuerySet> IfModifiedSinceSupport<'b>
+    for QueryDocumentsBuilder<'a, 'b, C, D, QuerySet>
 where
     QuerySet: ToAssign,
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
 {
-    type O = QueryDocumentsBuilder<'a, 'b, CUB, QuerySet>;
+    type O = QueryDocumentsBuilder<'a, 'b, C, D, QuerySet>;
 
     #[inline]
     fn with_if_modified_since(self, if_modified_since: &'b DateTime<Utc>) -> Self::O {
@@ -308,12 +324,13 @@ where
     }
 }
 
-impl<'a, 'b, CUB, QuerySet> UserAgentSupport<'b> for QueryDocumentsBuilder<'a, 'b, CUB, QuerySet>
+impl<'a, 'b, C, D, QuerySet> UserAgentSupport<'b> for QueryDocumentsBuilder<'a, 'b, C, D, QuerySet>
 where
     QuerySet: ToAssign,
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
 {
-    type O = QueryDocumentsBuilder<'a, 'b, CUB, QuerySet>;
+    type O = QueryDocumentsBuilder<'a, 'b, C, D, QuerySet>;
 
     #[inline]
     fn with_user_agent(self, user_agent: &'b str) -> Self::O {
@@ -335,12 +352,13 @@ where
     }
 }
 
-impl<'a, 'b, CUB, QuerySet> ActivityIdSupport<'b> for QueryDocumentsBuilder<'a, 'b, CUB, QuerySet>
+impl<'a, 'b, C, D, QuerySet> ActivityIdSupport<'b> for QueryDocumentsBuilder<'a, 'b, C, D, QuerySet>
 where
     QuerySet: ToAssign,
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
 {
-    type O = QueryDocumentsBuilder<'a, 'b, CUB, QuerySet>;
+    type O = QueryDocumentsBuilder<'a, 'b, C, D, QuerySet>;
 
     #[inline]
     fn with_activity_id(self, activity_id: &'b str) -> Self::O {
@@ -362,13 +380,14 @@ where
     }
 }
 
-impl<'a, 'b, CUB, QuerySet> ConsistencyLevelSupport<'b>
-    for QueryDocumentsBuilder<'a, 'b, CUB, QuerySet>
+impl<'a, 'b, C, D, QuerySet> ConsistencyLevelSupport<'b>
+    for QueryDocumentsBuilder<'a, 'b, C, D, QuerySet>
 where
     QuerySet: ToAssign,
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
 {
-    type O = QueryDocumentsBuilder<'a, 'b, CUB, QuerySet>;
+    type O = QueryDocumentsBuilder<'a, 'b, C, D, QuerySet>;
 
     #[inline]
     fn with_consistency_level(self, consistency_level: ConsistencyLevel<'b>) -> Self::O {
@@ -390,12 +409,14 @@ where
     }
 }
 
-impl<'a, 'b, CUB, QuerySet> ContinuationSupport<'b> for QueryDocumentsBuilder<'a, 'b, CUB, QuerySet>
+impl<'a, 'b, C, D, QuerySet> ContinuationSupport<'b>
+    for QueryDocumentsBuilder<'a, 'b, C, D, QuerySet>
 where
     QuerySet: ToAssign,
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
 {
-    type O = QueryDocumentsBuilder<'a, 'b, CUB, QuerySet>;
+    type O = QueryDocumentsBuilder<'a, 'b, C, D, QuerySet>;
 
     #[inline]
     fn with_continuation(self, continuation: &'b str) -> Self::O {
@@ -417,12 +438,13 @@ where
     }
 }
 
-impl<'a, 'b, CUB, QuerySet> MaxItemCountSupport for QueryDocumentsBuilder<'a, 'b, CUB, QuerySet>
+impl<'a, 'b, C, D, QuerySet> MaxItemCountSupport for QueryDocumentsBuilder<'a, 'b, C, D, QuerySet>
 where
     QuerySet: ToAssign,
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
 {
-    type O = QueryDocumentsBuilder<'a, 'b, CUB, QuerySet>;
+    type O = QueryDocumentsBuilder<'a, 'b, C, D, QuerySet>;
 
     #[inline]
     fn with_max_item_count(self, max_item_count: i32) -> Self::O {
@@ -444,13 +466,14 @@ where
     }
 }
 
-impl<'a, 'b, CUB, QuerySet> PartitionKeysSupport<'b>
-    for QueryDocumentsBuilder<'a, 'b, CUB, QuerySet>
+impl<'a, 'b, C, D, QuerySet> PartitionKeysSupport<'b>
+    for QueryDocumentsBuilder<'a, 'b, C, D, QuerySet>
 where
     QuerySet: ToAssign,
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
 {
-    type O = QueryDocumentsBuilder<'a, 'b, CUB, QuerySet>;
+    type O = QueryDocumentsBuilder<'a, 'b, C, D, QuerySet>;
 
     #[inline]
     fn with_partition_keys(self, partition_keys: &'b PartitionKeys) -> Self::O {
@@ -472,13 +495,14 @@ where
     }
 }
 
-impl<'a, 'b, CUB, QuerySet> QueryCrossPartitionSupport
-    for QueryDocumentsBuilder<'a, 'b, CUB, QuerySet>
+impl<'a, 'b, C, D, QuerySet> QueryCrossPartitionSupport
+    for QueryDocumentsBuilder<'a, 'b, C, D, QuerySet>
 where
     QuerySet: ToAssign,
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
 {
-    type O = QueryDocumentsBuilder<'a, 'b, CUB, QuerySet>;
+    type O = QueryDocumentsBuilder<'a, 'b, C, D, QuerySet>;
 
     #[inline]
     fn with_query_cross_partition(self, query_cross_partition: bool) -> Self::O {
@@ -500,13 +524,14 @@ where
     }
 }
 
-impl<'a, 'b, CUB, QuerySet> ParallelizeCrossPartitionQuerySupport
-    for QueryDocumentsBuilder<'a, 'b, CUB, QuerySet>
+impl<'a, 'b, C, D, QuerySet> ParallelizeCrossPartitionQuerySupport
+    for QueryDocumentsBuilder<'a, 'b, C, D, QuerySet>
 where
     QuerySet: ToAssign,
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
 {
-    type O = QueryDocumentsBuilder<'a, 'b, CUB, QuerySet>;
+    type O = QueryDocumentsBuilder<'a, 'b, C, D, QuerySet>;
 
     #[inline]
     fn with_parallelize_cross_partition_query(
@@ -532,9 +557,10 @@ where
 }
 
 // methods callable only when every mandatory field has been filled
-impl<'a, 'b, CUB> QueryDocumentsBuilder<'a, 'b, CUB, Yes>
+impl<'a, 'b, C, D> QueryDocumentsBuilder<'a, 'b, C, D, Yes>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
 {
     pub async fn execute<T>(&self) -> Result<QueryDocumentsResponse<T>, AzureError>
     where
@@ -542,30 +568,30 @@ where
     {
         trace!("QueryDocumentBuilder::execute called");
 
-        let mut req = self.collection_client.main_client().prepare_request(
+        let req = self.collection_client.cosmos_client().prepare_request(
             &format!(
                 "dbs/{}/colls/{}/docs",
-                self.collection_client.database_name().name(),
-                self.collection_client.collection_name().name()
+                self.collection_client.database_client().database_name(),
+                self.collection_client.collection_name()
             ),
             hyper::Method::POST,
             ResourceType::Documents,
         );
 
         // signal that this is a query
-        req = req.header(crate::headers::HEADER_DOCUMENTDB_ISQUERY, true.to_string());
-        req = req.header(http::header::CONTENT_TYPE, "application/query+json");
+        let req = req.header(crate::headers::HEADER_DOCUMENTDB_ISQUERY, true.to_string());
+        let req = req.header(http::header::CONTENT_TYPE, "application/query+json");
 
         // add trait headers
-        req = IfMatchConditionOption::add_header(self, req);
-        req = IfModifiedSinceOption::add_header(self, req);
-        req = UserAgentOption::add_header(self, req);
-        req = ActivityIdOption::add_header(self, req);
-        req = ConsistencyLevelOption::add_header(self, req);
-        req = ContinuationOption::add_header(self, req);
-        req = MaxItemCountOption::add_header(self, req);
-        req = PartitionKeysOption::add_header(self, req);
-        req = QueryCrossPartitionOption::add_header(self, req);
+        let req = IfMatchConditionOption::add_header(self, req);
+        let req = IfModifiedSinceOption::add_header(self, req);
+        let req = UserAgentOption::add_header(self, req);
+        let req = ActivityIdOption::add_header(self, req);
+        let req = ConsistencyLevelOption::add_header(self, req);
+        let req = ContinuationOption::add_header(self, req);
+        let req = MaxItemCountOption::add_header(self, req);
+        let req = PartitionKeysOption::add_header(self, req);
+        let req = QueryCrossPartitionOption::add_header(self, req);
 
         let body = serde_json::to_string(self.query())?;
         debug!("body == {}", body);
@@ -582,8 +608,7 @@ where
         debug!("\nheaders == {:?}", headers);
         debug!("\nbody == {:#?}", body);
 
-        let resp = QueryDocumentsResponse::try_from((&headers, &body as &[u8]))?;
-        Ok(resp)
+        Ok((&headers, &body as &[u8]).try_into()?)
     }
 
     pub fn stream<T>(

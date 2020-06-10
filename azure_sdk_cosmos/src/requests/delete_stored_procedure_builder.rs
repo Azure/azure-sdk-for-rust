@@ -1,32 +1,33 @@
-use crate::clients::{CosmosUriBuilder, ResourceType};
 use crate::prelude::*;
 use crate::responses::DeleteStoredProcedureResponse;
-use crate::StoredProcedureClient;
-use crate::StoredProcedureClientRequired;
 use azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError};
 use azure_sdk_core::prelude::*;
 use hyper::StatusCode;
 use std::convert::TryInto;
 
 #[derive(Debug, Clone)]
-pub struct DeleteStoredProcedureBuilder<'a, CUB>
+pub struct DeleteStoredProcedureBuilder<'a, 'b, C, D, COLL>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    COLL: CollectionClient<C, D>,
 {
-    stored_procedure_client: &'a StoredProcedureClient<'a, CUB>,
-    user_agent: Option<&'a str>,
-    activity_id: Option<&'a str>,
-    consistency_level: Option<ConsistencyLevel<'a>>,
+    stored_procedure_client: &'a dyn StoredProcedureClient<C, D, COLL>,
+    user_agent: Option<&'b str>,
+    activity_id: Option<&'b str>,
+    consistency_level: Option<ConsistencyLevel<'b>>,
 }
 
-impl<'a, CUB> DeleteStoredProcedureBuilder<'a, CUB>
+impl<'a, 'b, C, D, COLL> DeleteStoredProcedureBuilder<'a, 'b, C, D, COLL>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    COLL: CollectionClient<C, D>,
 {
     #[inline]
     pub(crate) fn new(
-        stored_procedure_client: &'a StoredProcedureClient<'a, CUB>,
-    ) -> DeleteStoredProcedureBuilder<'a, CUB> {
+        stored_procedure_client: &'a dyn StoredProcedureClient<C, D, COLL>,
+    ) -> DeleteStoredProcedureBuilder<'a, 'b, C, D, COLL> {
         DeleteStoredProcedureBuilder {
             stored_procedure_client,
             user_agent: None,
@@ -36,12 +37,15 @@ where
     }
 }
 
-impl<'a, CUB> StoredProcedureClientRequired<'a, CUB> for DeleteStoredProcedureBuilder<'a, CUB>
+impl<'a, 'b, C, D, COLL> StoredProcedureClientRequired<'a, C, D, COLL>
+    for DeleteStoredProcedureBuilder<'a, 'b, C, D, COLL>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    COLL: CollectionClient<C, D>,
 {
     #[inline]
-    fn stored_procedure_client(&self) -> &'a StoredProcedureClient<'a, CUB> {
+    fn stored_procedure_client(&self) -> &'a dyn StoredProcedureClient<C, D, COLL> {
         self.stored_procedure_client
     }
 }
@@ -49,44 +53,53 @@ where
 //get mandatory no traits methods
 
 //set mandatory no traits methods
-impl<'a, CUB> UserAgentOption<'a> for DeleteStoredProcedureBuilder<'a, CUB>
+impl<'a, 'b, C, D, COLL> UserAgentOption<'b> for DeleteStoredProcedureBuilder<'a, 'b, C, D, COLL>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    COLL: CollectionClient<C, D>,
 {
     #[inline]
-    fn user_agent(&self) -> Option<&'a str> {
+    fn user_agent(&self) -> Option<&'b str> {
         self.user_agent
     }
 }
 
-impl<'a, CUB> ActivityIdOption<'a> for DeleteStoredProcedureBuilder<'a, CUB>
+impl<'a, 'b, C, D, COLL> ActivityIdOption<'b> for DeleteStoredProcedureBuilder<'a, 'b, C, D, COLL>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    COLL: CollectionClient<C, D>,
 {
     #[inline]
-    fn activity_id(&self) -> Option<&'a str> {
+    fn activity_id(&self) -> Option<&'b str> {
         self.activity_id
     }
 }
 
-impl<'a, CUB> ConsistencyLevelOption<'a> for DeleteStoredProcedureBuilder<'a, CUB>
+impl<'a, 'b, C, D, COLL> ConsistencyLevelOption<'b>
+    for DeleteStoredProcedureBuilder<'a, 'b, C, D, COLL>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    COLL: CollectionClient<C, D>,
 {
     #[inline]
-    fn consistency_level(&self) -> Option<ConsistencyLevel<'a>> {
+    fn consistency_level(&self) -> Option<ConsistencyLevel<'b>> {
         self.consistency_level.clone()
     }
 }
 
-impl<'a, CUB> UserAgentSupport<'a> for DeleteStoredProcedureBuilder<'a, CUB>
+impl<'a, 'b, C, D, COLL> UserAgentSupport<'b> for DeleteStoredProcedureBuilder<'a, 'b, C, D, COLL>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    COLL: CollectionClient<C, D>,
 {
-    type O = DeleteStoredProcedureBuilder<'a, CUB>;
+    type O = DeleteStoredProcedureBuilder<'a, 'b, C, D, COLL>;
 
     #[inline]
-    fn with_user_agent(self, user_agent: &'a str) -> Self::O {
+    fn with_user_agent(self, user_agent: &'b str) -> Self::O {
         DeleteStoredProcedureBuilder {
             stored_procedure_client: self.stored_procedure_client,
             user_agent: Some(user_agent),
@@ -96,14 +109,16 @@ where
     }
 }
 
-impl<'a, CUB> ActivityIdSupport<'a> for DeleteStoredProcedureBuilder<'a, CUB>
+impl<'a, 'b, C, D, COLL> ActivityIdSupport<'b> for DeleteStoredProcedureBuilder<'a, 'b, C, D, COLL>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    COLL: CollectionClient<C, D>,
 {
-    type O = DeleteStoredProcedureBuilder<'a, CUB>;
+    type O = DeleteStoredProcedureBuilder<'a, 'b, C, D, COLL>;
 
     #[inline]
-    fn with_activity_id(self, activity_id: &'a str) -> Self::O {
+    fn with_activity_id(self, activity_id: &'b str) -> Self::O {
         DeleteStoredProcedureBuilder {
             stored_procedure_client: self.stored_procedure_client,
             user_agent: self.user_agent,
@@ -113,14 +128,17 @@ where
     }
 }
 
-impl<'a, CUB> ConsistencyLevelSupport<'a> for DeleteStoredProcedureBuilder<'a, CUB>
+impl<'a, 'b, C, D, COLL> ConsistencyLevelSupport<'b>
+    for DeleteStoredProcedureBuilder<'a, 'b, C, D, COLL>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    COLL: CollectionClient<C, D>,
 {
-    type O = DeleteStoredProcedureBuilder<'a, CUB>;
+    type O = DeleteStoredProcedureBuilder<'a, 'b, C, D, COLL>;
 
     #[inline]
-    fn with_consistency_level(self, consistency_level: ConsistencyLevel<'a>) -> Self::O {
+    fn with_consistency_level(self, consistency_level: ConsistencyLevel<'b>) -> Self::O {
         DeleteStoredProcedureBuilder {
             stored_procedure_client: self.stored_procedure_client,
             user_agent: self.user_agent,
@@ -131,33 +149,30 @@ where
 }
 
 // methods callable only when every mandatory field has been filled
-impl<'a, CUB> DeleteStoredProcedureBuilder<'a, CUB>
+impl<'a, 'b, C, D, COLL> DeleteStoredProcedureBuilder<'a, 'b, C, D, COLL>
 where
-    CUB: CosmosUriBuilder,
+    C: CosmosClient,
+    D: DatabaseClient<C>,
+    COLL: CollectionClient<C, D>,
 {
     pub async fn execute(&self) -> Result<DeleteStoredProcedureResponse, AzureError> {
         trace!("DeleteStoredProcedureBuilder::execute called");
 
-        let req = self.stored_procedure_client.main_client().prepare_request(
-            &format!(
-                "dbs/{}/colls/{}/sprocs/{}",
-                self.stored_procedure_client.database_name().name(),
-                self.stored_procedure_client.collection_name().name(),
-                self.stored_procedure_client.stored_procedure_name().name()
-            ),
-            hyper::Method::DELETE,
-            ResourceType::StoredProcedures,
-        );
+        let request = self
+            .stored_procedure_client
+            .prepare_request_with_stored_procedure_name(hyper::Method::DELETE);
 
         // add trait headers
-        let req = UserAgentOption::add_header(self, req);
-        let req = ActivityIdOption::add_header(self, req);
-        let req = ConsistencyLevelOption::add_header(self, req);
+        let request = UserAgentOption::add_header(self, request);
+        let request = ActivityIdOption::add_header(self, request);
+        let request = ConsistencyLevelOption::add_header(self, request);
 
-        let req = req.body(hyper::Body::empty())?;
+        let request = request.body(hyper::Body::empty())?;
 
         let (headers, body) = check_status_extract_headers_and_body(
-            self.stored_procedure_client().hyper_client().request(req),
+            self.stored_procedure_client()
+                .hyper_client()
+                .request(request),
             StatusCode::NO_CONTENT,
         )
         .await?;

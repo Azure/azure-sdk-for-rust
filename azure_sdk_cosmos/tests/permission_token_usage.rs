@@ -21,7 +21,7 @@ async fn permissions() {
         .await
         .unwrap();
 
-    let database_client = client.with_database(&DATABASE_NAME);
+    let database_client = client.with_database_client(DATABASE_NAME);
 
     // create a new collection
     let indexing_policy = IndexingPolicy {
@@ -41,18 +41,17 @@ async fn permissions() {
         .await
         .unwrap();
 
-    let user_client = database_client.with_user(&USER_NAME);
+    let user_client = database_client.with_user_client(USER_NAME);
     user_client.create_user().execute().await.unwrap();
 
     // create the RO permission
-    let permission_client = user_client.with_permission(&PERMISSION);
+    let permission_client = user_client.with_permission_client(PERMISSION);
     let permission_mode = PermissionMode::Read(create_collection_response.clone().collection);
 
     let create_permission_response = permission_client
         .create_permission()
-        .with_permission_mode(&permission_mode)
         .with_expiry_seconds(18000) // 5 hours, max!
-        .execute()
+        .execute_with_permission(&permission_mode)
         .await
         .unwrap();
 
@@ -63,13 +62,13 @@ async fn permissions() {
         .permission_token
         .into();
     let new_client = client.with_auth_token(new_authorization_token);
-    let new_database_client = new_client.with_database(&DATABASE_NAME);
-    let new_collection_client = new_database_client.with_collection(&COLLECTION_NAME);
+    let new_database_client = new_client.with_database_client(DATABASE_NAME);
+    let new_collection_client = new_database_client.with_collection_client(COLLECTION_NAME);
 
     // let's list the collection content.
     // This must succeed.
     new_database_client
-        .with_collection(&COLLECTION_NAME)
+        .with_collection_client(COLLECTION_NAME)
         .list_documents()
         .execute::<serde_json::Value>()
         .await
@@ -89,10 +88,9 @@ async fn permissions() {
     let document = Document::new(serde_json::from_str::<serde_json::Value>(data).unwrap());
     new_collection_client
         .create_document()
-        .with_document(&document)
         .with_is_upsert(true)
         .with_partition_keys(PartitionKeys::new().push(&"Gianluigi Bombatomica").unwrap())
-        .execute()
+        .execute_with_document(&document)
         .await
         .unwrap_err();
 
@@ -106,9 +104,8 @@ async fn permissions() {
     let permission_mode = PermissionMode::All(create_collection_response.collection);
     let create_permission_response = permission_client
         .create_permission()
-        .with_permission_mode(&permission_mode)
         .with_expiry_seconds(18000) // 5 hours, max!
-        .execute()
+        .execute_with_permission(&permission_mode)
         .await
         .unwrap();
 
@@ -117,17 +114,16 @@ async fn permissions() {
         .permission_token
         .into();
     let new_client = client.with_auth_token(new_authorization_token);
-    let new_database_client = new_client.with_database(&DATABASE_NAME);
-    let new_collection_client = new_database_client.with_collection(&COLLECTION_NAME);
+    let new_database_client = new_client.with_database_client(DATABASE_NAME);
+    let new_collection_client = new_database_client.with_collection_client(COLLECTION_NAME);
 
     // now we have an "All" authorization_token
     // so the create_document should succeed!
     let create_document_response = new_collection_client
         .create_document()
-        .with_document(&document)
         .with_is_upsert(true)
         .with_partition_keys(PartitionKeys::new().push(&"Gianluigi Bombatomica").unwrap())
-        .execute()
+        .execute_with_document(&document)
         .await
         .unwrap();
     println!(

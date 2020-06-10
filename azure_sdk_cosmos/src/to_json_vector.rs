@@ -116,6 +116,34 @@ impl std::convert::From<&String> for ToJsonVector {
     }
 }
 
+impl std::convert::From<u64> for ToJsonVector {
+    fn from(t: u64) -> Self {
+        let mut pk = Self::new();
+        let _ = pk.push(t).unwrap();
+        pk
+    }
+}
+
+impl std::convert::From<i64> for ToJsonVector {
+    fn from(t: i64) -> Self {
+        let mut pk = Self::new();
+        let _ = pk.push(t).unwrap();
+        pk
+    }
+}
+
+impl<'a> std::convert::From<ToJsonVector> for Cow<'a, ToJsonVector> {
+    fn from(t: ToJsonVector) -> Self {
+        Cow::Owned(t)
+    }
+}
+
+impl<'a> std::convert::From<&'a ToJsonVector> for Cow<'a, ToJsonVector> {
+    fn from(t: &'a ToJsonVector) -> Self {
+        Cow::Borrowed(t)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
