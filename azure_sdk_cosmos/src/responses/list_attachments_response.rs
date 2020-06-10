@@ -1,7 +1,9 @@
 use crate::from_headers::*;
 use crate::{Attachment, ResourceQuota};
 use azure_sdk_core::errors::AzureError;
-use azure_sdk_core::{session_token_from_headers, SessionToken};
+use azure_sdk_core::{
+    continuation_token_from_headers_optional, session_token_from_headers, SessionToken,
+};
 use chrono::{DateTime, Utc};
 use hyper::header::HeaderMap;
 
@@ -40,6 +42,7 @@ pub struct ListAttachmentsResponse {
     pub activity_id: uuid::Uuid,
     pub gateway_version: String,
     pub date: DateTime<Utc>,
+    pub continuation_token: Option<String>,
 }
 
 impl std::convert::TryFrom<(&HeaderMap, &[u8])> for ListAttachmentsResponse {
@@ -77,6 +80,7 @@ impl std::convert::TryFrom<(&HeaderMap, &[u8])> for ListAttachmentsResponse {
             activity_id: activity_id_from_headers(headers)?,
             gateway_version: gateway_version_from_headers(headers)?.to_owned(),
             date: date_from_headers(headers)?,
+            continuation_token: continuation_token_from_headers_optional(headers)?,
         })
     }
 }
