@@ -41,7 +41,7 @@ pub fn authorize_delegate(
 ) -> AuthObj {
     let auth_url = AuthUrl::from_url(
         Url::parse(&format!(
-            "https://login.microsoftonline.com/{}/oauth2/authorize",
+            "https://login.microsoftonline.com/{}/oauth2/v2.0/authorize",
             tenant_id
         ))
         .expect("Invalid authorization endpoint URL"),
@@ -68,7 +68,7 @@ pub fn authorize_delegate(
     // Generate the authorization URL to which we'll redirect the user.
     let (authorize_url, csrf_state) = client
         .authorize_url(CsrfToken::new_random)
-        .add_extra_param("resource", resource) //"https://management.azure.com/".to_owned())
+        .add_extra_param("scope", resource)
         .set_pkce_challenge(pkce_code_challenge)
         .url();
 
@@ -99,7 +99,7 @@ pub async fn exchange(
         .request_async(async_http_client)
         .await?;
 
-    debug!("MS Graph returned the following token:\n{:?}\n", token);
+    debug!("\nMS Graph returned the following token:\n{:?}\n", token);
     Ok(token)
 }
 

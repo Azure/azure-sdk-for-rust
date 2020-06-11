@@ -12,8 +12,13 @@ async fn main() -> Result<(), Box<dyn Error>> {
         env::var("CLIENT_SECRET").expect("Missing CLIENT_SECRET environment variable."),
     );
     let tenant_id = env::var("TENANT_ID").expect("Missing TENANT_ID environment variable.");
-    let subscription_id =
-        env::var("SUBSCRIPTION_ID").expect("Missing SUBSCRIPTION_ID environment variable.");
+
+    let storage_account_name = std::env::args()
+        .nth(1)
+        .expect("please specify the storage account name as first command line parameter");
+    let container_name = std::env::args()
+        .nth(2)
+        .expect("please specify the container name as second command line parameter");
 
     // Create URL to browse for initial authorization
     let c = authorize_delegate(
@@ -21,7 +26,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
         Some(client_secret),
         &tenant_id,
         Url::parse("http://localhost:3003/redirect").unwrap(),
-        "https://management.azure.com/user_impersonation",
+        &format!(
+            "https://{}.blob.core.windows.net/user_impersonation",
+            storage_account_name
+        ),
     );
 
     println!("c == {:?}", c);
@@ -40,21 +48,23 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     println!("token received: {:?}", token);
 
-    // Let's enumerate the Azure SQL Databases instances
-    // in the subscription. Note: this way of calling the REST API
-    // will be different (and easier) using other Azure Rust SDK
-    // crates, this is just an example.
-    let url = Url::parse(&format!(
-            "https://management.azure.com/subscriptions/{}/providers/Microsoft.Sql/servers?api-version=2015-05-01-preview",
-            subscription_id
-        ))?;
+    println!("token secret: {}", token.access_token().secret());
+
+    let dt = chrono::Utc::now();
+    let time = format!("{}", dt.format("%a, %d %h %Y %T GMT"));
+    println!("x-ms-date ==> {}", time);
 
     let resp = reqwest::Client::new()
-        .get(url)
+        .get(&format!(
+            "https://{}.blob.core.windows.net/{}?restype=container&comp=list",
+            storage_account_name, container_name
+        ))
         .header(
             "Authorization",
             format!("Bearer {}", token.access_token().secret()),
         )
+        .header("x-ms-version", "2019-07-07")
+        .header("x-ms-date", time)
         .send()
         .await?
         .text()

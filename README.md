@@ -5,7 +5,7 @@
 
 [![Build Status](https://travis-ci.org/MindFlavor/AzureSDKForRust.svg?branch=master)](https://travis-ci.org/MindFlavor/AzureSDKForRust) [![Coverage Status](https://coveralls.io/repos/MindFlavor/AzureSDKForRust/badge.svg?branch=master&service=github)](https://coveralls.io/github/MindFlavor/AzureSDKForRust?branch=master) ![stability-unstable](https://img.shields.io/badge/stability-unstable-yellow.svg)
 
-[![tag](https://img.shields.io/github/tag/mindflavor/AzureSDKForRust.svg)](https://github.com/MindFlavor/AzureSDKForRust/tree/cosmos_0.100.1) [![release](https://img.shields.io/github/release/mindflavor/AzureSDKForRust.svg)](https://github.com/MindFlavor/AzureSDKForRust/releases/tag/cosmos_0.100.1) [![commitssince](https://img.shields.io/github/commits-since/mindflavor/AzureSDKForRust/cosmos_0.100.1)](https://github.com/MindFlavor/AzureSDKForRust/commits/master)
+[![tag](https://img.shields.io/github/tag/mindflavor/AzureSDKForRust.svg)](https://github.com/MindFlavor/AzureSDKForRust/tree/aad_0.44.0) [![release](https://img.shields.io/github/release/mindflavor/AzureSDKForRust.svg)](https://github.com/MindFlavor/AzureSDKForRust/releases/tag/aad_0.44.0) [![commitssince](https://img.shields.io/github/commits-since/mindflavor/AzureSDKForRust/aad_0.44.0)](https://github.com/MindFlavor/AzureSDKForRust/commits/master)
 
 [![GitHub contributors](https://img.shields.io/github/contributors/MindFlavor/AzureSDKForRust.svg)](https://github.com/MindFlavor/AzureSDKForRust/graphs/contributors)
 
