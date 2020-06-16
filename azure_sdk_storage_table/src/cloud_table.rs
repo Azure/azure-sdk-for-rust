@@ -62,7 +62,7 @@ where
             &Method::GET,
             None,
             MetadataDetail::None, // etag is provided through header, no extra meta info is required
-            |mut request| {
+            &|mut request| {
                 if let Some(etag) = etag {
                     request = request.header(header::IF_MATCH, etag);
                 }
@@ -105,7 +105,7 @@ where
             &Method::POST,
             Some(&obj_ser),
             MetadataDetail::None,
-            |req| req,
+            &|req| req,
         )?;
 
         let (headers, body) =
@@ -151,7 +151,7 @@ where
             &Method::PUT,
             Some(&obj_ser),
             MetadataDetail::None,
-            |req| req,
+            &|req| req,
         )?;
         let (headers, _body) =
             check_status_extract_headers_and_body(future_response, StatusCode::NO_CONTENT).await?;
@@ -194,8 +194,8 @@ where
             &Method::PUT,
             Some(&obj_ser),
             MetadataDetail::None,
-            |mut request| {
-                if let Some(etag) = etag {
+            &|mut request| {
+                if let Some(etag) = &etag {
                     request = request.header(header::IF_MATCH, etag);
                 }
                 request
@@ -234,7 +234,7 @@ where
             &Method::DELETE,
             None,
             MetadataDetail::None,
-            |request| request.header(header::IF_MATCH, etag),
+            &|request| request.header(header::IF_MATCH, etag),
         )?;
 
         check_status_extract_body(future_response, StatusCode::NO_CONTENT).await?;
@@ -284,7 +284,7 @@ where
             &Method::GET,
             None,
             MetadataDetail::Full, // etag is provided through metadata only
-            |req| req,
+            &|req| req,
         )?;
 
         let (headers, body) =
@@ -318,7 +318,7 @@ where
 
         let future_response =
             self.client
-                .request("$batch", &Method::POST, Some(&payload), |request| {
+                .request("$batch", &Method::POST, Some(&payload), &|request| {
                     request.header(
                         header::CONTENT_TYPE,
                         header::HeaderValue::from_static(get_batch_mime()),

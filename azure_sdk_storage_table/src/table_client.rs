@@ -1,9 +1,11 @@
 use azure_sdk_core::errors::{check_status_extract_body, AzureError};
+use azure_sdk_storage_core::key_client::KeyClient;
 use azure_sdk_storage_core::prelude::*;
 use azure_sdk_storage_core::{
     client, get_default_json_mime, get_json_mime_fullmetadata, get_json_mime_nometadata,
     ConnectionString, ServiceType,
 };
+use http::request::Builder;
 use hyper::{
     client::ResponseFuture,
     header::{self, HeaderValue},
@@ -91,7 +93,7 @@ where
             &Method::GET,
             None,
             MetadataDetail::None,
-            |req| req,
+            &|req| req,
         )?;
         let body = check_status_extract_body(future_response, StatusCode::OK).await?;
         let entities = serde_json::from_str::<TableDataCollection>(&body)?;
@@ -112,7 +114,7 @@ where
             &Method::POST,
             Some(body),
             MetadataDetail::None,
-            |req| req,
+            &|req| req,
         )?;
 
         check_status_extract_body(future_response, StatusCode::CREATED).await?;
@@ -123,18 +125,15 @@ where
         self.client.get_uri_prefix(ServiceType::Table)
     }
 
-    pub(crate) fn request_with_default_header<F>(
+    pub(crate) fn request_with_default_header(
         &self,
         segment: &str,
         method: &Method,
         request_str: Option<&str>,
         metadata: MetadataDetail,
-        request_extra: F,
-    ) -> Result<ResponseFuture, AzureError>
-    where
-        F: FnOnce(::http::request::Builder) -> ::http::request::Builder,
-    {
-        self.request(segment, method, request_str, |mut request| {
+        http_header_adder: &dyn Fn(Builder) -> Builder,
+    ) -> Result<ResponseFuture, AzureError> {
+        self.request(segment, method, request_str, &|mut request| {
             request = match metadata {
                 MetadataDetail::Full => request.header(
                     header::ACCEPT,
@@ -156,20 +155,17 @@ where
                 );
             }
 
-            request_extra(request)
+            http_header_adder(request)
         })
     }
 
-    pub(crate) fn request<F>(
+    pub(crate) fn request(
         &self,
         segment: &str,
         method: &Method,
         request_str: Option<&str>,
-        request_extra: F,
-    ) -> Result<ResponseFuture, AzureError>
-    where
-        F: FnOnce(::http::request::Builder) -> ::http::request::Builder,
-    {
+        http_header_adder: &dyn Fn(Builder) -> Builder,
+    ) -> Result<ResponseFuture, AzureError> {
         log::trace!("{:?} {}", method, segment);
         if let Some(body) = request_str {
             log::trace!("Request: {}", body);
@@ -181,7 +177,7 @@ where
         };
 
         self.client
-            .perform_table_request(segment, method, request_extra, request_vec)
+            .perform_table_request(segment, method, http_header_adder, request_vec)
     }
 }
 
