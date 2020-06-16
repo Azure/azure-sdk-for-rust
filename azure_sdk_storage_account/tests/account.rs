@@ -9,7 +9,7 @@ async fn get_account_information() {
     let master_key =
         std::env::var("STORAGE_MASTER_KEY").expect("Set env variable STORAGE_MASTER_KEY first!");
 
-    let client = Client::new(&account, &master_key).unwrap();
+    let client = client::with_access_key(&account, &master_key);
 
     // we just test the call works, we don't check the return value since the
     // values depend on the Azure storage account

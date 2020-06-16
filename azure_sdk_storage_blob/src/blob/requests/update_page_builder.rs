@@ -4,31 +4,23 @@ use azure_sdk_core::ba512_range::BA512Range;
 use azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError};
 use azure_sdk_core::headers::PAGE_WRITE;
 use azure_sdk_core::lease::LeaseId;
-use azure_sdk_core::modify_conditions::{
-    IfMatchCondition, IfSinceCondition, SequenceNumberCondition,
-};
-use azure_sdk_core::{
-    BA512RangeRequired, BA512RangeSupport, BlobNameRequired, BlobNameSupport, BodyRequired,
-    BodySupport, ClientRequestIdOption, ClientRequestIdSupport, ContainerNameRequired,
-    ContainerNameSupport, ContentMD5Option, ContentMD5Support, IfMatchConditionOption,
-    IfMatchConditionSupport, IfSinceConditionOption, IfSinceConditionSupport, LeaseIdOption,
-    LeaseIdSupport, No, SequenceNumberConditionOption, SequenceNumberConditionSupport,
-    TimeoutOption, TimeoutSupport, ToAssign, Yes,
-};
-use azure_sdk_storage_core::client::Client;
+use azure_sdk_core::prelude::*;
+use azure_sdk_core::{No, ToAssign, Yes};
+use azure_sdk_storage_core::prelude::*;
 use azure_sdk_storage_core::ClientRequired;
 use hyper::{Method, StatusCode};
 use std::marker::PhantomData;
 
 #[derive(Debug, Clone)]
-pub struct UpdatePageBuilder<'a, ContainerNameSet, BlobNameSet, BA512RangeSet, BodySet>
+pub struct UpdatePageBuilder<'a, C, ContainerNameSet, BlobNameSet, BA512RangeSet, BodySet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     BA512RangeSet: ToAssign,
     BodySet: ToAssign,
+    C: Client,
 {
-    client: &'a Client,
+    client: &'a C,
     p_container_name: PhantomData<ContainerNameSet>,
     p_blob_name: PhantomData<BlobNameSet>,
     p_ba512_range: PhantomData<BA512RangeSet>,
@@ -46,9 +38,12 @@ where
     timeout: Option<u64>,
 }
 
-impl<'a> UpdatePageBuilder<'a, No, No, No, No> {
+impl<'a, C> UpdatePageBuilder<'a, C, No, No, No, No>
+where
+    C: Client,
+{
     #[inline]
-    pub(crate) fn new(client: &'a Client) -> UpdatePageBuilder<'a, No, No, No, No> {
+    pub(crate) fn new(client: &'a C) -> UpdatePageBuilder<'a, C, No, No, No, No> {
         UpdatePageBuilder {
             client,
             p_container_name: PhantomData {},
@@ -70,26 +65,31 @@ impl<'a> UpdatePageBuilder<'a, No, No, No, No> {
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, BA512RangeSet, BodySet> ClientRequired<'a>
-    for UpdatePageBuilder<'a, ContainerNameSet, BlobNameSet, BA512RangeSet, BodySet>
+impl<'a, C, ContainerNameSet, BlobNameSet, BA512RangeSet, BodySet> ClientRequired<'a, C>
+    for UpdatePageBuilder<'a, C, ContainerNameSet, BlobNameSet, BA512RangeSet, BodySet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     BA512RangeSet: ToAssign,
     BodySet: ToAssign,
+    C: Client,
 {
     #[inline]
-    fn client(&self) -> &'a Client {
+    fn client(&self) -> &'a C {
         self.client
     }
 }
 
-impl<'a, BlobNameSet, BA512RangeSet, BodySet> ContainerNameRequired<'a>
-    for UpdatePageBuilder<'a, Yes, BlobNameSet, BA512RangeSet, BodySet>
+//get mandatory no traits methods
+
+//set mandatory no traits methods
+impl<'a, C, BlobNameSet, BA512RangeSet, BodySet> ContainerNameRequired<'a>
+    for UpdatePageBuilder<'a, C, Yes, BlobNameSet, BA512RangeSet, BodySet>
 where
     BlobNameSet: ToAssign,
     BA512RangeSet: ToAssign,
     BodySet: ToAssign,
+    C: Client,
 {
     #[inline]
     fn container_name(&self) -> &'a str {
@@ -97,12 +97,13 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BA512RangeSet, BodySet> BlobNameRequired<'a>
-    for UpdatePageBuilder<'a, ContainerNameSet, Yes, BA512RangeSet, BodySet>
+impl<'a, C, ContainerNameSet, BA512RangeSet, BodySet> BlobNameRequired<'a>
+    for UpdatePageBuilder<'a, C, ContainerNameSet, Yes, BA512RangeSet, BodySet>
 where
     ContainerNameSet: ToAssign,
     BA512RangeSet: ToAssign,
     BodySet: ToAssign,
+    C: Client,
 {
     #[inline]
     fn blob_name(&self) -> &'a str {
@@ -110,12 +111,13 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, BodySet> BA512RangeRequired<'a>
-    for UpdatePageBuilder<'a, ContainerNameSet, BlobNameSet, Yes, BodySet>
+impl<'a, C, ContainerNameSet, BlobNameSet, BodySet> BA512RangeRequired<'a>
+    for UpdatePageBuilder<'a, C, ContainerNameSet, BlobNameSet, Yes, BodySet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     BodySet: ToAssign,
+    C: Client,
 {
     #[inline]
     fn ba512_range(&self) -> &'a BA512Range {
@@ -123,12 +125,13 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, BA512RangeSet> BodyRequired<'a>
-    for UpdatePageBuilder<'a, ContainerNameSet, BlobNameSet, BA512RangeSet, Yes>
+impl<'a, C, ContainerNameSet, BlobNameSet, BA512RangeSet> BodyRequired<'a>
+    for UpdatePageBuilder<'a, C, ContainerNameSet, BlobNameSet, BA512RangeSet, Yes>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     BA512RangeSet: ToAssign,
+    C: Client,
 {
     #[inline]
     fn body(&self) -> &'a [u8] {
@@ -136,13 +139,14 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, BA512RangeSet, BodySet> ContentMD5Option<'a>
-    for UpdatePageBuilder<'a, ContainerNameSet, BlobNameSet, BA512RangeSet, BodySet>
+impl<'a, C, ContainerNameSet, BlobNameSet, BA512RangeSet, BodySet> ContentMD5Option<'a>
+    for UpdatePageBuilder<'a, C, ContainerNameSet, BlobNameSet, BA512RangeSet, BodySet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     BA512RangeSet: ToAssign,
     BodySet: ToAssign,
+    C: Client,
 {
     #[inline]
     fn content_md5(&self) -> Option<&'a [u8]> {
@@ -150,13 +154,14 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, BA512RangeSet, BodySet> LeaseIdOption<'a>
-    for UpdatePageBuilder<'a, ContainerNameSet, BlobNameSet, BA512RangeSet, BodySet>
+impl<'a, C, ContainerNameSet, BlobNameSet, BA512RangeSet, BodySet> LeaseIdOption<'a>
+    for UpdatePageBuilder<'a, C, ContainerNameSet, BlobNameSet, BA512RangeSet, BodySet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     BA512RangeSet: ToAssign,
     BodySet: ToAssign,
+    C: Client,
 {
     #[inline]
     fn lease_id(&self) -> Option<&'a LeaseId> {
@@ -164,13 +169,14 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, BA512RangeSet, BodySet> SequenceNumberConditionOption
-    for UpdatePageBuilder<'a, ContainerNameSet, BlobNameSet, BA512RangeSet, BodySet>
+impl<'a, C, ContainerNameSet, BlobNameSet, BA512RangeSet, BodySet> SequenceNumberConditionOption
+    for UpdatePageBuilder<'a, C, ContainerNameSet, BlobNameSet, BA512RangeSet, BodySet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     BA512RangeSet: ToAssign,
     BodySet: ToAssign,
+    C: Client,
 {
     #[inline]
     fn sequence_number_condition(&self) -> Option<SequenceNumberCondition> {
@@ -178,13 +184,14 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, BA512RangeSet, BodySet> IfSinceConditionOption
-    for UpdatePageBuilder<'a, ContainerNameSet, BlobNameSet, BA512RangeSet, BodySet>
+impl<'a, C, ContainerNameSet, BlobNameSet, BA512RangeSet, BodySet> IfSinceConditionOption
+    for UpdatePageBuilder<'a, C, ContainerNameSet, BlobNameSet, BA512RangeSet, BodySet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     BA512RangeSet: ToAssign,
     BodySet: ToAssign,
+    C: Client,
 {
     #[inline]
     fn if_since_condition(&self) -> Option<IfSinceCondition> {
@@ -192,13 +199,14 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, BA512RangeSet, BodySet> IfMatchConditionOption<'a>
-    for UpdatePageBuilder<'a, ContainerNameSet, BlobNameSet, BA512RangeSet, BodySet>
+impl<'a, C, ContainerNameSet, BlobNameSet, BA512RangeSet, BodySet> IfMatchConditionOption<'a>
+    for UpdatePageBuilder<'a, C, ContainerNameSet, BlobNameSet, BA512RangeSet, BodySet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     BA512RangeSet: ToAssign,
     BodySet: ToAssign,
+    C: Client,
 {
     #[inline]
     fn if_match_condition(&self) -> Option<IfMatchCondition<'a>> {
@@ -206,13 +214,14 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, BA512RangeSet, BodySet> ClientRequestIdOption<'a>
-    for UpdatePageBuilder<'a, ContainerNameSet, BlobNameSet, BA512RangeSet, BodySet>
+impl<'a, C, ContainerNameSet, BlobNameSet, BA512RangeSet, BodySet> ClientRequestIdOption<'a>
+    for UpdatePageBuilder<'a, C, ContainerNameSet, BlobNameSet, BA512RangeSet, BodySet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     BA512RangeSet: ToAssign,
     BodySet: ToAssign,
+    C: Client,
 {
     #[inline]
     fn client_request_id(&self) -> Option<&'a str> {
@@ -220,13 +229,14 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, BA512RangeSet, BodySet> TimeoutOption
-    for UpdatePageBuilder<'a, ContainerNameSet, BlobNameSet, BA512RangeSet, BodySet>
+impl<'a, C, ContainerNameSet, BlobNameSet, BA512RangeSet, BodySet> TimeoutOption
+    for UpdatePageBuilder<'a, C, ContainerNameSet, BlobNameSet, BA512RangeSet, BodySet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     BA512RangeSet: ToAssign,
     BodySet: ToAssign,
+    C: Client,
 {
     #[inline]
     fn timeout(&self) -> Option<u64> {
@@ -234,15 +244,15 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, BA512RangeSet, BodySet> ContainerNameSupport<'a>
-    for UpdatePageBuilder<'a, ContainerNameSet, BlobNameSet, BA512RangeSet, BodySet>
+impl<'a, C, BlobNameSet, BA512RangeSet, BodySet> ContainerNameSupport<'a>
+    for UpdatePageBuilder<'a, C, No, BlobNameSet, BA512RangeSet, BodySet>
 where
-    ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     BA512RangeSet: ToAssign,
     BodySet: ToAssign,
+    C: Client,
 {
-    type O = UpdatePageBuilder<'a, Yes, BlobNameSet, BA512RangeSet, BodySet>;
+    type O = UpdatePageBuilder<'a, C, Yes, BlobNameSet, BA512RangeSet, BodySet>;
 
     #[inline]
     fn with_container_name(self, container_name: &'a str) -> Self::O {
@@ -267,15 +277,15 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, BA512RangeSet, BodySet> BlobNameSupport<'a>
-    for UpdatePageBuilder<'a, ContainerNameSet, BlobNameSet, BA512RangeSet, BodySet>
+impl<'a, C, ContainerNameSet, BA512RangeSet, BodySet> BlobNameSupport<'a>
+    for UpdatePageBuilder<'a, C, ContainerNameSet, No, BA512RangeSet, BodySet>
 where
     ContainerNameSet: ToAssign,
-    BlobNameSet: ToAssign,
     BA512RangeSet: ToAssign,
     BodySet: ToAssign,
+    C: Client,
 {
-    type O = UpdatePageBuilder<'a, ContainerNameSet, Yes, BA512RangeSet, BodySet>;
+    type O = UpdatePageBuilder<'a, C, ContainerNameSet, Yes, BA512RangeSet, BodySet>;
 
     #[inline]
     fn with_blob_name(self, blob_name: &'a str) -> Self::O {
@@ -300,15 +310,15 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, BA512RangeSet, BodySet> BA512RangeSupport<'a>
-    for UpdatePageBuilder<'a, ContainerNameSet, BlobNameSet, BA512RangeSet, BodySet>
+impl<'a, C, ContainerNameSet, BlobNameSet, BodySet> BA512RangeSupport<'a>
+    for UpdatePageBuilder<'a, C, ContainerNameSet, BlobNameSet, No, BodySet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
-    BA512RangeSet: ToAssign,
     BodySet: ToAssign,
+    C: Client,
 {
-    type O = UpdatePageBuilder<'a, ContainerNameSet, BlobNameSet, Yes, BodySet>;
+    type O = UpdatePageBuilder<'a, C, ContainerNameSet, BlobNameSet, Yes, BodySet>;
 
     #[inline]
     fn with_ba512_range(self, ba512_range: &'a BA512Range) -> Self::O {
@@ -333,15 +343,15 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, BA512RangeSet, BodySet> BodySupport<'a>
-    for UpdatePageBuilder<'a, ContainerNameSet, BlobNameSet, BA512RangeSet, BodySet>
+impl<'a, C, ContainerNameSet, BlobNameSet, BA512RangeSet> BodySupport<'a>
+    for UpdatePageBuilder<'a, C, ContainerNameSet, BlobNameSet, BA512RangeSet, No>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     BA512RangeSet: ToAssign,
-    BodySet: ToAssign,
+    C: Client,
 {
-    type O = UpdatePageBuilder<'a, ContainerNameSet, BlobNameSet, BA512RangeSet, Yes>;
+    type O = UpdatePageBuilder<'a, C, ContainerNameSet, BlobNameSet, BA512RangeSet, Yes>;
 
     #[inline]
     fn with_body(self, body: &'a [u8]) -> Self::O {
@@ -366,15 +376,16 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, BA512RangeSet, BodySet> ContentMD5Support<'a>
-    for UpdatePageBuilder<'a, ContainerNameSet, BlobNameSet, BA512RangeSet, BodySet>
+impl<'a, C, ContainerNameSet, BlobNameSet, BA512RangeSet, BodySet> ContentMD5Support<'a>
+    for UpdatePageBuilder<'a, C, ContainerNameSet, BlobNameSet, BA512RangeSet, BodySet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     BA512RangeSet: ToAssign,
     BodySet: ToAssign,
+    C: Client,
 {
-    type O = UpdatePageBuilder<'a, ContainerNameSet, BlobNameSet, BA512RangeSet, BodySet>;
+    type O = UpdatePageBuilder<'a, C, ContainerNameSet, BlobNameSet, BA512RangeSet, BodySet>;
 
     #[inline]
     fn with_content_md5(self, content_md5: &'a [u8]) -> Self::O {
@@ -399,15 +410,16 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, BA512RangeSet, BodySet> LeaseIdSupport<'a>
-    for UpdatePageBuilder<'a, ContainerNameSet, BlobNameSet, BA512RangeSet, BodySet>
+impl<'a, C, ContainerNameSet, BlobNameSet, BA512RangeSet, BodySet> LeaseIdSupport<'a>
+    for UpdatePageBuilder<'a, C, ContainerNameSet, BlobNameSet, BA512RangeSet, BodySet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     BA512RangeSet: ToAssign,
     BodySet: ToAssign,
+    C: Client,
 {
-    type O = UpdatePageBuilder<'a, ContainerNameSet, BlobNameSet, BA512RangeSet, BodySet>;
+    type O = UpdatePageBuilder<'a, C, ContainerNameSet, BlobNameSet, BA512RangeSet, BodySet>;
 
     #[inline]
     fn with_lease_id(self, lease_id: &'a LeaseId) -> Self::O {
@@ -432,15 +444,16 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, BA512RangeSet, BodySet> SequenceNumberConditionSupport
-    for UpdatePageBuilder<'a, ContainerNameSet, BlobNameSet, BA512RangeSet, BodySet>
+impl<'a, C, ContainerNameSet, BlobNameSet, BA512RangeSet, BodySet> SequenceNumberConditionSupport
+    for UpdatePageBuilder<'a, C, ContainerNameSet, BlobNameSet, BA512RangeSet, BodySet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     BA512RangeSet: ToAssign,
     BodySet: ToAssign,
+    C: Client,
 {
-    type O = UpdatePageBuilder<'a, ContainerNameSet, BlobNameSet, BA512RangeSet, BodySet>;
+    type O = UpdatePageBuilder<'a, C, ContainerNameSet, BlobNameSet, BA512RangeSet, BodySet>;
 
     #[inline]
     fn with_sequence_number_condition(
@@ -468,15 +481,16 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, BA512RangeSet, BodySet> IfSinceConditionSupport
-    for UpdatePageBuilder<'a, ContainerNameSet, BlobNameSet, BA512RangeSet, BodySet>
+impl<'a, C, ContainerNameSet, BlobNameSet, BA512RangeSet, BodySet> IfSinceConditionSupport
+    for UpdatePageBuilder<'a, C, ContainerNameSet, BlobNameSet, BA512RangeSet, BodySet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     BA512RangeSet: ToAssign,
     BodySet: ToAssign,
+    C: Client,
 {
-    type O = UpdatePageBuilder<'a, ContainerNameSet, BlobNameSet, BA512RangeSet, BodySet>;
+    type O = UpdatePageBuilder<'a, C, ContainerNameSet, BlobNameSet, BA512RangeSet, BodySet>;
 
     #[inline]
     fn with_if_since_condition(self, if_since_condition: IfSinceCondition) -> Self::O {
@@ -501,15 +515,16 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, BA512RangeSet, BodySet> IfMatchConditionSupport<'a>
-    for UpdatePageBuilder<'a, ContainerNameSet, BlobNameSet, BA512RangeSet, BodySet>
+impl<'a, C, ContainerNameSet, BlobNameSet, BA512RangeSet, BodySet> IfMatchConditionSupport<'a>
+    for UpdatePageBuilder<'a, C, ContainerNameSet, BlobNameSet, BA512RangeSet, BodySet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     BA512RangeSet: ToAssign,
     BodySet: ToAssign,
+    C: Client,
 {
-    type O = UpdatePageBuilder<'a, ContainerNameSet, BlobNameSet, BA512RangeSet, BodySet>;
+    type O = UpdatePageBuilder<'a, C, ContainerNameSet, BlobNameSet, BA512RangeSet, BodySet>;
 
     #[inline]
     fn with_if_match_condition(self, if_match_condition: IfMatchCondition<'a>) -> Self::O {
@@ -534,15 +549,16 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, BA512RangeSet, BodySet> ClientRequestIdSupport<'a>
-    for UpdatePageBuilder<'a, ContainerNameSet, BlobNameSet, BA512RangeSet, BodySet>
+impl<'a, C, ContainerNameSet, BlobNameSet, BA512RangeSet, BodySet> ClientRequestIdSupport<'a>
+    for UpdatePageBuilder<'a, C, ContainerNameSet, BlobNameSet, BA512RangeSet, BodySet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     BA512RangeSet: ToAssign,
     BodySet: ToAssign,
+    C: Client,
 {
-    type O = UpdatePageBuilder<'a, ContainerNameSet, BlobNameSet, BA512RangeSet, BodySet>;
+    type O = UpdatePageBuilder<'a, C, ContainerNameSet, BlobNameSet, BA512RangeSet, BodySet>;
 
     #[inline]
     fn with_client_request_id(self, client_request_id: &'a str) -> Self::O {
@@ -567,15 +583,16 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, BA512RangeSet, BodySet> TimeoutSupport
-    for UpdatePageBuilder<'a, ContainerNameSet, BlobNameSet, BA512RangeSet, BodySet>
+impl<'a, C, ContainerNameSet, BlobNameSet, BA512RangeSet, BodySet> TimeoutSupport
+    for UpdatePageBuilder<'a, C, ContainerNameSet, BlobNameSet, BA512RangeSet, BodySet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     BA512RangeSet: ToAssign,
     BodySet: ToAssign,
+    C: Client,
 {
-    type O = UpdatePageBuilder<'a, ContainerNameSet, BlobNameSet, BA512RangeSet, BodySet>;
+    type O = UpdatePageBuilder<'a, C, ContainerNameSet, BlobNameSet, BA512RangeSet, BodySet>;
 
     #[inline]
     fn with_timeout(self, timeout: u64) -> Self::O {
@@ -600,20 +617,18 @@ where
     }
 }
 
-// methods callable regardless
-impl<'a, ContainerNameSet, BlobNameSet, BA512RangeSet, BodySet>
-    UpdatePageBuilder<'a, ContainerNameSet, BlobNameSet, BA512RangeSet, BodySet>
+// methods callable only when every mandatory field has been filled
+impl<'a, C> UpdatePageBuilder<'a, C, Yes, Yes, Yes, Yes>
 where
-    ContainerNameSet: ToAssign,
-    BlobNameSet: ToAssign,
-    BA512RangeSet: ToAssign,
-    BodySet: ToAssign,
+    C: Client,
 {
-}
-
-impl<'a> UpdatePageBuilder<'a, Yes, Yes, Yes, Yes> {
     pub async fn finalize(self) -> Result<UpdatePageResponse, AzureError> {
-        let mut uri = generate_blob_uri(&self, Some("comp=page"));
+        let mut uri = generate_blob_uri(
+            self.client(),
+            self.container_name(),
+            self.blob_name(),
+            Some("comp=page"),
+        );
 
         if let Some(timeout) = TimeoutOption::to_uri_parameter(&self) {
             uri = format!("{}&{}", uri, timeout);
@@ -628,7 +643,7 @@ impl<'a> UpdatePageBuilder<'a, Yes, Yes, Yes, Yes> {
         let future_response = self.client().perform_request(
             &uri,
             &Method::PUT,
-            |mut request| {
+            &|mut request| {
                 request = BA512RangeRequired::add_header(&self, request);
                 request = ContentMD5Option::add_header(&self, request);
                 request = request.header(PAGE_WRITE, "update");

@@ -20,7 +20,7 @@ async fn code() -> Result<(), Box<dyn std::error::Error>> {
     let master_key =
         std::env::var("STORAGE_MASTER_KEY").expect("Set env variable STORAGE_MASTER_KEY first!");
 
-    let client = Client::new(&account, &master_key)?;
+    let client = client::with_access_key(&account, &master_key);
 
     if client
         .list_containers()

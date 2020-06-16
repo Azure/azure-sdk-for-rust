@@ -4,34 +4,44 @@
 extern crate log;
 #[macro_use]
 extern crate quick_error;
+mod bearer_token_client;
+mod blob_sas_builder;
 pub mod client;
+mod client_endpoint;
+mod connection_string;
+mod connection_string_builder;
+mod container_sas_builder;
+mod hyper_client_endpoint;
+mod into_azure_path;
+pub mod key_client;
+pub mod prelude;
 mod rest_client;
+pub mod shared_access_signature;
+pub use self::connection_string::{ConnectionString, EndpointProtocol};
+pub use self::connection_string_builder::ConnectionStringBuilder;
+pub use self::into_azure_path::IntoAzurePath;
 pub use self::rest_client::{
     get_default_json_mime, get_json_mime_fullmetadata, get_json_mime_nometadata, perform_request,
     ServiceType,
 };
-use crate::client::Client;
+use crate::key_client::KeyClient;
 use azure_sdk_core::errors::AzureError;
 use azure_sdk_core::headers::COPY_ID;
 use azure_sdk_core::util::HeaderMapExt;
-mod into_azure_path;
-pub mod prelude;
-pub use self::into_azure_path::IntoAzurePath;
-mod blob_sas_builder;
-use http::HeaderMap;
-mod connection_string;
-mod connection_string_builder;
-pub use self::connection_string::{ConnectionString, EndpointProtocol};
-pub use self::connection_string_builder::ConnectionStringBuilder;
-mod client_endpoint;
-mod container_sas_builder;
-mod hyper_client_endpoint;
-pub mod shared_access_signature;
+pub use client::Client;
 pub use client_endpoint::ClientEndpoint;
+use http::HeaderMap;
 pub use hyper_client_endpoint::HyperClientEndpoint;
 
-pub trait ClientRequired<'a> {
-    fn client(&self) -> &'a Client;
+pub trait ClientRequired<'a, C>
+where
+    C: Client,
+{
+    fn client(&self) -> &'a C;
+}
+
+pub trait KeyClientRequired<'a> {
+    fn key_client(&self) -> &'a KeyClient;
 }
 
 pub trait SharedAccessSignatureSupport<'a> {

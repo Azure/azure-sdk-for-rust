@@ -2,24 +2,20 @@ use crate::container::responses::AcquireLeaseResponse;
 use azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError};
 use azure_sdk_core::headers::LEASE_ACTION;
 use azure_sdk_core::lease::LeaseId;
-use azure_sdk_core::{
-    ClientRequestIdOption, ClientRequestIdSupport, ContainerNameRequired, ContainerNameSupport,
-    LeaseDurationRequired, LeaseDurationSupport, LeaseIdOption, LeaseIdSupport,
-    ProposedLeaseIdOption, ProposedLeaseIdSupport, TimeoutOption, TimeoutSupport,
-};
+use azure_sdk_core::prelude::*;
 use azure_sdk_core::{No, ToAssign, Yes};
-use azure_sdk_storage_core::client::Client;
-use azure_sdk_storage_core::ClientRequired;
+use azure_sdk_storage_core::prelude::*;
 use hyper::{Method, StatusCode};
 use std::marker::PhantomData;
 
 #[derive(Debug, Clone)]
-pub struct AcquireLeaseBuilder<'a, ContainerNameSet, LeaseDurationSet>
+pub struct AcquireLeaseBuilder<'a, C, ContainerNameSet, LeaseDurationSet>
 where
     ContainerNameSet: ToAssign,
     LeaseDurationSet: ToAssign,
+    C: Client,
 {
-    client: &'a Client,
+    client: &'a C,
     p_container_name: PhantomData<ContainerNameSet>,
     p_lease_duration: PhantomData<LeaseDurationSet>,
     container_name: Option<&'a str>,
@@ -30,8 +26,12 @@ where
     proposed_lease_id: Option<&'a LeaseId>,
 }
 
-impl<'a> AcquireLeaseBuilder<'a, No, No> {
-    pub(crate) fn new(client: &'a Client) -> AcquireLeaseBuilder<'a, No, No> {
+impl<'a, C> AcquireLeaseBuilder<'a, C, No, No>
+where
+    C: Client,
+{
+    #[inline]
+    pub(crate) fn new(client: &'a C) -> AcquireLeaseBuilder<'a, C, No, No> {
         AcquireLeaseBuilder {
             client,
             p_container_name: PhantomData {},
@@ -46,88 +46,107 @@ impl<'a> AcquireLeaseBuilder<'a, No, No> {
     }
 }
 
-impl<'a, ContainerNameSet, LeaseDurationSet> ClientRequired<'a>
-    for AcquireLeaseBuilder<'a, ContainerNameSet, LeaseDurationSet>
+impl<'a, C, ContainerNameSet, LeaseDurationSet> ClientRequired<'a, C>
+    for AcquireLeaseBuilder<'a, C, ContainerNameSet, LeaseDurationSet>
 where
     ContainerNameSet: ToAssign,
     LeaseDurationSet: ToAssign,
+    C: Client,
 {
-    fn client(&self) -> &'a Client {
+    #[inline]
+    fn client(&self) -> &'a C {
         self.client
     }
 }
 
-impl<'a, LeaseDurationSet> ContainerNameRequired<'a>
-    for AcquireLeaseBuilder<'a, Yes, LeaseDurationSet>
+//get mandatory no traits methods
+
+//set mandatory no traits methods
+impl<'a, C, LeaseDurationSet> ContainerNameRequired<'a>
+    for AcquireLeaseBuilder<'a, C, Yes, LeaseDurationSet>
 where
     LeaseDurationSet: ToAssign,
+    C: Client,
 {
+    #[inline]
     fn container_name(&self) -> &'a str {
         self.container_name.unwrap()
     }
 }
 
-impl<'a, ContainerNameSet, LeaseDurationSet> ClientRequestIdOption<'a>
-    for AcquireLeaseBuilder<'a, ContainerNameSet, LeaseDurationSet>
+impl<'a, C, ContainerNameSet, LeaseDurationSet> ClientRequestIdOption<'a>
+    for AcquireLeaseBuilder<'a, C, ContainerNameSet, LeaseDurationSet>
 where
     ContainerNameSet: ToAssign,
     LeaseDurationSet: ToAssign,
+    C: Client,
 {
+    #[inline]
     fn client_request_id(&self) -> Option<&'a str> {
         self.client_request_id
     }
 }
 
-impl<'a, ContainerNameSet, LeaseDurationSet> TimeoutOption
-    for AcquireLeaseBuilder<'a, ContainerNameSet, LeaseDurationSet>
+impl<'a, C, ContainerNameSet, LeaseDurationSet> TimeoutOption
+    for AcquireLeaseBuilder<'a, C, ContainerNameSet, LeaseDurationSet>
 where
     ContainerNameSet: ToAssign,
     LeaseDurationSet: ToAssign,
+    C: Client,
 {
+    #[inline]
     fn timeout(&self) -> Option<u64> {
         self.timeout
     }
 }
 
-impl<'a, ContainerNameSet, LeaseDurationSet> LeaseIdOption<'a>
-    for AcquireLeaseBuilder<'a, ContainerNameSet, LeaseDurationSet>
+impl<'a, C, ContainerNameSet, LeaseDurationSet> LeaseIdOption<'a>
+    for AcquireLeaseBuilder<'a, C, ContainerNameSet, LeaseDurationSet>
 where
     ContainerNameSet: ToAssign,
     LeaseDurationSet: ToAssign,
+    C: Client,
 {
+    #[inline]
     fn lease_id(&self) -> Option<&'a LeaseId> {
         self.lease_id
     }
 }
 
-impl<'a, ContainerNameSet> LeaseDurationRequired for AcquireLeaseBuilder<'a, ContainerNameSet, Yes>
+impl<'a, C, ContainerNameSet> LeaseDurationRequired
+    for AcquireLeaseBuilder<'a, C, ContainerNameSet, Yes>
 where
     ContainerNameSet: ToAssign,
+    C: Client,
 {
+    #[inline]
     fn lease_duration(&self) -> i8 {
         self.lease_duration.unwrap()
     }
 }
 
-impl<'a, ContainerNameSet, LeaseDurationSet> ProposedLeaseIdOption<'a>
-    for AcquireLeaseBuilder<'a, ContainerNameSet, LeaseDurationSet>
+impl<'a, C, ContainerNameSet, LeaseDurationSet> ProposedLeaseIdOption<'a>
+    for AcquireLeaseBuilder<'a, C, ContainerNameSet, LeaseDurationSet>
 where
     ContainerNameSet: ToAssign,
     LeaseDurationSet: ToAssign,
+    C: Client,
 {
+    #[inline]
     fn proposed_lease_id(&self) -> Option<&'a LeaseId> {
         self.proposed_lease_id
     }
 }
 
-impl<'a, ContainerNameSet, LeaseDurationSet> ContainerNameSupport<'a>
-    for AcquireLeaseBuilder<'a, ContainerNameSet, LeaseDurationSet>
+impl<'a, C, LeaseDurationSet> ContainerNameSupport<'a>
+    for AcquireLeaseBuilder<'a, C, No, LeaseDurationSet>
 where
-    ContainerNameSet: ToAssign,
     LeaseDurationSet: ToAssign,
+    C: Client,
 {
-    type O = AcquireLeaseBuilder<'a, Yes, LeaseDurationSet>;
+    type O = AcquireLeaseBuilder<'a, C, Yes, LeaseDurationSet>;
 
+    #[inline]
     fn with_container_name(self, container_name: &'a str) -> Self::O {
         AcquireLeaseBuilder {
             client: self.client,
@@ -143,14 +162,16 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, LeaseDurationSet> ClientRequestIdSupport<'a>
-    for AcquireLeaseBuilder<'a, ContainerNameSet, LeaseDurationSet>
+impl<'a, C, ContainerNameSet, LeaseDurationSet> ClientRequestIdSupport<'a>
+    for AcquireLeaseBuilder<'a, C, ContainerNameSet, LeaseDurationSet>
 where
     ContainerNameSet: ToAssign,
     LeaseDurationSet: ToAssign,
+    C: Client,
 {
-    type O = AcquireLeaseBuilder<'a, ContainerNameSet, LeaseDurationSet>;
+    type O = AcquireLeaseBuilder<'a, C, ContainerNameSet, LeaseDurationSet>;
 
+    #[inline]
     fn with_client_request_id(self, client_request_id: &'a str) -> Self::O {
         AcquireLeaseBuilder {
             client: self.client,
@@ -166,14 +187,16 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, LeaseDurationSet> TimeoutSupport
-    for AcquireLeaseBuilder<'a, ContainerNameSet, LeaseDurationSet>
+impl<'a, C, ContainerNameSet, LeaseDurationSet> TimeoutSupport
+    for AcquireLeaseBuilder<'a, C, ContainerNameSet, LeaseDurationSet>
 where
     ContainerNameSet: ToAssign,
     LeaseDurationSet: ToAssign,
+    C: Client,
 {
-    type O = AcquireLeaseBuilder<'a, ContainerNameSet, LeaseDurationSet>;
+    type O = AcquireLeaseBuilder<'a, C, ContainerNameSet, LeaseDurationSet>;
 
+    #[inline]
     fn with_timeout(self, timeout: u64) -> Self::O {
         AcquireLeaseBuilder {
             client: self.client,
@@ -189,14 +212,16 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, LeaseDurationSet> LeaseIdSupport<'a>
-    for AcquireLeaseBuilder<'a, ContainerNameSet, LeaseDurationSet>
+impl<'a, C, ContainerNameSet, LeaseDurationSet> LeaseIdSupport<'a>
+    for AcquireLeaseBuilder<'a, C, ContainerNameSet, LeaseDurationSet>
 where
     ContainerNameSet: ToAssign,
     LeaseDurationSet: ToAssign,
+    C: Client,
 {
-    type O = AcquireLeaseBuilder<'a, ContainerNameSet, LeaseDurationSet>;
+    type O = AcquireLeaseBuilder<'a, C, ContainerNameSet, LeaseDurationSet>;
 
+    #[inline]
     fn with_lease_id(self, lease_id: &'a LeaseId) -> Self::O {
         AcquireLeaseBuilder {
             client: self.client,
@@ -212,14 +237,15 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, LeaseDurationSet> LeaseDurationSupport
-    for AcquireLeaseBuilder<'a, ContainerNameSet, LeaseDurationSet>
+impl<'a, C, ContainerNameSet> LeaseDurationSupport
+    for AcquireLeaseBuilder<'a, C, ContainerNameSet, No>
 where
     ContainerNameSet: ToAssign,
-    LeaseDurationSet: ToAssign,
+    C: Client,
 {
-    type O = AcquireLeaseBuilder<'a, ContainerNameSet, Yes>;
+    type O = AcquireLeaseBuilder<'a, C, ContainerNameSet, Yes>;
 
+    #[inline]
     fn with_lease_duration(self, lease_duration: i8) -> Self::O {
         AcquireLeaseBuilder {
             client: self.client,
@@ -235,14 +261,16 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, LeaseDurationSet> ProposedLeaseIdSupport<'a>
-    for AcquireLeaseBuilder<'a, ContainerNameSet, LeaseDurationSet>
+impl<'a, C, ContainerNameSet, LeaseDurationSet> ProposedLeaseIdSupport<'a>
+    for AcquireLeaseBuilder<'a, C, ContainerNameSet, LeaseDurationSet>
 where
     ContainerNameSet: ToAssign,
     LeaseDurationSet: ToAssign,
+    C: Client,
 {
-    type O = AcquireLeaseBuilder<'a, ContainerNameSet, LeaseDurationSet>;
+    type O = AcquireLeaseBuilder<'a, C, ContainerNameSet, LeaseDurationSet>;
 
+    #[inline]
     fn with_proposed_lease_id(self, proposed_lease_id: &'a LeaseId) -> Self::O {
         AcquireLeaseBuilder {
             client: self.client,
@@ -258,16 +286,11 @@ where
     }
 }
 
-// methods callable regardless
-impl<'a, ContainerNameSet, LeaseDurationSet>
-    AcquireLeaseBuilder<'a, ContainerNameSet, LeaseDurationSet>
+// methods callable only when every mandatory field has been filled
+impl<'a, C> AcquireLeaseBuilder<'a, C, Yes, Yes>
 where
-    ContainerNameSet: ToAssign,
-    LeaseDurationSet: ToAssign,
+    C: Client,
 {
-}
-
-impl<'a> AcquireLeaseBuilder<'a, Yes, Yes> {
     pub async fn finalize(self) -> Result<AcquireLeaseResponse, AzureError> {
         let mut uri = format!(
             "{}/{}?comp=lease&restype=container",
@@ -282,7 +305,7 @@ impl<'a> AcquireLeaseBuilder<'a, Yes, Yes> {
         let future_response = self.client().perform_request(
             &uri,
             &Method::PUT,
-            |mut request| {
+            &|mut request| {
                 request = ClientRequestIdOption::add_header(&self, request);
                 request = LeaseIdOption::add_header(&self, request);
                 request = request.header(LEASE_ACTION, "acquire");

@@ -1,7 +1,5 @@
 {
 	"name": "CopyBlobFromUrlBuilder",
-	"extra_types": [ "'a" ],
-	"extra_wheres": [],
 	"uses": [
 		"azure_sdk_core::lease::LeaseId",
 		"azure_sdk_core::prelude::*",
@@ -15,11 +13,14 @@
 		"azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError}",
 		"crate::blob::generate_blob_uri"
 	],
+	"inline": true,
+	"extra_types": [ "'a", "C" ],
+	"extra_wheres": [ "C: Client" ],
 	"constructor_fields": [
 		{
 			"name": "client",
-			"field_type": "&'a Client",
-			"trait_get": "ClientRequired<'a>"
+			"field_type": "&'a C",
+			"trait_get": "ClientRequired<'a, C>"
 		}
 	],
 	"fields": [

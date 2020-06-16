@@ -15,15 +15,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .nth(1)
         .expect("please specify container name as command line parameter");
 
-    let client = Client::new(&account, &master_key)?;
+    let client = client::with_access_key(&account, &master_key);
 
     let mut count: u32 = 0;
-    let mut list_blobs = Box::pin(
-        client
-            .stream_list_blobs()
-            .with_container_name(&container)
-            .finalize(),
-    );
+    let mut list_blobs = Box::pin(client.list_blobs().with_container_name(&container).stream());
     while let Some(_blob) = list_blobs.next().await {
         count += 1;
     }

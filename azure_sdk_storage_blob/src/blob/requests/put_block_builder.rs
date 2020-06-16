@@ -2,26 +2,22 @@ use crate::blob::generate_blob_uri;
 use crate::blob::responses::PutBlockResponse;
 use azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError};
 use azure_sdk_core::lease::LeaseId;
-use azure_sdk_core::{
-    BlobNameRequired, BlobNameSupport, BlockIdRequired, BlockIdSupport, BodyRequired, BodySupport,
-    ClientRequestIdOption, ClientRequestIdSupport, ContainerNameRequired, ContainerNameSupport,
-    ContentMD5Option, ContentMD5Support, LeaseIdOption, LeaseIdSupport, No, TimeoutOption,
-    TimeoutSupport, ToAssign, Yes,
-};
-use azure_sdk_storage_core::client::Client;
-use azure_sdk_storage_core::ClientRequired;
+use azure_sdk_core::prelude::*;
+use azure_sdk_core::{No, ToAssign, Yes};
+use azure_sdk_storage_core::prelude::*;
 use hyper::{Method, StatusCode};
 use std::marker::PhantomData;
 
 #[derive(Debug, Clone)]
-pub struct PutBlockBuilder<'a, ContainerNameSet, BlobNameSet, BodySet, BlockIdSet>
+pub struct PutBlockBuilder<'a, C, ContainerNameSet, BlobNameSet, BodySet, BlockIdSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     BodySet: ToAssign,
     BlockIdSet: ToAssign,
+    C: Client,
 {
-    client: &'a Client,
+    client: &'a C,
     p_container_name: PhantomData<ContainerNameSet>,
     p_blob_name: PhantomData<BlobNameSet>,
     p_body: PhantomData<BodySet>,
@@ -36,9 +32,12 @@ where
     client_request_id: Option<&'a str>,
 }
 
-impl<'a> PutBlockBuilder<'a, No, No, No, No> {
+impl<'a, C> PutBlockBuilder<'a, C, No, No, No, No>
+where
+    C: Client,
+{
     #[inline]
-    pub(crate) fn new(client: &'a Client) -> PutBlockBuilder<'a, No, No, No, No> {
+    pub(crate) fn new(client: &'a C) -> PutBlockBuilder<'a, C, No, No, No, No> {
         PutBlockBuilder {
             client,
             p_container_name: PhantomData {},
@@ -57,26 +56,31 @@ impl<'a> PutBlockBuilder<'a, No, No, No, No> {
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, BodySet, BlockIdSet> ClientRequired<'a>
-    for PutBlockBuilder<'a, ContainerNameSet, BlobNameSet, BodySet, BlockIdSet>
+impl<'a, C, ContainerNameSet, BlobNameSet, BodySet, BlockIdSet> ClientRequired<'a, C>
+    for PutBlockBuilder<'a, C, ContainerNameSet, BlobNameSet, BodySet, BlockIdSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     BodySet: ToAssign,
     BlockIdSet: ToAssign,
+    C: Client,
 {
     #[inline]
-    fn client(&self) -> &'a Client {
+    fn client(&self) -> &'a C {
         self.client
     }
 }
 
-impl<'a, BlobNameSet, BodySet, BlockIdSet> ContainerNameRequired<'a>
-    for PutBlockBuilder<'a, Yes, BlobNameSet, BodySet, BlockIdSet>
+//get mandatory no traits methods
+
+//set mandatory no traits methods
+impl<'a, C, BlobNameSet, BodySet, BlockIdSet> ContainerNameRequired<'a>
+    for PutBlockBuilder<'a, C, Yes, BlobNameSet, BodySet, BlockIdSet>
 where
     BlobNameSet: ToAssign,
     BodySet: ToAssign,
     BlockIdSet: ToAssign,
+    C: Client,
 {
     #[inline]
     fn container_name(&self) -> &'a str {
@@ -84,12 +88,13 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BodySet, BlockIdSet> BlobNameRequired<'a>
-    for PutBlockBuilder<'a, ContainerNameSet, Yes, BodySet, BlockIdSet>
+impl<'a, C, ContainerNameSet, BodySet, BlockIdSet> BlobNameRequired<'a>
+    for PutBlockBuilder<'a, C, ContainerNameSet, Yes, BodySet, BlockIdSet>
 where
     ContainerNameSet: ToAssign,
     BodySet: ToAssign,
     BlockIdSet: ToAssign,
+    C: Client,
 {
     #[inline]
     fn blob_name(&self) -> &'a str {
@@ -97,12 +102,13 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, BlockIdSet> BodyRequired<'a>
-    for PutBlockBuilder<'a, ContainerNameSet, BlobNameSet, Yes, BlockIdSet>
+impl<'a, C, ContainerNameSet, BlobNameSet, BlockIdSet> BodyRequired<'a>
+    for PutBlockBuilder<'a, C, ContainerNameSet, BlobNameSet, Yes, BlockIdSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     BlockIdSet: ToAssign,
+    C: Client,
 {
     #[inline]
     fn body(&self) -> &'a [u8] {
@@ -110,12 +116,13 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, BodySet> BlockIdRequired<'a>
-    for PutBlockBuilder<'a, ContainerNameSet, BlobNameSet, BodySet, Yes>
+impl<'a, C, ContainerNameSet, BlobNameSet, BodySet> BlockIdRequired<'a>
+    for PutBlockBuilder<'a, C, ContainerNameSet, BlobNameSet, BodySet, Yes>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     BodySet: ToAssign,
+    C: Client,
 {
     #[inline]
     fn block_id(&self) -> &'a [u8] {
@@ -123,13 +130,14 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, BodySet, BlockIdSet> TimeoutOption
-    for PutBlockBuilder<'a, ContainerNameSet, BlobNameSet, BodySet, BlockIdSet>
+impl<'a, C, ContainerNameSet, BlobNameSet, BodySet, BlockIdSet> TimeoutOption
+    for PutBlockBuilder<'a, C, ContainerNameSet, BlobNameSet, BodySet, BlockIdSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     BodySet: ToAssign,
     BlockIdSet: ToAssign,
+    C: Client,
 {
     #[inline]
     fn timeout(&self) -> Option<u64> {
@@ -137,13 +145,14 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, BodySet, BlockIdSet> ContentMD5Option<'a>
-    for PutBlockBuilder<'a, ContainerNameSet, BlobNameSet, BodySet, BlockIdSet>
+impl<'a, C, ContainerNameSet, BlobNameSet, BodySet, BlockIdSet> ContentMD5Option<'a>
+    for PutBlockBuilder<'a, C, ContainerNameSet, BlobNameSet, BodySet, BlockIdSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     BodySet: ToAssign,
     BlockIdSet: ToAssign,
+    C: Client,
 {
     #[inline]
     fn content_md5(&self) -> Option<&'a [u8]> {
@@ -151,13 +160,14 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, BodySet, BlockIdSet> LeaseIdOption<'a>
-    for PutBlockBuilder<'a, ContainerNameSet, BlobNameSet, BodySet, BlockIdSet>
+impl<'a, C, ContainerNameSet, BlobNameSet, BodySet, BlockIdSet> LeaseIdOption<'a>
+    for PutBlockBuilder<'a, C, ContainerNameSet, BlobNameSet, BodySet, BlockIdSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     BodySet: ToAssign,
     BlockIdSet: ToAssign,
+    C: Client,
 {
     #[inline]
     fn lease_id(&self) -> Option<&'a LeaseId> {
@@ -165,13 +175,14 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, BodySet, BlockIdSet> ClientRequestIdOption<'a>
-    for PutBlockBuilder<'a, ContainerNameSet, BlobNameSet, BodySet, BlockIdSet>
+impl<'a, C, ContainerNameSet, BlobNameSet, BodySet, BlockIdSet> ClientRequestIdOption<'a>
+    for PutBlockBuilder<'a, C, ContainerNameSet, BlobNameSet, BodySet, BlockIdSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     BodySet: ToAssign,
     BlockIdSet: ToAssign,
+    C: Client,
 {
     #[inline]
     fn client_request_id(&self) -> Option<&'a str> {
@@ -179,15 +190,15 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, BodySet, BlockIdSet> ContainerNameSupport<'a>
-    for PutBlockBuilder<'a, ContainerNameSet, BlobNameSet, BodySet, BlockIdSet>
+impl<'a, C, BlobNameSet, BodySet, BlockIdSet> ContainerNameSupport<'a>
+    for PutBlockBuilder<'a, C, No, BlobNameSet, BodySet, BlockIdSet>
 where
-    ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     BodySet: ToAssign,
     BlockIdSet: ToAssign,
+    C: Client,
 {
-    type O = PutBlockBuilder<'a, Yes, BlobNameSet, BodySet, BlockIdSet>;
+    type O = PutBlockBuilder<'a, C, Yes, BlobNameSet, BodySet, BlockIdSet>;
 
     #[inline]
     fn with_container_name(self, container_name: &'a str) -> Self::O {
@@ -209,15 +220,15 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, BodySet, BlockIdSet> BlobNameSupport<'a>
-    for PutBlockBuilder<'a, ContainerNameSet, BlobNameSet, BodySet, BlockIdSet>
+impl<'a, C, ContainerNameSet, BodySet, BlockIdSet> BlobNameSupport<'a>
+    for PutBlockBuilder<'a, C, ContainerNameSet, No, BodySet, BlockIdSet>
 where
     ContainerNameSet: ToAssign,
-    BlobNameSet: ToAssign,
     BodySet: ToAssign,
     BlockIdSet: ToAssign,
+    C: Client,
 {
-    type O = PutBlockBuilder<'a, ContainerNameSet, Yes, BodySet, BlockIdSet>;
+    type O = PutBlockBuilder<'a, C, ContainerNameSet, Yes, BodySet, BlockIdSet>;
 
     #[inline]
     fn with_blob_name(self, blob_name: &'a str) -> Self::O {
@@ -239,15 +250,15 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, BodySet, BlockIdSet> BodySupport<'a>
-    for PutBlockBuilder<'a, ContainerNameSet, BlobNameSet, BodySet, BlockIdSet>
+impl<'a, C, ContainerNameSet, BlobNameSet, BlockIdSet> BodySupport<'a>
+    for PutBlockBuilder<'a, C, ContainerNameSet, BlobNameSet, No, BlockIdSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
-    BodySet: ToAssign,
     BlockIdSet: ToAssign,
+    C: Client,
 {
-    type O = PutBlockBuilder<'a, ContainerNameSet, BlobNameSet, Yes, BlockIdSet>;
+    type O = PutBlockBuilder<'a, C, ContainerNameSet, BlobNameSet, Yes, BlockIdSet>;
 
     #[inline]
     fn with_body(self, body: &'a [u8]) -> Self::O {
@@ -269,15 +280,15 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, BodySet, BlockIdSet> BlockIdSupport<'a>
-    for PutBlockBuilder<'a, ContainerNameSet, BlobNameSet, BodySet, BlockIdSet>
+impl<'a, C, ContainerNameSet, BlobNameSet, BodySet> BlockIdSupport<'a>
+    for PutBlockBuilder<'a, C, ContainerNameSet, BlobNameSet, BodySet, No>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     BodySet: ToAssign,
-    BlockIdSet: ToAssign,
+    C: Client,
 {
-    type O = PutBlockBuilder<'a, ContainerNameSet, BlobNameSet, BodySet, Yes>;
+    type O = PutBlockBuilder<'a, C, ContainerNameSet, BlobNameSet, BodySet, Yes>;
 
     #[inline]
     fn with_block_id(self, block_id: &'a [u8]) -> Self::O {
@@ -299,15 +310,16 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, BodySet, BlockIdSet> TimeoutSupport
-    for PutBlockBuilder<'a, ContainerNameSet, BlobNameSet, BodySet, BlockIdSet>
+impl<'a, C, ContainerNameSet, BlobNameSet, BodySet, BlockIdSet> TimeoutSupport
+    for PutBlockBuilder<'a, C, ContainerNameSet, BlobNameSet, BodySet, BlockIdSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     BodySet: ToAssign,
     BlockIdSet: ToAssign,
+    C: Client,
 {
-    type O = PutBlockBuilder<'a, ContainerNameSet, BlobNameSet, BodySet, BlockIdSet>;
+    type O = PutBlockBuilder<'a, C, ContainerNameSet, BlobNameSet, BodySet, BlockIdSet>;
 
     #[inline]
     fn with_timeout(self, timeout: u64) -> Self::O {
@@ -329,15 +341,16 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, BodySet, BlockIdSet> ContentMD5Support<'a>
-    for PutBlockBuilder<'a, ContainerNameSet, BlobNameSet, BodySet, BlockIdSet>
+impl<'a, C, ContainerNameSet, BlobNameSet, BodySet, BlockIdSet> ContentMD5Support<'a>
+    for PutBlockBuilder<'a, C, ContainerNameSet, BlobNameSet, BodySet, BlockIdSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     BodySet: ToAssign,
     BlockIdSet: ToAssign,
+    C: Client,
 {
-    type O = PutBlockBuilder<'a, ContainerNameSet, BlobNameSet, BodySet, BlockIdSet>;
+    type O = PutBlockBuilder<'a, C, ContainerNameSet, BlobNameSet, BodySet, BlockIdSet>;
 
     #[inline]
     fn with_content_md5(self, content_md5: &'a [u8]) -> Self::O {
@@ -359,15 +372,16 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, BodySet, BlockIdSet> LeaseIdSupport<'a>
-    for PutBlockBuilder<'a, ContainerNameSet, BlobNameSet, BodySet, BlockIdSet>
+impl<'a, C, ContainerNameSet, BlobNameSet, BodySet, BlockIdSet> LeaseIdSupport<'a>
+    for PutBlockBuilder<'a, C, ContainerNameSet, BlobNameSet, BodySet, BlockIdSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     BodySet: ToAssign,
     BlockIdSet: ToAssign,
+    C: Client,
 {
-    type O = PutBlockBuilder<'a, ContainerNameSet, BlobNameSet, BodySet, BlockIdSet>;
+    type O = PutBlockBuilder<'a, C, ContainerNameSet, BlobNameSet, BodySet, BlockIdSet>;
 
     #[inline]
     fn with_lease_id(self, lease_id: &'a LeaseId) -> Self::O {
@@ -389,15 +403,16 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, BodySet, BlockIdSet> ClientRequestIdSupport<'a>
-    for PutBlockBuilder<'a, ContainerNameSet, BlobNameSet, BodySet, BlockIdSet>
+impl<'a, C, ContainerNameSet, BlobNameSet, BodySet, BlockIdSet> ClientRequestIdSupport<'a>
+    for PutBlockBuilder<'a, C, ContainerNameSet, BlobNameSet, BodySet, BlockIdSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     BodySet: ToAssign,
     BlockIdSet: ToAssign,
+    C: Client,
 {
-    type O = PutBlockBuilder<'a, ContainerNameSet, BlobNameSet, BodySet, BlockIdSet>;
+    type O = PutBlockBuilder<'a, C, ContainerNameSet, BlobNameSet, BodySet, BlockIdSet>;
 
     #[inline]
     fn with_client_request_id(self, client_request_id: &'a str) -> Self::O {
@@ -419,21 +434,19 @@ where
     }
 }
 
-// methods callable regardless
-impl<'a, ContainerNameSet, BlobNameSet, BodySet, BlockIdSet>
-    PutBlockBuilder<'a, ContainerNameSet, BlobNameSet, BodySet, BlockIdSet>
+// methods callable only when every mandatory field has been filled
+impl<'a, C> PutBlockBuilder<'a, C, Yes, Yes, Yes, Yes>
 where
-    ContainerNameSet: ToAssign,
-    BlobNameSet: ToAssign,
-    BodySet: ToAssign,
-    BlockIdSet: ToAssign,
+    C: Client,
 {
-}
-
-impl<'a> PutBlockBuilder<'a, Yes, Yes, Yes, Yes> {
     #[inline]
     pub async fn finalize(self) -> Result<PutBlockResponse, AzureError> {
-        let mut uri = generate_blob_uri(&self, Some("comp=block"));
+        let mut uri = generate_blob_uri(
+            self.client(),
+            self.container_name(),
+            self.blob_name(),
+            Some("comp=block"),
+        );
 
         if let Some(timeout) = TimeoutOption::to_uri_parameter(&self) {
             uri = format!("{}&{}", uri, timeout);
@@ -445,7 +458,7 @@ impl<'a> PutBlockBuilder<'a, Yes, Yes, Yes, Yes> {
         let future_response = self.client().perform_request(
             &uri,
             &Method::PUT,
-            |mut request| {
+            &|mut request| {
                 request = ContentMD5Option::add_header(&self, request);
                 request = LeaseIdOption::add_header(&self, request);
                 request = ClientRequestIdOption::add_header(&self, request);

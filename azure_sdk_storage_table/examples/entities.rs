@@ -25,7 +25,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .nth(2)
         .expect("pass the row key as second command line parameter.");
 
-    let client = TableClient::new(&account, &master_key)?;
+    let client = TableClient::new(&account, &master_key);
     let table = CloudTable::new(client, table_name);
     table.create_if_not_exists().await?;
 

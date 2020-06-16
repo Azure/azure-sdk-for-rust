@@ -23,7 +23,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .nth(2)
         .expect("please specify blob name as command line parameter");
 
-    let client = Client::new(&account, &master_key)?;
+    let client = client::with_access_key(&account, &master_key);
 
     let data = b"something";
 
@@ -44,7 +44,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .with_content_md5(&digest[..])
         .finalize()
         .await?;
-    println!("{:?}", res);
+    println!("1-put_block_blob {:?}", res);
 
     let mut block_list = BlockList::default();
     block_list
@@ -62,9 +62,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .with_block_id(b"satanasso" as &[u8])
         .finalize()
         .await?;
-    println!("{:?}", res);
+    println!("2-put_block {:?}", res);
 
-    client
+    let res = client
         .put_block()
         .with_container_name(&container)
         .with_blob_name(&blob_name)
@@ -72,6 +72,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .with_block_id(b"pollastro" as &[u8])
         .finalize()
         .await?;
+    println!("3-put_block {:?}", res);
 
     let ret = client
         .get_block_list()

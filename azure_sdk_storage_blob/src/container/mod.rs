@@ -1,6 +1,8 @@
 pub mod requests;
 pub mod responses;
 
+use azure_sdk_core::incompletevector::IncompleteVector;
+use azure_sdk_core::StoredAccessPolicyList;
 use azure_sdk_core::{
     errors::AzureError,
     headers::{
@@ -9,9 +11,8 @@ use azure_sdk_core::{
     },
     lease::{LeaseDuration, LeaseState, LeaseStatus},
     parsing::{cast_must, cast_optional, traverse},
-    ContainerNameRequired,
 };
-use azure_sdk_storage_core::ClientRequired;
+use azure_sdk_storage_core::prelude::*;
 use chrono::{DateTime, Utc};
 use http::request::Builder;
 use http::HeaderMap;
@@ -56,6 +57,15 @@ pub trait PublicAccessRequired {
     }
 }
 
+pub trait StoredAccessPolicyListOption<'a> {
+    fn stored_access_policy_list(&self) -> Option<&'a StoredAccessPolicyList>;
+}
+
+pub trait StoredAccessPolicyListSupport<'a> {
+    type O;
+    fn with_stored_access_policy_list(self, sapl: &'a StoredAccessPolicyList) -> Self::O;
+}
+
 #[derive(Debug, Clone)]
 pub struct Container {
     pub name: String,
@@ -92,7 +102,10 @@ impl Container {
         }
     }
 
-    pub fn from_response(name: String, headers: &HeaderMap) -> Result<Container, AzureError> {
+    pub(crate) fn from_response(
+        name: String,
+        headers: &HeaderMap,
+    ) -> Result<Container, AzureError> {
         let last_modified = match headers.get(header::LAST_MODIFIED) {
             Some(last_modified) => last_modified.to_str()?,
             None => {
@@ -243,22 +256,46 @@ impl Container {
     }
 }
 
+pub(crate) fn incomplete_vector_from_container_response(
+    body: &str,
+) -> Result<IncompleteVector<Container>, AzureError> {
+    let elem: Element = body.parse()?;
+
+    let mut v = Vec::new();
+
+    for container in traverse(&elem, &["Containers", "Container"], true)? {
+        v.push(Container::parse(container)?);
+    }
+
+    let next_marker = match cast_optional::<String>(&elem, &["NextMarker"])? {
+        Some(ref nm) if nm == "" => None,
+        Some(nm) => Some(nm),
+        None => None,
+    };
+
+    Ok(IncompleteVector::new(next_marker, v))
+}
+
 #[inline]
-pub(crate) fn generate_container_uri<'a, T>(t: &T, params: Option<&str>) -> String
+pub(crate) fn generate_container_uri<'a, C>(
+    c: &C,
+    container_name: &str,
+    params: Option<&str>,
+) -> String
 where
-    T: ClientRequired<'a> + ContainerNameRequired<'a>,
+    C: Client,
 {
     match params {
         Some(ref params) => format!(
             "{}/{}?{}",
-            t.client().blob_uri(),
-            form_urlencoded::byte_serialize(t.container_name().as_bytes()).collect::<String>(),
+            c.blob_uri(),
+            form_urlencoded::byte_serialize(container_name.as_bytes()).collect::<String>(),
             params
         ),
         None => format!(
             "{}/{}",
-            t.client().blob_uri(),
-            form_urlencoded::byte_serialize(t.container_name().as_bytes()).collect::<String>(),
+            c.blob_uri(),
+            form_urlencoded::byte_serialize(container_name.as_bytes()).collect::<String>(),
         ),
     }
 }

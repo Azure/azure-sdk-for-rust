@@ -1,6 +1,3 @@
-#[macro_use]
-extern crate log;
-
 use azure_sdk_core::prelude::*;
 use azure_sdk_storage_blob::prelude::*;
 use azure_sdk_storage_core::prelude::*;
@@ -17,24 +14,37 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let container = std::env::args()
         .nth(1)
         .expect("please specify container name as command line parameter");
-    let blob = std::env::args()
-        .nth(2)
-        .expect("please specify blob name as command line parameter");
 
-    let client = Client::new(&account, &master_key)?;
+    let client = client::with_access_key(&account, &master_key);
 
-    trace!("Requesting blob");
+    let iv = client
+        .list_containers()
+        .with_max_results(2)
+        .finalize()
+        .await?;
+    println!(
+        "List containers returned {} containers.",
+        iv.incomplete_vector.len()
+    );
+    for cont in iv.incomplete_vector.iter() {
+        println!("\t{}", cont.name);
+    }
 
-    let response = client
-        .get_blob()
+    let iv = client
+        .list_blobs()
         .with_container_name(&container)
-        .with_blob_name(&blob)
+        .with_max_results(2)
         .finalize()
         .await?;
 
-    let s_content = String::from_utf8(response.data)?;
-    println!("blob == {:?}", blob);
-    println!("s_content == {}", s_content);
+    println!("List blob returned {} blobs.", iv.incomplete_vector.len());
+    for cont in iv.incomplete_vector.iter() {
+        println!(
+            "\t{}\t{} MB",
+            cont.name,
+            cont.content_length / (1024 * 1024)
+        );
+    }
 
     Ok(())
 }

@@ -1,12 +1,27 @@
 {
 	"name": "PutPageBlobBuilder",
-	"extra_types": [ "'a" ],
-	"extra_wheres": [],
+	"derive": "Debug, Clone",
+	"uses": [
+		"crate::blob::generate_blob_uri",
+		"crate::blob::responses::PutBlobResponse",
+		"azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError}",
+		"azure_sdk_core::headers::BLOB_TYPE",
+		"azure_sdk_core::lease::LeaseId",
+		"azure_sdk_core::prelude::*",
+		"azure_sdk_core::{No, ToAssign, Yes}",
+		"azure_sdk_storage_core::prelude::*",
+		"hyper::{Method, StatusCode}",
+		"std::collections::HashMap",
+		"std::marker::PhantomData"
+	],
+	"inline": true,
+	"extra_types": [ "'a", "C" ],
+	"extra_wheres": [ "C: Client" ],
 	"constructor_fields": [
 		{
 			"name": "client",
-			"field_type": "&'a Client",
-			"trait_get": "ClientRequired<'a>"
+			"field_type": "&'a C",
+			"trait_get": "ClientRequired<'a, C>"
 		}
 	],
 	"fields": [

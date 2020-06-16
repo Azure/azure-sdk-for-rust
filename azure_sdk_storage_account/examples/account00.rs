@@ -10,7 +10,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let master_key =
         std::env::var("STORAGE_MASTER_KEY").expect("Set env variable STORAGE_MASTER_KEY first!");
 
-    let client = Client::new(&account, &master_key)?;
+    let client = client::with_access_key(&account, &master_key);
 
     let response = client.get_account_information().finalize().await?;
     println!("{:?}", response);

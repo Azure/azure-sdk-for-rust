@@ -1,42 +1,41 @@
 use crate::blob::requests::GetBlobBuilder;
 use azure_sdk_core::errors::AzureError;
 use azure_sdk_core::lease::LeaseId;
-use azure_sdk_core::range::Range;
-use azure_sdk_core::{
-    BlobNameRequired, BlobNameSupport, ClientRequestIdOption, ClientRequestIdSupport,
-    ContainerNameRequired, ContainerNameSupport, LeaseIdOption, LeaseIdSupport, No, RangeRequired,
-    RangeSupport, SnapshotOption, SnapshotSupport, TimeoutOption, TimeoutSupport, ToAssign, Yes,
-};
-use azure_sdk_storage_core::client::Client;
-use azure_sdk_storage_core::ClientRequired;
+use azure_sdk_core::prelude::*;
+use azure_sdk_core::{No, ToAssign, Yes};
+use azure_sdk_storage_core::prelude::*;
 use chrono::{DateTime, Utc};
 use futures::stream::Stream;
 use std::marker::PhantomData;
 
 #[derive(Debug, Clone)]
-pub struct BlobStreamBuilder<'a, ContainerNameSet, BlobNameSet, RangeSet>
+pub struct BlobStreamBuilder<'a, C, ContainerNameSet, BlobNameSet, RangeSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     RangeSet: ToAssign,
+    C: Client,
 {
-    client: &'a Client,
+    client: &'a C,
     p_container_name: PhantomData<ContainerNameSet>,
     p_blob_name: PhantomData<BlobNameSet>,
     p_range: PhantomData<RangeSet>,
     container_name: Option<&'a str>,
     blob_name: Option<&'a str>,
+    range: Option<&'a Range>,
     snapshot: Option<DateTime<Utc>>,
     timeout: Option<u64>,
-    range: Option<&'a Range>,
     lease_id: Option<&'a LeaseId>,
     client_request_id: Option<&'a str>,
     chunk_size: u64,
 }
 
-impl<'a> BlobStreamBuilder<'a, No, No, No> {
+impl<'a, C> BlobStreamBuilder<'a, C, No, No, No>
+where
+    C: Client,
+{
     #[inline]
-    pub(crate) fn new(client: &'a Client) -> BlobStreamBuilder<'a, No, No, No> {
+    pub(crate) fn new(client: &'a C) -> BlobStreamBuilder<'a, C, No, No, No> {
         BlobStreamBuilder {
             client,
             p_container_name: PhantomData {},
@@ -49,60 +48,34 @@ impl<'a> BlobStreamBuilder<'a, No, No, No> {
             timeout: None,
             lease_id: None,
             client_request_id: None,
-            chunk_size: 1024 * 1024,
+            chunk_size: 1048576,
         }
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, RangeSet>
-    BlobStreamBuilder<'a, ContainerNameSet, BlobNameSet, RangeSet>
+impl<'a, C, ContainerNameSet, BlobNameSet, RangeSet> ClientRequired<'a, C>
+    for BlobStreamBuilder<'a, C, ContainerNameSet, BlobNameSet, RangeSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     RangeSet: ToAssign,
+    C: Client,
 {
     #[inline]
-    pub fn with_chunk_size(self, chunk_size: u64) -> Self {
-        BlobStreamBuilder {
-            client: self.client,
-            p_container_name: PhantomData {},
-            p_blob_name: PhantomData {},
-            p_range: PhantomData {},
-            container_name: self.container_name,
-            blob_name: self.blob_name,
-            range: self.range,
-            snapshot: self.snapshot,
-            timeout: self.timeout,
-            lease_id: self.lease_id,
-            client_request_id: self.client_request_id,
-            chunk_size,
-        }
-    }
-
-    #[inline]
-    pub fn chunk_size(&self) -> u64 {
-        self.chunk_size
-    }
-}
-
-impl<'a, ContainerNameSet, BlobNameSet, RangeSet> ClientRequired<'a>
-    for BlobStreamBuilder<'a, ContainerNameSet, BlobNameSet, RangeSet>
-where
-    ContainerNameSet: ToAssign,
-    BlobNameSet: ToAssign,
-    RangeSet: ToAssign,
-{
-    #[inline]
-    fn client(&self) -> &'a Client {
+    fn client(&self) -> &'a C {
         self.client
     }
 }
 
-impl<'a, BlobNameSet, RangeSet> ContainerNameRequired<'a>
-    for BlobStreamBuilder<'a, Yes, BlobNameSet, RangeSet>
+//get mandatory no traits methods
+
+//set mandatory no traits methods
+impl<'a, C, BlobNameSet, RangeSet> ContainerNameRequired<'a>
+    for BlobStreamBuilder<'a, C, Yes, BlobNameSet, RangeSet>
 where
     BlobNameSet: ToAssign,
     RangeSet: ToAssign,
+    C: Client,
 {
     #[inline]
     fn container_name(&self) -> &'a str {
@@ -110,11 +83,12 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, RangeSet> BlobNameRequired<'a>
-    for BlobStreamBuilder<'a, ContainerNameSet, Yes, RangeSet>
+impl<'a, C, ContainerNameSet, RangeSet> BlobNameRequired<'a>
+    for BlobStreamBuilder<'a, C, ContainerNameSet, Yes, RangeSet>
 where
     ContainerNameSet: ToAssign,
     RangeSet: ToAssign,
+    C: Client,
 {
     #[inline]
     fn blob_name(&self) -> &'a str {
@@ -122,11 +96,12 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet> RangeRequired<'a>
-    for BlobStreamBuilder<'a, ContainerNameSet, BlobNameSet, Yes>
+impl<'a, C, ContainerNameSet, BlobNameSet> RangeRequired<'a>
+    for BlobStreamBuilder<'a, C, ContainerNameSet, BlobNameSet, Yes>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
+    C: Client,
 {
     #[inline]
     fn range(&self) -> &'a Range {
@@ -134,12 +109,13 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, RangeSet> SnapshotOption
-    for BlobStreamBuilder<'a, ContainerNameSet, BlobNameSet, RangeSet>
+impl<'a, C, ContainerNameSet, BlobNameSet, RangeSet> SnapshotOption
+    for BlobStreamBuilder<'a, C, ContainerNameSet, BlobNameSet, RangeSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     RangeSet: ToAssign,
+    C: Client,
 {
     #[inline]
     fn snapshot(&self) -> Option<DateTime<Utc>> {
@@ -147,12 +123,13 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, RangeSet> TimeoutOption
-    for BlobStreamBuilder<'a, ContainerNameSet, BlobNameSet, RangeSet>
+impl<'a, C, ContainerNameSet, BlobNameSet, RangeSet> TimeoutOption
+    for BlobStreamBuilder<'a, C, ContainerNameSet, BlobNameSet, RangeSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     RangeSet: ToAssign,
+    C: Client,
 {
     #[inline]
     fn timeout(&self) -> Option<u64> {
@@ -160,12 +137,13 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, RangeSet> LeaseIdOption<'a>
-    for BlobStreamBuilder<'a, ContainerNameSet, BlobNameSet, RangeSet>
+impl<'a, C, ContainerNameSet, BlobNameSet, RangeSet> LeaseIdOption<'a>
+    for BlobStreamBuilder<'a, C, ContainerNameSet, BlobNameSet, RangeSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     RangeSet: ToAssign,
+    C: Client,
 {
     #[inline]
     fn lease_id(&self) -> Option<&'a LeaseId> {
@@ -173,12 +151,13 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, RangeSet> ClientRequestIdOption<'a>
-    for BlobStreamBuilder<'a, ContainerNameSet, BlobNameSet, RangeSet>
+impl<'a, C, ContainerNameSet, BlobNameSet, RangeSet> ClientRequestIdOption<'a>
+    for BlobStreamBuilder<'a, C, ContainerNameSet, BlobNameSet, RangeSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     RangeSet: ToAssign,
+    C: Client,
 {
     #[inline]
     fn client_request_id(&self) -> Option<&'a str> {
@@ -186,14 +165,28 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, RangeSet> ContainerNameSupport<'a>
-    for BlobStreamBuilder<'a, ContainerNameSet, BlobNameSet, RangeSet>
+impl<'a, C, ContainerNameSet, BlobNameSet, RangeSet> ChunkSizeOption
+    for BlobStreamBuilder<'a, C, ContainerNameSet, BlobNameSet, RangeSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     RangeSet: ToAssign,
+    C: Client,
 {
-    type O = BlobStreamBuilder<'a, Yes, BlobNameSet, RangeSet>;
+    #[inline]
+    fn chunk_size(&self) -> u64 {
+        self.chunk_size
+    }
+}
+
+impl<'a, C, BlobNameSet, RangeSet> ContainerNameSupport<'a>
+    for BlobStreamBuilder<'a, C, No, BlobNameSet, RangeSet>
+where
+    BlobNameSet: ToAssign,
+    RangeSet: ToAssign,
+    C: Client,
+{
+    type O = BlobStreamBuilder<'a, C, Yes, BlobNameSet, RangeSet>;
 
     #[inline]
     fn with_container_name(self, container_name: &'a str) -> Self::O {
@@ -214,14 +207,14 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, RangeSet> BlobNameSupport<'a>
-    for BlobStreamBuilder<'a, ContainerNameSet, BlobNameSet, RangeSet>
+impl<'a, C, ContainerNameSet, RangeSet> BlobNameSupport<'a>
+    for BlobStreamBuilder<'a, C, ContainerNameSet, No, RangeSet>
 where
     ContainerNameSet: ToAssign,
-    BlobNameSet: ToAssign,
     RangeSet: ToAssign,
+    C: Client,
 {
-    type O = BlobStreamBuilder<'a, ContainerNameSet, Yes, RangeSet>;
+    type O = BlobStreamBuilder<'a, C, ContainerNameSet, Yes, RangeSet>;
 
     #[inline]
     fn with_blob_name(self, blob_name: &'a str) -> Self::O {
@@ -242,14 +235,14 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, RangeSet> RangeSupport<'a>
-    for BlobStreamBuilder<'a, ContainerNameSet, BlobNameSet, RangeSet>
+impl<'a, C, ContainerNameSet, BlobNameSet> RangeSupport<'a>
+    for BlobStreamBuilder<'a, C, ContainerNameSet, BlobNameSet, No>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
-    RangeSet: ToAssign,
+    C: Client,
 {
-    type O = BlobStreamBuilder<'a, ContainerNameSet, BlobNameSet, Yes>;
+    type O = BlobStreamBuilder<'a, C, ContainerNameSet, BlobNameSet, Yes>;
 
     #[inline]
     fn with_range(self, range: &'a Range) -> Self::O {
@@ -270,14 +263,15 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, RangeSet> SnapshotSupport
-    for BlobStreamBuilder<'a, ContainerNameSet, BlobNameSet, RangeSet>
+impl<'a, C, ContainerNameSet, BlobNameSet, RangeSet> SnapshotSupport
+    for BlobStreamBuilder<'a, C, ContainerNameSet, BlobNameSet, RangeSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     RangeSet: ToAssign,
+    C: Client,
 {
-    type O = BlobStreamBuilder<'a, ContainerNameSet, BlobNameSet, RangeSet>;
+    type O = BlobStreamBuilder<'a, C, ContainerNameSet, BlobNameSet, RangeSet>;
 
     #[inline]
     fn with_snapshot(self, snapshot: DateTime<Utc>) -> Self::O {
@@ -288,9 +282,9 @@ where
             p_range: PhantomData {},
             container_name: self.container_name,
             blob_name: self.blob_name,
+            range: self.range,
             snapshot: Some(snapshot),
             timeout: self.timeout,
-            range: self.range,
             lease_id: self.lease_id,
             client_request_id: self.client_request_id,
             chunk_size: self.chunk_size,
@@ -298,14 +292,15 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, RangeSet> TimeoutSupport
-    for BlobStreamBuilder<'a, ContainerNameSet, BlobNameSet, RangeSet>
+impl<'a, C, ContainerNameSet, BlobNameSet, RangeSet> TimeoutSupport
+    for BlobStreamBuilder<'a, C, ContainerNameSet, BlobNameSet, RangeSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     RangeSet: ToAssign,
+    C: Client,
 {
-    type O = BlobStreamBuilder<'a, ContainerNameSet, BlobNameSet, RangeSet>;
+    type O = BlobStreamBuilder<'a, C, ContainerNameSet, BlobNameSet, RangeSet>;
 
     #[inline]
     fn with_timeout(self, timeout: u64) -> Self::O {
@@ -316,9 +311,9 @@ where
             p_range: PhantomData {},
             container_name: self.container_name,
             blob_name: self.blob_name,
+            range: self.range,
             snapshot: self.snapshot,
             timeout: Some(timeout),
-            range: self.range,
             lease_id: self.lease_id,
             client_request_id: self.client_request_id,
             chunk_size: self.chunk_size,
@@ -326,14 +321,15 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, RangeSet> LeaseIdSupport<'a>
-    for BlobStreamBuilder<'a, ContainerNameSet, BlobNameSet, RangeSet>
+impl<'a, C, ContainerNameSet, BlobNameSet, RangeSet> LeaseIdSupport<'a>
+    for BlobStreamBuilder<'a, C, ContainerNameSet, BlobNameSet, RangeSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     RangeSet: ToAssign,
+    C: Client,
 {
-    type O = BlobStreamBuilder<'a, ContainerNameSet, BlobNameSet, RangeSet>;
+    type O = BlobStreamBuilder<'a, C, ContainerNameSet, BlobNameSet, RangeSet>;
 
     #[inline]
     fn with_lease_id(self, lease_id: &'a LeaseId) -> Self::O {
@@ -344,9 +340,9 @@ where
             p_range: PhantomData {},
             container_name: self.container_name,
             blob_name: self.blob_name,
+            range: self.range,
             snapshot: self.snapshot,
             timeout: self.timeout,
-            range: self.range,
             lease_id: Some(lease_id),
             client_request_id: self.client_request_id,
             chunk_size: self.chunk_size,
@@ -354,14 +350,15 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, RangeSet> ClientRequestIdSupport<'a>
-    for BlobStreamBuilder<'a, ContainerNameSet, BlobNameSet, RangeSet>
+impl<'a, C, ContainerNameSet, BlobNameSet, RangeSet> ClientRequestIdSupport<'a>
+    for BlobStreamBuilder<'a, C, ContainerNameSet, BlobNameSet, RangeSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     RangeSet: ToAssign,
+    C: Client,
 {
-    type O = BlobStreamBuilder<'a, ContainerNameSet, BlobNameSet, RangeSet>;
+    type O = BlobStreamBuilder<'a, C, ContainerNameSet, BlobNameSet, RangeSet>;
 
     #[inline]
     fn with_client_request_id(self, client_request_id: &'a str) -> Self::O {
@@ -372,9 +369,9 @@ where
             p_range: PhantomData {},
             container_name: self.container_name,
             blob_name: self.blob_name,
+            range: self.range,
             snapshot: self.snapshot,
             timeout: self.timeout,
-            range: self.range,
             lease_id: self.lease_id,
             client_request_id: Some(client_request_id),
             chunk_size: self.chunk_size,
@@ -382,17 +379,40 @@ where
     }
 }
 
-// methods callable regardless
-impl<'a, ContainerNameSet, BlobNameSet, RangeSet>
-    BlobStreamBuilder<'a, ContainerNameSet, BlobNameSet, RangeSet>
+impl<'a, C, ContainerNameSet, BlobNameSet, RangeSet> ChunkSizeSupport
+    for BlobStreamBuilder<'a, C, ContainerNameSet, BlobNameSet, RangeSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     RangeSet: ToAssign,
+    C: Client,
 {
+    type O = BlobStreamBuilder<'a, C, ContainerNameSet, BlobNameSet, RangeSet>;
+
+    #[inline]
+    fn with_chunk_size(self, chunk_size: u64) -> Self::O {
+        BlobStreamBuilder {
+            client: self.client,
+            p_container_name: PhantomData {},
+            p_blob_name: PhantomData {},
+            p_range: PhantomData {},
+            container_name: self.container_name,
+            blob_name: self.blob_name,
+            range: self.range,
+            snapshot: self.snapshot,
+            timeout: self.timeout,
+            lease_id: self.lease_id,
+            client_request_id: self.client_request_id,
+            chunk_size,
+        }
+    }
 }
 
-impl<'a> BlobStreamBuilder<'a, Yes, Yes, Yes> {
+// methods callable only when every mandatory field has been filled
+impl<'a, C> BlobStreamBuilder<'a, C, Yes, Yes, Yes>
+where
+    C: Client + Clone,
+{
     #[inline]
     pub fn finalize(self) -> impl Stream<Item = Result<Vec<u8>, AzureError>> + 'a {
         let client = self.client().clone();

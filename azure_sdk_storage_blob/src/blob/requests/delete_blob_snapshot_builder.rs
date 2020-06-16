@@ -2,26 +2,22 @@ use crate::blob::generate_blob_uri;
 use crate::blob::responses::DeleteBlobResponse;
 use azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError};
 use azure_sdk_core::lease::LeaseId;
-use azure_sdk_core::{
-    BlobNameRequired, BlobNameSupport, ClientRequestIdOption, ClientRequestIdSupport,
-    ContainerNameRequired, ContainerNameSupport, LeaseIdOption, LeaseIdSupport, SnapshotRequired,
-    SnapshotSupport, TimeoutOption, TimeoutSupport,
-};
+use azure_sdk_core::prelude::*;
 use azure_sdk_core::{No, ToAssign, Yes};
-use azure_sdk_storage_core::client::Client;
-use azure_sdk_storage_core::ClientRequired;
+use azure_sdk_storage_core::prelude::*;
 use chrono::{DateTime, Utc};
 use hyper::{Method, StatusCode};
 use std::marker::PhantomData;
 
 #[derive(Debug, Clone)]
-pub struct DeleteBlobSnapshotBuilder<'a, ContainerNameSet, BlobNameSet, SnapshotSet>
+pub struct DeleteBlobSnapshotBuilder<'a, C, ContainerNameSet, BlobNameSet, SnapshotSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     SnapshotSet: ToAssign,
+    C: Client,
 {
-    client: &'a Client,
+    client: &'a C,
     p_container_name: PhantomData<ContainerNameSet>,
     p_blob_name: PhantomData<BlobNameSet>,
     p_snapshot: PhantomData<SnapshotSet>,
@@ -33,9 +29,12 @@ where
     client_request_id: Option<&'a str>,
 }
 
-impl<'a> DeleteBlobSnapshotBuilder<'a, No, No, No> {
+impl<'a, C> DeleteBlobSnapshotBuilder<'a, C, No, No, No>
+where
+    C: Client,
+{
     #[inline]
-    pub(crate) fn new(client: &'a Client) -> DeleteBlobSnapshotBuilder<'a, No, No, No> {
+    pub(crate) fn new(client: &'a C) -> DeleteBlobSnapshotBuilder<'a, C, No, No, No> {
         DeleteBlobSnapshotBuilder {
             client,
             p_container_name: PhantomData {},
@@ -51,24 +50,29 @@ impl<'a> DeleteBlobSnapshotBuilder<'a, No, No, No> {
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, SnapshotSet> ClientRequired<'a>
-    for DeleteBlobSnapshotBuilder<'a, ContainerNameSet, BlobNameSet, SnapshotSet>
+impl<'a, C, ContainerNameSet, BlobNameSet, SnapshotSet> ClientRequired<'a, C>
+    for DeleteBlobSnapshotBuilder<'a, C, ContainerNameSet, BlobNameSet, SnapshotSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     SnapshotSet: ToAssign,
+    C: Client,
 {
     #[inline]
-    fn client(&self) -> &'a Client {
+    fn client(&self) -> &'a C {
         self.client
     }
 }
 
-impl<'a, BlobNameSet, SnapshotSet> ContainerNameRequired<'a>
-    for DeleteBlobSnapshotBuilder<'a, Yes, BlobNameSet, SnapshotSet>
+//get mandatory no traits methods
+
+//set mandatory no traits methods
+impl<'a, C, BlobNameSet, SnapshotSet> ContainerNameRequired<'a>
+    for DeleteBlobSnapshotBuilder<'a, C, Yes, BlobNameSet, SnapshotSet>
 where
     BlobNameSet: ToAssign,
     SnapshotSet: ToAssign,
+    C: Client,
 {
     #[inline]
     fn container_name(&self) -> &'a str {
@@ -76,11 +80,12 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, SnapshotSet> BlobNameRequired<'a>
-    for DeleteBlobSnapshotBuilder<'a, ContainerNameSet, Yes, SnapshotSet>
+impl<'a, C, ContainerNameSet, SnapshotSet> BlobNameRequired<'a>
+    for DeleteBlobSnapshotBuilder<'a, C, ContainerNameSet, Yes, SnapshotSet>
 where
     ContainerNameSet: ToAssign,
     SnapshotSet: ToAssign,
+    C: Client,
 {
     #[inline]
     fn blob_name(&self) -> &'a str {
@@ -88,11 +93,12 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet> SnapshotRequired
-    for DeleteBlobSnapshotBuilder<'a, ContainerNameSet, BlobNameSet, Yes>
+impl<'a, C, ContainerNameSet, BlobNameSet> SnapshotRequired
+    for DeleteBlobSnapshotBuilder<'a, C, ContainerNameSet, BlobNameSet, Yes>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
+    C: Client,
 {
     #[inline]
     fn snapshot(&self) -> DateTime<Utc> {
@@ -100,12 +106,13 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, SnapshotSet> TimeoutOption
-    for DeleteBlobSnapshotBuilder<'a, ContainerNameSet, BlobNameSet, SnapshotSet>
+impl<'a, C, ContainerNameSet, BlobNameSet, SnapshotSet> TimeoutOption
+    for DeleteBlobSnapshotBuilder<'a, C, ContainerNameSet, BlobNameSet, SnapshotSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     SnapshotSet: ToAssign,
+    C: Client,
 {
     #[inline]
     fn timeout(&self) -> Option<u64> {
@@ -113,12 +120,13 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, SnapshotSet> LeaseIdOption<'a>
-    for DeleteBlobSnapshotBuilder<'a, ContainerNameSet, BlobNameSet, SnapshotSet>
+impl<'a, C, ContainerNameSet, BlobNameSet, SnapshotSet> LeaseIdOption<'a>
+    for DeleteBlobSnapshotBuilder<'a, C, ContainerNameSet, BlobNameSet, SnapshotSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     SnapshotSet: ToAssign,
+    C: Client,
 {
     #[inline]
     fn lease_id(&self) -> Option<&'a LeaseId> {
@@ -126,12 +134,13 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, SnapshotSet> ClientRequestIdOption<'a>
-    for DeleteBlobSnapshotBuilder<'a, ContainerNameSet, BlobNameSet, SnapshotSet>
+impl<'a, C, ContainerNameSet, BlobNameSet, SnapshotSet> ClientRequestIdOption<'a>
+    for DeleteBlobSnapshotBuilder<'a, C, ContainerNameSet, BlobNameSet, SnapshotSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     SnapshotSet: ToAssign,
+    C: Client,
 {
     #[inline]
     fn client_request_id(&self) -> Option<&'a str> {
@@ -139,14 +148,14 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, SnapshotSet> ContainerNameSupport<'a>
-    for DeleteBlobSnapshotBuilder<'a, ContainerNameSet, BlobNameSet, SnapshotSet>
+impl<'a, C, BlobNameSet, SnapshotSet> ContainerNameSupport<'a>
+    for DeleteBlobSnapshotBuilder<'a, C, No, BlobNameSet, SnapshotSet>
 where
-    ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     SnapshotSet: ToAssign,
+    C: Client,
 {
-    type O = DeleteBlobSnapshotBuilder<'a, Yes, BlobNameSet, SnapshotSet>;
+    type O = DeleteBlobSnapshotBuilder<'a, C, Yes, BlobNameSet, SnapshotSet>;
 
     #[inline]
     fn with_container_name(self, container_name: &'a str) -> Self::O {
@@ -165,14 +174,14 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, SnapshotSet> BlobNameSupport<'a>
-    for DeleteBlobSnapshotBuilder<'a, ContainerNameSet, BlobNameSet, SnapshotSet>
+impl<'a, C, ContainerNameSet, SnapshotSet> BlobNameSupport<'a>
+    for DeleteBlobSnapshotBuilder<'a, C, ContainerNameSet, No, SnapshotSet>
 where
     ContainerNameSet: ToAssign,
-    BlobNameSet: ToAssign,
     SnapshotSet: ToAssign,
+    C: Client,
 {
-    type O = DeleteBlobSnapshotBuilder<'a, ContainerNameSet, Yes, SnapshotSet>;
+    type O = DeleteBlobSnapshotBuilder<'a, C, ContainerNameSet, Yes, SnapshotSet>;
 
     #[inline]
     fn with_blob_name(self, blob_name: &'a str) -> Self::O {
@@ -191,14 +200,14 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, SnapshotSet> SnapshotSupport
-    for DeleteBlobSnapshotBuilder<'a, ContainerNameSet, BlobNameSet, SnapshotSet>
+impl<'a, C, ContainerNameSet, BlobNameSet> SnapshotSupport
+    for DeleteBlobSnapshotBuilder<'a, C, ContainerNameSet, BlobNameSet, No>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
-    SnapshotSet: ToAssign,
+    C: Client,
 {
-    type O = DeleteBlobSnapshotBuilder<'a, ContainerNameSet, BlobNameSet, Yes>;
+    type O = DeleteBlobSnapshotBuilder<'a, C, ContainerNameSet, BlobNameSet, Yes>;
 
     #[inline]
     fn with_snapshot(self, snapshot: DateTime<Utc>) -> Self::O {
@@ -217,14 +226,15 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, SnapshotSet> TimeoutSupport
-    for DeleteBlobSnapshotBuilder<'a, ContainerNameSet, BlobNameSet, SnapshotSet>
+impl<'a, C, ContainerNameSet, BlobNameSet, SnapshotSet> TimeoutSupport
+    for DeleteBlobSnapshotBuilder<'a, C, ContainerNameSet, BlobNameSet, SnapshotSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     SnapshotSet: ToAssign,
+    C: Client,
 {
-    type O = DeleteBlobSnapshotBuilder<'a, ContainerNameSet, BlobNameSet, SnapshotSet>;
+    type O = DeleteBlobSnapshotBuilder<'a, C, ContainerNameSet, BlobNameSet, SnapshotSet>;
 
     #[inline]
     fn with_timeout(self, timeout: u64) -> Self::O {
@@ -243,14 +253,15 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, SnapshotSet> LeaseIdSupport<'a>
-    for DeleteBlobSnapshotBuilder<'a, ContainerNameSet, BlobNameSet, SnapshotSet>
+impl<'a, C, ContainerNameSet, BlobNameSet, SnapshotSet> LeaseIdSupport<'a>
+    for DeleteBlobSnapshotBuilder<'a, C, ContainerNameSet, BlobNameSet, SnapshotSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     SnapshotSet: ToAssign,
+    C: Client,
 {
-    type O = DeleteBlobSnapshotBuilder<'a, ContainerNameSet, BlobNameSet, SnapshotSet>;
+    type O = DeleteBlobSnapshotBuilder<'a, C, ContainerNameSet, BlobNameSet, SnapshotSet>;
 
     #[inline]
     fn with_lease_id(self, lease_id: &'a LeaseId) -> Self::O {
@@ -269,14 +280,15 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, SnapshotSet> ClientRequestIdSupport<'a>
-    for DeleteBlobSnapshotBuilder<'a, ContainerNameSet, BlobNameSet, SnapshotSet>
+impl<'a, C, ContainerNameSet, BlobNameSet, SnapshotSet> ClientRequestIdSupport<'a>
+    for DeleteBlobSnapshotBuilder<'a, C, ContainerNameSet, BlobNameSet, SnapshotSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     SnapshotSet: ToAssign,
+    C: Client,
 {
-    type O = DeleteBlobSnapshotBuilder<'a, ContainerNameSet, BlobNameSet, SnapshotSet>;
+    type O = DeleteBlobSnapshotBuilder<'a, C, ContainerNameSet, BlobNameSet, SnapshotSet>;
 
     #[inline]
     fn with_client_request_id(self, client_request_id: &'a str) -> Self::O {
@@ -295,19 +307,18 @@ where
     }
 }
 
-// methods callable regardless
-impl<'a, ContainerNameSet, BlobNameSet, SnapshotSet>
-    DeleteBlobSnapshotBuilder<'a, ContainerNameSet, BlobNameSet, SnapshotSet>
+// methods callable only when every mandatory field has been filled
+impl<'a, C> DeleteBlobSnapshotBuilder<'a, C, Yes, Yes, Yes>
 where
-    ContainerNameSet: ToAssign,
-    BlobNameSet: ToAssign,
-    SnapshotSet: ToAssign,
+    C: Client,
 {
-}
-
-impl<'a> DeleteBlobSnapshotBuilder<'a, Yes, Yes, Yes> {
     pub async fn finalize(self) -> Result<DeleteBlobResponse, AzureError> {
-        let mut uri = generate_blob_uri(&self, Some(&SnapshotRequired::to_uri_parameter(&self)));
+        let mut uri = generate_blob_uri(
+            self.client(),
+            self.container_name(),
+            self.blob_name(),
+            Some(&SnapshotRequired::to_uri_parameter(&self)),
+        );
 
         if let Some(nm) = TimeoutOption::to_uri_parameter(&self) {
             uri = format!("{}&{}", uri, nm);
@@ -316,7 +327,7 @@ impl<'a> DeleteBlobSnapshotBuilder<'a, Yes, Yes, Yes> {
         let future_response = self.client().perform_request(
             &uri,
             &Method::DELETE,
-            |mut request| {
+            &|mut request| {
                 request = LeaseIdOption::add_header(&self, request);
                 request = ClientRequestIdOption::add_header(&self, request);
                 request

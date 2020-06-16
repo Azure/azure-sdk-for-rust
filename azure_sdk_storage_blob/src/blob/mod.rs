@@ -1,11 +1,11 @@
 mod lease_blob_options;
 pub use self::lease_blob_options::{LeaseBlobOptions, LEASE_BLOB_OPTIONS_DEFAULT};
-mod blob_stream_builder;
-pub use self::blob_stream_builder::BlobStreamBuilder;
+//mod blob_stream_builder;
+//pub use self::blob_stream_builder::BlobStreamBuilder;
 mod blob_block_type;
 pub use self::blob_block_type::BlobBlockType;
-mod list_blob_stream_builder;
-pub use self::list_blob_stream_builder::ListBlobStreamBuilder;
+//mod list_blob_stream_builder;
+//pub use self::list_blob_stream_builder::ListBlobStreamBuilder;
 mod block_list_type;
 pub use self::block_list_type::BlockListType;
 mod blob_block_with_size;
@@ -14,8 +14,6 @@ mod block_with_size_list;
 pub use self::block_with_size_list::BlockWithSizeList;
 mod block_list;
 pub use self::block_list::BlockList;
-mod shared_access;
-pub use self::shared_access::SignedUrlBuilder;
 pub mod requests;
 pub mod responses;
 use azure_sdk_core::headers::{
@@ -23,7 +21,7 @@ use azure_sdk_core::headers::{
     COPY_SOURCE, COPY_STATUS, COPY_STATUS_DESCRIPTION, CREATION_TIME, LEASE_DURATION, LEASE_STATE,
     LEASE_STATUS, SERVER_ENCRYPTED,
 };
-use azure_sdk_storage_core::ClientRequired;
+use azure_sdk_storage_core::Client;
 use chrono::{DateTime, Utc};
 use hyper::header;
 use std::borrow::Borrow;
@@ -40,7 +38,6 @@ use azure_sdk_core::{
     parsing::{cast_must, cast_optional, from_azure_time, inner_text, traverse},
     range::Range,
     util::HeaderMapExt,
-    BlobNameRequired, ContainerNameRequired,
 };
 
 pub trait BlockListTypeSupport {
@@ -426,23 +423,28 @@ pub(crate) fn incomplete_vector_from_response(
 }
 
 #[inline]
-pub(crate) fn generate_blob_uri<'a, T>(t: &T, params: Option<&str>) -> String
+pub(crate) fn generate_blob_uri<'a, C>(
+    t: &C,
+    container_name: &str,
+    blob_name: &str,
+    params: Option<&str>,
+) -> String
 where
-    T: ClientRequired<'a> + ContainerNameRequired<'a> + BlobNameRequired<'a>,
+    C: Client,
 {
     match params {
         Some(ref params) => format!(
             "{}/{}/{}?{}",
-            t.client().blob_uri(),
-            form_urlencoded::byte_serialize(t.container_name().as_bytes()).collect::<String>(),
-            form_urlencoded::byte_serialize(t.blob_name().as_bytes()).collect::<String>(),
+            t.blob_uri(),
+            form_urlencoded::byte_serialize(container_name.as_bytes()).collect::<String>(),
+            form_urlencoded::byte_serialize(blob_name.as_bytes()).collect::<String>(),
             params
         ),
         None => format!(
             "{}/{}/{}",
-            t.client().blob_uri(),
-            form_urlencoded::byte_serialize(t.container_name().as_bytes()).collect::<String>(),
-            form_urlencoded::byte_serialize(t.blob_name().as_bytes()).collect::<String>(),
+            t.blob_uri(),
+            form_urlencoded::byte_serialize(container_name.as_bytes()).collect::<String>(),
+            form_urlencoded::byte_serialize(blob_name.as_bytes()).collect::<String>(),
         ),
     }
 }

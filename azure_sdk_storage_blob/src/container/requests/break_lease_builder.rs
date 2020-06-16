@@ -2,23 +2,19 @@ use crate::container::responses::BreakLeaseResponse;
 use azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError};
 use azure_sdk_core::headers::LEASE_ACTION;
 use azure_sdk_core::lease::LeaseId;
-use azure_sdk_core::{
-    ClientRequestIdOption, ClientRequestIdSupport, ContainerNameRequired, ContainerNameSupport,
-    LeaseBreakPeriodOption, LeaseBreakPeriodSupport, LeaseIdOption, LeaseIdSupport, TimeoutOption,
-    TimeoutSupport,
-};
+use azure_sdk_core::prelude::*;
 use azure_sdk_core::{No, ToAssign, Yes};
-use azure_sdk_storage_core::client::Client;
-use azure_sdk_storage_core::ClientRequired;
+use azure_sdk_storage_core::prelude::*;
 use hyper::{Method, StatusCode};
 use std::marker::PhantomData;
 
 #[derive(Debug, Clone)]
-pub struct BreakLeaseBuilder<'a, ContainerNameSet>
+pub struct BreakLeaseBuilder<'a, C, ContainerNameSet>
 where
     ContainerNameSet: ToAssign,
+    C: Client,
 {
-    client: &'a Client,
+    client: &'a C,
     p_container_name: PhantomData<ContainerNameSet>,
     container_name: Option<&'a str>,
     client_request_id: Option<&'a str>,
@@ -27,8 +23,12 @@ where
     lease_id: Option<&'a LeaseId>,
 }
 
-impl<'a> BreakLeaseBuilder<'a, No> {
-    pub(crate) fn new(client: &'a Client) -> BreakLeaseBuilder<'a, No> {
+impl<'a, C> BreakLeaseBuilder<'a, C, No>
+where
+    C: Client,
+{
+    #[inline]
+    pub(crate) fn new(client: &'a C) -> BreakLeaseBuilder<'a, C, No> {
         BreakLeaseBuilder {
             client,
             p_container_name: PhantomData {},
@@ -41,63 +41,82 @@ impl<'a> BreakLeaseBuilder<'a, No> {
     }
 }
 
-impl<'a, ContainerNameSet> ClientRequired<'a> for BreakLeaseBuilder<'a, ContainerNameSet>
+impl<'a, C, ContainerNameSet> ClientRequired<'a, C> for BreakLeaseBuilder<'a, C, ContainerNameSet>
 where
     ContainerNameSet: ToAssign,
+    C: Client,
 {
-    fn client(&self) -> &'a Client {
+    #[inline]
+    fn client(&self) -> &'a C {
         self.client
     }
 }
 
-impl<'a> ContainerNameRequired<'a> for BreakLeaseBuilder<'a, Yes> {
+//get mandatory no traits methods
+
+//set mandatory no traits methods
+impl<'a, C> ContainerNameRequired<'a> for BreakLeaseBuilder<'a, C, Yes>
+where
+    C: Client,
+{
+    #[inline]
     fn container_name(&self) -> &'a str {
         self.container_name.unwrap()
     }
 }
 
-impl<'a, ContainerNameSet> ClientRequestIdOption<'a> for BreakLeaseBuilder<'a, ContainerNameSet>
+impl<'a, C, ContainerNameSet> ClientRequestIdOption<'a>
+    for BreakLeaseBuilder<'a, C, ContainerNameSet>
 where
     ContainerNameSet: ToAssign,
+    C: Client,
 {
+    #[inline]
     fn client_request_id(&self) -> Option<&'a str> {
         self.client_request_id
     }
 }
 
-impl<'a, ContainerNameSet> TimeoutOption for BreakLeaseBuilder<'a, ContainerNameSet>
+impl<'a, C, ContainerNameSet> TimeoutOption for BreakLeaseBuilder<'a, C, ContainerNameSet>
 where
     ContainerNameSet: ToAssign,
+    C: Client,
 {
+    #[inline]
     fn timeout(&self) -> Option<u64> {
         self.timeout
     }
 }
 
-impl<'a, ContainerNameSet> LeaseBreakPeriodOption for BreakLeaseBuilder<'a, ContainerNameSet>
+impl<'a, C, ContainerNameSet> LeaseBreakPeriodOption for BreakLeaseBuilder<'a, C, ContainerNameSet>
 where
     ContainerNameSet: ToAssign,
+    C: Client,
 {
+    #[inline]
     fn lease_break_period(&self) -> Option<u8> {
         self.lease_break_period
     }
 }
 
-impl<'a, ContainerNameSet> LeaseIdOption<'a> for BreakLeaseBuilder<'a, ContainerNameSet>
+impl<'a, C, ContainerNameSet> LeaseIdOption<'a> for BreakLeaseBuilder<'a, C, ContainerNameSet>
 where
     ContainerNameSet: ToAssign,
+    C: Client,
 {
+    #[inline]
     fn lease_id(&self) -> Option<&'a LeaseId> {
         self.lease_id
     }
 }
 
-impl<'a, ContainerNameSet> ContainerNameSupport<'a> for BreakLeaseBuilder<'a, ContainerNameSet>
+impl<'a, C> ContainerNameSupport<'a> for BreakLeaseBuilder<'a, C, No>
 where
-    ContainerNameSet: ToAssign,
+    C: Client,
 {
-    type O = BreakLeaseBuilder<'a, Yes>;
+    type O = BreakLeaseBuilder<'a, C, Yes>;
 
+    #[inline]
     fn with_container_name(self, container_name: &'a str) -> Self::O {
         BreakLeaseBuilder {
             client: self.client,
@@ -111,12 +130,15 @@ where
     }
 }
 
-impl<'a, ContainerNameSet> ClientRequestIdSupport<'a> for BreakLeaseBuilder<'a, ContainerNameSet>
+impl<'a, C, ContainerNameSet> ClientRequestIdSupport<'a>
+    for BreakLeaseBuilder<'a, C, ContainerNameSet>
 where
     ContainerNameSet: ToAssign,
+    C: Client,
 {
-    type O = BreakLeaseBuilder<'a, ContainerNameSet>;
+    type O = BreakLeaseBuilder<'a, C, ContainerNameSet>;
 
+    #[inline]
     fn with_client_request_id(self, client_request_id: &'a str) -> Self::O {
         BreakLeaseBuilder {
             client: self.client,
@@ -130,12 +152,14 @@ where
     }
 }
 
-impl<'a, ContainerNameSet> TimeoutSupport for BreakLeaseBuilder<'a, ContainerNameSet>
+impl<'a, C, ContainerNameSet> TimeoutSupport for BreakLeaseBuilder<'a, C, ContainerNameSet>
 where
     ContainerNameSet: ToAssign,
+    C: Client,
 {
-    type O = BreakLeaseBuilder<'a, ContainerNameSet>;
+    type O = BreakLeaseBuilder<'a, C, ContainerNameSet>;
 
+    #[inline]
     fn with_timeout(self, timeout: u64) -> Self::O {
         BreakLeaseBuilder {
             client: self.client,
@@ -149,12 +173,14 @@ where
     }
 }
 
-impl<'a, ContainerNameSet> LeaseBreakPeriodSupport for BreakLeaseBuilder<'a, ContainerNameSet>
+impl<'a, C, ContainerNameSet> LeaseBreakPeriodSupport for BreakLeaseBuilder<'a, C, ContainerNameSet>
 where
     ContainerNameSet: ToAssign,
+    C: Client,
 {
-    type O = BreakLeaseBuilder<'a, ContainerNameSet>;
+    type O = BreakLeaseBuilder<'a, C, ContainerNameSet>;
 
+    #[inline]
     fn with_lease_break_period(self, lease_break_period: u8) -> Self::O {
         BreakLeaseBuilder {
             client: self.client,
@@ -168,12 +194,14 @@ where
     }
 }
 
-impl<'a, ContainerNameSet> LeaseIdSupport<'a> for BreakLeaseBuilder<'a, ContainerNameSet>
+impl<'a, C, ContainerNameSet> LeaseIdSupport<'a> for BreakLeaseBuilder<'a, C, ContainerNameSet>
 where
     ContainerNameSet: ToAssign,
+    C: Client,
 {
-    type O = BreakLeaseBuilder<'a, ContainerNameSet>;
+    type O = BreakLeaseBuilder<'a, C, ContainerNameSet>;
 
+    #[inline]
     fn with_lease_id(self, lease_id: &'a LeaseId) -> Self::O {
         BreakLeaseBuilder {
             client: self.client,
@@ -187,10 +215,11 @@ where
     }
 }
 
-// methods callable regardless
-impl<'a, ContainerNameSet> BreakLeaseBuilder<'a, ContainerNameSet> where ContainerNameSet: ToAssign {}
-
-impl<'a> BreakLeaseBuilder<'a, Yes> {
+// methods callable only when every mandatory field has been filled
+impl<'a, C> BreakLeaseBuilder<'a, C, Yes>
+where
+    C: Client,
+{
     pub async fn finalize(self) -> Result<BreakLeaseResponse, AzureError> {
         let mut uri = format!(
             "{}/{}?comp=lease&restype=container",
@@ -205,7 +234,7 @@ impl<'a> BreakLeaseBuilder<'a, Yes> {
         let future_response = self.client().perform_request(
             &uri,
             &Method::PUT,
-            |mut request| {
+            &|mut request| {
                 request = ClientRequestIdOption::add_header(&self, request);
                 request = LeaseIdOption::add_header(&self, request);
                 request = request.header(LEASE_ACTION, "break");

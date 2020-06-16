@@ -10,13 +10,14 @@ use std::collections::HashMap;
 use std::convert::TryInto;
 use std::marker::PhantomData;
 
-pub struct CopyBlobFromUrlBuilder<'a, ContainerNameSet, BlobNameSet, SourceUrlSet>
+pub struct CopyBlobFromUrlBuilder<'a, C, ContainerNameSet, BlobNameSet, SourceUrlSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     SourceUrlSet: ToAssign,
+    C: Client,
 {
-    client: &'a Client,
+    client: &'a C,
     p_container_name: PhantomData<ContainerNameSet>,
     p_blob_name: PhantomData<BlobNameSet>,
     p_source_url: PhantomData<SourceUrlSet>,
@@ -38,8 +39,12 @@ where
     client_request_id: Option<&'a str>,
 }
 
-impl<'a> CopyBlobFromUrlBuilder<'a, No, No, No> {
-    pub(crate) fn new(client: &'a Client) -> CopyBlobFromUrlBuilder<'a, No, No, No> {
+impl<'a, C> CopyBlobFromUrlBuilder<'a, C, No, No, No>
+where
+    C: Client,
+{
+    #[inline]
+    pub(crate) fn new(client: &'a C) -> CopyBlobFromUrlBuilder<'a, C, No, No, No> {
         CopyBlobFromUrlBuilder {
             client,
             p_container_name: PhantomData {},
@@ -65,14 +70,16 @@ impl<'a> CopyBlobFromUrlBuilder<'a, No, No, No> {
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, SourceUrlSet> ClientRequired<'a>
-    for CopyBlobFromUrlBuilder<'a, ContainerNameSet, BlobNameSet, SourceUrlSet>
+impl<'a, C, ContainerNameSet, BlobNameSet, SourceUrlSet> ClientRequired<'a, C>
+    for CopyBlobFromUrlBuilder<'a, C, ContainerNameSet, BlobNameSet, SourceUrlSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     SourceUrlSet: ToAssign,
+    C: Client,
 {
-    fn client(&self) -> &'a Client {
+    #[inline]
+    fn client(&self) -> &'a C {
         self.client
     }
 }
@@ -80,203 +87,237 @@ where
 //get mandatory no traits methods
 
 //set mandatory no traits methods
-impl<'a, BlobNameSet, SourceUrlSet> ContainerNameRequired<'a>
-    for CopyBlobFromUrlBuilder<'a, Yes, BlobNameSet, SourceUrlSet>
+impl<'a, C, BlobNameSet, SourceUrlSet> ContainerNameRequired<'a>
+    for CopyBlobFromUrlBuilder<'a, C, Yes, BlobNameSet, SourceUrlSet>
 where
     BlobNameSet: ToAssign,
     SourceUrlSet: ToAssign,
+    C: Client,
 {
+    #[inline]
     fn container_name(&self) -> &'a str {
         self.container_name.unwrap()
     }
 }
 
-impl<'a, ContainerNameSet, SourceUrlSet> BlobNameRequired<'a>
-    for CopyBlobFromUrlBuilder<'a, ContainerNameSet, Yes, SourceUrlSet>
+impl<'a, C, ContainerNameSet, SourceUrlSet> BlobNameRequired<'a>
+    for CopyBlobFromUrlBuilder<'a, C, ContainerNameSet, Yes, SourceUrlSet>
 where
     ContainerNameSet: ToAssign,
     SourceUrlSet: ToAssign,
+    C: Client,
 {
+    #[inline]
     fn blob_name(&self) -> &'a str {
         self.blob_name.unwrap()
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet> SourceUrlRequired<'a>
-    for CopyBlobFromUrlBuilder<'a, ContainerNameSet, BlobNameSet, Yes>
+impl<'a, C, ContainerNameSet, BlobNameSet> SourceUrlRequired<'a>
+    for CopyBlobFromUrlBuilder<'a, C, ContainerNameSet, BlobNameSet, Yes>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
+    C: Client,
 {
+    #[inline]
     fn source_url(&self) -> &'a str {
         self.source_url.unwrap()
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, SourceUrlSet> TimeoutOption
-    for CopyBlobFromUrlBuilder<'a, ContainerNameSet, BlobNameSet, SourceUrlSet>
+impl<'a, C, ContainerNameSet, BlobNameSet, SourceUrlSet> TimeoutOption
+    for CopyBlobFromUrlBuilder<'a, C, ContainerNameSet, BlobNameSet, SourceUrlSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     SourceUrlSet: ToAssign,
+    C: Client,
 {
+    #[inline]
     fn timeout(&self) -> Option<u64> {
         self.timeout
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, SourceUrlSet> IsSynchronousOption
-    for CopyBlobFromUrlBuilder<'a, ContainerNameSet, BlobNameSet, SourceUrlSet>
+impl<'a, C, ContainerNameSet, BlobNameSet, SourceUrlSet> IsSynchronousOption
+    for CopyBlobFromUrlBuilder<'a, C, ContainerNameSet, BlobNameSet, SourceUrlSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     SourceUrlSet: ToAssign,
+    C: Client,
 {
+    #[inline]
     fn is_synchronous(&self) -> bool {
         self.is_synchronous
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, SourceUrlSet> SourceContentMD5Option<'a>
-    for CopyBlobFromUrlBuilder<'a, ContainerNameSet, BlobNameSet, SourceUrlSet>
+impl<'a, C, ContainerNameSet, BlobNameSet, SourceUrlSet> SourceContentMD5Option<'a>
+    for CopyBlobFromUrlBuilder<'a, C, ContainerNameSet, BlobNameSet, SourceUrlSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     SourceUrlSet: ToAssign,
+    C: Client,
 {
+    #[inline]
     fn source_content_md5(&self) -> Option<&'a [u8]> {
         self.source_content_md5
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, SourceUrlSet> LeaseIdOption<'a>
-    for CopyBlobFromUrlBuilder<'a, ContainerNameSet, BlobNameSet, SourceUrlSet>
+impl<'a, C, ContainerNameSet, BlobNameSet, SourceUrlSet> LeaseIdOption<'a>
+    for CopyBlobFromUrlBuilder<'a, C, ContainerNameSet, BlobNameSet, SourceUrlSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     SourceUrlSet: ToAssign,
+    C: Client,
 {
+    #[inline]
     fn lease_id(&self) -> Option<&'a LeaseId> {
         self.lease_id
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, SourceUrlSet> ContentTypeOption<'a>
-    for CopyBlobFromUrlBuilder<'a, ContainerNameSet, BlobNameSet, SourceUrlSet>
+impl<'a, C, ContainerNameSet, BlobNameSet, SourceUrlSet> ContentTypeOption<'a>
+    for CopyBlobFromUrlBuilder<'a, C, ContainerNameSet, BlobNameSet, SourceUrlSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     SourceUrlSet: ToAssign,
+    C: Client,
 {
+    #[inline]
     fn content_type(&self) -> Option<&'a str> {
         self.content_type
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, SourceUrlSet> ContentEncodingOption<'a>
-    for CopyBlobFromUrlBuilder<'a, ContainerNameSet, BlobNameSet, SourceUrlSet>
+impl<'a, C, ContainerNameSet, BlobNameSet, SourceUrlSet> ContentEncodingOption<'a>
+    for CopyBlobFromUrlBuilder<'a, C, ContainerNameSet, BlobNameSet, SourceUrlSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     SourceUrlSet: ToAssign,
+    C: Client,
 {
+    #[inline]
     fn content_encoding(&self) -> Option<&'a str> {
         self.content_encoding
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, SourceUrlSet> ContentLanguageOption<'a>
-    for CopyBlobFromUrlBuilder<'a, ContainerNameSet, BlobNameSet, SourceUrlSet>
+impl<'a, C, ContainerNameSet, BlobNameSet, SourceUrlSet> ContentLanguageOption<'a>
+    for CopyBlobFromUrlBuilder<'a, C, ContainerNameSet, BlobNameSet, SourceUrlSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     SourceUrlSet: ToAssign,
+    C: Client,
 {
+    #[inline]
     fn content_language(&self) -> Option<&'a str> {
         self.content_language
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, SourceUrlSet> CacheControlOption<'a>
-    for CopyBlobFromUrlBuilder<'a, ContainerNameSet, BlobNameSet, SourceUrlSet>
+impl<'a, C, ContainerNameSet, BlobNameSet, SourceUrlSet> CacheControlOption<'a>
+    for CopyBlobFromUrlBuilder<'a, C, ContainerNameSet, BlobNameSet, SourceUrlSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     SourceUrlSet: ToAssign,
+    C: Client,
 {
+    #[inline]
     fn cache_control(&self) -> Option<&'a str> {
         self.cache_control
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, SourceUrlSet> ContentDispositionOption<'a>
-    for CopyBlobFromUrlBuilder<'a, ContainerNameSet, BlobNameSet, SourceUrlSet>
+impl<'a, C, ContainerNameSet, BlobNameSet, SourceUrlSet> ContentDispositionOption<'a>
+    for CopyBlobFromUrlBuilder<'a, C, ContainerNameSet, BlobNameSet, SourceUrlSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     SourceUrlSet: ToAssign,
+    C: Client,
 {
+    #[inline]
     fn content_disposition(&self) -> Option<&'a str> {
         self.content_disposition
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, SourceUrlSet> MetadataOption<'a>
-    for CopyBlobFromUrlBuilder<'a, ContainerNameSet, BlobNameSet, SourceUrlSet>
+impl<'a, C, ContainerNameSet, BlobNameSet, SourceUrlSet> MetadataOption<'a>
+    for CopyBlobFromUrlBuilder<'a, C, ContainerNameSet, BlobNameSet, SourceUrlSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     SourceUrlSet: ToAssign,
+    C: Client,
 {
+    #[inline]
     fn metadata(&self) -> Option<&'a HashMap<&'a str, &'a str>> {
         self.metadata
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, SourceUrlSet> IfSinceConditionOption
-    for CopyBlobFromUrlBuilder<'a, ContainerNameSet, BlobNameSet, SourceUrlSet>
+impl<'a, C, ContainerNameSet, BlobNameSet, SourceUrlSet> IfSinceConditionOption
+    for CopyBlobFromUrlBuilder<'a, C, ContainerNameSet, BlobNameSet, SourceUrlSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     SourceUrlSet: ToAssign,
+    C: Client,
 {
+    #[inline]
     fn if_since_condition(&self) -> Option<IfSinceCondition> {
         self.if_since_condition
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, SourceUrlSet> IfMatchConditionOption<'a>
-    for CopyBlobFromUrlBuilder<'a, ContainerNameSet, BlobNameSet, SourceUrlSet>
+impl<'a, C, ContainerNameSet, BlobNameSet, SourceUrlSet> IfMatchConditionOption<'a>
+    for CopyBlobFromUrlBuilder<'a, C, ContainerNameSet, BlobNameSet, SourceUrlSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     SourceUrlSet: ToAssign,
+    C: Client,
 {
+    #[inline]
     fn if_match_condition(&self) -> Option<IfMatchCondition<'a>> {
         self.if_match_condition
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, SourceUrlSet> ClientRequestIdOption<'a>
-    for CopyBlobFromUrlBuilder<'a, ContainerNameSet, BlobNameSet, SourceUrlSet>
+impl<'a, C, ContainerNameSet, BlobNameSet, SourceUrlSet> ClientRequestIdOption<'a>
+    for CopyBlobFromUrlBuilder<'a, C, ContainerNameSet, BlobNameSet, SourceUrlSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     SourceUrlSet: ToAssign,
+    C: Client,
 {
+    #[inline]
     fn client_request_id(&self) -> Option<&'a str> {
         self.client_request_id
     }
 }
 
-impl<'a, BlobNameSet, SourceUrlSet> ContainerNameSupport<'a>
-    for CopyBlobFromUrlBuilder<'a, No, BlobNameSet, SourceUrlSet>
+impl<'a, C, BlobNameSet, SourceUrlSet> ContainerNameSupport<'a>
+    for CopyBlobFromUrlBuilder<'a, C, No, BlobNameSet, SourceUrlSet>
 where
     BlobNameSet: ToAssign,
     SourceUrlSet: ToAssign,
+    C: Client,
 {
-    type O = CopyBlobFromUrlBuilder<'a, Yes, BlobNameSet, SourceUrlSet>;
+    type O = CopyBlobFromUrlBuilder<'a, C, Yes, BlobNameSet, SourceUrlSet>;
 
+    #[inline]
     fn with_container_name(self, container_name: &'a str) -> Self::O {
         CopyBlobFromUrlBuilder {
             client: self.client,
@@ -303,14 +344,16 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, SourceUrlSet> BlobNameSupport<'a>
-    for CopyBlobFromUrlBuilder<'a, ContainerNameSet, No, SourceUrlSet>
+impl<'a, C, ContainerNameSet, SourceUrlSet> BlobNameSupport<'a>
+    for CopyBlobFromUrlBuilder<'a, C, ContainerNameSet, No, SourceUrlSet>
 where
     ContainerNameSet: ToAssign,
     SourceUrlSet: ToAssign,
+    C: Client,
 {
-    type O = CopyBlobFromUrlBuilder<'a, ContainerNameSet, Yes, SourceUrlSet>;
+    type O = CopyBlobFromUrlBuilder<'a, C, ContainerNameSet, Yes, SourceUrlSet>;
 
+    #[inline]
     fn with_blob_name(self, blob_name: &'a str) -> Self::O {
         CopyBlobFromUrlBuilder {
             client: self.client,
@@ -337,14 +380,16 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet> SourceUrlSupport<'a>
-    for CopyBlobFromUrlBuilder<'a, ContainerNameSet, BlobNameSet, No>
+impl<'a, C, ContainerNameSet, BlobNameSet> SourceUrlSupport<'a>
+    for CopyBlobFromUrlBuilder<'a, C, ContainerNameSet, BlobNameSet, No>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
+    C: Client,
 {
-    type O = CopyBlobFromUrlBuilder<'a, ContainerNameSet, BlobNameSet, Yes>;
+    type O = CopyBlobFromUrlBuilder<'a, C, ContainerNameSet, BlobNameSet, Yes>;
 
+    #[inline]
     fn with_source_url(self, source_url: &'a str) -> Self::O {
         CopyBlobFromUrlBuilder {
             client: self.client,
@@ -371,15 +416,17 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, SourceUrlSet> TimeoutSupport
-    for CopyBlobFromUrlBuilder<'a, ContainerNameSet, BlobNameSet, SourceUrlSet>
+impl<'a, C, ContainerNameSet, BlobNameSet, SourceUrlSet> TimeoutSupport
+    for CopyBlobFromUrlBuilder<'a, C, ContainerNameSet, BlobNameSet, SourceUrlSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     SourceUrlSet: ToAssign,
+    C: Client,
 {
-    type O = CopyBlobFromUrlBuilder<'a, ContainerNameSet, BlobNameSet, SourceUrlSet>;
+    type O = CopyBlobFromUrlBuilder<'a, C, ContainerNameSet, BlobNameSet, SourceUrlSet>;
 
+    #[inline]
     fn with_timeout(self, timeout: u64) -> Self::O {
         CopyBlobFromUrlBuilder {
             client: self.client,
@@ -406,15 +453,17 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, SourceUrlSet> IsSynchronousSupport
-    for CopyBlobFromUrlBuilder<'a, ContainerNameSet, BlobNameSet, SourceUrlSet>
+impl<'a, C, ContainerNameSet, BlobNameSet, SourceUrlSet> IsSynchronousSupport
+    for CopyBlobFromUrlBuilder<'a, C, ContainerNameSet, BlobNameSet, SourceUrlSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     SourceUrlSet: ToAssign,
+    C: Client,
 {
-    type O = CopyBlobFromUrlBuilder<'a, ContainerNameSet, BlobNameSet, SourceUrlSet>;
+    type O = CopyBlobFromUrlBuilder<'a, C, ContainerNameSet, BlobNameSet, SourceUrlSet>;
 
+    #[inline]
     fn with_is_synchronous(self, is_synchronous: bool) -> Self::O {
         CopyBlobFromUrlBuilder {
             client: self.client,
@@ -441,15 +490,17 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, SourceUrlSet> SourceContentMD5Support<'a>
-    for CopyBlobFromUrlBuilder<'a, ContainerNameSet, BlobNameSet, SourceUrlSet>
+impl<'a, C, ContainerNameSet, BlobNameSet, SourceUrlSet> SourceContentMD5Support<'a>
+    for CopyBlobFromUrlBuilder<'a, C, ContainerNameSet, BlobNameSet, SourceUrlSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     SourceUrlSet: ToAssign,
+    C: Client,
 {
-    type O = CopyBlobFromUrlBuilder<'a, ContainerNameSet, BlobNameSet, SourceUrlSet>;
+    type O = CopyBlobFromUrlBuilder<'a, C, ContainerNameSet, BlobNameSet, SourceUrlSet>;
 
+    #[inline]
     fn with_source_content_md5(self, source_content_md5: &'a [u8]) -> Self::O {
         CopyBlobFromUrlBuilder {
             client: self.client,
@@ -476,15 +527,17 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, SourceUrlSet> LeaseIdSupport<'a>
-    for CopyBlobFromUrlBuilder<'a, ContainerNameSet, BlobNameSet, SourceUrlSet>
+impl<'a, C, ContainerNameSet, BlobNameSet, SourceUrlSet> LeaseIdSupport<'a>
+    for CopyBlobFromUrlBuilder<'a, C, ContainerNameSet, BlobNameSet, SourceUrlSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     SourceUrlSet: ToAssign,
+    C: Client,
 {
-    type O = CopyBlobFromUrlBuilder<'a, ContainerNameSet, BlobNameSet, SourceUrlSet>;
+    type O = CopyBlobFromUrlBuilder<'a, C, ContainerNameSet, BlobNameSet, SourceUrlSet>;
 
+    #[inline]
     fn with_lease_id(self, lease_id: &'a LeaseId) -> Self::O {
         CopyBlobFromUrlBuilder {
             client: self.client,
@@ -511,15 +564,17 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, SourceUrlSet> ContentTypeSupport<'a>
-    for CopyBlobFromUrlBuilder<'a, ContainerNameSet, BlobNameSet, SourceUrlSet>
+impl<'a, C, ContainerNameSet, BlobNameSet, SourceUrlSet> ContentTypeSupport<'a>
+    for CopyBlobFromUrlBuilder<'a, C, ContainerNameSet, BlobNameSet, SourceUrlSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     SourceUrlSet: ToAssign,
+    C: Client,
 {
-    type O = CopyBlobFromUrlBuilder<'a, ContainerNameSet, BlobNameSet, SourceUrlSet>;
+    type O = CopyBlobFromUrlBuilder<'a, C, ContainerNameSet, BlobNameSet, SourceUrlSet>;
 
+    #[inline]
     fn with_content_type(self, content_type: &'a str) -> Self::O {
         CopyBlobFromUrlBuilder {
             client: self.client,
@@ -546,15 +601,17 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, SourceUrlSet> ContentEncodingSupport<'a>
-    for CopyBlobFromUrlBuilder<'a, ContainerNameSet, BlobNameSet, SourceUrlSet>
+impl<'a, C, ContainerNameSet, BlobNameSet, SourceUrlSet> ContentEncodingSupport<'a>
+    for CopyBlobFromUrlBuilder<'a, C, ContainerNameSet, BlobNameSet, SourceUrlSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     SourceUrlSet: ToAssign,
+    C: Client,
 {
-    type O = CopyBlobFromUrlBuilder<'a, ContainerNameSet, BlobNameSet, SourceUrlSet>;
+    type O = CopyBlobFromUrlBuilder<'a, C, ContainerNameSet, BlobNameSet, SourceUrlSet>;
 
+    #[inline]
     fn with_content_encoding(self, content_encoding: &'a str) -> Self::O {
         CopyBlobFromUrlBuilder {
             client: self.client,
@@ -581,15 +638,17 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, SourceUrlSet> ContentLanguageSupport<'a>
-    for CopyBlobFromUrlBuilder<'a, ContainerNameSet, BlobNameSet, SourceUrlSet>
+impl<'a, C, ContainerNameSet, BlobNameSet, SourceUrlSet> ContentLanguageSupport<'a>
+    for CopyBlobFromUrlBuilder<'a, C, ContainerNameSet, BlobNameSet, SourceUrlSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     SourceUrlSet: ToAssign,
+    C: Client,
 {
-    type O = CopyBlobFromUrlBuilder<'a, ContainerNameSet, BlobNameSet, SourceUrlSet>;
+    type O = CopyBlobFromUrlBuilder<'a, C, ContainerNameSet, BlobNameSet, SourceUrlSet>;
 
+    #[inline]
     fn with_content_language(self, content_language: &'a str) -> Self::O {
         CopyBlobFromUrlBuilder {
             client: self.client,
@@ -616,15 +675,17 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, SourceUrlSet> CacheControlSupport<'a>
-    for CopyBlobFromUrlBuilder<'a, ContainerNameSet, BlobNameSet, SourceUrlSet>
+impl<'a, C, ContainerNameSet, BlobNameSet, SourceUrlSet> CacheControlSupport<'a>
+    for CopyBlobFromUrlBuilder<'a, C, ContainerNameSet, BlobNameSet, SourceUrlSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     SourceUrlSet: ToAssign,
+    C: Client,
 {
-    type O = CopyBlobFromUrlBuilder<'a, ContainerNameSet, BlobNameSet, SourceUrlSet>;
+    type O = CopyBlobFromUrlBuilder<'a, C, ContainerNameSet, BlobNameSet, SourceUrlSet>;
 
+    #[inline]
     fn with_cache_control(self, cache_control: &'a str) -> Self::O {
         CopyBlobFromUrlBuilder {
             client: self.client,
@@ -651,15 +712,17 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, SourceUrlSet> ContentDispositionSupport<'a>
-    for CopyBlobFromUrlBuilder<'a, ContainerNameSet, BlobNameSet, SourceUrlSet>
+impl<'a, C, ContainerNameSet, BlobNameSet, SourceUrlSet> ContentDispositionSupport<'a>
+    for CopyBlobFromUrlBuilder<'a, C, ContainerNameSet, BlobNameSet, SourceUrlSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     SourceUrlSet: ToAssign,
+    C: Client,
 {
-    type O = CopyBlobFromUrlBuilder<'a, ContainerNameSet, BlobNameSet, SourceUrlSet>;
+    type O = CopyBlobFromUrlBuilder<'a, C, ContainerNameSet, BlobNameSet, SourceUrlSet>;
 
+    #[inline]
     fn with_content_disposition(self, content_disposition: &'a str) -> Self::O {
         CopyBlobFromUrlBuilder {
             client: self.client,
@@ -686,15 +749,17 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, SourceUrlSet> MetadataSupport<'a>
-    for CopyBlobFromUrlBuilder<'a, ContainerNameSet, BlobNameSet, SourceUrlSet>
+impl<'a, C, ContainerNameSet, BlobNameSet, SourceUrlSet> MetadataSupport<'a>
+    for CopyBlobFromUrlBuilder<'a, C, ContainerNameSet, BlobNameSet, SourceUrlSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     SourceUrlSet: ToAssign,
+    C: Client,
 {
-    type O = CopyBlobFromUrlBuilder<'a, ContainerNameSet, BlobNameSet, SourceUrlSet>;
+    type O = CopyBlobFromUrlBuilder<'a, C, ContainerNameSet, BlobNameSet, SourceUrlSet>;
 
+    #[inline]
     fn with_metadata(self, metadata: &'a HashMap<&'a str, &'a str>) -> Self::O {
         CopyBlobFromUrlBuilder {
             client: self.client,
@@ -721,15 +786,17 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, SourceUrlSet> IfSinceConditionSupport
-    for CopyBlobFromUrlBuilder<'a, ContainerNameSet, BlobNameSet, SourceUrlSet>
+impl<'a, C, ContainerNameSet, BlobNameSet, SourceUrlSet> IfSinceConditionSupport
+    for CopyBlobFromUrlBuilder<'a, C, ContainerNameSet, BlobNameSet, SourceUrlSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     SourceUrlSet: ToAssign,
+    C: Client,
 {
-    type O = CopyBlobFromUrlBuilder<'a, ContainerNameSet, BlobNameSet, SourceUrlSet>;
+    type O = CopyBlobFromUrlBuilder<'a, C, ContainerNameSet, BlobNameSet, SourceUrlSet>;
 
+    #[inline]
     fn with_if_since_condition(self, if_since_condition: IfSinceCondition) -> Self::O {
         CopyBlobFromUrlBuilder {
             client: self.client,
@@ -756,15 +823,17 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, SourceUrlSet> IfMatchConditionSupport<'a>
-    for CopyBlobFromUrlBuilder<'a, ContainerNameSet, BlobNameSet, SourceUrlSet>
+impl<'a, C, ContainerNameSet, BlobNameSet, SourceUrlSet> IfMatchConditionSupport<'a>
+    for CopyBlobFromUrlBuilder<'a, C, ContainerNameSet, BlobNameSet, SourceUrlSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     SourceUrlSet: ToAssign,
+    C: Client,
 {
-    type O = CopyBlobFromUrlBuilder<'a, ContainerNameSet, BlobNameSet, SourceUrlSet>;
+    type O = CopyBlobFromUrlBuilder<'a, C, ContainerNameSet, BlobNameSet, SourceUrlSet>;
 
+    #[inline]
     fn with_if_match_condition(self, if_match_condition: IfMatchCondition<'a>) -> Self::O {
         CopyBlobFromUrlBuilder {
             client: self.client,
@@ -791,15 +860,17 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, SourceUrlSet> ClientRequestIdSupport<'a>
-    for CopyBlobFromUrlBuilder<'a, ContainerNameSet, BlobNameSet, SourceUrlSet>
+impl<'a, C, ContainerNameSet, BlobNameSet, SourceUrlSet> ClientRequestIdSupport<'a>
+    for CopyBlobFromUrlBuilder<'a, C, ContainerNameSet, BlobNameSet, SourceUrlSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     SourceUrlSet: ToAssign,
+    C: Client,
 {
-    type O = CopyBlobFromUrlBuilder<'a, ContainerNameSet, BlobNameSet, SourceUrlSet>;
+    type O = CopyBlobFromUrlBuilder<'a, C, ContainerNameSet, BlobNameSet, SourceUrlSet>;
 
+    #[inline]
     fn with_client_request_id(self, client_request_id: &'a str) -> Self::O {
         CopyBlobFromUrlBuilder {
             client: self.client,
@@ -826,21 +897,15 @@ where
     }
 }
 
-// methods callable regardless
-impl<'a, ContainerNameSet, BlobNameSet, SourceUrlSet>
-    CopyBlobFromUrlBuilder<'a, ContainerNameSet, BlobNameSet, SourceUrlSet>
-where
-    ContainerNameSet: ToAssign,
-    BlobNameSet: ToAssign,
-    SourceUrlSet: ToAssign,
-{
-}
-
 // methods callable only when every mandatory field has been filled
-impl<'a> CopyBlobFromUrlBuilder<'a, Yes, Yes, Yes> {
+impl<'a, C> CopyBlobFromUrlBuilder<'a, C, Yes, Yes, Yes>
+where
+    C: Client,
+{
     #[inline]
     pub async fn finalize(self) -> Result<CopyBlobFromUrlResponse, AzureError> {
-        let mut uri = generate_blob_uri(&self, None);
+        let mut uri =
+            generate_blob_uri(self.client(), self.container_name(), self.blob_name(), None);
 
         if let Some(timeout) = TimeoutOption::to_uri_parameter(&self) {
             uri = format!("{}?{}", uri, timeout);
@@ -851,7 +916,7 @@ impl<'a> CopyBlobFromUrlBuilder<'a, Yes, Yes, Yes> {
         let future_response = self.client().perform_request(
             &uri,
             &Method::PUT,
-            |mut request| {
+            &|mut request| {
                 request = SourceUrlRequired::add_header(&self, request);
                 request = IsSynchronousOption::add_header(&self, request);
                 request = SourceContentMD5Option::add_header(&self, request);

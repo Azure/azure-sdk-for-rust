@@ -25,7 +25,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .nth(2)
         .expect("please specify blob name as command line parameter");
 
-    let client = Client::new(&account, &master_key)?;
+    let client = client::with_access_key(&account, &master_key);
 
     let data: [u8; 2000] = [51; 2000];
 
@@ -48,7 +48,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .put_page_blob()
         .with_container_name(&container)
         .with_blob_name(&blob_name)
-        .with_content_length(1024 * 3)?
+        .with_content_length(1024 * 3)
         .with_content_type("text/plain")
         .with_metadata(&metadata)
         .finalize()

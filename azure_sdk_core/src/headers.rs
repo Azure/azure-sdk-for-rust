@@ -25,6 +25,7 @@ pub const CONTENT_MD5: &str = "Content-MD5"; //=> [String] }
 pub const SOURCE_CONTENT_MD5: &str = "x-ms-source-content-md5"; //=> [String] }
 pub const SERVER_ENCRYPTED: &str = "x-ms-server-encrypted";
 pub const BLOB_TYPE: &str = "x-ms-blob-type";
+pub const CONTENT_CRC64: &str = "x-ms-content-crc64";
 pub const BLOB_CONTENT_LENGTH: &str = "x-ms-blob-content-length";
 pub const BLOB_ACCESS_TIER: &str = "x-ms-access-tier";
 pub const BLOB_SEQUENCE_NUMBER: &str = "x-ms-blob-sequence-number";

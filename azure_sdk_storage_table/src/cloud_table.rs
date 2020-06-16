@@ -4,6 +4,7 @@ use crate::{
 use azure_sdk_core::errors::{
     check_status_extract_body, check_status_extract_headers_and_body, AzureError,
 };
+use azure_sdk_storage_core::Client;
 use futures::stream::Stream;
 use hyper::{header, Method, StatusCode};
 use log;
@@ -13,14 +14,20 @@ use std::convert::TryFrom;
 
 /// Represents a table in the Microsoft Azure Table service.
 #[derive(Clone)]
-pub struct CloudTable {
-    client: TableClient,
+pub struct CloudTable<C>
+where
+    C: Client,
+{
+    client: TableClient<C>,
     table_name: String,
 }
 
-impl CloudTable {
+impl<C> CloudTable<C>
+where
+    C: Client,
+{
     /// Creates an CloadTable using the specified client and table name
-    pub fn new<T: Into<String>>(client: TableClient, table: T) -> Self {
+    pub fn new<T: Into<String>>(client: TableClient<C>, table: T) -> Self {
         CloudTable {
             client,
             table_name: table.into(),

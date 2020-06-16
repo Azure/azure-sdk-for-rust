@@ -3,10 +3,10 @@
 	"derive": "Debug, Clone",
 	"uses": [
 			"crate::prelude::*",
+			"azure_sdk_core::prelude::*",
 			"crate::{ResourceType, DocumentClient}",
 			"crate::DocumentClientRequired",
 			"azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError}",
-			"azure_sdk_core::prelude::*",
 			"hyper::StatusCode",
 			"crate::responses::ListAttachmentsResponse",
 			"std::convert::TryInto"

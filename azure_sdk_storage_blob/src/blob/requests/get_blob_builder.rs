@@ -3,26 +3,23 @@ use crate::blob::{generate_blob_uri, Blob};
 use azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError};
 use azure_sdk_core::headers::RANGE_GET_CONTENT_MD5;
 use azure_sdk_core::lease::LeaseId;
+use azure_sdk_core::prelude::*;
 use azure_sdk_core::range::Range;
 use azure_sdk_core::util::RequestBuilderExt;
-use azure_sdk_core::{
-    BlobNameRequired, BlobNameSupport, ClientRequestIdOption, ClientRequestIdSupport,
-    ContainerNameRequired, ContainerNameSupport, LeaseIdOption, LeaseIdSupport, No, RangeOption,
-    RangeSupport, SnapshotOption, SnapshotSupport, TimeoutOption, TimeoutSupport, ToAssign, Yes,
-};
-use azure_sdk_storage_core::client::Client;
-use azure_sdk_storage_core::ClientRequired;
+use azure_sdk_core::{No, ToAssign, Yes};
+use azure_sdk_storage_core::prelude::*;
 use chrono::{DateTime, Utc};
 use hyper::{Method, StatusCode};
 use std::marker::PhantomData;
 
 #[derive(Debug, Clone)]
-pub struct GetBlobBuilder<'a, ContainerNameSet, BlobNameSet>
+pub struct GetBlobBuilder<'a, C, ContainerNameSet, BlobNameSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
+    C: Client,
 {
-    client: &'a Client,
+    client: &'a C,
     p_container_name: PhantomData<ContainerNameSet>,
     p_blob_name: PhantomData<BlobNameSet>,
     container_name: Option<&'a str>,
@@ -34,9 +31,12 @@ where
     client_request_id: Option<&'a str>,
 }
 
-impl<'a> GetBlobBuilder<'a, No, No> {
+impl<'a, C> GetBlobBuilder<'a, C, No, No>
+where
+    C: Client,
+{
     #[inline]
-    pub(crate) fn new(client: &'a Client) -> GetBlobBuilder<'a, No, No> {
+    pub(crate) fn new(client: &'a C) -> GetBlobBuilder<'a, C, No, No> {
         GetBlobBuilder {
             client,
             p_container_name: PhantomData {},
@@ -52,21 +52,26 @@ impl<'a> GetBlobBuilder<'a, No, No> {
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet> ClientRequired<'a>
-    for GetBlobBuilder<'a, ContainerNameSet, BlobNameSet>
+impl<'a, C, ContainerNameSet, BlobNameSet> ClientRequired<'a, C>
+    for GetBlobBuilder<'a, C, ContainerNameSet, BlobNameSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
+    C: Client,
 {
     #[inline]
-    fn client(&self) -> &'a Client {
+    fn client(&self) -> &'a C {
         self.client
     }
 }
 
-impl<'a, BlobNameSet> ContainerNameRequired<'a> for GetBlobBuilder<'a, Yes, BlobNameSet>
+//get mandatory no traits methods
+
+//set mandatory no traits methods
+impl<'a, C, BlobNameSet> ContainerNameRequired<'a> for GetBlobBuilder<'a, C, Yes, BlobNameSet>
 where
     BlobNameSet: ToAssign,
+    C: Client,
 {
     #[inline]
     fn container_name(&self) -> &'a str {
@@ -74,9 +79,10 @@ where
     }
 }
 
-impl<'a, ContainerNameSet> BlobNameRequired<'a> for GetBlobBuilder<'a, ContainerNameSet, Yes>
+impl<'a, C, ContainerNameSet> BlobNameRequired<'a> for GetBlobBuilder<'a, C, ContainerNameSet, Yes>
 where
     ContainerNameSet: ToAssign,
+    C: Client,
 {
     #[inline]
     fn blob_name(&self) -> &'a str {
@@ -84,11 +90,12 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet> SnapshotOption
-    for GetBlobBuilder<'a, ContainerNameSet, BlobNameSet>
+impl<'a, C, ContainerNameSet, BlobNameSet> SnapshotOption
+    for GetBlobBuilder<'a, C, ContainerNameSet, BlobNameSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
+    C: Client,
 {
     #[inline]
     fn snapshot(&self) -> Option<DateTime<Utc>> {
@@ -96,11 +103,12 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet> TimeoutOption
-    for GetBlobBuilder<'a, ContainerNameSet, BlobNameSet>
+impl<'a, C, ContainerNameSet, BlobNameSet> TimeoutOption
+    for GetBlobBuilder<'a, C, ContainerNameSet, BlobNameSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
+    C: Client,
 {
     #[inline]
     fn timeout(&self) -> Option<u64> {
@@ -108,11 +116,12 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet> RangeOption<'a>
-    for GetBlobBuilder<'a, ContainerNameSet, BlobNameSet>
+impl<'a, C, ContainerNameSet, BlobNameSet> RangeOption<'a>
+    for GetBlobBuilder<'a, C, ContainerNameSet, BlobNameSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
+    C: Client,
 {
     #[inline]
     fn range(&self) -> Option<&'a Range> {
@@ -120,11 +129,12 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet> LeaseIdOption<'a>
-    for GetBlobBuilder<'a, ContainerNameSet, BlobNameSet>
+impl<'a, C, ContainerNameSet, BlobNameSet> LeaseIdOption<'a>
+    for GetBlobBuilder<'a, C, ContainerNameSet, BlobNameSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
+    C: Client,
 {
     #[inline]
     fn lease_id(&self) -> Option<&'a LeaseId> {
@@ -132,11 +142,12 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet> ClientRequestIdOption<'a>
-    for GetBlobBuilder<'a, ContainerNameSet, BlobNameSet>
+impl<'a, C, ContainerNameSet, BlobNameSet> ClientRequestIdOption<'a>
+    for GetBlobBuilder<'a, C, ContainerNameSet, BlobNameSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
+    C: Client,
 {
     #[inline]
     fn client_request_id(&self) -> Option<&'a str> {
@@ -144,13 +155,12 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet> ContainerNameSupport<'a>
-    for GetBlobBuilder<'a, ContainerNameSet, BlobNameSet>
+impl<'a, C, BlobNameSet> ContainerNameSupport<'a> for GetBlobBuilder<'a, C, No, BlobNameSet>
 where
-    ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
+    C: Client,
 {
-    type O = GetBlobBuilder<'a, Yes, BlobNameSet>;
+    type O = GetBlobBuilder<'a, C, Yes, BlobNameSet>;
 
     #[inline]
     fn with_container_name(self, container_name: &'a str) -> Self::O {
@@ -169,13 +179,12 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet> BlobNameSupport<'a>
-    for GetBlobBuilder<'a, ContainerNameSet, BlobNameSet>
+impl<'a, C, ContainerNameSet> BlobNameSupport<'a> for GetBlobBuilder<'a, C, ContainerNameSet, No>
 where
     ContainerNameSet: ToAssign,
-    BlobNameSet: ToAssign,
+    C: Client,
 {
-    type O = GetBlobBuilder<'a, ContainerNameSet, Yes>;
+    type O = GetBlobBuilder<'a, C, ContainerNameSet, Yes>;
 
     #[inline]
     fn with_blob_name(self, blob_name: &'a str) -> Self::O {
@@ -194,13 +203,14 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet> SnapshotSupport
-    for GetBlobBuilder<'a, ContainerNameSet, BlobNameSet>
+impl<'a, C, ContainerNameSet, BlobNameSet> SnapshotSupport
+    for GetBlobBuilder<'a, C, ContainerNameSet, BlobNameSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
+    C: Client,
 {
-    type O = GetBlobBuilder<'a, ContainerNameSet, BlobNameSet>;
+    type O = GetBlobBuilder<'a, C, ContainerNameSet, BlobNameSet>;
 
     #[inline]
     fn with_snapshot(self, snapshot: DateTime<Utc>) -> Self::O {
@@ -219,13 +229,14 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet> TimeoutSupport
-    for GetBlobBuilder<'a, ContainerNameSet, BlobNameSet>
+impl<'a, C, ContainerNameSet, BlobNameSet> TimeoutSupport
+    for GetBlobBuilder<'a, C, ContainerNameSet, BlobNameSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
+    C: Client,
 {
-    type O = GetBlobBuilder<'a, ContainerNameSet, BlobNameSet>;
+    type O = GetBlobBuilder<'a, C, ContainerNameSet, BlobNameSet>;
 
     #[inline]
     fn with_timeout(self, timeout: u64) -> Self::O {
@@ -244,13 +255,14 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet> RangeSupport<'a>
-    for GetBlobBuilder<'a, ContainerNameSet, BlobNameSet>
+impl<'a, C, ContainerNameSet, BlobNameSet> RangeSupport<'a>
+    for GetBlobBuilder<'a, C, ContainerNameSet, BlobNameSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
+    C: Client,
 {
-    type O = GetBlobBuilder<'a, ContainerNameSet, BlobNameSet>;
+    type O = GetBlobBuilder<'a, C, ContainerNameSet, BlobNameSet>;
 
     #[inline]
     fn with_range(self, range: &'a Range) -> Self::O {
@@ -269,13 +281,14 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet> LeaseIdSupport<'a>
-    for GetBlobBuilder<'a, ContainerNameSet, BlobNameSet>
+impl<'a, C, ContainerNameSet, BlobNameSet> LeaseIdSupport<'a>
+    for GetBlobBuilder<'a, C, ContainerNameSet, BlobNameSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
+    C: Client,
 {
-    type O = GetBlobBuilder<'a, ContainerNameSet, BlobNameSet>;
+    type O = GetBlobBuilder<'a, C, ContainerNameSet, BlobNameSet>;
 
     #[inline]
     fn with_lease_id(self, lease_id: &'a LeaseId) -> Self::O {
@@ -294,13 +307,14 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet> ClientRequestIdSupport<'a>
-    for GetBlobBuilder<'a, ContainerNameSet, BlobNameSet>
+impl<'a, C, ContainerNameSet, BlobNameSet> ClientRequestIdSupport<'a>
+    for GetBlobBuilder<'a, C, ContainerNameSet, BlobNameSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
+    C: Client,
 {
-    type O = GetBlobBuilder<'a, ContainerNameSet, BlobNameSet>;
+    type O = GetBlobBuilder<'a, C, ContainerNameSet, BlobNameSet>;
 
     #[inline]
     fn with_client_request_id(self, client_request_id: &'a str) -> Self::O {
@@ -319,22 +333,18 @@ where
     }
 }
 
-// methods callable regardless
-impl<'a, ContainerNameSet, BlobNameSet> GetBlobBuilder<'a, ContainerNameSet, BlobNameSet>
+// methods callable only when every mandatory field has been filled
+impl<'a, C> GetBlobBuilder<'a, C, Yes, Yes>
 where
-    ContainerNameSet: ToAssign,
-    BlobNameSet: ToAssign,
+    C: Client,
 {
-}
-
-impl<'a> GetBlobBuilder<'a, Yes, Yes> {
-    #[inline]
     pub async fn finalize(self) -> Result<GetBlobResponse, AzureError> {
         let container_name = self.container_name().to_owned();
         let blob_name = self.blob_name().to_owned();
         let snapshot_time = self.snapshot();
 
-        let mut uri = generate_blob_uri(&self, None);
+        let mut uri =
+            generate_blob_uri(self.client(), self.container_name(), self.blob_name(), None);
 
         let mut f_first = true;
         if let Some(snapshot) = SnapshotOption::to_uri_parameter(&self) {
@@ -350,7 +360,7 @@ impl<'a> GetBlobBuilder<'a, Yes, Yes> {
         let future_response = self.client().perform_request(
             &uri,
             &Method::GET,
-            |mut request| {
+            &|mut request| {
                 if let Some(r) = self.range() {
                     request = LeaseIdOption::add_header(&self, request);
                     request = RangeOption::add_header(&self, request);

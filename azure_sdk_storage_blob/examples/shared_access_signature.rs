@@ -23,7 +23,7 @@ fn code() -> Result<(), Box<dyn Error>> {
         .nth(2)
         .expect("please specify blob name as command line parameter");
 
-    let client = Client::new(&account, &master_key)?;
+    let client = client::with_access_key(&account, &master_key);
 
     let now = Utc::now();
     let later = now + Duration::hours(1);

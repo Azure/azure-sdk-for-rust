@@ -11,10 +11,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // this is how you use the emulator.
     let blob_storage_url = "http://127.0.0.1:10000";
     let table_storage_url = "http://127.0.0.1:10002";
-    let client = Client::emulator(
+    let client = client::with_emulator(
         &Url::parse(blob_storage_url)?,
         &Url::parse(table_storage_url)?,
-    )?;
+    );
 
     // create container
     let res = client

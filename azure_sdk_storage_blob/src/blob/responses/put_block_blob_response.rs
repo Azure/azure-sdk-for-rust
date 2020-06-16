@@ -18,6 +18,8 @@ pub struct PutBlockBlobResponse {
 
 impl PutBlockBlobResponse {
     pub fn from_headers(headers: &HeaderMap) -> Result<PutBlockBlobResponse, AzureError> {
+        debug!("headers == {:?}", headers);
+
         let etag = etag_from_headers(headers)?;
         let last_modified = last_modified_from_headers(headers)?;
         let content_md5 = content_md5_from_headers(headers)?;

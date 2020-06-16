@@ -1,28 +1,41 @@
 use crate::account::responses::GetAccountInformationResponse;
 use azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError};
-use azure_sdk_storage_core::client::Client;
-use azure_sdk_storage_core::ClientRequired;
+use azure_sdk_storage_core::prelude::*;
 use hyper::{Method, StatusCode};
 
 #[derive(Debug, Clone)]
-pub struct GetAccountInformationBuilder<'a> {
-    client: &'a Client,
+pub struct GetAccountInformationBuilder<'a, C>
+where
+    C: Client,
+{
+    client: &'a C,
 }
 
-impl<'a> GetAccountInformationBuilder<'a> {
-    pub(crate) fn new(client: &'a Client) -> GetAccountInformationBuilder<'a> {
+impl<'a, C> GetAccountInformationBuilder<'a, C>
+where
+    C: Client,
+{
+    #[inline]
+    pub(crate) fn new(client: &'a C) -> GetAccountInformationBuilder<'a, C> {
         GetAccountInformationBuilder { client }
     }
 }
 
-impl<'a> ClientRequired<'a> for GetAccountInformationBuilder<'a> {
-    fn client(&self) -> &'a Client {
+impl<'a, C> ClientRequired<'a, C> for GetAccountInformationBuilder<'a, C>
+where
+    C: Client,
+{
+    #[inline]
+    fn client(&self) -> &'a C {
         self.client
     }
 }
 
-// methods callable regardless
-impl<'a> GetAccountInformationBuilder<'a> {
+// methods callable only when every mandatory field has been filled
+impl<'a, C> GetAccountInformationBuilder<'a, C>
+where
+    C: Client,
+{
     #[inline]
     pub async fn finalize(self) -> Result<GetAccountInformationResponse, AzureError> {
         let uri = format!(
@@ -33,7 +46,7 @@ impl<'a> GetAccountInformationBuilder<'a> {
 
         let req = self
             .client()
-            .perform_request(&uri, &Method::GET, |request| request, None);
+            .perform_request(&uri, &Method::GET, &|request| request, None);
         let (headers, _) = check_status_extract_headers_and_body(req?, StatusCode::OK).await?;
         GetAccountInformationResponse::from_headers(&headers)
     }

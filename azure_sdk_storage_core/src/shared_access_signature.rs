@@ -1,4 +1,4 @@
-use super::{Client, ClientRequired};
+use super::{KeyClient, KeyClientRequired};
 use crate::client_endpoint::ClientEndpoint;
 use azure_sdk_core::{No, ToAssign};
 use base64::encode;
@@ -100,7 +100,7 @@ impl fmt::Display for SasResourceType {
     }
 }
 
-/// Indicate which operations a client may perform on the resource ([Azure documentation](https://docs.microsoft.com/en-us/rest/api/storageservices/create-service-sas#specifying-permissions)).
+/// Indicate which operations a key_client may perform on the resource ([Azure documentation](https://docs.microsoft.com/en-us/rest/api/storageservices/create-service-sas#specifying-permissions)).
 #[derive(Copy, Clone)]
 pub enum SasPermissions {
     Read,
@@ -143,8 +143,8 @@ pub struct SharedAccessSignature {
 }
 
 impl SharedAccessSignature {
-    pub fn new(client: &Client) -> SharedAccessSignatureBuilder<No, No, No, No> {
-        SharedAccessSignatureBuilder::new(client)
+    pub fn new(key_client: &KeyClient) -> SharedAccessSignatureBuilder<No, No, No, No> {
+        SharedAccessSignatureBuilder::new(key_client)
     }
 
     fn format_date(d: DateTime<Utc>) -> String {
@@ -249,7 +249,7 @@ pub struct SharedAccessSignatureBuilder<
     SasExpirySet: ToAssign,
     SasPermissionsSet: ToAssign,
 {
-    client: &'a Client,
+    key_client: &'a KeyClient,
     signed_version: SasVersion,
     p_signed_resource: PhantomData<SasResourceSet>,
     signed_resource: Option<SasResource>,
@@ -265,9 +265,9 @@ pub struct SharedAccessSignatureBuilder<
 }
 
 impl<'a> SharedAccessSignatureBuilder<'a, No, No, No, No> {
-    pub fn new(client: &'a Client) -> Self {
+    pub fn new(key_client: &'a KeyClient) -> Self {
         Self {
-            client,
+            key_client,
             signed_version: SasVersion::V20181109,
             p_signed_resource: PhantomData {},
             signed_resource: None,
@@ -285,8 +285,8 @@ impl<'a> SharedAccessSignatureBuilder<'a, No, No, No, No> {
 
     pub fn finalize(&self) -> SharedAccessSignature {
         SharedAccessSignature {
-            account: self.client.account().to_string(),
-            key: self.client.key().to_string(),
+            account: self.key_client.account().to_string(),
+            key: self.key_client.key().to_string(),
 
             signed_version: self.signed_version,
             signed_resource: self.signed_resource.unwrap(),
@@ -300,7 +300,7 @@ impl<'a> SharedAccessSignatureBuilder<'a, No, No, No, No> {
     }
 }
 
-impl<'a, SasResourceSet, SasResourceTypeSet, SasExpirySet, SasPermissionsSet> ClientRequired<'a>
+impl<'a, SasResourceSet, SasResourceTypeSet, SasExpirySet, SasPermissionsSet> KeyClientRequired<'a>
     for SharedAccessSignatureBuilder<
         'a,
         SasResourceSet,
@@ -315,8 +315,8 @@ where
     SasPermissionsSet: ToAssign,
 {
     #[inline]
-    fn client(&self) -> &'a Client {
-        self.client
+    fn key_client(&self) -> &'a KeyClient {
+        self.key_client
     }
 }
 
@@ -324,7 +324,7 @@ pub trait ClientSharedAccessSignature {
     fn shared_access_signature(&self) -> SharedAccessSignatureBuilder<'_, No, No, No, No>;
 }
 
-impl ClientSharedAccessSignature for Client {
+impl ClientSharedAccessSignature for KeyClient {
     /// Grant restricted access rights to Azure Storage resources ([Azure documentation](https://docs.microsoft.com/en-us/rest/api/storageservices/delegate-access-with-shared-access-signature)).
     fn shared_access_signature(&self) -> SharedAccessSignatureBuilder<'_, No, No, No, No> {
         SharedAccessSignature::new(self)
@@ -385,7 +385,7 @@ where
     #[inline]
     fn with_resource(self, resource: SasResource) -> Self::O {
         SharedAccessSignatureBuilder {
-            client: self.client,
+            key_client: self.key_client,
             signed_version: self.signed_version,
             p_signed_resource: PhantomData {},
             signed_resource: Some(resource),
@@ -458,7 +458,7 @@ where
     #[inline]
     fn with_resource_type(self, resource_type: SasResourceType) -> Self::O {
         SharedAccessSignatureBuilder {
-            client: self.client,
+            key_client: self.key_client,
             signed_version: self.signed_version,
             p_signed_resource: PhantomData {},
             signed_resource: self.signed_resource,
@@ -529,7 +529,7 @@ where
     #[inline]
     fn with_expiry(self, expiry: DateTime<Utc>) -> Self::O {
         SharedAccessSignatureBuilder {
-            client: self.client,
+            key_client: self.key_client,
             signed_version: self.signed_version,
             p_signed_resource: PhantomData {},
             signed_resource: self.signed_resource,
@@ -601,7 +601,7 @@ where
     #[inline]
     fn with_permissions(self, permissions: SasPermissions) -> Self::O {
         SharedAccessSignatureBuilder {
-            client: self.client,
+            key_client: self.key_client,
             signed_version: self.signed_version,
             p_signed_resource: PhantomData {},
             signed_resource: self.signed_resource,
@@ -648,7 +648,7 @@ where
     #[inline]
     fn with_start(self, start: DateTime<Utc>) -> Self::O {
         SharedAccessSignatureBuilder {
-            client: self.client,
+            key_client: self.key_client,
             signed_version: self.signed_version,
             p_signed_resource: PhantomData {},
             signed_resource: self.signed_resource,
@@ -695,7 +695,7 @@ where
     #[inline]
     fn with_ip(self, ip: &str) -> Self::O {
         SharedAccessSignatureBuilder {
-            client: self.client,
+            key_client: self.key_client,
             signed_version: self.signed_version,
             p_signed_resource: PhantomData {},
             signed_resource: self.signed_resource,
@@ -742,7 +742,7 @@ where
     #[inline]
     fn with_protocol(self, protocol: SasProtocol) -> Self::O {
         SharedAccessSignatureBuilder {
-            client: self.client,
+            key_client: self.key_client,
             signed_version: self.signed_version,
             p_signed_resource: PhantomData {},
             signed_resource: self.signed_resource,

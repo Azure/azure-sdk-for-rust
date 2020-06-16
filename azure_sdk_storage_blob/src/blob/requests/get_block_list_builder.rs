@@ -3,24 +3,21 @@ use crate::blob::responses::GetBlockListResponse;
 use crate::blob::{BlockListType, BlockListTypeRequired, BlockListTypeSupport};
 use azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError};
 use azure_sdk_core::lease::LeaseId;
-use azure_sdk_core::{
-    BlobNameRequired, BlobNameSupport, ClientRequestIdOption, ClientRequestIdSupport,
-    ContainerNameRequired, ContainerNameSupport, LeaseIdOption, LeaseIdSupport, No, TimeoutOption,
-    TimeoutSupport, ToAssign, Yes,
-};
+use azure_sdk_core::prelude::*;
+use azure_sdk_core::{No, ToAssign, Yes};
 use azure_sdk_storage_core::client::Client;
 use azure_sdk_storage_core::ClientRequired;
 use hyper::{Method, StatusCode};
 use std::marker::PhantomData;
 
-#[derive(Debug, Clone)]
-pub struct GetBlockListBuilder<'a, ContainerNameSet, BlobNameSet, BlobListTypeSet>
+pub struct GetBlockListBuilder<'a, C, ContainerNameSet, BlobNameSet, BlobListTypeSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     BlobListTypeSet: ToAssign,
+    C: Client,
 {
-    client: &'a Client,
+    client: &'a C,
     p_container_name: PhantomData<ContainerNameSet>,
     p_blob_name: PhantomData<BlobNameSet>,
     p_block_list_type: PhantomData<BlobListTypeSet>,
@@ -32,9 +29,12 @@ where
     client_request_id: Option<&'a str>,
 }
 
-impl<'a> GetBlockListBuilder<'a, No, No, No> {
+impl<'a, C> GetBlockListBuilder<'a, C, No, No, No>
+where
+    C: Client,
+{
     #[inline]
-    pub(crate) fn new(client: &'a Client) -> GetBlockListBuilder<'a, No, No, No> {
+    pub(crate) fn new(client: &'a C) -> GetBlockListBuilder<'a, C, No, No, No> {
         GetBlockListBuilder {
             client,
             p_container_name: PhantomData {},
@@ -50,24 +50,29 @@ impl<'a> GetBlockListBuilder<'a, No, No, No> {
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, BlobListTypeSet> ClientRequired<'a>
-    for GetBlockListBuilder<'a, ContainerNameSet, BlobNameSet, BlobListTypeSet>
+impl<'a, C, ContainerNameSet, BlobNameSet, BlobListTypeSet> ClientRequired<'a, C>
+    for GetBlockListBuilder<'a, C, ContainerNameSet, BlobNameSet, BlobListTypeSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     BlobListTypeSet: ToAssign,
+    C: Client,
 {
     #[inline]
-    fn client(&self) -> &'a Client {
+    fn client(&self) -> &'a C {
         self.client
     }
 }
 
-impl<'a, BlobNameSet, BlobListTypeSet> ContainerNameRequired<'a>
-    for GetBlockListBuilder<'a, Yes, BlobNameSet, BlobListTypeSet>
+//get mandatory no traits methods
+
+//set mandatory no traits methods
+impl<'a, C, BlobNameSet, BlobListTypeSet> ContainerNameRequired<'a>
+    for GetBlockListBuilder<'a, C, Yes, BlobNameSet, BlobListTypeSet>
 where
     BlobNameSet: ToAssign,
     BlobListTypeSet: ToAssign,
+    C: Client,
 {
     #[inline]
     fn container_name(&self) -> &'a str {
@@ -75,11 +80,12 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobListTypeSet> BlobNameRequired<'a>
-    for GetBlockListBuilder<'a, ContainerNameSet, Yes, BlobListTypeSet>
+impl<'a, C, ContainerNameSet, BlobListTypeSet> BlobNameRequired<'a>
+    for GetBlockListBuilder<'a, C, ContainerNameSet, Yes, BlobListTypeSet>
 where
     ContainerNameSet: ToAssign,
     BlobListTypeSet: ToAssign,
+    C: Client,
 {
     #[inline]
     fn blob_name(&self) -> &'a str {
@@ -87,11 +93,12 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet> BlockListTypeRequired
-    for GetBlockListBuilder<'a, ContainerNameSet, BlobNameSet, Yes>
+impl<'a, C, ContainerNameSet, BlobNameSet> BlockListTypeRequired
+    for GetBlockListBuilder<'a, C, ContainerNameSet, BlobNameSet, Yes>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
+    C: Client,
 {
     #[inline]
     fn block_list_type(&self) -> BlockListType {
@@ -99,12 +106,13 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, BlobListTypeSet> TimeoutOption
-    for GetBlockListBuilder<'a, ContainerNameSet, BlobNameSet, BlobListTypeSet>
+impl<'a, C, ContainerNameSet, BlobNameSet, BlobListTypeSet> TimeoutOption
+    for GetBlockListBuilder<'a, C, ContainerNameSet, BlobNameSet, BlobListTypeSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     BlobListTypeSet: ToAssign,
+    C: Client,
 {
     #[inline]
     fn timeout(&self) -> Option<u64> {
@@ -112,12 +120,13 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, BlobListTypeSet> LeaseIdOption<'a>
-    for GetBlockListBuilder<'a, ContainerNameSet, BlobNameSet, BlobListTypeSet>
+impl<'a, C, ContainerNameSet, BlobNameSet, BlobListTypeSet> LeaseIdOption<'a>
+    for GetBlockListBuilder<'a, C, ContainerNameSet, BlobNameSet, BlobListTypeSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     BlobListTypeSet: ToAssign,
+    C: Client,
 {
     #[inline]
     fn lease_id(&self) -> Option<&'a LeaseId> {
@@ -125,12 +134,13 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, BlobListTypeSet> ClientRequestIdOption<'a>
-    for GetBlockListBuilder<'a, ContainerNameSet, BlobNameSet, BlobListTypeSet>
+impl<'a, C, ContainerNameSet, BlobNameSet, BlobListTypeSet> ClientRequestIdOption<'a>
+    for GetBlockListBuilder<'a, C, ContainerNameSet, BlobNameSet, BlobListTypeSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     BlobListTypeSet: ToAssign,
+    C: Client,
 {
     #[inline]
     fn client_request_id(&self) -> Option<&'a str> {
@@ -138,14 +148,14 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, BlobListTypeSet> ContainerNameSupport<'a>
-    for GetBlockListBuilder<'a, ContainerNameSet, BlobNameSet, BlobListTypeSet>
+impl<'a, C, BlobNameSet, BlobListTypeSet> ContainerNameSupport<'a>
+    for GetBlockListBuilder<'a, C, No, BlobNameSet, BlobListTypeSet>
 where
-    ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     BlobListTypeSet: ToAssign,
+    C: Client,
 {
-    type O = GetBlockListBuilder<'a, Yes, BlobNameSet, BlobListTypeSet>;
+    type O = GetBlockListBuilder<'a, C, Yes, BlobNameSet, BlobListTypeSet>;
 
     #[inline]
     fn with_container_name(self, container_name: &'a str) -> Self::O {
@@ -164,14 +174,14 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, BlobListTypeSet> BlobNameSupport<'a>
-    for GetBlockListBuilder<'a, ContainerNameSet, BlobNameSet, BlobListTypeSet>
+impl<'a, C, ContainerNameSet, BlobListTypeSet> BlobNameSupport<'a>
+    for GetBlockListBuilder<'a, C, ContainerNameSet, No, BlobListTypeSet>
 where
     ContainerNameSet: ToAssign,
-    BlobNameSet: ToAssign,
     BlobListTypeSet: ToAssign,
+    C: Client,
 {
-    type O = GetBlockListBuilder<'a, ContainerNameSet, Yes, BlobListTypeSet>;
+    type O = GetBlockListBuilder<'a, C, ContainerNameSet, Yes, BlobListTypeSet>;
 
     #[inline]
     fn with_blob_name(self, blob_name: &'a str) -> Self::O {
@@ -190,14 +200,14 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, BlobListTypeSet> BlockListTypeSupport
-    for GetBlockListBuilder<'a, ContainerNameSet, BlobNameSet, BlobListTypeSet>
+impl<'a, C, ContainerNameSet, BlobNameSet> BlockListTypeSupport
+    for GetBlockListBuilder<'a, C, ContainerNameSet, BlobNameSet, No>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
-    BlobListTypeSet: ToAssign,
+    C: Client,
 {
-    type O = GetBlockListBuilder<'a, ContainerNameSet, BlobNameSet, Yes>;
+    type O = GetBlockListBuilder<'a, C, ContainerNameSet, BlobNameSet, Yes>;
 
     #[inline]
     fn with_block_list_type(self, block_list_type: BlockListType) -> Self::O {
@@ -216,14 +226,15 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, BlobListTypeSet> TimeoutSupport
-    for GetBlockListBuilder<'a, ContainerNameSet, BlobNameSet, BlobListTypeSet>
+impl<'a, C, ContainerNameSet, BlobNameSet, BlobListTypeSet> TimeoutSupport
+    for GetBlockListBuilder<'a, C, ContainerNameSet, BlobNameSet, BlobListTypeSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     BlobListTypeSet: ToAssign,
+    C: Client,
 {
-    type O = GetBlockListBuilder<'a, ContainerNameSet, BlobNameSet, BlobListTypeSet>;
+    type O = GetBlockListBuilder<'a, C, ContainerNameSet, BlobNameSet, BlobListTypeSet>;
 
     #[inline]
     fn with_timeout(self, timeout: u64) -> Self::O {
@@ -242,14 +253,15 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, BlobListTypeSet> LeaseIdSupport<'a>
-    for GetBlockListBuilder<'a, ContainerNameSet, BlobNameSet, BlobListTypeSet>
+impl<'a, C, ContainerNameSet, BlobNameSet, BlobListTypeSet> LeaseIdSupport<'a>
+    for GetBlockListBuilder<'a, C, ContainerNameSet, BlobNameSet, BlobListTypeSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     BlobListTypeSet: ToAssign,
+    C: Client,
 {
-    type O = GetBlockListBuilder<'a, ContainerNameSet, BlobNameSet, BlobListTypeSet>;
+    type O = GetBlockListBuilder<'a, C, ContainerNameSet, BlobNameSet, BlobListTypeSet>;
 
     #[inline]
     fn with_lease_id(self, lease_id: &'a LeaseId) -> Self::O {
@@ -268,14 +280,15 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, BlobListTypeSet> ClientRequestIdSupport<'a>
-    for GetBlockListBuilder<'a, ContainerNameSet, BlobNameSet, BlobListTypeSet>
+impl<'a, C, ContainerNameSet, BlobNameSet, BlobListTypeSet> ClientRequestIdSupport<'a>
+    for GetBlockListBuilder<'a, C, ContainerNameSet, BlobNameSet, BlobListTypeSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     BlobListTypeSet: ToAssign,
+    C: Client,
 {
-    type O = GetBlockListBuilder<'a, ContainerNameSet, BlobNameSet, BlobListTypeSet>;
+    type O = GetBlockListBuilder<'a, C, ContainerNameSet, BlobNameSet, BlobListTypeSet>;
 
     #[inline]
     fn with_client_request_id(self, client_request_id: &'a str) -> Self::O {
@@ -295,19 +308,29 @@ where
 }
 
 // methods callable regardless
-impl<'a, ContainerNameSet, BlobNameSet, BlobListTypeSet>
-    GetBlockListBuilder<'a, ContainerNameSet, BlobNameSet, BlobListTypeSet>
+impl<'a, C, ContainerNameSet, BlobNameSet, BlobListTypeSet>
+    GetBlockListBuilder<'a, C, ContainerNameSet, BlobNameSet, BlobListTypeSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     BlobListTypeSet: ToAssign,
+    C: Client,
 {
 }
 
-impl<'a> GetBlockListBuilder<'a, Yes, Yes, Yes> {
+// methods callable only when every mandatory field has been filled
+impl<'a, C> GetBlockListBuilder<'a, C, Yes, Yes, Yes>
+where
+    C: Client,
+{
     #[inline]
     pub async fn finalize(self) -> Result<GetBlockListResponse, AzureError> {
-        let mut uri = generate_blob_uri(&self, Some("comp=blocklist"));
+        let mut uri = generate_blob_uri(
+            self.client,
+            self.container_name(),
+            self.blob_name(),
+            Some("comp=blocklist"),
+        );
 
         if let Some(timeout) = TimeoutOption::to_uri_parameter(&self) {
             uri = format!("{}&{}", uri, timeout);
@@ -319,7 +342,7 @@ impl<'a> GetBlockListBuilder<'a, Yes, Yes, Yes> {
         let future_response = self.client().perform_request(
             &uri,
             &Method::GET,
-            |mut request| {
+            &|mut request| {
                 request = LeaseIdOption::add_header(&self, request);
                 request = ClientRequestIdOption::add_header(&self, request);
                 request

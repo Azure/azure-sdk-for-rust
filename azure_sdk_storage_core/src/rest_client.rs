@@ -6,6 +6,7 @@ use azure_sdk_core::util::{format_header_value, HeaderMapExt, RequestBuilderExt}
 use base64;
 use chrono;
 use chrono::{DateTime, Utc};
+use http::request::Builder;
 use hyper::{self, header, HeaderMap, Method};
 use ring::hmac;
 use std::fmt::Write;
@@ -20,11 +21,11 @@ pub enum ServiceType {
     Table,
 }
 
-const AZURE_VERSION: &str = "2018-03-28";
-const SAS_VERSION: &str = "2019-02-02";
+pub(crate) const AZURE_VERSION: &str = "2019-07-07";
+pub(crate) const SAS_VERSION: &str = "2019-02-02";
 
-pub const HEADER_VERSION: &str = "x-ms-version"; //=> [String] }
-pub const HEADER_DATE: &str = "x-ms-date"; //=> [String] }
+pub(crate) const HEADER_VERSION: &str = "x-ms-version"; //=> [String] }
+pub(crate) const HEADER_DATE: &str = "x-ms-date"; //=> [String] }
 
 fn generate_authorization<CE: ClientEndpoint>(
     client_endpoint: &CE,
@@ -494,17 +495,14 @@ fn lexy_sort(vec: &url::form_urlencoded::Parse, query_param: &str) -> Vec<String
 }
 
 #[allow(unknown_lints)]
-pub fn perform_request<F, HCE: HyperClientEndpoint>(
+pub fn perform_request<HCE: HyperClientEndpoint>(
     hyper_client_endpoint: &HCE,
     uri: &str,
     http_method: &Method,
-    headers_func: F,
+    http_header_adder: &dyn Fn(Builder) -> Builder,
     request_body: Option<&[u8]>,
     service_type: ServiceType,
-) -> Result<hyper::client::ResponseFuture, AzureError>
-where
-    F: FnOnce(::http::request::Builder) -> ::http::request::Builder,
-{
+) -> Result<hyper::client::ResponseFuture, AzureError> {
     let dt = chrono::Utc::now();
     let time = format!("{}", dt.format("%a, %d %h %Y %T GMT"));
 
@@ -528,7 +526,7 @@ where
     // This will give the caller the ability to add custom headers.
     // The closure is needed to because request.headers_mut().set_raw(...) requires
     // a Cow with 'static lifetime...
-    request = headers_func(request);
+    request = http_header_adder(request);
 
     request = request
         .header_bytes(HEADER_DATE, time)

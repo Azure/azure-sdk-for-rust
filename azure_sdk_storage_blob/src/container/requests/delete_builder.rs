@@ -1,150 +1,183 @@
 use azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError};
 use azure_sdk_core::lease::LeaseId;
-use azure_sdk_core::{
-    ClientRequestIdOption, ClientRequestIdSupport, ContainerNameRequired, ContainerNameSupport,
-    LeaseIdOption, LeaseIdSupport, TimeoutOption, TimeoutSupport,
-};
+use azure_sdk_core::prelude::*;
 use azure_sdk_core::{No, ToAssign, Yes};
-use azure_sdk_storage_core::client::Client;
-use azure_sdk_storage_core::ClientRequired;
+use azure_sdk_storage_core::prelude::*;
 use hyper::{Method, StatusCode};
 use std::marker::PhantomData;
 
 #[derive(Debug, Clone)]
-pub struct DeleteBuilder<'a, ContainerNameSet> {
+pub struct DeleteBuilder<'a, C, ContainerNameSet>
+where
+    ContainerNameSet: ToAssign,
+    C: Client,
+{
+    client: &'a C,
     p_container_name: PhantomData<ContainerNameSet>,
-    client: &'a Client,
     container_name: Option<&'a str>,
-    timeout: Option<u64>,
     client_request_id: Option<&'a str>,
+    timeout: Option<u64>,
     lease_id: Option<&'a LeaseId>,
 }
 
-impl<'a, ContainerNameSet> ClientRequired<'a> for DeleteBuilder<'a, ContainerNameSet> {
-    fn client(&self) -> &'a Client {
-        self.client
-    }
-}
-
-impl<'a, ContainerNameSet> ClientRequestIdOption<'a> for DeleteBuilder<'a, ContainerNameSet>
+impl<'a, C> DeleteBuilder<'a, C, No>
 where
-    ContainerNameSet: ToAssign,
+    C: Client,
 {
-    fn client_request_id(&self) -> Option<&'a str> {
-        self.client_request_id
-    }
-}
-
-impl<'a, ContainerNameSet> ClientRequestIdSupport<'a> for DeleteBuilder<'a, ContainerNameSet>
-where
-    ContainerNameSet: ToAssign,
-{
-    type O = DeleteBuilder<'a, ContainerNameSet>;
-
-    fn with_client_request_id(self, client_request_id: &'a str) -> Self {
+    #[inline]
+    pub(crate) fn new(client: &'a C) -> DeleteBuilder<'a, C, No> {
         DeleteBuilder {
-            p_container_name: PhantomData {},
-            client: self.client,
-            container_name: self.container_name,
-            timeout: self.timeout,
-            client_request_id: Some(client_request_id),
-            lease_id: self.lease_id,
-        }
-    }
-}
-
-impl<'a, ContainerNameSet> LeaseIdOption<'a> for DeleteBuilder<'a, ContainerNameSet>
-where
-    ContainerNameSet: ToAssign,
-{
-    fn lease_id(&self) -> Option<&'a LeaseId> {
-        self.lease_id
-    }
-}
-
-impl<'a, ContainerNameSet> LeaseIdSupport<'a> for DeleteBuilder<'a, ContainerNameSet>
-where
-    ContainerNameSet: ToAssign,
-{
-    type O = DeleteBuilder<'a, ContainerNameSet>;
-
-    fn with_lease_id(self, lease_id: &'a LeaseId) -> Self::O {
-        DeleteBuilder {
-            p_container_name: PhantomData {},
-            client: self.client,
-            container_name: self.container_name,
-            timeout: self.timeout,
-            client_request_id: self.client_request_id,
-            lease_id: Some(lease_id),
-        }
-    }
-}
-
-impl<'a, ContainerNameSet> TimeoutOption for DeleteBuilder<'a, ContainerNameSet>
-where
-    ContainerNameSet: ToAssign,
-{
-    fn timeout(&self) -> Option<u64> {
-        self.timeout
-    }
-}
-
-impl<'a, ContainerNameSet> TimeoutSupport for DeleteBuilder<'a, ContainerNameSet>
-where
-    ContainerNameSet: ToAssign,
-{
-    type O = DeleteBuilder<'a, ContainerNameSet>;
-
-    fn with_timeout(self, timeout: u64) -> Self::O {
-        DeleteBuilder {
-            p_container_name: PhantomData {},
-            client: self.client,
-            container_name: self.container_name,
-            timeout: Some(timeout),
-            client_request_id: self.client_request_id,
-            lease_id: self.lease_id,
-        }
-    }
-}
-
-impl<'a, ContainerNameSet> ContainerNameSupport<'a> for DeleteBuilder<'a, ContainerNameSet>
-where
-    ContainerNameSet: ToAssign,
-{
-    type O = DeleteBuilder<'a, Yes>;
-
-    fn with_container_name(self, t: &'a str) -> Self::O {
-        DeleteBuilder {
-            p_container_name: PhantomData {},
-            client: self.client,
-            container_name: Some(t),
-            timeout: self.timeout,
-            client_request_id: self.client_request_id,
-            lease_id: self.lease_id,
-        }
-    }
-}
-
-impl<'a> ContainerNameRequired<'a> for DeleteBuilder<'a, Yes> {
-    fn container_name(&self) -> &'a str {
-        self.container_name.unwrap()
-    }
-}
-
-impl<'a> DeleteBuilder<'a, No> {
-    pub fn new(client: &'a Client) -> DeleteBuilder<'a, No> {
-        DeleteBuilder {
-            p_container_name: PhantomData {},
             client,
+            p_container_name: PhantomData {},
             container_name: None,
-            timeout: None,
             client_request_id: None,
+            timeout: None,
             lease_id: None,
         }
     }
 }
 
-impl<'a> DeleteBuilder<'a, Yes> {
+impl<'a, C, ContainerNameSet> ClientRequired<'a, C> for DeleteBuilder<'a, C, ContainerNameSet>
+where
+    ContainerNameSet: ToAssign,
+    C: Client,
+{
+    #[inline]
+    fn client(&self) -> &'a C {
+        self.client
+    }
+}
+
+//get mandatory no traits methods
+
+//set mandatory no traits methods
+impl<'a, C> ContainerNameRequired<'a> for DeleteBuilder<'a, C, Yes>
+where
+    C: Client,
+{
+    #[inline]
+    fn container_name(&self) -> &'a str {
+        self.container_name.unwrap()
+    }
+}
+
+impl<'a, C, ContainerNameSet> ClientRequestIdOption<'a> for DeleteBuilder<'a, C, ContainerNameSet>
+where
+    ContainerNameSet: ToAssign,
+    C: Client,
+{
+    #[inline]
+    fn client_request_id(&self) -> Option<&'a str> {
+        self.client_request_id
+    }
+}
+
+impl<'a, C, ContainerNameSet> TimeoutOption for DeleteBuilder<'a, C, ContainerNameSet>
+where
+    ContainerNameSet: ToAssign,
+    C: Client,
+{
+    #[inline]
+    fn timeout(&self) -> Option<u64> {
+        self.timeout
+    }
+}
+
+impl<'a, C, ContainerNameSet> LeaseIdOption<'a> for DeleteBuilder<'a, C, ContainerNameSet>
+where
+    ContainerNameSet: ToAssign,
+    C: Client,
+{
+    #[inline]
+    fn lease_id(&self) -> Option<&'a LeaseId> {
+        self.lease_id
+    }
+}
+
+impl<'a, C> ContainerNameSupport<'a> for DeleteBuilder<'a, C, No>
+where
+    C: Client,
+{
+    type O = DeleteBuilder<'a, C, Yes>;
+
+    #[inline]
+    fn with_container_name(self, container_name: &'a str) -> Self::O {
+        DeleteBuilder {
+            client: self.client,
+            p_container_name: PhantomData {},
+            container_name: Some(container_name),
+            client_request_id: self.client_request_id,
+            timeout: self.timeout,
+            lease_id: self.lease_id,
+        }
+    }
+}
+
+impl<'a, C, ContainerNameSet> ClientRequestIdSupport<'a> for DeleteBuilder<'a, C, ContainerNameSet>
+where
+    ContainerNameSet: ToAssign,
+    C: Client,
+{
+    type O = DeleteBuilder<'a, C, ContainerNameSet>;
+
+    #[inline]
+    fn with_client_request_id(self, client_request_id: &'a str) -> Self::O {
+        DeleteBuilder {
+            client: self.client,
+            p_container_name: PhantomData {},
+            container_name: self.container_name,
+            client_request_id: Some(client_request_id),
+            timeout: self.timeout,
+            lease_id: self.lease_id,
+        }
+    }
+}
+
+impl<'a, C, ContainerNameSet> TimeoutSupport for DeleteBuilder<'a, C, ContainerNameSet>
+where
+    ContainerNameSet: ToAssign,
+    C: Client,
+{
+    type O = DeleteBuilder<'a, C, ContainerNameSet>;
+
+    #[inline]
+    fn with_timeout(self, timeout: u64) -> Self::O {
+        DeleteBuilder {
+            client: self.client,
+            p_container_name: PhantomData {},
+            container_name: self.container_name,
+            client_request_id: self.client_request_id,
+            timeout: Some(timeout),
+            lease_id: self.lease_id,
+        }
+    }
+}
+
+impl<'a, C, ContainerNameSet> LeaseIdSupport<'a> for DeleteBuilder<'a, C, ContainerNameSet>
+where
+    ContainerNameSet: ToAssign,
+    C: Client,
+{
+    type O = DeleteBuilder<'a, C, ContainerNameSet>;
+
+    #[inline]
+    fn with_lease_id(self, lease_id: &'a LeaseId) -> Self::O {
+        DeleteBuilder {
+            client: self.client,
+            p_container_name: PhantomData {},
+            container_name: self.container_name,
+            client_request_id: self.client_request_id,
+            timeout: self.timeout,
+            lease_id: Some(lease_id),
+        }
+    }
+}
+
+// methods callable only when every mandatory field has been filled
+impl<'a, C> DeleteBuilder<'a, C, Yes>
+where
+    C: Client,
+{
     pub async fn finalize(self) -> Result<(), AzureError> {
         let mut uri = format!(
             "{}/{}?restype=container",
@@ -159,7 +192,7 @@ impl<'a> DeleteBuilder<'a, Yes> {
         let future_response = self.client().perform_request(
             &uri,
             &Method::DELETE,
-            |mut request| {
+            &|mut request| {
                 request = ClientRequestIdOption::add_header(&self, request);
                 request = LeaseIdOption::add_header(&self, request);
                 request
@@ -169,19 +202,5 @@ impl<'a> DeleteBuilder<'a, Yes> {
 
         check_status_extract_headers_and_body(future_response, StatusCode::ACCEPTED).await?;
         Ok(())
-    }
-}
-
-#[cfg(test)]
-mod test {
-    use super::*;
-
-    #[test]
-    fn alloc() {
-        let client = Client::new("a", "b").unwrap();
-        let del = DeleteBuilder::new(&client).with_container_name("ciccio");
-        println!("container_name == {}", del.container_name());
-        // this would fail as Client was not set
-        //del.finalize();
     }
 }

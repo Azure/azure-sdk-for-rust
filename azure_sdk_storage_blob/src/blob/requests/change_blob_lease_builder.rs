@@ -3,26 +3,28 @@ use crate::blob::responses::ChangeBlobLeaseResponse;
 use azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError};
 use azure_sdk_core::headers::LEASE_ACTION;
 use azure_sdk_core::lease::LeaseId;
-use azure_sdk_core::{
-    BlobNameRequired, BlobNameSupport, ClientRequestIdOption, ClientRequestIdSupport,
-    ContainerNameRequired, ContainerNameSupport, LeaseIdRequired, LeaseIdSupport,
-    ProposedLeaseIdRequired, ProposedLeaseIdSupport, TimeoutOption, TimeoutSupport,
-};
+use azure_sdk_core::prelude::*;
 use azure_sdk_core::{No, ToAssign, Yes};
-use azure_sdk_storage_core::client::Client;
-use azure_sdk_storage_core::ClientRequired;
+use azure_sdk_storage_core::prelude::*;
 use hyper::{Method, StatusCode};
 use std::marker::PhantomData;
 
 #[derive(Debug, Clone)]
-pub struct ChangeBlobLeaseBuilder<'a, ContainerNameSet, BlobNameSet, LeaseIdSet, ProposedLeaseIdSet>
-where
+pub struct ChangeBlobLeaseBuilder<
+    'a,
+    C,
+    ContainerNameSet,
+    BlobNameSet,
+    LeaseIdSet,
+    ProposedLeaseIdSet,
+> where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     LeaseIdSet: ToAssign,
     ProposedLeaseIdSet: ToAssign,
+    C: Client,
 {
-    client: &'a Client,
+    client: &'a C,
     p_container_name: PhantomData<ContainerNameSet>,
     p_blob_name: PhantomData<BlobNameSet>,
     p_lease_id: PhantomData<LeaseIdSet>,
@@ -35,9 +37,12 @@ where
     client_request_id: Option<&'a str>,
 }
 
-impl<'a> ChangeBlobLeaseBuilder<'a, No, No, No, No> {
+impl<'a, C> ChangeBlobLeaseBuilder<'a, C, No, No, No, No>
+where
+    C: Client,
+{
     #[inline]
-    pub(crate) fn new(client: &'a Client) -> ChangeBlobLeaseBuilder<'a, No, No, No, No> {
+    pub(crate) fn new(client: &'a C) -> ChangeBlobLeaseBuilder<'a, C, No, No, No, No> {
         ChangeBlobLeaseBuilder {
             client,
             p_container_name: PhantomData {},
@@ -54,26 +59,31 @@ impl<'a> ChangeBlobLeaseBuilder<'a, No, No, No, No> {
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, LeaseIdSet, ProposedLeaseIdSet> ClientRequired<'a>
-    for ChangeBlobLeaseBuilder<'a, ContainerNameSet, BlobNameSet, LeaseIdSet, ProposedLeaseIdSet>
+impl<'a, C, ContainerNameSet, BlobNameSet, LeaseIdSet, ProposedLeaseIdSet> ClientRequired<'a, C>
+    for ChangeBlobLeaseBuilder<'a, C, ContainerNameSet, BlobNameSet, LeaseIdSet, ProposedLeaseIdSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     LeaseIdSet: ToAssign,
     ProposedLeaseIdSet: ToAssign,
+    C: Client,
 {
     #[inline]
-    fn client(&self) -> &'a Client {
+    fn client(&self) -> &'a C {
         self.client
     }
 }
 
-impl<'a, BlobNameSet, LeaseIdSet, ProposedLeaseIdSet> ContainerNameRequired<'a>
-    for ChangeBlobLeaseBuilder<'a, Yes, BlobNameSet, LeaseIdSet, ProposedLeaseIdSet>
+//get mandatory no traits methods
+
+//set mandatory no traits methods
+impl<'a, C, BlobNameSet, LeaseIdSet, ProposedLeaseIdSet> ContainerNameRequired<'a>
+    for ChangeBlobLeaseBuilder<'a, C, Yes, BlobNameSet, LeaseIdSet, ProposedLeaseIdSet>
 where
     BlobNameSet: ToAssign,
     LeaseIdSet: ToAssign,
     ProposedLeaseIdSet: ToAssign,
+    C: Client,
 {
     #[inline]
     fn container_name(&self) -> &'a str {
@@ -81,12 +91,13 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, LeaseIdSet, ProposedLeaseIdSet> BlobNameRequired<'a>
-    for ChangeBlobLeaseBuilder<'a, ContainerNameSet, Yes, LeaseIdSet, ProposedLeaseIdSet>
+impl<'a, C, ContainerNameSet, LeaseIdSet, ProposedLeaseIdSet> BlobNameRequired<'a>
+    for ChangeBlobLeaseBuilder<'a, C, ContainerNameSet, Yes, LeaseIdSet, ProposedLeaseIdSet>
 where
     ContainerNameSet: ToAssign,
     LeaseIdSet: ToAssign,
     ProposedLeaseIdSet: ToAssign,
+    C: Client,
 {
     #[inline]
     fn blob_name(&self) -> &'a str {
@@ -94,12 +105,13 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, ProposedLeaseIdSet> LeaseIdRequired<'a>
-    for ChangeBlobLeaseBuilder<'a, ContainerNameSet, BlobNameSet, Yes, ProposedLeaseIdSet>
+impl<'a, C, ContainerNameSet, BlobNameSet, ProposedLeaseIdSet> LeaseIdRequired<'a>
+    for ChangeBlobLeaseBuilder<'a, C, ContainerNameSet, BlobNameSet, Yes, ProposedLeaseIdSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     ProposedLeaseIdSet: ToAssign,
+    C: Client,
 {
     #[inline]
     fn lease_id(&self) -> &'a LeaseId {
@@ -107,12 +119,13 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, LeaseIdSet> ProposedLeaseIdRequired<'a>
-    for ChangeBlobLeaseBuilder<'a, ContainerNameSet, BlobNameSet, LeaseIdSet, Yes>
+impl<'a, C, ContainerNameSet, BlobNameSet, LeaseIdSet> ProposedLeaseIdRequired<'a>
+    for ChangeBlobLeaseBuilder<'a, C, ContainerNameSet, BlobNameSet, LeaseIdSet, Yes>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     LeaseIdSet: ToAssign,
+    C: Client,
 {
     #[inline]
     fn proposed_lease_id(&self) -> &'a LeaseId {
@@ -120,13 +133,14 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, LeaseIdSet, ProposedLeaseIdSet> TimeoutOption
-    for ChangeBlobLeaseBuilder<'a, ContainerNameSet, BlobNameSet, LeaseIdSet, ProposedLeaseIdSet>
+impl<'a, C, ContainerNameSet, BlobNameSet, LeaseIdSet, ProposedLeaseIdSet> TimeoutOption
+    for ChangeBlobLeaseBuilder<'a, C, ContainerNameSet, BlobNameSet, LeaseIdSet, ProposedLeaseIdSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     LeaseIdSet: ToAssign,
     ProposedLeaseIdSet: ToAssign,
+    C: Client,
 {
     #[inline]
     fn timeout(&self) -> Option<u64> {
@@ -134,13 +148,14 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, LeaseIdSet, ProposedLeaseIdSet> ClientRequestIdOption<'a>
-    for ChangeBlobLeaseBuilder<'a, ContainerNameSet, BlobNameSet, LeaseIdSet, ProposedLeaseIdSet>
+impl<'a, C, ContainerNameSet, BlobNameSet, LeaseIdSet, ProposedLeaseIdSet> ClientRequestIdOption<'a>
+    for ChangeBlobLeaseBuilder<'a, C, ContainerNameSet, BlobNameSet, LeaseIdSet, ProposedLeaseIdSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     LeaseIdSet: ToAssign,
     ProposedLeaseIdSet: ToAssign,
+    C: Client,
 {
     #[inline]
     fn client_request_id(&self) -> Option<&'a str> {
@@ -148,15 +163,15 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, LeaseIdSet, ProposedLeaseIdSet> ContainerNameSupport<'a>
-    for ChangeBlobLeaseBuilder<'a, ContainerNameSet, BlobNameSet, LeaseIdSet, ProposedLeaseIdSet>
+impl<'a, C, BlobNameSet, LeaseIdSet, ProposedLeaseIdSet> ContainerNameSupport<'a>
+    for ChangeBlobLeaseBuilder<'a, C, No, BlobNameSet, LeaseIdSet, ProposedLeaseIdSet>
 where
-    ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     LeaseIdSet: ToAssign,
     ProposedLeaseIdSet: ToAssign,
+    C: Client,
 {
-    type O = ChangeBlobLeaseBuilder<'a, Yes, BlobNameSet, LeaseIdSet, ProposedLeaseIdSet>;
+    type O = ChangeBlobLeaseBuilder<'a, C, Yes, BlobNameSet, LeaseIdSet, ProposedLeaseIdSet>;
 
     #[inline]
     fn with_container_name(self, container_name: &'a str) -> Self::O {
@@ -176,15 +191,15 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, LeaseIdSet, ProposedLeaseIdSet> BlobNameSupport<'a>
-    for ChangeBlobLeaseBuilder<'a, ContainerNameSet, BlobNameSet, LeaseIdSet, ProposedLeaseIdSet>
+impl<'a, C, ContainerNameSet, LeaseIdSet, ProposedLeaseIdSet> BlobNameSupport<'a>
+    for ChangeBlobLeaseBuilder<'a, C, ContainerNameSet, No, LeaseIdSet, ProposedLeaseIdSet>
 where
     ContainerNameSet: ToAssign,
-    BlobNameSet: ToAssign,
     LeaseIdSet: ToAssign,
     ProposedLeaseIdSet: ToAssign,
+    C: Client,
 {
-    type O = ChangeBlobLeaseBuilder<'a, ContainerNameSet, Yes, LeaseIdSet, ProposedLeaseIdSet>;
+    type O = ChangeBlobLeaseBuilder<'a, C, ContainerNameSet, Yes, LeaseIdSet, ProposedLeaseIdSet>;
 
     #[inline]
     fn with_blob_name(self, blob_name: &'a str) -> Self::O {
@@ -204,15 +219,15 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, LeaseIdSet, ProposedLeaseIdSet> LeaseIdSupport<'a>
-    for ChangeBlobLeaseBuilder<'a, ContainerNameSet, BlobNameSet, LeaseIdSet, ProposedLeaseIdSet>
+impl<'a, C, ContainerNameSet, BlobNameSet, ProposedLeaseIdSet> LeaseIdSupport<'a>
+    for ChangeBlobLeaseBuilder<'a, C, ContainerNameSet, BlobNameSet, No, ProposedLeaseIdSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
-    LeaseIdSet: ToAssign,
     ProposedLeaseIdSet: ToAssign,
+    C: Client,
 {
-    type O = ChangeBlobLeaseBuilder<'a, ContainerNameSet, BlobNameSet, Yes, ProposedLeaseIdSet>;
+    type O = ChangeBlobLeaseBuilder<'a, C, ContainerNameSet, BlobNameSet, Yes, ProposedLeaseIdSet>;
 
     #[inline]
     fn with_lease_id(self, lease_id: &'a LeaseId) -> Self::O {
@@ -232,15 +247,15 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, LeaseIdSet, ProposedLeaseIdSet> ProposedLeaseIdSupport<'a>
-    for ChangeBlobLeaseBuilder<'a, ContainerNameSet, BlobNameSet, LeaseIdSet, ProposedLeaseIdSet>
+impl<'a, C, ContainerNameSet, BlobNameSet, LeaseIdSet> ProposedLeaseIdSupport<'a>
+    for ChangeBlobLeaseBuilder<'a, C, ContainerNameSet, BlobNameSet, LeaseIdSet, No>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     LeaseIdSet: ToAssign,
-    ProposedLeaseIdSet: ToAssign,
+    C: Client,
 {
-    type O = ChangeBlobLeaseBuilder<'a, ContainerNameSet, BlobNameSet, LeaseIdSet, Yes>;
+    type O = ChangeBlobLeaseBuilder<'a, C, ContainerNameSet, BlobNameSet, LeaseIdSet, Yes>;
 
     #[inline]
     fn with_proposed_lease_id(self, proposed_lease_id: &'a LeaseId) -> Self::O {
@@ -260,16 +275,23 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, LeaseIdSet, ProposedLeaseIdSet> TimeoutSupport
-    for ChangeBlobLeaseBuilder<'a, ContainerNameSet, BlobNameSet, LeaseIdSet, ProposedLeaseIdSet>
+impl<'a, C, ContainerNameSet, BlobNameSet, LeaseIdSet, ProposedLeaseIdSet> TimeoutSupport
+    for ChangeBlobLeaseBuilder<'a, C, ContainerNameSet, BlobNameSet, LeaseIdSet, ProposedLeaseIdSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     LeaseIdSet: ToAssign,
     ProposedLeaseIdSet: ToAssign,
+    C: Client,
 {
-    type O =
-        ChangeBlobLeaseBuilder<'a, ContainerNameSet, BlobNameSet, LeaseIdSet, ProposedLeaseIdSet>;
+    type O = ChangeBlobLeaseBuilder<
+        'a,
+        C,
+        ContainerNameSet,
+        BlobNameSet,
+        LeaseIdSet,
+        ProposedLeaseIdSet,
+    >;
 
     #[inline]
     fn with_timeout(self, timeout: u64) -> Self::O {
@@ -289,16 +311,24 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, LeaseIdSet, ProposedLeaseIdSet> ClientRequestIdSupport<'a>
-    for ChangeBlobLeaseBuilder<'a, ContainerNameSet, BlobNameSet, LeaseIdSet, ProposedLeaseIdSet>
+impl<'a, C, ContainerNameSet, BlobNameSet, LeaseIdSet, ProposedLeaseIdSet>
+    ClientRequestIdSupport<'a>
+    for ChangeBlobLeaseBuilder<'a, C, ContainerNameSet, BlobNameSet, LeaseIdSet, ProposedLeaseIdSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     LeaseIdSet: ToAssign,
     ProposedLeaseIdSet: ToAssign,
+    C: Client,
 {
-    type O =
-        ChangeBlobLeaseBuilder<'a, ContainerNameSet, BlobNameSet, LeaseIdSet, ProposedLeaseIdSet>;
+    type O = ChangeBlobLeaseBuilder<
+        'a,
+        C,
+        ContainerNameSet,
+        BlobNameSet,
+        LeaseIdSet,
+        ProposedLeaseIdSet,
+    >;
 
     #[inline]
     fn with_client_request_id(self, client_request_id: &'a str) -> Self::O {
@@ -318,20 +348,18 @@ where
     }
 }
 
-// methods callable regardless
-impl<'a, ContainerNameSet, BlobNameSet, LeaseIdSet, ProposedLeaseIdSet>
-    ChangeBlobLeaseBuilder<'a, ContainerNameSet, BlobNameSet, LeaseIdSet, ProposedLeaseIdSet>
+// methods callable only when every mandatory field has been filled
+impl<'a, C> ChangeBlobLeaseBuilder<'a, C, Yes, Yes, Yes, Yes>
 where
-    ContainerNameSet: ToAssign,
-    BlobNameSet: ToAssign,
-    LeaseIdSet: ToAssign,
-    ProposedLeaseIdSet: ToAssign,
+    C: Client,
 {
-}
-
-impl<'a> ChangeBlobLeaseBuilder<'a, Yes, Yes, Yes, Yes> {
     pub async fn finalize(self) -> Result<ChangeBlobLeaseResponse, AzureError> {
-        let mut uri = generate_blob_uri(&self, Some("comp=lease"));
+        let mut uri = generate_blob_uri(
+            self.client(),
+            self.container_name(),
+            self.blob_name(),
+            Some("comp=lease"),
+        );
 
         if let Some(nm) = TimeoutOption::to_uri_parameter(&self) {
             uri = format!("{}&{}", uri, nm);
@@ -340,7 +368,7 @@ impl<'a> ChangeBlobLeaseBuilder<'a, Yes, Yes, Yes, Yes> {
         let future_response = self.client().perform_request(
             &uri,
             &Method::PUT,
-            |mut request| {
+            &|mut request| {
                 request = LeaseIdRequired::add_header(&self, request);
                 request = request.header(LEASE_ACTION, "change");
                 request = ProposedLeaseIdRequired::add_header(&self, request);

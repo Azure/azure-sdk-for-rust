@@ -158,7 +158,10 @@ quick_error! {
         DigestNot16BytesLong(len : u64) {
             display("digest length {} bytes instead of 16", len)
         }
-        ParseBoolError(err: ParseBoolError) {
+        CRC64Not8BytesLong(len : u64) {
+            display("CRC64 length {} bytes instead of 8", len)
+        }
+         ParseBoolError(err: ParseBoolError) {
             from()
             display("parse bool error: {}", err)
             cause(err)

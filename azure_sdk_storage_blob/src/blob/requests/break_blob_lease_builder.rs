@@ -2,25 +2,21 @@ use crate::blob::generate_blob_uri;
 use crate::blob::responses::BreakBlobLeaseResponse;
 use azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError};
 use azure_sdk_core::headers::LEASE_ACTION;
-use azure_sdk_core::{
-    BlobNameRequired, BlobNameSupport, ClientRequestIdOption, ClientRequestIdSupport,
-    ContainerNameRequired, ContainerNameSupport, LeaseBreakPeriodRequired, LeaseBreakPeriodSupport,
-    TimeoutOption, TimeoutSupport,
-};
+use azure_sdk_core::prelude::*;
 use azure_sdk_core::{No, ToAssign, Yes};
-use azure_sdk_storage_core::client::Client;
-use azure_sdk_storage_core::ClientRequired;
+use azure_sdk_storage_core::prelude::*;
 use hyper::{Method, StatusCode};
 use std::marker::PhantomData;
 
 #[derive(Debug, Clone)]
-pub struct BreakBlobLeaseBuilder<'a, ContainerNameSet, BlobNameSet, BreakPeriodSet>
+pub struct BreakBlobLeaseBuilder<'a, C, ContainerNameSet, BlobNameSet, BreakPeriodSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     BreakPeriodSet: ToAssign,
+    C: Client,
 {
-    client: &'a Client,
+    client: &'a C,
     p_container_name: PhantomData<ContainerNameSet>,
     p_blob_name: PhantomData<BlobNameSet>,
     p_lease_break_period: PhantomData<BreakPeriodSet>,
@@ -31,9 +27,12 @@ where
     client_request_id: Option<&'a str>,
 }
 
-impl<'a> BreakBlobLeaseBuilder<'a, No, No, No> {
+impl<'a, C> BreakBlobLeaseBuilder<'a, C, No, No, No>
+where
+    C: Client,
+{
     #[inline]
-    pub(crate) fn new(client: &'a Client) -> BreakBlobLeaseBuilder<'a, No, No, No> {
+    pub(crate) fn new(client: &'a C) -> BreakBlobLeaseBuilder<'a, C, No, No, No> {
         BreakBlobLeaseBuilder {
             client,
             p_container_name: PhantomData {},
@@ -48,24 +47,29 @@ impl<'a> BreakBlobLeaseBuilder<'a, No, No, No> {
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, BreakPeriodSet> ClientRequired<'a>
-    for BreakBlobLeaseBuilder<'a, ContainerNameSet, BlobNameSet, BreakPeriodSet>
+impl<'a, C, ContainerNameSet, BlobNameSet, BreakPeriodSet> ClientRequired<'a, C>
+    for BreakBlobLeaseBuilder<'a, C, ContainerNameSet, BlobNameSet, BreakPeriodSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     BreakPeriodSet: ToAssign,
+    C: Client,
 {
     #[inline]
-    fn client(&self) -> &'a Client {
+    fn client(&self) -> &'a C {
         self.client
     }
 }
 
-impl<'a, BlobNameSet, BreakPeriodSet> ContainerNameRequired<'a>
-    for BreakBlobLeaseBuilder<'a, Yes, BlobNameSet, BreakPeriodSet>
+//get mandatory no traits methods
+
+//set mandatory no traits methods
+impl<'a, C, BlobNameSet, BreakPeriodSet> ContainerNameRequired<'a>
+    for BreakBlobLeaseBuilder<'a, C, Yes, BlobNameSet, BreakPeriodSet>
 where
     BlobNameSet: ToAssign,
     BreakPeriodSet: ToAssign,
+    C: Client,
 {
     #[inline]
     fn container_name(&self) -> &'a str {
@@ -73,11 +77,12 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BreakPeriodSet> BlobNameRequired<'a>
-    for BreakBlobLeaseBuilder<'a, ContainerNameSet, Yes, BreakPeriodSet>
+impl<'a, C, ContainerNameSet, BreakPeriodSet> BlobNameRequired<'a>
+    for BreakBlobLeaseBuilder<'a, C, ContainerNameSet, Yes, BreakPeriodSet>
 where
     ContainerNameSet: ToAssign,
     BreakPeriodSet: ToAssign,
+    C: Client,
 {
     #[inline]
     fn blob_name(&self) -> &'a str {
@@ -85,11 +90,12 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet> LeaseBreakPeriodRequired
-    for BreakBlobLeaseBuilder<'a, ContainerNameSet, BlobNameSet, Yes>
+impl<'a, C, ContainerNameSet, BlobNameSet> LeaseBreakPeriodRequired
+    for BreakBlobLeaseBuilder<'a, C, ContainerNameSet, BlobNameSet, Yes>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
+    C: Client,
 {
     #[inline]
     fn lease_break_period(&self) -> u8 {
@@ -97,12 +103,13 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, BreakPeriodSet> TimeoutOption
-    for BreakBlobLeaseBuilder<'a, ContainerNameSet, BlobNameSet, BreakPeriodSet>
+impl<'a, C, ContainerNameSet, BlobNameSet, BreakPeriodSet> TimeoutOption
+    for BreakBlobLeaseBuilder<'a, C, ContainerNameSet, BlobNameSet, BreakPeriodSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     BreakPeriodSet: ToAssign,
+    C: Client,
 {
     #[inline]
     fn timeout(&self) -> Option<u64> {
@@ -110,12 +117,13 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, BreakPeriodSet> ClientRequestIdOption<'a>
-    for BreakBlobLeaseBuilder<'a, ContainerNameSet, BlobNameSet, BreakPeriodSet>
+impl<'a, C, ContainerNameSet, BlobNameSet, BreakPeriodSet> ClientRequestIdOption<'a>
+    for BreakBlobLeaseBuilder<'a, C, ContainerNameSet, BlobNameSet, BreakPeriodSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     BreakPeriodSet: ToAssign,
+    C: Client,
 {
     #[inline]
     fn client_request_id(&self) -> Option<&'a str> {
@@ -123,14 +131,14 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, BreakPeriodSet> ContainerNameSupport<'a>
-    for BreakBlobLeaseBuilder<'a, ContainerNameSet, BlobNameSet, BreakPeriodSet>
+impl<'a, C, BlobNameSet, BreakPeriodSet> ContainerNameSupport<'a>
+    for BreakBlobLeaseBuilder<'a, C, No, BlobNameSet, BreakPeriodSet>
 where
-    ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     BreakPeriodSet: ToAssign,
+    C: Client,
 {
-    type O = BreakBlobLeaseBuilder<'a, Yes, BlobNameSet, BreakPeriodSet>;
+    type O = BreakBlobLeaseBuilder<'a, C, Yes, BlobNameSet, BreakPeriodSet>;
 
     #[inline]
     fn with_container_name(self, container_name: &'a str) -> Self::O {
@@ -148,14 +156,14 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, BreakPeriodSet> BlobNameSupport<'a>
-    for BreakBlobLeaseBuilder<'a, ContainerNameSet, BlobNameSet, BreakPeriodSet>
+impl<'a, C, ContainerNameSet, BreakPeriodSet> BlobNameSupport<'a>
+    for BreakBlobLeaseBuilder<'a, C, ContainerNameSet, No, BreakPeriodSet>
 where
     ContainerNameSet: ToAssign,
-    BlobNameSet: ToAssign,
     BreakPeriodSet: ToAssign,
+    C: Client,
 {
-    type O = BreakBlobLeaseBuilder<'a, ContainerNameSet, Yes, BreakPeriodSet>;
+    type O = BreakBlobLeaseBuilder<'a, C, ContainerNameSet, Yes, BreakPeriodSet>;
 
     #[inline]
     fn with_blob_name(self, blob_name: &'a str) -> Self::O {
@@ -173,14 +181,14 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, BreakPeriodSet> LeaseBreakPeriodSupport
-    for BreakBlobLeaseBuilder<'a, ContainerNameSet, BlobNameSet, BreakPeriodSet>
+impl<'a, C, ContainerNameSet, BlobNameSet> LeaseBreakPeriodSupport
+    for BreakBlobLeaseBuilder<'a, C, ContainerNameSet, BlobNameSet, No>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
-    BreakPeriodSet: ToAssign,
+    C: Client,
 {
-    type O = BreakBlobLeaseBuilder<'a, ContainerNameSet, BlobNameSet, Yes>;
+    type O = BreakBlobLeaseBuilder<'a, C, ContainerNameSet, BlobNameSet, Yes>;
 
     #[inline]
     fn with_lease_break_period(self, lease_break_period: u8) -> Self::O {
@@ -198,14 +206,15 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, BreakPeriodSet> TimeoutSupport
-    for BreakBlobLeaseBuilder<'a, ContainerNameSet, BlobNameSet, BreakPeriodSet>
+impl<'a, C, ContainerNameSet, BlobNameSet, BreakPeriodSet> TimeoutSupport
+    for BreakBlobLeaseBuilder<'a, C, ContainerNameSet, BlobNameSet, BreakPeriodSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     BreakPeriodSet: ToAssign,
+    C: Client,
 {
-    type O = BreakBlobLeaseBuilder<'a, ContainerNameSet, BlobNameSet, BreakPeriodSet>;
+    type O = BreakBlobLeaseBuilder<'a, C, ContainerNameSet, BlobNameSet, BreakPeriodSet>;
 
     #[inline]
     fn with_timeout(self, timeout: u64) -> Self::O {
@@ -223,14 +232,15 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, BlobNameSet, BreakPeriodSet> ClientRequestIdSupport<'a>
-    for BreakBlobLeaseBuilder<'a, ContainerNameSet, BlobNameSet, BreakPeriodSet>
+impl<'a, C, ContainerNameSet, BlobNameSet, BreakPeriodSet> ClientRequestIdSupport<'a>
+    for BreakBlobLeaseBuilder<'a, C, ContainerNameSet, BlobNameSet, BreakPeriodSet>
 where
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     BreakPeriodSet: ToAssign,
+    C: Client,
 {
-    type O = BreakBlobLeaseBuilder<'a, ContainerNameSet, BlobNameSet, BreakPeriodSet>;
+    type O = BreakBlobLeaseBuilder<'a, C, ContainerNameSet, BlobNameSet, BreakPeriodSet>;
 
     #[inline]
     fn with_client_request_id(self, client_request_id: &'a str) -> Self::O {
@@ -248,19 +258,18 @@ where
     }
 }
 
-// methods callable regardless
-impl<'a, ContainerNameSet, BlobNameSet, BreakPeriodSet>
-    BreakBlobLeaseBuilder<'a, ContainerNameSet, BlobNameSet, BreakPeriodSet>
+// methods callable only when every mandatory field has been filled
+impl<'a, C> BreakBlobLeaseBuilder<'a, C, Yes, Yes, Yes>
 where
-    ContainerNameSet: ToAssign,
-    BlobNameSet: ToAssign,
-    BreakPeriodSet: ToAssign,
+    C: Client,
 {
-}
-
-impl<'a> BreakBlobLeaseBuilder<'a, Yes, Yes, Yes> {
     pub async fn finalize(self) -> Result<BreakBlobLeaseResponse, AzureError> {
-        let mut uri = generate_blob_uri(&self, Some("comp=lease"));
+        let mut uri = generate_blob_uri(
+            self.client(),
+            self.container_name(),
+            self.blob_name(),
+            Some("comp=lease"),
+        );
 
         if let Some(nm) = TimeoutOption::to_uri_parameter(&self) {
             uri = format!("{}&{}", uri, nm);
@@ -269,7 +278,7 @@ impl<'a> BreakBlobLeaseBuilder<'a, Yes, Yes, Yes> {
         let future_response = self.client().perform_request(
             &uri,
             &Method::PUT,
-            |mut request| {
+            &|mut request| {
                 request = request.header(LEASE_ACTION, "break");
                 request = LeaseBreakPeriodRequired::add_header(&self, request);
                 request = ClientRequestIdOption::add_header(&self, request);

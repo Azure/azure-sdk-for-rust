@@ -16,7 +16,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .nth(1)
         .expect("please specify container name as command line parameter");
 
-    let client = Client::new(&account, &master_key)?;
+    let client = client::with_access_key(&account, &master_key);
 
     // create container
     let res = client

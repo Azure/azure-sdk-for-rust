@@ -3,18 +3,18 @@ use crate::container::generate_container_uri;
 use azure_sdk_core::errors::{check_status_extract_headers_and_body_as_string, AzureError};
 use azure_sdk_core::prelude::*;
 use azure_sdk_core::{No, ToAssign, Yes};
-use azure_sdk_storage_core::client::Client;
-use azure_sdk_storage_core::ClientRequired;
+use azure_sdk_storage_core::prelude::*;
 use futures::stream::{unfold, Stream};
 use hyper::{Method, StatusCode};
 use std::marker::PhantomData;
 
 #[derive(Debug, Clone)]
-pub struct ListBlobBuilder<'a, ContainerNameSet>
+pub struct ListBlobBuilder<'a, C, ContainerNameSet>
 where
     ContainerNameSet: ToAssign,
+    C: Client,
 {
-    client: &'a Client,
+    client: &'a C,
     p_container_name: PhantomData<ContainerNameSet>,
     container_name: Option<&'a str>,
     client_request_id: Option<&'a str>,
@@ -30,9 +30,12 @@ where
     include_deleted: bool,
 }
 
-impl<'a> ListBlobBuilder<'a, No> {
+impl<'a, C> ListBlobBuilder<'a, C, No>
+where
+    C: Client,
+{
     #[inline]
-    pub(crate) fn new(client: &'a Client) -> ListBlobBuilder<'a, No> {
+    pub(crate) fn new(client: &'a C) -> ListBlobBuilder<'a, C, No> {
         ListBlobBuilder {
             client,
             p_container_name: PhantomData {},
@@ -52,26 +55,34 @@ impl<'a> ListBlobBuilder<'a, No> {
     }
 }
 
-impl<'a, ContainerNameSet> ClientRequired<'a> for ListBlobBuilder<'a, ContainerNameSet>
+impl<'a, C, ContainerNameSet> ClientRequired<'a, C> for ListBlobBuilder<'a, C, ContainerNameSet>
 where
     ContainerNameSet: ToAssign,
+    C: Client,
 {
     #[inline]
-    fn client(&self) -> &'a Client {
+    fn client(&self) -> &'a C {
         self.client
     }
 }
 
-impl<'a> ContainerNameRequired<'a> for ListBlobBuilder<'a, Yes> {
+//get mandatory no traits methods
+
+//set mandatory no traits methods
+impl<'a, C> ContainerNameRequired<'a> for ListBlobBuilder<'a, C, Yes>
+where
+    C: Client,
+{
     #[inline]
     fn container_name(&self) -> &'a str {
         self.container_name.unwrap()
     }
 }
 
-impl<'a, ContainerNameSet> ClientRequestIdOption<'a> for ListBlobBuilder<'a, ContainerNameSet>
+impl<'a, C, ContainerNameSet> ClientRequestIdOption<'a> for ListBlobBuilder<'a, C, ContainerNameSet>
 where
     ContainerNameSet: ToAssign,
+    C: Client,
 {
     #[inline]
     fn client_request_id(&self) -> Option<&'a str> {
@@ -79,9 +90,10 @@ where
     }
 }
 
-impl<'a, ContainerNameSet> TimeoutOption for ListBlobBuilder<'a, ContainerNameSet>
+impl<'a, C, ContainerNameSet> TimeoutOption for ListBlobBuilder<'a, C, ContainerNameSet>
 where
     ContainerNameSet: ToAssign,
+    C: Client,
 {
     #[inline]
     fn timeout(&self) -> Option<u64> {
@@ -89,9 +101,10 @@ where
     }
 }
 
-impl<'a, ContainerNameSet> PrefixOption<'a> for ListBlobBuilder<'a, ContainerNameSet>
+impl<'a, C, ContainerNameSet> PrefixOption<'a> for ListBlobBuilder<'a, C, ContainerNameSet>
 where
     ContainerNameSet: ToAssign,
+    C: Client,
 {
     #[inline]
     fn prefix(&self) -> Option<&'a str> {
@@ -99,9 +112,10 @@ where
     }
 }
 
-impl<'a, ContainerNameSet> DelimiterOption<'a> for ListBlobBuilder<'a, ContainerNameSet>
+impl<'a, C, ContainerNameSet> DelimiterOption<'a> for ListBlobBuilder<'a, C, ContainerNameSet>
 where
     ContainerNameSet: ToAssign,
+    C: Client,
 {
     #[inline]
     fn delimiter(&self) -> Option<&'a str> {
@@ -109,9 +123,10 @@ where
     }
 }
 
-impl<'a, ContainerNameSet> NextMarkerOption<'a> for ListBlobBuilder<'a, ContainerNameSet>
+impl<'a, C, ContainerNameSet> NextMarkerOption<'a> for ListBlobBuilder<'a, C, ContainerNameSet>
 where
     ContainerNameSet: ToAssign,
+    C: Client,
 {
     #[inline]
     fn next_marker(&self) -> Option<&'a str> {
@@ -119,9 +134,10 @@ where
     }
 }
 
-impl<'a, ContainerNameSet> MaxResultsOption for ListBlobBuilder<'a, ContainerNameSet>
+impl<'a, C, ContainerNameSet> MaxResultsOption for ListBlobBuilder<'a, C, ContainerNameSet>
 where
     ContainerNameSet: ToAssign,
+    C: Client,
 {
     #[inline]
     fn max_results(&self) -> Option<u32> {
@@ -129,9 +145,10 @@ where
     }
 }
 
-impl<'a, ContainerNameSet> IncludeSnapshotsOption for ListBlobBuilder<'a, ContainerNameSet>
+impl<'a, C, ContainerNameSet> IncludeSnapshotsOption for ListBlobBuilder<'a, C, ContainerNameSet>
 where
     ContainerNameSet: ToAssign,
+    C: Client,
 {
     #[inline]
     fn include_snapshots(&self) -> bool {
@@ -139,9 +156,10 @@ where
     }
 }
 
-impl<'a, ContainerNameSet> IncludeMetadataOption for ListBlobBuilder<'a, ContainerNameSet>
+impl<'a, C, ContainerNameSet> IncludeMetadataOption for ListBlobBuilder<'a, C, ContainerNameSet>
 where
     ContainerNameSet: ToAssign,
+    C: Client,
 {
     #[inline]
     fn include_metadata(&self) -> bool {
@@ -149,9 +167,11 @@ where
     }
 }
 
-impl<'a, ContainerNameSet> IncludeUncommittedBlobsOption for ListBlobBuilder<'a, ContainerNameSet>
+impl<'a, C, ContainerNameSet> IncludeUncommittedBlobsOption
+    for ListBlobBuilder<'a, C, ContainerNameSet>
 where
     ContainerNameSet: ToAssign,
+    C: Client,
 {
     #[inline]
     fn include_uncommitted_blobs(&self) -> bool {
@@ -159,9 +179,10 @@ where
     }
 }
 
-impl<'a, ContainerNameSet> IncludeCopyOption for ListBlobBuilder<'a, ContainerNameSet>
+impl<'a, C, ContainerNameSet> IncludeCopyOption for ListBlobBuilder<'a, C, ContainerNameSet>
 where
     ContainerNameSet: ToAssign,
+    C: Client,
 {
     #[inline]
     fn include_copy(&self) -> bool {
@@ -169,9 +190,10 @@ where
     }
 }
 
-impl<'a, ContainerNameSet> IncludeDeletedOption for ListBlobBuilder<'a, ContainerNameSet>
+impl<'a, C, ContainerNameSet> IncludeDeletedOption for ListBlobBuilder<'a, C, ContainerNameSet>
 where
     ContainerNameSet: ToAssign,
+    C: Client,
 {
     #[inline]
     fn include_deleted(&self) -> bool {
@@ -179,11 +201,11 @@ where
     }
 }
 
-impl<'a, ContainerNameSet> ContainerNameSupport<'a> for ListBlobBuilder<'a, ContainerNameSet>
+impl<'a, C> ContainerNameSupport<'a> for ListBlobBuilder<'a, C, No>
 where
-    ContainerNameSet: ToAssign,
+    C: Client,
 {
-    type O = ListBlobBuilder<'a, Yes>;
+    type O = ListBlobBuilder<'a, C, Yes>;
 
     #[inline]
     fn with_container_name(self, container_name: &'a str) -> Self::O {
@@ -206,11 +228,13 @@ where
     }
 }
 
-impl<'a, ContainerNameSet> ClientRequestIdSupport<'a> for ListBlobBuilder<'a, ContainerNameSet>
+impl<'a, C, ContainerNameSet> ClientRequestIdSupport<'a>
+    for ListBlobBuilder<'a, C, ContainerNameSet>
 where
     ContainerNameSet: ToAssign,
+    C: Client,
 {
-    type O = ListBlobBuilder<'a, ContainerNameSet>;
+    type O = ListBlobBuilder<'a, C, ContainerNameSet>;
 
     #[inline]
     fn with_client_request_id(self, client_request_id: &'a str) -> Self::O {
@@ -233,11 +257,12 @@ where
     }
 }
 
-impl<'a, ContainerNameSet> TimeoutSupport for ListBlobBuilder<'a, ContainerNameSet>
+impl<'a, C, ContainerNameSet> TimeoutSupport for ListBlobBuilder<'a, C, ContainerNameSet>
 where
     ContainerNameSet: ToAssign,
+    C: Client,
 {
-    type O = ListBlobBuilder<'a, ContainerNameSet>;
+    type O = ListBlobBuilder<'a, C, ContainerNameSet>;
 
     #[inline]
     fn with_timeout(self, timeout: u64) -> Self::O {
@@ -260,11 +285,12 @@ where
     }
 }
 
-impl<'a, ContainerNameSet> PrefixSupport<'a> for ListBlobBuilder<'a, ContainerNameSet>
+impl<'a, C, ContainerNameSet> PrefixSupport<'a> for ListBlobBuilder<'a, C, ContainerNameSet>
 where
     ContainerNameSet: ToAssign,
+    C: Client,
 {
-    type O = ListBlobBuilder<'a, ContainerNameSet>;
+    type O = ListBlobBuilder<'a, C, ContainerNameSet>;
 
     #[inline]
     fn with_prefix(self, prefix: &'a str) -> Self::O {
@@ -287,11 +313,12 @@ where
     }
 }
 
-impl<'a, ContainerNameSet> DelimiterSupport<'a> for ListBlobBuilder<'a, ContainerNameSet>
+impl<'a, C, ContainerNameSet> DelimiterSupport<'a> for ListBlobBuilder<'a, C, ContainerNameSet>
 where
     ContainerNameSet: ToAssign,
+    C: Client,
 {
-    type O = ListBlobBuilder<'a, ContainerNameSet>;
+    type O = ListBlobBuilder<'a, C, ContainerNameSet>;
 
     #[inline]
     fn with_delimiter(self, delimiter: &'a str) -> Self::O {
@@ -314,11 +341,12 @@ where
     }
 }
 
-impl<'a, ContainerNameSet> NextMarkerSupport<'a> for ListBlobBuilder<'a, ContainerNameSet>
+impl<'a, C, ContainerNameSet> NextMarkerSupport<'a> for ListBlobBuilder<'a, C, ContainerNameSet>
 where
     ContainerNameSet: ToAssign,
+    C: Client,
 {
-    type O = ListBlobBuilder<'a, ContainerNameSet>;
+    type O = ListBlobBuilder<'a, C, ContainerNameSet>;
 
     #[inline]
     fn with_next_marker(self, next_marker: &'a str) -> Self::O {
@@ -341,11 +369,12 @@ where
     }
 }
 
-impl<'a, ContainerNameSet> MaxResultsSupport for ListBlobBuilder<'a, ContainerNameSet>
+impl<'a, C, ContainerNameSet> MaxResultsSupport for ListBlobBuilder<'a, C, ContainerNameSet>
 where
     ContainerNameSet: ToAssign,
+    C: Client,
 {
-    type O = ListBlobBuilder<'a, ContainerNameSet>;
+    type O = ListBlobBuilder<'a, C, ContainerNameSet>;
 
     #[inline]
     fn with_max_results(self, max_results: u32) -> Self::O {
@@ -368,11 +397,12 @@ where
     }
 }
 
-impl<'a, ContainerNameSet> IncludeSnapshotsSupport for ListBlobBuilder<'a, ContainerNameSet>
+impl<'a, C, ContainerNameSet> IncludeSnapshotsSupport for ListBlobBuilder<'a, C, ContainerNameSet>
 where
     ContainerNameSet: ToAssign,
+    C: Client,
 {
-    type O = ListBlobBuilder<'a, ContainerNameSet>;
+    type O = ListBlobBuilder<'a, C, ContainerNameSet>;
 
     #[inline]
     fn with_include_snapshots(self) -> Self::O {
@@ -395,11 +425,12 @@ where
     }
 }
 
-impl<'a, ContainerNameSet> IncludeMetadataSupport for ListBlobBuilder<'a, ContainerNameSet>
+impl<'a, C, ContainerNameSet> IncludeMetadataSupport for ListBlobBuilder<'a, C, ContainerNameSet>
 where
     ContainerNameSet: ToAssign,
+    C: Client,
 {
-    type O = ListBlobBuilder<'a, ContainerNameSet>;
+    type O = ListBlobBuilder<'a, C, ContainerNameSet>;
 
     #[inline]
     fn with_include_metadata(self) -> Self::O {
@@ -422,11 +453,13 @@ where
     }
 }
 
-impl<'a, ContainerNameSet> IncludeUncommittedBlobsSupport for ListBlobBuilder<'a, ContainerNameSet>
+impl<'a, C, ContainerNameSet> IncludeUncommittedBlobsSupport
+    for ListBlobBuilder<'a, C, ContainerNameSet>
 where
     ContainerNameSet: ToAssign,
+    C: Client,
 {
-    type O = ListBlobBuilder<'a, ContainerNameSet>;
+    type O = ListBlobBuilder<'a, C, ContainerNameSet>;
 
     #[inline]
     fn with_include_uncommitted_blobs(self) -> Self::O {
@@ -449,11 +482,12 @@ where
     }
 }
 
-impl<'a, ContainerNameSet> IncludeCopySupport for ListBlobBuilder<'a, ContainerNameSet>
+impl<'a, C, ContainerNameSet> IncludeCopySupport for ListBlobBuilder<'a, C, ContainerNameSet>
 where
     ContainerNameSet: ToAssign,
+    C: Client,
 {
-    type O = ListBlobBuilder<'a, ContainerNameSet>;
+    type O = ListBlobBuilder<'a, C, ContainerNameSet>;
 
     #[inline]
     fn with_include_copy(self) -> Self::O {
@@ -476,11 +510,12 @@ where
     }
 }
 
-impl<'a, ContainerNameSet> IncludeDeletedSupport for ListBlobBuilder<'a, ContainerNameSet>
+impl<'a, C, ContainerNameSet> IncludeDeletedSupport for ListBlobBuilder<'a, C, ContainerNameSet>
 where
     ContainerNameSet: ToAssign,
+    C: Client,
 {
-    type O = ListBlobBuilder<'a, ContainerNameSet>;
+    type O = ListBlobBuilder<'a, C, ContainerNameSet>;
 
     #[inline]
     fn with_include_deleted(self) -> Self::O {
@@ -503,22 +538,24 @@ where
     }
 }
 
-// methods callable regardless
-impl<'a, ContainerNameSet> ListBlobBuilder<'a, ContainerNameSet> where ContainerNameSet: ToAssign {}
+impl<'a, C> IncludeListOptions for ListBlobBuilder<'a, C, Yes> where C: Client {}
 
-// this empty trait is required in order to use IncludeListOptions methods. No duck typing, sorry
-// :(
-impl<'a> IncludeListOptions for ListBlobBuilder<'a, Yes> {}
-
-impl<'a> ListBlobBuilder<'a, Yes> {
-    #[inline]
+// methods callable only when every mandatory field has been filled
+impl<'a, C> ListBlobBuilder<'a, C, Yes>
+where
+    C: Client + Clone,
+{
     pub async fn finalize(self) -> Result<ListBlobsResponse, AzureError> {
         // we create a copy to move into the future's closure.
         // We need to do this since the closure only accepts
         // 'static lifetimes.
         let container_name = self.container_name().to_owned();
 
-        let mut uri = generate_container_uri(&self, Some("restype=container&comp=list"));
+        let mut uri = generate_container_uri(
+            self.client(),
+            self.container_name(),
+            Some("restype=container&comp=list"),
+        );
 
         if let Some(mr) = MaxResultsOption::to_uri_parameter(&self) {
             uri = format!("{}&{}", uri, mr);
@@ -540,7 +577,7 @@ impl<'a> ListBlobBuilder<'a, Yes> {
 
         let future_response =
             self.client()
-                .perform_request(&uri, &Method::GET, |request| request, None)?;
+                .perform_request(&uri, &Method::GET, &|request| request, None)?;
 
         let (headers, body_as_str) =
             check_status_extract_headers_and_body_as_string(future_response, StatusCode::OK)

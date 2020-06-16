@@ -1,13 +1,29 @@
 {
 	"name": "UpdatePageBuilder",
+	"derive": "Debug, Clone",
+	"uses": [
+		"crate::blob::generate_blob_uri",
+		"crate::blob::responses::UpdatePageResponse",
+		"azure_sdk_core::ba512_range::BA512Range",
+		"azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError}",
+		"azure_sdk_core::headers::PAGE_WRITE",
+		"azure_sdk_core::lease::LeaseId",
+		"azure_sdk_core::modify_conditions::{IfMatchCondition, IfSinceCondition, SequenceNumberCondition}",
+		"azure_sdk_core::prelude::*",
+		"azure_sdk_core::{Yes, No, ToAssign}",
+		"azure_sdk_storage_core::prelude::*",
+		"azure_sdk_storage_core::ClientRequired",
+		"hyper::{Method, StatusCode}",
+		"std::marker::PhantomData"
+	],
 	"inline": true,
-	"extra_types": [ "'a" ],
-	"extra_wheres": [],
+	"extra_types": [ "'a", "C" ],
+	"extra_wheres": [ "C: Client" ],
 	"constructor_fields": [
 		{
 			"name": "client",
-			"field_type": "&'a Client",
-			"trait_get": "ClientRequired<'a>"
+			"field_type": "&'a C",
+			"trait_get": "ClientRequired<'a, C>"
 		}
 	],
 	"fields": [

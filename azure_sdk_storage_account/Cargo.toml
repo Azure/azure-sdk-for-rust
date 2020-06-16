@@ -1,6 +1,6 @@
 [package]
 name          = "azure_sdk_storage_account"
-version       = "0.40.5"
+version       = "0.41.0"
 description   = "Rust wrappers around Microsoft Azure REST APIs - Blob storage account crate"
 readme        = "README.md"
 authors       = ["Francesco Cogno <francesco.cogno@outlook.com>", "Max Gortman <mgortman@microsoft.com>"]
@@ -15,8 +15,8 @@ categories    = ["api-bindings"]
 edition       = "2018"
 
 [dependencies]
-azure_sdk_core           = { path = "../azure_sdk_core", version = "0.43.3" }
-azure_sdk_storage_core   = { path = "../azure_sdk_storage_core", version = "0.43.3" }
+azure_sdk_core           = { path = "../azure_sdk_core", version = "0.43.4" }
+azure_sdk_storage_core   = { path = "../azure_sdk_storage_core", version = "0.44.0" }
 chrono                   = "0.4"
 http                     = "0.2"
 hyper                    = "0.13"

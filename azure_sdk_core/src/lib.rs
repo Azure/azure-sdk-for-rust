@@ -764,6 +764,15 @@ pub fn add_content_md5_header(content_md5: &[u8], builder: Builder) -> Builder {
     builder.header(CONTENT_MD5, &s as &str)
 }
 
+pub trait ChunkSizeSupport {
+    type O;
+    fn with_chunk_size(self, chunk_size: u64) -> Self::O;
+}
+
+pub trait ChunkSizeOption {
+    fn chunk_size(&self) -> u64;
+}
+
 pub trait RangeSupport<'a> {
     type O;
     fn with_range(self, _: &'a range::Range) -> Self::O;
@@ -948,6 +957,26 @@ pub fn content_md5_from_headers(headers: &HeaderMap) -> Result<[u8; 16], AzureEr
 
     trace!("content_md5 == {:?}", content_md5);
     Ok(content_md5)
+}
+
+pub fn content_crc64_from_headers(headers: &HeaderMap) -> Result<[u8; 8], AzureError> {
+    let content_crc64 = headers
+        .get(CONTENT_CRC64)
+        .ok_or_else(|| AzureError::HeaderNotFound(CONTENT_CRC64.to_owned()))?
+        .to_str()?;
+
+    let content_crc64_vec = base64::decode(&content_crc64)?;
+
+    if content_crc64_vec.len() != 8 {
+        return Err(AzureError::CRC64Not8BytesLong(
+            content_crc64_vec.len() as u64
+        ));
+    }
+    let mut content_crc64 = [0; 8];
+    content_crc64.copy_from_slice(&content_crc64_vec[0..8]);
+
+    trace!("content_crc64 == {:?}", content_crc64);
+    Ok(content_crc64)
 }
 
 pub fn last_modified_from_headers_optional(

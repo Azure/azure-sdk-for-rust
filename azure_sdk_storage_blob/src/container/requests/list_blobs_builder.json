@@ -6,6 +6,7 @@
 		"crate::container::generate_container_uri",
 		"azure_sdk_core::errors::{check_status_extract_headers_and_body_as_string, AzureError}",
 		"azure_sdk_core::prelude::*",
+		"azure_sdk_storage_core::prelude::*",
 		"azure_sdk_core::{No, ToAssign, Yes}",
 		"azure_sdk_storage_core::client::Client",
 		"azure_sdk_storage_core::ClientRequired",
@@ -14,12 +15,13 @@
 		"std::marker::PhantomData"
 	],
 	"inline": true,
-	"extra_types": [ "'a" ],
+	"extra_types": [ "'a", "C" ],
+	"extra_wheres": [ "C: Client" ],
 	"constructor_fields": [
 		{
 			"name": "client",
-			"field_type": "&'a Client",
-			"trait_get": "ClientRequired<'a>"
+			"field_type": "&'a C",
+			"trait_get": "ClientRequired<'a, C>"
 		}
 	],
 	"fields": [

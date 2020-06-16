@@ -1,8 +1,8 @@
 use azure_sdk_core::errors::{check_status_extract_body, AzureError};
-use azure_sdk_storage_core::client::Client;
+use azure_sdk_storage_core::prelude::*;
 use azure_sdk_storage_core::{
-    get_default_json_mime, get_json_mime_fullmetadata, get_json_mime_nometadata, ConnectionString,
-    ServiceType,
+    client, get_default_json_mime, get_json_mime_fullmetadata, get_json_mime_nometadata,
+    ConnectionString, ServiceType,
 };
 use hyper::{
     client::ResponseFuture,
@@ -22,23 +22,26 @@ pub enum MetadataDetail {
 }
 
 #[derive(Clone)]
-pub struct TableClient {
-    client: Client,
+pub struct TableClient<C>
+where
+    C: Client,
+{
+    client: C,
 }
 
-impl TableClient {
+impl TableClient<KeyClient> {
     /// Create a new `TableClient` using a key.
-    pub fn new(account: &str, key: &str) -> Result<Self, AzureError> {
-        Ok(TableClient {
-            client: Client::new(account, key)?,
-        })
+    pub fn new(account: &str, key: &str) -> Self {
+        TableClient {
+            client: client::with_access_key(account, key),
+        }
     }
 
     /// Create a new `TableClient` using a SAS token.
-    pub fn azure_sas(account: &str, sas_token: &str) -> Result<Self, AzureError> {
-        Ok(TableClient {
-            client: Client::azure_sas(account, sas_token)?,
-        })
+    pub fn azure_sas(account: &str, sas_token: &str) -> Self {
+        TableClient {
+            client: client::with_azure_sas(account, sas_token),
+        }
     }
 
     pub fn from_connection_string(connection_string: &str) -> Result<Self, AzureError> {
@@ -51,7 +54,7 @@ impl TableClient {
             } => {
                 log::warn!("Both account key and SAS defined in connection string. Using only the provided SAS.");
                 Ok(TableClient {
-                    client: Client::azure_sas(account, sas_token)?,
+                    client: client::with_azure_sas(account, sas_token),
                 })
             }
             ConnectionString {
@@ -59,14 +62,14 @@ impl TableClient {
                 sas: Some(sas_token),
                 ..
             } => Ok(TableClient {
-                client: Client::azure_sas(account, sas_token)?,
+                client: client::with_azure_sas(account, sas_token),
             }),
             ConnectionString {
                 account_name: Some(account),
                 account_key: Some(key),
                 ..
             } => Ok(TableClient {
-                client: Client::azure(account, key)?,
+                client: client::with_access_key(account, key),
             }),
             _ => {
                 return Err(AzureError::GenericErrorWithText(
@@ -76,7 +79,12 @@ impl TableClient {
             }
         }
     }
+}
 
+impl<C> TableClient<C>
+where
+    C: Client,
+{
     pub async fn list_tables(&self) -> Result<Vec<String>, AzureError> {
         let future_response = self.request_with_default_header(
             TABLE_TABLES,

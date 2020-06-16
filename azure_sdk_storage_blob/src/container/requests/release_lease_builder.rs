@@ -2,23 +2,20 @@ use crate::container::responses::ReleaseLeaseResponse;
 use azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError};
 use azure_sdk_core::headers::LEASE_ACTION;
 use azure_sdk_core::lease::LeaseId;
-use azure_sdk_core::{
-    ClientRequestIdOption, ClientRequestIdSupport, ContainerNameRequired, ContainerNameSupport,
-    LeaseIdRequired, LeaseIdSupport, TimeoutOption, TimeoutSupport,
-};
+use azure_sdk_core::prelude::*;
 use azure_sdk_core::{No, ToAssign, Yes};
-use azure_sdk_storage_core::client::Client;
-use azure_sdk_storage_core::ClientRequired;
+use azure_sdk_storage_core::prelude::*;
 use hyper::{Method, StatusCode};
 use std::marker::PhantomData;
 
 #[derive(Debug, Clone)]
-pub struct ReleaseLeaseBuilder<'a, ContainerNameSet, LeaseIdSet>
+pub struct ReleaseLeaseBuilder<'a, C, ContainerNameSet, LeaseIdSet>
 where
     ContainerNameSet: ToAssign,
     LeaseIdSet: ToAssign,
+    C: Client,
 {
-    client: &'a Client,
+    client: &'a C,
     p_container_name: PhantomData<ContainerNameSet>,
     p_lease_id: PhantomData<LeaseIdSet>,
     container_name: Option<&'a str>,
@@ -27,8 +24,12 @@ where
     lease_id: Option<&'a LeaseId>,
 }
 
-impl<'a> ReleaseLeaseBuilder<'a, No, No> {
-    pub(crate) fn new(client: &'a Client) -> ReleaseLeaseBuilder<'a, No, No> {
+impl<'a, C> ReleaseLeaseBuilder<'a, C, No, No>
+where
+    C: Client,
+{
+    #[inline]
+    pub(crate) fn new(client: &'a C) -> ReleaseLeaseBuilder<'a, C, No, No> {
         ReleaseLeaseBuilder {
             client,
             p_container_name: PhantomData {},
@@ -41,65 +42,79 @@ impl<'a> ReleaseLeaseBuilder<'a, No, No> {
     }
 }
 
-impl<'a, ContainerNameSet, LeaseIdSet> ClientRequired<'a>
-    for ReleaseLeaseBuilder<'a, ContainerNameSet, LeaseIdSet>
+impl<'a, C, ContainerNameSet, LeaseIdSet> ClientRequired<'a, C>
+    for ReleaseLeaseBuilder<'a, C, ContainerNameSet, LeaseIdSet>
 where
     ContainerNameSet: ToAssign,
     LeaseIdSet: ToAssign,
+    C: Client,
 {
-    fn client(&self) -> &'a Client {
+    #[inline]
+    fn client(&self) -> &'a C {
         self.client
     }
 }
 
-impl<'a, LeaseIdSet> ContainerNameRequired<'a> for ReleaseLeaseBuilder<'a, Yes, LeaseIdSet>
+//get mandatory no traits methods
+
+//set mandatory no traits methods
+impl<'a, C, LeaseIdSet> ContainerNameRequired<'a> for ReleaseLeaseBuilder<'a, C, Yes, LeaseIdSet>
 where
     LeaseIdSet: ToAssign,
+    C: Client,
 {
+    #[inline]
     fn container_name(&self) -> &'a str {
         self.container_name.unwrap()
     }
 }
 
-impl<'a, ContainerNameSet, LeaseIdSet> ClientRequestIdOption<'a>
-    for ReleaseLeaseBuilder<'a, ContainerNameSet, LeaseIdSet>
+impl<'a, C, ContainerNameSet, LeaseIdSet> ClientRequestIdOption<'a>
+    for ReleaseLeaseBuilder<'a, C, ContainerNameSet, LeaseIdSet>
 where
     ContainerNameSet: ToAssign,
     LeaseIdSet: ToAssign,
+    C: Client,
 {
+    #[inline]
     fn client_request_id(&self) -> Option<&'a str> {
         self.client_request_id
     }
 }
 
-impl<'a, ContainerNameSet, LeaseIdSet> TimeoutOption
-    for ReleaseLeaseBuilder<'a, ContainerNameSet, LeaseIdSet>
+impl<'a, C, ContainerNameSet, LeaseIdSet> TimeoutOption
+    for ReleaseLeaseBuilder<'a, C, ContainerNameSet, LeaseIdSet>
 where
     ContainerNameSet: ToAssign,
     LeaseIdSet: ToAssign,
+    C: Client,
 {
+    #[inline]
     fn timeout(&self) -> Option<u64> {
         self.timeout
     }
 }
 
-impl<'a, ContainerNameSet> LeaseIdRequired<'a> for ReleaseLeaseBuilder<'a, ContainerNameSet, Yes>
+impl<'a, C, ContainerNameSet> LeaseIdRequired<'a>
+    for ReleaseLeaseBuilder<'a, C, ContainerNameSet, Yes>
 where
     ContainerNameSet: ToAssign,
+    C: Client,
 {
+    #[inline]
     fn lease_id(&self) -> &'a LeaseId {
         self.lease_id.unwrap()
     }
 }
 
-impl<'a, ContainerNameSet, LeaseIdSet> ContainerNameSupport<'a>
-    for ReleaseLeaseBuilder<'a, ContainerNameSet, LeaseIdSet>
+impl<'a, C, LeaseIdSet> ContainerNameSupport<'a> for ReleaseLeaseBuilder<'a, C, No, LeaseIdSet>
 where
-    ContainerNameSet: ToAssign,
     LeaseIdSet: ToAssign,
+    C: Client,
 {
-    type O = ReleaseLeaseBuilder<'a, Yes, LeaseIdSet>;
+    type O = ReleaseLeaseBuilder<'a, C, Yes, LeaseIdSet>;
 
+    #[inline]
     fn with_container_name(self, container_name: &'a str) -> Self::O {
         ReleaseLeaseBuilder {
             client: self.client,
@@ -113,14 +128,16 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, LeaseIdSet> ClientRequestIdSupport<'a>
-    for ReleaseLeaseBuilder<'a, ContainerNameSet, LeaseIdSet>
+impl<'a, C, ContainerNameSet, LeaseIdSet> ClientRequestIdSupport<'a>
+    for ReleaseLeaseBuilder<'a, C, ContainerNameSet, LeaseIdSet>
 where
     ContainerNameSet: ToAssign,
     LeaseIdSet: ToAssign,
+    C: Client,
 {
-    type O = ReleaseLeaseBuilder<'a, ContainerNameSet, LeaseIdSet>;
+    type O = ReleaseLeaseBuilder<'a, C, ContainerNameSet, LeaseIdSet>;
 
+    #[inline]
     fn with_client_request_id(self, client_request_id: &'a str) -> Self::O {
         ReleaseLeaseBuilder {
             client: self.client,
@@ -134,14 +151,16 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, LeaseIdSet> TimeoutSupport
-    for ReleaseLeaseBuilder<'a, ContainerNameSet, LeaseIdSet>
+impl<'a, C, ContainerNameSet, LeaseIdSet> TimeoutSupport
+    for ReleaseLeaseBuilder<'a, C, ContainerNameSet, LeaseIdSet>
 where
     ContainerNameSet: ToAssign,
     LeaseIdSet: ToAssign,
+    C: Client,
 {
-    type O = ReleaseLeaseBuilder<'a, ContainerNameSet, LeaseIdSet>;
+    type O = ReleaseLeaseBuilder<'a, C, ContainerNameSet, LeaseIdSet>;
 
+    #[inline]
     fn with_timeout(self, timeout: u64) -> Self::O {
         ReleaseLeaseBuilder {
             client: self.client,
@@ -155,14 +174,15 @@ where
     }
 }
 
-impl<'a, ContainerNameSet, LeaseIdSet> LeaseIdSupport<'a>
-    for ReleaseLeaseBuilder<'a, ContainerNameSet, LeaseIdSet>
+impl<'a, C, ContainerNameSet> LeaseIdSupport<'a>
+    for ReleaseLeaseBuilder<'a, C, ContainerNameSet, No>
 where
     ContainerNameSet: ToAssign,
-    LeaseIdSet: ToAssign,
+    C: Client,
 {
-    type O = ReleaseLeaseBuilder<'a, ContainerNameSet, Yes>;
+    type O = ReleaseLeaseBuilder<'a, C, ContainerNameSet, Yes>;
 
+    #[inline]
     fn with_lease_id(self, lease_id: &'a LeaseId) -> Self::O {
         ReleaseLeaseBuilder {
             client: self.client,
@@ -176,15 +196,11 @@ where
     }
 }
 
-// methods callable regardless
-impl<'a, ContainerNameSet, LeaseIdSet> ReleaseLeaseBuilder<'a, ContainerNameSet, LeaseIdSet>
+// methods callable only when every mandatory field has been filled
+impl<'a, C> ReleaseLeaseBuilder<'a, C, Yes, Yes>
 where
-    ContainerNameSet: ToAssign,
-    LeaseIdSet: ToAssign,
+    C: Client,
 {
-}
-
-impl<'a> ReleaseLeaseBuilder<'a, Yes, Yes> {
     pub async fn finalize(self) -> Result<ReleaseLeaseResponse, AzureError> {
         let mut uri = format!(
             "{}/{}?comp=lease&restype=container",
@@ -199,7 +215,7 @@ impl<'a> ReleaseLeaseBuilder<'a, Yes, Yes> {
         let future_response = self.client().perform_request(
             &uri,
             &Method::PUT,
-            |mut request| {
+            &|mut request| {
                 request = ClientRequestIdOption::add_header(&self, request);
                 request = LeaseIdRequired::add_header(&self, request);
                 request = request.header(LEASE_ACTION, "release");

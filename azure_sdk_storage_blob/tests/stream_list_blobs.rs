@@ -13,7 +13,7 @@ async fn stream_list_blobs() {
         std::env::var("STORAGE_MASTER_KEY").expect("Set env variable STORAGE_MASTER_KEY first!");
 
     let container_name = "streamlistblobs235xx752zdve";
-    let client = Client::new(&account, &master_key).unwrap();
+    let client = client::with_access_key(&account, &master_key);
 
     let iv = client.list_containers().finalize().await.unwrap();
 

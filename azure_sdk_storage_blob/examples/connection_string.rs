@@ -14,7 +14,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .nth(1)
         .expect("please specify container name as command line parameter");
 
-    let client = Client::from_connection_string(&connection_string)?;
+    let client = client::from_connection_string(&connection_string)?;
 
     let iv = client.list_containers().finalize().await?;
 
