@@ -13,7 +13,7 @@ pub trait HttpHeaderAdder {
     fn add_headers(&self, builder: ::http::request::Builder) -> ::http::request::Builder;
 }
 
-pub trait Client {
+pub trait Client: Send + Sync {
     fn blob_uri(&self) -> &str;
     fn table_uri(&self) -> &str;
 
@@ -41,6 +41,40 @@ pub trait Client {
         http_header_adder: &dyn Fn(Builder) -> Builder,
         request_str: Option<&[u8]>,
     ) -> Result<hyper::client::ResponseFuture, AzureError>;
+}
+
+impl<C> Client for Box<C>
+where
+    C: Client,
+{
+    fn blob_uri(&self) -> &str {
+        self.as_ref().blob_uri()
+    }
+    fn table_uri(&self) -> &str {
+        self.as_ref().table_uri()
+    }
+
+    fn perform_request(
+        &self,
+        uri: &str,
+        method: &Method,
+        http_header_adder: &dyn Fn(Builder) -> Builder,
+        request_body: Option<&[u8]>,
+    ) -> Result<hyper::client::ResponseFuture, AzureError> {
+        self.as_ref()
+            .perform_request(uri, method, http_header_adder, request_body)
+    }
+
+    fn perform_table_request(
+        &self,
+        segment: &str,
+        method: &Method,
+        http_header_adder: &dyn Fn(Builder) -> Builder,
+        request_str: Option<&[u8]>,
+    ) -> Result<hyper::client::ResponseFuture, AzureError> {
+        self.as_ref()
+            .perform_table_request(segment, method, http_header_adder, request_str)
+    }
 }
 
 impl Client for Box<dyn Client> {
