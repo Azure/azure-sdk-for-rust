@@ -24,7 +24,7 @@ const AZURE_VERSION: &str = "2018-12-31";
 const VERSION: &str = "1.0";
 const TIME_FORMAT: &str = "%a, %d %h %Y %T GMT";
 
-pub trait CosmosUriBuilder {
+pub trait CosmosUriBuilder: Send + Sync {
     fn build_base_uri(&self) -> &str;
 }
 

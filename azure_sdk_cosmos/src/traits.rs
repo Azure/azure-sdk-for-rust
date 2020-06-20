@@ -6,11 +6,11 @@ use hyper_rustls::HttpsConnector;
 use std::borrow::Cow;
 use std::fmt::Debug;
 
-pub trait HasHyperClient: Debug {
+pub trait HasHyperClient: Debug + Send + Sync {
     fn hyper_client(&self) -> &hyper::Client<HttpsConnector<hyper::client::HttpConnector>>;
 }
 
-pub trait CosmosClient: HasHyperClient {
+pub trait CosmosClient: HasHyperClient + Send + Sync {
     fn create_database(&self) -> requests::CreateDatabaseBuilder<'_, No>;
     fn list_databases(&self) -> requests::ListDatabasesBuilder<'_>;
 
@@ -62,7 +62,7 @@ where
     fn database_client(&self) -> &D;
 }
 
-pub trait WithDatabaseClient<'a, C, D>: Debug
+pub trait WithDatabaseClient<'a, C, D>: Debug + Send + Sync
 where
     C: CosmosClient,
     D: DatabaseClient<C>,
@@ -72,7 +72,7 @@ where
         IntoCowStr: Into<Cow<'a, str>>;
 }
 
-pub trait IntoDatabaseClient<'a, C, D>: Debug
+pub trait IntoDatabaseClient<'a, C, D>: Debug + Send + Sync
 where
     C: CosmosClient,
     D: DatabaseClient<C>,
@@ -125,7 +125,7 @@ where
     fn user_client(&self) -> &USER;
 }
 
-pub trait WithUserClient<'a, C, D, USER>: Debug
+pub trait WithUserClient<'a, C, D, USER>: Debug + Send + Sync
 where
     C: CosmosClient,
     D: DatabaseClient<C>,
@@ -136,7 +136,7 @@ where
         IntoCowStr: Into<Cow<'a, str>>;
 }
 
-pub trait IntoUserClient<'a, C, D, USER>: Debug
+pub trait IntoUserClient<'a, C, D, USER>: Debug + Send + Sync
 where
     C: CosmosClient,
     D: DatabaseClient<C>,
@@ -198,7 +198,7 @@ where
     fn permission_client(&self) -> &PERMISSION;
 }
 
-pub trait WithPermissionClient<'a, C, D, USER, PERMISSION>: Debug
+pub trait WithPermissionClient<'a, C, D, USER, PERMISSION>: Debug + Send + Sync
 where
     C: CosmosClient,
     D: DatabaseClient<C>,
@@ -210,7 +210,7 @@ where
         IntoCowStr: Into<Cow<'a, str>>;
 }
 
-pub trait IntoPermissionClient<'a, C, D, USER, PERMISSION>: Debug
+pub trait IntoPermissionClient<'a, C, D, USER, PERMISSION>: Debug + Send + Sync
 where
     C: CosmosClient,
     D: DatabaseClient<C>,
@@ -278,7 +278,7 @@ where
     fn collection_client(&self) -> &COLL;
 }
 
-pub trait WithCollectionClient<'a, C, D, COLL>: Debug
+pub trait WithCollectionClient<'a, C, D, COLL>: Debug + Send + Sync
 where
     C: CosmosClient,
     D: DatabaseClient<C>,
@@ -289,7 +289,7 @@ where
         IntoCowStr: Into<Cow<'a, str>>;
 }
 
-pub trait IntoCollectionClient<'a, C, D, COLL>: Debug
+pub trait IntoCollectionClient<'a, C, D, COLL>: Debug + Send + Sync
 where
     C: CosmosClient,
     D: DatabaseClient<C>,
@@ -356,7 +356,7 @@ where
     fn user_defined_function_client(&self) -> &UDF;
 }
 
-pub trait WithUserDefinedFunctionClient<'a, C, D, COLL, UDF>: Debug
+pub trait WithUserDefinedFunctionClient<'a, C, D, COLL, UDF>: Debug + Send + Sync
 where
     C: CosmosClient,
     D: DatabaseClient<C>,
@@ -371,7 +371,7 @@ where
         IntoCowStr: Into<Cow<'a, str>>;
 }
 
-pub trait IntoUserDefinedFunctionClient<'a, C, D, COLL, UDF>: Debug
+pub trait IntoUserDefinedFunctionClient<'a, C, D, COLL, UDF>: Debug + Send + Sync
 where
     C: CosmosClient,
     D: DatabaseClient<C>,
@@ -444,7 +444,7 @@ where
     fn stored_procedure_client(&self) -> &SP;
 }
 
-pub trait WithStoredProcedureClient<'a, C, D, COLL, SP>: Debug
+pub trait WithStoredProcedureClient<'a, C, D, COLL, SP>: Debug + Send + Sync
 where
     C: CosmosClient,
     D: DatabaseClient<C>,
@@ -456,7 +456,7 @@ where
         IntoCowStr: Into<Cow<'a, str>>;
 }
 
-pub trait IntoStoredProcedureClient<'a, C, D, COLL, SP>: Debug
+pub trait IntoStoredProcedureClient<'a, C, D, COLL, SP>: Debug + Send + Sync
 where
     C: CosmosClient,
     D: DatabaseClient<C>,
@@ -518,7 +518,7 @@ where
     fn trigger_client(&self) -> &TRIGGER;
 }
 
-pub trait WithTriggerClient<'a, C, D, COLL, TRIGGER>: Debug
+pub trait WithTriggerClient<'a, C, D, COLL, TRIGGER>: Debug + Send + Sync
 where
     C: CosmosClient,
     D: DatabaseClient<C>,
@@ -530,7 +530,7 @@ where
         IntoCowStr: Into<Cow<'a, str>>;
 }
 
-pub trait IntoTriggerClient<'a, C, D, COLL, TRIGGER>: Debug
+pub trait IntoTriggerClient<'a, C, D, COLL, TRIGGER>: Debug + Send + Sync
 where
     C: CosmosClient,
     D: DatabaseClient<C>,
@@ -590,7 +590,7 @@ where
     fn document_client(&self) -> &DOC;
 }
 
-pub trait WithDocumentClient<'a, 'b, C, D, COLL, DOC>: Debug
+pub trait WithDocumentClient<'a, 'b, C, D, COLL, DOC>: Debug + Send + Sync
 where
     C: CosmosClient,
     D: DatabaseClient<C>,
@@ -606,7 +606,7 @@ where
         DocName: Into<Cow<'b, str>>;
 }
 
-pub trait IntoDocumentClient<'b, C, D, COLL, DOC>: Debug
+pub trait IntoDocumentClient<'b, C, D, COLL, DOC>: Debug + Send + Sync
 where
     C: CosmosClient,
     D: DatabaseClient<C>,
@@ -686,7 +686,7 @@ where
     fn attachment_client(&self) -> &ATT;
 }
 
-pub trait WithAttachmentClient<'a, C, D, COLL, DOC, ATT>: Debug
+pub trait WithAttachmentClient<'a, C, D, COLL, DOC, ATT>: Debug + Send + Sync
 where
     C: CosmosClient,
     D: DatabaseClient<C>,
@@ -699,7 +699,7 @@ where
         IntoCowStr: Into<Cow<'a, str>>;
 }
 
-pub trait IntoAttachmentClient<'a, C, D, COLL, DOC, ATT>: Debug
+pub trait IntoAttachmentClient<'a, C, D, COLL, DOC, ATT>: Debug + Send + Sync
 where
     C: CosmosClient,
     D: DatabaseClient<C>,
