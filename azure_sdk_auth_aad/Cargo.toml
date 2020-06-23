@@ -1,6 +1,6 @@
 [package]
 name               = "azure_sdk_auth_aad"
-version            = "0.44.0"
+version            = "0.45.0"
 description        = "Rust wrappers around Microsoft Azure REST APIs - Azure OAuth2 helper crate"
 readme             = "README.md"
 authors            = ["Francesco Cogno <francesco.cogno@outlook.com>"]

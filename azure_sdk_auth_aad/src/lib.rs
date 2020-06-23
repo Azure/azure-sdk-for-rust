@@ -32,7 +32,7 @@ pub struct AuthObj {
     pub pkce_code_verifier: PkceCodeVerifier,
 }
 
-pub fn authorize_delegate(
+pub fn authorize_code_flow(
     client_id: ClientId,
     client_secret: Option<ClientSecret>,
     tenant_id: &str,
@@ -103,23 +103,23 @@ pub async fn exchange(
     Ok(token)
 }
 
-pub async fn authorize_non_interactive(
+pub async fn authorize_client_credentials_flow(
     client: Arc<reqwest::Client>,
     //  grant_type: &str, fixed on "client_credentials",
     client_id: &oauth2::ClientId,
     client_secret: &oauth2::ClientSecret,
-    resource: &str,
+    scope: &str,
     tenant_id: &str,
 ) -> Result<LoginResponse, AzureError> {
     let encoded: String = form_urlencoded::Serializer::new(String::new())
-        .append_pair("grant_type", "client_credentials")
         .append_pair("client_id", client_id.as_str())
+        .append_pair("scope", scope)
         .append_pair("client_secret", client_secret.secret())
-        .append_pair("resource", resource)
+        .append_pair("grant_type", "client_credentials")
         .finish();
 
     let url = url::Url::parse(&format!(
-        "https://login.microsoftonline.com/{}/oauth2/token",
+        "https://login.microsoftonline.com/{}/oauth2/v2.0/token",
         tenant_id
     ))
     .map_err(|error| AzureError::GenericErrorWithText(error.to_string()))?;

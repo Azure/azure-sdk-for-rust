@@ -21,7 +21,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .expect("please specify the container name as second command line parameter");
 
     // Create URL to browse for initial authorization
-    let c = authorize_delegate(
+    let c = authorize_code_flow(
         client_id,
         Some(client_secret),
         &tenant_id,

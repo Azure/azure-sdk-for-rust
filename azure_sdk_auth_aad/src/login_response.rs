@@ -7,11 +7,11 @@ use std::str::FromStr;
 #[derive(Debug, Clone, Deserialize)]
 struct _LoginResponse {
     token_type: String,
-    expires_in: String,
-    ext_expires_in: String,
-    expires_on: String,
-    not_before: String,
-    resource: String,
+    expires_in: u64,
+    ext_expires_in: u64,
+    expires_on: Option<String>,
+    not_before: Option<String>,
+    resource: Option<String>,
     access_token: String,
 }
 
@@ -20,9 +20,9 @@ pub struct LoginResponse {
     pub token_type: String,
     pub expires_in: u64,
     pub ext_expires_in: u64,
-    pub expires_on: DateTime<Utc>,
-    pub not_before: DateTime<Utc>,
-    pub resource: String,
+    pub expires_on: Option<DateTime<Utc>>,
+    pub not_before: Option<DateTime<Utc>>,
+    pub resource: Option<String>,
     pub access_token: AccessToken,
 }
 
@@ -51,16 +51,19 @@ impl LoginResponse {
     }
 
     fn from_base_response(r: _LoginResponse) -> Result<LoginResponse, AzureError> {
-        let expires_on: i64 = r.expires_on.parse()?;
-        let expires_on: DateTime<Utc> = Utc.timestamp(expires_on, 0);
-
-        let not_before: i64 = r.not_before.parse()?;
-        let not_before: DateTime<Utc> = Utc.timestamp(not_before, 0);
+        let expires_on: Option<DateTime<Utc>> = match r.expires_on {
+            Some(d) => Some(Utc.timestamp(d.parse()?, 0)),
+            None => None,
+        };
+        let not_before: Option<DateTime<Utc>> = match r.not_before {
+            Some(d) => Some(Utc.timestamp(d.parse()?, 0)),
+            None => None,
+        };
 
         Ok(LoginResponse {
             token_type: r.token_type,
-            expires_in: r.expires_in.parse()?,
-            ext_expires_in: r.ext_expires_in.parse()?,
+            expires_in: r.expires_in,
+            ext_expires_in: r.ext_expires_in,
             expires_on,
             not_before,
             resource: r.resource,
