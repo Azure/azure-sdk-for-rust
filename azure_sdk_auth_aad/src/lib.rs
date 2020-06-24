@@ -1,3 +1,4 @@
+#![feature(async_closure)]
 #[macro_use]
 extern crate failure;
 #[macro_use]
@@ -18,8 +19,10 @@ use url::Url;
 mod login_response;
 pub use login_response::*;
 use std::sync::Arc;
+mod device_code_flow;
 pub mod errors;
 mod naive_server;
+pub use crate::device_code_flow::*;
 use futures::TryFutureExt;
 pub use naive_server::naive_server;
 use reqwest;
