@@ -101,8 +101,14 @@ impl<'a> DeviceCodePhaseOneResponse<'a> {
 
         unfold(States::Continue, async move |state: States| match state {
             States::Continue => {
-                println!("getting {}", &self.verification_uri);
+                let uri = format!(
+                    "https://login.microsoftonline.com/{}/oauth2/v2.0/token",
+                    self.tenant_id,
+                );
+
+                // throttle down
                 new_timer(Duration::from_secs(self.interval)).await;
+                debug!("getting {}", &uri);
 
                 let mut encoded = form_urlencoded::Serializer::new(String::new());
                 let encoded = encoded
@@ -113,10 +119,7 @@ impl<'a> DeviceCodePhaseOneResponse<'a> {
 
                 let result = match self
                     .client
-                    .post(&format!(
-                        "https://login.microsoftonline.com/{}/oauth2/v2.0/token",
-                        self.tenant_id,
-                    ))
+                    .post(&uri)
                     .header("ContentType", "application/x-www-form-urlencoded")
                     .body(encoded)
                     .send()
@@ -126,7 +129,7 @@ impl<'a> DeviceCodePhaseOneResponse<'a> {
                     Ok(result) => result,
                     Err(error) => return Some((Err(error), States::Finish)),
                 };
-                println!("result ==> {:?}", result);
+                debug!("result ==> {:?}", result);
 
                 let result = match result
                     .text()
@@ -136,7 +139,7 @@ impl<'a> DeviceCodePhaseOneResponse<'a> {
                     Ok(result) => result,
                     Err(error) => return Some((Err(error), States::Finish)),
                 };
-                println!("result (as text) ==> {}", result);
+                debug!("result (as text) ==> {}", result);
 
                 // here either we get an error response from Azure
                 // or we get a success. A success can be either "Pending" or

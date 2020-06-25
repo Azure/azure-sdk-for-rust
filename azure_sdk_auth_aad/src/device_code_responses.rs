@@ -1,12 +1,20 @@
-use azure_sdk_core::errors::AzureError;
 use oauth2::AccessToken;
 use std::convert::TryInto;
+use std::fmt;
+use thiserror::Error;
 
 #[derive(Debug, Clone, PartialEq, Deserialize)]
 pub struct DeviceCodeErrorResponse {
     pub error: String,
     pub error_description: String,
     pub error_uri: String,
+}
+
+impl fmt::Display for DeviceCodeErrorResponse {
+    // This trait requires `fmt` with this exact signature.
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}. {}", self.error, self.error_description)
+    }
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -19,13 +27,19 @@ pub struct DeviceCodeAuthorization {
     pub id_token: Option<AccessToken>,
 }
 
-#[derive(Debug)]
+#[derive(Error, Debug)]
 pub enum DeviceCodeError {
+    #[error("Authorization declined")]
     AuthorizationDeclined(DeviceCodeErrorResponse),
+    #[error("Bad verification code")]
     BadVerificationCode(DeviceCodeErrorResponse),
+    #[error("Expired token")]
     ExpiredToken(DeviceCodeErrorResponse),
+    #[error("Unrecognized error: {0}")]
     UnrecognizedError(DeviceCodeErrorResponse),
+    #[error("Unhandled error: {0}. {1}")]
     UnhandledError(String, String),
+    #[error("Reqwest error: {0}")]
     ReqwestError(reqwest::Error),
 }
 

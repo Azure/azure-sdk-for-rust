@@ -1,6 +1,6 @@
 use azure_sdk_auth_aad::*;
 use futures::stream::StreamExt;
-use oauth2::{ClientId, ClientSecret};
+use oauth2::ClientId;
 use std::env;
 use std::error::Error;
 use std::sync::Arc;
@@ -20,20 +20,35 @@ async fn main() -> Result<(), Box<dyn Error>> {
         client.clone(),
         &tenant_id,
         &client_id,
-        &[&format!(
-            "https://{}.blob.core.windows.net/.default",
-            storage_account_name
-        )],
+        &[
+            &format!(
+                "https://{}.blob.core.windows.net/.default",
+                storage_account_name
+            ),
+            "offline_access",
+        ],
     )
     .await?;
 
     println!("{}", device_code_flow.message());
 
     let mut stream = Box::pin(device_code_flow.stream());
-
+    let mut authorization = None;
     while let Some(resp) = stream.next().await {
         println!("{:?}", resp);
+
+        // if we have the authorization, let's store it for later use.
+        if let DeviceCodeResponse::AuthorizationSucceded(auth) = resp? {
+            authorization = Some(auth);
+        }
     }
+
+    let authorization = authorization.unwrap();
+
+    println!(
+        "\nReceived valid bearer token: {}",
+        &authorization.access_token.secret()
+    );
 
     //// Let's enumerate the Azure SQL Databases instances
     //// in the subscription. Note: this way of calling the REST API
