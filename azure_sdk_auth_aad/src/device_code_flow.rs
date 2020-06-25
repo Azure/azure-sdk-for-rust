@@ -17,6 +17,9 @@ pub struct DeviceCodePhaseOneResponse<'a> {
     expires_in: u64,
     interval: u64,
     message: String,
+    // the skipped fields below do not come
+    // from the Azure answer. They will be added
+    // manually after deserialization
     #[serde(skip)]
     client: Arc<reqwest::Client>,
     #[serde(skip)]
@@ -94,65 +97,71 @@ impl<'a> DeviceCodePhaseOneResponse<'a> {
         &self,
     ) -> impl futures::Stream<Item = Result<DeviceCodeResponse, DeviceCodeError>> + '_ {
         #[derive(Debug, Clone, PartialEq)]
-        enum States {
+        enum NextState {
             Continue,
             Finish,
         }
 
-        unfold(States::Continue, async move |state: States| match state {
-            States::Continue => {
-                let uri = format!(
-                    "https://login.microsoftonline.com/{}/oauth2/v2.0/token",
-                    self.tenant_id,
-                );
+        unfold(
+            NextState::Continue,
+            async move |state: NextState| match state {
+                NextState::Continue => {
+                    let uri = format!(
+                        "https://login.microsoftonline.com/{}/oauth2/v2.0/token",
+                        self.tenant_id,
+                    );
 
-                // throttle down
-                new_timer(Duration::from_secs(self.interval)).await;
-                debug!("getting {}", &uri);
+                    // throttle down as specified by Azure. This could be
+                    // smarter: we could calculate the elapsed time since the
+                    // last poll and wait only the delta. For now we do not
+                    // need such precision.
+                    new_timer(Duration::from_secs(self.interval)).await;
+                    debug!("posting to {}", &uri);
 
-                let mut encoded = form_urlencoded::Serializer::new(String::new());
-                let encoded = encoded
-                    .append_pair("grant_type", "urn:ietf:params:oauth:grant-type:device_code");
-                let encoded = encoded.append_pair("client_id", self.client_id.as_str());
-                let encoded = encoded.append_pair("device_code", &self.device_code);
-                let encoded = encoded.finish();
+                    let mut encoded = form_urlencoded::Serializer::new(String::new());
+                    let encoded = encoded
+                        .append_pair("grant_type", "urn:ietf:params:oauth:grant-type:device_code");
+                    let encoded = encoded.append_pair("client_id", self.client_id.as_str());
+                    let encoded = encoded.append_pair("device_code", &self.device_code);
+                    let encoded = encoded.finish();
 
-                let result = match self
-                    .client
-                    .post(&uri)
-                    .header("ContentType", "application/x-www-form-urlencoded")
-                    .body(encoded)
-                    .send()
-                    .await
-                    .map_err(DeviceCodeError::ReqwestError)
-                {
-                    Ok(result) => result,
-                    Err(error) => return Some((Err(error), States::Finish)),
-                };
-                debug!("result ==> {:?}", result);
+                    let result = match self
+                        .client
+                        .post(&uri)
+                        .header("ContentType", "application/x-www-form-urlencoded")
+                        .body(encoded)
+                        .send()
+                        .await
+                        .map_err(DeviceCodeError::ReqwestError)
+                    {
+                        Ok(result) => result,
+                        Err(error) => return Some((Err(error), NextState::Finish)),
+                    };
+                    debug!("result (raw) ==> {:?}", result);
 
-                let result = match result.text().await.map_err(DeviceCodeError::ReqwestError) {
-                    Ok(result) => result,
-                    Err(error) => return Some((Err(error), States::Finish)),
-                };
-                debug!("result (as text) ==> {}", result);
+                    let result = match result.text().await.map_err(DeviceCodeError::ReqwestError) {
+                        Ok(result) => result,
+                        Err(error) => return Some((Err(error), NextState::Finish)),
+                    };
+                    debug!("result (as text) ==> {}", result);
 
-                // here either we get an error response from Azure
-                // or we get a success. A success can be either "Pending" or
-                // "Completed". We finish the loop only on "Completed" (ie Success)
-                match result.try_into() {
-                    Ok(device_code_response) => {
-                        let next_state = match &device_code_response {
-                            DeviceCodeResponse::AuthorizationSucceded(_) => States::Finish,
-                            DeviceCodeResponse::AuthorizationPending(_) => States::Continue,
-                        };
+                    // here either we get an error response from Azure
+                    // or we get a success. A success can be either "Pending" or
+                    // "Completed". We finish the loop only on "Completed" (ie Success)
+                    match result.try_into() {
+                        Ok(device_code_response) => {
+                            let next_state = match &device_code_response {
+                                DeviceCodeResponse::AuthorizationSucceded(_) => NextState::Finish,
+                                DeviceCodeResponse::AuthorizationPending(_) => NextState::Continue,
+                            };
 
-                        Some((Ok(device_code_response), next_state))
+                            Some((Ok(device_code_response), next_state))
+                        }
+                        Err(error) => Some((Err(error), NextState::Finish)),
                     }
-                    Err(error) => Some((Err(error), States::Finish)),
                 }
-            }
-            States::Finish => None,
-        })
+                NextState::Finish => None,
+            },
+        )
     }
 }
