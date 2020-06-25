@@ -1,5 +1,4 @@
-#[macro_use]
-extern crate failure;
+#![feature(async_closure)]
 #[macro_use]
 extern crate serde_derive;
 extern crate log;
@@ -17,12 +16,15 @@ use url::form_urlencoded;
 use url::Url;
 mod login_response;
 pub use login_response::*;
+mod device_code_responses;
 use std::sync::Arc;
+mod device_code_flow;
 pub mod errors;
 mod naive_server;
+pub use crate::device_code_flow::*;
+pub use crate::device_code_responses::*;
 use futures::TryFutureExt;
 pub use naive_server::naive_server;
-use reqwest;
 
 #[derive(Debug)]
 pub struct AuthObj {
