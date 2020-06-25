@@ -43,6 +43,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
         }
     }
 
+    // remove the option (this is safe since we
+    // unwrapped the errors before).
     let authorization = authorization.unwrap();
 
     println!(
@@ -50,27 +52,28 @@ async fn main() -> Result<(), Box<dyn Error>> {
         &authorization.access_token.secret()
     );
 
-    //// Let's enumerate the Azure SQL Databases instances
-    //// in the subscription. Note: this way of calling the REST API
-    //// will be different (and easier) using other Azure Rust SDK
-    //// crates, this is just an example.
-    //let url = Url::parse(&format!(
-    //        "https://management.azure.com/subscriptions/{}/providers/Microsoft.Sql/servers?api-version=2015-05-01-preview",
-    //        subscription_id
-    //    ))?;
+    // let's get the containers using the just received bearer
+    // token. We should get 200 as result.
+    let dt = chrono::Utc::now();
+    let time = format!("{}", dt.format("%a, %d %h %Y %T GMT"));
 
-    //let resp = reqwest::Client::new()
-    //    .get(url)
-    //    .header(
-    //        "Authorization",
-    //        format!("Bearer {}", token.access_token().secret()),
-    //    )
-    //    .send()
-    //    .await?
-    //    .text()
-    //    .await?;
+    let resp = reqwest::Client::new()
+        .get(&format!(
+            "https://{}.blob.core.windows.net/?comp=list",
+            storage_account_name,
+        ))
+        .header(
+            "Authorization",
+            format!("Bearer {}", authorization.access_token.secret()),
+        )
+        .header("x-ms-version", "2019-07-07")
+        .header("x-ms-date", time)
+        .send()
+        .await?
+        .text()
+        .await?;
 
-    //println!("\n\nresp {:?}", resp);
+    println!("\n\nresp {:?}", resp);
 
     Ok(())
 }
