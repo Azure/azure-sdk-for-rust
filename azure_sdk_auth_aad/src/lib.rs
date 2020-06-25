@@ -25,7 +25,6 @@ pub use crate::device_code_flow::*;
 pub use crate::device_code_responses::*;
 use futures::TryFutureExt;
 pub use naive_server::naive_server;
-use reqwest;
 
 #[derive(Debug)]
 pub struct AuthObj {

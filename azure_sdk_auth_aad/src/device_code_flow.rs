@@ -124,18 +124,14 @@ impl<'a> DeviceCodePhaseOneResponse<'a> {
                     .body(encoded)
                     .send()
                     .await
-                    .map_err(|error| DeviceCodeError::ReqwestError(error))
+                    .map_err(DeviceCodeError::ReqwestError)
                 {
                     Ok(result) => result,
                     Err(error) => return Some((Err(error), States::Finish)),
                 };
                 debug!("result ==> {:?}", result);
 
-                let result = match result
-                    .text()
-                    .await
-                    .map_err(|error| DeviceCodeError::ReqwestError(error))
-                {
+                let result = match result.text().await.map_err(DeviceCodeError::ReqwestError) {
                     Ok(result) => result,
                     Err(error) => return Some((Err(error), States::Finish)),
                 };
@@ -153,7 +149,7 @@ impl<'a> DeviceCodePhaseOneResponse<'a> {
 
                         Some((Ok(device_code_response), next_state))
                     }
-                    Err(error) => return Some((Err(error), States::Finish)),
+                    Err(error) => Some((Err(error), States::Finish)),
                 }
             }
             States::Finish => None,
