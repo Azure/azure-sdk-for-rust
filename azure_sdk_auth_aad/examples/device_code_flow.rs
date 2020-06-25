@@ -1,4 +1,6 @@
 use azure_sdk_auth_aad::*;
+use azure_sdk_storage_blob::prelude::*;
+use azure_sdk_storage_core::prelude::*;
 use futures::stream::StreamExt;
 use oauth2::ClientId;
 use std::env;
@@ -16,6 +18,13 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .expect("please specify the storage account name as first command line parameter");
 
     let client = Arc::new(reqwest::Client::new());
+
+    // the process requires two steps. The first is to ask for
+    // the code to show to the user. This is done with the following
+    // function. Notice you can pass as many scopes as you want.
+    // Since we are asking for the "offline_access" scope we will
+    // receive the refresh token as well.
+    // We are requesting access to the storage account passed as parameter.
     let device_code_flow = begin_authorize_device_code_flow(
         client.clone(),
         &tenant_id,
@@ -30,8 +39,16 @@ async fn main() -> Result<(), Box<dyn Error>> {
     )
     .await?;
 
+    // now we must show the user the authentication message. It
+    // will point the user to the login page and show the code
+    // they have to specify.
     println!("{}", device_code_flow.message());
 
+    // now we poll the auth endpoint until the user
+    // completes the authentication. The following stream can
+    // return, besides errors, a success meaning either
+    // Success or Pending. The loop will continue until we
+    // get either a Success or an error.
     let mut stream = Box::pin(device_code_flow.stream());
     let mut authorization = None;
     while let Some(resp) = stream.next().await {
@@ -52,28 +69,22 @@ async fn main() -> Result<(), Box<dyn Error>> {
         &authorization.access_token.secret()
     );
 
-    // let's get the containers using the just received bearer
-    // token. We should get 200 as result.
-    let dt = chrono::Utc::now();
-    let time = format!("{}", dt.format("%a, %d %h %Y %T GMT"));
+    if let Some(refresh_token) = authorization.refresh_token.as_ref() {
+        println!("Received valid refresh token: {}", &refresh_token.secret());
+    }
 
-    let resp = reqwest::Client::new()
-        .get(&format!(
-            "https://{}.blob.core.windows.net/?comp=list",
-            storage_account_name,
-        ))
-        .header(
-            "Authorization",
-            format!("Bearer {}", authorization.access_token.secret()),
-        )
-        .header("x-ms-version", "2019-07-07")
-        .header("x-ms-date", time)
-        .send()
-        .await?
-        .text()
-        .await?;
+    // we can now spend the access token in other crates. In
+    // this example we are creating an Azure Storage client
+    // using the access token.
+    let client = client::with_bearer_token(
+        &storage_account_name,
+        &authorization.access_token.secret() as &str,
+    );
 
-    println!("\n\nresp {:?}", resp);
+    // now we enumerate the containers in the
+    // specified storage account.
+    let containers = client.list_containers().finalize().await?;
+    println!("\nList containers completed succesfully: {:?}", containers);
 
     Ok(())
 }
