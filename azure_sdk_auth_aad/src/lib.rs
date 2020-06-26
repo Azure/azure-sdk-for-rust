@@ -20,6 +20,8 @@ mod device_code_responses;
 use std::sync::Arc;
 mod device_code_flow;
 pub mod errors;
+mod refresh_token;
+pub use refresh_token::*;
 mod naive_server;
 pub use crate::device_code_flow::*;
 pub use crate::device_code_responses::*;

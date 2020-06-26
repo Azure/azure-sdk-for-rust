@@ -21,8 +21,6 @@ pub struct DeviceCodePhaseOneResponse<'a> {
     // from the Azure answer. They will be added
     // manually after deserialization
     #[serde(skip)]
-    client: Arc<reqwest::Client>,
-    #[serde(skip)]
     tenant_id: &'a str,
     // we store the ClientId as string instead of
     // the original type because it does not
@@ -33,7 +31,7 @@ pub struct DeviceCodePhaseOneResponse<'a> {
 }
 
 pub async fn begin_authorize_device_code_flow<'a, 'b>(
-    client: Arc<reqwest::Client>,
+    client: &'a reqwest::Client,
     tenant_id: &'a str,
     client_id: &'a ClientId,
     scopes: &'b [&'b str],
@@ -71,7 +69,6 @@ pub async fn begin_authorize_device_code_flow<'a, 'b>(
                     expires_in: device_code_reponse.expires_in,
                     interval: device_code_reponse.interval,
                     message: device_code_reponse.message,
-                    client: client.clone(),
                     tenant_id,
                     client_id: client_id.as_str().to_string(),
                 })
@@ -93,9 +90,10 @@ impl<'a> DeviceCodePhaseOneResponse<'a> {
         &self.message
     }
 
-    pub fn stream(
-        &self,
-    ) -> impl futures::Stream<Item = Result<DeviceCodeResponse, DeviceCodeError>> + '_ {
+    pub fn stream<'b>(
+        &'b self,
+        client: &'b reqwest::Client,
+    ) -> impl futures::Stream<Item = Result<DeviceCodeResponse, DeviceCodeError>> + 'b + '_ {
         #[derive(Debug, Clone, PartialEq)]
         enum NextState {
             Continue,
@@ -125,8 +123,7 @@ impl<'a> DeviceCodePhaseOneResponse<'a> {
                     let encoded = encoded.append_pair("device_code", &self.device_code);
                     let encoded = encoded.finish();
 
-                    let result = match self
-                        .client
+                    let result = match client
                         .post(&uri)
                         .header("ContentType", "application/x-www-form-urlencoded")
                         .body(encoded)

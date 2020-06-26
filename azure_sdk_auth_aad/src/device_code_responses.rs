@@ -22,9 +22,23 @@ pub struct DeviceCodeAuthorization {
     pub token_type: String,
     pub scope: String,
     pub expires_in: u64,
-    pub access_token: AccessToken,
-    pub refresh_token: Option<AccessToken>,
-    pub id_token: Option<AccessToken>,
+    access_token: AccessToken,
+    refresh_token: Option<AccessToken>,
+    id_token: Option<AccessToken>,
+}
+
+impl DeviceCodeAuthorization {
+    pub fn access_token(&self) -> &AccessToken {
+        &self.access_token
+    }
+
+    pub fn refresh_token(&self) -> Option<&AccessToken> {
+        self.refresh_token.as_ref()
+    }
+
+    pub fn id_token(&self) -> Option<&AccessToken> {
+        self.id_token.as_ref()
+    }
 }
 
 #[derive(Error, Debug)]
