@@ -5,7 +5,6 @@ use futures::stream::StreamExt;
 use oauth2::ClientId;
 use std::env;
 use std::error::Error;
-use std::sync::Arc;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
@@ -31,7 +30,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         &client_id,
         &[
             &format!(
-                "https://{}.blob.core.windows.net/.default",
+                "https://{}.blob.core.windows.net/user_impersonation",
                 storage_account_name
             ),
             "offline_access",
@@ -49,7 +48,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // return, besides errors, a success meaning either
     // Success or Pending. The loop will continue until we
     // get either a Success or an error.
-    let mut stream = Box::pin(device_code_flow.stream(&client));
+    let mut stream = Box::pin(device_code_flow.stream());
     let mut authorization = None;
     while let Some(resp) = stream.next().await {
         println!("{:?}", resp);
