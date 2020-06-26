@@ -4,8 +4,8 @@ use azure_sdk_core::errors::AzureError;
 use futures::stream::unfold;
 use log::debug;
 pub use oauth2::{ClientId, ClientSecret};
+use std::borrow::Cow;
 use std::convert::TryInto;
-use std::sync::Arc;
 use std::time::Duration;
 use url::form_urlencoded;
 
@@ -21,7 +21,9 @@ pub struct DeviceCodePhaseOneResponse<'a> {
     // from the Azure answer. They will be added
     // manually after deserialization
     #[serde(skip)]
-    tenant_id: &'a str,
+    client: Option<&'a reqwest::Client>,
+    #[serde(skip)]
+    tenant_id: Cow<'a, str>,
     // we store the ClientId as string instead of
     // the original type because it does not
     // implement Default and it's in another
@@ -30,16 +32,21 @@ pub struct DeviceCodePhaseOneResponse<'a> {
     client_id: String,
 }
 
-pub async fn begin_authorize_device_code_flow<'a, 'b>(
+pub async fn begin_authorize_device_code_flow<'a, 'b, T>(
     client: &'a reqwest::Client,
-    tenant_id: &'a str,
+    tenant_id: T,
     client_id: &'a ClientId,
     scopes: &'b [&'b str],
-) -> Result<DeviceCodePhaseOneResponse<'a>, AzureError> {
+) -> Result<DeviceCodePhaseOneResponse<'a>, AzureError>
+where
+    T: Into<Cow<'a, str>>,
+{
     let mut encoded = form_urlencoded::Serializer::new(String::new());
     let encoded = encoded.append_pair("client_id", client_id.as_str());
     let encoded = encoded.append_pair("scope", &scopes.join(" "));
     let encoded = encoded.finish();
+
+    let tenant_id = tenant_id.into();
 
     debug!("encoded ==> {}", encoded);
 
@@ -69,6 +76,7 @@ pub async fn begin_authorize_device_code_flow<'a, 'b>(
                     expires_in: device_code_reponse.expires_in,
                     interval: device_code_reponse.interval,
                     message: device_code_reponse.message,
+                    client: Some(client),
                     tenant_id,
                     client_id: client_id.as_str().to_string(),
                 })
@@ -92,7 +100,6 @@ impl<'a> DeviceCodePhaseOneResponse<'a> {
 
     pub fn stream<'b>(
         &'b self,
-        client: &'b reqwest::Client,
     ) -> impl futures::Stream<Item = Result<DeviceCodeResponse, DeviceCodeError>> + 'b + '_ {
         #[derive(Debug, Clone, PartialEq)]
         enum NextState {
@@ -123,7 +130,9 @@ impl<'a> DeviceCodePhaseOneResponse<'a> {
                     let encoded = encoded.append_pair("device_code", &self.device_code);
                     let encoded = encoded.finish();
 
-                    let result = match client
+                    let result = match self
+                        .client
+                        .unwrap()
                         .post(&uri)
                         .header("ContentType", "application/x-www-form-urlencoded")
                         .body(encoded)

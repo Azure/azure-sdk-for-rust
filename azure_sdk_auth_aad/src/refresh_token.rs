@@ -1,7 +1,8 @@
+use crate::responses::RefreshTokenResponse;
 use azure_sdk_core::errors::AzureError;
 use log::debug;
 use oauth2::{AccessToken, ClientId, ClientSecret};
-use std::sync::Arc;
+use std::convert::TryInto;
 use url::form_urlencoded;
 
 pub async fn exchange_refresh_token(
@@ -10,7 +11,7 @@ pub async fn exchange_refresh_token(
     client_id: &ClientId,
     client_secret: Option<&ClientSecret>,
     refresh_token: &AccessToken,
-) -> Result<(), AzureError> {
+) -> Result<RefreshTokenResponse, AzureError> {
     let mut encoded = form_urlencoded::Serializer::new(String::new());
     let encoded = encoded.append_pair("grant_type", "refresh_token");
     let encoded = encoded.append_pair("client_id", client_id.as_str());
@@ -23,7 +24,7 @@ pub async fn exchange_refresh_token(
     let encoded = encoded.append_pair("refresh_token", refresh_token.secret());
     let encoded = encoded.finish();
 
-    println!("encoded ==> {}", encoded);
+    debug!("encoded ==> {}", encoded);
 
     let url = url::Url::parse(&format!(
         "https://login.microsoftonline.com/{}/oauth2/v2.0/token",
@@ -40,8 +41,7 @@ pub async fn exchange_refresh_token(
         .text()
         .await
         .map_err(|e| AzureError::GenericErrorWithText(e.to_string()))?;
+    debug!("{}", ret);
 
-    println!("{}", ret);
-
-    Ok(())
+    Ok(ret.try_into()?)
 }
