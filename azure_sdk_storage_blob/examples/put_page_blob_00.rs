@@ -40,7 +40,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // spurious data to be uploaded.
     let digest = md5::compute(slice);
 
-    // The required parameters are container_name, blob_name and body.
+    // The required parameters are container_name, blob_name.
     // The builder supports many more optional
     // parameters (such as LeaseID, or ContentDisposition, etc...)
     // so make sure to check with the documentation.
@@ -89,7 +89,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .with_ba512_range(&BA512Range::new(512, 1023)?)
         .with_content_md5(&digest[..])
         .with_body(slice)
-        .with_sequence_number_condition(SequenceNumberCondition::Equal(1))
+        .with_sequence_number_condition(SequenceNumberCondition::Equal(0))
         .finalize()
         .await?;
     println!("update failed sequence number condition == {:?}", res);

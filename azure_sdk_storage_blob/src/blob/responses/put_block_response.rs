@@ -16,7 +16,7 @@ pub struct PutBlockResponse {
 
 impl PutBlockResponse {
     pub(crate) fn from_headers(headers: &HeaderMap) -> Result<PutBlockResponse, AzureError> {
-        debug!("{:?}", headers);
+        debug!("{:#?}", headers);
 
         let content_crc64 = content_crc64_from_headers(headers)?;
         let request_id = request_id_from_headers(headers)?;
