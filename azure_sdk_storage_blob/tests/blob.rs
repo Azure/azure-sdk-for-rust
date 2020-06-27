@@ -3,7 +3,7 @@
 extern crate log;
 
 use azure_sdk_core::prelude::*;
-use azure_sdk_core::DeleteSnapshotsMethod;
+use azure_sdk_core::{Consistency, DeleteSnapshotsMethod};
 use azure_sdk_storage_blob::{
     blob::BlockListType,
     container::{Container, PublicAccess, PublicAccessSupport},
@@ -146,7 +146,9 @@ async fn put_and_get_block_list() {
     let contents2 = "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB";
     let contents3 = "CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC";
 
-    client
+    let digest3 = md5::compute(contents3);
+
+    let put_block_response = client
         .put_block()
         .with_container_name(&container.name)
         .with_blob_name(name)
@@ -155,6 +157,11 @@ async fn put_and_get_block_list() {
         .finalize()
         .await
         .unwrap();
+
+    match &put_block_response.consistency {
+        Consistency::Crc64(_) => {}
+        _ => panic!("must receive a content_crc64 header"),
+    }
 
     client
         .put_block()
@@ -166,15 +173,21 @@ async fn put_and_get_block_list() {
         .await
         .unwrap();
 
-    client
+    let put_block_response = client
         .put_block()
         .with_container_name(&container.name)
         .with_blob_name(name)
         .with_body(&contents3.as_bytes())
         .with_block_id(b"block3")
+        .with_content_md5(&digest3[..])
         .finalize()
         .await
         .unwrap();
+
+    match &put_block_response.consistency {
+        Consistency::Md5(_) => {}
+        _ => panic!("must receive a content_md5 header"),
+    }
 
     let received_block_list = client
         .get_block_list()

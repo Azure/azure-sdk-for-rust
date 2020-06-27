@@ -210,6 +210,9 @@ quick_error! {
         HeaderNotFound(msg: String) {
             display("Header not found: {}", msg)
         }
+        HeadersNotFound(headers: Vec<String>) {
+            display("At least one of these headers must be present: {:?}", headers)
+        }
         ResponseParsingError(err: TraversingError){
             from()
             display("Traversing error: {}", err)

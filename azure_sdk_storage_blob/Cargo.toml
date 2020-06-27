@@ -1,6 +1,6 @@
 [package]
 name          = "azure_sdk_storage_blob"
-version       = "0.44.2"
+version       = "0.44.3"
 description   = "Rust wrappers around Microsoft Azure REST APIs - Blob storage crate"
 readme        = "README.md"
 authors       = ["Francesco Cogno <francesco.cogno@outlook.com>", "Max Gortman <mgortman@microsoft.com>", "Dong Liu <doliu@microsoft.com>"]
@@ -15,8 +15,8 @@ categories    = ["api-bindings"]
 edition       = "2018"
 
 [dependencies]
-azure_sdk_core          = { path = "../azure_sdk_core", version = "0.43.4" }
-azure_sdk_storage_core  = { path = "../azure_sdk_storage_core", version = "0.44.1" }
+azure_sdk_core          = { path = "../azure_sdk_core", version = "0.43.5" }
+azure_sdk_storage_core  = { path = "../azure_sdk_storage_core", version = "0.44.2" }
 md5                     = "0.7"
 RustyXML                = "0.3"
 base64                  = "0.12"

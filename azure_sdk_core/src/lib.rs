@@ -88,6 +88,12 @@ impl NotAssigned for No {}
 
 create_enum!(DeleteSnapshotsMethod, (Include, "include"), (Only, "only"));
 
+#[derive(Debug, Clone, PartialEq)]
+pub enum Consistency {
+    Md5([u8; 16]),
+    Crc64([u8; 8]),
+}
+
 pub trait TimeoutSupport {
     type O;
     fn with_timeout(self, timeout: u64) -> Self::O;
@@ -959,6 +965,16 @@ pub fn content_md5_from_headers(headers: &HeaderMap) -> Result<[u8; 16], AzureEr
     Ok(content_md5)
 }
 
+pub fn content_crc64_from_headers_optional(
+    headers: &HeaderMap,
+) -> Result<Option<[u8; 8]>, AzureError> {
+    if headers.contains_key(CONTENT_CRC64) {
+        Ok(Some(content_crc64_from_headers(headers)?))
+    } else {
+        Ok(None)
+    }
+}
+
 pub fn content_crc64_from_headers(headers: &HeaderMap) -> Result<[u8; 8], AzureError> {
     let content_crc64 = headers
         .get(CONTENT_CRC64)
@@ -977,6 +993,21 @@ pub fn content_crc64_from_headers(headers: &HeaderMap) -> Result<[u8; 8], AzureE
 
     trace!("content_crc64 == {:?}", content_crc64);
     Ok(content_crc64)
+}
+
+pub fn consistency_from_headers(headers: &HeaderMap) -> Result<Consistency, AzureError> {
+    if let Some(content_crc64) = content_crc64_from_headers_optional(headers)? {
+        return Ok(Consistency::Crc64(content_crc64));
+    } else {
+        if let Some(content_md5) = content_md5_from_headers_optional(headers)? {
+            return Ok(Consistency::Md5(content_md5));
+        }
+    }
+
+    Err(AzureError::HeadersNotFound(vec![
+        CONTENT_CRC64.to_owned(),
+        CONTENT_MD5.to_owned(),
+    ]))
 }
 
 pub fn last_modified_from_headers_optional(
