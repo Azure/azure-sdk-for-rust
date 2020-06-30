@@ -423,7 +423,7 @@ pub(crate) fn incomplete_vector_from_response(
 }
 
 #[inline]
-pub(crate) fn generate_blob_uri<'a, C>(
+pub(crate) fn generate_blob_uri<C>(
     t: &C,
     container_name: &str,
     blob_name: &str,

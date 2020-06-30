@@ -153,11 +153,11 @@ impl<'a> ConnectionString<'a> {
         let mut file_secondary_endpoint = None;
 
         let kv_str_pairs = connection_string
-            .split(";")
+            .split(';')
             .filter(|s| !s.chars().all(char::is_whitespace));
 
         for kv_pair_str in kv_str_pairs {
-            let mut kv = kv_pair_str.trim().split("=");
+            let mut kv = kv_pair_str.trim().split('=');
             let k = match kv.next() {
                 Some(k) if k.chars().all(char::is_whitespace) => {
                     return Err(ConnectionStringError::ParsingError {

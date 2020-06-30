@@ -277,11 +277,7 @@ pub(crate) fn incomplete_vector_from_container_response(
 }
 
 #[inline]
-pub(crate) fn generate_container_uri<'a, C>(
-    c: &C,
-    container_name: &str,
-    params: Option<&str>,
-) -> String
+pub(crate) fn generate_container_uri<C>(c: &C, container_name: &str, params: Option<&str>) -> String
 where
     C: Client,
 {

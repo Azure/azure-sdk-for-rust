@@ -143,6 +143,7 @@ pub struct SharedAccessSignature {
 }
 
 impl SharedAccessSignature {
+    #[allow(clippy::new_ret_no_self)]
     pub fn new(key_client: &KeyClient) -> SharedAccessSignatureBuilder<No, No, No, No> {
         SharedAccessSignatureBuilder::new(key_client)
     }

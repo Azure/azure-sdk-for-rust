@@ -45,7 +45,7 @@ pub trait Client: Send + Sync {
 
 impl<C> Client for Box<C>
 where
-    C: Client,
+    C: Client + ?Sized,
 {
     fn blob_uri(&self) -> &str {
         self.as_ref().blob_uri()
@@ -77,7 +77,10 @@ where
     }
 }
 
-impl Client for Box<dyn Client> {
+impl<C> Client for std::sync::Arc<C>
+where
+    C: Client + ?Sized,
+{
     fn blob_uri(&self) -> &str {
         self.as_ref().blob_uri()
     }
@@ -191,7 +194,7 @@ pub fn from_connection_string(connection_string: &str) -> Result<KeyClient, Azur
                 format!("https://{}.table.core.windows.net", account), 
             )),
             _ => {
-                return Err(AzureError::GenericErrorWithText(
+                Err(AzureError::GenericErrorWithText(
                     "Could not create a storage client from the provided connection string. Please validate that you have specified the account name and means of authentication (key, SAS, etc.)."
                         .to_owned(),
                 ))

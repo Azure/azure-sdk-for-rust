@@ -1,10 +1,12 @@
 #[macro_use]
 extern crate log;
 
+use azure_sdk_core::errors::AzureError;
 use azure_sdk_core::prelude::*;
 use azure_sdk_storage_blob::prelude::*;
 use azure_sdk_storage_core::prelude::*;
 use std::error::Error;
+use std::sync::Arc;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
@@ -22,7 +24,23 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .expect("please specify blob name as command line parameter");
 
     let client: Box<dyn Client> = Box::new(client::with_access_key(&account, &master_key));
+    let s_content = get_blob_box(&client, &container, &blob).await?;
+    println!("blob == {:?}", blob);
+    println!("s_content == {}", s_content);
 
+    let client: Arc<dyn Client> = Arc::new(client::with_access_key(&account, &master_key));
+    let s_content = get_blob_arc(client, &container, &blob).await?;
+    println!("blob == {:?}", blob);
+    println!("s_content == {}", s_content);
+
+    Ok(())
+}
+
+async fn get_blob_box<'a>(
+    client: &'a Box<dyn Client>,
+    container: &'a str,
+    blob: &'a str,
+) -> Result<String, AzureError> {
     trace!("Requesting blob");
 
     let response = client
@@ -32,9 +50,22 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .finalize()
         .await?;
 
-    let s_content = String::from_utf8(response.data)?;
-    println!("blob == {:?}", blob);
-    println!("s_content == {}", s_content);
+    Ok(String::from_utf8(response.data)?)
+}
 
-    Ok(())
+async fn get_blob_arc<'a>(
+    client: Arc<dyn Client>,
+    container: &'a str,
+    blob: &'a str,
+) -> Result<String, AzureError> {
+    trace!("Requesting blob");
+
+    let response = client
+        .get_blob()
+        .with_container_name(&container)
+        .with_blob_name(&blob)
+        .finalize()
+        .await?;
+
+    Ok(String::from_utf8(response.data)?)
 }

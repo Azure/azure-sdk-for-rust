@@ -1,7 +1,6 @@
 use crate::blob::BlobBlockType;
 use crate::blob::BlobBlockWithSize;
 use azure_sdk_core::errors::AzureError;
-use base64;
 use std::borrow::Borrow;
 
 #[derive(Debug, Deserialize)]

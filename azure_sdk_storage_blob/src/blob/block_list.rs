@@ -1,5 +1,4 @@
 use crate::blob::{BlobBlockType, BlockWithSizeList};
-use base64;
 use std::borrow::Borrow;
 
 #[derive(Default, Debug, Clone, PartialEq)]

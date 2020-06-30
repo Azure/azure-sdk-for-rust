@@ -9,7 +9,6 @@ use azure_sdk_core::prelude::*;
 use azure_sdk_core::{No, ToAssign, Yes};
 use azure_sdk_storage_core::prelude::*;
 use hyper::{Method, StatusCode};
-use md5;
 use std::borrow::Borrow;
 use std::collections::HashMap;
 use std::marker::PhantomData;

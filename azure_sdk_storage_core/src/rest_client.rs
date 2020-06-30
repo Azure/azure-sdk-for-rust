@@ -3,14 +3,11 @@ use crate::{ClientEndpoint, HyperClientEndpoint};
 use azure_sdk_core::errors::AzureError;
 use azure_sdk_core::headers;
 use azure_sdk_core::util::{format_header_value, HeaderMapExt, RequestBuilderExt};
-use base64;
-use chrono;
 use chrono::{DateTime, Utc};
 use http::request::Builder;
 use hyper::{self, header, HeaderMap, Method};
 use ring::hmac;
 use std::fmt::Write;
-use url;
 use url::form_urlencoded;
 
 #[derive(Debug, Clone, Copy)]
@@ -74,6 +71,7 @@ pub(crate) enum SASType {
     Table,
 }
 
+#[allow(clippy::too_many_arguments)]
 pub(crate) fn generate_storage_sas<CE: ClientEndpoint>(
     client_endpoint: &CE,
     start: Option<&DateTime<Utc>>,

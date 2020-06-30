@@ -10,7 +10,6 @@
 		"azure_sdk_core::lease::LeaseId",
 		"azure_sdk_core::prelude::*",
 		"hyper::{Method, StatusCode}",
-		"md5",
 		"azure_sdk_storage_core::prelude::*",
 		"azure_sdk_core::add_content_md5_header",
 		"azure_sdk_core::{Yes, No, ToAssign}",
