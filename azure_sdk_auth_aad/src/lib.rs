@@ -30,6 +30,8 @@ use futures::TryFutureExt;
 mod responses;
 pub use naive_server::naive_server;
 mod prelude;
+mod token_credentials;
+pub use token_credentials::*;
 
 #[derive(Debug)]
 pub struct AuthObj {
