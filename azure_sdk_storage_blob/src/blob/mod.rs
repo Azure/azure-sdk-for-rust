@@ -40,6 +40,20 @@ use azure_sdk_core::{
     util::HeaderMapExt,
 };
 
+#[cfg(feature = "azurite_workaround")]
+fn get_creation_time(h: &header::HeaderMap) -> Result<Option<DateTime<Utc>>, AzureError> {
+    if let Some(creation_time) = h.get(CREATION_TIME) {
+        // Check that the creation time is valid
+        let creation_time = creation_time.to_str()?;
+        let creation_time = DateTime::parse_from_rfc2822(creation_time)?;
+        let creation_time = DateTime::from_utc(creation_time.naive_utc(), Utc);
+        Ok(Some(creation_time))
+    } else {
+        // Not having a creation time is ok
+        Ok(None)
+    }
+}
+
 pub trait BlockListTypeSupport {
     type O;
     fn with_block_list_type(self, block_list_type: BlockListType) -> Self::O;
@@ -89,6 +103,7 @@ create_enum!(
 
 create_enum!(PageWriteType, (Update, "update"), (Clear, "clear"));
 
+#[cfg(not(feature = "azurite_workaround"))]
 #[derive(Debug, Clone, PartialEq)]
 pub struct Blob {
     pub name: String,
@@ -125,11 +140,53 @@ pub struct Blob {
     pub metadata: HashMap<String, String>,
 }
 
+#[cfg(feature = "azurite_workaround")]
+#[derive(Debug, Clone, PartialEq)]
+pub struct Blob {
+    pub name: String,
+    pub container_name: String,
+    pub snapshot_time: Option<DateTime<Utc>>,
+    pub creation_time: Option<DateTime<Utc>>,
+    pub last_modified: Option<DateTime<Utc>>, // optional because unavailable in uncommitted blobs
+    pub etag: Option<String>,                 // optional because unavailable in uncommitted blobs
+    pub content_length: u64,
+    pub content_type: Option<String>,
+    pub content_encoding: Option<String>,
+    pub content_language: Option<String>,
+    pub content_md5: Option<String>,
+    pub cache_control: Option<String>,
+    pub content_disposition: Option<String>,
+    pub x_ms_blob_sequence_number: Option<u64>,
+    pub blob_type: BlobType,
+    pub access_tier: Option<String>,
+    pub lease_status: Option<LeaseStatus>,
+    pub lease_state: LeaseState,
+    pub lease_duration: Option<LeaseDuration>,
+    pub copy_id: Option<String>,
+    pub copy_status: Option<CopyStatus>,
+    pub copy_source: Option<String>,
+    pub copy_progress: Option<Range>,
+    pub copy_completion_time: Option<DateTime<Utc>>,
+    pub copy_status_description: Option<String>,
+    pub incremental_copy: Option<bool>,
+    pub server_encrypted: bool,
+    pub access_tier_inferred: Option<bool>,
+    pub access_tier_change_time: Option<DateTime<Utc>>,
+    pub deleted_time: Option<DateTime<Utc>>,
+    pub remaining_retention_days: Option<u64>,
+    pub metadata: HashMap<String, String>,
+}
+
 impl Blob {
     pub(crate) fn parse(elem: &Element, container_name: &str) -> Result<Blob, AzureError> {
         let name = cast_must::<String>(elem, &["Name"])?;
         let snapshot_time = cast_optional::<DateTime<Utc>>(elem, &["Snapshot"])?;
+
+        #[cfg(feature = "azurite_workaround")]
+        let creation_time = cast_optional::<DateTime<Utc>>(elem, &["Properties", "Creation-Time"])?;
+        #[cfg(not(feature = "azurite_workaround"))]
         let creation_time = cast_must::<DateTime<Utc>>(elem, &["Properties", "Creation-Time"])?;
+
         let last_modified = cast_optional::<DateTime<Utc>>(elem, &["Properties", "Last-Modified"])?;
         let etag = cast_optional::<String>(elem, &["Properties", "Etag"])?;
 
@@ -252,13 +309,19 @@ impl Blob {
     ) -> Result<Blob, AzureError> {
         trace!("\n{:?}", h);
 
-        let creation_time = h
-            .get(CREATION_TIME)
-            .ok_or_else(|| AzureError::HeaderNotFound(CREATION_TIME.to_owned()))?
-            .to_str()?;
-        let creation_time = DateTime::parse_from_rfc2822(creation_time)?;
-        let creation_time = DateTime::from_utc(creation_time.naive_utc(), Utc);
-        trace!("creation_time == {:?}", creation_time);
+        #[cfg(not(feature = "azurite_workaround"))]
+        let creation_time = {
+            let creation_time = h
+                .get(CREATION_TIME)
+                .ok_or_else(|| AzureError::HeaderNotFound(CREATION_TIME.to_owned()))?
+                .to_str()?;
+            let creation_time = DateTime::parse_from_rfc2822(creation_time)?;
+            let creation_time = DateTime::from_utc(creation_time.naive_utc(), Utc);
+            trace!("creation_time == {:?}", creation_time);
+            creation_time
+        };
+        #[cfg(feature = "azurite_workaround")]
+        let creation_time = get_creation_time(h)?;
 
         let content_type = h
             .get_as_string(header::CONTENT_TYPE)
