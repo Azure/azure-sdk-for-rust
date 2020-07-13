@@ -39,10 +39,23 @@ impl FromStringOptional<chrono::DateTime<chrono::Utc>> for chrono::DateTime<chro
 }
 
 #[inline]
+#[cfg(not(feature = "azurite_workaround"))]
 pub fn from_azure_time(s: &str) -> Result<chrono::DateTime<chrono::Utc>, chrono::ParseError> {
     let dt = chrono::DateTime::parse_from_rfc2822(s)?;
     let dt_utc: chrono::DateTime<chrono::Utc> = dt.with_timezone(&chrono::Utc);
     Ok(dt_utc)
+}
+
+#[inline]
+#[cfg(feature = "azurite_workaround")]
+pub fn from_azure_time(s: &str) -> Result<chrono::DateTime<chrono::Utc>, chrono::ParseError> {
+    if let Ok(dt) = chrono::DateTime::parse_from_rfc2822(s) {
+        let dt_utc: chrono::DateTime<chrono::Utc> = dt.with_timezone(&chrono::Utc);
+        Ok(dt_utc)
+    } else {
+        log::warn!("Received an invalid date: {}, returning now()", s);
+        Ok(chrono::Utc::now())
+    }
 }
 
 #[inline]

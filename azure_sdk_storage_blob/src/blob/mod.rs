@@ -40,6 +40,20 @@ use azure_sdk_core::{
     util::HeaderMapExt,
 };
 
+#[cfg(feature = "azurite_workaround")]
+fn get_creation_time(h: &header::HeaderMap) -> Result<Option<DateTime<Utc>>, AzureError> {
+    if let Some(creation_time) = h.get(CREATION_TIME) {
+        // Check that the creation time is valid
+        let creation_time = creation_time.to_str()?;
+        let creation_time = DateTime::parse_from_rfc2822(creation_time)?;
+        let creation_time = DateTime::from_utc(creation_time.naive_utc(), Utc);
+        Ok(Some(creation_time))
+    } else {
+        // Not having a creation time is ok
+        Ok(None)
+    }
+}
+
 pub trait BlockListTypeSupport {
     type O;
     fn with_block_list_type(self, block_list_type: BlockListType) -> Self::O;
@@ -94,7 +108,10 @@ pub struct Blob {
     pub name: String,
     pub container_name: String,
     pub snapshot_time: Option<DateTime<Utc>>,
+    #[cfg(not(feature = "azurite_workaround"))]
     pub creation_time: DateTime<Utc>,
+    #[cfg(feature = "azurite_workaround")]
+    pub creation_time: Option<DateTime<Utc>>,
     pub last_modified: Option<DateTime<Utc>>, // optional because unavailable in uncommitted blobs
     pub etag: Option<String>,                 // optional because unavailable in uncommitted blobs
     pub content_length: u64,
@@ -129,7 +146,12 @@ impl Blob {
     pub(crate) fn parse(elem: &Element, container_name: &str) -> Result<Blob, AzureError> {
         let name = cast_must::<String>(elem, &["Name"])?;
         let snapshot_time = cast_optional::<DateTime<Utc>>(elem, &["Snapshot"])?;
+
+        #[cfg(feature = "azurite_workaround")]
+        let creation_time = cast_optional::<DateTime<Utc>>(elem, &["Properties", "Creation-Time"])?;
+        #[cfg(not(feature = "azurite_workaround"))]
         let creation_time = cast_must::<DateTime<Utc>>(elem, &["Properties", "Creation-Time"])?;
+
         let last_modified = cast_optional::<DateTime<Utc>>(elem, &["Properties", "Last-Modified"])?;
         let etag = cast_optional::<String>(elem, &["Properties", "Etag"])?;
 
@@ -252,13 +274,19 @@ impl Blob {
     ) -> Result<Blob, AzureError> {
         trace!("\n{:?}", h);
 
-        let creation_time = h
-            .get(CREATION_TIME)
-            .ok_or_else(|| AzureError::HeaderNotFound(CREATION_TIME.to_owned()))?
-            .to_str()?;
-        let creation_time = DateTime::parse_from_rfc2822(creation_time)?;
-        let creation_time = DateTime::from_utc(creation_time.naive_utc(), Utc);
-        trace!("creation_time == {:?}", creation_time);
+        #[cfg(not(feature = "azurite_workaround"))]
+        let creation_time = {
+            let creation_time = h
+                .get(CREATION_TIME)
+                .ok_or_else(|| AzureError::HeaderNotFound(CREATION_TIME.to_owned()))?
+                .to_str()?;
+            let creation_time = DateTime::parse_from_rfc2822(creation_time)?;
+            let creation_time = DateTime::from_utc(creation_time.naive_utc(), Utc);
+            trace!("creation_time == {:?}", creation_time);
+            creation_time
+        };
+        #[cfg(feature = "azurite_workaround")]
+        let creation_time = get_creation_time(h)?;
 
         let content_type = h
             .get_as_string(header::CONTENT_TYPE)
