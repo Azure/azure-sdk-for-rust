@@ -103,49 +103,14 @@ create_enum!(
 
 create_enum!(PageWriteType, (Update, "update"), (Clear, "clear"));
 
-#[cfg(not(feature = "azurite_workaround"))]
 #[derive(Debug, Clone, PartialEq)]
 pub struct Blob {
     pub name: String,
     pub container_name: String,
     pub snapshot_time: Option<DateTime<Utc>>,
+    #[cfg(not(feature = "azurite_workaround"))]
     pub creation_time: DateTime<Utc>,
-    pub last_modified: Option<DateTime<Utc>>, // optional because unavailable in uncommitted blobs
-    pub etag: Option<String>,                 // optional because unavailable in uncommitted blobs
-    pub content_length: u64,
-    pub content_type: Option<String>,
-    pub content_encoding: Option<String>,
-    pub content_language: Option<String>,
-    pub content_md5: Option<String>,
-    pub cache_control: Option<String>,
-    pub content_disposition: Option<String>,
-    pub x_ms_blob_sequence_number: Option<u64>,
-    pub blob_type: BlobType,
-    pub access_tier: Option<String>,
-    pub lease_status: Option<LeaseStatus>,
-    pub lease_state: LeaseState,
-    pub lease_duration: Option<LeaseDuration>,
-    pub copy_id: Option<String>,
-    pub copy_status: Option<CopyStatus>,
-    pub copy_source: Option<String>,
-    pub copy_progress: Option<Range>,
-    pub copy_completion_time: Option<DateTime<Utc>>,
-    pub copy_status_description: Option<String>,
-    pub incremental_copy: Option<bool>,
-    pub server_encrypted: bool,
-    pub access_tier_inferred: Option<bool>,
-    pub access_tier_change_time: Option<DateTime<Utc>>,
-    pub deleted_time: Option<DateTime<Utc>>,
-    pub remaining_retention_days: Option<u64>,
-    pub metadata: HashMap<String, String>,
-}
-
-#[cfg(feature = "azurite_workaround")]
-#[derive(Debug, Clone, PartialEq)]
-pub struct Blob {
-    pub name: String,
-    pub container_name: String,
-    pub snapshot_time: Option<DateTime<Utc>>,
+    #[cfg(feature = "azurite_workaround")]
     pub creation_time: Option<DateTime<Utc>>,
     pub last_modified: Option<DateTime<Utc>>, // optional because unavailable in uncommitted blobs
     pub etag: Option<String>,                 // optional because unavailable in uncommitted blobs
