@@ -540,10 +540,9 @@ where
 
 impl<'a, C> IncludeListOptions for ListBlobBuilder<'a, C, Yes> where C: Client {}
 
-// methods callable only when every mandatory field has been filled
 impl<'a, C> ListBlobBuilder<'a, C, Yes>
 where
-    C: Client + Clone,
+    C: Client,
 {
     pub async fn finalize(self) -> Result<ListBlobsResponse, AzureError> {
         // we create a copy to move into the future's closure.
@@ -584,7 +583,12 @@ where
                 .await?;
         ListBlobsResponse::from_response(&container_name, &headers, &body_as_str)
     }
+}
 
+impl<'a, C> ListBlobBuilder<'a, C, Yes>
+where
+    C: Client + Clone,
+{
     pub fn stream(self) -> impl Stream<Item = Result<ListBlobsResponse, AzureError>> + 'a {
         #[derive(Debug, Clone, PartialEq)]
         enum States {

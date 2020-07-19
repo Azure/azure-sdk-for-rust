@@ -36,6 +36,34 @@ async fn main() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+async fn list_blobs_box<'a>(
+    client: &'a Box<dyn Client>,
+    container: &'a str,
+) -> Result<(), AzureError> {
+    client
+        .list_blobs()
+        .with_max_results(100)
+        .with_container_name(container)
+        .finalize()
+        .await?;
+
+    Ok(())
+}
+
+async fn list_blobs_arc<'a>(
+    client: &'a Arc<dyn Client>,
+    container: &'a str,
+) -> Result<(), AzureError> {
+    client
+        .list_blobs()
+        .with_max_results(100)
+        .with_container_name(container)
+        .finalize()
+        .await?;
+
+    Ok(())
+}
+
 async fn get_blob_box<'a>(
     client: &'a Box<dyn Client>,
     container: &'a str,
