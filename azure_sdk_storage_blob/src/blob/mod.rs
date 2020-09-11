@@ -21,16 +21,6 @@ use azure_sdk_core::headers::{
     COPY_SOURCE, COPY_STATUS, COPY_STATUS_DESCRIPTION, CREATION_TIME, LEASE_DURATION, LEASE_STATE,
     LEASE_STATUS, SERVER_ENCRYPTED,
 };
-use azure_sdk_storage_core::Client;
-use chrono::{DateTime, Utc};
-use hyper::header;
-use std::borrow::Borrow;
-use std::collections::HashMap;
-use std::str::FromStr;
-use url::form_urlencoded;
-use xml::Element;
-use xml::Xml::ElementNode;
-
 use azure_sdk_core::{
     errors::{AzureError, TraversingError},
     incompletevector::IncompleteVector,
@@ -39,6 +29,15 @@ use azure_sdk_core::{
     range::Range,
     util::HeaderMapExt,
 };
+use azure_sdk_storage_core::Client;
+use chrono::{DateTime, Utc};
+use hyper::header;
+use percent_encoding::{utf8_percent_encode, NON_ALPHANUMERIC};
+use std::borrow::Borrow;
+use std::collections::HashMap;
+use std::str::FromStr;
+use xml::Element;
+use xml::Xml::ElementNode;
 
 #[cfg(feature = "azurite_workaround")]
 fn get_creation_time(h: &header::HeaderMap) -> Result<Option<DateTime<Utc>>, AzureError> {
@@ -464,15 +463,15 @@ where
         Some(ref params) => format!(
             "{}/{}/{}?{}",
             t.blob_uri(),
-            form_urlencoded::byte_serialize(container_name.as_bytes()).collect::<String>(),
-            form_urlencoded::byte_serialize(blob_name.as_bytes()).collect::<String>(),
+            utf8_percent_encode(container_name, NON_ALPHANUMERIC),
+            utf8_percent_encode(blob_name, NON_ALPHANUMERIC),
             params
         ),
         None => format!(
             "{}/{}/{}",
             t.blob_uri(),
-            form_urlencoded::byte_serialize(container_name.as_bytes()).collect::<String>(),
-            form_urlencoded::byte_serialize(blob_name.as_bytes()).collect::<String>(),
+            utf8_percent_encode(container_name, NON_ALPHANUMERIC),
+            utf8_percent_encode(blob_name, NON_ALPHANUMERIC),
         ),
     }
 }

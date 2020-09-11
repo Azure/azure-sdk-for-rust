@@ -18,9 +18,9 @@ use http::request::Builder;
 use http::HeaderMap;
 use hyper::header;
 use hyper::header::HeaderName;
+use percent_encoding::{utf8_percent_encode, NON_ALPHANUMERIC};
 use std::collections::HashMap;
 use std::str::FromStr;
-use url::form_urlencoded;
 use xml::{Element, Xml};
 
 create_enum!(
@@ -285,13 +285,13 @@ where
         Some(ref params) => format!(
             "{}/{}?{}",
             c.blob_uri(),
-            form_urlencoded::byte_serialize(container_name.as_bytes()).collect::<String>(),
+            utf8_percent_encode(container_name, NON_ALPHANUMERIC),
             params
         ),
         None => format!(
             "{}/{}",
             c.blob_uri(),
-            form_urlencoded::byte_serialize(container_name.as_bytes()).collect::<String>(),
+            utf8_percent_encode(container_name, NON_ALPHANUMERIC),
         ),
     }
 }
