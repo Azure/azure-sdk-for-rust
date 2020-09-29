@@ -14,6 +14,7 @@ pub struct KeyClient {
     hc: hyper::Client<HttpsConnector<hyper::client::HttpConnector>>,
     blob_uri: String,
     table_uri: String,
+    queue_uri: String,
 }
 
 pub(crate) fn get_sas_token_parms(sas_token: &str) -> Vec<(String, String)> {
@@ -37,6 +38,7 @@ impl KeyClient {
         hc: hyper::Client<HttpsConnector<hyper::client::HttpConnector>>,
         blob_uri: String,
         table_uri: String,
+        queue_uri: String,
     ) -> Self {
         Self {
             account,
@@ -45,6 +47,7 @@ impl KeyClient {
             hc,
             blob_uri,
             table_uri,
+            queue_uri,
         }
     }
 
@@ -65,6 +68,11 @@ impl Client for KeyClient {
     #[inline]
     fn table_uri(&self) -> &str {
         &self.table_uri
+    }
+
+    #[inline]
+    fn queue_uri(&self) -> &str {
+        &self.queue_uri
     }
 
     fn perform_request(

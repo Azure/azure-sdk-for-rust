@@ -36,6 +36,7 @@ use crate::lease::LeaseId;
 use http::request::Builder;
 use http::HeaderMap;
 use std::collections::HashMap;
+use std::convert::TryFrom;
 mod stored_access_policy;
 pub use self::stored_access_policy::{StoredAccessPolicy, StoredAccessPolicyList};
 pub mod prelude;
@@ -486,6 +487,14 @@ pub trait IncludeMetadataSupport {
 
 pub trait IncludeMetadataOption {
     fn include_metadata(&self) -> bool;
+
+    fn to_uri_parameter(&self) -> Option<&'static str> {
+        if self.include_metadata() {
+            Some("include=metadata")
+        } else {
+            None
+        }
+    }
 }
 
 pub trait IncludeCopySupport {
@@ -524,7 +533,7 @@ pub trait IncludeListOptions:
 
         if self.include_metadata() {
             if !f_first {
-                s.push_str(",");
+                s.push(',');
             }
             s.push_str("metadata");
             f_first = false;
@@ -532,7 +541,7 @@ pub trait IncludeListOptions:
 
         if self.include_uncommitted_blobs() {
             if !f_first {
-                s.push_str(",");
+                s.push(',');
             }
             s.push_str("uncommittedblobs");
             f_first = false;
@@ -540,7 +549,7 @@ pub trait IncludeListOptions:
 
         if self.include_copy() {
             if !f_first {
-                s.push_str(",");
+                s.push(',');
             }
             s.push_str("copy");
             f_first = false;
@@ -548,7 +557,7 @@ pub trait IncludeListOptions:
 
         if self.include_deleted() {
             if !f_first {
-                s.push_str(",");
+                s.push(',');
             }
             s.push_str("deleted");
         }
@@ -935,6 +944,10 @@ pub fn request_id_from_headers(headers: &HeaderMap) -> Result<RequestId, AzureEr
     Ok(Uuid::parse_str(request_id)?)
 }
 
+pub fn client_request_id_from_headers_optional(headers: &HeaderMap) -> Option<String> {
+    headers.get_as_str(CLIENT_REQUEST_ID).map(|s| s.to_owned())
+}
+
 pub fn content_md5_from_headers_optional(
     headers: &HeaderMap,
 ) -> Result<Option<[u8; 16]>, AzureError> {
@@ -942,6 +955,29 @@ pub fn content_md5_from_headers_optional(
         Ok(Some(content_md5_from_headers(headers)?))
     } else {
         Ok(None)
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct CommonStorageResponseHeaders {
+    pub request_id: RequestId,
+    pub client_request_id: Option<String>,
+    pub version: String,
+    pub date: DateTime<Utc>,
+    pub server: String,
+}
+
+impl TryFrom<&HeaderMap> for CommonStorageResponseHeaders {
+    type Error = AzureError;
+
+    fn try_from(headers: &HeaderMap) -> Result<Self, Self::Error> {
+        Ok(Self {
+            request_id: request_id_from_headers(headers)?,
+            client_request_id: client_request_id_from_headers_optional(headers),
+            version: version_from_headers(headers)?.to_owned(),
+            date: date_from_headers(headers)?,
+            server: server_from_headers(headers)?.to_owned(),
+        })
     }
 }
 
@@ -998,10 +1034,8 @@ pub fn content_crc64_from_headers(headers: &HeaderMap) -> Result<[u8; 8], AzureE
 pub fn consistency_from_headers(headers: &HeaderMap) -> Result<Consistency, AzureError> {
     if let Some(content_crc64) = content_crc64_from_headers_optional(headers)? {
         return Ok(Consistency::Crc64(content_crc64));
-    } else {
-        if let Some(content_md5) = content_md5_from_headers_optional(headers)? {
-            return Ok(Consistency::Md5(content_md5));
-        }
+    } else if let Some(content_md5) = content_md5_from_headers_optional(headers)? {
+        return Ok(Consistency::Md5(content_md5));
     }
 
     Err(AzureError::HeadersNotFound(vec![
@@ -1043,6 +1077,12 @@ pub fn continuation_token_from_headers_optional(
     } else {
         Ok(None)
     }
+}
+
+#[inline]
+pub fn utc_date_from_rfc2822(date: &str) -> Result<DateTime<Utc>, AzureError> {
+    let date = DateTime::parse_from_rfc2822(date)?;
+    Ok(DateTime::from_utc(date.naive_utc(), Utc))
 }
 
 pub fn date_from_headers(headers: &HeaderMap) -> Result<DateTime<Utc>, AzureError> {

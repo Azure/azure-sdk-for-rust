@@ -1,5 +1,4 @@
 use crate::errors::TraversingError;
-use chrono;
 use xml::Element;
 use xml::Xml::{CharacterNode, ElementNode};
 

@@ -1,12 +1,6 @@
 use crate::{enumerations::ParsingError, range::ParseError};
-use base64;
-use chrono;
-use http;
 use http::header::ToStrError;
 use hyper::{self, body, Body, StatusCode};
-use serde_json;
-use serde_xml_rs;
-use std;
 use std::io::Error as IOError;
 use std::num;
 use std::num::ParseIntError;
@@ -14,7 +8,6 @@ use std::str;
 use std::str::ParseBoolError;
 use std::string;
 use url::ParseError as URLParseError;
-use uuid;
 use xml::BuilderError as XMLError;
 
 quick_error! {

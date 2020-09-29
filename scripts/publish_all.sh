@@ -16,13 +16,15 @@ cd azure_sdk_storage_account
 cargo publish
 cd ..
 
-sleep 20
-
 cd azure_sdk_storage_blob
 cargo publish
 cd ..
 
 cd azure_sdk_storage_table
+cargo publish
+cd ..
+
+cd azure_sdk_storage_queue
 cargo publish
 cd ..
 

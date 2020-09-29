@@ -406,7 +406,7 @@ fn canonicalize_header(h: &HeaderMap) -> String {
         .filter(|(k, _v)| k.as_str().starts_with("x-ms"))
         .map(|(k, _)| k.as_str())
         .collect::<Vec<_>>();
-    v_headers.sort();
+    v_headers.sort_unstable();
 
     let mut can = String::new();
 
@@ -434,7 +434,7 @@ fn canonicalized_resource<CE: ClientEndpoint>(client_endpoint: &CE, u: &url::Url
     {
         let mut path = String::new();
         for p in paths {
-            path.push_str("/");
+            path.push('/');
             path.push_str(&*p);
         }
 

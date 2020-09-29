@@ -14,6 +14,7 @@ pub struct BearerTokenClient<'a> {
     hc: hyper::Client<HttpsConnector<hyper::client::HttpConnector>>,
     blob_uri: String,
     table_uri: String,
+    queue_uri: String,
 }
 
 impl<'a> BearerTokenClient<'a> {
@@ -25,10 +26,12 @@ impl<'a> BearerTokenClient<'a> {
     ) -> Self {
         let blob_uri = format!("https://{}.blob.core.windows.net", account);
         let table_uri = format!("https://{}.table.core.windows.net", account);
+        let queue_uri = format!("https://{}.queue.core.windows.net", account);
 
         Self {
             account,
             bearer_token,
+            queue_uri,
             hc,
             blob_uri,
             table_uri,
@@ -88,6 +91,11 @@ impl<'a> Client for BearerTokenClient<'a> {
     #[inline]
     fn table_uri(&self) -> &str {
         &self.table_uri
+    }
+
+    #[inline]
+    fn queue_uri(&self) -> &str {
+        &self.queue_uri
     }
 
     #[inline]
