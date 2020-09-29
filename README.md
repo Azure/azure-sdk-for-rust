@@ -1,5 +1,15 @@
 # Microsoft Azure SDK for Rust
 
+> :construction: :construction:
+>
+> **Warning**: This repo is in *maintenance mode* only. 
+> It's being migrated to the [Microsoft Open Source](https://github.com/Azure) org :two_hearts:. The new repo is here [https://github.com/Azure/azure-sdk-for-rust](https://github.com/Azure/azure-sdk-for-rust).
+>
+> In maintenance mode only essential PRs will be accepted; non bug-related issues will be closed. 
+> As soon as the migration is completed this repo will become read-only. 
+>
+> :construction: :construction:
+
 
 [![legal](https://img.shields.io/github/license/mindflavor/AzureSDKForRust.svg)](LICENSE) 
 
