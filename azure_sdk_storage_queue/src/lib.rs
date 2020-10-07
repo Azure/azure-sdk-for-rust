@@ -16,18 +16,28 @@ use core::fmt::Debug;
 mod clients;
 pub use clients::*;
 use std::borrow::Cow;
+use std::time::Duration;
 
 //********* Request traits
 pub trait VisibilityTimeoutSupport {
     type O;
-    fn with_visibility_timeout_seconds(self, timeout: u64) -> Self::O;
+    fn with_visibility_timeout(self, timeout: Duration) -> Self::O;
+}
+
+pub trait VisibilityTimeoutOption {
+    fn visibility_timeout(&self) -> Option<Duration>;
+
+    fn to_uri_parameter(&self) -> Option<String> {
+        self.visibility_timeout()
+            .map(|visibility_timeout| format!("visibilitytimeout={}", visibility_timeout.as_secs()))
+    }
 }
 
 pub trait VisibilityTimeoutRequired {
-    fn visibility_timeout_seconds(&self) -> u64;
+    fn visibility_timeout(&self) -> Duration;
 
     fn to_uri_parameter(&self) -> String {
-        format!("visibilitytimeout={}", self.visibility_timeout_seconds())
+        format!("visibilitytimeout={}", self.visibility_timeout().as_secs())
     }
 }
 
@@ -53,11 +63,8 @@ pub trait NumberOfMessagesOption {
     fn number_of_messages(&self) -> Option<u32>;
 
     fn to_uri_parameter(&self) -> Option<String> {
-        if let Some(number_of_messages) = self.number_of_messages() {
-            Some(format!("numofmessages={}", number_of_messages))
-        } else {
-            None
-        }
+        self.number_of_messages()
+            .map(|number_of_messages| format!("numofmessages={}", number_of_messages))
     }
 }
 

@@ -7,6 +7,7 @@
 			"azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError}",
 			"azure_sdk_core::prelude::*",
 			"azure_sdk_storage_core::prelude::*",
+			"std::time::Duration",
 			"std::marker::PhantomData",
 			"std::borrow::Cow",
 			"azure_sdk_core::{Yes,No,ToAssign}",
@@ -32,11 +33,10 @@
 			"trait_set": "MessageBodySupport<'b>"
 		},
 		{
-			"name": "visibility_timeout_seconds",
-			"field_type": "u64",
+			"name": "visibility_timeout",
+			"field_type": "Duration",
 			"optional": true,
-			"initializer": "0",
-			"trait_get": "VisibilityTimeoutRequired",
+			"trait_get": "VisibilityTimeoutOption",
 			"trait_set": "VisibilityTimeoutSupport"
 		},
 		{

@@ -5,6 +5,7 @@
 			"crate::prelude::*",
 			"crate::responses::*",
 			"azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError}",
+			"std::time::Duration",
 			"azure_sdk_core::prelude::*",
 			"azure_sdk_storage_core::prelude::*",
 			"hyper::StatusCode",
@@ -28,11 +29,10 @@
 			"trait_set": "NumberOfMessagesSupport"
 		},
 		{
-			"name": "visibility_timeout_seconds",
-			"field_type": "u64",
+			"name": "visibility_timeout",
+			"field_type": "Duration",
 			"optional": true,
-			"initializer": "30",
-			"trait_get": "VisibilityTimeoutRequired",
+			"trait_get": "VisibilityTimeoutOption",
 			"trait_set": "VisibilityTimeoutSupport"
 		},
 		{

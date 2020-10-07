@@ -5,6 +5,7 @@ use azure_sdk_core::prelude::*;
 use azure_sdk_storage_core::prelude::*;
 use hyper::StatusCode;
 use std::convert::TryInto;
+use std::time::Duration;
 
 #[derive(Debug, Clone)]
 pub struct GetMessagesBuilder<'a, C>
@@ -13,7 +14,7 @@ where
 {
     queue_name_service: &'a dyn QueueNameService<StorageClient = C>,
     number_of_messages: Option<u32>,
-    visibility_timeout_seconds: u64,
+    visibility_timeout: Option<Duration>,
     timeout: Option<u64>,
     client_request_id: Option<&'a str>,
 }
@@ -29,7 +30,7 @@ where
         GetMessagesBuilder {
             queue_name_service,
             number_of_messages: None,
-            visibility_timeout_seconds: 30,
+            visibility_timeout: None,
             timeout: None,
             client_request_id: None,
         }
@@ -47,13 +48,13 @@ where
     }
 }
 
-impl<'a, C> VisibilityTimeoutRequired for GetMessagesBuilder<'a, C>
+impl<'a, C> VisibilityTimeoutOption for GetMessagesBuilder<'a, C>
 where
     C: Client,
 {
     #[inline]
-    fn visibility_timeout_seconds(&self) -> u64 {
-        self.visibility_timeout_seconds
+    fn visibility_timeout(&self) -> Option<Duration> {
+        self.visibility_timeout
     }
 }
 
@@ -88,7 +89,7 @@ where
         GetMessagesBuilder {
             queue_name_service: self.queue_name_service,
             number_of_messages: Some(number_of_messages),
-            visibility_timeout_seconds: self.visibility_timeout_seconds,
+            visibility_timeout: self.visibility_timeout,
             timeout: self.timeout,
             client_request_id: self.client_request_id,
         }
@@ -102,11 +103,11 @@ where
     type O = GetMessagesBuilder<'a, C>;
 
     #[inline]
-    fn with_visibility_timeout_seconds(self, visibility_timeout_seconds: u64) -> Self::O {
+    fn with_visibility_timeout(self, visibility_timeout: Duration) -> Self::O {
         GetMessagesBuilder {
             queue_name_service: self.queue_name_service,
             number_of_messages: self.number_of_messages,
-            visibility_timeout_seconds,
+            visibility_timeout: Some(visibility_timeout),
             timeout: self.timeout,
             client_request_id: self.client_request_id,
         }
@@ -124,7 +125,7 @@ where
         GetMessagesBuilder {
             queue_name_service: self.queue_name_service,
             number_of_messages: self.number_of_messages,
-            visibility_timeout_seconds: self.visibility_timeout_seconds,
+            visibility_timeout: self.visibility_timeout,
             timeout: Some(timeout),
             client_request_id: self.client_request_id,
         }
@@ -142,7 +143,7 @@ where
         GetMessagesBuilder {
             queue_name_service: self.queue_name_service,
             number_of_messages: self.number_of_messages,
-            visibility_timeout_seconds: self.visibility_timeout_seconds,
+            visibility_timeout: self.visibility_timeout,
             timeout: self.timeout,
             client_request_id: Some(client_request_id),
         }
@@ -171,17 +172,18 @@ where
             self.queue_name_service.queue_name()
         );
 
-        uri = format!(
-            "{}?{}",
-            uri,
-            VisibilityTimeoutRequired::to_uri_parameter(&self)
-        );
+        let mut concatenation_char = '?';
 
+        if let Some(nm) = VisibilityTimeoutOption::to_uri_parameter(&self) {
+            uri = format!("{}{}{}", uri, concatenation_char, nm);
+            concatenation_char = '&';
+        }
         if let Some(nm) = TimeoutOption::to_uri_parameter(&self) {
-            uri = format!("{}&{}", uri, nm);
+            uri = format!("{}{}{}", uri, concatenation_char, nm);
+            concatenation_char = '&';
         }
         if let Some(nm) = NumberOfMessagesOption::to_uri_parameter(&self) {
-            uri = format!("{}&{}", uri, nm);
+            uri = format!("{}{}{}", uri, concatenation_char, nm);
         }
 
         debug!("uri == {}", uri);

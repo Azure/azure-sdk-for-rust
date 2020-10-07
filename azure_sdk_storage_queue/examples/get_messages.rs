@@ -1,9 +1,9 @@
 #[macro_use]
 extern crate log;
-use azure_sdk_core::prelude::*;
 use azure_sdk_storage_core::prelude::*;
 use azure_sdk_storage_queue::prelude::*;
 use std::error::Error;
+use std::time::Duration;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
@@ -26,6 +26,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let response = queue
         .get_messages()
         .with_number_of_messages(2)
+        .with_visibility_timeout(Duration::from_secs(5)) // the message will become visible again after 5 secs
         .execute()
         .await?;
 

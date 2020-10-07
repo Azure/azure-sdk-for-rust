@@ -8,6 +8,7 @@ use hyper::StatusCode;
 use std::borrow::Cow;
 use std::convert::TryInto;
 use std::marker::PhantomData;
+use std::time::Duration;
 
 #[derive(Debug, Clone)]
 pub struct PutMessageBuilder<'a, 'b, C, MessageBodySet>
@@ -18,7 +19,7 @@ where
     queue_name_service: &'a dyn QueueNameService<StorageClient = C>,
     p_message_body: PhantomData<MessageBodySet>,
     message_body: Option<Cow<'b, str>>,
-    visibility_timeout_seconds: u64,
+    visibility_timeout: Option<Duration>,
     message_ttl_seconds: u64,
     timeout: Option<u64>,
     client_request_id: Option<&'a str>,
@@ -36,7 +37,7 @@ where
             queue_name_service,
             p_message_body: PhantomData {},
             message_body: None,
-            visibility_timeout_seconds: 0,
+            visibility_timeout: None,
             message_ttl_seconds: 25200,
             timeout: None,
             client_request_id: None,
@@ -55,15 +56,15 @@ where
     }
 }
 
-impl<'a, 'b, C, MessageBodySet> VisibilityTimeoutRequired
+impl<'a, 'b, C, MessageBodySet> VisibilityTimeoutOption
     for PutMessageBuilder<'a, 'b, C, MessageBodySet>
 where
     MessageBodySet: ToAssign,
     C: Client,
 {
     #[inline]
-    fn visibility_timeout_seconds(&self) -> u64 {
-        self.visibility_timeout_seconds
+    fn visibility_timeout(&self) -> Option<Duration> {
+        self.visibility_timeout
     }
 }
 
@@ -113,7 +114,7 @@ where
             queue_name_service: self.queue_name_service,
             p_message_body: PhantomData {},
             message_body: Some(message_body.into()),
-            visibility_timeout_seconds: self.visibility_timeout_seconds,
+            visibility_timeout: self.visibility_timeout,
             message_ttl_seconds: self.message_ttl_seconds,
             timeout: self.timeout,
             client_request_id: self.client_request_id,
@@ -130,12 +131,12 @@ where
     type O = PutMessageBuilder<'a, 'b, C, MessageBodySet>;
 
     #[inline]
-    fn with_visibility_timeout_seconds(self, visibility_timeout_seconds: u64) -> Self::O {
+    fn with_visibility_timeout(self, visibility_timeout: Duration) -> Self::O {
         PutMessageBuilder {
             queue_name_service: self.queue_name_service,
             p_message_body: PhantomData {},
             message_body: self.message_body,
-            visibility_timeout_seconds,
+            visibility_timeout: Some(visibility_timeout),
             message_ttl_seconds: self.message_ttl_seconds,
             timeout: self.timeout,
             client_request_id: self.client_request_id,
@@ -156,7 +157,7 @@ where
             queue_name_service: self.queue_name_service,
             p_message_body: PhantomData {},
             message_body: self.message_body,
-            visibility_timeout_seconds: self.visibility_timeout_seconds,
+            visibility_timeout: self.visibility_timeout,
             message_ttl_seconds,
             timeout: self.timeout,
             client_request_id: self.client_request_id,
@@ -177,7 +178,7 @@ where
             queue_name_service: self.queue_name_service,
             p_message_body: PhantomData {},
             message_body: self.message_body,
-            visibility_timeout_seconds: self.visibility_timeout_seconds,
+            visibility_timeout: self.visibility_timeout,
             message_ttl_seconds: self.message_ttl_seconds,
             timeout: Some(timeout),
             client_request_id: self.client_request_id,
@@ -199,7 +200,7 @@ where
             queue_name_service: self.queue_name_service,
             p_message_body: PhantomData {},
             message_body: self.message_body,
-            visibility_timeout_seconds: self.visibility_timeout_seconds,
+            visibility_timeout: self.visibility_timeout,
             message_ttl_seconds: self.message_ttl_seconds,
             timeout: self.timeout,
             client_request_id: Some(client_request_id),
@@ -230,12 +231,10 @@ where
             self.queue_name_service.queue_name()
         );
 
-        uri = format!(
-            "{}?{}",
-            uri,
-            VisibilityTimeoutRequired::to_uri_parameter(&self)
-        );
-        uri = format!("{}&{}", uri, MessageTTLRequired::to_uri_parameter(&self));
+        uri = format!("{}?{}", uri, MessageTTLRequired::to_uri_parameter(&self));
+        if let Some(nm) = VisibilityTimeoutOption::to_uri_parameter(&self) {
+            uri = format!("{}&{}", uri, nm);
+        }
         if let Some(nm) = TimeoutOption::to_uri_parameter(&self) {
             uri = format!("{}&{}", uri, nm);
         }
