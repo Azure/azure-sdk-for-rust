@@ -71,4 +71,8 @@ where
     fn put_message(&self) -> requests::PutMessageBuilder<'_, '_, Self::StorageClient, No> {
         requests::PutMessageBuilder::new(self)
     }
+
+    fn get_messages(&self) -> requests::GetMessagesBuilder<'_, Self::StorageClient> {
+        requests::GetMessagesBuilder::new(self)
+    }
 }

@@ -1,6 +1,6 @@
 [package]
 name          = "azure_sdk_storage_queue"
-version       = "0.1.0"
+version       = "0.1.1"
 description   = "Rust wrappers around Microsoft Azure REST APIs - Azure Storage Queue crate"
 readme        = "README.md"
 authors       = ["Francesco Cogno <francesco.cogno@outlook.com>"]

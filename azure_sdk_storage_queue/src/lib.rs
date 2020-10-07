@@ -44,6 +44,23 @@ pub trait MessageTTLRequired {
     }
 }
 
+pub trait NumberOfMessagesSupport {
+    type O;
+    fn with_number_of_messages(self, number_of_messages: u32) -> Self::O;
+}
+
+pub trait NumberOfMessagesOption {
+    fn number_of_messages(&self) -> Option<u32>;
+
+    fn to_uri_parameter(&self) -> Option<String> {
+        if let Some(number_of_messages) = self.number_of_messages() {
+            Some(format!("numofmessages={}", number_of_messages))
+        } else {
+            None
+        }
+    }
+}
+
 /// Wraps the message like: '\<QueueMessage>\<MessageText>{}\</MessageText>\</QueueMessage>'
 /// as per Azure specification.
 /// See
@@ -89,6 +106,7 @@ pub trait QueueNameService: HasStorageClient {
     fn queue_name(&self) -> &str;
 
     fn put_message(&self) -> requests::PutMessageBuilder<'_, '_, Self::StorageClient, No>;
+    fn get_messages(&self) -> requests::GetMessagesBuilder<'_, Self::StorageClient>;
 }
 
 pub trait WithQueueNameClient<'a, 'b>: Debug + Send + Sync {
