@@ -15,7 +15,7 @@ categories    = ["api-bindings"]
 edition       = "2018"
 
 [dependencies]
-azure_sdk_core       = { path = "../azure_sdk_core", version = "0.43.5" }
+azure_sdk_core       = { path = "../core", version = "0.43.5" }
 ring                 = "0.16"
 base64               = "0.12"
 chrono               = "0.4"

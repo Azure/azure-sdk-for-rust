@@ -8,14 +8,12 @@ license            = "Apache-2.0"
 repository         = "https://github.com/MindFlavor/AzureSDKForRust"
 documentation      = "http://mindflavor.github.io/AzureSDKForRust/azure_sdk_for_rust/index.html"
 homepage           = "https://github.com/MindFlavor/AzureSDKForRust"
-
 keywords           = ["sdk", "azure", "rest", "iot", "cloud"]
 categories         = ["api-bindings"]
-
 edition            = "2018"
 
 [dependencies]
-azure_sdk_core       = { path = "../azure_sdk_core", version = "0.43.5" }
+azure_sdk_core       = { path = "../core", version = "0.43.5" }
 oauth2               = { version = "3.0.0", features = ["reqwest-010", "futures-03"], default-features = false}
 url                  = "2.1"
 futures              = "0.3"
@@ -31,8 +29,7 @@ async-trait          = "0.1.36"
 
 [dev-dependencies]
 tokio                  = { version = "0.2", features = ["macros"] }
-azure_sdk_storage_core = { version = "0.44" }
-azure_sdk_storage_blob = { version = "0.44" }
+azure_sdk_storage      = { version = "0.44", path = "../storage" }
 env_logger             = "0.7.1"
 
 [features]

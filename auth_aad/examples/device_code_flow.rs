@@ -1,6 +1,6 @@
 use azure_sdk_auth_aad::*;
-use azure_sdk_storage_blob::prelude::*;
-use azure_sdk_storage_core::prelude::*;
+use azure_sdk_storage::blob::prelude::*;
+use azure_sdk_storage::core::prelude::*;
 use futures::stream::StreamExt;
 use oauth2::ClientId;
 use std::env;

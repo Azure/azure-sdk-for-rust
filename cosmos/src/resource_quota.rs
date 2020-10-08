@@ -150,6 +150,9 @@ mod tests {
         assert_eq!(resource_quota, vec![ResourceQuota::Functions(26)]);
 
         let resource_quota = resource_quotas_from_str("clientEncryptionKeys=13;").unwrap();
-        assert_eq!(resource_quota, vec![ResourceQuota::ClientEncryptionKeys(13)]);
+        assert_eq!(
+            resource_quota,
+            vec![ResourceQuota::ClientEncryptionKeys(13)]
+        );
     }
 }
