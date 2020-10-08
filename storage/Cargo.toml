@@ -15,7 +15,7 @@ edition       = "2018"
 [dependencies]
 azure_sdk_core          = { path = "../core", version = "0.43.6" }
 ring                    = "0.16"
-base64                  = "0.12"
+base64                  = "0.13"
 chrono                  = "0.4"
 http                    = "0.2"
 futures                 = "0.3"
@@ -30,9 +30,9 @@ serde-xml-rs            = "0.4"
 time                    = "0.2"
 url                     = "2.1"
 uuid                    = { version = "0.8", features = ["v4"] }
-smallvec                = { version = "1.0", features = ["serde"] }
+smallvec                = { version = "1.4", features = ["serde"] }
 bytes                   = "0.5"
-hyper-rustls            = "0.20"
+hyper-rustls            = "0.21"
 md5                     = "0.7"
 RustyXML                = "0.3"
 percent-encoding	    = "2.1"
@@ -45,6 +45,7 @@ azure_sdk_auth_aad      = { path = "../auth_aad" }
 url                     = "2.1"
 
 [features]
+default                 = ["account", "blob", "queue", "table"]
 test_e2e                = []
 account                 = []
 blob                    = []

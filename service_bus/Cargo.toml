@@ -17,12 +17,12 @@ edition       = "2018"
 [dependencies]
 azure_sdk_core       = { path = "../core", version = "0.43.5" }
 ring                 = "0.16"
-base64               = "0.12"
+base64               = "0.13"
 chrono               = "0.4"
 hyper                = "0.13"
 log                  = "0.4"
 url                  = "2.1"
-hyper-rustls         = "0.20"
+hyper-rustls         = "0.21"
 
 [dev-dependencies]
 futures              = "0.3"

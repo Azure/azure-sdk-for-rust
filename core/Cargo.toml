@@ -14,7 +14,7 @@ edition       = "2018"
 
 [dependencies]
 RustyXML                = "0.3"
-base64                  = "0.12"
+base64                  = "0.13"
 chrono                  = "0.4"
 http                    = "0.2"
 futures                 = "0.3"
@@ -28,7 +28,7 @@ serde-xml-rs            = "0.4"
 url                     = "2.1"
 uuid                    = { version = "0.8", features = ["v4"] }
 bytes                   = "0.5"
-hyper-rustls            = "0.20"
+hyper-rustls            = "0.21"
 failure		            = "0.1"
 
 [dev-dependencies]
