@@ -46,3 +46,7 @@ url                     = "2.1"
 
 [features]
 test_e2e                = []
+account                 = []
+blob                    = []
+queue                   = []
+table                   = []
