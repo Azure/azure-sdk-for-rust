@@ -4,7 +4,7 @@ use serde_json::Value;
 // [https://github.com/rust-lang/rust/issues/63033](https://github.com/rust-lang/rust/issues/63033).
 // When the bug is resolved we can revert to the original Query from
 // commit:
-// [https://github.com/MindFlavor/AzureSDKForRust/commit/1b6cb32b3478b0afc50c4460100c21f785720b17](https://github.com/MindFlavor/AzureSDKForRust/commit/1b6cb32b3478b0afc50c4460100c21f785720b17)
+// [https://github.com/azure/azure-sdk-for-rust/commit/1b6cb32b3478b0afc50c4460100c21f785720b17](https://github.com/azure/azure-sdk-for-rust/commit/1b6cb32b3478b0afc50c4460100c21f785720b17)
 #[derive(Debug, Serialize)]
 pub struct Query<'a> {
     query: &'a str,
