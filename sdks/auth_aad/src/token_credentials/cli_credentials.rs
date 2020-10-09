@@ -52,7 +52,7 @@ impl TokenCredential for AzureCliCredential {
                 "json",
                 "--resource",
                 resource,
-            ])
+            ]).output()
         } else {
             Command::new("az")
             .args(&[
@@ -62,9 +62,8 @@ impl TokenCredential for AzureCliCredential {
                 "json",
                 "--resource",
                 resource,
-            ])
+            ]).output()
         };
-        let az_command = az_command.output(); 
 
         let res = match az_command {
             Ok(az_output) => {
