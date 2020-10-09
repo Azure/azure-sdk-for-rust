@@ -1,41 +1,29 @@
 #!/usr/bin/env bash
 
-cd azure_sdk_core
+cd sdks/azure_sdk_core
 cargo publish
 cd ..
 
 sleep 20
 
-cd azure_sdk_storage_core
+cd azure_storage
 cargo publish
 cd ..
 
 sleep 20
 
-cd azure_sdk_storage_account
+cd azure_auth_aad
 cargo publish
 cd ..
 
-cd azure_sdk_storage_blob
+cd azure_cosmos
 cargo publish
 cd ..
 
-cd azure_sdk_storage_table
+cd azure_service_bus
 cargo publish
 cd ..
 
-cd azure_sdk_storage_queue
-cargo publish
-cd ..
-
-cd azure_sdk_auth_aad
-cargo publish
-cd ..
-
-cd azure_sdk_cosmos
-cargo publish
-cd ..
-
-cd azure_sdk_service_bus
+cd azure_keyvault
 cargo publish
 cd ..

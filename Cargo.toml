@@ -1,8 +1,4 @@
 [workspace]
 members = [
-  "auth_aad",
-  "core",
-  "service_bus",
-  "storage",
-  "cosmos",
+  "sdks/*",
 ]
