@@ -77,7 +77,8 @@ impl<'a, T:TokenCredential> KeyVaultClient<'a, T> {
             // Token is valid, return it.
             return Ok(());
         }
-        let token = self.token_credential.get_token(&self.keyvault_endpoint)
+        let resource = format!("https://{}", endpoint_suffix);
+        let token = self.token_credential.get_token(&resource)
         .await
         .with_context(|| "Failed to authenticate to Azure Active Directory")
         .map_err(|e| KeyVaultError::AuthorizationError(e))?;
