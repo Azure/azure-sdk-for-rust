@@ -1,5 +1,6 @@
 use crate::KeyVaultClient;
 use crate::{client::API_VERSION, KeyVaultError};
+use azure_auth_aad::TokenCredential;
 use anyhow::{Context, Result};
 use chrono::serde::ts_seconds;
 use chrono::{DateTime, Utc};
@@ -103,7 +104,7 @@ pub struct KeyVaultSecret {
     time_updated: DateTime<Utc>,
 }
 
-impl<'a> KeyVaultClient<'a> {
+impl<'a, T:TokenCredential> KeyVaultClient<'a, T> {
     /// Gets a secret from the Key Vault.
     /// Note that the latest version is fetched. For a specific version, use `get_version_with_version`.
     ///
