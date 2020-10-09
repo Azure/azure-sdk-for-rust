@@ -39,7 +39,22 @@ pub struct AzureCliCredential;
 #[async_trait::async_trait]
 impl TokenCredential for AzureCliCredential {
     async fn get_token(&self, resource: &str) -> Result<TokenResponse, AzureError> {
-        let az_command = Command::new("az")
+        let az_command = if cfg!(target_os = "windows") {
+            // on window az is a cmd and it should be called like this
+            // see https://doc.rust-lang.org/nightly/std/process/struct.Command.html
+            Command::new("cmd")
+            .args(&[
+                "/C",
+                "az",
+                "account",
+                "get-access-token",
+                "--output",
+                "json",
+                "--resource",
+                resource,
+            ])
+        } else {
+            Command::new("az")
             .args(&[
                 "account",
                 "get-access-token",
@@ -48,7 +63,8 @@ impl TokenCredential for AzureCliCredential {
                 "--resource",
                 resource,
             ])
-            .output();
+        };
+        let az_command = az_command.output(); 
 
         let res = match az_command {
             Ok(az_output) => {
