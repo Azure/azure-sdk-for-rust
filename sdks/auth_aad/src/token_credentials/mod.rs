@@ -22,7 +22,7 @@ pub struct TokenResponse {
 }
 
 impl TokenResponse {
-    pub(crate) fn new(token: AccessToken, expires_on: DateTime<Utc>) -> Self {
+    pub fn new(token: AccessToken, expires_on: DateTime<Utc>) -> Self {
         TokenResponse { token, expires_on }
     }
 }
