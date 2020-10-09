@@ -1,7 +1,7 @@
-use azure_sdk_core::errors::AzureError;
 use azure_cosmos::clients::DefaultCosmosUri;
 use azure_cosmos::prelude::*;
 use azure_cosmos::AuthorizationToken;
+use azure_sdk_core::errors::AzureError;
 
 pub fn initialize() -> Result<CosmosStruct<'static, DefaultCosmosUri>, AzureError> {
     let account = std::env::var("COSMOS_ACCOUNT").expect("Set env variable COSMOS_ACCOUNT first!");
