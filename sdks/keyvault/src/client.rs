@@ -182,7 +182,11 @@ impl<'a> KeyVaultClient<'a> {
         Ok(body)
     }
 
-    pub(crate) async fn put_authed(&mut self, uri: String, body: String) -> Result<String, KeyVaultError> {
+    pub(crate) async fn put_authed(
+        &mut self,
+        uri: String,
+        body: String,
+    ) -> Result<String, KeyVaultError> {
         self.refresh_token().await?;
 
         let resp = reqwest::Client::new()
@@ -200,7 +204,11 @@ impl<'a> KeyVaultClient<'a> {
         Ok(body)
     }
 
-    pub(crate) async fn post_authed(&mut self, uri: String, json_body: Option<String>) -> Result<String, KeyVaultError> {
+    pub(crate) async fn post_authed(
+        &mut self,
+        uri: String,
+        json_body: Option<String>,
+    ) -> Result<String, KeyVaultError> {
         self.refresh_token().await?;
 
         let mut req = reqwest::Client::new().post(&uri).header(
@@ -220,7 +228,11 @@ impl<'a> KeyVaultClient<'a> {
         Ok(body)
     }
 
-    pub(crate) async fn patch_authed(&mut self, uri: String, body: String) -> Result<String, KeyVaultError> {
+    pub(crate) async fn patch_authed(
+        &mut self,
+        uri: String,
+        body: String,
+    ) -> Result<String, KeyVaultError> {
         self.refresh_token().await?;
 
         let resp = reqwest::Client::new()
