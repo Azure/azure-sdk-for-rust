@@ -1,7 +1,7 @@
-mod models;
 mod client;
+mod models;
 
-pub use self::{models::*, client::*};
+pub use self::{client::*, models::*};
 
 pub struct Configuration {
     pub base_path: String,
