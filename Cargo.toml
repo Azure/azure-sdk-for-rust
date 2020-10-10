@@ -1,5 +1,5 @@
 [workspace]
 members = [
   "sdks/*",
-  "rest/azure_mgmt_storage_v2019_06_01",
+  "rest/mgmt_storage/*",
 ]
