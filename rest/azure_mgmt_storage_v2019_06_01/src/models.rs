@@ -128,7 +128,7 @@ pub struct SkuInformation {
     #[serde(skip_serializing_if = "Option::is_none")]
     locations: Option<Vec<String>>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    capabilities: Option<Vec<SKUCapability>>,
+    capabilities: Option<Vec<SkuCapability>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     restrictions: Option<Vec<Restriction>>,
 }
@@ -259,7 +259,7 @@ pub struct NetworkRuleSet {
     #[serde(rename = "virtualNetworkRules", skip_serializing_if = "Option::is_none")]
     virtual_network_rules: Option<Vec<VirtualNetworkRule>>,
     #[serde(rename = "ipRules", skip_serializing_if = "Option::is_none")]
-    ip_rules: Option<Vec<IPRule>>,
+    ip_rules: Option<Vec<IpRule>>,
     #[serde(rename = "defaultAction")]
     default_action: network_rule_set::DefaultAction,
 }
