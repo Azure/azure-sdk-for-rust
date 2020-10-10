@@ -13,11 +13,25 @@ pub struct Operation {
     #[serde(skip_serializing_if = "Option::is_none")]
     name: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    display: Option<serde_json::Value>,
+    display: Option<operation::Display>,
     #[serde(skip_serializing_if = "Option::is_none")]
     origin: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     properties: Option<OperationProperties>,
+}
+mod operation {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub struct Display {
+        #[serde(skip_serializing_if = "Option::is_none")]
+        provider: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        resource: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        operation: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        description: Option<String>,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationProperties {
@@ -1264,9 +1278,31 @@ pub struct ListContainerItems {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BlobServiceProperties {
     #[serde(skip_serializing_if = "Option::is_none")]
-    properties: Option<serde_json::Value>,
+    properties: Option<blob_service_properties::Properties>,
     #[serde(skip_serializing_if = "Option::is_none")]
     sku: Option<Sku>,
+}
+mod blob_service_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub struct Properties {
+        #[serde(skip_serializing_if = "Option::is_none")]
+        cors: Option<CorsRules>,
+        #[serde(rename = "defaultServiceVersion", skip_serializing_if = "Option::is_none")]
+        default_service_version: Option<String>,
+        #[serde(rename = "deleteRetentionPolicy", skip_serializing_if = "Option::is_none")]
+        delete_retention_policy: Option<DeleteRetentionPolicy>,
+        #[serde(rename = "isVersioningEnabled", skip_serializing_if = "Option::is_none")]
+        is_versioning_enabled: Option<bool>,
+        #[serde(rename = "automaticSnapshotPolicyEnabled", skip_serializing_if = "Option::is_none")]
+        automatic_snapshot_policy_enabled: Option<bool>,
+        #[serde(rename = "changeFeed", skip_serializing_if = "Option::is_none")]
+        change_feed: Option<ChangeFeed>,
+        #[serde(rename = "restorePolicy", skip_serializing_if = "Option::is_none")]
+        restore_policy: Option<RestorePolicyProperties>,
+        #[serde(rename = "containerDeleteRetentionPolicy", skip_serializing_if = "Option::is_none")]
+        container_delete_retention_policy: Option<DeleteRetentionPolicy>,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BlobServiceItems {
@@ -1326,9 +1362,19 @@ pub struct FileServiceItems {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FileServiceProperties {
     #[serde(skip_serializing_if = "Option::is_none")]
-    properties: Option<serde_json::Value>,
+    properties: Option<file_service_properties::Properties>,
     #[serde(skip_serializing_if = "Option::is_none")]
     sku: Option<Sku>,
+}
+mod file_service_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub struct Properties {
+        #[serde(skip_serializing_if = "Option::is_none")]
+        cors: Option<CorsRules>,
+        #[serde(rename = "shareDeleteRetentionPolicy", skip_serializing_if = "Option::is_none")]
+        share_delete_retention_policy: Option<DeleteRetentionPolicy>,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FileShare {
@@ -1430,7 +1476,15 @@ pub struct ListQueueServices {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct QueueServiceProperties {
     #[serde(skip_serializing_if = "Option::is_none")]
-    properties: Option<serde_json::Value>,
+    properties: Option<queue_service_properties::Properties>,
+}
+mod queue_service_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub struct Properties {
+        #[serde(skip_serializing_if = "Option::is_none")]
+        cors: Option<CorsRules>,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StorageQueue {
@@ -1469,7 +1523,15 @@ pub struct ListTableServices {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TableServiceProperties {
     #[serde(skip_serializing_if = "Option::is_none")]
-    properties: Option<serde_json::Value>,
+    properties: Option<table_service_properties::Properties>,
+}
+mod table_service_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub struct Properties {
+        #[serde(skip_serializing_if = "Option::is_none")]
+        cors: Option<CorsRules>,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Table {
