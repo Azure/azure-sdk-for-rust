@@ -800,3 +800,1053 @@ pub async fn encryption_scopes_list(
         }
     }
 }
+pub async fn blob_services_list(
+    configuration: &Configuration,
+    resource_group_name: &str,
+    account_name: &str,
+    api_version: &str,
+    subscription_id: &str,
+) -> Result<BlobServiceItems> {
+    let client = &configuration.client;
+    let uri_str = &format!(
+        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/blobServices",
+        &configuration.base_path, subscription_id, resource_group_name, account_name
+    );
+    let mut req_builder = client.get(uri_str);
+    let req = req_builder.build()?;
+    let res = client.execute(req).await?;
+    match res.error_for_status_ref() {
+        Ok(_) => Ok(res.json().await?),
+        Err(err) => {
+            let e = Error::new(err);
+            let e = e.context(res.text().await?);
+            Err(e)
+        }
+    }
+}
+pub async fn blob_services_get_service_properties(
+    configuration: &Configuration,
+    resource_group_name: &str,
+    account_name: &str,
+    api_version: &str,
+    subscription_id: &str,
+    blob_services_name: &str,
+) -> Result<BlobServiceProperties> {
+    let client = &configuration.client;
+    let uri_str = &format!(
+        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/blobServices/{}",
+        &configuration.base_path, subscription_id, resource_group_name, account_name, blob_services_name
+    );
+    let mut req_builder = client.get(uri_str);
+    let req = req_builder.build()?;
+    let res = client.execute(req).await?;
+    match res.error_for_status_ref() {
+        Ok(_) => Ok(res.json().await?),
+        Err(err) => {
+            let e = Error::new(err);
+            let e = e.context(res.text().await?);
+            Err(e)
+        }
+    }
+}
+pub async fn blob_services_set_service_properties(
+    configuration: &Configuration,
+    resource_group_name: &str,
+    account_name: &str,
+    api_version: &str,
+    subscription_id: &str,
+    blob_services_name: &str,
+    parameters: BlobServiceProperties,
+) -> Result<BlobServiceProperties> {
+    let client = &configuration.client;
+    let uri_str = &format!(
+        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/blobServices/{}",
+        &configuration.base_path, subscription_id, resource_group_name, account_name, blob_services_name
+    );
+    let mut req_builder = client.put(uri_str);
+    let req = req_builder.build()?;
+    let res = client.execute(req).await?;
+    match res.error_for_status_ref() {
+        Ok(_) => Ok(res.json().await?),
+        Err(err) => {
+            let e = Error::new(err);
+            let e = e.context(res.text().await?);
+            Err(e)
+        }
+    }
+}
+pub async fn blob_containers_list(
+    configuration: &Configuration,
+    resource_group_name: &str,
+    account_name: &str,
+    api_version: &str,
+    subscription_id: &str,
+    maxpagesize: &str,
+    filter: &str,
+    include: &str,
+) -> Result<ListContainerItems> {
+    let client = &configuration.client;
+    let uri_str = &format!(
+        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/blobServices/default/containers",
+        &configuration.base_path, subscription_id, resource_group_name, account_name
+    );
+    let mut req_builder = client.get(uri_str);
+    let req = req_builder.build()?;
+    let res = client.execute(req).await?;
+    match res.error_for_status_ref() {
+        Ok(_) => Ok(res.json().await?),
+        Err(err) => {
+            let e = Error::new(err);
+            let e = e.context(res.text().await?);
+            Err(e)
+        }
+    }
+}
+pub async fn blob_containers_get(
+    configuration: &Configuration,
+    resource_group_name: &str,
+    account_name: &str,
+    container_name: &str,
+    api_version: &str,
+    subscription_id: &str,
+) -> Result<BlobContainer> {
+    let client = &configuration.client;
+    let uri_str = &format!(
+        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/blobServices/default/containers/{}",
+        &configuration.base_path, subscription_id, resource_group_name, account_name, container_name
+    );
+    let mut req_builder = client.get(uri_str);
+    let req = req_builder.build()?;
+    let res = client.execute(req).await?;
+    match res.error_for_status_ref() {
+        Ok(_) => Ok(res.json().await?),
+        Err(err) => {
+            let e = Error::new(err);
+            let e = e.context(res.text().await?);
+            Err(e)
+        }
+    }
+}
+pub async fn blob_containers_create(
+    configuration: &Configuration,
+    resource_group_name: &str,
+    account_name: &str,
+    container_name: &str,
+    blob_container: BlobContainer,
+    api_version: &str,
+    subscription_id: &str,
+) -> Result<BlobContainer> {
+    let client = &configuration.client;
+    let uri_str = &format!(
+        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/blobServices/default/containers/{}",
+        &configuration.base_path, subscription_id, resource_group_name, account_name, container_name
+    );
+    let mut req_builder = client.put(uri_str);
+    let req = req_builder.build()?;
+    let res = client.execute(req).await?;
+    match res.error_for_status_ref() {
+        Ok(_) => Ok(res.json().await?),
+        Err(err) => {
+            let e = Error::new(err);
+            let e = e.context(res.text().await?);
+            Err(e)
+        }
+    }
+}
+pub async fn blob_containers_update(
+    configuration: &Configuration,
+    resource_group_name: &str,
+    account_name: &str,
+    container_name: &str,
+    blob_container: BlobContainer,
+    api_version: &str,
+    subscription_id: &str,
+) -> Result<BlobContainer> {
+    let client = &configuration.client;
+    let uri_str = &format!(
+        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/blobServices/default/containers/{}",
+        &configuration.base_path, subscription_id, resource_group_name, account_name, container_name
+    );
+    let mut req_builder = client.patch(uri_str);
+    let req = req_builder.build()?;
+    let res = client.execute(req).await?;
+    match res.error_for_status_ref() {
+        Ok(_) => Ok(res.json().await?),
+        Err(err) => {
+            let e = Error::new(err);
+            let e = e.context(res.text().await?);
+            Err(e)
+        }
+    }
+}
+pub async fn blob_containers_delete(
+    configuration: &Configuration,
+    resource_group_name: &str,
+    account_name: &str,
+    container_name: &str,
+    api_version: &str,
+    subscription_id: &str,
+) -> Result<()> {
+    let client = &configuration.client;
+    let uri_str = &format!(
+        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/blobServices/default/containers/{}",
+        &configuration.base_path, subscription_id, resource_group_name, account_name, container_name
+    );
+    let mut req_builder = client.delete(uri_str);
+    let req = req_builder.build()?;
+    let res = client.execute(req).await?;
+    match res.error_for_status_ref() {
+        Ok(_) => Ok(res.json().await?),
+        Err(err) => {
+            let e = Error::new(err);
+            let e = e.context(res.text().await?);
+            Err(e)
+        }
+    }
+}
+pub async fn blob_containers_set_legal_hold(
+    configuration: &Configuration,
+    resource_group_name: &str,
+    account_name: &str,
+    container_name: &str,
+    api_version: &str,
+    subscription_id: &str,
+    legal_hold: LegalHold,
+) -> Result<LegalHold> {
+    let client = &configuration.client;
+    let uri_str = &format!(
+        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/blobServices/default/containers/{}/setLegalHold",
+        &configuration.base_path, subscription_id, resource_group_name, account_name, container_name
+    );
+    let mut req_builder = client.post(uri_str);
+    let req = req_builder.build()?;
+    let res = client.execute(req).await?;
+    match res.error_for_status_ref() {
+        Ok(_) => Ok(res.json().await?),
+        Err(err) => {
+            let e = Error::new(err);
+            let e = e.context(res.text().await?);
+            Err(e)
+        }
+    }
+}
+pub async fn blob_containers_clear_legal_hold(
+    configuration: &Configuration,
+    resource_group_name: &str,
+    account_name: &str,
+    container_name: &str,
+    api_version: &str,
+    subscription_id: &str,
+    legal_hold: LegalHold,
+) -> Result<LegalHold> {
+    let client = &configuration.client;
+    let uri_str = &format!(
+        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/blobServices/default/containers/{}/clearLegalHold",
+        &configuration.base_path, subscription_id, resource_group_name, account_name, container_name
+    );
+    let mut req_builder = client.post(uri_str);
+    let req = req_builder.build()?;
+    let res = client.execute(req).await?;
+    match res.error_for_status_ref() {
+        Ok(_) => Ok(res.json().await?),
+        Err(err) => {
+            let e = Error::new(err);
+            let e = e.context(res.text().await?);
+            Err(e)
+        }
+    }
+}
+pub async fn blob_containers_get_immutability_policy(
+    configuration: &Configuration,
+    resource_group_name: &str,
+    account_name: &str,
+    container_name: &str,
+    immutability_policy_name: &str,
+    api_version: &str,
+    subscription_id: &str,
+    if_match: &str,
+) -> Result<ImmutabilityPolicy> {
+    let client = &configuration.client;
+    let uri_str = &format!(
+        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/blobServices/default/containers/{}/immutabilityPolicies/{}",
+        &configuration.base_path, subscription_id, resource_group_name, account_name, container_name, immutability_policy_name
+    );
+    let mut req_builder = client.get(uri_str);
+    let req = req_builder.build()?;
+    let res = client.execute(req).await?;
+    match res.error_for_status_ref() {
+        Ok(_) => Ok(res.json().await?),
+        Err(err) => {
+            let e = Error::new(err);
+            let e = e.context(res.text().await?);
+            Err(e)
+        }
+    }
+}
+pub async fn blob_containers_create_or_update_immutability_policy(
+    configuration: &Configuration,
+    resource_group_name: &str,
+    account_name: &str,
+    container_name: &str,
+    immutability_policy_name: &str,
+    api_version: &str,
+    subscription_id: &str,
+    parameters: ImmutabilityPolicy,
+    if_match: &str,
+) -> Result<ImmutabilityPolicy> {
+    let client = &configuration.client;
+    let uri_str = &format!(
+        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/blobServices/default/containers/{}/immutabilityPolicies/{}",
+        &configuration.base_path, subscription_id, resource_group_name, account_name, container_name, immutability_policy_name
+    );
+    let mut req_builder = client.put(uri_str);
+    let req = req_builder.build()?;
+    let res = client.execute(req).await?;
+    match res.error_for_status_ref() {
+        Ok(_) => Ok(res.json().await?),
+        Err(err) => {
+            let e = Error::new(err);
+            let e = e.context(res.text().await?);
+            Err(e)
+        }
+    }
+}
+pub async fn blob_containers_delete_immutability_policy(
+    configuration: &Configuration,
+    resource_group_name: &str,
+    account_name: &str,
+    container_name: &str,
+    immutability_policy_name: &str,
+    api_version: &str,
+    subscription_id: &str,
+    if_match: &str,
+) -> Result<ImmutabilityPolicy> {
+    let client = &configuration.client;
+    let uri_str = &format!(
+        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/blobServices/default/containers/{}/immutabilityPolicies/{}",
+        &configuration.base_path, subscription_id, resource_group_name, account_name, container_name, immutability_policy_name
+    );
+    let mut req_builder = client.delete(uri_str);
+    let req = req_builder.build()?;
+    let res = client.execute(req).await?;
+    match res.error_for_status_ref() {
+        Ok(_) => Ok(res.json().await?),
+        Err(err) => {
+            let e = Error::new(err);
+            let e = e.context(res.text().await?);
+            Err(e)
+        }
+    }
+}
+pub async fn blob_containers_lock_immutability_policy(
+    configuration: &Configuration,
+    resource_group_name: &str,
+    account_name: &str,
+    container_name: &str,
+    api_version: &str,
+    subscription_id: &str,
+    if_match: &str,
+) -> Result<ImmutabilityPolicy> {
+    let client = &configuration.client;
+    let uri_str = &format!(
+        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/blobServices/default/containers/{}/immutabilityPolicies/default/lock",
+        &configuration.base_path, subscription_id, resource_group_name, account_name, container_name
+    );
+    let mut req_builder = client.post(uri_str);
+    let req = req_builder.build()?;
+    let res = client.execute(req).await?;
+    match res.error_for_status_ref() {
+        Ok(_) => Ok(res.json().await?),
+        Err(err) => {
+            let e = Error::new(err);
+            let e = e.context(res.text().await?);
+            Err(e)
+        }
+    }
+}
+pub async fn blob_containers_extend_immutability_policy(
+    configuration: &Configuration,
+    resource_group_name: &str,
+    account_name: &str,
+    container_name: &str,
+    api_version: &str,
+    subscription_id: &str,
+    parameters: ImmutabilityPolicy,
+    if_match: &str,
+) -> Result<ImmutabilityPolicy> {
+    let client = &configuration.client;
+    let uri_str = &format!(
+        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/blobServices/default/containers/{}/immutabilityPolicies/default/extend",
+        &configuration.base_path, subscription_id, resource_group_name, account_name, container_name
+    );
+    let mut req_builder = client.post(uri_str);
+    let req = req_builder.build()?;
+    let res = client.execute(req).await?;
+    match res.error_for_status_ref() {
+        Ok(_) => Ok(res.json().await?),
+        Err(err) => {
+            let e = Error::new(err);
+            let e = e.context(res.text().await?);
+            Err(e)
+        }
+    }
+}
+pub async fn blob_containers_lease(
+    configuration: &Configuration,
+    resource_group_name: &str,
+    account_name: &str,
+    container_name: &str,
+    api_version: &str,
+    subscription_id: &str,
+    parameters: LeaseContainerRequest,
+) -> Result<LeaseContainerResponse> {
+    let client = &configuration.client;
+    let uri_str = &format!(
+        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/blobServices/default/containers/{}/lease",
+        &configuration.base_path, subscription_id, resource_group_name, account_name, container_name
+    );
+    let mut req_builder = client.post(uri_str);
+    let req = req_builder.build()?;
+    let res = client.execute(req).await?;
+    match res.error_for_status_ref() {
+        Ok(_) => Ok(res.json().await?),
+        Err(err) => {
+            let e = Error::new(err);
+            let e = e.context(res.text().await?);
+            Err(e)
+        }
+    }
+}
+pub async fn file_services_list(
+    configuration: &Configuration,
+    resource_group_name: &str,
+    account_name: &str,
+    api_version: &str,
+    subscription_id: &str,
+) -> Result<FileServiceItems> {
+    let client = &configuration.client;
+    let uri_str = &format!(
+        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/fileServices",
+        &configuration.base_path, subscription_id, resource_group_name, account_name
+    );
+    let mut req_builder = client.get(uri_str);
+    let req = req_builder.build()?;
+    let res = client.execute(req).await?;
+    match res.error_for_status_ref() {
+        Ok(_) => Ok(res.json().await?),
+        Err(err) => {
+            let e = Error::new(err);
+            let e = e.context(res.text().await?);
+            Err(e)
+        }
+    }
+}
+pub async fn file_services_get_service_properties(
+    configuration: &Configuration,
+    resource_group_name: &str,
+    account_name: &str,
+    api_version: &str,
+    subscription_id: &str,
+    file_services_name: &str,
+) -> Result<FileServiceProperties> {
+    let client = &configuration.client;
+    let uri_str = &format!(
+        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/fileServices/{}",
+        &configuration.base_path, subscription_id, resource_group_name, account_name, file_services_name
+    );
+    let mut req_builder = client.get(uri_str);
+    let req = req_builder.build()?;
+    let res = client.execute(req).await?;
+    match res.error_for_status_ref() {
+        Ok(_) => Ok(res.json().await?),
+        Err(err) => {
+            let e = Error::new(err);
+            let e = e.context(res.text().await?);
+            Err(e)
+        }
+    }
+}
+pub async fn file_services_set_service_properties(
+    configuration: &Configuration,
+    resource_group_name: &str,
+    account_name: &str,
+    api_version: &str,
+    subscription_id: &str,
+    file_services_name: &str,
+    parameters: FileServiceProperties,
+) -> Result<FileServiceProperties> {
+    let client = &configuration.client;
+    let uri_str = &format!(
+        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/fileServices/{}",
+        &configuration.base_path, subscription_id, resource_group_name, account_name, file_services_name
+    );
+    let mut req_builder = client.put(uri_str);
+    let req = req_builder.build()?;
+    let res = client.execute(req).await?;
+    match res.error_for_status_ref() {
+        Ok(_) => Ok(res.json().await?),
+        Err(err) => {
+            let e = Error::new(err);
+            let e = e.context(res.text().await?);
+            Err(e)
+        }
+    }
+}
+pub async fn file_shares_list(
+    configuration: &Configuration,
+    resource_group_name: &str,
+    account_name: &str,
+    api_version: &str,
+    subscription_id: &str,
+    maxpagesize: &str,
+    filter: &str,
+    expand: &str,
+) -> Result<FileShareItems> {
+    let client = &configuration.client;
+    let uri_str = &format!(
+        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/fileServices/default/shares",
+        &configuration.base_path, subscription_id, resource_group_name, account_name
+    );
+    let mut req_builder = client.get(uri_str);
+    let req = req_builder.build()?;
+    let res = client.execute(req).await?;
+    match res.error_for_status_ref() {
+        Ok(_) => Ok(res.json().await?),
+        Err(err) => {
+            let e = Error::new(err);
+            let e = e.context(res.text().await?);
+            Err(e)
+        }
+    }
+}
+pub async fn file_shares_get(
+    configuration: &Configuration,
+    resource_group_name: &str,
+    account_name: &str,
+    share_name: &str,
+    api_version: &str,
+    subscription_id: &str,
+    expand: &str,
+) -> Result<FileShare> {
+    let client = &configuration.client;
+    let uri_str = &format!(
+        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/fileServices/default/shares/{}",
+        &configuration.base_path, subscription_id, resource_group_name, account_name, share_name
+    );
+    let mut req_builder = client.get(uri_str);
+    let req = req_builder.build()?;
+    let res = client.execute(req).await?;
+    match res.error_for_status_ref() {
+        Ok(_) => Ok(res.json().await?),
+        Err(err) => {
+            let e = Error::new(err);
+            let e = e.context(res.text().await?);
+            Err(e)
+        }
+    }
+}
+pub async fn file_shares_create(
+    configuration: &Configuration,
+    resource_group_name: &str,
+    account_name: &str,
+    share_name: &str,
+    file_share: FileShare,
+    api_version: &str,
+    subscription_id: &str,
+) -> Result<FileShare> {
+    let client = &configuration.client;
+    let uri_str = &format!(
+        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/fileServices/default/shares/{}",
+        &configuration.base_path, subscription_id, resource_group_name, account_name, share_name
+    );
+    let mut req_builder = client.put(uri_str);
+    let req = req_builder.build()?;
+    let res = client.execute(req).await?;
+    match res.error_for_status_ref() {
+        Ok(_) => Ok(res.json().await?),
+        Err(err) => {
+            let e = Error::new(err);
+            let e = e.context(res.text().await?);
+            Err(e)
+        }
+    }
+}
+pub async fn file_shares_update(
+    configuration: &Configuration,
+    resource_group_name: &str,
+    account_name: &str,
+    share_name: &str,
+    file_share: FileShare,
+    api_version: &str,
+    subscription_id: &str,
+) -> Result<FileShare> {
+    let client = &configuration.client;
+    let uri_str = &format!(
+        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/fileServices/default/shares/{}",
+        &configuration.base_path, subscription_id, resource_group_name, account_name, share_name
+    );
+    let mut req_builder = client.patch(uri_str);
+    let req = req_builder.build()?;
+    let res = client.execute(req).await?;
+    match res.error_for_status_ref() {
+        Ok(_) => Ok(res.json().await?),
+        Err(err) => {
+            let e = Error::new(err);
+            let e = e.context(res.text().await?);
+            Err(e)
+        }
+    }
+}
+pub async fn file_shares_delete(
+    configuration: &Configuration,
+    resource_group_name: &str,
+    account_name: &str,
+    share_name: &str,
+    api_version: &str,
+    subscription_id: &str,
+) -> Result<CloudError> {
+    let client = &configuration.client;
+    let uri_str = &format!(
+        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/fileServices/default/shares/{}",
+        &configuration.base_path, subscription_id, resource_group_name, account_name, share_name
+    );
+    let mut req_builder = client.delete(uri_str);
+    let req = req_builder.build()?;
+    let res = client.execute(req).await?;
+    match res.error_for_status_ref() {
+        Ok(_) => Ok(res.json().await?),
+        Err(err) => {
+            let e = Error::new(err);
+            let e = e.context(res.text().await?);
+            Err(e)
+        }
+    }
+}
+pub async fn file_shares_restore(
+    configuration: &Configuration,
+    resource_group_name: &str,
+    account_name: &str,
+    share_name: &str,
+    deleted_share: DeletedShare,
+    api_version: &str,
+    subscription_id: &str,
+) -> Result<CloudError> {
+    let client = &configuration.client;
+    let uri_str = &format!(
+        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/fileServices/default/shares/{}/restore",
+        &configuration.base_path, subscription_id, resource_group_name, account_name, share_name
+    );
+    let mut req_builder = client.post(uri_str);
+    let req = req_builder.build()?;
+    let res = client.execute(req).await?;
+    match res.error_for_status_ref() {
+        Ok(_) => Ok(res.json().await?),
+        Err(err) => {
+            let e = Error::new(err);
+            let e = e.context(res.text().await?);
+            Err(e)
+        }
+    }
+}
+pub async fn queue_services_list(
+    configuration: &Configuration,
+    resource_group_name: &str,
+    account_name: &str,
+    api_version: &str,
+    subscription_id: &str,
+) -> Result<ListQueueServices> {
+    let client = &configuration.client;
+    let uri_str = &format!(
+        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/queueServices",
+        &configuration.base_path, subscription_id, resource_group_name, account_name
+    );
+    let mut req_builder = client.get(uri_str);
+    let req = req_builder.build()?;
+    let res = client.execute(req).await?;
+    match res.error_for_status_ref() {
+        Ok(_) => Ok(res.json().await?),
+        Err(err) => {
+            let e = Error::new(err);
+            let e = e.context(res.text().await?);
+            Err(e)
+        }
+    }
+}
+pub async fn queue_services_get_service_properties(
+    configuration: &Configuration,
+    resource_group_name: &str,
+    account_name: &str,
+    api_version: &str,
+    subscription_id: &str,
+    queue_service_name: &str,
+) -> Result<QueueServiceProperties> {
+    let client = &configuration.client;
+    let uri_str = &format!(
+        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/queueServices/{}",
+        &configuration.base_path, subscription_id, resource_group_name, account_name, queue_service_name
+    );
+    let mut req_builder = client.get(uri_str);
+    let req = req_builder.build()?;
+    let res = client.execute(req).await?;
+    match res.error_for_status_ref() {
+        Ok(_) => Ok(res.json().await?),
+        Err(err) => {
+            let e = Error::new(err);
+            let e = e.context(res.text().await?);
+            Err(e)
+        }
+    }
+}
+pub async fn queue_services_set_service_properties(
+    configuration: &Configuration,
+    resource_group_name: &str,
+    account_name: &str,
+    api_version: &str,
+    subscription_id: &str,
+    queue_service_name: &str,
+    parameters: QueueServiceProperties,
+) -> Result<QueueServiceProperties> {
+    let client = &configuration.client;
+    let uri_str = &format!(
+        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/queueServices/{}",
+        &configuration.base_path, subscription_id, resource_group_name, account_name, queue_service_name
+    );
+    let mut req_builder = client.put(uri_str);
+    let req = req_builder.build()?;
+    let res = client.execute(req).await?;
+    match res.error_for_status_ref() {
+        Ok(_) => Ok(res.json().await?),
+        Err(err) => {
+            let e = Error::new(err);
+            let e = e.context(res.text().await?);
+            Err(e)
+        }
+    }
+}
+pub async fn queue_get(
+    configuration: &Configuration,
+    resource_group_name: &str,
+    account_name: &str,
+    api_version: &str,
+    subscription_id: &str,
+    queue_name: &str,
+) -> Result<StorageQueue> {
+    let client = &configuration.client;
+    let uri_str = &format!(
+        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/queueServices/default/queues/{}",
+        &configuration.base_path, subscription_id, resource_group_name, account_name, queue_name
+    );
+    let mut req_builder = client.get(uri_str);
+    let req = req_builder.build()?;
+    let res = client.execute(req).await?;
+    match res.error_for_status_ref() {
+        Ok(_) => Ok(res.json().await?),
+        Err(err) => {
+            let e = Error::new(err);
+            let e = e.context(res.text().await?);
+            Err(e)
+        }
+    }
+}
+pub async fn queue_create(
+    configuration: &Configuration,
+    resource_group_name: &str,
+    account_name: &str,
+    api_version: &str,
+    subscription_id: &str,
+    queue_name: &str,
+    queue: StorageQueue,
+) -> Result<StorageQueue> {
+    let client = &configuration.client;
+    let uri_str = &format!(
+        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/queueServices/default/queues/{}",
+        &configuration.base_path, subscription_id, resource_group_name, account_name, queue_name
+    );
+    let mut req_builder = client.put(uri_str);
+    let req = req_builder.build()?;
+    let res = client.execute(req).await?;
+    match res.error_for_status_ref() {
+        Ok(_) => Ok(res.json().await?),
+        Err(err) => {
+            let e = Error::new(err);
+            let e = e.context(res.text().await?);
+            Err(e)
+        }
+    }
+}
+pub async fn queue_update(
+    configuration: &Configuration,
+    resource_group_name: &str,
+    account_name: &str,
+    api_version: &str,
+    subscription_id: &str,
+    queue_name: &str,
+    queue: StorageQueue,
+) -> Result<StorageQueue> {
+    let client = &configuration.client;
+    let uri_str = &format!(
+        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/queueServices/default/queues/{}",
+        &configuration.base_path, subscription_id, resource_group_name, account_name, queue_name
+    );
+    let mut req_builder = client.patch(uri_str);
+    let req = req_builder.build()?;
+    let res = client.execute(req).await?;
+    match res.error_for_status_ref() {
+        Ok(_) => Ok(res.json().await?),
+        Err(err) => {
+            let e = Error::new(err);
+            let e = e.context(res.text().await?);
+            Err(e)
+        }
+    }
+}
+pub async fn queue_delete(
+    configuration: &Configuration,
+    resource_group_name: &str,
+    account_name: &str,
+    api_version: &str,
+    subscription_id: &str,
+    queue_name: &str,
+) -> Result<CloudError> {
+    let client = &configuration.client;
+    let uri_str = &format!(
+        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/queueServices/default/queues/{}",
+        &configuration.base_path, subscription_id, resource_group_name, account_name, queue_name
+    );
+    let mut req_builder = client.delete(uri_str);
+    let req = req_builder.build()?;
+    let res = client.execute(req).await?;
+    match res.error_for_status_ref() {
+        Ok(_) => Ok(res.json().await?),
+        Err(err) => {
+            let e = Error::new(err);
+            let e = e.context(res.text().await?);
+            Err(e)
+        }
+    }
+}
+pub async fn queue_list(
+    configuration: &Configuration,
+    resource_group_name: &str,
+    account_name: &str,
+    api_version: &str,
+    subscription_id: &str,
+    maxpagesize: &str,
+    filter: &str,
+) -> Result<ListQueueResource> {
+    let client = &configuration.client;
+    let uri_str = &format!(
+        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/queueServices/default/queues",
+        &configuration.base_path, subscription_id, resource_group_name, account_name
+    );
+    let mut req_builder = client.get(uri_str);
+    let req = req_builder.build()?;
+    let res = client.execute(req).await?;
+    match res.error_for_status_ref() {
+        Ok(_) => Ok(res.json().await?),
+        Err(err) => {
+            let e = Error::new(err);
+            let e = e.context(res.text().await?);
+            Err(e)
+        }
+    }
+}
+pub async fn table_services_list(
+    configuration: &Configuration,
+    resource_group_name: &str,
+    account_name: &str,
+    api_version: &str,
+    subscription_id: &str,
+) -> Result<ListTableServices> {
+    let client = &configuration.client;
+    let uri_str = &format!(
+        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/tableServices",
+        &configuration.base_path, subscription_id, resource_group_name, account_name
+    );
+    let mut req_builder = client.get(uri_str);
+    let req = req_builder.build()?;
+    let res = client.execute(req).await?;
+    match res.error_for_status_ref() {
+        Ok(_) => Ok(res.json().await?),
+        Err(err) => {
+            let e = Error::new(err);
+            let e = e.context(res.text().await?);
+            Err(e)
+        }
+    }
+}
+pub async fn table_services_get_service_properties(
+    configuration: &Configuration,
+    resource_group_name: &str,
+    account_name: &str,
+    api_version: &str,
+    subscription_id: &str,
+    table_service_name: &str,
+) -> Result<TableServiceProperties> {
+    let client = &configuration.client;
+    let uri_str = &format!(
+        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/tableServices/{}",
+        &configuration.base_path, subscription_id, resource_group_name, account_name, table_service_name
+    );
+    let mut req_builder = client.get(uri_str);
+    let req = req_builder.build()?;
+    let res = client.execute(req).await?;
+    match res.error_for_status_ref() {
+        Ok(_) => Ok(res.json().await?),
+        Err(err) => {
+            let e = Error::new(err);
+            let e = e.context(res.text().await?);
+            Err(e)
+        }
+    }
+}
+pub async fn table_services_set_service_properties(
+    configuration: &Configuration,
+    resource_group_name: &str,
+    account_name: &str,
+    api_version: &str,
+    subscription_id: &str,
+    table_service_name: &str,
+    parameters: TableServiceProperties,
+) -> Result<TableServiceProperties> {
+    let client = &configuration.client;
+    let uri_str = &format!(
+        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/tableServices/{}",
+        &configuration.base_path, subscription_id, resource_group_name, account_name, table_service_name
+    );
+    let mut req_builder = client.put(uri_str);
+    let req = req_builder.build()?;
+    let res = client.execute(req).await?;
+    match res.error_for_status_ref() {
+        Ok(_) => Ok(res.json().await?),
+        Err(err) => {
+            let e = Error::new(err);
+            let e = e.context(res.text().await?);
+            Err(e)
+        }
+    }
+}
+pub async fn table_get(
+    configuration: &Configuration,
+    resource_group_name: &str,
+    account_name: &str,
+    api_version: &str,
+    subscription_id: &str,
+    table_name: &str,
+) -> Result<Table> {
+    let client = &configuration.client;
+    let uri_str = &format!(
+        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/tableServices/default/tables/{}",
+        &configuration.base_path, subscription_id, resource_group_name, account_name, table_name
+    );
+    let mut req_builder = client.get(uri_str);
+    let req = req_builder.build()?;
+    let res = client.execute(req).await?;
+    match res.error_for_status_ref() {
+        Ok(_) => Ok(res.json().await?),
+        Err(err) => {
+            let e = Error::new(err);
+            let e = e.context(res.text().await?);
+            Err(e)
+        }
+    }
+}
+pub async fn table_create(
+    configuration: &Configuration,
+    resource_group_name: &str,
+    account_name: &str,
+    api_version: &str,
+    subscription_id: &str,
+    table_name: &str,
+) -> Result<Table> {
+    let client = &configuration.client;
+    let uri_str = &format!(
+        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/tableServices/default/tables/{}",
+        &configuration.base_path, subscription_id, resource_group_name, account_name, table_name
+    );
+    let mut req_builder = client.put(uri_str);
+    let req = req_builder.build()?;
+    let res = client.execute(req).await?;
+    match res.error_for_status_ref() {
+        Ok(_) => Ok(res.json().await?),
+        Err(err) => {
+            let e = Error::new(err);
+            let e = e.context(res.text().await?);
+            Err(e)
+        }
+    }
+}
+pub async fn table_update(
+    configuration: &Configuration,
+    resource_group_name: &str,
+    account_name: &str,
+    api_version: &str,
+    subscription_id: &str,
+    table_name: &str,
+) -> Result<Table> {
+    let client = &configuration.client;
+    let uri_str = &format!(
+        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/tableServices/default/tables/{}",
+        &configuration.base_path, subscription_id, resource_group_name, account_name, table_name
+    );
+    let mut req_builder = client.patch(uri_str);
+    let req = req_builder.build()?;
+    let res = client.execute(req).await?;
+    match res.error_for_status_ref() {
+        Ok(_) => Ok(res.json().await?),
+        Err(err) => {
+            let e = Error::new(err);
+            let e = e.context(res.text().await?);
+            Err(e)
+        }
+    }
+}
+pub async fn table_delete(
+    configuration: &Configuration,
+    resource_group_name: &str,
+    account_name: &str,
+    api_version: &str,
+    subscription_id: &str,
+    table_name: &str,
+) -> Result<CloudError> {
+    let client = &configuration.client;
+    let uri_str = &format!(
+        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/tableServices/default/tables/{}",
+        &configuration.base_path, subscription_id, resource_group_name, account_name, table_name
+    );
+    let mut req_builder = client.delete(uri_str);
+    let req = req_builder.build()?;
+    let res = client.execute(req).await?;
+    match res.error_for_status_ref() {
+        Ok(_) => Ok(res.json().await?),
+        Err(err) => {
+            let e = Error::new(err);
+            let e = e.context(res.text().await?);
+            Err(e)
+        }
+    }
+}
+pub async fn table_list(
+    configuration: &Configuration,
+    resource_group_name: &str,
+    account_name: &str,
+    api_version: &str,
+    subscription_id: &str,
+) -> Result<ListTableResource> {
+    let client = &configuration.client;
+    let uri_str = &format!(
+        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/tableServices/default/tables",
+        &configuration.base_path, subscription_id, resource_group_name, account_name
+    );
+    let mut req_builder = client.get(uri_str);
+    let req = req_builder.build()?;
+    let res = client.execute(req).await?;
+    match res.error_for_status_ref() {
+        Ok(_) => Ok(res.json().await?),
+        Err(err) => {
+            let e = Error::new(err);
+            let e = e.context(res.text().await?);
+            Err(e)
+        }
+    }
+}
