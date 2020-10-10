@@ -1,5 +1,15 @@
+# Azure SDK for Rust
 
-# Contributing
+This repository is for the development of the *unofficial* Azure SDK for Rust. Users of the SDK may wish to learn more about this crate on [crates.io](https://crates.io/crates/azure_sdk_for_rust).
+
+
+## Project Structure
+
+Each supported Azure service is its own separate crate. If a particular service provides logically separate sub-services (e.g., Azure Storage offers blob, queue, and table storage), these are exposed as cargo features of the service's crate.
+
+Building each crate should be as straight forward as `cargo build`, but check each crate's README for more specific information.
+
+## Contributing
 
 This project welcomes contributions and suggestions.  Most contributions require you to agree to a
 Contributor License Agreement (CLA) declaring that you have the right to, and actually do, grant us

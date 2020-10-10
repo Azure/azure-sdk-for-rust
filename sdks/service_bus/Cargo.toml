@@ -1,0 +1,33 @@
+[package]
+name          = "azure_sdk_service_bus"
+version       = "0.44.2"
+description   = "Rust wrappers around Microsoft Azure REST APIs - Service Bus crate"
+readme        = "README.md"
+authors       = ["Francesco Cogno <francesco.cogno@outlook.com>", "Max Gortman <mgortman@microsoft.com>", "Dong Liu <doliu@microsoft.com>"]
+license       = "Apache-2.0"
+repository    = "https://github.com/azure/azure-sdk-for-rust"
+documentation = "http://mindflavor.github.io/AzureSDKForRust/azure_sdk_for_rust/index.html"
+homepage      = "https://github.com/azure/azure-sdk-for-rust"
+
+keywords      = ["sdk", "azure", "rest", "iot", "cloud"]
+categories    = ["api-bindings"]
+
+edition       = "2018"
+
+[dependencies]
+azure_sdk_core       = { path = "../core", version = "0.43.5" }
+ring                 = "0.16"
+base64               = "0.13"
+chrono               = "0.4"
+hyper                = "0.13"
+log                  = "0.4"
+url                  = "2.1"
+hyper-rustls         = "0.21"
+
+[dev-dependencies]
+futures              = "0.3"
+tokio                = { version = "0.2", features = ["macros"] }
+env_logger           = "0.7"
+
+[features]
+test_e2e             = []
