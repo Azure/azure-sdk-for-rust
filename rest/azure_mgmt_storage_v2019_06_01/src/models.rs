@@ -1099,6 +1099,37 @@ pub struct ErrorResponse {
     message: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PrivateEndpointConnectionListResult {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    value: Option<Vec<PrivateEndpointConnection>>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PrivateEndpointConnection {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    properties: Option<PrivateEndpointConnectionProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PrivateLinkResourceListResult {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    value: Option<Vec<PrivateLinkResource>>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SkuName {}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Tier {}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Sku {
+    name: SkuName,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    tier: Option<Tier>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct TrackedResource {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    tags: Option<serde_json::Value>,
+    location: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
     #[serde(skip_serializing_if = "Option::is_none")]
     id: Option<String>,
@@ -1107,105 +1138,3 @@ pub struct Resource {
     #[serde(rename = "type", skip_serializing_if = "Option::is_none")]
     type_: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Sku {
-    name: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    tier: Option<sku::Tier>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    size: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    family: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    capacity: Option<i32>,
-}
-mod sku {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Tier {
-        Free,
-        Basic,
-        Standard,
-        Premium,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Plan {
-    name: String,
-    publisher: String,
-    product: String,
-    #[serde(rename = "promotionCode", skip_serializing_if = "Option::is_none")]
-    promotion_code: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    version: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ErrorAdditionalInfo {
-    #[serde(rename = "type", skip_serializing_if = "Option::is_none")]
-    type_: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    info: Option<serde_json::Value>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PrivateEndpointConnectionProperties {
-    #[serde(rename = "privateEndpoint", skip_serializing_if = "Option::is_none")]
-    private_endpoint: Option<PrivateEndpoint>,
-    #[serde(rename = "privateLinkServiceConnectionState")]
-    private_link_service_connection_state: PrivateLinkServiceConnectionState,
-    #[serde(rename = "provisioningState", skip_serializing_if = "Option::is_none")]
-    provisioning_state: Option<PrivateEndpointConnectionProvisioningState>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PrivateEndpoint {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    id: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PrivateLinkServiceConnectionState {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    status: Option<PrivateEndpointServiceConnectionStatus>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    description: Option<String>,
-    #[serde(rename = "actionRequired", skip_serializing_if = "Option::is_none")]
-    action_required: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PrivateEndpointConnectionProvisioningState {}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PrivateEndpointServiceConnectionStatus {}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PrivateLinkResourceProperties {
-    #[serde(rename = "groupId", skip_serializing_if = "Option::is_none")]
-    group_id: Option<String>,
-    #[serde(rename = "requiredMembers", skip_serializing_if = "Option::is_none")]
-    required_members: Option<Vec<String>>,
-    #[serde(rename = "requiredZoneNames", skip_serializing_if = "Option::is_none")]
-    required_zone_names: Option<Vec<String>>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PrivateEndpointConnection {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    properties: Option<PrivateEndpointConnectionProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PrivateLinkResource {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    properties: Option<PrivateLinkResourceProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CorsRule {
-    #[serde(rename = "allowedOrigins")]
-    allowed_origins: Vec<String>,
-    #[serde(rename = "allowedMethods")]
-    allowed_methods: Vec<String>,
-    #[serde(rename = "maxAgeInSeconds")]
-    max_age_in_seconds: i64,
-    #[serde(rename = "exposedHeaders")]
-    exposed_headers: Vec<String>,
-    #[serde(rename = "allowedHeaders")]
-    allowed_headers: Vec<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SkuName {}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Tier {}
