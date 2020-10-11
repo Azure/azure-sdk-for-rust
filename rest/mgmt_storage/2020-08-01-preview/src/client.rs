@@ -181,6 +181,55 @@ pub async fn storage_accounts_delete(
         }
     }
 }
+pub async fn deleted_accounts_list(configuration: &Configuration, subscription_id: &str) -> Result<DeletedAccountListResult> {
+    let client = &configuration.client;
+    let uri_str = &format!(
+        "{}/subscriptions/{}/providers/Microsoft.Storage/deletedAccounts",
+        &configuration.base_path, subscription_id
+    );
+    let mut req_builder = client.get(uri_str);
+    req_builder = req_builder.query(&[("api-version", "2019-06-01")]);
+    if let Some(token) = &configuration.bearer_access_token {
+        req_builder = req_builder.bearer_auth(token);
+    }
+    let req = req_builder.build()?;
+    let res = client.execute(req).await?;
+    match res.error_for_status_ref() {
+        Ok(_) => Ok(res.json().await?),
+        Err(err) => {
+            let e = Error::new(err);
+            let e = e.context(res.text().await?);
+            Err(e)
+        }
+    }
+}
+pub async fn deleted_accounts_get(
+    configuration: &Configuration,
+    deleted_account_name: &str,
+    location: &str,
+    subscription_id: &str,
+) -> Result<DeletedAccount> {
+    let client = &configuration.client;
+    let uri_str = &format!(
+        "{}/subscriptions/{}/providers/Microsoft.Storage/locations/{}/deletedAccounts/{}",
+        &configuration.base_path, subscription_id, location, deleted_account_name
+    );
+    let mut req_builder = client.get(uri_str);
+    req_builder = req_builder.query(&[("api-version", "2019-06-01")]);
+    if let Some(token) = &configuration.bearer_access_token {
+        req_builder = req_builder.bearer_auth(token);
+    }
+    let req = req_builder.build()?;
+    let res = client.execute(req).await?;
+    match res.error_for_status_ref() {
+        Ok(_) => Ok(res.json().await?),
+        Err(err) => {
+            let e = Error::new(err);
+            let e = e.context(res.text().await?);
+            Err(e)
+        }
+    }
+}
 pub async fn storage_accounts_list(configuration: &Configuration, subscription_id: &str) -> Result<StorageAccountListResult> {
     let client = &configuration.client;
     let uri_str = &format!(

@@ -227,6 +227,13 @@ mod encryption {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ResourceAccessRule {
+    #[serde(rename = "tenantId", skip_serializing_if = "Option::is_none")]
+    pub tenant_id: Option<String>,
+    #[serde(rename = "resourceId", skip_serializing_if = "Option::is_none")]
+    pub resource_id: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VirtualNetworkRule {
     pub id: String,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -271,6 +278,8 @@ mod ip_rule {
 pub struct NetworkRuleSet {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub bypass: Option<network_rule_set::Bypass>,
+    #[serde(rename = "resourceAccessRules", skip_serializing_if = "Option::is_none")]
+    pub resource_access_rules: Option<Vec<ResourceAccessRule>>,
     #[serde(rename = "virtualNetworkRules", skip_serializing_if = "Option::is_none")]
     pub virtual_network_rules: Option<Vec<VirtualNetworkRule>>,
     #[serde(rename = "ipRules", skip_serializing_if = "Option::is_none")]
@@ -390,10 +399,23 @@ mod identity {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum ExtendedLocationType {
+    EdgeZone,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ExtendedLocation {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(rename = "type", skip_serializing_if = "Option::is_none")]
+    pub type_: Option<ExtendedLocationType>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StorageAccountCreateParameters {
     pub sku: Sku,
     pub kind: storage_account_create_parameters::Kind,
     pub location: String,
+    #[serde(rename = "extendedLocation", skip_serializing_if = "Option::is_none")]
+    pub extended_location: Option<ExtendedLocation>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -513,6 +535,19 @@ mod blob_restore_status {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DeletedAccountProperties {
+    #[serde(rename = "storageAccountResourceId", skip_serializing_if = "Option::is_none")]
+    pub storage_account_resource_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub location: Option<String>,
+    #[serde(rename = "restoreReference", skip_serializing_if = "Option::is_none")]
+    pub restore_reference: Option<String>,
+    #[serde(rename = "creationTime", skip_serializing_if = "Option::is_none")]
+    pub creation_time: Option<String>,
+    #[serde(rename = "deletionTime", skip_serializing_if = "Option::is_none")]
+    pub deletion_time: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StorageAccountProperties {
     #[serde(rename = "provisioningState", skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<storage_account_properties::ProvisioningState>,
@@ -607,6 +642,13 @@ mod storage_account_properties {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DeletedAccount {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub properties: Option<DeletedAccountProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StorageAccount {
     #[serde(flatten)]
     pub tracked_resource: TrackedResource,
@@ -616,6 +658,8 @@ pub struct StorageAccount {
     pub kind: Option<storage_account::Kind>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub identity: Option<Identity>,
+    #[serde(rename = "extendedLocation", skip_serializing_if = "Option::is_none")]
+    pub extended_location: Option<ExtendedLocation>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub properties: Option<StorageAccountProperties>,
 }
@@ -651,6 +695,13 @@ mod storage_account_key {
 pub struct StorageAccountListResult {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub value: Option<Vec<StorageAccount>>,
+    #[serde(rename = "nextLink", skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DeletedAccountListResult {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub value: Option<Vec<DeletedAccount>>,
     #[serde(rename = "nextLink", skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -1115,11 +1166,16 @@ pub struct ObjectReplicationPolicyFilter {
     pub min_creation_time: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ErrorResponse {
+pub struct ErrorResponseBody {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ErrorResponse {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub error: Option<ErrorResponseBody>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContainerProperties {
@@ -1689,6 +1745,11 @@ pub struct Sku {
     pub name: SkuName,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tier: Option<Tier>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ProxyResource {
+    #[serde(flatten)]
+    pub resource: Resource,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TrackedResource {
