@@ -5,8 +5,8 @@ use crate::*;
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationListResult {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub value: Option<Vec<Operation>>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<Operation>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Operation {
@@ -40,8 +40,8 @@ pub struct OperationProperties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServiceSpecification {
-    #[serde(rename = "metricSpecifications", skip_serializing_if = "Option::is_none")]
-    pub metric_specifications: Option<Vec<MetricSpecification>>,
+    #[serde(rename = "metricSpecifications", skip_serializing_if = "Vec::is_empty")]
+    pub metric_specifications: Vec<MetricSpecification>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MetricSpecification {
@@ -53,8 +53,8 @@ pub struct MetricSpecification {
     pub display_description: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub unit: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub dimensions: Option<Vec<Dimension>>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub dimensions: Vec<Dimension>,
     #[serde(rename = "aggregationType", skip_serializing_if = "Option::is_none")]
     pub aggregation_type: Option<String>,
     #[serde(rename = "fillGapWithZero", skip_serializing_if = "Option::is_none")]
@@ -96,8 +96,8 @@ pub struct SkuCapability {
 pub struct Restriction {
     #[serde(rename = "type", skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub values: Option<Vec<String>>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub values: Vec<String>,
     #[serde(rename = "reasonCode", skip_serializing_if = "Option::is_none")]
     pub reason_code: Option<restriction::ReasonCode>,
 }
@@ -111,8 +111,8 @@ mod restriction {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StorageSkuListResult {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub value: Option<Vec<SkuInformation>>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<SkuInformation>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CheckNameAvailabilityResult {
@@ -140,12 +140,12 @@ pub struct SkuInformation {
     pub resource_type: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub kind: Option<sku_information::Kind>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub locations: Option<Vec<String>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub capabilities: Option<Vec<SkuCapability>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub restrictions: Option<Vec<Restriction>>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub locations: Vec<String>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub capabilities: Vec<SkuCapability>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub restrictions: Vec<Restriction>,
 }
 mod sku_information {
     use super::*;
@@ -278,12 +278,12 @@ mod ip_rule {
 pub struct NetworkRuleSet {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub bypass: Option<network_rule_set::Bypass>,
-    #[serde(rename = "resourceAccessRules", skip_serializing_if = "Option::is_none")]
-    pub resource_access_rules: Option<Vec<ResourceAccessRule>>,
-    #[serde(rename = "virtualNetworkRules", skip_serializing_if = "Option::is_none")]
-    pub virtual_network_rules: Option<Vec<VirtualNetworkRule>>,
-    #[serde(rename = "ipRules", skip_serializing_if = "Option::is_none")]
-    pub ip_rules: Option<Vec<IpRule>>,
+    #[serde(rename = "resourceAccessRules", skip_serializing_if = "Vec::is_empty")]
+    pub resource_access_rules: Vec<ResourceAccessRule>,
+    #[serde(rename = "virtualNetworkRules", skip_serializing_if = "Vec::is_empty")]
+    pub virtual_network_rules: Vec<VirtualNetworkRule>,
+    #[serde(rename = "ipRules", skip_serializing_if = "Vec::is_empty")]
+    pub ip_rules: Vec<IpRule>,
     #[serde(rename = "defaultAction")]
     pub default_action: network_rule_set::DefaultAction,
 }
@@ -587,8 +587,8 @@ pub struct StorageAccountProperties {
     pub failover_in_progress: Option<bool>,
     #[serde(rename = "largeFileSharesState", skip_serializing_if = "Option::is_none")]
     pub large_file_shares_state: Option<storage_account_properties::LargeFileSharesState>,
-    #[serde(rename = "privateEndpointConnections", skip_serializing_if = "Option::is_none")]
-    pub private_endpoint_connections: Option<Vec<PrivateEndpointConnection>>,
+    #[serde(rename = "privateEndpointConnections", skip_serializing_if = "Vec::is_empty")]
+    pub private_endpoint_connections: Vec<PrivateEndpointConnection>,
     #[serde(rename = "routingPreference", skip_serializing_if = "Option::is_none")]
     pub routing_preference: Option<RoutingPreference>,
     #[serde(rename = "blobRestoreStatus", skip_serializing_if = "Option::is_none")]
@@ -693,22 +693,22 @@ mod storage_account_key {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StorageAccountListResult {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub value: Option<Vec<StorageAccount>>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<StorageAccount>,
     #[serde(rename = "nextLink", skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeletedAccountListResult {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub value: Option<Vec<DeletedAccount>>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<DeletedAccount>,
     #[serde(rename = "nextLink", skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StorageAccountListKeysResult {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub keys: Option<Vec<StorageAccountKey>>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub keys: Vec<StorageAccountKey>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StorageAccountRegenerateKeyParameters {
@@ -830,8 +830,8 @@ mod usage {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UsageListResult {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub value: Option<Vec<Usage>>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<Usage>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AccountSasParameters {
@@ -1031,12 +1031,12 @@ pub struct ManagementPolicyDefinition {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManagementPolicyFilter {
-    #[serde(rename = "prefixMatch", skip_serializing_if = "Option::is_none")]
-    pub prefix_match: Option<Vec<String>>,
+    #[serde(rename = "prefixMatch", skip_serializing_if = "Vec::is_empty")]
+    pub prefix_match: Vec<String>,
     #[serde(rename = "blobTypes")]
     pub blob_types: Vec<String>,
-    #[serde(rename = "blobIndexMatch", skip_serializing_if = "Option::is_none")]
-    pub blob_index_match: Option<Vec<TagFilter>>,
+    #[serde(rename = "blobIndexMatch", skip_serializing_if = "Vec::is_empty")]
+    pub blob_index_match: Vec<TagFilter>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TagFilter {
@@ -1117,15 +1117,15 @@ pub struct EncryptionScopeKeyVaultProperties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EncryptionScopeListResult {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub value: Option<Vec<EncryptionScope>>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<EncryptionScope>,
     #[serde(rename = "nextLink", skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ObjectReplicationPolicies {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub value: Option<Vec<ObjectReplicationPolicy>>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<ObjectReplicationPolicy>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ObjectReplicationPolicy {
@@ -1144,8 +1144,8 @@ pub struct ObjectReplicationPolicyProperties {
     pub source_account: String,
     #[serde(rename = "destinationAccount")]
     pub destination_account: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub rules: Option<Vec<ObjectReplicationPolicyRule>>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub rules: Vec<ObjectReplicationPolicyRule>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ObjectReplicationPolicyRule {
@@ -1160,8 +1160,8 @@ pub struct ObjectReplicationPolicyRule {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ObjectReplicationPolicyFilter {
-    #[serde(rename = "prefixMatch", skip_serializing_if = "Option::is_none")]
-    pub prefix_match: Option<Vec<String>>,
+    #[serde(rename = "prefixMatch", skip_serializing_if = "Vec::is_empty")]
+    pub prefix_match: Vec<String>,
     #[serde(rename = "minCreationTime", skip_serializing_if = "Option::is_none")]
     pub min_creation_time: Option<String>,
 }
@@ -1269,8 +1269,8 @@ pub struct ImmutabilityPolicyProperties {
     pub properties: Option<ImmutabilityPolicyProperty>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
-    #[serde(rename = "updateHistory", skip_serializing_if = "Option::is_none")]
-    pub update_history: Option<Vec<UpdateHistoryProperty>>,
+    #[serde(rename = "updateHistory", skip_serializing_if = "Vec::is_empty")]
+    pub update_history: Vec<UpdateHistoryProperty>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ImmutabilityPolicy {
@@ -1309,8 +1309,8 @@ mod update_history_property {
 pub struct LegalHoldProperties {
     #[serde(rename = "hasLegalHold", skip_serializing_if = "Option::is_none")]
     pub has_legal_hold: Option<bool>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub tags: Option<Vec<TagProperty>>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub tags: Vec<TagProperty>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TagProperty {
@@ -1340,8 +1340,8 @@ pub struct ListContainerItem {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ListContainerItems {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub value: Option<Vec<ListContainerItem>>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<ListContainerItem>,
     #[serde(rename = "nextLink", skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -1378,8 +1378,8 @@ mod blob_service_properties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BlobServiceItems {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub value: Option<Vec<BlobServiceProperties>>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<BlobServiceProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ChangeFeed {
@@ -1428,8 +1428,8 @@ pub struct LeaseContainerResponse {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FileServiceItems {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub value: Option<Vec<FileServiceProperties>>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<FileServiceProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FileServiceProperties {
@@ -1473,8 +1473,8 @@ pub struct FileShareItem {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FileShareItems {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub value: Option<Vec<FileShareItem>>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<FileShareItem>,
     #[serde(rename = "nextLink", skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -1543,13 +1543,13 @@ pub struct CloudErrorBody {
     pub message: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub details: Option<Vec<CloudErrorBody>>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub details: Vec<CloudErrorBody>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ListQueueServices {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub value: Option<Vec<QueueServiceProperties>>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<QueueServiceProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct QueueServiceProperties {
@@ -1594,15 +1594,15 @@ pub struct ListQueueProperties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ListQueueResource {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub value: Option<Vec<ListQueue>>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<ListQueue>,
     #[serde(rename = "nextLink", skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ListTableServices {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub value: Option<Vec<TableServiceProperties>>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<TableServiceProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TableServiceProperties {
@@ -1633,15 +1633,15 @@ pub struct TableProperties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ListTableResource {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub value: Option<Vec<Table>>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<Table>,
     #[serde(rename = "nextLink", skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PrivateEndpointConnectionListResult {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub value: Option<Vec<PrivateEndpointConnection>>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<PrivateEndpointConnection>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PrivateEndpointConnection {
@@ -1697,8 +1697,8 @@ pub struct Resource {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PrivateLinkResourceListResult {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub value: Option<Vec<PrivateLinkResource>>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<PrivateLinkResource>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PrivateLinkResource {
@@ -1711,10 +1711,10 @@ pub struct PrivateLinkResource {
 pub struct PrivateLinkResourceProperties {
     #[serde(rename = "groupId", skip_serializing_if = "Option::is_none")]
     pub group_id: Option<String>,
-    #[serde(rename = "requiredMembers", skip_serializing_if = "Option::is_none")]
-    pub required_members: Option<Vec<String>>,
-    #[serde(rename = "requiredZoneNames", skip_serializing_if = "Option::is_none")]
-    pub required_zone_names: Option<Vec<String>>,
+    #[serde(rename = "requiredMembers", skip_serializing_if = "Vec::is_empty")]
+    pub required_members: Vec<String>,
+    #[serde(rename = "requiredZoneNames", skip_serializing_if = "Vec::is_empty")]
+    pub required_zone_names: Vec<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum SkuName {
@@ -1768,8 +1768,8 @@ pub struct AzureEntityResource {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CorsRules {
-    #[serde(rename = "corsRules", skip_serializing_if = "Option::is_none")]
-    pub cors_rules: Option<Vec<CorsRule>>,
+    #[serde(rename = "corsRules", skip_serializing_if = "Vec::is_empty")]
+    pub cors_rules: Vec<CorsRule>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CorsRule {
