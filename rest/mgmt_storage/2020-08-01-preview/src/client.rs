@@ -7,7 +7,9 @@ pub async fn operations_list(configuration: &Configuration) -> Result<OperationL
     let client = &configuration.client;
     let uri_str = &format!("{}/providers/Microsoft.Storage/operations", &configuration.base_path,);
     let mut req_builder = client.get(uri_str);
-    req_builder = req_builder.query(&[("api-version", "2019-06-01")]);
+    if let Some(token) = &configuration.bearer_access_token {
+        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    }
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
@@ -29,7 +31,9 @@ pub async fn skus_list(configuration: &Configuration, subscription_id: &str) -> 
         &configuration.base_path, subscription_id
     );
     let mut req_builder = client.get(uri_str);
-    req_builder = req_builder.query(&[("api-version", "2019-06-01")]);
+    if let Some(token) = &configuration.bearer_access_token {
+        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    }
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
@@ -55,7 +59,9 @@ pub async fn storage_accounts_check_name_availability(
         &configuration.base_path, subscription_id
     );
     let mut req_builder = client.post(uri_str);
-    req_builder = req_builder.query(&[("api-version", "2019-06-01")]);
+    if let Some(token) = &configuration.bearer_access_token {
+        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    }
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
@@ -83,7 +89,9 @@ pub async fn storage_accounts_get_properties(
         &configuration.base_path, subscription_id, resource_group_name, account_name
     );
     let mut req_builder = client.get(uri_str);
-    req_builder = req_builder.query(&[("api-version", "2019-06-01")]);
+    if let Some(token) = &configuration.bearer_access_token {
+        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    }
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
@@ -111,7 +119,9 @@ pub async fn storage_accounts_create(
         &configuration.base_path, subscription_id, resource_group_name, account_name
     );
     let mut req_builder = client.put(uri_str);
-    req_builder = req_builder.query(&[("api-version", "2019-06-01")]);
+    if let Some(token) = &configuration.bearer_access_token {
+        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    }
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
@@ -139,7 +149,9 @@ pub async fn storage_accounts_update(
         &configuration.base_path, subscription_id, resource_group_name, account_name
     );
     let mut req_builder = client.patch(uri_str);
-    req_builder = req_builder.query(&[("api-version", "2019-06-01")]);
+    if let Some(token) = &configuration.bearer_access_token {
+        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    }
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
@@ -166,7 +178,9 @@ pub async fn storage_accounts_delete(
         &configuration.base_path, subscription_id, resource_group_name, account_name
     );
     let mut req_builder = client.delete(uri_str);
-    req_builder = req_builder.query(&[("api-version", "2019-06-01")]);
+    if let Some(token) = &configuration.bearer_access_token {
+        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    }
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
@@ -188,7 +202,9 @@ pub async fn deleted_accounts_list(configuration: &Configuration, subscription_i
         &configuration.base_path, subscription_id
     );
     let mut req_builder = client.get(uri_str);
-    req_builder = req_builder.query(&[("api-version", "2019-06-01")]);
+    if let Some(token) = &configuration.bearer_access_token {
+        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    }
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
@@ -215,7 +231,9 @@ pub async fn deleted_accounts_get(
         &configuration.base_path, subscription_id, location, deleted_account_name
     );
     let mut req_builder = client.get(uri_str);
-    req_builder = req_builder.query(&[("api-version", "2019-06-01")]);
+    if let Some(token) = &configuration.bearer_access_token {
+        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    }
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
@@ -237,7 +255,9 @@ pub async fn storage_accounts_list(configuration: &Configuration, subscription_i
         &configuration.base_path, subscription_id
     );
     let mut req_builder = client.get(uri_str);
-    req_builder = req_builder.query(&[("api-version", "2019-06-01")]);
+    if let Some(token) = &configuration.bearer_access_token {
+        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    }
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
@@ -263,7 +283,9 @@ pub async fn storage_accounts_list_by_resource_group(
         &configuration.base_path, subscription_id, resource_group_name
     );
     let mut req_builder = client.get(uri_str);
-    req_builder = req_builder.query(&[("api-version", "2019-06-01")]);
+    if let Some(token) = &configuration.bearer_access_token {
+        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    }
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
@@ -291,7 +313,9 @@ pub async fn storage_accounts_list_keys(
         &configuration.base_path, subscription_id, resource_group_name, account_name
     );
     let mut req_builder = client.post(uri_str);
-    req_builder = req_builder.query(&[("api-version", "2019-06-01")]);
+    if let Some(token) = &configuration.bearer_access_token {
+        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    }
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
@@ -319,7 +343,9 @@ pub async fn storage_accounts_regenerate_key(
         &configuration.base_path, subscription_id, resource_group_name, account_name
     );
     let mut req_builder = client.post(uri_str);
-    req_builder = req_builder.query(&[("api-version", "2019-06-01")]);
+    if let Some(token) = &configuration.bearer_access_token {
+        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    }
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
@@ -341,7 +367,9 @@ pub async fn usages_list_by_location(configuration: &Configuration, subscription
         &configuration.base_path, subscription_id, location
     );
     let mut req_builder = client.get(uri_str);
-    req_builder = req_builder.query(&[("api-version", "2019-06-01")]);
+    if let Some(token) = &configuration.bearer_access_token {
+        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    }
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
@@ -369,7 +397,9 @@ pub async fn storage_accounts_list_account_sas(
         &configuration.base_path, subscription_id, resource_group_name, account_name
     );
     let mut req_builder = client.post(uri_str);
-    req_builder = req_builder.query(&[("api-version", "2019-06-01")]);
+    if let Some(token) = &configuration.bearer_access_token {
+        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    }
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
@@ -397,7 +427,9 @@ pub async fn storage_accounts_list_service_sas(
         &configuration.base_path, subscription_id, resource_group_name, account_name
     );
     let mut req_builder = client.post(uri_str);
-    req_builder = req_builder.query(&[("api-version", "2019-06-01")]);
+    if let Some(token) = &configuration.bearer_access_token {
+        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    }
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
@@ -424,7 +456,9 @@ pub async fn storage_accounts_failover(
         &configuration.base_path, subscription_id, resource_group_name, account_name
     );
     let mut req_builder = client.post(uri_str);
-    req_builder = req_builder.query(&[("api-version", "2019-06-01")]);
+    if let Some(token) = &configuration.bearer_access_token {
+        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    }
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
@@ -452,7 +486,9 @@ pub async fn storage_accounts_restore_blob_ranges(
         &configuration.base_path, subscription_id, resource_group_name, account_name
     );
     let mut req_builder = client.post(uri_str);
-    req_builder = req_builder.query(&[("api-version", "2019-06-01")]);
+    if let Some(token) = &configuration.bearer_access_token {
+        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    }
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
@@ -480,7 +516,9 @@ pub async fn management_policies_get(
         &configuration.base_path, subscription_id, resource_group_name, account_name, management_policy_name
     );
     let mut req_builder = client.get(uri_str);
-    req_builder = req_builder.query(&[("api-version", "2019-06-01")]);
+    if let Some(token) = &configuration.bearer_access_token {
+        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    }
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
@@ -509,7 +547,9 @@ pub async fn management_policies_create_or_update(
         &configuration.base_path, subscription_id, resource_group_name, account_name, management_policy_name
     );
     let mut req_builder = client.put(uri_str);
-    req_builder = req_builder.query(&[("api-version", "2019-06-01")]);
+    if let Some(token) = &configuration.bearer_access_token {
+        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    }
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
@@ -537,7 +577,9 @@ pub async fn management_policies_delete(
         &configuration.base_path, subscription_id, resource_group_name, account_name, management_policy_name
     );
     let mut req_builder = client.delete(uri_str);
-    req_builder = req_builder.query(&[("api-version", "2019-06-01")]);
+    if let Some(token) = &configuration.bearer_access_token {
+        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    }
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
@@ -564,7 +606,9 @@ pub async fn private_endpoint_connections_list(
         &configuration.base_path, subscription_id, resource_group_name, account_name
     );
     let mut req_builder = client.get(uri_str);
-    req_builder = req_builder.query(&[("api-version", "2019-06-01")]);
+    if let Some(token) = &configuration.bearer_access_token {
+        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    }
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
@@ -592,7 +636,9 @@ pub async fn private_endpoint_connections_get(
         &configuration.base_path, subscription_id, resource_group_name, account_name, private_endpoint_connection_name
     );
     let mut req_builder = client.get(uri_str);
-    req_builder = req_builder.query(&[("api-version", "2019-06-01")]);
+    if let Some(token) = &configuration.bearer_access_token {
+        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    }
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
@@ -621,7 +667,9 @@ pub async fn private_endpoint_connections_put(
         &configuration.base_path, subscription_id, resource_group_name, account_name, private_endpoint_connection_name
     );
     let mut req_builder = client.put(uri_str);
-    req_builder = req_builder.query(&[("api-version", "2019-06-01")]);
+    if let Some(token) = &configuration.bearer_access_token {
+        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    }
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
@@ -649,7 +697,9 @@ pub async fn private_endpoint_connections_delete(
         &configuration.base_path, subscription_id, resource_group_name, account_name, private_endpoint_connection_name
     );
     let mut req_builder = client.delete(uri_str);
-    req_builder = req_builder.query(&[("api-version", "2019-06-01")]);
+    if let Some(token) = &configuration.bearer_access_token {
+        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    }
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
@@ -676,7 +726,9 @@ pub async fn private_link_resources_list_by_storage_account(
         &configuration.base_path, subscription_id, resource_group_name, account_name
     );
     let mut req_builder = client.get(uri_str);
-    req_builder = req_builder.query(&[("api-version", "2019-06-01")]);
+    if let Some(token) = &configuration.bearer_access_token {
+        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    }
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
@@ -703,7 +755,9 @@ pub async fn object_replication_policies_list(
         &configuration.base_path, subscription_id, resource_group_name, account_name
     );
     let mut req_builder = client.get(uri_str);
-    req_builder = req_builder.query(&[("api-version", "2019-06-01")]);
+    if let Some(token) = &configuration.bearer_access_token {
+        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    }
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
@@ -731,7 +785,9 @@ pub async fn object_replication_policies_get(
         &configuration.base_path, subscription_id, resource_group_name, account_name, object_replication_policy_id
     );
     let mut req_builder = client.get(uri_str);
-    req_builder = req_builder.query(&[("api-version", "2019-06-01")]);
+    if let Some(token) = &configuration.bearer_access_token {
+        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    }
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
@@ -760,7 +816,9 @@ pub async fn object_replication_policies_create_or_update(
         &configuration.base_path, subscription_id, resource_group_name, account_name, object_replication_policy_id
     );
     let mut req_builder = client.put(uri_str);
-    req_builder = req_builder.query(&[("api-version", "2019-06-01")]);
+    if let Some(token) = &configuration.bearer_access_token {
+        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    }
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
@@ -788,7 +846,9 @@ pub async fn object_replication_policies_delete(
         &configuration.base_path, subscription_id, resource_group_name, account_name, object_replication_policy_id
     );
     let mut req_builder = client.delete(uri_str);
-    req_builder = req_builder.query(&[("api-version", "2019-06-01")]);
+    if let Some(token) = &configuration.bearer_access_token {
+        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    }
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
@@ -815,7 +875,9 @@ pub async fn storage_accounts_revoke_user_delegation_keys(
         &configuration.base_path, subscription_id, resource_group_name, account_name
     );
     let mut req_builder = client.post(uri_str);
-    req_builder = req_builder.query(&[("api-version", "2019-06-01")]);
+    if let Some(token) = &configuration.bearer_access_token {
+        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    }
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
@@ -843,7 +905,9 @@ pub async fn encryption_scopes_get(
         &configuration.base_path, subscription_id, resource_group_name, account_name, encryption_scope_name
     );
     let mut req_builder = client.get(uri_str);
-    req_builder = req_builder.query(&[("api-version", "2019-06-01")]);
+    if let Some(token) = &configuration.bearer_access_token {
+        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    }
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
@@ -872,7 +936,9 @@ pub async fn encryption_scopes_put(
         &configuration.base_path, subscription_id, resource_group_name, account_name, encryption_scope_name
     );
     let mut req_builder = client.put(uri_str);
-    req_builder = req_builder.query(&[("api-version", "2019-06-01")]);
+    if let Some(token) = &configuration.bearer_access_token {
+        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    }
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
@@ -901,7 +967,9 @@ pub async fn encryption_scopes_patch(
         &configuration.base_path, subscription_id, resource_group_name, account_name, encryption_scope_name
     );
     let mut req_builder = client.patch(uri_str);
-    req_builder = req_builder.query(&[("api-version", "2019-06-01")]);
+    if let Some(token) = &configuration.bearer_access_token {
+        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    }
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
@@ -928,7 +996,9 @@ pub async fn encryption_scopes_list(
         &configuration.base_path, subscription_id, resource_group_name, account_name
     );
     let mut req_builder = client.get(uri_str);
-    req_builder = req_builder.query(&[("api-version", "2019-06-01")]);
+    if let Some(token) = &configuration.bearer_access_token {
+        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    }
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
@@ -955,7 +1025,9 @@ pub async fn blob_services_list(
         &configuration.base_path, subscription_id, resource_group_name, account_name
     );
     let mut req_builder = client.get(uri_str);
-    req_builder = req_builder.query(&[("api-version", "2019-06-01")]);
+    if let Some(token) = &configuration.bearer_access_token {
+        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    }
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
@@ -983,7 +1055,9 @@ pub async fn blob_services_get_service_properties(
         &configuration.base_path, subscription_id, resource_group_name, account_name, blob_services_name
     );
     let mut req_builder = client.get(uri_str);
-    req_builder = req_builder.query(&[("api-version", "2019-06-01")]);
+    if let Some(token) = &configuration.bearer_access_token {
+        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    }
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
@@ -1012,7 +1086,9 @@ pub async fn blob_services_set_service_properties(
         &configuration.base_path, subscription_id, resource_group_name, account_name, blob_services_name
     );
     let mut req_builder = client.put(uri_str);
-    req_builder = req_builder.query(&[("api-version", "2019-06-01")]);
+    if let Some(token) = &configuration.bearer_access_token {
+        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    }
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
@@ -1042,7 +1118,9 @@ pub async fn blob_containers_list(
         &configuration.base_path, subscription_id, resource_group_name, account_name
     );
     let mut req_builder = client.get(uri_str);
-    req_builder = req_builder.query(&[("api-version", "2019-06-01")]);
+    if let Some(token) = &configuration.bearer_access_token {
+        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    }
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
@@ -1070,7 +1148,9 @@ pub async fn blob_containers_get(
         &configuration.base_path, subscription_id, resource_group_name, account_name, container_name
     );
     let mut req_builder = client.get(uri_str);
-    req_builder = req_builder.query(&[("api-version", "2019-06-01")]);
+    if let Some(token) = &configuration.bearer_access_token {
+        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    }
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
@@ -1099,7 +1179,9 @@ pub async fn blob_containers_create(
         &configuration.base_path, subscription_id, resource_group_name, account_name, container_name
     );
     let mut req_builder = client.put(uri_str);
-    req_builder = req_builder.query(&[("api-version", "2019-06-01")]);
+    if let Some(token) = &configuration.bearer_access_token {
+        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    }
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
@@ -1128,7 +1210,9 @@ pub async fn blob_containers_update(
         &configuration.base_path, subscription_id, resource_group_name, account_name, container_name
     );
     let mut req_builder = client.patch(uri_str);
-    req_builder = req_builder.query(&[("api-version", "2019-06-01")]);
+    if let Some(token) = &configuration.bearer_access_token {
+        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    }
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
@@ -1156,7 +1240,9 @@ pub async fn blob_containers_delete(
         &configuration.base_path, subscription_id, resource_group_name, account_name, container_name
     );
     let mut req_builder = client.delete(uri_str);
-    req_builder = req_builder.query(&[("api-version", "2019-06-01")]);
+    if let Some(token) = &configuration.bearer_access_token {
+        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    }
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
@@ -1182,7 +1268,9 @@ pub async fn blob_containers_set_legal_hold(
     let client = &configuration.client;
     let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/blobServices/default/containers/{}/setLegalHold" , & configuration . base_path , subscription_id , resource_group_name , account_name , container_name) ;
     let mut req_builder = client.post(uri_str);
-    req_builder = req_builder.query(&[("api-version", "2019-06-01")]);
+    if let Some(token) = &configuration.bearer_access_token {
+        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    }
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
@@ -1208,7 +1296,9 @@ pub async fn blob_containers_clear_legal_hold(
     let client = &configuration.client;
     let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/blobServices/default/containers/{}/clearLegalHold" , & configuration . base_path , subscription_id , resource_group_name , account_name , container_name) ;
     let mut req_builder = client.post(uri_str);
-    req_builder = req_builder.query(&[("api-version", "2019-06-01")]);
+    if let Some(token) = &configuration.bearer_access_token {
+        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    }
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
@@ -1235,7 +1325,9 @@ pub async fn blob_containers_get_immutability_policy(
     let client = &configuration.client;
     let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/blobServices/default/containers/{}/immutabilityPolicies/{}" , & configuration . base_path , subscription_id , resource_group_name , account_name , container_name , immutability_policy_name) ;
     let mut req_builder = client.get(uri_str);
-    req_builder = req_builder.query(&[("api-version", "2019-06-01")]);
+    if let Some(token) = &configuration.bearer_access_token {
+        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    }
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
@@ -1263,7 +1355,9 @@ pub async fn blob_containers_create_or_update_immutability_policy(
     let client = &configuration.client;
     let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/blobServices/default/containers/{}/immutabilityPolicies/{}" , & configuration . base_path , subscription_id , resource_group_name , account_name , container_name , immutability_policy_name) ;
     let mut req_builder = client.put(uri_str);
-    req_builder = req_builder.query(&[("api-version", "2019-06-01")]);
+    if let Some(token) = &configuration.bearer_access_token {
+        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    }
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
@@ -1290,7 +1384,9 @@ pub async fn blob_containers_delete_immutability_policy(
     let client = &configuration.client;
     let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/blobServices/default/containers/{}/immutabilityPolicies/{}" , & configuration . base_path , subscription_id , resource_group_name , account_name , container_name , immutability_policy_name) ;
     let mut req_builder = client.delete(uri_str);
-    req_builder = req_builder.query(&[("api-version", "2019-06-01")]);
+    if let Some(token) = &configuration.bearer_access_token {
+        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    }
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
@@ -1316,7 +1412,9 @@ pub async fn blob_containers_lock_immutability_policy(
     let client = &configuration.client;
     let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/blobServices/default/containers/{}/immutabilityPolicies/default/lock" , & configuration . base_path , subscription_id , resource_group_name , account_name , container_name) ;
     let mut req_builder = client.post(uri_str);
-    req_builder = req_builder.query(&[("api-version", "2019-06-01")]);
+    if let Some(token) = &configuration.bearer_access_token {
+        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    }
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
@@ -1343,7 +1441,9 @@ pub async fn blob_containers_extend_immutability_policy(
     let client = &configuration.client;
     let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/blobServices/default/containers/{}/immutabilityPolicies/default/extend" , & configuration . base_path , subscription_id , resource_group_name , account_name , container_name) ;
     let mut req_builder = client.post(uri_str);
-    req_builder = req_builder.query(&[("api-version", "2019-06-01")]);
+    if let Some(token) = &configuration.bearer_access_token {
+        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    }
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
@@ -1372,7 +1472,9 @@ pub async fn blob_containers_lease(
         &configuration.base_path, subscription_id, resource_group_name, account_name, container_name
     );
     let mut req_builder = client.post(uri_str);
-    req_builder = req_builder.query(&[("api-version", "2019-06-01")]);
+    if let Some(token) = &configuration.bearer_access_token {
+        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    }
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
@@ -1399,7 +1501,9 @@ pub async fn file_services_list(
         &configuration.base_path, subscription_id, resource_group_name, account_name
     );
     let mut req_builder = client.get(uri_str);
-    req_builder = req_builder.query(&[("api-version", "2019-06-01")]);
+    if let Some(token) = &configuration.bearer_access_token {
+        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    }
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
@@ -1427,7 +1531,9 @@ pub async fn file_services_get_service_properties(
         &configuration.base_path, subscription_id, resource_group_name, account_name, file_services_name
     );
     let mut req_builder = client.get(uri_str);
-    req_builder = req_builder.query(&[("api-version", "2019-06-01")]);
+    if let Some(token) = &configuration.bearer_access_token {
+        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    }
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
@@ -1456,7 +1562,9 @@ pub async fn file_services_set_service_properties(
         &configuration.base_path, subscription_id, resource_group_name, account_name, file_services_name
     );
     let mut req_builder = client.put(uri_str);
-    req_builder = req_builder.query(&[("api-version", "2019-06-01")]);
+    if let Some(token) = &configuration.bearer_access_token {
+        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    }
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
@@ -1486,7 +1594,9 @@ pub async fn file_shares_list(
         &configuration.base_path, subscription_id, resource_group_name, account_name
     );
     let mut req_builder = client.get(uri_str);
-    req_builder = req_builder.query(&[("api-version", "2019-06-01")]);
+    if let Some(token) = &configuration.bearer_access_token {
+        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    }
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
@@ -1515,7 +1625,9 @@ pub async fn file_shares_get(
         &configuration.base_path, subscription_id, resource_group_name, account_name, share_name
     );
     let mut req_builder = client.get(uri_str);
-    req_builder = req_builder.query(&[("api-version", "2019-06-01")]);
+    if let Some(token) = &configuration.bearer_access_token {
+        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    }
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
@@ -1544,7 +1656,9 @@ pub async fn file_shares_create(
         &configuration.base_path, subscription_id, resource_group_name, account_name, share_name
     );
     let mut req_builder = client.put(uri_str);
-    req_builder = req_builder.query(&[("api-version", "2019-06-01")]);
+    if let Some(token) = &configuration.bearer_access_token {
+        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    }
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
@@ -1573,7 +1687,9 @@ pub async fn file_shares_update(
         &configuration.base_path, subscription_id, resource_group_name, account_name, share_name
     );
     let mut req_builder = client.patch(uri_str);
-    req_builder = req_builder.query(&[("api-version", "2019-06-01")]);
+    if let Some(token) = &configuration.bearer_access_token {
+        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    }
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
@@ -1601,7 +1717,9 @@ pub async fn file_shares_delete(
         &configuration.base_path, subscription_id, resource_group_name, account_name, share_name
     );
     let mut req_builder = client.delete(uri_str);
-    req_builder = req_builder.query(&[("api-version", "2019-06-01")]);
+    if let Some(token) = &configuration.bearer_access_token {
+        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    }
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
@@ -1630,7 +1748,9 @@ pub async fn file_shares_restore(
         &configuration.base_path, subscription_id, resource_group_name, account_name, share_name
     );
     let mut req_builder = client.post(uri_str);
-    req_builder = req_builder.query(&[("api-version", "2019-06-01")]);
+    if let Some(token) = &configuration.bearer_access_token {
+        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    }
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
@@ -1657,7 +1777,9 @@ pub async fn queue_services_list(
         &configuration.base_path, subscription_id, resource_group_name, account_name
     );
     let mut req_builder = client.get(uri_str);
-    req_builder = req_builder.query(&[("api-version", "2019-06-01")]);
+    if let Some(token) = &configuration.bearer_access_token {
+        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    }
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
@@ -1685,7 +1807,9 @@ pub async fn queue_services_get_service_properties(
         &configuration.base_path, subscription_id, resource_group_name, account_name, queue_service_name
     );
     let mut req_builder = client.get(uri_str);
-    req_builder = req_builder.query(&[("api-version", "2019-06-01")]);
+    if let Some(token) = &configuration.bearer_access_token {
+        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    }
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
@@ -1714,7 +1838,9 @@ pub async fn queue_services_set_service_properties(
         &configuration.base_path, subscription_id, resource_group_name, account_name, queue_service_name
     );
     let mut req_builder = client.put(uri_str);
-    req_builder = req_builder.query(&[("api-version", "2019-06-01")]);
+    if let Some(token) = &configuration.bearer_access_token {
+        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    }
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
@@ -1742,7 +1868,9 @@ pub async fn queue_get(
         &configuration.base_path, subscription_id, resource_group_name, account_name, queue_name
     );
     let mut req_builder = client.get(uri_str);
-    req_builder = req_builder.query(&[("api-version", "2019-06-01")]);
+    if let Some(token) = &configuration.bearer_access_token {
+        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    }
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
@@ -1771,7 +1899,9 @@ pub async fn queue_create(
         &configuration.base_path, subscription_id, resource_group_name, account_name, queue_name
     );
     let mut req_builder = client.put(uri_str);
-    req_builder = req_builder.query(&[("api-version", "2019-06-01")]);
+    if let Some(token) = &configuration.bearer_access_token {
+        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    }
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
@@ -1800,7 +1930,9 @@ pub async fn queue_update(
         &configuration.base_path, subscription_id, resource_group_name, account_name, queue_name
     );
     let mut req_builder = client.patch(uri_str);
-    req_builder = req_builder.query(&[("api-version", "2019-06-01")]);
+    if let Some(token) = &configuration.bearer_access_token {
+        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    }
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
@@ -1828,7 +1960,9 @@ pub async fn queue_delete(
         &configuration.base_path, subscription_id, resource_group_name, account_name, queue_name
     );
     let mut req_builder = client.delete(uri_str);
-    req_builder = req_builder.query(&[("api-version", "2019-06-01")]);
+    if let Some(token) = &configuration.bearer_access_token {
+        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    }
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
@@ -1857,7 +1991,9 @@ pub async fn queue_list(
         &configuration.base_path, subscription_id, resource_group_name, account_name
     );
     let mut req_builder = client.get(uri_str);
-    req_builder = req_builder.query(&[("api-version", "2019-06-01")]);
+    if let Some(token) = &configuration.bearer_access_token {
+        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    }
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
@@ -1884,7 +2020,9 @@ pub async fn table_services_list(
         &configuration.base_path, subscription_id, resource_group_name, account_name
     );
     let mut req_builder = client.get(uri_str);
-    req_builder = req_builder.query(&[("api-version", "2019-06-01")]);
+    if let Some(token) = &configuration.bearer_access_token {
+        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    }
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
@@ -1912,7 +2050,9 @@ pub async fn table_services_get_service_properties(
         &configuration.base_path, subscription_id, resource_group_name, account_name, table_service_name
     );
     let mut req_builder = client.get(uri_str);
-    req_builder = req_builder.query(&[("api-version", "2019-06-01")]);
+    if let Some(token) = &configuration.bearer_access_token {
+        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    }
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
@@ -1941,7 +2081,9 @@ pub async fn table_services_set_service_properties(
         &configuration.base_path, subscription_id, resource_group_name, account_name, table_service_name
     );
     let mut req_builder = client.put(uri_str);
-    req_builder = req_builder.query(&[("api-version", "2019-06-01")]);
+    if let Some(token) = &configuration.bearer_access_token {
+        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    }
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
@@ -1969,7 +2111,9 @@ pub async fn table_get(
         &configuration.base_path, subscription_id, resource_group_name, account_name, table_name
     );
     let mut req_builder = client.get(uri_str);
-    req_builder = req_builder.query(&[("api-version", "2019-06-01")]);
+    if let Some(token) = &configuration.bearer_access_token {
+        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    }
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
@@ -1997,7 +2141,9 @@ pub async fn table_create(
         &configuration.base_path, subscription_id, resource_group_name, account_name, table_name
     );
     let mut req_builder = client.put(uri_str);
-    req_builder = req_builder.query(&[("api-version", "2019-06-01")]);
+    if let Some(token) = &configuration.bearer_access_token {
+        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    }
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
@@ -2025,7 +2171,9 @@ pub async fn table_update(
         &configuration.base_path, subscription_id, resource_group_name, account_name, table_name
     );
     let mut req_builder = client.patch(uri_str);
-    req_builder = req_builder.query(&[("api-version", "2019-06-01")]);
+    if let Some(token) = &configuration.bearer_access_token {
+        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    }
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
@@ -2053,7 +2201,9 @@ pub async fn table_delete(
         &configuration.base_path, subscription_id, resource_group_name, account_name, table_name
     );
     let mut req_builder = client.delete(uri_str);
-    req_builder = req_builder.query(&[("api-version", "2019-06-01")]);
+    if let Some(token) = &configuration.bearer_access_token {
+        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    }
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
@@ -2080,7 +2230,9 @@ pub async fn table_list(
         &configuration.base_path, subscription_id, resource_group_name, account_name
     );
     let mut req_builder = client.get(uri_str);
-    req_builder = req_builder.query(&[("api-version", "2019-06-01")]);
+    if let Some(token) = &configuration.bearer_access_token {
+        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    }
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
