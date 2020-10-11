@@ -65,7 +65,7 @@ pub async fn storage_accounts_get_properties(
     account_name: &str,
     api_version: &str,
     subscription_id: &str,
-    expand: &str,
+    expand: Option<&str>,
 ) -> Result<StorageAccount> {
     let client = &configuration.client;
     let uri_str = &format!(
@@ -209,7 +209,7 @@ pub async fn storage_accounts_list_keys(
     account_name: &str,
     api_version: &str,
     subscription_id: &str,
-    expand: &str,
+    expand: Option<&str>,
 ) -> Result<StorageAccountListKeysResult> {
     let client = &configuration.client;
     let uri_str = &format!(
@@ -881,9 +881,9 @@ pub async fn blob_containers_list(
     account_name: &str,
     api_version: &str,
     subscription_id: &str,
-    maxpagesize: &str,
-    filter: &str,
-    include: &str,
+    maxpagesize: Option<&str>,
+    filter: Option<&str>,
+    include: Option<&str>,
 ) -> Result<ListContainerItems> {
     let client = &configuration.client;
     let uri_str = &format!(
@@ -1064,7 +1064,7 @@ pub async fn blob_containers_get_immutability_policy(
     immutability_policy_name: &str,
     api_version: &str,
     subscription_id: &str,
-    if_match: &str,
+    if_match: Option<&str>,
 ) -> Result<ImmutabilityPolicy> {
     let client = &configuration.client;
     let uri_str = &format!(
@@ -1091,8 +1091,8 @@ pub async fn blob_containers_create_or_update_immutability_policy(
     immutability_policy_name: &str,
     api_version: &str,
     subscription_id: &str,
-    parameters: ImmutabilityPolicy,
-    if_match: &str,
+    parameters: Option<ImmutabilityPolicy>,
+    if_match: Option<&str>,
 ) -> Result<ImmutabilityPolicy> {
     let client = &configuration.client;
     let uri_str = &format!(
@@ -1171,7 +1171,7 @@ pub async fn blob_containers_extend_immutability_policy(
     container_name: &str,
     api_version: &str,
     subscription_id: &str,
-    parameters: ImmutabilityPolicy,
+    parameters: Option<ImmutabilityPolicy>,
     if_match: &str,
 ) -> Result<ImmutabilityPolicy> {
     let client = &configuration.client;
@@ -1198,7 +1198,7 @@ pub async fn blob_containers_lease(
     container_name: &str,
     api_version: &str,
     subscription_id: &str,
-    parameters: LeaseContainerRequest,
+    parameters: Option<LeaseContainerRequest>,
 ) -> Result<LeaseContainerResponse> {
     let client = &configuration.client;
     let uri_str = &format!(
@@ -1298,9 +1298,9 @@ pub async fn file_shares_list(
     account_name: &str,
     api_version: &str,
     subscription_id: &str,
-    maxpagesize: &str,
-    filter: &str,
-    expand: &str,
+    maxpagesize: Option<&str>,
+    filter: Option<&str>,
+    expand: Option<&str>,
 ) -> Result<FileShareItems> {
     let client = &configuration.client;
     let uri_str = &format!(
@@ -1326,7 +1326,7 @@ pub async fn file_shares_get(
     share_name: &str,
     api_version: &str,
     subscription_id: &str,
-    expand: &str,
+    expand: Option<&str>,
 ) -> Result<FileShare> {
     let client = &configuration.client;
     let uri_str = &format!(
@@ -1631,8 +1631,8 @@ pub async fn queue_list(
     account_name: &str,
     api_version: &str,
     subscription_id: &str,
-    maxpagesize: &str,
-    filter: &str,
+    maxpagesize: Option<&str>,
+    filter: Option<&str>,
 ) -> Result<ListQueueResource> {
     let client = &configuration.client;
     let uri_str = &format!(
