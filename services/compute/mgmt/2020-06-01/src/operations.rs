@@ -38,7 +38,7 @@ pub async fn availability_sets_create_or_update(
     configuration: &Configuration,
     resource_group_name: &str,
     availability_set_name: &str,
-    parameters: AvailabilitySet,
+    parameters: &AvailabilitySet,
     subscription_id: &str,
 ) -> Result<AvailabilitySet> {
     let client = &configuration.client;
@@ -51,6 +51,7 @@ pub async fn availability_sets_create_or_update(
         req_builder = req_builder.bearer_auth(token);
     }
     req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    req_builder = req_builder.json(parameters);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -59,7 +60,7 @@ pub async fn availability_sets_update(
     configuration: &Configuration,
     resource_group_name: &str,
     availability_set_name: &str,
-    parameters: AvailabilitySetUpdate,
+    parameters: &AvailabilitySetUpdate,
     subscription_id: &str,
 ) -> Result<AvailabilitySet> {
     let client = &configuration.client;
@@ -72,6 +73,7 @@ pub async fn availability_sets_update(
         req_builder = req_builder.bearer_auth(token);
     }
     req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    req_builder = req_builder.json(parameters);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -185,7 +187,7 @@ pub async fn proximity_placement_groups_create_or_update(
     configuration: &Configuration,
     resource_group_name: &str,
     proximity_placement_group_name: &str,
-    parameters: ProximityPlacementGroup,
+    parameters: &ProximityPlacementGroup,
     subscription_id: &str,
 ) -> Result<ProximityPlacementGroup> {
     let client = &configuration.client;
@@ -198,6 +200,7 @@ pub async fn proximity_placement_groups_create_or_update(
         req_builder = req_builder.bearer_auth(token);
     }
     req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    req_builder = req_builder.json(parameters);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -206,7 +209,7 @@ pub async fn proximity_placement_groups_update(
     configuration: &Configuration,
     resource_group_name: &str,
     proximity_placement_group_name: &str,
-    parameters: ProximityPlacementGroupUpdate,
+    parameters: &ProximityPlacementGroupUpdate,
     subscription_id: &str,
 ) -> Result<ProximityPlacementGroup> {
     let client = &configuration.client;
@@ -219,6 +222,7 @@ pub async fn proximity_placement_groups_update(
         req_builder = req_builder.bearer_auth(token);
     }
     req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    req_builder = req_builder.json(parameters);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -308,7 +312,7 @@ pub async fn dedicated_host_groups_create_or_update(
     configuration: &Configuration,
     resource_group_name: &str,
     host_group_name: &str,
-    parameters: DedicatedHostGroup,
+    parameters: &DedicatedHostGroup,
     subscription_id: &str,
 ) -> Result<DedicatedHostGroup> {
     let client = &configuration.client;
@@ -321,6 +325,7 @@ pub async fn dedicated_host_groups_create_or_update(
         req_builder = req_builder.bearer_auth(token);
     }
     req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    req_builder = req_builder.json(parameters);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -329,7 +334,7 @@ pub async fn dedicated_host_groups_update(
     configuration: &Configuration,
     resource_group_name: &str,
     host_group_name: &str,
-    parameters: DedicatedHostGroupUpdate,
+    parameters: &DedicatedHostGroupUpdate,
     subscription_id: &str,
 ) -> Result<DedicatedHostGroup> {
     let client = &configuration.client;
@@ -342,6 +347,7 @@ pub async fn dedicated_host_groups_update(
         req_builder = req_builder.bearer_auth(token);
     }
     req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    req_builder = req_builder.json(parameters);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -433,7 +439,7 @@ pub async fn dedicated_hosts_create_or_update(
     resource_group_name: &str,
     host_group_name: &str,
     host_name: &str,
-    parameters: DedicatedHost,
+    parameters: &DedicatedHost,
     subscription_id: &str,
 ) -> Result<DedicatedHost> {
     let client = &configuration.client;
@@ -446,6 +452,7 @@ pub async fn dedicated_hosts_create_or_update(
         req_builder = req_builder.bearer_auth(token);
     }
     req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    req_builder = req_builder.json(parameters);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -455,7 +462,7 @@ pub async fn dedicated_hosts_update(
     resource_group_name: &str,
     host_group_name: &str,
     host_name: &str,
-    parameters: DedicatedHostUpdate,
+    parameters: &DedicatedHostUpdate,
     subscription_id: &str,
 ) -> Result<DedicatedHost> {
     let client = &configuration.client;
@@ -468,6 +475,7 @@ pub async fn dedicated_hosts_update(
         req_builder = req_builder.bearer_auth(token);
     }
     req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    req_builder = req_builder.json(parameters);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -574,7 +582,7 @@ pub async fn ssh_public_keys_create(
     configuration: &Configuration,
     resource_group_name: &str,
     ssh_public_key_name: &str,
-    parameters: SshPublicKeyResource,
+    parameters: &SshPublicKeyResource,
     subscription_id: &str,
 ) -> Result<SshPublicKeyResource> {
     let client = &configuration.client;
@@ -587,6 +595,7 @@ pub async fn ssh_public_keys_create(
         req_builder = req_builder.bearer_auth(token);
     }
     req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    req_builder = req_builder.json(parameters);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -595,7 +604,7 @@ pub async fn ssh_public_keys_update(
     configuration: &Configuration,
     resource_group_name: &str,
     ssh_public_key_name: &str,
-    parameters: SshPublicKeyUpdateResource,
+    parameters: &SshPublicKeyUpdateResource,
     subscription_id: &str,
 ) -> Result<SshPublicKeyResource> {
     let client = &configuration.client;
@@ -608,6 +617,7 @@ pub async fn ssh_public_keys_update(
         req_builder = req_builder.bearer_auth(token);
     }
     req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    req_builder = req_builder.json(parameters);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -757,7 +767,7 @@ pub async fn virtual_machine_extensions_create_or_update(
     resource_group_name: &str,
     vm_name: &str,
     vm_extension_name: &str,
-    extension_parameters: VirtualMachineExtension,
+    extension_parameters: &VirtualMachineExtension,
     subscription_id: &str,
 ) -> Result<VirtualMachineExtension> {
     let client = &configuration.client;
@@ -770,6 +780,7 @@ pub async fn virtual_machine_extensions_create_or_update(
         req_builder = req_builder.bearer_auth(token);
     }
     req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    req_builder = req_builder.json(extension_parameters);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -779,7 +790,7 @@ pub async fn virtual_machine_extensions_update(
     resource_group_name: &str,
     vm_name: &str,
     vm_extension_name: &str,
-    extension_parameters: VirtualMachineExtensionUpdate,
+    extension_parameters: &VirtualMachineExtensionUpdate,
     subscription_id: &str,
 ) -> Result<VirtualMachineExtension> {
     let client = &configuration.client;
@@ -792,6 +803,7 @@ pub async fn virtual_machine_extensions_update(
         req_builder = req_builder.bearer_auth(token);
     }
     req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    req_builder = req_builder.json(extension_parameters);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -1039,7 +1051,7 @@ pub async fn images_create_or_update(
     configuration: &Configuration,
     resource_group_name: &str,
     image_name: &str,
-    parameters: Image,
+    parameters: &Image,
     subscription_id: &str,
 ) -> Result<Image> {
     let client = &configuration.client;
@@ -1052,6 +1064,7 @@ pub async fn images_create_or_update(
         req_builder = req_builder.bearer_auth(token);
     }
     req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    req_builder = req_builder.json(parameters);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -1060,7 +1073,7 @@ pub async fn images_update(
     configuration: &Configuration,
     resource_group_name: &str,
     image_name: &str,
-    parameters: ImageUpdate,
+    parameters: &ImageUpdate,
     subscription_id: &str,
 ) -> Result<Image> {
     let client = &configuration.client;
@@ -1073,6 +1086,7 @@ pub async fn images_update(
         req_builder = req_builder.bearer_auth(token);
     }
     req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    req_builder = req_builder.json(parameters);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -1135,7 +1149,7 @@ pub async fn virtual_machines_capture(
     configuration: &Configuration,
     resource_group_name: &str,
     vm_name: &str,
-    parameters: VirtualMachineCaptureParameters,
+    parameters: &VirtualMachineCaptureParameters,
     subscription_id: &str,
 ) -> Result<VirtualMachineCaptureResult> {
     let client = &configuration.client;
@@ -1148,6 +1162,7 @@ pub async fn virtual_machines_capture(
         req_builder = req_builder.bearer_auth(token);
     }
     req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    req_builder = req_builder.json(parameters);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -1180,7 +1195,7 @@ pub async fn virtual_machines_create_or_update(
     configuration: &Configuration,
     resource_group_name: &str,
     vm_name: &str,
-    parameters: VirtualMachine,
+    parameters: &VirtualMachine,
     subscription_id: &str,
 ) -> Result<VirtualMachine> {
     let client = &configuration.client;
@@ -1193,6 +1208,7 @@ pub async fn virtual_machines_create_or_update(
         req_builder = req_builder.bearer_auth(token);
     }
     req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    req_builder = req_builder.json(parameters);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -1201,7 +1217,7 @@ pub async fn virtual_machines_update(
     configuration: &Configuration,
     resource_group_name: &str,
     vm_name: &str,
-    parameters: VirtualMachineUpdate,
+    parameters: &VirtualMachineUpdate,
     subscription_id: &str,
 ) -> Result<VirtualMachine> {
     let client = &configuration.client;
@@ -1214,6 +1230,7 @@ pub async fn virtual_machines_update(
         req_builder = req_builder.bearer_auth(token);
     }
     req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    req_builder = req_builder.json(parameters);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -1487,7 +1504,7 @@ pub async fn virtual_machines_reimage(
     configuration: &Configuration,
     resource_group_name: &str,
     vm_name: &str,
-    parameters: Option<VirtualMachineReimageParameters>,
+    parameters: Option<&VirtualMachineReimageParameters>,
     subscription_id: &str,
 ) -> Result<()> {
     let client = &configuration.client;
@@ -1500,6 +1517,9 @@ pub async fn virtual_machines_reimage(
         req_builder = req_builder.bearer_auth(token);
     }
     req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    if let Some(parameters) = parameters {
+        req_builder = req_builder.json(parameters);
+    }
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -1612,7 +1632,7 @@ pub async fn virtual_machine_scale_sets_create_or_update(
     configuration: &Configuration,
     resource_group_name: &str,
     vm_scale_set_name: &str,
-    parameters: VirtualMachineScaleSet,
+    parameters: &VirtualMachineScaleSet,
     subscription_id: &str,
 ) -> Result<VirtualMachineScaleSet> {
     let client = &configuration.client;
@@ -1625,6 +1645,7 @@ pub async fn virtual_machine_scale_sets_create_or_update(
         req_builder = req_builder.bearer_auth(token);
     }
     req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    req_builder = req_builder.json(parameters);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -1633,7 +1654,7 @@ pub async fn virtual_machine_scale_sets_update(
     configuration: &Configuration,
     resource_group_name: &str,
     vm_scale_set_name: &str,
-    parameters: VirtualMachineScaleSetUpdate,
+    parameters: &VirtualMachineScaleSetUpdate,
     subscription_id: &str,
 ) -> Result<VirtualMachineScaleSet> {
     let client = &configuration.client;
@@ -1646,6 +1667,7 @@ pub async fn virtual_machine_scale_sets_update(
         req_builder = req_builder.bearer_auth(token);
     }
     req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    req_builder = req_builder.json(parameters);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -1674,7 +1696,7 @@ pub async fn virtual_machine_scale_sets_deallocate(
     configuration: &Configuration,
     resource_group_name: &str,
     vm_scale_set_name: &str,
-    vm_instance_i_ds: Option<VirtualMachineScaleSetVmInstanceIDs>,
+    vm_instance_i_ds: Option<&VirtualMachineScaleSetVmInstanceIDs>,
     subscription_id: &str,
 ) -> Result<()> {
     let client = &configuration.client;
@@ -1687,6 +1709,9 @@ pub async fn virtual_machine_scale_sets_deallocate(
         req_builder = req_builder.bearer_auth(token);
     }
     req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    if let Some(vm_instance_i_ds) = vm_instance_i_ds {
+        req_builder = req_builder.json(vm_instance_i_ds);
+    }
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -1695,7 +1720,7 @@ pub async fn virtual_machine_scale_sets_delete_instances(
     configuration: &Configuration,
     resource_group_name: &str,
     vm_scale_set_name: &str,
-    vm_instance_i_ds: VirtualMachineScaleSetVmInstanceRequiredIDs,
+    vm_instance_i_ds: &VirtualMachineScaleSetVmInstanceRequiredIDs,
     subscription_id: &str,
 ) -> Result<()> {
     let client = &configuration.client;
@@ -1708,6 +1733,7 @@ pub async fn virtual_machine_scale_sets_delete_instances(
         req_builder = req_builder.bearer_auth(token);
     }
     req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    req_builder = req_builder.json(vm_instance_i_ds);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -1781,7 +1807,7 @@ pub async fn virtual_machine_scale_set_extensions_create_or_update(
     resource_group_name: &str,
     vm_scale_set_name: &str,
     vmss_extension_name: &str,
-    extension_parameters: VirtualMachineScaleSetExtension,
+    extension_parameters: &VirtualMachineScaleSetExtension,
     subscription_id: &str,
 ) -> Result<VirtualMachineScaleSetExtension> {
     let client = &configuration.client;
@@ -1794,6 +1820,7 @@ pub async fn virtual_machine_scale_set_extensions_create_or_update(
         req_builder = req_builder.bearer_auth(token);
     }
     req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    req_builder = req_builder.json(extension_parameters);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -1803,7 +1830,7 @@ pub async fn virtual_machine_scale_set_extensions_update(
     resource_group_name: &str,
     vm_scale_set_name: &str,
     vmss_extension_name: &str,
-    extension_parameters: VirtualMachineScaleSetExtensionUpdate,
+    extension_parameters: &VirtualMachineScaleSetExtensionUpdate,
     subscription_id: &str,
 ) -> Result<VirtualMachineScaleSetExtension> {
     let client = &configuration.client;
@@ -1816,6 +1843,7 @@ pub async fn virtual_machine_scale_set_extensions_update(
         req_builder = req_builder.bearer_auth(token);
     }
     req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    req_builder = req_builder.json(extension_parameters);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -1923,7 +1951,7 @@ pub async fn virtual_machine_scale_sets_power_off(
     configuration: &Configuration,
     resource_group_name: &str,
     vm_scale_set_name: &str,
-    vm_instance_i_ds: Option<VirtualMachineScaleSetVmInstanceIDs>,
+    vm_instance_i_ds: Option<&VirtualMachineScaleSetVmInstanceIDs>,
     skip_shutdown: Option<bool>,
     subscription_id: &str,
 ) -> Result<()> {
@@ -1937,6 +1965,9 @@ pub async fn virtual_machine_scale_sets_power_off(
         req_builder = req_builder.bearer_auth(token);
     }
     req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    if let Some(vm_instance_i_ds) = vm_instance_i_ds {
+        req_builder = req_builder.json(vm_instance_i_ds);
+    }
     if let Some(skip_shutdown) = skip_shutdown {
         req_builder = req_builder.query(&[("skipShutdown", skip_shutdown)]);
     }
@@ -1948,7 +1979,7 @@ pub async fn virtual_machine_scale_sets_restart(
     configuration: &Configuration,
     resource_group_name: &str,
     vm_scale_set_name: &str,
-    vm_instance_i_ds: Option<VirtualMachineScaleSetVmInstanceIDs>,
+    vm_instance_i_ds: Option<&VirtualMachineScaleSetVmInstanceIDs>,
     subscription_id: &str,
 ) -> Result<()> {
     let client = &configuration.client;
@@ -1961,6 +1992,9 @@ pub async fn virtual_machine_scale_sets_restart(
         req_builder = req_builder.bearer_auth(token);
     }
     req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    if let Some(vm_instance_i_ds) = vm_instance_i_ds {
+        req_builder = req_builder.json(vm_instance_i_ds);
+    }
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -1969,7 +2003,7 @@ pub async fn virtual_machine_scale_sets_start(
     configuration: &Configuration,
     resource_group_name: &str,
     vm_scale_set_name: &str,
-    vm_instance_i_ds: Option<VirtualMachineScaleSetVmInstanceIDs>,
+    vm_instance_i_ds: Option<&VirtualMachineScaleSetVmInstanceIDs>,
     subscription_id: &str,
 ) -> Result<()> {
     let client = &configuration.client;
@@ -1982,6 +2016,9 @@ pub async fn virtual_machine_scale_sets_start(
         req_builder = req_builder.bearer_auth(token);
     }
     req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    if let Some(vm_instance_i_ds) = vm_instance_i_ds {
+        req_builder = req_builder.json(vm_instance_i_ds);
+    }
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -1990,7 +2027,7 @@ pub async fn virtual_machine_scale_sets_redeploy(
     configuration: &Configuration,
     resource_group_name: &str,
     vm_scale_set_name: &str,
-    vm_instance_i_ds: Option<VirtualMachineScaleSetVmInstanceIDs>,
+    vm_instance_i_ds: Option<&VirtualMachineScaleSetVmInstanceIDs>,
     subscription_id: &str,
 ) -> Result<()> {
     let client = &configuration.client;
@@ -2003,6 +2040,9 @@ pub async fn virtual_machine_scale_sets_redeploy(
         req_builder = req_builder.bearer_auth(token);
     }
     req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    if let Some(vm_instance_i_ds) = vm_instance_i_ds {
+        req_builder = req_builder.json(vm_instance_i_ds);
+    }
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -2011,7 +2051,7 @@ pub async fn virtual_machine_scale_sets_perform_maintenance(
     configuration: &Configuration,
     resource_group_name: &str,
     vm_scale_set_name: &str,
-    vm_instance_i_ds: Option<VirtualMachineScaleSetVmInstanceIDs>,
+    vm_instance_i_ds: Option<&VirtualMachineScaleSetVmInstanceIDs>,
     subscription_id: &str,
 ) -> Result<()> {
     let client = &configuration.client;
@@ -2024,6 +2064,9 @@ pub async fn virtual_machine_scale_sets_perform_maintenance(
         req_builder = req_builder.bearer_auth(token);
     }
     req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    if let Some(vm_instance_i_ds) = vm_instance_i_ds {
+        req_builder = req_builder.json(vm_instance_i_ds);
+    }
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -2032,7 +2075,7 @@ pub async fn virtual_machine_scale_sets_update_instances(
     configuration: &Configuration,
     resource_group_name: &str,
     vm_scale_set_name: &str,
-    vm_instance_i_ds: VirtualMachineScaleSetVmInstanceRequiredIDs,
+    vm_instance_i_ds: &VirtualMachineScaleSetVmInstanceRequiredIDs,
     subscription_id: &str,
 ) -> Result<()> {
     let client = &configuration.client;
@@ -2045,6 +2088,7 @@ pub async fn virtual_machine_scale_sets_update_instances(
         req_builder = req_builder.bearer_auth(token);
     }
     req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    req_builder = req_builder.json(vm_instance_i_ds);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -2053,7 +2097,7 @@ pub async fn virtual_machine_scale_sets_reimage(
     configuration: &Configuration,
     resource_group_name: &str,
     vm_scale_set_name: &str,
-    vm_scale_set_reimage_input: Option<VirtualMachineScaleSetReimageParameters>,
+    vm_scale_set_reimage_input: Option<&VirtualMachineScaleSetReimageParameters>,
     subscription_id: &str,
 ) -> Result<()> {
     let client = &configuration.client;
@@ -2066,6 +2110,9 @@ pub async fn virtual_machine_scale_sets_reimage(
         req_builder = req_builder.bearer_auth(token);
     }
     req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    if let Some(vm_scale_set_reimage_input) = vm_scale_set_reimage_input {
+        req_builder = req_builder.json(vm_scale_set_reimage_input);
+    }
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -2074,7 +2121,7 @@ pub async fn virtual_machine_scale_sets_reimage_all(
     configuration: &Configuration,
     resource_group_name: &str,
     vm_scale_set_name: &str,
-    vm_instance_i_ds: Option<VirtualMachineScaleSetVmInstanceIDs>,
+    vm_instance_i_ds: Option<&VirtualMachineScaleSetVmInstanceIDs>,
     subscription_id: &str,
 ) -> Result<()> {
     let client = &configuration.client;
@@ -2087,6 +2134,9 @@ pub async fn virtual_machine_scale_sets_reimage_all(
         req_builder = req_builder.bearer_auth(token);
     }
     req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    if let Some(vm_instance_i_ds) = vm_instance_i_ds {
+        req_builder = req_builder.json(vm_instance_i_ds);
+    }
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -2194,7 +2244,7 @@ pub async fn virtual_machine_scale_sets_convert_to_single_placement_group(
     configuration: &Configuration,
     resource_group_name: &str,
     vm_scale_set_name: &str,
-    parameters: VmScaleSetConvertToSinglePlacementGroupInput,
+    parameters: &VmScaleSetConvertToSinglePlacementGroupInput,
     subscription_id: &str,
 ) -> Result<()> {
     let client = &configuration.client;
@@ -2207,6 +2257,7 @@ pub async fn virtual_machine_scale_sets_convert_to_single_placement_group(
         req_builder = req_builder.bearer_auth(token);
     }
     req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    req_builder = req_builder.json(parameters);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -2215,7 +2266,7 @@ pub async fn virtual_machine_scale_sets_set_orchestration_service_state(
     configuration: &Configuration,
     resource_group_name: &str,
     vm_scale_set_name: &str,
-    parameters: OrchestrationServiceStateInput,
+    parameters: &OrchestrationServiceStateInput,
     subscription_id: &str,
 ) -> Result<()> {
     let client = &configuration.client;
@@ -2228,6 +2279,7 @@ pub async fn virtual_machine_scale_sets_set_orchestration_service_state(
         req_builder = req_builder.bearer_auth(token);
     }
     req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    req_builder = req_builder.json(parameters);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -2264,7 +2316,7 @@ pub async fn virtual_machine_scale_set_vm_extensions_create_or_update(
     vm_scale_set_name: &str,
     instance_id: &str,
     vm_extension_name: &str,
-    extension_parameters: VirtualMachineExtension,
+    extension_parameters: &VirtualMachineExtension,
     subscription_id: &str,
 ) -> Result<VirtualMachineExtension> {
     let client = &configuration.client;
@@ -2277,6 +2329,7 @@ pub async fn virtual_machine_scale_set_vm_extensions_create_or_update(
         req_builder = req_builder.bearer_auth(token);
     }
     req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    req_builder = req_builder.json(extension_parameters);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -2287,7 +2340,7 @@ pub async fn virtual_machine_scale_set_vm_extensions_update(
     vm_scale_set_name: &str,
     instance_id: &str,
     vm_extension_name: &str,
-    extension_parameters: VirtualMachineExtensionUpdate,
+    extension_parameters: &VirtualMachineExtensionUpdate,
     subscription_id: &str,
 ) -> Result<VirtualMachineExtension> {
     let client = &configuration.client;
@@ -2300,6 +2353,7 @@ pub async fn virtual_machine_scale_set_vm_extensions_update(
         req_builder = req_builder.bearer_auth(token);
     }
     req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    req_builder = req_builder.json(extension_parameters);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -2356,7 +2410,7 @@ pub async fn virtual_machine_scale_set_v_ms_reimage(
     resource_group_name: &str,
     vm_scale_set_name: &str,
     instance_id: &str,
-    vm_scale_set_vm_reimage_input: Option<VirtualMachineScaleSetVmReimageParameters>,
+    vm_scale_set_vm_reimage_input: Option<&VirtualMachineScaleSetVmReimageParameters>,
     subscription_id: &str,
 ) -> Result<()> {
     let client = &configuration.client;
@@ -2369,6 +2423,9 @@ pub async fn virtual_machine_scale_set_v_ms_reimage(
         req_builder = req_builder.bearer_auth(token);
     }
     req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    if let Some(vm_scale_set_vm_reimage_input) = vm_scale_set_vm_reimage_input {
+        req_builder = req_builder.json(vm_scale_set_vm_reimage_input);
+    }
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -2445,7 +2502,7 @@ pub async fn virtual_machine_scale_set_v_ms_update(
     resource_group_name: &str,
     vm_scale_set_name: &str,
     instance_id: &str,
-    parameters: VirtualMachineScaleSetVm,
+    parameters: &VirtualMachineScaleSetVm,
     subscription_id: &str,
 ) -> Result<VirtualMachineScaleSetVm> {
     let client = &configuration.client;
@@ -2458,6 +2515,7 @@ pub async fn virtual_machine_scale_set_v_ms_update(
         req_builder = req_builder.bearer_auth(token);
     }
     req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    req_builder = req_builder.json(parameters);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -2687,7 +2745,7 @@ pub async fn virtual_machine_scale_set_v_ms_simulate_eviction(
 }
 pub async fn log_analytics_export_request_rate_by_interval(
     configuration: &Configuration,
-    parameters: RequestRateByIntervalInput,
+    parameters: &RequestRateByIntervalInput,
     location: &str,
     subscription_id: &str,
 ) -> Result<LogAnalyticsOperationResult> {
@@ -2701,13 +2759,14 @@ pub async fn log_analytics_export_request_rate_by_interval(
         req_builder = req_builder.bearer_auth(token);
     }
     req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    req_builder = req_builder.json(parameters);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
 }
 pub async fn log_analytics_export_throttled_requests(
     configuration: &Configuration,
-    parameters: ThrottledRequestsInput,
+    parameters: &ThrottledRequestsInput,
     location: &str,
     subscription_id: &str,
 ) -> Result<LogAnalyticsOperationResult> {
@@ -2721,6 +2780,7 @@ pub async fn log_analytics_export_throttled_requests(
         req_builder = req_builder.bearer_auth(token);
     }
     req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    req_builder = req_builder.json(parameters);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -2768,7 +2828,7 @@ pub async fn virtual_machines_run_command(
     configuration: &Configuration,
     resource_group_name: &str,
     vm_name: &str,
-    parameters: RunCommandInput,
+    parameters: &RunCommandInput,
     subscription_id: &str,
 ) -> Result<RunCommandResult> {
     let client = &configuration.client;
@@ -2781,6 +2841,7 @@ pub async fn virtual_machines_run_command(
         req_builder = req_builder.bearer_auth(token);
     }
     req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    req_builder = req_builder.json(parameters);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -2790,7 +2851,7 @@ pub async fn virtual_machine_scale_set_v_ms_run_command(
     resource_group_name: &str,
     vm_scale_set_name: &str,
     instance_id: &str,
-    parameters: RunCommandInput,
+    parameters: &RunCommandInput,
     subscription_id: &str,
 ) -> Result<RunCommandResult> {
     let client = &configuration.client;
@@ -2803,6 +2864,7 @@ pub async fn virtual_machine_scale_set_v_ms_run_command(
         req_builder = req_builder.bearer_auth(token);
     }
     req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    req_builder = req_builder.json(parameters);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -2845,7 +2907,7 @@ pub async fn disks_create_or_update(
     subscription_id: &str,
     resource_group_name: &str,
     disk_name: &str,
-    disk: Disk,
+    disk: &Disk,
 ) -> Result<Disk> {
     let client = &configuration.client;
     let uri_str = &format!(
@@ -2857,6 +2919,7 @@ pub async fn disks_create_or_update(
         req_builder = req_builder.bearer_auth(token);
     }
     req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    req_builder = req_builder.json(disk);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -2866,7 +2929,7 @@ pub async fn disks_update(
     subscription_id: &str,
     resource_group_name: &str,
     disk_name: &str,
-    disk: DiskUpdate,
+    disk: &DiskUpdate,
 ) -> Result<Disk> {
     let client = &configuration.client;
     let uri_str = &format!(
@@ -2878,6 +2941,7 @@ pub async fn disks_update(
         req_builder = req_builder.bearer_auth(token);
     }
     req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    req_builder = req_builder.json(disk);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -2936,7 +3000,7 @@ pub async fn disks_grant_access(
     subscription_id: &str,
     resource_group_name: &str,
     disk_name: &str,
-    grant_access_data: GrantAccessData,
+    grant_access_data: &GrantAccessData,
 ) -> Result<AccessUri> {
     let client = &configuration.client;
     let uri_str = &format!(
@@ -2948,6 +3012,7 @@ pub async fn disks_grant_access(
         req_builder = req_builder.bearer_auth(token);
     }
     req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    req_builder = req_builder.json(grant_access_data);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -2997,7 +3062,7 @@ pub async fn snapshots_create_or_update(
     subscription_id: &str,
     resource_group_name: &str,
     snapshot_name: &str,
-    snapshot: Snapshot,
+    snapshot: &Snapshot,
 ) -> Result<Snapshot> {
     let client = &configuration.client;
     let uri_str = &format!(
@@ -3009,6 +3074,7 @@ pub async fn snapshots_create_or_update(
         req_builder = req_builder.bearer_auth(token);
     }
     req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    req_builder = req_builder.json(snapshot);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -3018,7 +3084,7 @@ pub async fn snapshots_update(
     subscription_id: &str,
     resource_group_name: &str,
     snapshot_name: &str,
-    snapshot: SnapshotUpdate,
+    snapshot: &SnapshotUpdate,
 ) -> Result<Snapshot> {
     let client = &configuration.client;
     let uri_str = &format!(
@@ -3030,6 +3096,7 @@ pub async fn snapshots_update(
         req_builder = req_builder.bearer_auth(token);
     }
     req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    req_builder = req_builder.json(snapshot);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -3093,7 +3160,7 @@ pub async fn snapshots_grant_access(
     subscription_id: &str,
     resource_group_name: &str,
     snapshot_name: &str,
-    grant_access_data: GrantAccessData,
+    grant_access_data: &GrantAccessData,
 ) -> Result<AccessUri> {
     let client = &configuration.client;
     let uri_str = &format!(
@@ -3105,6 +3172,7 @@ pub async fn snapshots_grant_access(
         req_builder = req_builder.bearer_auth(token);
     }
     req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    req_builder = req_builder.json(grant_access_data);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -3154,7 +3222,7 @@ pub async fn disk_encryption_sets_create_or_update(
     subscription_id: &str,
     resource_group_name: &str,
     disk_encryption_set_name: &str,
-    disk_encryption_set: DiskEncryptionSet,
+    disk_encryption_set: &DiskEncryptionSet,
 ) -> Result<DiskEncryptionSet> {
     let client = &configuration.client;
     let uri_str = &format!(
@@ -3166,6 +3234,7 @@ pub async fn disk_encryption_sets_create_or_update(
         req_builder = req_builder.bearer_auth(token);
     }
     req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    req_builder = req_builder.json(disk_encryption_set);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -3175,7 +3244,7 @@ pub async fn disk_encryption_sets_update(
     subscription_id: &str,
     resource_group_name: &str,
     disk_encryption_set_name: &str,
-    disk_encryption_set: DiskEncryptionSetUpdate,
+    disk_encryption_set: &DiskEncryptionSetUpdate,
 ) -> Result<DiskEncryptionSet> {
     let client = &configuration.client;
     let uri_str = &format!(
@@ -3187,6 +3256,7 @@ pub async fn disk_encryption_sets_update(
         req_builder = req_builder.bearer_auth(token);
     }
     req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    req_builder = req_builder.json(disk_encryption_set);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -3270,7 +3340,7 @@ pub async fn disk_accesses_create_or_update(
     subscription_id: &str,
     resource_group_name: &str,
     disk_access_name: &str,
-    disk_access: DiskAccess,
+    disk_access: &DiskAccess,
 ) -> Result<DiskAccess> {
     let client = &configuration.client;
     let uri_str = &format!(
@@ -3282,6 +3352,7 @@ pub async fn disk_accesses_create_or_update(
         req_builder = req_builder.bearer_auth(token);
     }
     req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    req_builder = req_builder.json(disk_access);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -3291,7 +3362,7 @@ pub async fn disk_accesses_update(
     subscription_id: &str,
     resource_group_name: &str,
     disk_access_name: &str,
-    disk_access: DiskAccessUpdate,
+    disk_access: &DiskAccessUpdate,
 ) -> Result<DiskAccess> {
     let client = &configuration.client;
     let uri_str = &format!(
@@ -3303,6 +3374,7 @@ pub async fn disk_accesses_update(
         req_builder = req_builder.bearer_auth(token);
     }
     req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    req_builder = req_builder.json(disk_access);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -3406,7 +3478,7 @@ pub async fn galleries_create_or_update(
     subscription_id: &str,
     resource_group_name: &str,
     gallery_name: &str,
-    gallery: Gallery,
+    gallery: &Gallery,
 ) -> Result<Gallery> {
     let client = &configuration.client;
     let uri_str = &format!(
@@ -3418,6 +3490,7 @@ pub async fn galleries_create_or_update(
         req_builder = req_builder.bearer_auth(token);
     }
     req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    req_builder = req_builder.json(gallery);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -3427,7 +3500,7 @@ pub async fn galleries_update(
     subscription_id: &str,
     resource_group_name: &str,
     gallery_name: &str,
-    gallery: GalleryUpdate,
+    gallery: &GalleryUpdate,
 ) -> Result<Gallery> {
     let client = &configuration.client;
     let uri_str = &format!(
@@ -3439,6 +3512,7 @@ pub async fn galleries_update(
         req_builder = req_builder.bearer_auth(token);
     }
     req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    req_builder = req_builder.json(gallery);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -3490,7 +3564,7 @@ pub async fn gallery_images_create_or_update(
     resource_group_name: &str,
     gallery_name: &str,
     gallery_image_name: &str,
-    gallery_image: GalleryImage,
+    gallery_image: &GalleryImage,
 ) -> Result<GalleryImage> {
     let client = &configuration.client;
     let uri_str = &format!(
@@ -3502,6 +3576,7 @@ pub async fn gallery_images_create_or_update(
         req_builder = req_builder.bearer_auth(token);
     }
     req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    req_builder = req_builder.json(gallery_image);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -3512,7 +3587,7 @@ pub async fn gallery_images_update(
     resource_group_name: &str,
     gallery_name: &str,
     gallery_image_name: &str,
-    gallery_image: GalleryImageUpdate,
+    gallery_image: &GalleryImageUpdate,
 ) -> Result<GalleryImage> {
     let client = &configuration.client;
     let uri_str = &format!(
@@ -3524,6 +3599,7 @@ pub async fn gallery_images_update(
         req_builder = req_builder.bearer_auth(token);
     }
     req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    req_builder = req_builder.json(gallery_image);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -3582,7 +3658,7 @@ pub async fn gallery_image_versions_create_or_update(
     gallery_name: &str,
     gallery_image_name: &str,
     gallery_image_version_name: &str,
-    gallery_image_version: GalleryImageVersion,
+    gallery_image_version: &GalleryImageVersion,
 ) -> Result<GalleryImageVersion> {
     let client = &configuration.client;
     let uri_str = &format!(
@@ -3594,6 +3670,7 @@ pub async fn gallery_image_versions_create_or_update(
         req_builder = req_builder.bearer_auth(token);
     }
     req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    req_builder = req_builder.json(gallery_image_version);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -3605,7 +3682,7 @@ pub async fn gallery_image_versions_update(
     gallery_name: &str,
     gallery_image_name: &str,
     gallery_image_version_name: &str,
-    gallery_image_version: GalleryImageVersionUpdate,
+    gallery_image_version: &GalleryImageVersionUpdate,
 ) -> Result<GalleryImageVersion> {
     let client = &configuration.client;
     let uri_str = &format!(
@@ -3617,6 +3694,7 @@ pub async fn gallery_image_versions_update(
         req_builder = req_builder.bearer_auth(token);
     }
     req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    req_builder = req_builder.json(gallery_image_version);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -3670,7 +3748,7 @@ pub async fn gallery_applications_create_or_update(
     resource_group_name: &str,
     gallery_name: &str,
     gallery_application_name: &str,
-    gallery_application: GalleryApplication,
+    gallery_application: &GalleryApplication,
 ) -> Result<GalleryApplication> {
     let client = &configuration.client;
     let uri_str = &format!(
@@ -3682,6 +3760,7 @@ pub async fn gallery_applications_create_or_update(
         req_builder = req_builder.bearer_auth(token);
     }
     req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    req_builder = req_builder.json(gallery_application);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -3692,7 +3771,7 @@ pub async fn gallery_applications_update(
     resource_group_name: &str,
     gallery_name: &str,
     gallery_application_name: &str,
-    gallery_application: GalleryApplicationUpdate,
+    gallery_application: &GalleryApplicationUpdate,
 ) -> Result<GalleryApplication> {
     let client = &configuration.client;
     let uri_str = &format!(
@@ -3704,6 +3783,7 @@ pub async fn gallery_applications_update(
         req_builder = req_builder.bearer_auth(token);
     }
     req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    req_builder = req_builder.json(gallery_application);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -3767,7 +3847,7 @@ pub async fn gallery_application_versions_create_or_update(
     gallery_name: &str,
     gallery_application_name: &str,
     gallery_application_version_name: &str,
-    gallery_application_version: GalleryApplicationVersion,
+    gallery_application_version: &GalleryApplicationVersion,
 ) -> Result<GalleryApplicationVersion> {
     let client = &configuration.client;
     let uri_str = &format!(
@@ -3784,6 +3864,7 @@ pub async fn gallery_application_versions_create_or_update(
         req_builder = req_builder.bearer_auth(token);
     }
     req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    req_builder = req_builder.json(gallery_application_version);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -3795,7 +3876,7 @@ pub async fn gallery_application_versions_update(
     gallery_name: &str,
     gallery_application_name: &str,
     gallery_application_version_name: &str,
-    gallery_application_version: GalleryApplicationVersionUpdate,
+    gallery_application_version: &GalleryApplicationVersionUpdate,
 ) -> Result<GalleryApplicationVersion> {
     let client = &configuration.client;
     let uri_str = &format!(
@@ -3812,6 +3893,7 @@ pub async fn gallery_application_versions_update(
         req_builder = req_builder.bearer_auth(token);
     }
     req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    req_builder = req_builder.json(gallery_application_version);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -3998,7 +4080,7 @@ pub async fn container_services_create_or_update(
     configuration: &Configuration,
     resource_group_name: &str,
     container_service_name: &str,
-    parameters: ContainerService,
+    parameters: &ContainerService,
     subscription_id: &str,
 ) -> Result<ContainerService> {
     let client = &configuration.client;
@@ -4011,6 +4093,7 @@ pub async fn container_services_create_or_update(
         req_builder = req_builder.bearer_auth(token);
     }
     req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    req_builder = req_builder.json(parameters);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)

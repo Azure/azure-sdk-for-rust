@@ -31,7 +31,7 @@ pub async fn skus_list(configuration: &Configuration, subscription_id: &str) -> 
 }
 pub async fn storage_accounts_check_name_availability(
     configuration: &Configuration,
-    account_name: StorageAccountCheckNameAvailabilityParameters,
+    account_name: &StorageAccountCheckNameAvailabilityParameters,
     subscription_id: &str,
 ) -> Result<CheckNameAvailabilityResult> {
     let client = &configuration.client;
@@ -44,6 +44,7 @@ pub async fn storage_accounts_check_name_availability(
         req_builder = req_builder.bearer_auth(token);
     }
     req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    req_builder = req_builder.json(account_name);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -76,7 +77,7 @@ pub async fn storage_accounts_create(
     configuration: &Configuration,
     resource_group_name: &str,
     account_name: &str,
-    parameters: StorageAccountCreateParameters,
+    parameters: &StorageAccountCreateParameters,
     subscription_id: &str,
 ) -> Result<StorageAccount> {
     let client = &configuration.client;
@@ -89,6 +90,7 @@ pub async fn storage_accounts_create(
         req_builder = req_builder.bearer_auth(token);
     }
     req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    req_builder = req_builder.json(parameters);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -97,7 +99,7 @@ pub async fn storage_accounts_update(
     configuration: &Configuration,
     resource_group_name: &str,
     account_name: &str,
-    parameters: StorageAccountUpdateParameters,
+    parameters: &StorageAccountUpdateParameters,
     subscription_id: &str,
 ) -> Result<StorageAccount> {
     let client = &configuration.client;
@@ -110,6 +112,7 @@ pub async fn storage_accounts_update(
         req_builder = req_builder.bearer_auth(token);
     }
     req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    req_builder = req_builder.json(parameters);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -231,7 +234,7 @@ pub async fn storage_accounts_regenerate_key(
     configuration: &Configuration,
     resource_group_name: &str,
     account_name: &str,
-    regenerate_key: StorageAccountRegenerateKeyParameters,
+    regenerate_key: &StorageAccountRegenerateKeyParameters,
     subscription_id: &str,
 ) -> Result<StorageAccountListKeysResult> {
     let client = &configuration.client;
@@ -244,6 +247,7 @@ pub async fn storage_accounts_regenerate_key(
         req_builder = req_builder.bearer_auth(token);
     }
     req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    req_builder = req_builder.json(regenerate_key);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -267,7 +271,7 @@ pub async fn storage_accounts_list_account_sas(
     configuration: &Configuration,
     resource_group_name: &str,
     account_name: &str,
-    parameters: AccountSasParameters,
+    parameters: &AccountSasParameters,
     subscription_id: &str,
 ) -> Result<ListAccountSasResponse> {
     let client = &configuration.client;
@@ -280,6 +284,7 @@ pub async fn storage_accounts_list_account_sas(
         req_builder = req_builder.bearer_auth(token);
     }
     req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    req_builder = req_builder.json(parameters);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -288,7 +293,7 @@ pub async fn storage_accounts_list_service_sas(
     configuration: &Configuration,
     resource_group_name: &str,
     account_name: &str,
-    parameters: ServiceSasParameters,
+    parameters: &ServiceSasParameters,
     subscription_id: &str,
 ) -> Result<ListServiceSasResponse> {
     let client = &configuration.client;
@@ -301,6 +306,7 @@ pub async fn storage_accounts_list_service_sas(
         req_builder = req_builder.bearer_auth(token);
     }
     req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    req_builder = req_builder.json(parameters);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -330,7 +336,7 @@ pub async fn storage_accounts_restore_blob_ranges(
     resource_group_name: &str,
     account_name: &str,
     subscription_id: &str,
-    parameters: BlobRestoreParameters,
+    parameters: &BlobRestoreParameters,
 ) -> Result<BlobRestoreStatus> {
     let client = &configuration.client;
     let uri_str = &format!(
@@ -342,6 +348,7 @@ pub async fn storage_accounts_restore_blob_ranges(
         req_builder = req_builder.bearer_auth(token);
     }
     req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    req_builder = req_builder.json(parameters);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -373,7 +380,7 @@ pub async fn management_policies_create_or_update(
     account_name: &str,
     subscription_id: &str,
     management_policy_name: &str,
-    properties: ManagementPolicy,
+    properties: &ManagementPolicy,
 ) -> Result<ManagementPolicy> {
     let client = &configuration.client;
     let uri_str = &format!(
@@ -385,6 +392,7 @@ pub async fn management_policies_create_or_update(
         req_builder = req_builder.bearer_auth(token);
     }
     req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    req_builder = req_builder.json(properties);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -457,7 +465,7 @@ pub async fn private_endpoint_connections_put(
     account_name: &str,
     subscription_id: &str,
     private_endpoint_connection_name: &str,
-    properties: PrivateEndpointConnection,
+    properties: &PrivateEndpointConnection,
 ) -> Result<PrivateEndpointConnection> {
     let client = &configuration.client;
     let uri_str = &format!(
@@ -469,6 +477,7 @@ pub async fn private_endpoint_connections_put(
         req_builder = req_builder.bearer_auth(token);
     }
     req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    req_builder = req_builder.json(properties);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -561,7 +570,7 @@ pub async fn object_replication_policies_create_or_update(
     account_name: &str,
     subscription_id: &str,
     object_replication_policy_id: &str,
-    properties: ObjectReplicationPolicy,
+    properties: &ObjectReplicationPolicy,
 ) -> Result<ObjectReplicationPolicy> {
     let client = &configuration.client;
     let uri_str = &format!(
@@ -573,6 +582,7 @@ pub async fn object_replication_policies_create_or_update(
         req_builder = req_builder.bearer_auth(token);
     }
     req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    req_builder = req_builder.json(properties);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -645,7 +655,7 @@ pub async fn encryption_scopes_put(
     account_name: &str,
     subscription_id: &str,
     encryption_scope_name: &str,
-    encryption_scope: EncryptionScope,
+    encryption_scope: &EncryptionScope,
 ) -> Result<EncryptionScope> {
     let client = &configuration.client;
     let uri_str = &format!(
@@ -657,6 +667,7 @@ pub async fn encryption_scopes_put(
         req_builder = req_builder.bearer_auth(token);
     }
     req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    req_builder = req_builder.json(encryption_scope);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -667,7 +678,7 @@ pub async fn encryption_scopes_patch(
     account_name: &str,
     subscription_id: &str,
     encryption_scope_name: &str,
-    encryption_scope: EncryptionScope,
+    encryption_scope: &EncryptionScope,
 ) -> Result<EncryptionScope> {
     let client = &configuration.client;
     let uri_str = &format!(
@@ -679,6 +690,7 @@ pub async fn encryption_scopes_patch(
         req_builder = req_builder.bearer_auth(token);
     }
     req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    req_builder = req_builder.json(encryption_scope);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -750,7 +762,7 @@ pub async fn blob_services_set_service_properties(
     account_name: &str,
     subscription_id: &str,
     blob_services_name: &str,
-    parameters: BlobServiceProperties,
+    parameters: &BlobServiceProperties,
 ) -> Result<BlobServiceProperties> {
     let client = &configuration.client;
     let uri_str = &format!(
@@ -762,6 +774,7 @@ pub async fn blob_services_set_service_properties(
         req_builder = req_builder.bearer_auth(token);
     }
     req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    req_builder = req_builder.json(parameters);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -824,7 +837,7 @@ pub async fn blob_containers_create(
     resource_group_name: &str,
     account_name: &str,
     container_name: &str,
-    blob_container: BlobContainer,
+    blob_container: &BlobContainer,
     subscription_id: &str,
 ) -> Result<BlobContainer> {
     let client = &configuration.client;
@@ -837,6 +850,7 @@ pub async fn blob_containers_create(
         req_builder = req_builder.bearer_auth(token);
     }
     req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    req_builder = req_builder.json(blob_container);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -846,7 +860,7 @@ pub async fn blob_containers_update(
     resource_group_name: &str,
     account_name: &str,
     container_name: &str,
-    blob_container: BlobContainer,
+    blob_container: &BlobContainer,
     subscription_id: &str,
 ) -> Result<BlobContainer> {
     let client = &configuration.client;
@@ -859,6 +873,7 @@ pub async fn blob_containers_update(
         req_builder = req_builder.bearer_auth(token);
     }
     req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    req_builder = req_builder.json(blob_container);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -890,7 +905,7 @@ pub async fn blob_containers_set_legal_hold(
     account_name: &str,
     container_name: &str,
     subscription_id: &str,
-    legal_hold: LegalHold,
+    legal_hold: &LegalHold,
 ) -> Result<LegalHold> {
     let client = &configuration.client;
     let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/blobServices/default/containers/{}/setLegalHold" , & configuration . base_path , subscription_id , resource_group_name , account_name , container_name) ;
@@ -899,6 +914,7 @@ pub async fn blob_containers_set_legal_hold(
         req_builder = req_builder.bearer_auth(token);
     }
     req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    req_builder = req_builder.json(legal_hold);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -909,7 +925,7 @@ pub async fn blob_containers_clear_legal_hold(
     account_name: &str,
     container_name: &str,
     subscription_id: &str,
-    legal_hold: LegalHold,
+    legal_hold: &LegalHold,
 ) -> Result<LegalHold> {
     let client = &configuration.client;
     let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/blobServices/default/containers/{}/clearLegalHold" , & configuration . base_path , subscription_id , resource_group_name , account_name , container_name) ;
@@ -918,6 +934,7 @@ pub async fn blob_containers_clear_legal_hold(
         req_builder = req_builder.bearer_auth(token);
     }
     req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    req_builder = req_builder.json(legal_hold);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -938,6 +955,9 @@ pub async fn blob_containers_get_immutability_policy(
         req_builder = req_builder.bearer_auth(token);
     }
     req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    if let Some(if_match) = if_match {
+        req_builder = req_builder.header("If-Match", if_match);
+    }
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -949,7 +969,7 @@ pub async fn blob_containers_create_or_update_immutability_policy(
     container_name: &str,
     immutability_policy_name: &str,
     subscription_id: &str,
-    parameters: Option<ImmutabilityPolicy>,
+    parameters: Option<&ImmutabilityPolicy>,
     if_match: Option<&str>,
 ) -> Result<ImmutabilityPolicy> {
     let client = &configuration.client;
@@ -959,6 +979,12 @@ pub async fn blob_containers_create_or_update_immutability_policy(
         req_builder = req_builder.bearer_auth(token);
     }
     req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    if let Some(parameters) = parameters {
+        req_builder = req_builder.json(parameters);
+    }
+    if let Some(if_match) = if_match {
+        req_builder = req_builder.header("If-Match", if_match);
+    }
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -979,6 +1005,7 @@ pub async fn blob_containers_delete_immutability_policy(
         req_builder = req_builder.bearer_auth(token);
     }
     req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    req_builder = req_builder.header("If-Match", if_match);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -998,6 +1025,7 @@ pub async fn blob_containers_lock_immutability_policy(
         req_builder = req_builder.bearer_auth(token);
     }
     req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    req_builder = req_builder.header("If-Match", if_match);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -1008,7 +1036,7 @@ pub async fn blob_containers_extend_immutability_policy(
     account_name: &str,
     container_name: &str,
     subscription_id: &str,
-    parameters: Option<ImmutabilityPolicy>,
+    parameters: Option<&ImmutabilityPolicy>,
     if_match: &str,
 ) -> Result<ImmutabilityPolicy> {
     let client = &configuration.client;
@@ -1018,6 +1046,10 @@ pub async fn blob_containers_extend_immutability_policy(
         req_builder = req_builder.bearer_auth(token);
     }
     req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    if let Some(parameters) = parameters {
+        req_builder = req_builder.json(parameters);
+    }
+    req_builder = req_builder.header("If-Match", if_match);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -1028,7 +1060,7 @@ pub async fn blob_containers_lease(
     account_name: &str,
     container_name: &str,
     subscription_id: &str,
-    parameters: Option<LeaseContainerRequest>,
+    parameters: Option<&LeaseContainerRequest>,
 ) -> Result<LeaseContainerResponse> {
     let client = &configuration.client;
     let uri_str = &format!(
@@ -1040,6 +1072,9 @@ pub async fn blob_containers_lease(
         req_builder = req_builder.bearer_auth(token);
     }
     req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    if let Some(parameters) = parameters {
+        req_builder = req_builder.json(parameters);
+    }
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -1091,7 +1126,7 @@ pub async fn file_services_set_service_properties(
     account_name: &str,
     subscription_id: &str,
     file_services_name: &str,
-    parameters: FileServiceProperties,
+    parameters: &FileServiceProperties,
 ) -> Result<FileServiceProperties> {
     let client = &configuration.client;
     let uri_str = &format!(
@@ -1103,6 +1138,7 @@ pub async fn file_services_set_service_properties(
         req_builder = req_builder.bearer_auth(token);
     }
     req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    req_builder = req_builder.json(parameters);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -1169,7 +1205,7 @@ pub async fn file_shares_create(
     resource_group_name: &str,
     account_name: &str,
     share_name: &str,
-    file_share: FileShare,
+    file_share: &FileShare,
     subscription_id: &str,
 ) -> Result<FileShare> {
     let client = &configuration.client;
@@ -1182,6 +1218,7 @@ pub async fn file_shares_create(
         req_builder = req_builder.bearer_auth(token);
     }
     req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    req_builder = req_builder.json(file_share);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -1191,7 +1228,7 @@ pub async fn file_shares_update(
     resource_group_name: &str,
     account_name: &str,
     share_name: &str,
-    file_share: FileShare,
+    file_share: &FileShare,
     subscription_id: &str,
 ) -> Result<FileShare> {
     let client = &configuration.client;
@@ -1204,6 +1241,7 @@ pub async fn file_shares_update(
         req_builder = req_builder.bearer_auth(token);
     }
     req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    req_builder = req_builder.json(file_share);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -1234,7 +1272,7 @@ pub async fn file_shares_restore(
     resource_group_name: &str,
     account_name: &str,
     share_name: &str,
-    deleted_share: DeletedShare,
+    deleted_share: &DeletedShare,
     subscription_id: &str,
 ) -> Result<CloudError> {
     let client = &configuration.client;
@@ -1247,6 +1285,7 @@ pub async fn file_shares_restore(
         req_builder = req_builder.bearer_auth(token);
     }
     req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    req_builder = req_builder.json(deleted_share);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -1298,7 +1337,7 @@ pub async fn queue_services_set_service_properties(
     account_name: &str,
     subscription_id: &str,
     queue_service_name: &str,
-    parameters: QueueServiceProperties,
+    parameters: &QueueServiceProperties,
 ) -> Result<QueueServiceProperties> {
     let client = &configuration.client;
     let uri_str = &format!(
@@ -1310,6 +1349,7 @@ pub async fn queue_services_set_service_properties(
         req_builder = req_builder.bearer_auth(token);
     }
     req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    req_builder = req_builder.json(parameters);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -1341,7 +1381,7 @@ pub async fn queue_create(
     account_name: &str,
     subscription_id: &str,
     queue_name: &str,
-    queue: StorageQueue,
+    queue: &StorageQueue,
 ) -> Result<StorageQueue> {
     let client = &configuration.client;
     let uri_str = &format!(
@@ -1353,6 +1393,7 @@ pub async fn queue_create(
         req_builder = req_builder.bearer_auth(token);
     }
     req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    req_builder = req_builder.json(queue);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -1363,7 +1404,7 @@ pub async fn queue_update(
     account_name: &str,
     subscription_id: &str,
     queue_name: &str,
-    queue: StorageQueue,
+    queue: &StorageQueue,
 ) -> Result<StorageQueue> {
     let client = &configuration.client;
     let uri_str = &format!(
@@ -1375,6 +1416,7 @@ pub async fn queue_update(
         req_builder = req_builder.bearer_auth(token);
     }
     req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    req_builder = req_builder.json(queue);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -1475,7 +1517,7 @@ pub async fn table_services_set_service_properties(
     account_name: &str,
     subscription_id: &str,
     table_service_name: &str,
-    parameters: TableServiceProperties,
+    parameters: &TableServiceProperties,
 ) -> Result<TableServiceProperties> {
     let client = &configuration.client;
     let uri_str = &format!(
@@ -1487,6 +1529,7 @@ pub async fn table_services_set_service_properties(
         req_builder = req_builder.bearer_auth(token);
     }
     req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    req_builder = req_builder.json(parameters);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
