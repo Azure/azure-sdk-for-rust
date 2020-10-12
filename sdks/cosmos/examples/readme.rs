@@ -2,8 +2,8 @@
 extern crate serde_derive;
 // Using the prelude module of the Cosmos crate makes easier to use the Rust Azure SDK for Cosmos
 // DB.
-use azure_sdk_core::prelude::*;
 use azure_cosmos::prelude::*;
+use azure_sdk_core::prelude::*;
 use futures::stream::StreamExt;
 use std::borrow::Cow;
 use std::error::Error;
