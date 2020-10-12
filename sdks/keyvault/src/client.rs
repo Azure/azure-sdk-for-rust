@@ -2,9 +2,6 @@ use crate::KeyVaultError;
 use anyhow::Context;
 use anyhow::Result;
 use azure_auth_aad::{TokenCredential, TokenResponse};
-use chrono::{DateTime, Utc};
-use oauth2::{AccessToken, ClientId, ClientSecret};
-use std::sync::Arc;
 
 pub(crate) const PUBLIC_ENDPOINT_SUFFIX: &str = "vault.azure.net";
 pub(crate) const API_VERSION: &str = "7.0";
@@ -26,7 +23,7 @@ pub struct KeyVaultClient<'a, T> {
     pub(crate) token: Option<TokenResponse>,
 }
 
-impl<'a, T:TokenCredential> KeyVaultClient<'a, T> {
+impl<'a, T: TokenCredential> KeyVaultClient<'a, T> {
     /// Creates a new `KeyVaultClient` with an endpoint suffix. Useful for non-public Azure clouds.
     /// For the default public environment, use `KeyVaultClient::new`.
     ///
@@ -61,10 +58,7 @@ impl<'a, T:TokenCredential> KeyVaultClient<'a, T> {
     /// use azure_auth_aad::DefaultCredential;
     /// let client = KeyVaultClient::new(&DefaultCredential::default(), &"test-keyvault");
     /// ```
-    pub fn new(
-        token_credential: &'a T,
-        keyvault_name: &'a str,
-    ) -> Self {
+    pub fn new(token_credential: &'a T, keyvault_name: &'a str) -> Self {
         KeyVaultClient::with_endpoint_suffix(
             token_credential,
             keyvault_name,
@@ -78,10 +72,12 @@ impl<'a, T:TokenCredential> KeyVaultClient<'a, T> {
             return Ok(());
         }
         let resource = format!("https://{}", &self.endpoint_suffix);
-        let token = self.token_credential.get_token(&resource)
-        .await
-        .with_context(|| "Failed to authenticate to Azure Active Directory")
-        .map_err(|e| KeyVaultError::AuthorizationError(e))?;
+        let token = self
+            .token_credential
+            .get_token(&resource)
+            .await
+            .with_context(|| "Failed to authenticate to Azure Active Directory")
+            .map_err(|e| KeyVaultError::AuthorizationError(e))?;
         self.token = Some(token);
         Ok(())
     }
@@ -91,10 +87,7 @@ impl<'a, T:TokenCredential> KeyVaultClient<'a, T> {
 
         let resp = reqwest::Client::new()
             .get(&uri)
-            .header(
-                "Authorization",
-                format!("Bearer {}", self.token.as_ref().unwrap().token.secret()),
-            )
+            .bearer_auth(self.token.as_ref().unwrap().token.secret())
             .send()
             .await
             .unwrap();
@@ -111,10 +104,7 @@ impl<'a, T:TokenCredential> KeyVaultClient<'a, T> {
 
         let resp = reqwest::Client::new()
             .put(&uri)
-            .header(
-                "Authorization",
-                format!("Bearer {}", self.token.as_ref().unwrap().token.secret()),
-            )
+            .bearer_auth(self.token.as_ref().unwrap().token.secret())
             .header("Content-Type", "application/json")
             .body(body)
             .send()
@@ -131,10 +121,9 @@ impl<'a, T:TokenCredential> KeyVaultClient<'a, T> {
     ) -> Result<String, KeyVaultError> {
         self.refresh_token().await?;
 
-        let mut req = reqwest::Client::new().post(&uri).header(
-            "Authorization",
-            format!("Bearer {}", self.token.as_ref().unwrap().token.secret()),
-        );
+        let mut req = reqwest::Client::new()
+            .post(&uri)
+            .bearer_auth(self.token.as_ref().unwrap().token.secret());
 
         if let Some(body) = json_body {
             req = req.header("Content-Type", "application/json").body(body);
@@ -157,10 +146,7 @@ impl<'a, T:TokenCredential> KeyVaultClient<'a, T> {
 
         let resp = reqwest::Client::new()
             .patch(&uri)
-            .header(
-                "Authorization",
-                format!("Bearer {}", self.token.as_ref().unwrap().token.secret()),
-            )
+            .bearer_auth(self.token.as_ref().unwrap().token.secret())
             .header("Content-Type", "application/json")
             .body(body)
             .send()
@@ -186,10 +172,7 @@ impl<'a, T:TokenCredential> KeyVaultClient<'a, T> {
 
         let resp = reqwest::Client::new()
             .delete(&uri)
-            .header(
-                "Authorization",
-                format!("Bearer {}", self.token.as_ref().unwrap().token.secret()),
-            )
+            .bearer_auth(self.token.as_ref().unwrap().token.secret())
             .header("Content-Type", "application/json")
             .send()
             .await
