@@ -9,9 +9,7 @@ pub async fn operations_list(configuration: &Configuration) -> Result<OperationL
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
-    if let Some(token) = &configuration.bearer_access_token {
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-    }
+    req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -26,9 +24,7 @@ pub async fn skus_list(configuration: &Configuration, subscription_id: &str) -> 
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
-    if let Some(token) = &configuration.bearer_access_token {
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-    }
+    req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -47,9 +43,7 @@ pub async fn storage_accounts_check_name_availability(
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
-    if let Some(token) = &configuration.bearer_access_token {
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-    }
+    req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -70,9 +64,7 @@ pub async fn storage_accounts_get_properties(
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
-    if let Some(token) = &configuration.bearer_access_token {
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-    }
+    req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
     if let Some(expand) = expand {
         req_builder = req_builder.query(&[("$expand", expand)]);
     }
@@ -96,9 +88,7 @@ pub async fn storage_accounts_create(
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
-    if let Some(token) = &configuration.bearer_access_token {
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-    }
+    req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -119,9 +109,7 @@ pub async fn storage_accounts_update(
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
-    if let Some(token) = &configuration.bearer_access_token {
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-    }
+    req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -141,9 +129,7 @@ pub async fn storage_accounts_delete(
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
-    if let Some(token) = &configuration.bearer_access_token {
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-    }
+    req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -158,9 +144,7 @@ pub async fn storage_accounts_list(configuration: &Configuration, subscription_i
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
-    if let Some(token) = &configuration.bearer_access_token {
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-    }
+    req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -179,9 +163,7 @@ pub async fn storage_accounts_list_by_resource_group(
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
-    if let Some(token) = &configuration.bearer_access_token {
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-    }
+    req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -202,9 +184,7 @@ pub async fn storage_accounts_list_keys(
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
-    if let Some(token) = &configuration.bearer_access_token {
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-    }
+    req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
     if let Some(expand) = expand {
         req_builder = req_builder.query(&[("$expand", expand)]);
     }
@@ -228,9 +208,7 @@ pub async fn storage_accounts_regenerate_key(
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
-    if let Some(token) = &configuration.bearer_access_token {
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-    }
+    req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -245,9 +223,7 @@ pub async fn usages_list_by_location(configuration: &Configuration, subscription
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
-    if let Some(token) = &configuration.bearer_access_token {
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-    }
+    req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -268,9 +244,7 @@ pub async fn storage_accounts_list_account_sas(
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
-    if let Some(token) = &configuration.bearer_access_token {
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-    }
+    req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -291,9 +265,7 @@ pub async fn storage_accounts_list_service_sas(
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
-    if let Some(token) = &configuration.bearer_access_token {
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-    }
+    req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -313,9 +285,7 @@ pub async fn storage_accounts_failover(
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
-    if let Some(token) = &configuration.bearer_access_token {
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-    }
+    req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -336,9 +306,7 @@ pub async fn storage_accounts_restore_blob_ranges(
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
-    if let Some(token) = &configuration.bearer_access_token {
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-    }
+    req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -359,9 +327,7 @@ pub async fn management_policies_get(
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
-    if let Some(token) = &configuration.bearer_access_token {
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-    }
+    req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -383,9 +349,7 @@ pub async fn management_policies_create_or_update(
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
-    if let Some(token) = &configuration.bearer_access_token {
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-    }
+    req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -406,9 +370,7 @@ pub async fn management_policies_delete(
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
-    if let Some(token) = &configuration.bearer_access_token {
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-    }
+    req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -428,9 +390,7 @@ pub async fn private_endpoint_connections_list(
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
-    if let Some(token) = &configuration.bearer_access_token {
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-    }
+    req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -451,9 +411,7 @@ pub async fn private_endpoint_connections_get(
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
-    if let Some(token) = &configuration.bearer_access_token {
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-    }
+    req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -475,9 +433,7 @@ pub async fn private_endpoint_connections_put(
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
-    if let Some(token) = &configuration.bearer_access_token {
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-    }
+    req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -498,9 +454,7 @@ pub async fn private_endpoint_connections_delete(
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
-    if let Some(token) = &configuration.bearer_access_token {
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-    }
+    req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -520,9 +474,7 @@ pub async fn private_link_resources_list_by_storage_account(
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
-    if let Some(token) = &configuration.bearer_access_token {
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-    }
+    req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -542,9 +494,7 @@ pub async fn object_replication_policies_list(
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
-    if let Some(token) = &configuration.bearer_access_token {
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-    }
+    req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -565,9 +515,7 @@ pub async fn object_replication_policies_get(
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
-    if let Some(token) = &configuration.bearer_access_token {
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-    }
+    req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -589,9 +537,7 @@ pub async fn object_replication_policies_create_or_update(
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
-    if let Some(token) = &configuration.bearer_access_token {
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-    }
+    req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -612,9 +558,7 @@ pub async fn object_replication_policies_delete(
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
-    if let Some(token) = &configuration.bearer_access_token {
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-    }
+    req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -634,9 +578,7 @@ pub async fn storage_accounts_revoke_user_delegation_keys(
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
-    if let Some(token) = &configuration.bearer_access_token {
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-    }
+    req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -657,9 +599,7 @@ pub async fn encryption_scopes_get(
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
-    if let Some(token) = &configuration.bearer_access_token {
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-    }
+    req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -681,9 +621,7 @@ pub async fn encryption_scopes_put(
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
-    if let Some(token) = &configuration.bearer_access_token {
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-    }
+    req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -705,9 +643,7 @@ pub async fn encryption_scopes_patch(
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
-    if let Some(token) = &configuration.bearer_access_token {
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-    }
+    req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -727,9 +663,7 @@ pub async fn encryption_scopes_list(
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
-    if let Some(token) = &configuration.bearer_access_token {
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-    }
+    req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -749,9 +683,7 @@ pub async fn blob_services_list(
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
-    if let Some(token) = &configuration.bearer_access_token {
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-    }
+    req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -772,9 +704,7 @@ pub async fn blob_services_get_service_properties(
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
-    if let Some(token) = &configuration.bearer_access_token {
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-    }
+    req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -796,9 +726,7 @@ pub async fn blob_services_set_service_properties(
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
-    if let Some(token) = &configuration.bearer_access_token {
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-    }
+    req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -821,9 +749,7 @@ pub async fn blob_containers_list(
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
-    if let Some(token) = &configuration.bearer_access_token {
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-    }
+    req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
     if let Some(maxpagesize) = maxpagesize {
         req_builder = req_builder.query(&[("$maxpagesize", maxpagesize)]);
     }
@@ -853,9 +779,7 @@ pub async fn blob_containers_get(
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
-    if let Some(token) = &configuration.bearer_access_token {
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-    }
+    req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -877,9 +801,7 @@ pub async fn blob_containers_create(
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
-    if let Some(token) = &configuration.bearer_access_token {
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-    }
+    req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -901,9 +823,7 @@ pub async fn blob_containers_update(
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
-    if let Some(token) = &configuration.bearer_access_token {
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-    }
+    req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -924,9 +844,7 @@ pub async fn blob_containers_delete(
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
-    if let Some(token) = &configuration.bearer_access_token {
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-    }
+    req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -945,9 +863,7 @@ pub async fn blob_containers_set_legal_hold(
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
-    if let Some(token) = &configuration.bearer_access_token {
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-    }
+    req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -966,9 +882,7 @@ pub async fn blob_containers_clear_legal_hold(
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
-    if let Some(token) = &configuration.bearer_access_token {
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-    }
+    req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -988,9 +902,7 @@ pub async fn blob_containers_get_immutability_policy(
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
-    if let Some(token) = &configuration.bearer_access_token {
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-    }
+    req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -1011,9 +923,7 @@ pub async fn blob_containers_create_or_update_immutability_policy(
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
-    if let Some(token) = &configuration.bearer_access_token {
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-    }
+    req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -1033,9 +943,7 @@ pub async fn blob_containers_delete_immutability_policy(
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
-    if let Some(token) = &configuration.bearer_access_token {
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-    }
+    req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -1054,9 +962,7 @@ pub async fn blob_containers_lock_immutability_policy(
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
-    if let Some(token) = &configuration.bearer_access_token {
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-    }
+    req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -1076,9 +982,7 @@ pub async fn blob_containers_extend_immutability_policy(
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
-    if let Some(token) = &configuration.bearer_access_token {
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-    }
+    req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -1100,9 +1004,7 @@ pub async fn blob_containers_lease(
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
-    if let Some(token) = &configuration.bearer_access_token {
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-    }
+    req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -1122,9 +1024,7 @@ pub async fn file_services_list(
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
-    if let Some(token) = &configuration.bearer_access_token {
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-    }
+    req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -1145,9 +1045,7 @@ pub async fn file_services_get_service_properties(
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
-    if let Some(token) = &configuration.bearer_access_token {
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-    }
+    req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -1169,9 +1067,7 @@ pub async fn file_services_set_service_properties(
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
-    if let Some(token) = &configuration.bearer_access_token {
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-    }
+    req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -1194,9 +1090,7 @@ pub async fn file_shares_list(
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
-    if let Some(token) = &configuration.bearer_access_token {
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-    }
+    req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
     if let Some(maxpagesize) = maxpagesize {
         req_builder = req_builder.query(&[("$maxpagesize", maxpagesize)]);
     }
@@ -1227,9 +1121,7 @@ pub async fn file_shares_get(
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
-    if let Some(token) = &configuration.bearer_access_token {
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-    }
+    req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
     if let Some(expand) = expand {
         req_builder = req_builder.query(&[("$expand", expand)]);
     }
@@ -1254,9 +1146,7 @@ pub async fn file_shares_create(
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
-    if let Some(token) = &configuration.bearer_access_token {
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-    }
+    req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -1278,9 +1168,7 @@ pub async fn file_shares_update(
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
-    if let Some(token) = &configuration.bearer_access_token {
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-    }
+    req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -1301,9 +1189,7 @@ pub async fn file_shares_delete(
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
-    if let Some(token) = &configuration.bearer_access_token {
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-    }
+    req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -1325,9 +1211,7 @@ pub async fn file_shares_restore(
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
-    if let Some(token) = &configuration.bearer_access_token {
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-    }
+    req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -1347,9 +1231,7 @@ pub async fn queue_services_list(
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
-    if let Some(token) = &configuration.bearer_access_token {
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-    }
+    req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -1370,9 +1252,7 @@ pub async fn queue_services_get_service_properties(
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
-    if let Some(token) = &configuration.bearer_access_token {
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-    }
+    req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -1394,9 +1274,7 @@ pub async fn queue_services_set_service_properties(
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
-    if let Some(token) = &configuration.bearer_access_token {
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-    }
+    req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -1417,9 +1295,7 @@ pub async fn queue_get(
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
-    if let Some(token) = &configuration.bearer_access_token {
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-    }
+    req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -1441,9 +1317,7 @@ pub async fn queue_create(
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
-    if let Some(token) = &configuration.bearer_access_token {
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-    }
+    req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -1465,9 +1339,7 @@ pub async fn queue_update(
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
-    if let Some(token) = &configuration.bearer_access_token {
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-    }
+    req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -1488,9 +1360,7 @@ pub async fn queue_delete(
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
-    if let Some(token) = &configuration.bearer_access_token {
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-    }
+    req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -1512,9 +1382,7 @@ pub async fn queue_list(
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
-    if let Some(token) = &configuration.bearer_access_token {
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-    }
+    req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
     if let Some(maxpagesize) = maxpagesize {
         req_builder = req_builder.query(&[("$maxpagesize", maxpagesize)]);
     }
@@ -1540,9 +1408,7 @@ pub async fn table_services_list(
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
-    if let Some(token) = &configuration.bearer_access_token {
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-    }
+    req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -1563,9 +1429,7 @@ pub async fn table_services_get_service_properties(
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
-    if let Some(token) = &configuration.bearer_access_token {
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-    }
+    req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -1587,9 +1451,7 @@ pub async fn table_services_set_service_properties(
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
-    if let Some(token) = &configuration.bearer_access_token {
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-    }
+    req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -1610,9 +1472,7 @@ pub async fn table_get(
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
-    if let Some(token) = &configuration.bearer_access_token {
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-    }
+    req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -1633,9 +1493,7 @@ pub async fn table_create(
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
-    if let Some(token) = &configuration.bearer_access_token {
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-    }
+    req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -1656,9 +1514,7 @@ pub async fn table_update(
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
-    if let Some(token) = &configuration.bearer_access_token {
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-    }
+    req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -1679,9 +1535,7 @@ pub async fn table_delete(
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
-    if let Some(token) = &configuration.bearer_access_token {
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-    }
+    req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
@@ -1701,9 +1555,7 @@ pub async fn table_list(
     if let Some(token) = &configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
-    if let Some(token) = &configuration.bearer_access_token {
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-    }
+    req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
     Ok(res.json().await?)
