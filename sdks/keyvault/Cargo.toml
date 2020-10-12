@@ -1,6 +1,6 @@
 [package]
 name = "azure-keyvault"
-version = "0.2.0"
+version = "0.1.0"
 authors = ["Microsoft Corp."]
 description = "Rust wrapper around Microsoft Azure REST APIs for Azure Key Vault"
 documentation = "https://docs.rs/azure-sdk-keyvault"
