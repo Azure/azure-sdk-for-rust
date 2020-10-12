@@ -27,7 +27,9 @@ impl fmt::Display for RecoveryLevel {
         match self {
             RecoveryLevel::Purgeable => write!(f, "Purgeable"),
             RecoveryLevel::Recoverable => write!(f, "Recoverable"),
-            RecoveryLevel::RecoverableAndProtectedSubscription => write!(f, "Recoverable+ProtectedSubscription"),
+            RecoveryLevel::RecoverableAndProtectedSubscription => {
+                write!(f, "Recoverable+ProtectedSubscription")
+            }
             RecoveryLevel::RecoverableAndPurgeable => write!(f, "Recoverable+Purgeable"),
         }
     }
@@ -127,7 +129,10 @@ impl<'a, T:TokenCredential> KeyVaultClient<'a, T> {
     ///
     /// Runtime::new().unwrap().block_on(example());
     /// ```
-    pub async fn get_secret(&mut self, secret_name: &'a str) -> Result<KeyVaultSecret, KeyVaultError> {
+    pub async fn get_secret(
+        &mut self,
+        secret_name: &'a str,
+    ) -> Result<KeyVaultSecret, KeyVaultError> {
         Ok(self.get_secret_with_version(secret_name, "").await?)
     }
 
@@ -197,7 +202,9 @@ impl<'a, T:TokenCredential> KeyVaultClient<'a, T> {
     ///
     /// Runtime::new().unwrap().block_on(example());
     /// ```
-    pub async fn list_secrets(&mut self) -> Result<Vec<KeyVaultSecretBaseIdentifier>, KeyVaultError> {
+    pub async fn list_secrets(
+        &mut self,
+    ) -> Result<Vec<KeyVaultSecretBaseIdentifier>, KeyVaultError> {
         let mut secrets = Vec::<KeyVaultSecretBaseIdentifier>::new();
         let mut uri = Url::parse_with_params(
             &format!("{}/secrets", self.keyvault_endpoint),
@@ -262,7 +269,10 @@ impl<'a, T:TokenCredential> KeyVaultClient<'a, T> {
     ) -> Result<Vec<KeyVaultSecretBaseIdentifier>, KeyVaultError> {
         let mut secret_versions = Vec::<KeyVaultSecretBaseIdentifier>::new();
         let mut uri = Url::parse_with_params(
-            &format!("{}/secrets/{}/versions", self.keyvault_endpoint, secret_name),
+            &format!(
+                "{}/secrets/{}/versions",
+                self.keyvault_endpoint, secret_name
+            ),
             &[
                 ("api-version", API_VERSION),
                 ("maxresults", &DEFAULT_MAX_RESULTS.to_string()),
@@ -324,7 +334,11 @@ impl<'a, T:TokenCredential> KeyVaultClient<'a, T> {
     ///
     /// Runtime::new().unwrap().block_on(example());
     /// ```
-    pub async fn set_secret(&mut self, secret_name: &'a str, new_secret_value: &'a str) -> Result<(), KeyVaultError> {
+    pub async fn set_secret(
+        &mut self,
+        secret_name: &'a str,
+        new_secret_value: &'a str,
+    ) -> Result<(), KeyVaultError> {
         let uri = Url::parse_with_params(
             &format!("{}/secrets/{}", self.keyvault_endpoint, secret_name),
             &[("api-version", API_VERSION)],
@@ -332,7 +346,10 @@ impl<'a, T:TokenCredential> KeyVaultClient<'a, T> {
         .unwrap();
 
         let mut request_body = Map::new();
-        request_body.insert("value".to_owned(), Value::String(new_secret_value.to_owned()));
+        request_body.insert(
+            "value".to_owned(),
+            Value::String(new_secret_value.to_owned()),
+        );
 
         self.put_authed(uri.to_string(), Value::Object(request_body).to_string())
             .await?;
@@ -375,7 +392,8 @@ impl<'a, T:TokenCredential> KeyVaultClient<'a, T> {
         let mut attributes = Map::new();
         attributes.insert("enabled".to_owned(), Value::Bool(enabled));
 
-        self.update_secret(secret_name, secret_version, attributes).await?;
+        self.update_secret(secret_name, secret_version, attributes)
+            .await?;
 
         Ok(())
     }
@@ -413,9 +431,13 @@ impl<'a, T:TokenCredential> KeyVaultClient<'a, T> {
         recovery_level: RecoveryLevel,
     ) -> Result<(), KeyVaultError> {
         let mut attributes = Map::new();
-        attributes.insert("enabled".to_owned(), Value::String(recovery_level.to_string()));
+        attributes.insert(
+            "enabled".to_owned(),
+            Value::String(recovery_level.to_string()),
+        );
 
-        self.update_secret(secret_name, secret_version, attributes).await?;
+        self.update_secret(secret_name, secret_version, attributes)
+            .await?;
 
         Ok(())
     }
@@ -459,7 +481,8 @@ impl<'a, T:TokenCredential> KeyVaultClient<'a, T> {
             Value::Number(serde_json::Number::from(expiration_time.timestamp())),
         );
 
-        self.update_secret(secret_name, secret_version, attributes).await?;
+        self.update_secret(secret_name, secret_version, attributes)
+            .await?;
 
         Ok(())
     }
@@ -471,7 +494,10 @@ impl<'a, T:TokenCredential> KeyVaultClient<'a, T> {
         attributes: Map<String, Value>,
     ) -> Result<(), KeyVaultError> {
         let uri = Url::parse_with_params(
-            &format!("{}/secrets/{}/{}", self.keyvault_endpoint, secret_name, secret_version),
+            &format!(
+                "{}/secrets/{}/{}",
+                self.keyvault_endpoint, secret_name, secret_version
+            ),
             &[("api-version", API_VERSION)],
         )
         .unwrap();
@@ -516,8 +542,11 @@ impl<'a, T:TokenCredential> KeyVaultClient<'a, T> {
         let mut request_body = Map::new();
         request_body.insert("value".to_owned(), Value::String(backup_blob.to_owned()));
 
-        self.post_authed(uri.to_string(), Some(Value::Object(request_body).to_string()))
-            .await?;
+        self.post_authed(
+            uri.to_string(),
+            Some(Value::Object(request_body).to_string()),
+        )
+        .await?;
 
         Ok(())
     }
@@ -543,7 +572,10 @@ impl<'a, T:TokenCredential> KeyVaultClient<'a, T> {
     ///
     /// Runtime::new().unwrap().block_on(example());
     /// ```
-    pub async fn backup_secret(&mut self, secret_name: &'a str) -> Result<KeyVaultSecretBackupBlob, KeyVaultError> {
+    pub async fn backup_secret(
+        &mut self,
+        secret_name: &'a str,
+    ) -> Result<KeyVaultSecretBackupBlob, KeyVaultError> {
         let uri = Url::parse_with_params(
             &format!("{}/secrets/{}/backup", self.keyvault_endpoint, secret_name),
             &[("api-version", API_VERSION)],
@@ -551,13 +583,14 @@ impl<'a, T:TokenCredential> KeyVaultClient<'a, T> {
         .unwrap();
 
         let response = self.post_authed(uri.to_string(), None).await?;
-        let backup_blob = serde_json::from_str::<KeyVaultSecretBackupResponseRaw>(&response).with_context(|| {
-            format!(
-                "Failed to parse response from Key Vault when backing up secret {}: {}",
-                secret_name,
-                response.to_string()
-            )
-        })?;
+        let backup_blob = serde_json::from_str::<KeyVaultSecretBackupResponseRaw>(&response)
+            .with_context(|| {
+                format!(
+                    "Failed to parse response from Key Vault when backing up secret {}: {}",
+                    secret_name,
+                    response.to_string()
+                )
+            })?;
 
         Ok(KeyVaultSecretBackupBlob {
             value: backup_blob.value,

@@ -1,12 +1,12 @@
 #![cfg(all(test, feature = "test_e2e"))]
 #[macro_use]
 extern crate serde_derive;
-use azure_sdk_core::prelude::*;
 use azure_cosmos::collection::*;
 use azure_cosmos::prelude::*;
 use azure_cosmos::responses::GetDocumentResponse;
 use azure_cosmos::Offer;
 use azure_cosmos::Query;
+use azure_sdk_core::prelude::*;
 mod setup;
 
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
