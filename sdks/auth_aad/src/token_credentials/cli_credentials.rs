@@ -43,26 +43,28 @@ impl TokenCredential for AzureCliCredential {
             // on window az is a cmd and it should be called like this
             // see https://doc.rust-lang.org/nightly/std/process/struct.Command.html
             Command::new("cmd")
-            .args(&[
-                "/C",
-                "az",
-                "account",
-                "get-access-token",
-                "--output",
-                "json",
-                "--resource",
-                resource,
-            ]).output()
+                .args(&[
+                    "/C",
+                    "az",
+                    "account",
+                    "get-access-token",
+                    "--output",
+                    "json",
+                    "--resource",
+                    resource,
+                ])
+                .output()
         } else {
             Command::new("az")
-            .args(&[
-                "account",
-                "get-access-token",
-                "--output",
-                "json",
-                "--resource",
-                resource,
-            ]).output()
+                .args(&[
+                    "account",
+                    "get-access-token",
+                    "--output",
+                    "json",
+                    "--resource",
+                    resource,
+                ])
+                .output()
         };
 
         let res = match az_command {
