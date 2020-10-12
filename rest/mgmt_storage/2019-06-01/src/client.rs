@@ -2,7 +2,6 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 use crate::*;
-use anyhow::{Error, Result};
 pub async fn operations_list(configuration: &Configuration) -> Result<OperationListResult> {
     let client = &configuration.client;
     let uri_str = &format!("{}/providers/Microsoft.Storage/operations", &configuration.base_path,);
@@ -15,14 +14,7 @@ pub async fn operations_list(configuration: &Configuration) -> Result<OperationL
     }
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
-    match res.error_for_status_ref() {
-        Ok(_) => Ok(res.json().await?),
-        Err(err) => {
-            let e = Error::new(err);
-            let e = e.context(res.text().await?);
-            Err(e)
-        }
-    }
+    Ok(res.json().await?)
 }
 pub async fn skus_list(configuration: &Configuration, subscription_id: &str) -> Result<StorageSkuListResult> {
     let client = &configuration.client;
@@ -39,14 +31,7 @@ pub async fn skus_list(configuration: &Configuration, subscription_id: &str) -> 
     }
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
-    match res.error_for_status_ref() {
-        Ok(_) => Ok(res.json().await?),
-        Err(err) => {
-            let e = Error::new(err);
-            let e = e.context(res.text().await?);
-            Err(e)
-        }
-    }
+    Ok(res.json().await?)
 }
 pub async fn storage_accounts_check_name_availability(
     configuration: &Configuration,
@@ -67,14 +52,7 @@ pub async fn storage_accounts_check_name_availability(
     }
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
-    match res.error_for_status_ref() {
-        Ok(_) => Ok(res.json().await?),
-        Err(err) => {
-            let e = Error::new(err);
-            let e = e.context(res.text().await?);
-            Err(e)
-        }
-    }
+    Ok(res.json().await?)
 }
 pub async fn storage_accounts_get_properties(
     configuration: &Configuration,
@@ -100,14 +78,7 @@ pub async fn storage_accounts_get_properties(
     }
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
-    match res.error_for_status_ref() {
-        Ok(_) => Ok(res.json().await?),
-        Err(err) => {
-            let e = Error::new(err);
-            let e = e.context(res.text().await?);
-            Err(e)
-        }
-    }
+    Ok(res.json().await?)
 }
 pub async fn storage_accounts_create(
     configuration: &Configuration,
@@ -130,14 +101,7 @@ pub async fn storage_accounts_create(
     }
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
-    match res.error_for_status_ref() {
-        Ok(_) => Ok(res.json().await?),
-        Err(err) => {
-            let e = Error::new(err);
-            let e = e.context(res.text().await?);
-            Err(e)
-        }
-    }
+    Ok(res.json().await?)
 }
 pub async fn storage_accounts_update(
     configuration: &Configuration,
@@ -160,14 +124,7 @@ pub async fn storage_accounts_update(
     }
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
-    match res.error_for_status_ref() {
-        Ok(_) => Ok(res.json().await?),
-        Err(err) => {
-            let e = Error::new(err);
-            let e = e.context(res.text().await?);
-            Err(e)
-        }
-    }
+    Ok(res.json().await?)
 }
 pub async fn storage_accounts_delete(
     configuration: &Configuration,
@@ -189,14 +146,7 @@ pub async fn storage_accounts_delete(
     }
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
-    match res.error_for_status_ref() {
-        Ok(_) => Ok(res.json().await?),
-        Err(err) => {
-            let e = Error::new(err);
-            let e = e.context(res.text().await?);
-            Err(e)
-        }
-    }
+    Ok(res.json().await?)
 }
 pub async fn storage_accounts_list(configuration: &Configuration, subscription_id: &str) -> Result<StorageAccountListResult> {
     let client = &configuration.client;
@@ -213,14 +163,7 @@ pub async fn storage_accounts_list(configuration: &Configuration, subscription_i
     }
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
-    match res.error_for_status_ref() {
-        Ok(_) => Ok(res.json().await?),
-        Err(err) => {
-            let e = Error::new(err);
-            let e = e.context(res.text().await?);
-            Err(e)
-        }
-    }
+    Ok(res.json().await?)
 }
 pub async fn storage_accounts_list_by_resource_group(
     configuration: &Configuration,
@@ -241,14 +184,7 @@ pub async fn storage_accounts_list_by_resource_group(
     }
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
-    match res.error_for_status_ref() {
-        Ok(_) => Ok(res.json().await?),
-        Err(err) => {
-            let e = Error::new(err);
-            let e = e.context(res.text().await?);
-            Err(e)
-        }
-    }
+    Ok(res.json().await?)
 }
 pub async fn storage_accounts_list_keys(
     configuration: &Configuration,
@@ -274,14 +210,7 @@ pub async fn storage_accounts_list_keys(
     }
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
-    match res.error_for_status_ref() {
-        Ok(_) => Ok(res.json().await?),
-        Err(err) => {
-            let e = Error::new(err);
-            let e = e.context(res.text().await?);
-            Err(e)
-        }
-    }
+    Ok(res.json().await?)
 }
 pub async fn storage_accounts_regenerate_key(
     configuration: &Configuration,
@@ -304,14 +233,7 @@ pub async fn storage_accounts_regenerate_key(
     }
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
-    match res.error_for_status_ref() {
-        Ok(_) => Ok(res.json().await?),
-        Err(err) => {
-            let e = Error::new(err);
-            let e = e.context(res.text().await?);
-            Err(e)
-        }
-    }
+    Ok(res.json().await?)
 }
 pub async fn usages_list_by_location(configuration: &Configuration, subscription_id: &str, location: &str) -> Result<UsageListResult> {
     let client = &configuration.client;
@@ -328,14 +250,7 @@ pub async fn usages_list_by_location(configuration: &Configuration, subscription
     }
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
-    match res.error_for_status_ref() {
-        Ok(_) => Ok(res.json().await?),
-        Err(err) => {
-            let e = Error::new(err);
-            let e = e.context(res.text().await?);
-            Err(e)
-        }
-    }
+    Ok(res.json().await?)
 }
 pub async fn storage_accounts_list_account_sas(
     configuration: &Configuration,
@@ -358,14 +273,7 @@ pub async fn storage_accounts_list_account_sas(
     }
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
-    match res.error_for_status_ref() {
-        Ok(_) => Ok(res.json().await?),
-        Err(err) => {
-            let e = Error::new(err);
-            let e = e.context(res.text().await?);
-            Err(e)
-        }
-    }
+    Ok(res.json().await?)
 }
 pub async fn storage_accounts_list_service_sas(
     configuration: &Configuration,
@@ -388,14 +296,7 @@ pub async fn storage_accounts_list_service_sas(
     }
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
-    match res.error_for_status_ref() {
-        Ok(_) => Ok(res.json().await?),
-        Err(err) => {
-            let e = Error::new(err);
-            let e = e.context(res.text().await?);
-            Err(e)
-        }
-    }
+    Ok(res.json().await?)
 }
 pub async fn storage_accounts_failover(
     configuration: &Configuration,
@@ -417,14 +318,7 @@ pub async fn storage_accounts_failover(
     }
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
-    match res.error_for_status_ref() {
-        Ok(_) => Ok(res.json().await?),
-        Err(err) => {
-            let e = Error::new(err);
-            let e = e.context(res.text().await?);
-            Err(e)
-        }
-    }
+    Ok(res.json().await?)
 }
 pub async fn storage_accounts_restore_blob_ranges(
     configuration: &Configuration,
@@ -447,14 +341,7 @@ pub async fn storage_accounts_restore_blob_ranges(
     }
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
-    match res.error_for_status_ref() {
-        Ok(_) => Ok(res.json().await?),
-        Err(err) => {
-            let e = Error::new(err);
-            let e = e.context(res.text().await?);
-            Err(e)
-        }
-    }
+    Ok(res.json().await?)
 }
 pub async fn management_policies_get(
     configuration: &Configuration,
@@ -477,14 +364,7 @@ pub async fn management_policies_get(
     }
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
-    match res.error_for_status_ref() {
-        Ok(_) => Ok(res.json().await?),
-        Err(err) => {
-            let e = Error::new(err);
-            let e = e.context(res.text().await?);
-            Err(e)
-        }
-    }
+    Ok(res.json().await?)
 }
 pub async fn management_policies_create_or_update(
     configuration: &Configuration,
@@ -508,14 +388,7 @@ pub async fn management_policies_create_or_update(
     }
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
-    match res.error_for_status_ref() {
-        Ok(_) => Ok(res.json().await?),
-        Err(err) => {
-            let e = Error::new(err);
-            let e = e.context(res.text().await?);
-            Err(e)
-        }
-    }
+    Ok(res.json().await?)
 }
 pub async fn management_policies_delete(
     configuration: &Configuration,
@@ -538,14 +411,7 @@ pub async fn management_policies_delete(
     }
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
-    match res.error_for_status_ref() {
-        Ok(_) => Ok(res.json().await?),
-        Err(err) => {
-            let e = Error::new(err);
-            let e = e.context(res.text().await?);
-            Err(e)
-        }
-    }
+    Ok(res.json().await?)
 }
 pub async fn private_endpoint_connections_list(
     configuration: &Configuration,
@@ -567,14 +433,7 @@ pub async fn private_endpoint_connections_list(
     }
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
-    match res.error_for_status_ref() {
-        Ok(_) => Ok(res.json().await?),
-        Err(err) => {
-            let e = Error::new(err);
-            let e = e.context(res.text().await?);
-            Err(e)
-        }
-    }
+    Ok(res.json().await?)
 }
 pub async fn private_endpoint_connections_get(
     configuration: &Configuration,
@@ -597,14 +456,7 @@ pub async fn private_endpoint_connections_get(
     }
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
-    match res.error_for_status_ref() {
-        Ok(_) => Ok(res.json().await?),
-        Err(err) => {
-            let e = Error::new(err);
-            let e = e.context(res.text().await?);
-            Err(e)
-        }
-    }
+    Ok(res.json().await?)
 }
 pub async fn private_endpoint_connections_put(
     configuration: &Configuration,
@@ -628,14 +480,7 @@ pub async fn private_endpoint_connections_put(
     }
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
-    match res.error_for_status_ref() {
-        Ok(_) => Ok(res.json().await?),
-        Err(err) => {
-            let e = Error::new(err);
-            let e = e.context(res.text().await?);
-            Err(e)
-        }
-    }
+    Ok(res.json().await?)
 }
 pub async fn private_endpoint_connections_delete(
     configuration: &Configuration,
@@ -658,14 +503,7 @@ pub async fn private_endpoint_connections_delete(
     }
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
-    match res.error_for_status_ref() {
-        Ok(_) => Ok(res.json().await?),
-        Err(err) => {
-            let e = Error::new(err);
-            let e = e.context(res.text().await?);
-            Err(e)
-        }
-    }
+    Ok(res.json().await?)
 }
 pub async fn private_link_resources_list_by_storage_account(
     configuration: &Configuration,
@@ -687,14 +525,7 @@ pub async fn private_link_resources_list_by_storage_account(
     }
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
-    match res.error_for_status_ref() {
-        Ok(_) => Ok(res.json().await?),
-        Err(err) => {
-            let e = Error::new(err);
-            let e = e.context(res.text().await?);
-            Err(e)
-        }
-    }
+    Ok(res.json().await?)
 }
 pub async fn object_replication_policies_list(
     configuration: &Configuration,
@@ -716,14 +547,7 @@ pub async fn object_replication_policies_list(
     }
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
-    match res.error_for_status_ref() {
-        Ok(_) => Ok(res.json().await?),
-        Err(err) => {
-            let e = Error::new(err);
-            let e = e.context(res.text().await?);
-            Err(e)
-        }
-    }
+    Ok(res.json().await?)
 }
 pub async fn object_replication_policies_get(
     configuration: &Configuration,
@@ -746,14 +570,7 @@ pub async fn object_replication_policies_get(
     }
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
-    match res.error_for_status_ref() {
-        Ok(_) => Ok(res.json().await?),
-        Err(err) => {
-            let e = Error::new(err);
-            let e = e.context(res.text().await?);
-            Err(e)
-        }
-    }
+    Ok(res.json().await?)
 }
 pub async fn object_replication_policies_create_or_update(
     configuration: &Configuration,
@@ -777,14 +594,7 @@ pub async fn object_replication_policies_create_or_update(
     }
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
-    match res.error_for_status_ref() {
-        Ok(_) => Ok(res.json().await?),
-        Err(err) => {
-            let e = Error::new(err);
-            let e = e.context(res.text().await?);
-            Err(e)
-        }
-    }
+    Ok(res.json().await?)
 }
 pub async fn object_replication_policies_delete(
     configuration: &Configuration,
@@ -807,14 +617,7 @@ pub async fn object_replication_policies_delete(
     }
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
-    match res.error_for_status_ref() {
-        Ok(_) => Ok(res.json().await?),
-        Err(err) => {
-            let e = Error::new(err);
-            let e = e.context(res.text().await?);
-            Err(e)
-        }
-    }
+    Ok(res.json().await?)
 }
 pub async fn storage_accounts_revoke_user_delegation_keys(
     configuration: &Configuration,
@@ -836,14 +639,7 @@ pub async fn storage_accounts_revoke_user_delegation_keys(
     }
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
-    match res.error_for_status_ref() {
-        Ok(_) => Ok(res.json().await?),
-        Err(err) => {
-            let e = Error::new(err);
-            let e = e.context(res.text().await?);
-            Err(e)
-        }
-    }
+    Ok(res.json().await?)
 }
 pub async fn encryption_scopes_get(
     configuration: &Configuration,
@@ -866,14 +662,7 @@ pub async fn encryption_scopes_get(
     }
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
-    match res.error_for_status_ref() {
-        Ok(_) => Ok(res.json().await?),
-        Err(err) => {
-            let e = Error::new(err);
-            let e = e.context(res.text().await?);
-            Err(e)
-        }
-    }
+    Ok(res.json().await?)
 }
 pub async fn encryption_scopes_put(
     configuration: &Configuration,
@@ -897,14 +686,7 @@ pub async fn encryption_scopes_put(
     }
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
-    match res.error_for_status_ref() {
-        Ok(_) => Ok(res.json().await?),
-        Err(err) => {
-            let e = Error::new(err);
-            let e = e.context(res.text().await?);
-            Err(e)
-        }
-    }
+    Ok(res.json().await?)
 }
 pub async fn encryption_scopes_patch(
     configuration: &Configuration,
@@ -928,14 +710,7 @@ pub async fn encryption_scopes_patch(
     }
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
-    match res.error_for_status_ref() {
-        Ok(_) => Ok(res.json().await?),
-        Err(err) => {
-            let e = Error::new(err);
-            let e = e.context(res.text().await?);
-            Err(e)
-        }
-    }
+    Ok(res.json().await?)
 }
 pub async fn encryption_scopes_list(
     configuration: &Configuration,
@@ -957,14 +732,7 @@ pub async fn encryption_scopes_list(
     }
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
-    match res.error_for_status_ref() {
-        Ok(_) => Ok(res.json().await?),
-        Err(err) => {
-            let e = Error::new(err);
-            let e = e.context(res.text().await?);
-            Err(e)
-        }
-    }
+    Ok(res.json().await?)
 }
 pub async fn blob_services_list(
     configuration: &Configuration,
@@ -986,14 +754,7 @@ pub async fn blob_services_list(
     }
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
-    match res.error_for_status_ref() {
-        Ok(_) => Ok(res.json().await?),
-        Err(err) => {
-            let e = Error::new(err);
-            let e = e.context(res.text().await?);
-            Err(e)
-        }
-    }
+    Ok(res.json().await?)
 }
 pub async fn blob_services_get_service_properties(
     configuration: &Configuration,
@@ -1016,14 +777,7 @@ pub async fn blob_services_get_service_properties(
     }
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
-    match res.error_for_status_ref() {
-        Ok(_) => Ok(res.json().await?),
-        Err(err) => {
-            let e = Error::new(err);
-            let e = e.context(res.text().await?);
-            Err(e)
-        }
-    }
+    Ok(res.json().await?)
 }
 pub async fn blob_services_set_service_properties(
     configuration: &Configuration,
@@ -1047,14 +801,7 @@ pub async fn blob_services_set_service_properties(
     }
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
-    match res.error_for_status_ref() {
-        Ok(_) => Ok(res.json().await?),
-        Err(err) => {
-            let e = Error::new(err);
-            let e = e.context(res.text().await?);
-            Err(e)
-        }
-    }
+    Ok(res.json().await?)
 }
 pub async fn blob_containers_list(
     configuration: &Configuration,
@@ -1088,14 +835,7 @@ pub async fn blob_containers_list(
     }
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
-    match res.error_for_status_ref() {
-        Ok(_) => Ok(res.json().await?),
-        Err(err) => {
-            let e = Error::new(err);
-            let e = e.context(res.text().await?);
-            Err(e)
-        }
-    }
+    Ok(res.json().await?)
 }
 pub async fn blob_containers_get(
     configuration: &Configuration,
@@ -1118,14 +858,7 @@ pub async fn blob_containers_get(
     }
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
-    match res.error_for_status_ref() {
-        Ok(_) => Ok(res.json().await?),
-        Err(err) => {
-            let e = Error::new(err);
-            let e = e.context(res.text().await?);
-            Err(e)
-        }
-    }
+    Ok(res.json().await?)
 }
 pub async fn blob_containers_create(
     configuration: &Configuration,
@@ -1149,14 +882,7 @@ pub async fn blob_containers_create(
     }
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
-    match res.error_for_status_ref() {
-        Ok(_) => Ok(res.json().await?),
-        Err(err) => {
-            let e = Error::new(err);
-            let e = e.context(res.text().await?);
-            Err(e)
-        }
-    }
+    Ok(res.json().await?)
 }
 pub async fn blob_containers_update(
     configuration: &Configuration,
@@ -1180,14 +906,7 @@ pub async fn blob_containers_update(
     }
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
-    match res.error_for_status_ref() {
-        Ok(_) => Ok(res.json().await?),
-        Err(err) => {
-            let e = Error::new(err);
-            let e = e.context(res.text().await?);
-            Err(e)
-        }
-    }
+    Ok(res.json().await?)
 }
 pub async fn blob_containers_delete(
     configuration: &Configuration,
@@ -1210,14 +929,7 @@ pub async fn blob_containers_delete(
     }
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
-    match res.error_for_status_ref() {
-        Ok(_) => Ok(res.json().await?),
-        Err(err) => {
-            let e = Error::new(err);
-            let e = e.context(res.text().await?);
-            Err(e)
-        }
-    }
+    Ok(res.json().await?)
 }
 pub async fn blob_containers_set_legal_hold(
     configuration: &Configuration,
@@ -1238,14 +950,7 @@ pub async fn blob_containers_set_legal_hold(
     }
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
-    match res.error_for_status_ref() {
-        Ok(_) => Ok(res.json().await?),
-        Err(err) => {
-            let e = Error::new(err);
-            let e = e.context(res.text().await?);
-            Err(e)
-        }
-    }
+    Ok(res.json().await?)
 }
 pub async fn blob_containers_clear_legal_hold(
     configuration: &Configuration,
@@ -1266,14 +971,7 @@ pub async fn blob_containers_clear_legal_hold(
     }
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
-    match res.error_for_status_ref() {
-        Ok(_) => Ok(res.json().await?),
-        Err(err) => {
-            let e = Error::new(err);
-            let e = e.context(res.text().await?);
-            Err(e)
-        }
-    }
+    Ok(res.json().await?)
 }
 pub async fn blob_containers_get_immutability_policy(
     configuration: &Configuration,
@@ -1295,14 +993,7 @@ pub async fn blob_containers_get_immutability_policy(
     }
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
-    match res.error_for_status_ref() {
-        Ok(_) => Ok(res.json().await?),
-        Err(err) => {
-            let e = Error::new(err);
-            let e = e.context(res.text().await?);
-            Err(e)
-        }
-    }
+    Ok(res.json().await?)
 }
 pub async fn blob_containers_create_or_update_immutability_policy(
     configuration: &Configuration,
@@ -1325,14 +1016,7 @@ pub async fn blob_containers_create_or_update_immutability_policy(
     }
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
-    match res.error_for_status_ref() {
-        Ok(_) => Ok(res.json().await?),
-        Err(err) => {
-            let e = Error::new(err);
-            let e = e.context(res.text().await?);
-            Err(e)
-        }
-    }
+    Ok(res.json().await?)
 }
 pub async fn blob_containers_delete_immutability_policy(
     configuration: &Configuration,
@@ -1354,14 +1038,7 @@ pub async fn blob_containers_delete_immutability_policy(
     }
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
-    match res.error_for_status_ref() {
-        Ok(_) => Ok(res.json().await?),
-        Err(err) => {
-            let e = Error::new(err);
-            let e = e.context(res.text().await?);
-            Err(e)
-        }
-    }
+    Ok(res.json().await?)
 }
 pub async fn blob_containers_lock_immutability_policy(
     configuration: &Configuration,
@@ -1382,14 +1059,7 @@ pub async fn blob_containers_lock_immutability_policy(
     }
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
-    match res.error_for_status_ref() {
-        Ok(_) => Ok(res.json().await?),
-        Err(err) => {
-            let e = Error::new(err);
-            let e = e.context(res.text().await?);
-            Err(e)
-        }
-    }
+    Ok(res.json().await?)
 }
 pub async fn blob_containers_extend_immutability_policy(
     configuration: &Configuration,
@@ -1411,14 +1081,7 @@ pub async fn blob_containers_extend_immutability_policy(
     }
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
-    match res.error_for_status_ref() {
-        Ok(_) => Ok(res.json().await?),
-        Err(err) => {
-            let e = Error::new(err);
-            let e = e.context(res.text().await?);
-            Err(e)
-        }
-    }
+    Ok(res.json().await?)
 }
 pub async fn blob_containers_lease(
     configuration: &Configuration,
@@ -1442,14 +1105,7 @@ pub async fn blob_containers_lease(
     }
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
-    match res.error_for_status_ref() {
-        Ok(_) => Ok(res.json().await?),
-        Err(err) => {
-            let e = Error::new(err);
-            let e = e.context(res.text().await?);
-            Err(e)
-        }
-    }
+    Ok(res.json().await?)
 }
 pub async fn file_services_list(
     configuration: &Configuration,
@@ -1471,14 +1127,7 @@ pub async fn file_services_list(
     }
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
-    match res.error_for_status_ref() {
-        Ok(_) => Ok(res.json().await?),
-        Err(err) => {
-            let e = Error::new(err);
-            let e = e.context(res.text().await?);
-            Err(e)
-        }
-    }
+    Ok(res.json().await?)
 }
 pub async fn file_services_get_service_properties(
     configuration: &Configuration,
@@ -1501,14 +1150,7 @@ pub async fn file_services_get_service_properties(
     }
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
-    match res.error_for_status_ref() {
-        Ok(_) => Ok(res.json().await?),
-        Err(err) => {
-            let e = Error::new(err);
-            let e = e.context(res.text().await?);
-            Err(e)
-        }
-    }
+    Ok(res.json().await?)
 }
 pub async fn file_services_set_service_properties(
     configuration: &Configuration,
@@ -1532,14 +1174,7 @@ pub async fn file_services_set_service_properties(
     }
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
-    match res.error_for_status_ref() {
-        Ok(_) => Ok(res.json().await?),
-        Err(err) => {
-            let e = Error::new(err);
-            let e = e.context(res.text().await?);
-            Err(e)
-        }
-    }
+    Ok(res.json().await?)
 }
 pub async fn file_shares_list(
     configuration: &Configuration,
@@ -1573,14 +1208,7 @@ pub async fn file_shares_list(
     }
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
-    match res.error_for_status_ref() {
-        Ok(_) => Ok(res.json().await?),
-        Err(err) => {
-            let e = Error::new(err);
-            let e = e.context(res.text().await?);
-            Err(e)
-        }
-    }
+    Ok(res.json().await?)
 }
 pub async fn file_shares_get(
     configuration: &Configuration,
@@ -1607,14 +1235,7 @@ pub async fn file_shares_get(
     }
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
-    match res.error_for_status_ref() {
-        Ok(_) => Ok(res.json().await?),
-        Err(err) => {
-            let e = Error::new(err);
-            let e = e.context(res.text().await?);
-            Err(e)
-        }
-    }
+    Ok(res.json().await?)
 }
 pub async fn file_shares_create(
     configuration: &Configuration,
@@ -1638,14 +1259,7 @@ pub async fn file_shares_create(
     }
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
-    match res.error_for_status_ref() {
-        Ok(_) => Ok(res.json().await?),
-        Err(err) => {
-            let e = Error::new(err);
-            let e = e.context(res.text().await?);
-            Err(e)
-        }
-    }
+    Ok(res.json().await?)
 }
 pub async fn file_shares_update(
     configuration: &Configuration,
@@ -1669,14 +1283,7 @@ pub async fn file_shares_update(
     }
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
-    match res.error_for_status_ref() {
-        Ok(_) => Ok(res.json().await?),
-        Err(err) => {
-            let e = Error::new(err);
-            let e = e.context(res.text().await?);
-            Err(e)
-        }
-    }
+    Ok(res.json().await?)
 }
 pub async fn file_shares_delete(
     configuration: &Configuration,
@@ -1699,14 +1306,7 @@ pub async fn file_shares_delete(
     }
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
-    match res.error_for_status_ref() {
-        Ok(_) => Ok(res.json().await?),
-        Err(err) => {
-            let e = Error::new(err);
-            let e = e.context(res.text().await?);
-            Err(e)
-        }
-    }
+    Ok(res.json().await?)
 }
 pub async fn file_shares_restore(
     configuration: &Configuration,
@@ -1730,14 +1330,7 @@ pub async fn file_shares_restore(
     }
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
-    match res.error_for_status_ref() {
-        Ok(_) => Ok(res.json().await?),
-        Err(err) => {
-            let e = Error::new(err);
-            let e = e.context(res.text().await?);
-            Err(e)
-        }
-    }
+    Ok(res.json().await?)
 }
 pub async fn queue_services_list(
     configuration: &Configuration,
@@ -1759,14 +1352,7 @@ pub async fn queue_services_list(
     }
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
-    match res.error_for_status_ref() {
-        Ok(_) => Ok(res.json().await?),
-        Err(err) => {
-            let e = Error::new(err);
-            let e = e.context(res.text().await?);
-            Err(e)
-        }
-    }
+    Ok(res.json().await?)
 }
 pub async fn queue_services_get_service_properties(
     configuration: &Configuration,
@@ -1789,14 +1375,7 @@ pub async fn queue_services_get_service_properties(
     }
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
-    match res.error_for_status_ref() {
-        Ok(_) => Ok(res.json().await?),
-        Err(err) => {
-            let e = Error::new(err);
-            let e = e.context(res.text().await?);
-            Err(e)
-        }
-    }
+    Ok(res.json().await?)
 }
 pub async fn queue_services_set_service_properties(
     configuration: &Configuration,
@@ -1820,14 +1399,7 @@ pub async fn queue_services_set_service_properties(
     }
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
-    match res.error_for_status_ref() {
-        Ok(_) => Ok(res.json().await?),
-        Err(err) => {
-            let e = Error::new(err);
-            let e = e.context(res.text().await?);
-            Err(e)
-        }
-    }
+    Ok(res.json().await?)
 }
 pub async fn queue_get(
     configuration: &Configuration,
@@ -1850,14 +1422,7 @@ pub async fn queue_get(
     }
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
-    match res.error_for_status_ref() {
-        Ok(_) => Ok(res.json().await?),
-        Err(err) => {
-            let e = Error::new(err);
-            let e = e.context(res.text().await?);
-            Err(e)
-        }
-    }
+    Ok(res.json().await?)
 }
 pub async fn queue_create(
     configuration: &Configuration,
@@ -1881,14 +1446,7 @@ pub async fn queue_create(
     }
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
-    match res.error_for_status_ref() {
-        Ok(_) => Ok(res.json().await?),
-        Err(err) => {
-            let e = Error::new(err);
-            let e = e.context(res.text().await?);
-            Err(e)
-        }
-    }
+    Ok(res.json().await?)
 }
 pub async fn queue_update(
     configuration: &Configuration,
@@ -1912,14 +1470,7 @@ pub async fn queue_update(
     }
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
-    match res.error_for_status_ref() {
-        Ok(_) => Ok(res.json().await?),
-        Err(err) => {
-            let e = Error::new(err);
-            let e = e.context(res.text().await?);
-            Err(e)
-        }
-    }
+    Ok(res.json().await?)
 }
 pub async fn queue_delete(
     configuration: &Configuration,
@@ -1942,14 +1493,7 @@ pub async fn queue_delete(
     }
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
-    match res.error_for_status_ref() {
-        Ok(_) => Ok(res.json().await?),
-        Err(err) => {
-            let e = Error::new(err);
-            let e = e.context(res.text().await?);
-            Err(e)
-        }
-    }
+    Ok(res.json().await?)
 }
 pub async fn queue_list(
     configuration: &Configuration,
@@ -1979,14 +1523,7 @@ pub async fn queue_list(
     }
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
-    match res.error_for_status_ref() {
-        Ok(_) => Ok(res.json().await?),
-        Err(err) => {
-            let e = Error::new(err);
-            let e = e.context(res.text().await?);
-            Err(e)
-        }
-    }
+    Ok(res.json().await?)
 }
 pub async fn table_services_list(
     configuration: &Configuration,
@@ -2008,14 +1545,7 @@ pub async fn table_services_list(
     }
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
-    match res.error_for_status_ref() {
-        Ok(_) => Ok(res.json().await?),
-        Err(err) => {
-            let e = Error::new(err);
-            let e = e.context(res.text().await?);
-            Err(e)
-        }
-    }
+    Ok(res.json().await?)
 }
 pub async fn table_services_get_service_properties(
     configuration: &Configuration,
@@ -2038,14 +1568,7 @@ pub async fn table_services_get_service_properties(
     }
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
-    match res.error_for_status_ref() {
-        Ok(_) => Ok(res.json().await?),
-        Err(err) => {
-            let e = Error::new(err);
-            let e = e.context(res.text().await?);
-            Err(e)
-        }
-    }
+    Ok(res.json().await?)
 }
 pub async fn table_services_set_service_properties(
     configuration: &Configuration,
@@ -2069,14 +1592,7 @@ pub async fn table_services_set_service_properties(
     }
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
-    match res.error_for_status_ref() {
-        Ok(_) => Ok(res.json().await?),
-        Err(err) => {
-            let e = Error::new(err);
-            let e = e.context(res.text().await?);
-            Err(e)
-        }
-    }
+    Ok(res.json().await?)
 }
 pub async fn table_get(
     configuration: &Configuration,
@@ -2099,14 +1615,7 @@ pub async fn table_get(
     }
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
-    match res.error_for_status_ref() {
-        Ok(_) => Ok(res.json().await?),
-        Err(err) => {
-            let e = Error::new(err);
-            let e = e.context(res.text().await?);
-            Err(e)
-        }
-    }
+    Ok(res.json().await?)
 }
 pub async fn table_create(
     configuration: &Configuration,
@@ -2129,14 +1638,7 @@ pub async fn table_create(
     }
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
-    match res.error_for_status_ref() {
-        Ok(_) => Ok(res.json().await?),
-        Err(err) => {
-            let e = Error::new(err);
-            let e = e.context(res.text().await?);
-            Err(e)
-        }
-    }
+    Ok(res.json().await?)
 }
 pub async fn table_update(
     configuration: &Configuration,
@@ -2159,14 +1661,7 @@ pub async fn table_update(
     }
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
-    match res.error_for_status_ref() {
-        Ok(_) => Ok(res.json().await?),
-        Err(err) => {
-            let e = Error::new(err);
-            let e = e.context(res.text().await?);
-            Err(e)
-        }
-    }
+    Ok(res.json().await?)
 }
 pub async fn table_delete(
     configuration: &Configuration,
@@ -2189,14 +1684,7 @@ pub async fn table_delete(
     }
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
-    match res.error_for_status_ref() {
-        Ok(_) => Ok(res.json().await?),
-        Err(err) => {
-            let e = Error::new(err);
-            let e = e.context(res.text().await?);
-            Err(e)
-        }
-    }
+    Ok(res.json().await?)
 }
 pub async fn table_list(
     configuration: &Configuration,
@@ -2218,12 +1706,5 @@ pub async fn table_list(
     }
     let req = req_builder.build()?;
     let res = client.execute(req).await?;
-    match res.error_for_status_ref() {
-        Ok(_) => Ok(res.json().await?),
-        Err(err) => {
-            let e = Error::new(err);
-            let e = e.context(res.text().await?);
-            Err(e)
-        }
-    }
+    Ok(res.json().await?)
 }
