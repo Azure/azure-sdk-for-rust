@@ -1,9 +1,9 @@
-mod client;
 mod models;
+mod operations;
 
-pub use self::{client::*, models::*};
+pub use self::{models::*, operations::*};
 
-pub const API_VERSION: &str = "2019-06-01";
+pub const API_VERSION: &str = "2020-08-01";
 
 pub type Error = Box<dyn std::error::Error + Send + Sync>;
 pub type Result<T> = std::result::Result<T, Error>;

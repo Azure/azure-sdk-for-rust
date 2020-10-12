@@ -1,5 +1,5 @@
 [package]
-name          = "azure_mgmt_storage_2020_08_01"
+name          = "azure_storage_mgmt_2019_06_01"
 version       = "0.1.0"
 edition       = "2018"
 
