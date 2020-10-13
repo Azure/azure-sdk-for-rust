@@ -639,10 +639,23 @@ impl<'a, T: TokenCredential> KeyVaultClient<'a, T> {
 mod tests {
     use super::*;
 
+    use azure_auth_aad::{TokenCredential, TokenResponse};
     use chrono::{Duration, Utc};
     use mockito::{mock, Matcher};
     use oauth2::AccessToken;
     use serde_json::json;
+
+    struct MockSecretCredential;
+
+    #[async_trait::async_trait]
+    impl TokenCredential for MockSecretCredential {
+        async fn get_token(&self, resource: &str) -> Result<TokenResponse, AzureError> {
+            Ok(TokenResponse::new(
+                AccessToken::new("TOKEN".to_owned()),
+                Utc::now() + Duration::days(14),
+            ))
+        }
+    }
 
     fn diff(first: DateTime<Utc>, second: DateTime<Utc>) -> Duration {
         if first > second {
@@ -654,14 +667,8 @@ mod tests {
 
     macro_rules! mock_client {
         ($keyvault_name:expr) => {{
-            let mut client = KeyVaultClient::with_aad_token(
-                &"",
-                &"",
-                &"TENANT_ID",
-                $keyvault_name,
-                AccessToken::new("TOKEN".to_owned()),
-                Utc::now() + Duration::days(14),
-            );
+            let creds = MockSecretCredential;
+            let mut client = KeyVaultClient::new(&creds, $keyvault_name);
             client.keyvault_endpoint = mockito::server_url();
             client
         }};

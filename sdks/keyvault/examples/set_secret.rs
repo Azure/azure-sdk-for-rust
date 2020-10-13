@@ -1,3 +1,4 @@
+use azure_auth_aad::ClientSecretCredential;
 use azure_keyvault::KeyVaultClient;
 use std::env;
 
@@ -13,7 +14,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let secret_value =
         env::var("SECRET_VALUE").expect("Missing SECRET_VALUE environment variable.");
 
-    let mut client = KeyVaultClient::new(&client_id, &client_secret, &tenant_id, &keyvault_name);
+    let creds = ClientSecretCredential::new(tenant_id, client_id, client_secret);
+    let mut client = KeyVaultClient::new(&creds, &keyvault_name);
 
     client.set_secret(&secret_name, &secret_value).await?;
 
