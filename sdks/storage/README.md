@@ -13,5 +13,5 @@ This crate has several features depending on what part of the storage service yo
 By default all of these features are turned on. If you only need a specific feature, make sure to specify which features you need in your `Cargo.toml` file like so:
 
 ```toml
-azure_sdk_storage = { version = "0.2", default-features = false, features = ["blob"] }
+azure_storage = { version = "0.2", default-features = false, features = ["blob"] }
 ```
