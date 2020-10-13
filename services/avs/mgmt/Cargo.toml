@@ -1,5 +1,5 @@
 [package]
-name          = "azure_resources_mgmt_2020_06_01"
+name          = "azure_avs_mgmt"
 version       = "0.1.0"
 edition       = "2018"
 
@@ -7,3 +7,7 @@ edition       = "2018"
 serde = { version = "*", features = ["derive"] }
 serde_json = "*"
 reqwest = { version = "*", features = ["json"] }
+
+[features]
+default = ["2020-03-20"]
+2020-03-20 = []

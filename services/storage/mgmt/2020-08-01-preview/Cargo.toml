@@ -1,9 +1,0 @@
-[package]
-name          = "azure_storage_mgmt_2020_08_01"
-version       = "0.1.0"
-edition       = "2018"
-
-[dependencies]
-serde = { version = "*", features = ["derive"] }
-serde_json = "*"
-reqwest = { version = "*", features = ["json"] }

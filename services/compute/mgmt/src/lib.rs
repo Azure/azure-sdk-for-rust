@@ -1,7 +1,13 @@
-pub mod models;
-pub mod operations;
-
-pub const API_VERSION: &str = "2020-03-20";
+#[cfg(feature = "2020-06-01")]
+pub mod models_2020_06_01;
+#[cfg(feature = "2020-06-01")]
+pub use models_2020_06_01 as models;
+#[cfg(feature = "2020-06-01")]
+pub mod operations_2020_06_01;
+#[cfg(feature = "2020-06-01")]
+pub use operations_2020_06_01 as operations;
+#[cfg(feature = "2020-06-01")]
+pub const API_VERSION: &str = "2020-06-01";
 
 pub type Error = Box<dyn std::error::Error + Send + Sync>;
 pub type Result<T> = std::result::Result<T, Error>;
