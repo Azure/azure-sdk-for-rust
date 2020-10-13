@@ -1,0 +1,9 @@
+[package]
+name          = "azure_resources_mgmt_2020_06_01"
+version       = "0.1.0"
+edition       = "2018"
+
+[dependencies]
+serde = { version = "*", features = ["derive"] }
+serde_json = "*"
+reqwest = { version = "*", features = ["json"] }
