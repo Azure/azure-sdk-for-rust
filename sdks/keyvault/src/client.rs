@@ -12,7 +12,9 @@ pub(crate) const API_VERSION: &str = "7.0";
 ///
 /// ```no_run
 /// use azure_keyvault::KeyVaultClient;
-/// let client = KeyVaultClient::new(&"{client_id}", &"{client_secret}", &"{tenant_id}", &"test-keyvault");
+/// use azure_auth_aad::DefaultCredential;
+/// let creds = DefaultCredential::default();
+/// let client = KeyVaultClient::new(&creds, &"test-keyvault");
 /// ```
 #[derive(Debug)]
 pub struct KeyVaultClient<'a, T> {
@@ -32,7 +34,8 @@ impl<'a, T: TokenCredential> KeyVaultClient<'a, T> {
     /// ```no_run
     /// use azure_keyvault::KeyVaultClient;
     /// use azure_auth_aad::DefaultCredential;
-    /// let client = KeyVaultClient::with_endpoint_suffix(&DefaultCredential::default(), &"test-keyvault", "vault.azure.net".to_owned());
+    /// let creds = DefaultCredential::default();
+    /// let client = KeyVaultClient::with_endpoint_suffix(&creds, &"test-keyvault", "vault.azure.net".to_owned());
     /// ```
     pub fn with_endpoint_suffix(
         token_credential: &'a T,
@@ -56,7 +59,8 @@ impl<'a, T: TokenCredential> KeyVaultClient<'a, T> {
     /// ```no_run
     /// use azure_keyvault::KeyVaultClient;
     /// use azure_auth_aad::DefaultCredential;
-    /// let client = KeyVaultClient::new(&DefaultCredential::default(), &"test-keyvault");
+    /// let creds = DefaultCredential::default();
+    /// let client = KeyVaultClient::new(&creds, &"test-keyvault");
     /// ```
     pub fn new(token_credential: &'a T, keyvault_name: &'a str) -> Self {
         KeyVaultClient::with_endpoint_suffix(
