@@ -1,0 +1,55 @@
+{
+  "name": "CreateDatabaseBuilder",
+  "derive": "Debug, Clone",
+  "uses": [
+    "azure_core::errors::{check_status_extract_headers_and_body, AzureError}",
+    "azure_core::prelude::*",
+    "crate::prelude::*",
+    "hyper::StatusCode",
+    "std::marker::PhantomData",
+    "azure_core::{Yes,No,ToAssign}"
+  ],
+  "extra_types": [
+    "'a"
+  ],
+  "extra_wheres": [],
+  "constructor_fields": [
+    {
+      "name": "cosmos_client",
+      "field_type": "&'a dyn CosmosClient",
+      "trait_get": "CosmosClientRequired<'a>"
+    }
+  ],
+  "fields": [
+    {
+      "name": "database_name",
+      "field_type": "&'a dyn DatabaseName",
+      "builder_type": "DatabaseNameSet",
+      "optional": false,
+      "trait_get": "DatabaseNameRequired<'a>",
+      "trait_set": "DatabaseNameSupport<'a>"
+    },
+    {
+      "name": "user_agent",
+      "field_type": "&'a str",
+      "optional": true,
+      "trait_get": "UserAgentOption<'a>",
+      "trait_set": "UserAgentSupport<'a>"
+    },
+    {
+      "name": "activity_id",
+      "field_type": "&'a str",
+      "optional": true,
+      "trait_get": "ActivityIdOption<'a>",
+      "trait_set": "ActivityIdSupport<'a>"
+    },
+    {
+      "name": "consistency_level",
+      "field_type": "ConsistencyLevel<'a>",
+      "optional": true,
+      "trait_get": "ConsistencyLevelOption<'a>",
+      "trait_set": "ConsistencyLevelSupport<'a>",
+      "get_via_clone": true
+    }
+  ]
+}

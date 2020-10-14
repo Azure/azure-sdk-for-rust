@@ -1,0 +1,67 @@
+{
+  "name": "ListCollectionsBuilder",
+  "derive": "Debug, Clone",
+  "uses": [
+    "crate::responses::ListCollectionsResponse",
+    "azure_core::prelude::*",
+    "crate::{DatabaseClientRequired, ResourceType}",
+    "crate::prelude::*",
+    "azure_core::errors::{check_status_extract_headers_and_body, AzureError}",
+    "futures::stream::{unfold, Stream}",
+    "hyper::StatusCode",
+    "std::convert::TryInto"
+  ],
+  "extra_types": [
+    "'a",
+    "C"
+  ],
+  "extra_wheres": [
+    "C: CosmosClient"
+  ],
+  "constructor_fields": [
+    {
+      "name": "database_client",
+      "field_type": "&'a dyn DatabaseClient<C>",
+      "trait_get": "DatabaseClientRequired<'a, C>"
+    }
+  ],
+  "fields": [
+    {
+      "name": "user_agent",
+      "field_type": "&'a str",
+      "optional": true,
+      "trait_get": "UserAgentOption<'a>",
+      "trait_set": "UserAgentSupport<'a>"
+    },
+    {
+      "name": "activity_id",
+      "field_type": "&'a str",
+      "optional": true,
+      "trait_get": "ActivityIdOption<'a>",
+      "trait_set": "ActivityIdSupport<'a>"
+    },
+    {
+      "name": "consistency_level",
+      "field_type": "ConsistencyLevel<'a>",
+      "optional": true,
+      "trait_get": "ConsistencyLevelOption<'a>",
+      "trait_set": "ConsistencyLevelSupport<'a>",
+      "get_via_clone": true
+    },
+    {
+      "name": "continuation",
+      "field_type": "&'a str",
+      "optional": true,
+      "trait_get": "ContinuationOption<'a>",
+      "trait_set": "ContinuationSupport<'a>"
+    },
+    {
+      "name": "max_item_count",
+      "field_type": "i32",
+      "optional": true,
+      "initializer": "-1",
+      "trait_get": "MaxItemCountOption",
+      "trait_set": "MaxItemCountSupport"
+    }
+  ]
+}
