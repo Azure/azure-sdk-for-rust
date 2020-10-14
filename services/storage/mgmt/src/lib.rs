@@ -1,24 +1,12 @@
-#[cfg(feature = "2019-06-01")]
-pub mod models_2019_06_01;
-#[cfg(feature = "2019-06-01")]
-pub use models_2019_06_01 as models;
-#[cfg(feature = "2019-06-01")]
-pub mod operations_2019_06_01;
-#[cfg(feature = "2019-06-01")]
-pub use operations_2019_06_01 as operations;
-#[cfg(feature = "2019-06-01")]
-pub const API_VERSION: &str = "2019-06-01";
+#[cfg(feature = "2019-08-01-preview")]
+mod v2019_08_01_preview;
+#[cfg(feature = "2019-08-01-preview")]
+pub use v2019_08_01_preview::{models, operations, API_VERSION};
 
-#[cfg(feature = "2019-08-01-preview")]
-pub mod models_2019_08_01_preview;
-#[cfg(feature = "2019-08-01-preview")]
-pub use models_2019_08_01_preview as models;
-#[cfg(feature = "2019-08-01-preview")]
-pub mod operations_2019_08_01_preview;
-#[cfg(feature = "2019-08-01-preview")]
-pub use operations_2019_08_01_preview as operations;
-#[cfg(feature = "2019-08-01-preview")]
-pub const API_VERSION: &str = "2019-08-01-preview";
+#[cfg(feature = "2019-06-01")]
+mod v2019_06_01;
+#[cfg(feature = "2019-06-01")]
+pub use v2019_06_01::{models, operations, API_VERSION};
 
 pub type Error = Box<dyn std::error::Error + Send + Sync>;
 pub type Result<T> = std::result::Result<T, Error>;
