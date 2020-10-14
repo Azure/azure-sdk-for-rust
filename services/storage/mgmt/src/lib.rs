@@ -30,6 +30,15 @@ pub struct Configuration {
     pub bearer_access_token: Option<String>,
 }
 
+impl Configuration {
+    pub fn new(bearer_access_token: &str) -> Self {
+        Self {
+            bearer_access_token: Some(bearer_access_token.to_owned()),
+            ..Default::default()
+        }
+    }
+}
+
 impl Default for Configuration {
     fn default() -> Self {
         {
