@@ -2,7 +2,7 @@
 
 for f in sdk/*
 do
-	echo "Publishing $f"
+    echo "Publishing $f"
     cd $f
     cargo publish
     sleep 20

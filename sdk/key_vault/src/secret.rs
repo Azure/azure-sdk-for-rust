@@ -1,7 +1,7 @@
 use crate::KeyVaultClient;
 use crate::{client::API_VERSION, KeyVaultError};
 use anyhow::{Context, Result};
-use azure_auth_aad::TokenCredential;
+use azure_identity::TokenCredential;
 use chrono::serde::ts_seconds;
 use chrono::{DateTime, Utc};
 use getset::Getters;
@@ -113,12 +113,8 @@ impl<'a, T: TokenCredential> KeyVaultClient<'a, T> {
     /// # Example
     ///
     /// ```no_run
-<<<<<<< HEAD:sdk/keyvault/src/secret.rs
-    /// use azure_keyvault::KeyVaultClient;
-    /// use azure_auth_aad::DefaultCredential;
-=======
     /// use azure_key_vault::KeyVaultClient;
->>>>>>> Rename keyvault to key_vault:sdk/key_vault/src/secret.rs
+    /// use azure_identity::DefaultCredential;
     /// use tokio::runtime::Runtime;
     ///
     /// async fn example() {
@@ -146,12 +142,8 @@ impl<'a, T: TokenCredential> KeyVaultClient<'a, T> {
     /// # Example
     ///
     /// ```no_run
-<<<<<<< HEAD:sdk/keyvault/src/secret.rs
-    /// use azure_keyvault::KeyVaultClient;
-    /// use azure_auth_aad::DefaultCredential;
-=======
     /// use azure_key_vault::KeyVaultClient;
->>>>>>> Rename keyvault to key_vault:sdk/key_vault/src/secret.rs
+    /// use azure_identity::DefaultCredential;
     /// use tokio::runtime::Runtime;
     ///
     /// async fn example() {
@@ -194,12 +186,8 @@ impl<'a, T: TokenCredential> KeyVaultClient<'a, T> {
     /// Lists all the secrets in the Key Vault.
     ///
     /// ```no_run
-<<<<<<< HEAD:sdk/keyvault/src/secret.rs
-    /// use azure_keyvault::KeyVaultClient;
-    /// use azure_auth_aad::DefaultCredential;
-=======
     /// use azure_key_vault::KeyVaultClient;
->>>>>>> Rename keyvault to key_vault:sdk/key_vault/src/secret.rs
+    /// use azure_identity::DefaultCredential;
     /// use tokio::runtime::Runtime;
     ///
     /// async fn example() {
@@ -259,12 +247,8 @@ impl<'a, T: TokenCredential> KeyVaultClient<'a, T> {
     /// # Example
     ///
     /// ```no_run
-<<<<<<< HEAD:sdk/keyvault/src/secret.rs
-    /// use azure_keyvault::KeyVaultClient;
-    /// use azure_auth_aad::DefaultCredential;
-=======
     /// use azure_key_vault::KeyVaultClient;
->>>>>>> Rename keyvault to key_vault:sdk/key_vault/src/secret.rs
+    /// use azure_identity::DefaultCredential;
     /// use tokio::runtime::Runtime;
     ///
     /// async fn example() {
@@ -335,12 +319,8 @@ impl<'a, T: TokenCredential> KeyVaultClient<'a, T> {
     /// # Example
     ///
     /// ```no_run
-<<<<<<< HEAD:sdk/keyvault/src/secret.rs
-    /// use azure_keyvault::KeyVaultClient;
-    /// use azure_auth_aad::DefaultCredential;
-=======
     /// use azure_key_vault::KeyVaultClient;
->>>>>>> Rename keyvault to key_vault:sdk/key_vault/src/secret.rs
+    /// use azure_identity::DefaultCredential;
     /// use tokio::runtime::Runtime;
     ///
     /// async fn example() {
@@ -388,12 +368,8 @@ impl<'a, T: TokenCredential> KeyVaultClient<'a, T> {
     /// # Example
     ///
     /// ```no_run
-<<<<<<< HEAD:sdk/keyvault/src/secret.rs
-    /// use azure_keyvault::KeyVaultClient;
-    /// use azure_auth_aad::DefaultCredential;
-=======
     /// use azure_key_vault::KeyVaultClient;
->>>>>>> Rename keyvault to key_vault:sdk/key_vault/src/secret.rs
+    /// use azure_identity::DefaultCredential;
     /// use tokio::runtime::Runtime;
     ///
     /// async fn example() {
@@ -433,12 +409,8 @@ impl<'a, T: TokenCredential> KeyVaultClient<'a, T> {
     /// # Example
     ///
     /// ```no_run
-<<<<<<< HEAD:sdk/keyvault/src/secret.rs
-    /// use azure_keyvault::{KeyVaultClient, RecoveryLevel};
-    /// use azure_auth_aad::DefaultCredential;
-=======
     /// use azure_key_vault::{KeyVaultClient, RecoveryLevel};
->>>>>>> Rename keyvault to key_vault:sdk/key_vault/src/secret.rs
+    /// use azure_identity::DefaultCredential;
     /// use tokio::runtime::Runtime;
     ///
     /// async fn example() {
@@ -481,12 +453,8 @@ impl<'a, T: TokenCredential> KeyVaultClient<'a, T> {
     /// # Example
     ///
     /// ```no_run
-<<<<<<< HEAD:sdk/keyvault/src/secret.rs
-    /// use azure_keyvault::{KeyVaultClient, RecoveryLevel};
-    /// use azure_auth_aad::DefaultCredential;
-=======
     /// use azure_key_vault::{KeyVaultClient, RecoveryLevel};
->>>>>>> Rename keyvault to key_vault:sdk/key_vault/src/secret.rs
+    /// use azure_identity::DefaultCredential;
     /// use tokio::runtime::Runtime;
     /// use chrono::{Utc, Duration};
     ///
@@ -549,12 +517,8 @@ impl<'a, T: TokenCredential> KeyVaultClient<'a, T> {
     /// # Example
     ///
     /// ```no_run
-<<<<<<< HEAD:sdk/keyvault/src/secret.rs
-    /// use azure_keyvault::KeyVaultClient;
-    /// use azure_auth_aad::DefaultCredential;
-=======
     /// use azure_key_vault::KeyVaultClient;
->>>>>>> Rename keyvault to key_vault:sdk/key_vault/src/secret.rs
+    /// use azure_identity::DefaultCredential;
     /// use tokio::runtime::Runtime;
     ///
     /// async fn example() {
@@ -593,12 +557,8 @@ impl<'a, T: TokenCredential> KeyVaultClient<'a, T> {
     /// # Example
     ///
     /// ```no_run
-<<<<<<< HEAD:sdk/keyvault/src/secret.rs
-    /// use azure_keyvault::KeyVaultClient;
-    /// use azure_auth_aad::DefaultCredential;
-=======
     /// use azure_key_vault::KeyVaultClient;
->>>>>>> Rename keyvault to key_vault:sdk/key_vault/src/secret.rs
+    /// use azure_identity::DefaultCredential;
     /// use tokio::runtime::Runtime;
     ///
     /// async fn example() {
@@ -646,12 +606,8 @@ impl<'a, T: TokenCredential> KeyVaultClient<'a, T> {
     /// # Example
     ///
     /// ```no_run
-<<<<<<< HEAD:sdk/keyvault/src/secret.rs
-    /// use azure_keyvault::{KeyVaultClient, RecoveryLevel};
-    /// use azure_auth_aad::DefaultCredential;
-=======
     /// use azure_key_vault::{KeyVaultClient, RecoveryLevel};
->>>>>>> Rename keyvault to key_vault:sdk/key_vault/src/secret.rs
+    /// use azure_identity::DefaultCredential;
     /// use tokio::runtime::Runtime;
     ///
     /// async fn example() {
@@ -684,8 +640,8 @@ mod tests {
     use super::*;
 
     use async_trait;
-    use azure_auth_aad::{TokenCredential, TokenResponse};
-    use azure_sdk_core::errors::AzureError;
+    use azure_core::errors::AzureError;
+    use azure_identity::{TokenCredential, TokenResponse};
     use chrono::{Duration, Utc};
     use mockito::{mock, Matcher};
     use oauth2::AccessToken;
