@@ -1,6 +1,6 @@
 use crate::blob::blob::BlockWithSizeList;
-use azure_sdk_core::errors::AzureError;
-use azure_sdk_core::{
+use azure_core::errors::AzureError;
+use azure_core::{
     date_from_headers, etag_from_headers_optional, last_modified_from_headers_optional,
     request_id_from_headers, RequestId,
 };

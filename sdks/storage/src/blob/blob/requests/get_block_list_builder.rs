@@ -3,10 +3,10 @@ use crate::blob::blob::responses::GetBlockListResponse;
 use crate::blob::blob::{BlockListType, BlockListTypeRequired, BlockListTypeSupport};
 use crate::core::client::Client;
 use crate::core::ClientRequired;
-use azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError};
-use azure_sdk_core::lease::LeaseId;
-use azure_sdk_core::prelude::*;
-use azure_sdk_core::{No, ToAssign, Yes};
+use azure_core::errors::{check_status_extract_headers_and_body, AzureError};
+use azure_core::lease::LeaseId;
+use azure_core::prelude::*;
+use azure_core::{No, ToAssign, Yes};
 use hyper::{Method, StatusCode};
 use std::marker::PhantomData;
 

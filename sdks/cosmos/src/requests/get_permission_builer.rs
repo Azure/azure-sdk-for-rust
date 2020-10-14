@@ -1,7 +1,7 @@
 use crate::prelude::*;
 use crate::responses::GetPermissionResponse;
-use azure_sdk_core::errors::{extract_status_headers_and_body, AzureError, UnexpectedHTTPResult};
-use azure_sdk_core::prelude::*;
+use azure_core::errors::{extract_status_headers_and_body, AzureError, UnexpectedHTTPResult};
+use azure_core::prelude::*;
 use hyper::StatusCode;
 use std::convert::TryInto;
 

@@ -1,5 +1,5 @@
-use azure_sdk_core::errors::AzureError;
-use azure_sdk_core::{utc_date_from_rfc2822, CommonStorageResponseHeaders};
+use azure_core::errors::AzureError;
+use azure_core::{utc_date_from_rfc2822, CommonStorageResponseHeaders};
 use chrono::{DateTime, Utc};
 use hyper::header::HeaderMap;
 use std::convert::TryInto;

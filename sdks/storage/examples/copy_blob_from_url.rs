@@ -1,4 +1,4 @@
-use azure_sdk_core::prelude::*;
+use azure_core::prelude::*;
 use azure_storage::blob::Blob;
 use azure_storage::core::prelude::*;
 use std::error::Error;

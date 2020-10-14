@@ -1,7 +1,7 @@
 #![cfg(all(test, feature = "test_e2e"))]
 use crate::core::prelude::*;
-use azure_sdk_core::prelude::*;
-use azure_sdk_core::{range::Range, DeleteSnapshotsMethod};
+use azure_core::prelude::*;
+use azure_core::{range::Range, DeleteSnapshotsMethod};
 use azure_storage::blob::prelude::*;
 use futures::stream::StreamExt;
 

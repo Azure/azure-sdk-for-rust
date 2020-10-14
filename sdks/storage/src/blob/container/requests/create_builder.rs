@@ -1,8 +1,8 @@
 use crate::container::{PublicAccess, PublicAccessRequired, PublicAccessSupport};
 use crate::core::prelude::*;
-use azure_sdk_core::errors::{check_status_extract_body, AzureError};
-use azure_sdk_core::prelude::*;
-use azure_sdk_core::{No, ToAssign, Yes};
+use azure_core::errors::{check_status_extract_body, AzureError};
+use azure_core::prelude::*;
+use azure_core::{No, ToAssign, Yes};
 use hyper::{Method, StatusCode};
 use std::collections::HashMap;
 use std::marker::PhantomData;

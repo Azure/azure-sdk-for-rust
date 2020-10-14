@@ -2,7 +2,7 @@ use crate::core::Client;
 use crate::{
     entity_path, get_batch_mime, Batch, Continuation, MetadataDetail, TableClient, TableEntity,
 };
-use azure_sdk_core::errors::{
+use azure_core::errors::{
     check_status_extract_body, check_status_extract_headers_and_body, AzureError,
 };
 use futures::stream::Stream;

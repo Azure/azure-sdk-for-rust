@@ -4,10 +4,10 @@ use crate::blob::prelude::{
 };
 use crate::container::public_access_from_header;
 use crate::core::prelude::*;
-use azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError};
-use azure_sdk_core::lease::LeaseId;
-use azure_sdk_core::prelude::*;
-use azure_sdk_core::{No, StoredAccessPolicyList, ToAssign, Yes};
+use azure_core::errors::{check_status_extract_headers_and_body, AzureError};
+use azure_core::lease::LeaseId;
+use azure_core::prelude::*;
+use azure_core::{No, StoredAccessPolicyList, ToAssign, Yes};
 use hyper::{Method, StatusCode};
 use std::marker::PhantomData;
 

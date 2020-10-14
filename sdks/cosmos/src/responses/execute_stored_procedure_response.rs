@@ -1,6 +1,6 @@
 use crate::from_headers::*;
-use azure_sdk_core::errors::AzureError;
-use azure_sdk_core::{session_token_from_headers, SessionToken};
+use azure_core::errors::AzureError;
+use azure_core::{session_token_from_headers, SessionToken};
 use chrono::{DateTime, Utc};
 use http::HeaderMap;
 use serde::de::DeserializeOwned;

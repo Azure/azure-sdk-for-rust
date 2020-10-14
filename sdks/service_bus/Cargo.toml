@@ -1,6 +1,6 @@
 [package]
-name          = "azure_sdk_service_bus"
-version       = "0.44.2"
+name          = "azure_service_bus"
+version       = "0.1.0"
 description   = "Rust wrappers around Microsoft Azure REST APIs - Service Bus crate"
 readme        = "README.md"
 authors       = ["Francesco Cogno <francesco.cogno@outlook.com>", "Max Gortman <mgortman@microsoft.com>", "Dong Liu <doliu@microsoft.com>"]
@@ -15,7 +15,7 @@ categories    = ["api-bindings"]
 edition       = "2018"
 
 [dependencies]
-azure_sdk_core       = { path = "../core", version = "0.43.5" }
+azure_core       = { path = "../core", version = "0.1.0" }
 ring                 = "0.16"
 base64               = "0.13"
 chrono               = "0.4"

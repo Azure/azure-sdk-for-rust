@@ -1,7 +1,7 @@
 use crate::core::rest_client::{generate_storage_sas, SASType};
 use crate::core::ClientEndpoint;
 use crate::core::IPRange;
-use azure_sdk_core::{No, ToAssign, Yes};
+use azure_core::{No, ToAssign, Yes};
 use chrono::{DateTime, Utc};
 use std::marker::PhantomData;
 use url::Url;

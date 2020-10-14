@@ -1,6 +1,6 @@
 use crate::requests;
 use crate::{PartitionKeys, ResourceType};
-use azure_sdk_core::No;
+use azure_core::No;
 use http::request::Builder;
 use hyper_rustls::HttpsConnector;
 use std::borrow::Cow;

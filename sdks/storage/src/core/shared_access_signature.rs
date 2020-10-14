@@ -1,6 +1,6 @@
 use super::{KeyClient, KeyClientRequired};
 use crate::core::client_endpoint::ClientEndpoint;
-use azure_sdk_core::{No, ToAssign};
+use azure_core::{No, ToAssign};
 use base64::encode;
 use chrono::{DateTime, Utc};
 use ring::hmac;

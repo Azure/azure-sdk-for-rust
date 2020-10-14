@@ -6,20 +6,27 @@
 		"crate::blob::responses::PutBlockListResponse",
 		"crate::blob::BlockList",
 		"crate::blob::{BlockListRequired, BlockListSupport}",
-		"azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError}",
-		"azure_sdk_core::lease::LeaseId",
-		"azure_sdk_core::prelude::*",
+		"azure_core::errors::{check_status_extract_headers_and_body, AzureError}",
+		"azure_core::lease::LeaseId",
+		"azure_core::prelude::*",
 		"hyper::{Method, StatusCode}",
 		"azure_sdk_storage_core::prelude::*",
-		"azure_sdk_core::add_content_md5_header",
-		"azure_sdk_core::{Yes, No, ToAssign}",
+		"azure_core::add_content_md5_header",
+		"azure_core::{Yes, No, ToAssign}",
 		"std::borrow::Borrow",
 		"std::collections::HashMap",
 		"std::marker::PhantomData"
 	],
 	"inline": true,
-	"extra_types": [ "'a", "C", "T" ],
-	"extra_wheres": [ "C: Client", "T: Borrow<[u8]> + 'a" ],
+	"extra_types": [
+		"'a",
+		"C",
+		"T"
+	],
+	"extra_wheres": [
+		"C: Client",
+		"T: Borrow<[u8]> + 'a"
+	],
 	"constructor_fields": [
 		{
 			"name": "client",

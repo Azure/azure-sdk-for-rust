@@ -1,5 +1,5 @@
 [package]
-name = "azure-keyvault"
+name = "azure_keyvault"
 version = "0.1.0"
 authors = ["Microsoft Corp."]
 description = "Rust wrapper around Microsoft Azure REST APIs for Azure Key Vault"
@@ -12,8 +12,6 @@ readme = "README.md"
 license = "MIT"
 edition = "2018"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
 anyhow = "1.0"
 thiserror = "1.0"
@@ -24,8 +22,8 @@ url = "2.1"
 serde = { version = "1.0", features = ["derive"] }
 getset = "0.1"
 oauth2 = { version = "4.0.0-alpha.2" }
-azure_auth_aad = { version = "0.1", path = "../auth_aad" }
-azure_sdk_core = { path = "../core", version = "0.43.5" }
+azure_core = { path = "../core", version = "0.1.0" }
+azure_identity = { version = "0.1", path = "../identity" }
 
 [dev-dependencies]
 mockito = "0.27"

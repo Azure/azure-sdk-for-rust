@@ -1,7 +1,7 @@
 use crate::headers::*;
 use crate::resource_quota::resource_quotas_from_str;
 use crate::{IndexingDirective, ResourceQuota};
-use azure_sdk_core::errors::AzureError;
+use azure_core::errors::AzureError;
 use chrono::{DateTime, Utc};
 use http::HeaderMap;
 

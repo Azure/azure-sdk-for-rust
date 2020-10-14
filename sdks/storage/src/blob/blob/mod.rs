@@ -17,12 +17,12 @@ pub use self::block_list::BlockList;
 pub mod requests;
 pub mod responses;
 use crate::core::Client;
-use azure_sdk_core::headers::{
+use azure_core::headers::{
     BLOB_SEQUENCE_NUMBER, BLOB_TYPE, CONTENT_MD5, COPY_COMPLETION_TIME, COPY_ID, COPY_PROGRESS,
     COPY_SOURCE, COPY_STATUS, COPY_STATUS_DESCRIPTION, CREATION_TIME, LEASE_DURATION, LEASE_STATE,
     LEASE_STATUS, SERVER_ENCRYPTED,
 };
-use azure_sdk_core::{
+use azure_core::{
     errors::{AzureError, TraversingError},
     incompletevector::IncompleteVector,
     lease::{LeaseDuration, LeaseState, LeaseStatus},
@@ -480,9 +480,9 @@ pub(crate) fn copy_status_from_headers(
     headers: &http::HeaderMap,
 ) -> Result<CopyStatus, AzureError> {
     let val = headers
-        .get_as_str(azure_sdk_core::headers::COPY_STATUS)
+        .get_as_str(azure_core::headers::COPY_STATUS)
         .ok_or_else(|| {
-            AzureError::HeaderNotFound(azure_sdk_core::headers::COPY_STATUS.to_owned())
+            AzureError::HeaderNotFound(azure_core::headers::COPY_STATUS.to_owned())
         })?;
     Ok(CopyStatus::from_str(val)?)
 }

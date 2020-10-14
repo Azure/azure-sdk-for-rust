@@ -1,8 +1,8 @@
 use crate::from_headers::*;
 use crate::permission::CosmosPermission;
 use crate::Permission;
-use azure_sdk_core::errors::AzureError;
-use azure_sdk_core::{etag_from_headers, session_token_from_headers};
+use azure_core::errors::AzureError;
+use azure_core::{etag_from_headers, session_token_from_headers};
 use http::HeaderMap;
 use std::borrow::Cow;
 

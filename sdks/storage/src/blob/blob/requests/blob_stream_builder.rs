@@ -1,9 +1,9 @@
 use crate::blob::blob::requests::GetBlobBuilder;
 use crate::core::prelude::*;
-use azure_sdk_core::errors::AzureError;
-use azure_sdk_core::lease::LeaseId;
-use azure_sdk_core::prelude::*;
-use azure_sdk_core::{No, ToAssign, Yes};
+use azure_core::errors::AzureError;
+use azure_core::lease::LeaseId;
+use azure_core::prelude::*;
+use azure_core::{No, ToAssign, Yes};
 use chrono::{DateTime, Utc};
 use futures::stream::Stream;
 use std::marker::PhantomData;

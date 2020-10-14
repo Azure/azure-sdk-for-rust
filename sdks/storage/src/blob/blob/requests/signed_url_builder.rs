@@ -4,7 +4,7 @@ use crate::core::{
     shared_access_signature::SharedAccessSignature, SharedAccessSignatureRequired,
     SharedAccessSignatureSupport,
 };
-use azure_sdk_core::{
+use azure_core::{
     BlobNameRequired, BlobNameSupport, ContainerNameRequired, ContainerNameSupport, No, ToAssign,
     Yes,
 };

@@ -2,17 +2,25 @@
 	"name": "GetUserBuilder",
 	"derive": "Debug, Clone",
 	"uses": [
-			"crate::prelude::*",
-			"azure_sdk_core::prelude::*",
-			"crate::responses::CreateUserResponse",
-			"azure_sdk_core::errors::UnexpectedHTTPResult",
-			"azure_sdk_core::errors::{extract_status_headers_and_body, AzureError}",
-			"hyper::StatusCode",
-			"std::convert::TryInto"
+		"crate::prelude::*",
+		"azure_core::prelude::*",
+		"crate::responses::CreateUserResponse",
+		"azure_core::errors::UnexpectedHTTPResult",
+		"azure_core::errors::{extract_status_headers_and_body, AzureError}",
+		"hyper::StatusCode",
+		"std::convert::TryInto"
 	],
 	"inline": true,
-	"extra_types": [ "'a", "'b", "C", "D" ],
-	"extra_wheres": [ "C: CosmosClient", "D: DatabaseClient<C>" ],
+	"extra_types": [
+		"'a",
+		"'b",
+		"C",
+		"D"
+	],
+	"extra_wheres": [
+		"C: CosmosClient",
+		"D: DatabaseClient<C>"
+	],
 	"constructor_fields": [
 		{
 			"name": "user_client",

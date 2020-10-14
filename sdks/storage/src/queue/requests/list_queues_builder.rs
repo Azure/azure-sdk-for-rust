@@ -1,8 +1,8 @@
 use crate::core::prelude::*;
 use crate::queue::prelude::*;
 use crate::queue::responses::*;
-use azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError};
-use azure_sdk_core::prelude::*;
+use azure_core::errors::{check_status_extract_headers_and_body, AzureError};
+use azure_core::prelude::*;
 use hyper::StatusCode;
 use std::convert::TryInto;
 

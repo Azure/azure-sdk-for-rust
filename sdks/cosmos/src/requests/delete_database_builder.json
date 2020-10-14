@@ -3,14 +3,19 @@
 	"derive": "Debug, Clone",
 	"uses": [
 		"crate::responses::DeleteDatabaseResponse",
-		"azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError}",
-		"azure_sdk_core::prelude::*",
+		"azure_core::errors::{check_status_extract_headers_and_body, AzureError}",
+		"azure_core::prelude::*",
 		"crate::prelude::*",
 		"std::convert::TryInto",
 		"hyper::StatusCode"
 	],
-	"extra_types": [ "'a", "C" ],
-	"extra_wheres": [ "C: CosmosClient" ],
+	"extra_types": [
+		"'a",
+		"C"
+	],
+	"extra_wheres": [
+		"C: CosmosClient"
+	],
 	"constructor_fields": [
 		{
 			"name": "database_client",
@@ -41,6 +46,5 @@
 			"trait_set": "ConsistencyLevelSupport<'a>",
 			"get_via_clone": true
 		}
-
 	]
 }

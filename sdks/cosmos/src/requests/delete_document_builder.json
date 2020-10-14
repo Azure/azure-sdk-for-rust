@@ -5,17 +5,26 @@
 		"crate::prelude::*",
 		"crate::responses::DeleteDocumentResponse",
 		"crate::DocumentClientRequired",
-		"azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError}",
-		"azure_sdk_core::modify_conditions::IfMatchCondition",
-		"azure_sdk_core::prelude::*",
-		"azure_sdk_core::{IfMatchConditionOption, IfMatchConditionSupport}",
+		"azure_core::errors::{check_status_extract_headers_and_body, AzureError}",
+		"azure_core::modify_conditions::IfMatchCondition",
+		"azure_core::prelude::*",
+		"azure_core::{IfMatchConditionOption, IfMatchConditionSupport}",
 		"chrono::{DateTime, Utc}",
 		"hyper::StatusCode",
 		"std::convert::TryInto"
 	],
 	"inline": true,
-	"extra_types": [ "'a", "C", "D", "COLL" ],
-	"extra_wheres": [ "C: CosmosClient", "D: DatabaseClient<C>", "COLL: CollectionClient<C, D>" ],
+	"extra_types": [
+		"'a",
+		"C",
+		"D",
+		"COLL"
+	],
+	"extra_wheres": [
+		"C: CosmosClient",
+		"D: DatabaseClient<C>",
+		"COLL: CollectionClient<C, D>"
+	],
 	"constructor_fields": [
 		{
 			"name": "document_client",

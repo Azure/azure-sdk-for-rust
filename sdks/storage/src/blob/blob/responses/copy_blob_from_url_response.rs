@@ -1,8 +1,8 @@
 use crate::blob::blob::{copy_status_from_headers, CopyStatus};
 use crate::core::copy_id_from_headers;
 use crate::core::CopyId;
-use azure_sdk_core::errors::AzureError;
-use azure_sdk_core::{
+use azure_core::errors::AzureError;
+use azure_core::{
     content_md5_from_headers_optional, date_from_headers, etag_from_headers,
     last_modified_from_headers, request_id_from_headers, server_from_headers, version_from_headers,
     RequestId,

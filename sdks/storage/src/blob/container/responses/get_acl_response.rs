@@ -1,7 +1,7 @@
 use crate::container::{public_access_from_header, PublicAccess};
-use azure_sdk_core::errors::AzureError;
-use azure_sdk_core::headers::REQUEST_ID;
-use azure_sdk_core::{RequestId, StoredAccessPolicyList};
+use azure_core::errors::AzureError;
+use azure_core::headers::REQUEST_ID;
+use azure_core::{RequestId, StoredAccessPolicyList};
 use chrono::{DateTime, FixedOffset};
 use http::header;
 use http::HeaderMap;

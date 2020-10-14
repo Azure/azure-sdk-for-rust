@@ -48,7 +48,7 @@ use hyper::{Body, Client, Request};
 macro_rules! response_from_headers {
     ($cn:ident, $($fh:ident -> $na:ident: $typ:ty),+) => {
         use http::HeaderMap;
-        use azure_sdk_core::{
+        use azure_core::{
             $($fh,)+
         };
 

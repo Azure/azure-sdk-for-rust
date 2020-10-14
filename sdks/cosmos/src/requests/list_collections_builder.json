@@ -2,17 +2,22 @@
 	"name": "ListCollectionsBuilder",
 	"derive": "Debug, Clone",
 	"uses": [
-			"crate::responses::ListCollectionsResponse",
-			"azure_sdk_core::prelude::*",
-			"crate::{DatabaseClientRequired, ResourceType}",
-			"crate::prelude::*",
-			"azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError}",
-			"futures::stream::{unfold, Stream}",
-			"hyper::StatusCode",
-			"std::convert::TryInto"
+		"crate::responses::ListCollectionsResponse",
+		"azure_core::prelude::*",
+		"crate::{DatabaseClientRequired, ResourceType}",
+		"crate::prelude::*",
+		"azure_core::errors::{check_status_extract_headers_and_body, AzureError}",
+		"futures::stream::{unfold, Stream}",
+		"hyper::StatusCode",
+		"std::convert::TryInto"
 	],
-	"extra_types": [ "'a", "C" ],
-	"extra_wheres": ["C: CosmosClient" ],
+	"extra_types": [
+		"'a",
+		"C"
+	],
+	"extra_wheres": [
+		"C: CosmosClient"
+	],
 	"constructor_fields": [
 		{
 			"name": "database_client",

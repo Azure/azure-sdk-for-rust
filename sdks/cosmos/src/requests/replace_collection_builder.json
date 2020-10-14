@@ -3,18 +3,26 @@
 	"derive": "Debug, Clone",
 	"uses": [
 		"crate::collection::{IndexingPolicy}",
-		"azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError}",
+		"azure_core::errors::{check_status_extract_headers_and_body, AzureError}",
 		"crate::responses::CreateCollectionResponse",
 		"crate::prelude::*",
-		"azure_sdk_core::prelude::*",
+		"azure_core::prelude::*",
 		"crate::collection::PartitionKey",
 		"std::convert::TryInto",
 		"hyper::StatusCode",
 		"std::marker::PhantomData",
-		"azure_sdk_core::{Yes,No,ToAssign}"
+		"azure_core::{Yes,No,ToAssign}"
 	],
-	"extra_types": [ "'a", "'b", "C", "D" ],
-	"extra_wheres": [ "C: CosmosClient", "D: DatabaseClient<C>" ],
+	"extra_types": [
+		"'a",
+		"'b",
+		"C",
+		"D"
+	],
+	"extra_wheres": [
+		"C: CosmosClient",
+		"D: DatabaseClient<C>"
+	],
 	"constructor_fields": [
 		{
 			"name": "collection_client",

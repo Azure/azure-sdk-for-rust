@@ -2,20 +2,26 @@
 	"name": "PutMessageBuilder",
 	"derive": "Debug, Clone",
 	"uses": [
-			"crate::prelude::*",
-			"crate::responses::*",
-			"azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError}",
-			"azure_sdk_core::prelude::*",
-			"azure_sdk_storage_core::prelude::*",
-			"std::marker::PhantomData",
-			"std::borrow::Cow",
-			"azure_sdk_core::{Yes,No,ToAssign}",
-			"hyper::StatusCode",
-			"std::convert::TryInto"
+		"crate::prelude::*",
+		"crate::responses::*",
+		"azure_core::errors::{check_status_extract_headers_and_body, AzureError}",
+		"azure_core::prelude::*",
+		"azure_sdk_storage_core::prelude::*",
+		"std::marker::PhantomData",
+		"std::borrow::Cow",
+		"azure_core::{Yes,No,ToAssign}",
+		"hyper::StatusCode",
+		"std::convert::TryInto"
 	],
 	"inline": true,
-	"extra_types": [ "'a", "'b", "C" ],
-	"extra_wheres": [ "C: Client" ],
+	"extra_types": [
+		"'a",
+		"'b",
+		"C"
+	],
+	"extra_wheres": [
+		"C: Client"
+	],
 	"constructor_fields": [
 		{
 			"name": "queue_name_service",
@@ -26,7 +32,7 @@
 		{
 			"name": "message_body",
 			"field_type": "Cow<'b, str>",
-			"builder_type": "MessageBodySet", 
+			"builder_type": "MessageBodySet",
 			"optional": false,
 			"trait_get": "MessageBodyRequired",
 			"trait_set": "MessageBodySupport<'b>"
@@ -55,11 +61,11 @@
 			"trait_set": "TimeoutSupport"
 		},
 		{
-                        "name": "client_request_id",
-                        "field_type": "&'a str",
-                        "optional": true,
-                        "trait_get": "ClientRequestIdOption<'a>",
-                        "trait_set": "ClientRequestIdSupport<'a>"
-                }
+			"name": "client_request_id",
+			"field_type": "&'a str",
+			"optional": true,
+			"trait_get": "ClientRequestIdOption<'a>",
+			"trait_set": "ClientRequestIdSupport<'a>"
+		}
 	]
 }

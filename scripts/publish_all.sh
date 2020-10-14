@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-cd sdks/azure_sdk_core
+cd sdks/azure_core
 cargo publish
 cd ..
 
@@ -12,7 +12,7 @@ cd ..
 
 sleep 20
 
-cd azure_auth_aad
+cd azure_identity
 cargo publish
 cd ..
 

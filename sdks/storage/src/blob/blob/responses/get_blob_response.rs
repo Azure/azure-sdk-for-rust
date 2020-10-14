@@ -1,6 +1,6 @@
 use crate::blob::blob::Blob;
-use azure_sdk_core::errors::AzureError;
-use azure_sdk_core::{date_from_headers, request_id_from_headers, RequestId};
+use azure_core::errors::AzureError;
+use azure_core::{date_from_headers, request_id_from_headers, RequestId};
 use chrono::{DateTime, Utc};
 use http::HeaderMap;
 

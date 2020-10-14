@@ -2,7 +2,7 @@ use crate::core::bearer_token_client::BearerTokenClient;
 use crate::core::key_client::get_sas_token_parms;
 use crate::core::rest_client::ServiceType;
 use crate::core::{ConnectionString, KeyClient};
-use azure_sdk_core::errors::AzureError;
+use azure_core::errors::AzureError;
 use http::request::Builder;
 use hyper::{self, Method};
 use hyper_rustls::HttpsConnector;

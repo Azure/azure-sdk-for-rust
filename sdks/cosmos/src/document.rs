@@ -1,5 +1,5 @@
 use crate::DocumentAttributes;
-use azure_sdk_core::errors::AzureError;
+use azure_core::errors::AzureError;
 use hyper::header::HeaderMap;
 use serde::de::DeserializeOwned;
 

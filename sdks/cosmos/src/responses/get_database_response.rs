@@ -1,8 +1,8 @@
 use crate::database::Database;
 use crate::from_headers::*;
 use crate::ResourceQuota;
-use azure_sdk_core::errors::AzureError;
-use azure_sdk_core::{etag_from_headers, session_token_from_headers};
+use azure_core::errors::AzureError;
+use azure_core::{etag_from_headers, session_token_from_headers};
 use chrono::{DateTime, Utc};
 use hyper::header::HeaderMap;
 

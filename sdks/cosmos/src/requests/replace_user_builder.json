@@ -2,18 +2,26 @@
 	"name": "ReplaceUserBuilder",
 	"derive": "Debug, Clone",
 	"uses": [
-			"crate::prelude::*",
-			"azure_sdk_core::prelude::*",
-			"crate::responses::CreateUserResponse",
-			"azure_sdk_core::errors::{UnexpectedHTTPResult, extract_status_headers_and_body, AzureError}",
-			"hyper::StatusCode",
-			"std::convert::TryInto",
-			"std::marker::PhantomData",
-			"azure_sdk_core::{Yes,No,ToAssign}"
+		"crate::prelude::*",
+		"azure_core::prelude::*",
+		"crate::responses::CreateUserResponse",
+		"azure_core::errors::{UnexpectedHTTPResult, extract_status_headers_and_body, AzureError}",
+		"hyper::StatusCode",
+		"std::convert::TryInto",
+		"std::marker::PhantomData",
+		"azure_core::{Yes,No,ToAssign}"
 	],
 	"inline": true,
-	"extra_types": [ "'a", "'b", "C", "D" ],
-	"extra_wheres": [ "C: CosmosClient", "D: DatabaseClient<C>" ],
+	"extra_types": [
+		"'a",
+		"'b",
+		"C",
+		"D"
+	],
+	"extra_wheres": [
+		"C: CosmosClient",
+		"D: DatabaseClient<C>"
+	],
 	"constructor_fields": [
 		{
 			"name": "user_client",

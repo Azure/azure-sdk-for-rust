@@ -3,19 +3,24 @@
 	"derive": "Debug, Clone",
 	"uses": [
 		"crate::blob::requests::GetBlobBuilder",
-		"azure_sdk_core::errors::AzureError",
-		"azure_sdk_core::lease::LeaseId",
-		"azure_sdk_core::prelude::*",
-		"azure_sdk_core::range::Range",
+		"azure_core::errors::AzureError",
+		"azure_core::lease::LeaseId",
+		"azure_core::prelude::*",
+		"azure_core::range::Range",
 		"azure_sdk_storage_core::prelude::*",
 		"chrono::{DateTime, Utc}",
-		"azure_sdk_core::{No, ToAssign, Yes}",
+		"azure_core::{No, ToAssign, Yes}",
 		"futures::stream::Stream",
 		"std::marker::PhantomData"
 	],
 	"inline": true,
-	"extra_types": [ "'a", "C" ],
-	"extra_wheres": [ "C: Client" ],
+	"extra_types": [
+		"'a",
+		"C"
+	],
+	"extra_wheres": [
+		"C: Client"
+	],
 	"constructor_fields": [
 		{
 			"name": "client",

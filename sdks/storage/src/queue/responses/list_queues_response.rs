@@ -1,5 +1,5 @@
-use azure_sdk_core::errors::AzureError;
-use azure_sdk_core::CommonStorageResponseHeaders;
+use azure_core::errors::AzureError;
+use azure_core::CommonStorageResponseHeaders;
 use hyper::header::HeaderMap;
 use std::convert::TryInto;
 

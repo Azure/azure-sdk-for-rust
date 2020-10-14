@@ -2,17 +2,27 @@
 	"name": "ReplacePermissionBuilder",
 	"derive": "Debug, Clone",
 	"uses": [
-			"crate::prelude::*",
-			"azure_sdk_core::prelude::*",
-			"crate::responses::ReplacePermissionResponse",
-			"crate::{PermissionMode, PermissionResource}",
-			"azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError}",
-			"hyper::StatusCode",
-			"std::convert::TryInto"
+		"crate::prelude::*",
+		"azure_core::prelude::*",
+		"crate::responses::ReplacePermissionResponse",
+		"crate::{PermissionMode, PermissionResource}",
+		"azure_core::errors::{check_status_extract_headers_and_body, AzureError}",
+		"hyper::StatusCode",
+		"std::convert::TryInto"
 	],
 	"inline": true,
-	"extra_types": [ "'a", "'b", "C", "D", "USER" ],
-	"extra_wheres": [ "C: CosmosClient", "D: DatabaseClient<C>", "USER: UserClient<C, D>" ],
+	"extra_types": [
+		"'a",
+		"'b",
+		"C",
+		"D",
+		"USER"
+	],
+	"extra_wheres": [
+		"C: CosmosClient",
+		"D: DatabaseClient<C>",
+		"USER: UserClient<C, D>"
+	],
 	"constructor_fields": [
 		{
 			"name": "permission_client",

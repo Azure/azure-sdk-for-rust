@@ -1,5 +1,5 @@
 use crate::de;
-use azure_sdk_core::errors::AzureError;
+use azure_core::errors::AzureError;
 use chrono::{DateTime, Utc};
 use http::header;
 use http::HeaderMap;

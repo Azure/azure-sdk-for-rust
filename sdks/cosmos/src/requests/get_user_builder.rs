@@ -1,8 +1,8 @@
 use crate::prelude::*;
 use crate::responses::CreateUserResponse;
-use azure_sdk_core::errors::UnexpectedHTTPResult;
-use azure_sdk_core::errors::{extract_status_headers_and_body, AzureError};
-use azure_sdk_core::prelude::*;
+use azure_core::errors::UnexpectedHTTPResult;
+use azure_core::errors::{extract_status_headers_and_body, AzureError};
+use azure_core::prelude::*;
 use hyper::StatusCode;
 use std::convert::TryInto;
 

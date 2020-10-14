@@ -1,7 +1,7 @@
 use crate::from_headers::*;
 use crate::{Attachment, ResourceQuota};
-use azure_sdk_core::errors::AzureError;
-use azure_sdk_core::{etag_from_headers, session_token_from_headers, SessionToken};
+use azure_core::errors::AzureError;
+use azure_core::{etag_from_headers, session_token_from_headers, SessionToken};
 use chrono::{DateTime, Utc};
 use http::HeaderMap;
 

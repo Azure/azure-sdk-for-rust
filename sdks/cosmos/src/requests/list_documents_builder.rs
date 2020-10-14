@@ -1,8 +1,8 @@
 use crate::prelude::*;
 use crate::responses::ListDocumentsResponse;
 use crate::ResourceType;
-use azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError};
-use azure_sdk_core::prelude::*;
+use azure_core::errors::{check_status_extract_headers_and_body, AzureError};
+use azure_core::prelude::*;
 use futures::stream::{unfold, Stream};
 use hyper::StatusCode;
 use serde::de::DeserializeOwned;

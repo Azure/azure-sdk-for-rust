@@ -1,5 +1,5 @@
 use crate::from_headers::*;
-use azure_sdk_core::errors::AzureError;
+use azure_core::errors::AzureError;
 use hyper::header::HeaderMap;
 
 #[derive(Debug, Clone)]

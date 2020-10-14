@@ -6,7 +6,7 @@ extern crate log;
 #[macro_use]
 extern crate serde_derive;
 #[macro_use]
-extern crate azure_sdk_core;
+extern crate azure_core;
 #[macro_use]
 extern crate quick_error;
 

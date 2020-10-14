@@ -5,8 +5,8 @@ use crate::{
     AuthorizationToken, CosmosClient, HasHyperClient, IntoDatabaseClient, ResourceType,
     WithDatabaseClient,
 };
-use azure_sdk_core::errors::AzureError;
-use azure_sdk_core::No;
+use azure_core::errors::AzureError;
+use azure_core::No;
 use base64;
 use chrono;
 use http::request::Builder as RequestBuilder;

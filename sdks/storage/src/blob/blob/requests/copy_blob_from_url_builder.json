@@ -1,21 +1,26 @@
 {
 	"name": "CopyBlobFromUrlBuilder",
 	"uses": [
-		"azure_sdk_core::lease::LeaseId",
-		"azure_sdk_core::prelude::*",
+		"azure_core::lease::LeaseId",
+		"azure_core::prelude::*",
 		"crate::blob::responses::CopyBlobFromUrlResponse",
-		"azure_sdk_core::{No, ToAssign, Yes}",
+		"azure_core::{No, ToAssign, Yes}",
 		"azure_sdk_storage_core::prelude::*",
 		"std::convert::TryInto",
 		"std::collections::HashMap",
 		"std::marker::PhantomData",
 		"hyper::{Method, StatusCode}",
-		"azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError}",
+		"azure_core::errors::{check_status_extract_headers_and_body, AzureError}",
 		"crate::blob::generate_blob_uri"
 	],
 	"inline": true,
-	"extra_types": [ "'a", "C" ],
-	"extra_wheres": [ "C: Client" ],
+	"extra_types": [
+		"'a",
+		"C"
+	],
+	"extra_wheres": [
+		"C: Client"
+	],
 	"constructor_fields": [
 		{
 			"name": "client",

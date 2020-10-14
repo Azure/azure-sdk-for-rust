@@ -2,7 +2,7 @@ use crate::event_hub::{
     delete_message, peek_lock, peek_lock_full, receive_and_delete, renew_lock, send_event,
     unlock_message, PeekLockResponse,
 };
-use azure_sdk_core::errors::AzureError;
+use azure_core::errors::AzureError;
 use chrono::Duration;
 use hyper_rustls::HttpsConnector;
 use ring::hmac::Key;

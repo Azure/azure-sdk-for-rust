@@ -1,7 +1,7 @@
 use crate::clients::{CollectionStruct, UserStruct};
 use crate::traits::*;
 use crate::{requests, CosmosClient};
-use azure_sdk_core::No;
+use azure_core::No;
 use std::borrow::Cow;
 
 #[derive(Debug, Clone)]

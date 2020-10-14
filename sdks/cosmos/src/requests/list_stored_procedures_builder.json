@@ -2,18 +2,26 @@
 	"name": "ListStoredProceduresBuilder",
 	"derive": "Debug, Clone",
 	"uses": [
-			"crate::prelude::*",
-			"azure_sdk_core::prelude::*",
-			"azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError}",
-			"crate::ResourceType",
-			"hyper::StatusCode",
-			"futures::stream::{unfold, Stream}",
-			"crate::responses::ListStoredProceduresResponse",
-			"std::convert::TryInto"
+		"crate::prelude::*",
+		"azure_core::prelude::*",
+		"azure_core::errors::{check_status_extract_headers_and_body, AzureError}",
+		"crate::ResourceType",
+		"hyper::StatusCode",
+		"futures::stream::{unfold, Stream}",
+		"crate::responses::ListStoredProceduresResponse",
+		"std::convert::TryInto"
 	],
 	"inline": true,
-	"extra_types": [ "'a", "'b", "C", "D" ],
-	"extra_wheres": [ "C: CosmosClient", "D: DatabaseClient<C>" ],
+	"extra_types": [
+		"'a",
+		"'b",
+		"C",
+		"D"
+	],
+	"extra_wheres": [
+		"C: CosmosClient",
+		"D: DatabaseClient<C>"
+	],
 	"constructor_fields": [
 		{
 			"name": "collection_client",
@@ -59,6 +67,5 @@
 			"trait_get": "MaxItemCountOption",
 			"trait_set": "MaxItemCountSupport"
 		}
-
 	]
 }

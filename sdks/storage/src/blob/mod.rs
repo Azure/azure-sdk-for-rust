@@ -3,7 +3,7 @@ pub mod container;
 pub mod prelude;
 
 use crate::core::Client;
-use azure_sdk_core::No;
+use azure_core::No;
 use std::borrow::Borrow;
 
 pub trait Blob<C>

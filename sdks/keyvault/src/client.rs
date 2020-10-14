@@ -1,7 +1,7 @@
 use crate::KeyVaultError;
 use anyhow::Context;
 use anyhow::Result;
-use azure_auth_aad::{TokenCredential, TokenResponse};
+use azure_identity::{TokenCredential, TokenResponse};
 
 pub(crate) const PUBLIC_ENDPOINT_SUFFIX: &str = "vault.azure.net";
 pub(crate) const API_VERSION: &str = "7.0";

@@ -1,10 +1,10 @@
 use crate::prelude::*;
 use crate::responses::GetDocumentResponse;
 use crate::DocumentClientRequired;
-use azure_sdk_core::errors::{extract_status_headers_and_body, AzureError, UnexpectedHTTPResult};
-use azure_sdk_core::modify_conditions::IfMatchCondition;
-use azure_sdk_core::prelude::*;
-use azure_sdk_core::{IfMatchConditionOption, IfMatchConditionSupport};
+use azure_core::errors::{extract_status_headers_and_body, AzureError, UnexpectedHTTPResult};
+use azure_core::modify_conditions::IfMatchCondition;
+use azure_core::prelude::*;
+use azure_core::{IfMatchConditionOption, IfMatchConditionSupport};
 use chrono::{DateTime, Utc};
 use hyper::StatusCode;
 use serde::de::DeserializeOwned;

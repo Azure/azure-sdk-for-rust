@@ -2,18 +2,26 @@
 	"name": "ListPermissionsBuilder",
 	"derive": "Debug, Clone",
 	"uses": [
-			"crate::prelude::*",
-			"azure_sdk_core::prelude::*",
-			"crate::ResourceType",
-			"crate::responses::ListPermissionsResponse",
-			"azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError}",
-			"hyper::StatusCode",
-			"futures::stream::{unfold, Stream}",
-			"std::convert::TryInto"
+		"crate::prelude::*",
+		"azure_core::prelude::*",
+		"crate::ResourceType",
+		"crate::responses::ListPermissionsResponse",
+		"azure_core::errors::{check_status_extract_headers_and_body, AzureError}",
+		"hyper::StatusCode",
+		"futures::stream::{unfold, Stream}",
+		"std::convert::TryInto"
 	],
 	"inline": true,
-	"extra_types": [ "'a", "'b", "C", "D" ],
-	"extra_wheres": [ "C: CosmosClient", "D: DatabaseClient<C>" ],
+	"extra_types": [
+		"'a",
+		"'b",
+		"C",
+		"D"
+	],
+	"extra_wheres": [
+		"C: CosmosClient",
+		"D: DatabaseClient<C>"
+	],
 	"constructor_fields": [
 		{
 			"name": "user_client",

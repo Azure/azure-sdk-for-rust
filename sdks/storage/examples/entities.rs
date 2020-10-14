@@ -1,7 +1,7 @@
 #[macro_use]
 extern crate serde_derive;
 
-use azure_sdk_core::errors::AzureError;
+use azure_core::errors::AzureError;
 use azure_storage::table::{CloudTable, TableClient, TableEntity};
 use std::error::Error;
 

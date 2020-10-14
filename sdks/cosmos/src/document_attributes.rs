@@ -1,5 +1,5 @@
-use azure_sdk_core::errors::AzureError;
-use azure_sdk_core::prelude::IfMatchCondition;
+use azure_core::errors::AzureError;
+use azure_core::prelude::IfMatchCondition;
 use http::HeaderMap;
 
 #[derive(Default, Serialize, Deserialize, Debug, Clone, PartialEq)]

@@ -1,9 +1,9 @@
 use crate::blob::blob::responses::ListBlobsResponse;
 use crate::blob::container::generate_container_uri;
 use crate::core::prelude::*;
-use azure_sdk_core::errors::{check_status_extract_headers_and_body_as_string, AzureError};
-use azure_sdk_core::prelude::*;
-use azure_sdk_core::{No, ToAssign, Yes};
+use azure_core::errors::{check_status_extract_headers_and_body_as_string, AzureError};
+use azure_core::prelude::*;
+use azure_core::{No, ToAssign, Yes};
 use futures::stream::{unfold, Stream};
 use hyper::{Method, StatusCode};
 use std::marker::PhantomData;

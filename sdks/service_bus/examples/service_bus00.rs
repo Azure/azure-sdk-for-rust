@@ -1,4 +1,4 @@
-use azure_sdk_service_bus::prelude::*;
+use azure_service_bus::prelude::*;
 use chrono::Duration;
 use std::error::Error;
 

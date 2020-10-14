@@ -3,8 +3,8 @@
 extern crate log;
 
 use crate::core::prelude::*;
-use azure_sdk_core::prelude::*;
-use azure_sdk_core::{Consistency, DeleteSnapshotsMethod};
+use azure_core::prelude::*;
+use azure_core::{Consistency, DeleteSnapshotsMethod};
 use azure_storage::blob::{
     blob::BlockListType,
     container::{Container, PublicAccess, PublicAccessSupport},

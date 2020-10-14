@@ -5,18 +5,28 @@
 		"crate::prelude::*",
 		"crate::responses::GetDocumentResponse",
 		"crate::DocumentClientRequired",
-		"azure_sdk_core::errors::{extract_status_headers_and_body, AzureError, UnexpectedHTTPResult}",
-		"azure_sdk_core::modify_conditions::IfMatchCondition",
-		"azure_sdk_core::prelude::*",
-		"azure_sdk_core::{IfMatchConditionOption, IfMatchConditionSupport}",
+		"azure_core::errors::{extract_status_headers_and_body, AzureError, UnexpectedHTTPResult}",
+		"azure_core::modify_conditions::IfMatchCondition",
+		"azure_core::prelude::*",
+		"azure_core::{IfMatchConditionOption, IfMatchConditionSupport}",
 		"chrono::{DateTime, Utc}",
 		"hyper::StatusCode",
 		"serde::de::DeserializeOwned",
 		"std::convert::TryFrom"
 	],
 	"inline": true,
-	"extra_types": [ "'a", "'b", "C", "D", "COLL" ],
-	"extra_wheres": [ "C: CosmosClient", "D: DatabaseClient<C>", "COLL: CollectionClient<C, D>" ],
+	"extra_types": [
+		"'a",
+		"'b",
+		"C",
+		"D",
+		"COLL"
+	],
+	"extra_wheres": [
+		"C: CosmosClient",
+		"D: DatabaseClient<C>",
+		"COLL: CollectionClient<C, D>"
+	],
 	"constructor_fields": [
 		{
 			"name": "document_client",

@@ -1,6 +1,6 @@
 use crate::core::rest_client::{perform_request, ServiceType};
 use crate::core::{Client, ClientEndpoint, HyperClientEndpoint};
-use azure_sdk_core::errors::AzureError;
+use azure_core::errors::AzureError;
 use http::request::Builder;
 use hyper::{self, Method};
 use hyper_rustls::HttpsConnector;

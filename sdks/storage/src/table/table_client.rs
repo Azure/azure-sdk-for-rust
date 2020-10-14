@@ -4,7 +4,7 @@ use crate::core::{
     client, get_default_json_mime, get_json_mime_fullmetadata, get_json_mime_nometadata,
     ConnectionString, ServiceType,
 };
-use azure_sdk_core::errors::{check_status_extract_body, AzureError};
+use azure_core::errors::{check_status_extract_body, AzureError};
 use http::request::Builder;
 use hyper::{
     client::ResponseFuture,

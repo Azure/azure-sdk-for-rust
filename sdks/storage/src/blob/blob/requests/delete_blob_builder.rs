@@ -1,11 +1,11 @@
 use crate::blob::blob::generate_blob_uri;
 use crate::blob::blob::responses::DeleteBlobResponse;
 use crate::core::prelude::*;
-use azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError};
-use azure_sdk_core::lease::LeaseId;
-use azure_sdk_core::prelude::*;
-use azure_sdk_core::{DeleteSnapshotsMethod, No, ToAssign, Yes};
-use azure_sdk_core::{DeleteSnapshotsMethodRequired, DeleteSnapshotsMethodSupport};
+use azure_core::errors::{check_status_extract_headers_and_body, AzureError};
+use azure_core::lease::LeaseId;
+use azure_core::prelude::*;
+use azure_core::{DeleteSnapshotsMethod, No, ToAssign, Yes};
+use azure_core::{DeleteSnapshotsMethodRequired, DeleteSnapshotsMethodSupport};
 use hyper::{Method, StatusCode};
 use std::marker::PhantomData;
 

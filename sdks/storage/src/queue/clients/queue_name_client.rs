@@ -2,7 +2,7 @@ use crate::core::Client;
 use crate::queue::clients::QueueServiceClient;
 use crate::requests;
 use crate::{HasStorageClient, IntoQueueNameClient, QueueNameService, WithQueueNameClient};
-use azure_sdk_core::No;
+use azure_core::No;
 use std::borrow::Cow;
 use std::fmt::Debug;
 

@@ -1,5 +1,5 @@
-use azure_sdk_core::errors::AzureError;
-use azure_sdk_core::{
+use azure_core::errors::AzureError;
+use azure_core::{
     consistency_from_headers, date_from_headers, request_id_from_headers,
     request_server_encrypted_from_headers, Consistency, RequestId,
 };

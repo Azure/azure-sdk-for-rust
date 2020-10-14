@@ -2,18 +2,28 @@
 	"name": "ListAttachmentsBuilder",
 	"derive": "Debug, Clone",
 	"uses": [
-			"crate::prelude::*",
-			"azure_sdk_core::prelude::*",
-			"crate::{ResourceType, DocumentClient}",
-			"crate::DocumentClientRequired",
-			"azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError}",
-			"hyper::StatusCode",
-			"crate::responses::ListAttachmentsResponse",
-			"std::convert::TryInto"
+		"crate::prelude::*",
+		"azure_core::prelude::*",
+		"crate::{ResourceType, DocumentClient}",
+		"crate::DocumentClientRequired",
+		"azure_core::errors::{check_status_extract_headers_and_body, AzureError}",
+		"hyper::StatusCode",
+		"crate::responses::ListAttachmentsResponse",
+		"std::convert::TryInto"
 	],
 	"inline": true,
-	"extra_types": [ "'a", "'b", "C", "D", "COLL" ],
-	"extra_wheres": [ "C: CosmosClient", "D: DatabaseClient<C>", "COLL: CollectionClient<C, D>" ],
+	"extra_types": [
+		"'a",
+		"'b",
+		"C",
+		"D",
+		"COLL"
+	],
+	"extra_wheres": [
+		"C: CosmosClient",
+		"D: DatabaseClient<C>",
+		"COLL: CollectionClient<C, D>"
+	],
 	"constructor_fields": [
 		{
 			"name": "document_client",

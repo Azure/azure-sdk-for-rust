@@ -1,8 +1,8 @@
 use crate::IPRange;
 use crate::{ClientEndpoint, HyperClientEndpoint};
-use azure_sdk_core::errors::AzureError;
-use azure_sdk_core::headers;
-use azure_sdk_core::util::{format_header_value, HeaderMapExt, RequestBuilderExt};
+use azure_core::errors::AzureError;
+use azure_core::headers;
+use azure_core::util::{format_header_value, HeaderMapExt, RequestBuilderExt};
 use chrono::{DateTime, Utc};
 use http::request::Builder;
 use hyper::{self, header, HeaderMap, Method};

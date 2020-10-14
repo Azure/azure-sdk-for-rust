@@ -1,6 +1,6 @@
 use crate::account::account::responses::GetAccountInformationResponse;
 use crate::core::prelude::*;
-use azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError};
+use azure_core::errors::{check_status_extract_headers_and_body, AzureError};
 use hyper::{Method, StatusCode};
 
 #[derive(Debug, Clone)]

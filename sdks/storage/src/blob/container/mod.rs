@@ -2,9 +2,9 @@ pub mod requests;
 pub mod responses;
 
 use crate::core::prelude::*;
-use azure_sdk_core::incompletevector::IncompleteVector;
-use azure_sdk_core::StoredAccessPolicyList;
-use azure_sdk_core::{
+use azure_core::incompletevector::IncompleteVector;
+use azure_core::StoredAccessPolicyList;
+use azure_core::{
     errors::AzureError,
     headers::{
         BLOB_PUBLIC_ACCESS, HAS_IMMUTABILITY_POLICY, HAS_LEGAL_HOLD, LEASE_DURATION, LEASE_STATE,

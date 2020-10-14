@@ -1,4 +1,4 @@
-use azure_sdk_core::errors::AzureError;
+use azure_core::errors::AzureError;
 use serde::ser::Serialize;
 use std::borrow::Cow;
 

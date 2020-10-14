@@ -5,9 +5,9 @@
 		"crate::prelude::*",
 		"crate::ResourceType",
 		"crate::responses::CreateDocumentResponse",
-		"azure_sdk_core::errors::{extract_status_headers_and_body, AzureError, UnexpectedHTTPResult}",
-		"azure_sdk_core::prelude::*",
-		"azure_sdk_core::{No, ToAssign, Yes}",
+		"azure_core::errors::{extract_status_headers_and_body, AzureError, UnexpectedHTTPResult}",
+		"azure_core::prelude::*",
+		"azure_core::{No, ToAssign, Yes}",
 		"chrono::{DateTime, Utc}",
 		"hyper::StatusCode",
 		"serde::Serialize",
@@ -15,12 +15,20 @@
 		"std::marker::PhantomData"
 	],
 	"inline": true,
-	"extra_types": [ "'a", "'b", "C", "D" ],
-	"extra_wheres": [ "C: CosmosClient", "D: DatabaseClient<C>" ],
+	"extra_types": [
+		"'a",
+		"'b",
+		"C",
+		"D"
+	],
+	"extra_wheres": [
+		"C: CosmosClient",
+		"D: DatabaseClient<C>"
+	],
 	"constructor_fields": [
 		{
 			"name": "collection_client",
-			"field_type": "&'a dyn CollectionClient<C, D>", 
+			"field_type": "&'a dyn CollectionClient<C, D>",
 			"trait_get": "CollectionClientRequired<'a, C, D>"
 		}
 	],

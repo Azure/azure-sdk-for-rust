@@ -1,7 +1,7 @@
 use crate::from_headers::*;
 use crate::User;
-use azure_sdk_core::errors::AzureError;
-use azure_sdk_core::{
+use azure_core::errors::AzureError;
+use azure_core::{
     continuation_token_from_headers_optional, session_token_from_headers, SessionToken,
 };
 use http::HeaderMap;

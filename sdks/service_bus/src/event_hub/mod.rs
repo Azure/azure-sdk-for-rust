@@ -1,4 +1,4 @@
-use azure_sdk_core::errors::{
+use azure_core::errors::{
     check_status_extract_body, extract_location_status_and_body, AzureError,
 };
 use chrono::Duration;

@@ -4,18 +4,23 @@
 	"uses": [
 		"crate::blob::generate_blob_uri",
 		"crate::blob::responses::DeleteBlobResponse",
-		"azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError}",
-		"azure_sdk_core::lease::LeaseId",
-		"azure_sdk_core::prelude::*",
-		"azure_sdk_core::{No, ToAssign, Yes}",
+		"azure_core::errors::{check_status_extract_headers_and_body, AzureError}",
+		"azure_core::lease::LeaseId",
+		"azure_core::prelude::*",
+		"azure_core::{No, ToAssign, Yes}",
 		"azure_sdk_storage_core::prelude::*",
 		"chrono::{DateTime, Utc}",
 		"hyper::{Method, StatusCode}",
 		"std::marker::PhantomData"
 	],
 	"inline": true,
-	"extra_types": [ "'a", "C" ],
-	"extra_wheres": [ "C: Client" ],
+	"extra_types": [
+		"'a",
+		"C"
+	],
+	"extra_wheres": [
+		"C: Client"
+	],
 	"constructor_fields": [
 		{
 			"name": "client",

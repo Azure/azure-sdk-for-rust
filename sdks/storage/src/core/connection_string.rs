@@ -1,4 +1,4 @@
-use azure_sdk_core::errors::AzureError;
+use azure_core::errors::AzureError;
 
 // Key names.
 pub const ACCOUNT_KEY_KEY_NAME: &str = "AccountKey";

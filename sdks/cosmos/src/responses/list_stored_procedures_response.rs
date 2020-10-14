@@ -1,8 +1,8 @@
 use crate::from_headers::*;
 use crate::stored_procedure::StoredProcedure;
 use crate::ResourceQuota;
-use azure_sdk_core::errors::AzureError;
-use azure_sdk_core::{continuation_token_from_headers_optional, session_token_from_headers};
+use azure_core::errors::AzureError;
+use azure_core::{continuation_token_from_headers_optional, session_token_from_headers};
 use chrono::{DateTime, Utc};
 use http::HeaderMap;
 

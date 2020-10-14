@@ -4,7 +4,7 @@ pub mod requests;
 pub mod responses;
 
 use crate::core::Client;
-use azure_sdk_core::No;
+use azure_core::No;
 pub use clients::*;
 use std::borrow::Cow;
 use std::fmt::Debug;

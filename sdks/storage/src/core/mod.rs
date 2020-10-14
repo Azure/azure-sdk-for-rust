@@ -19,9 +19,9 @@ pub use self::rest_client::{
     ServiceType,
 };
 use crate::key_client::KeyClient;
-use azure_sdk_core::errors::AzureError;
-use azure_sdk_core::headers::COPY_ID;
-use azure_sdk_core::util::HeaderMapExt;
+use azure_core::errors::AzureError;
+use azure_core::headers::COPY_ID;
+use azure_core::util::HeaderMapExt;
 pub use client::Client;
 pub use client_endpoint::ClientEndpoint;
 use http::HeaderMap;

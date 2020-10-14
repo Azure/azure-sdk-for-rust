@@ -1,4 +1,4 @@
-use azure_sdk_core::enumerations::ParsingError;
+use azure_core::enumerations::ParsingError;
 use std::fmt;
 
 #[derive(Debug, Clone, Copy, PartialEq)]

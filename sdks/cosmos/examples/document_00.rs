@@ -4,7 +4,7 @@ extern crate serde_derive;
 // DB.
 use azure_cosmos::prelude::*;
 use azure_cosmos::responses::GetDocumentResponse;
-use azure_sdk_core::prelude::*;
+use azure_core::prelude::*;
 use std::borrow::Cow;
 use std::error::Error;
 

@@ -1,9 +1,9 @@
 use crate::prelude::*;
 use crate::responses::ReplaceDocumentResponse;
 use crate::ResourceType;
-use azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError};
-use azure_sdk_core::prelude::*;
-use azure_sdk_core::{No, ToAssign, Yes};
+use azure_core::errors::{check_status_extract_headers_and_body, AzureError};
+use azure_core::prelude::*;
+use azure_core::{No, ToAssign, Yes};
 use chrono::{DateTime, Utc};
 use hyper::StatusCode;
 use serde::Serialize;

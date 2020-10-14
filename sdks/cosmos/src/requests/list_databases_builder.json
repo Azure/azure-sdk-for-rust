@@ -3,16 +3,18 @@
 	"derive": "Debug, Clone",
 	"uses": [
 		"crate::responses::ListDatabasesResponse",
-		"azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError}",
+		"azure_core::errors::{check_status_extract_headers_and_body, AzureError}",
 		"hyper::StatusCode",
 		"crate::prelude::*",
 		"crate::ResourceType",
-		"azure_sdk_core::prelude::*",
+		"azure_core::prelude::*",
 		"std::convert::TryInto",
 		"futures::stream::{unfold, Stream}"
 	],
-	"extra_types": [ "'a" ],
-	"extra_wheres": [ ],
+	"extra_types": [
+		"'a"
+	],
+	"extra_wheres": [],
 	"constructor_fields": [
 		{
 			"name": "cosmos_client",

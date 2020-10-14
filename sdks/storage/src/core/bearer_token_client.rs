@@ -1,7 +1,7 @@
 use super::prelude::*;
 use super::rest_client::{AZURE_VERSION, HEADER_DATE, HEADER_VERSION};
-use azure_sdk_core::errors::AzureError;
-use azure_sdk_core::util::{format_header_value, RequestBuilderExt};
+use azure_core::errors::AzureError;
+use azure_core::util::{format_header_value, RequestBuilderExt};
 use http::request::Builder;
 use hyper::{header, Method};
 use hyper_rustls::HttpsConnector;

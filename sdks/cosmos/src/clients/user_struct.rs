@@ -2,7 +2,7 @@
 use crate::requests;
 use crate::traits::*;
 use crate::PermissionStruct;
-use azure_sdk_core::No;
+use azure_core::No;
 use std::borrow::Cow;
 use std::marker::PhantomData;
 

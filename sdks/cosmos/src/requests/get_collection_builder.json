@@ -4,18 +4,25 @@
 	"uses": [
 		"crate::prelude::*",
 		"crate::responses::GetCollectionResponse",
-		"azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError}",
+		"azure_core::errors::{check_status_extract_headers_and_body, AzureError}",
 		"hyper::StatusCode",
-		"azure_sdk_core::prelude::*",
+		"azure_core::prelude::*",
 		"std::convert::TryInto"
 	],
 	"inline": true,
-	"extra_types": [ "'a", "C", "D" ],
-	"extra_wheres": [ "C: CosmosClient", "D: DatabaseClient<C>" ],
+	"extra_types": [
+		"'a",
+		"C",
+		"D"
+	],
+	"extra_wheres": [
+		"C: CosmosClient",
+		"D: DatabaseClient<C>"
+	],
 	"constructor_fields": [
 		{
 			"name": "collection_client",
-			"field_type": "&'a dyn CollectionClient<C, D>", 
+			"field_type": "&'a dyn CollectionClient<C, D>",
 			"trait_get": "CollectionClientRequired<'a, C, D>"
 		}
 	],

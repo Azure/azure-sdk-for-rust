@@ -1,5 +1,5 @@
-use azure_sdk_core::errors::AzureError;
-use azure_sdk_core::{
+use azure_core::errors::AzureError;
+use azure_core::{
     account_kind_from_headers, date_from_headers, request_id_from_headers, sku_name_from_headers,
     RequestId,
 };

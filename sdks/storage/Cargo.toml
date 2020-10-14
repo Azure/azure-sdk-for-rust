@@ -13,7 +13,7 @@ categories    = ["api-bindings"]
 edition       = "2018"
 
 [dependencies]
-azure_sdk_core          = { path = "../core", version = "0.43.6" }
+azure_core          = { path = "../core", version = "0.1.0" }
 ring                    = "0.16"
 base64                  = "0.13"
 chrono                  = "0.4"
@@ -41,7 +41,7 @@ failure			        = "0.1"
 [dev-dependencies]
 tokio                   = { version = "0.2", features = ["macros"] }
 env_logger              = "0.7"
-azure_auth_aad      = { path = "../auth_aad" }
+azure_identity      = { path = "../identity" }
 url                     = "2.1"
 
 [features]

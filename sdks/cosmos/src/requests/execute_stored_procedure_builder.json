@@ -2,18 +2,28 @@
 	"name": "ExecuteStoredProcedureBuilder",
 	"derive": "Debug, Clone",
 	"uses": [
-			"crate::prelude::*",
-			"azure_sdk_core::prelude::*",
-			"crate::stored_procedure::Parameters",
-			"azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError}",
-			"hyper::StatusCode",
-			"crate::responses::ExecuteStoredProcedureResponse",
-			"serde::de::DeserializeOwned",
-			"std::convert::TryInto"
+		"crate::prelude::*",
+		"azure_core::prelude::*",
+		"crate::stored_procedure::Parameters",
+		"azure_core::errors::{check_status_extract_headers_and_body, AzureError}",
+		"hyper::StatusCode",
+		"crate::responses::ExecuteStoredProcedureResponse",
+		"serde::de::DeserializeOwned",
+		"std::convert::TryInto"
 	],
 	"inline": true,
-	"extra_types": [ "'a", "'b", "C", "D", "COLL" ],
-	"extra_wheres": [ "C: CosmosClient", "D: DatabaseClient<C>", "COLL: CollectionClient<C, D>" ],
+	"extra_types": [
+		"'a",
+		"'b",
+		"C",
+		"D",
+		"COLL"
+	],
+	"extra_wheres": [
+		"C: CosmosClient",
+		"D: DatabaseClient<C>",
+		"COLL: CollectionClient<C, D>"
+	],
 	"constructor_fields": [
 		{
 			"name": "stored_procedure_client",

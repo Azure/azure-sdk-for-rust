@@ -2,18 +2,28 @@
 	"name": "ReplaceStoredProcedureBuilder",
 	"derive": "Debug, Clone",
 	"uses": [
-			"crate::prelude::*",
-			"azure_sdk_core::prelude::*",
-			"azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError}",
-			"azure_sdk_core::{Yes,No,ToAssign}",
-			"std::marker::PhantomData",
-			"hyper::StatusCode",
-			"crate::responses::ReplaceStoredProcedureResponse",
-			"std::convert::TryInto"
+		"crate::prelude::*",
+		"azure_core::prelude::*",
+		"azure_core::errors::{check_status_extract_headers_and_body, AzureError}",
+		"azure_core::{Yes,No,ToAssign}",
+		"std::marker::PhantomData",
+		"hyper::StatusCode",
+		"crate::responses::ReplaceStoredProcedureResponse",
+		"std::convert::TryInto"
 	],
 	"inline": true,
-	"extra_types": [ "'a", "'b", "C", "D", "COLL" ],
-	"extra_wheres": [ "C: CosmosClient", "D: DatabaseClient<C>", "COLL: CollectionClient<C, D>" ],
+	"extra_types": [
+		"'a",
+		"'b",
+		"C",
+		"D",
+		"COLL"
+	],
+	"extra_wheres": [
+		"C: CosmosClient",
+		"D: DatabaseClient<C>",
+		"COLL: CollectionClient<C, D>"
+	],
 	"constructor_fields": [
 		{
 			"name": "stored_procedure_client",

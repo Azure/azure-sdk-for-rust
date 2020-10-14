@@ -4,22 +4,26 @@
 	"uses": [
 		"crate::blob::responses::GetBlobResponse",
 		"crate::blob::{generate_blob_uri, Blob}",
-		"azure_sdk_core::{Yes, No, ToAssign}",
-		"azure_sdk_core::errors::{check_status_extract_headers_and_body, AzureError}",
-		"azure_sdk_core::headers::RANGE_GET_CONTENT_MD5",
-		"azure_sdk_core::lease::LeaseId",
-		"azure_sdk_core::range::Range",
-		"azure_sdk_core::util::RequestBuilderExt",
-		"azure_sdk_core::prelude::*",
+		"azure_core::{Yes, No, ToAssign}",
+		"azure_core::errors::{check_status_extract_headers_and_body, AzureError}",
+		"azure_core::headers::RANGE_GET_CONTENT_MD5",
+		"azure_core::lease::LeaseId",
+		"azure_core::range::Range",
+		"azure_core::util::RequestBuilderExt",
+		"azure_core::prelude::*",
 		"azure_sdk_storage_core::prelude::*",
 		"chrono::{DateTime, Utc}",
 		"hyper::{Method, StatusCode}",
 		"std::marker::PhantomData"
-
 	],
 	"inline": true,
-	"extra_types": [ "'a", "C" ],
-	"extra_wheres": [ "C: Client" ],
+	"extra_types": [
+		"'a",
+		"C"
+	],
+	"extra_wheres": [
+		"C: Client"
+	],
 	"constructor_fields": [
 		{
 			"name": "client",

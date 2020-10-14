@@ -2,8 +2,8 @@
 #[macro_use]
 extern crate log;
 
-use azure_sdk_core::errors::AzureError;
-use azure_sdk_service_bus::event_hub::Client;
+use azure_core::errors::AzureError;
+use azure_service_bus::event_hub::Client;
 use chrono::Duration;
 
 #[tokio::test]

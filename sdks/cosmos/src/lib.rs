@@ -7,7 +7,7 @@ extern crate serde_derive;
 #[macro_use]
 extern crate failure;
 #[macro_use]
-extern crate azure_sdk_core;
+extern crate azure_core;
 
 pub mod attachment;
 mod authorization_token;

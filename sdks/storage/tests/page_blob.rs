@@ -2,7 +2,7 @@
 #[macro_use]
 extern crate log;
 use crate::core::prelude::*;
-use azure_sdk_core::prelude::*;
+use azure_core::prelude::*;
 use azure_storage::blob::prelude::*;
 use std::collections::HashMap;
 

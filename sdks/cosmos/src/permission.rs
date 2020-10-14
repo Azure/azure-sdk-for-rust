@@ -1,5 +1,5 @@
 use crate::{PermissionResource, PermissionToken};
-use azure_sdk_core::errors::{AzureError, UnexpectedValue};
+use azure_core::errors::{AzureError, UnexpectedValue};
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
 use std::convert::TryInto;
