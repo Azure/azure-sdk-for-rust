@@ -14,7 +14,7 @@ edition            = "2018"
 
 [dependencies]
 azure_sdk_core       = { path = "../core", version = "0.43.5" }
-oauth2               = { version = "3.0.0", features = ["reqwest-010", "futures-03"], default-features = false}
+oauth2               = { version = "4.0.0-alpha.2" }
 url                  = "2.1"
 futures              = "0.3"
 serde                = "1.0"
