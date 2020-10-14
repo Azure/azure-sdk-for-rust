@@ -4,16 +4,16 @@ version            = "0.1.0"
 description        = "Rust wrappers around Microsoft Azure REST APIs - Azure identity helper crate"
 readme             = "README.md"
 authors            = ["Microsoft Corp."]
-license            = "Apache-2.0"
+license            = "MIT"
 repository         = "https://github.com/azure/azure-sdk-for-rust"
-documentation      = "http://mindflavor.github.io/AzureSDKForRust/azure_sdk_for_rust/index.html"
 homepage           = "https://github.com/azure/azure-sdk-for-rust"
+documentation      = "https://docs.rs/azure_identity"
 keywords           = ["sdk", "azure", "rest", "iot", "cloud"]
 categories         = ["api-bindings"]
 edition            = "2018"
 
 [dependencies]
-azure_core       = { path = "../core", version = "0.1.0" }
+azure_core           = { path = "../core", version = "0.1.0" }
 oauth2               = { version = "4.0.0-alpha.2" }
 url                  = "2.1"
 futures              = "0.3"
