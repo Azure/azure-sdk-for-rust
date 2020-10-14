@@ -1,0 +1,31 @@
+[package]
+name = "azure_key_vault"
+version = "0.1.0"
+authors = ["Microsoft Corp."]
+description = "Rust wrapper around Microsoft Azure REST APIs for Azure Key Vault"
+repository = "https://github.com/azure/azure-sdk-for-rust"
+homepage = "https://github.com/azure/azure-sdk-for-rust"
+documentation = "https://docs.rs/azure_key_vault"
+keywords = ["azure", "microsoft", "sdk", "keyvault", "cloud"]
+categories = ["api-bindings"]
+readme = "README.md"
+license = "MIT"
+edition = "2018"
+
+[dependencies]
+anyhow = "1.0"
+thiserror = "1.0"
+reqwest = { version = "0.10", features = ["blocking", "json"] }
+chrono = { version = "0.4", features = ["serde"] }
+serde_json = "1.0"
+url = "2.1"
+serde = { version = "1.0", features = ["derive"] }
+getset = "0.1"
+oauth2 = { version = "4.0.0-alpha.2" }
+azure_core = { path = "../core", version = "0.1.0" }
+azure_identity = { version = "0.1", path = "../identity" }
+
+[dev-dependencies]
+mockito = "0.27"
+async-trait = "0.1"
+tokio = { version = "0.2", features = ["full"] }

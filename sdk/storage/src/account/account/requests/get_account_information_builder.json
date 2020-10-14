@@ -1,0 +1,26 @@
+{
+  "name": "GetAccountInformationBuilder",
+  "derive": "Debug, Clone",
+  "uses": [
+    "crate::account::responses::GetAccountInformationResponse",
+    "azure_core::errors::{check_status_extract_headers_and_body, AzureError}",
+    "azure_sdk_storage_core::prelude::*",
+    "hyper::{Method, StatusCode}"
+  ],
+  "inline": true,
+  "extra_types": [
+    "'a",
+    "C"
+  ],
+  "extra_wheres": [
+    "C: Client"
+  ],
+  "constructor_fields": [
+    {
+      "name": "client",
+      "field_type": "&'a C",
+      "trait_get": "ClientRequired<'a, C>"
+    }
+  ],
+  "fields": []
+}
