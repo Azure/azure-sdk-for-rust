@@ -24,6 +24,6 @@ cd azure_service_bus
 cargo publish
 cd ..
 
-cd azure_keyvault
+cd azure_key_vault
 cargo publish
 cd ..

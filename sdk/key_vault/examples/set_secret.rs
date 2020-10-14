@@ -1,5 +1,9 @@
+<<<<<<< HEAD:sdk/keyvault/examples/set_secret.rs
 use azure_auth_aad::ClientSecretCredential;
 use azure_keyvault::KeyVaultClient;
+=======
+use azure_key_vault::KeyVaultClient;
+>>>>>>> Rename keyvault to key_vault:sdk/key_vault/examples/set_secret.rs
 use std::env;
 
 #[tokio::main]

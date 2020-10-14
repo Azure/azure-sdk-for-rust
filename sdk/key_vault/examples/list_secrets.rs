@@ -1,5 +1,5 @@
-use azure_auth_aad::ClientSecretCredential;
-use azure_keyvault::KeyVaultClient;
+use azure_identity::ClientSecretCredential;
+use azure_key_vault::{KeyVaultClient, RecoveryLevel};
 use std::env;
 
 #[tokio::main]
@@ -10,12 +10,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let tenant_id = env::var("TENANT_ID").expect("Missing TENANT_ID environment variable.");
     let keyvault_name =
         env::var("KEYVAULT_NAME").expect("Missing KEYVAULT_NAME environment variable.");
-    let backup_blob = env::var("BACKUP_BLOB").expect("Missing BACKUP_BLOB environment variable.");
 
     let creds = ClientSecretCredential::new(tenant_id, client_id, client_secret);
     let mut client = KeyVaultClient::new(&creds, &keyvault_name);
 
-    client.restore_secret(&backup_blob).await?;
+    let secrets = client.list_secrets().await?;
+    dbg!(&secrets);
 
     Ok(())
 }

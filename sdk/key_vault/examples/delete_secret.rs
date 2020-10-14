@@ -1,5 +1,5 @@
-use azure_auth_aad::ClientSecretCredential;
-use azure_keyvault::KeyVaultClient;
+use azure_identity::ClientSecretCredential;
+use azure_key_vault::{KeyVaultClient, RecoveryLevel};
 use std::env;
 
 #[tokio::main]
@@ -14,9 +14,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let creds = ClientSecretCredential::new(tenant_id, client_id, client_secret);
     let mut client = KeyVaultClient::new(&creds, &keyvault_name);
-
-    let secret = client.get_secret(&secret_name).await?;
-    dbg!(&secret.value());
+    client.delete_secret(&secret_name).await?;
 
     Ok(())
 }

@@ -113,8 +113,12 @@ impl<'a, T: TokenCredential> KeyVaultClient<'a, T> {
     /// # Example
     ///
     /// ```no_run
+<<<<<<< HEAD:sdk/keyvault/src/secret.rs
     /// use azure_keyvault::KeyVaultClient;
     /// use azure_auth_aad::DefaultCredential;
+=======
+    /// use azure_key_vault::KeyVaultClient;
+>>>>>>> Rename keyvault to key_vault:sdk/key_vault/src/secret.rs
     /// use tokio::runtime::Runtime;
     ///
     /// async fn example() {
@@ -142,8 +146,12 @@ impl<'a, T: TokenCredential> KeyVaultClient<'a, T> {
     /// # Example
     ///
     /// ```no_run
+<<<<<<< HEAD:sdk/keyvault/src/secret.rs
     /// use azure_keyvault::KeyVaultClient;
     /// use azure_auth_aad::DefaultCredential;
+=======
+    /// use azure_key_vault::KeyVaultClient;
+>>>>>>> Rename keyvault to key_vault:sdk/key_vault/src/secret.rs
     /// use tokio::runtime::Runtime;
     ///
     /// async fn example() {
@@ -186,8 +194,12 @@ impl<'a, T: TokenCredential> KeyVaultClient<'a, T> {
     /// Lists all the secrets in the Key Vault.
     ///
     /// ```no_run
+<<<<<<< HEAD:sdk/keyvault/src/secret.rs
     /// use azure_keyvault::KeyVaultClient;
     /// use azure_auth_aad::DefaultCredential;
+=======
+    /// use azure_key_vault::KeyVaultClient;
+>>>>>>> Rename keyvault to key_vault:sdk/key_vault/src/secret.rs
     /// use tokio::runtime::Runtime;
     ///
     /// async fn example() {
@@ -247,8 +259,12 @@ impl<'a, T: TokenCredential> KeyVaultClient<'a, T> {
     /// # Example
     ///
     /// ```no_run
+<<<<<<< HEAD:sdk/keyvault/src/secret.rs
     /// use azure_keyvault::KeyVaultClient;
     /// use azure_auth_aad::DefaultCredential;
+=======
+    /// use azure_key_vault::KeyVaultClient;
+>>>>>>> Rename keyvault to key_vault:sdk/key_vault/src/secret.rs
     /// use tokio::runtime::Runtime;
     ///
     /// async fn example() {
@@ -319,8 +335,12 @@ impl<'a, T: TokenCredential> KeyVaultClient<'a, T> {
     /// # Example
     ///
     /// ```no_run
+<<<<<<< HEAD:sdk/keyvault/src/secret.rs
     /// use azure_keyvault::KeyVaultClient;
     /// use azure_auth_aad::DefaultCredential;
+=======
+    /// use azure_key_vault::KeyVaultClient;
+>>>>>>> Rename keyvault to key_vault:sdk/key_vault/src/secret.rs
     /// use tokio::runtime::Runtime;
     ///
     /// async fn example() {
@@ -368,8 +388,12 @@ impl<'a, T: TokenCredential> KeyVaultClient<'a, T> {
     /// # Example
     ///
     /// ```no_run
+<<<<<<< HEAD:sdk/keyvault/src/secret.rs
     /// use azure_keyvault::KeyVaultClient;
     /// use azure_auth_aad::DefaultCredential;
+=======
+    /// use azure_key_vault::KeyVaultClient;
+>>>>>>> Rename keyvault to key_vault:sdk/key_vault/src/secret.rs
     /// use tokio::runtime::Runtime;
     ///
     /// async fn example() {
@@ -409,8 +433,12 @@ impl<'a, T: TokenCredential> KeyVaultClient<'a, T> {
     /// # Example
     ///
     /// ```no_run
+<<<<<<< HEAD:sdk/keyvault/src/secret.rs
     /// use azure_keyvault::{KeyVaultClient, RecoveryLevel};
     /// use azure_auth_aad::DefaultCredential;
+=======
+    /// use azure_key_vault::{KeyVaultClient, RecoveryLevel};
+>>>>>>> Rename keyvault to key_vault:sdk/key_vault/src/secret.rs
     /// use tokio::runtime::Runtime;
     ///
     /// async fn example() {
@@ -453,8 +481,12 @@ impl<'a, T: TokenCredential> KeyVaultClient<'a, T> {
     /// # Example
     ///
     /// ```no_run
+<<<<<<< HEAD:sdk/keyvault/src/secret.rs
     /// use azure_keyvault::{KeyVaultClient, RecoveryLevel};
     /// use azure_auth_aad::DefaultCredential;
+=======
+    /// use azure_key_vault::{KeyVaultClient, RecoveryLevel};
+>>>>>>> Rename keyvault to key_vault:sdk/key_vault/src/secret.rs
     /// use tokio::runtime::Runtime;
     /// use chrono::{Utc, Duration};
     ///
@@ -517,8 +549,12 @@ impl<'a, T: TokenCredential> KeyVaultClient<'a, T> {
     /// # Example
     ///
     /// ```no_run
+<<<<<<< HEAD:sdk/keyvault/src/secret.rs
     /// use azure_keyvault::KeyVaultClient;
     /// use azure_auth_aad::DefaultCredential;
+=======
+    /// use azure_key_vault::KeyVaultClient;
+>>>>>>> Rename keyvault to key_vault:sdk/key_vault/src/secret.rs
     /// use tokio::runtime::Runtime;
     ///
     /// async fn example() {
@@ -557,8 +593,12 @@ impl<'a, T: TokenCredential> KeyVaultClient<'a, T> {
     /// # Example
     ///
     /// ```no_run
+<<<<<<< HEAD:sdk/keyvault/src/secret.rs
     /// use azure_keyvault::KeyVaultClient;
     /// use azure_auth_aad::DefaultCredential;
+=======
+    /// use azure_key_vault::KeyVaultClient;
+>>>>>>> Rename keyvault to key_vault:sdk/key_vault/src/secret.rs
     /// use tokio::runtime::Runtime;
     ///
     /// async fn example() {
@@ -606,8 +646,12 @@ impl<'a, T: TokenCredential> KeyVaultClient<'a, T> {
     /// # Example
     ///
     /// ```no_run
+<<<<<<< HEAD:sdk/keyvault/src/secret.rs
     /// use azure_keyvault::{KeyVaultClient, RecoveryLevel};
     /// use azure_auth_aad::DefaultCredential;
+=======
+    /// use azure_key_vault::{KeyVaultClient, RecoveryLevel};
+>>>>>>> Rename keyvault to key_vault:sdk/key_vault/src/secret.rs
     /// use tokio::runtime::Runtime;
     ///
     /// async fn example() {

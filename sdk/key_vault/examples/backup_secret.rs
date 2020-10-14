@@ -1,5 +1,5 @@
-use azure_auth_aad::ClientSecretCredential;
-use azure_keyvault::KeyVaultClient;
+use azure_identity::ClientSecretCredential;
+use azure_key_vault::{KeyVaultClient, RecoveryLevel};
 use std::env;
 
 #[tokio::main]

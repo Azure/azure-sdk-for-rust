@@ -1,11 +1,11 @@
 [package]
-name = "azure_keyvault"
+name = "azure_key_vault"
 version = "0.1.0"
 authors = ["Microsoft Corp."]
 description = "Rust wrapper around Microsoft Azure REST APIs for Azure Key Vault"
 repository = "https://github.com/azure/azure-sdk-for-rust"
 homepage = "https://github.com/azure/azure-sdk-for-rust"
-documentation = "https://docs.rs/azure_keyvault"
+documentation = "https://docs.rs/azure_key_vault"
 keywords = ["azure", "microsoft", "sdk", "keyvault", "cloud"]
 categories = ["api-bindings"]
 readme = "README.md"

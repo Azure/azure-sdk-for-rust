@@ -1,5 +1,9 @@
+<<<<<<< HEAD:sdk/keyvault/examples/get_secret.rs
 use azure_auth_aad::ClientSecretCredential;
 use azure_keyvault::KeyVaultClient;
+=======
+use azure_key_vault::KeyVaultClient;
+>>>>>>> Rename keyvault to key_vault:sdk/key_vault/examples/get_secret.rs
 use std::env;
 
 #[tokio::main]
@@ -14,7 +18,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let creds = ClientSecretCredential::new(tenant_id, client_id, client_secret);
     let mut client = KeyVaultClient::new(&creds, &keyvault_name);
-    client.delete_secret(&secret_name).await?;
+
+    let secret = client.get_secret(&secret_name).await?;
+    dbg!(&secret.value());
 
     Ok(())
 }
