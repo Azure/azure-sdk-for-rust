@@ -3,8 +3,8 @@ use crate::token_credentials::TokenCredential;
 use azure_sdk_core::errors::AzureError;
 use chrono::Utc;
 use oauth2::{
-    basic::BasicClient, reqwest::async_http_client, AccessToken,
-    AsyncClientCredentialsTokenRequest, AuthType, AuthUrl, Scope, TokenResponse, TokenUrl,
+    basic::BasicClient, reqwest::async_http_client, AccessToken, AuthType, AuthUrl, Scope,
+    TokenResponse, TokenUrl,
 };
 use std::{str, time::Duration};
 use url::Url;
