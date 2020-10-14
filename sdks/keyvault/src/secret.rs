@@ -1,6 +1,7 @@
 use crate::KeyVaultClient;
 use crate::{client::API_VERSION, KeyVaultError};
 use anyhow::{Context, Result};
+use azure_auth_aad::TokenCredential;
 use chrono::serde::ts_seconds;
 use chrono::{DateTime, Utc};
 use getset::Getters;
@@ -105,7 +106,7 @@ pub struct KeyVaultSecret {
     time_updated: DateTime<Utc>,
 }
 
-impl<'a> KeyVaultClient<'a> {
+impl<'a, T: TokenCredential> KeyVaultClient<'a, T> {
     /// Gets a secret from the Key Vault.
     /// Note that the latest version is fetched. For a specific version, use `get_version_with_version`.
     ///
@@ -113,13 +114,13 @@ impl<'a> KeyVaultClient<'a> {
     ///
     /// ```no_run
     /// use azure_keyvault::KeyVaultClient;
+    /// use azure_auth_aad::DefaultCredential;
     /// use tokio::runtime::Runtime;
     ///
     /// async fn example() {
+    ///     let creds = DefaultCredential::default();
     ///     let mut client = KeyVaultClient::new(
-    ///     &"CLIENT_ID",
-    ///     &"CLIENT_SECRET",
-    ///     &"TENANT_ID",
+    ///     &creds,
     ///     &"KEYVAULT_NAME",
     ///     );
     ///     let secret = client.get_secret(&"SECRET_NAME").await.unwrap();
@@ -142,13 +143,13 @@ impl<'a> KeyVaultClient<'a> {
     ///
     /// ```no_run
     /// use azure_keyvault::KeyVaultClient;
+    /// use azure_auth_aad::DefaultCredential;
     /// use tokio::runtime::Runtime;
     ///
     /// async fn example() {
+    ///     let creds = DefaultCredential::default();
     ///     let mut client = KeyVaultClient::new(
-    ///     &"CLIENT_ID",
-    ///     &"CLIENT_SECRET",
-    ///     &"TENANT_ID",
+    ///     &creds,
     ///     &"KEYVAULT_NAME",
     ///     );
     ///     let secret = client.get_secret_with_version(&"SECRET_NAME", &"SECRET_VERSION").await.unwrap();
@@ -186,13 +187,13 @@ impl<'a> KeyVaultClient<'a> {
     ///
     /// ```no_run
     /// use azure_keyvault::KeyVaultClient;
+    /// use azure_auth_aad::DefaultCredential;
     /// use tokio::runtime::Runtime;
     ///
     /// async fn example() {
+    ///     let creds = DefaultCredential::default();
     ///     let mut client = KeyVaultClient::new(
-    ///     &"CLIENT_ID",
-    ///     &"CLIENT_SECRET",
-    ///     &"TENANT_ID",
+    ///     &creds,
     ///     &"KEYVAULT_NAME",
     ///     );
     ///     let secrets = client.list_secrets().await.unwrap();
@@ -247,13 +248,13 @@ impl<'a> KeyVaultClient<'a> {
     ///
     /// ```no_run
     /// use azure_keyvault::KeyVaultClient;
+    /// use azure_auth_aad::DefaultCredential;
     /// use tokio::runtime::Runtime;
     ///
     /// async fn example() {
+    ///     let creds = DefaultCredential::default();
     ///     let mut client = KeyVaultClient::new(
-    ///     &"CLIENT_ID",
-    ///     &"CLIENT_SECRET",
-    ///     &"TENANT_ID",
+    ///     &creds,
     ///     &"KEYVAULT_NAME",
     ///     );
     ///     let secret_versions = client.get_secret_versions(&"SECRET_NAME").await.unwrap();
@@ -319,13 +320,13 @@ impl<'a> KeyVaultClient<'a> {
     ///
     /// ```no_run
     /// use azure_keyvault::KeyVaultClient;
+    /// use azure_auth_aad::DefaultCredential;
     /// use tokio::runtime::Runtime;
     ///
     /// async fn example() {
+    ///     let creds = DefaultCredential::default();
     ///     let mut client = KeyVaultClient::new(
-    ///     &"CLIENT_ID",
-    ///     &"CLIENT_SECRET",
-    ///     &"TENANT_ID",
+    ///     &creds,
     ///     &"KEYVAULT_NAME",
     ///     );
     ///     client.set_secret(&"SECRET_NAME", &"NEW_VALUE").await.unwrap();
@@ -368,13 +369,13 @@ impl<'a> KeyVaultClient<'a> {
     ///
     /// ```no_run
     /// use azure_keyvault::KeyVaultClient;
+    /// use azure_auth_aad::DefaultCredential;
     /// use tokio::runtime::Runtime;
     ///
     /// async fn example() {
+    ///     let creds = DefaultCredential::default();
     ///     let mut client = KeyVaultClient::new(
-    ///     &"CLIENT_ID",
-    ///     &"CLIENT_SECRET",
-    ///     &"TENANT_ID",
+    ///     &creds,
     ///     &"KEYVAULT_NAME",
     ///     );
     ///     client.update_secret_enabled(&"SECRET_NAME", &"", true).await.unwrap();
@@ -409,13 +410,13 @@ impl<'a> KeyVaultClient<'a> {
     ///
     /// ```no_run
     /// use azure_keyvault::{KeyVaultClient, RecoveryLevel};
+    /// use azure_auth_aad::DefaultCredential;
     /// use tokio::runtime::Runtime;
     ///
     /// async fn example() {
+    ///     let creds = DefaultCredential::default();
     ///     let mut client = KeyVaultClient::new(
-    ///     &"CLIENT_ID",
-    ///     &"CLIENT_SECRET",
-    ///     &"TENANT_ID",
+    ///     &creds,
     ///     &"KEYVAULT_NAME",
     ///     );
     ///     client.update_secret_recovery_level(&"SECRET_NAME", &"", RecoveryLevel::Purgeable).await.unwrap();
@@ -453,14 +454,14 @@ impl<'a> KeyVaultClient<'a> {
     ///
     /// ```no_run
     /// use azure_keyvault::{KeyVaultClient, RecoveryLevel};
+    /// use azure_auth_aad::DefaultCredential;
     /// use tokio::runtime::Runtime;
     /// use chrono::{Utc, Duration};
     ///
     /// async fn example() {
+    ///     let creds = DefaultCredential::default();
     ///     let mut client = KeyVaultClient::new(
-    ///     &"CLIENT_ID",
-    ///     &"CLIENT_SECRET",
-    ///     &"TENANT_ID",
+    ///     &creds,
     ///     &"KEYVAULT_NAME",
     ///     );
     ///     client.update_secret_expiration_time(&"SECRET_NAME", &"", Utc::now() + Duration::days(14)).await.unwrap();
@@ -517,13 +518,13 @@ impl<'a> KeyVaultClient<'a> {
     ///
     /// ```no_run
     /// use azure_keyvault::KeyVaultClient;
+    /// use azure_auth_aad::DefaultCredential;
     /// use tokio::runtime::Runtime;
     ///
     /// async fn example() {
+    ///     let creds = DefaultCredential::default();
     ///     let mut client = KeyVaultClient::new(
-    ///     &"CLIENT_ID",
-    ///     &"CLIENT_SECRET",
-    ///     &"TENANT_ID",
+    ///     &creds,
     ///     &"KEYVAULT_NAME",
     ///     );
     ///     client.restore_secret(&"KUF6dXJlS2V5VmF1bHRTZWNyZXRCYWNrdXBWMS5taW").await.unwrap();
@@ -557,13 +558,13 @@ impl<'a> KeyVaultClient<'a> {
     ///
     /// ```no_run
     /// use azure_keyvault::KeyVaultClient;
+    /// use azure_auth_aad::DefaultCredential;
     /// use tokio::runtime::Runtime;
     ///
     /// async fn example() {
+    ///     let creds = DefaultCredential::default();
     ///     let mut client = KeyVaultClient::new(
-    ///     &"CLIENT_ID",
-    ///     &"CLIENT_SECRET",
-    ///     &"TENANT_ID",
+    ///     &creds,
     ///     &"KEYVAULT_NAME",
     ///     );
     ///     client.backup_secret(&"SECRET_NAME").await.unwrap();
@@ -606,13 +607,13 @@ impl<'a> KeyVaultClient<'a> {
     ///
     /// ```no_run
     /// use azure_keyvault::{KeyVaultClient, RecoveryLevel};
+    /// use azure_auth_aad::DefaultCredential;
     /// use tokio::runtime::Runtime;
     ///
     /// async fn example() {
+    ///     let creds = DefaultCredential::default();
     ///     let mut client = KeyVaultClient::new(
-    ///     &"CLIENT_ID",
-    ///     &"CLIENT_SECRET",
-    ///     &"TENANT_ID",
+    ///     &creds,
     ///     &"KEYVAULT_NAME",
     ///     );
     ///     client.delete_secret(&"SECRET_NAME").await.unwrap();
@@ -638,10 +639,25 @@ impl<'a> KeyVaultClient<'a> {
 mod tests {
     use super::*;
 
+    use async_trait;
+    use azure_auth_aad::{TokenCredential, TokenResponse};
+    use azure_sdk_core::errors::AzureError;
     use chrono::{Duration, Utc};
     use mockito::{mock, Matcher};
     use oauth2::AccessToken;
     use serde_json::json;
+
+    struct MockSecretCredential;
+
+    #[async_trait::async_trait]
+    impl TokenCredential for MockSecretCredential {
+        async fn get_token(&self, _resource: &str) -> Result<TokenResponse, AzureError> {
+            Ok(TokenResponse::new(
+                AccessToken::new("TOKEN".to_owned()),
+                Utc::now() + Duration::days(14),
+            ))
+        }
+    }
 
     fn diff(first: DateTime<Utc>, second: DateTime<Utc>) -> Duration {
         if first > second {
@@ -652,15 +668,8 @@ mod tests {
     }
 
     macro_rules! mock_client {
-        ($keyvault_name:expr) => {{
-            let mut client = KeyVaultClient::with_aad_token(
-                &"",
-                &"",
-                &"TENANT_ID",
-                $keyvault_name,
-                AccessToken::new("TOKEN".to_owned()),
-                Utc::now() + Duration::days(14),
-            );
+        ($creds:expr, $keyvault_name:expr) => {{
+            let mut client = KeyVaultClient::new($creds, $keyvault_name);
             client.keyvault_endpoint = mockito::server_url();
             client
         }};
@@ -689,7 +698,8 @@ mod tests {
             .with_status(200)
             .create();
 
-        let mut client = mock_client!(&"test-keyvault");
+        let creds = MockSecretCredential;
+        let mut client = mock_client!(&creds, &"test-keyvault");
 
         let secret: KeyVaultSecret = client.get_secret(&"test-secret").await.unwrap();
 
@@ -757,7 +767,8 @@ mod tests {
             .with_status(200)
             .create();
 
-        let mut client = mock_client!(&"test-keyvault");
+        let creds = MockSecretCredential;
+        let mut client = mock_client!(&creds, &"test-keyvault");
 
         let secret_versions = client.get_secret_versions(&"test-secret").await.unwrap();
 
