@@ -481,8 +481,6 @@ pub(crate) fn copy_status_from_headers(
 ) -> Result<CopyStatus, AzureError> {
     let val = headers
         .get_as_str(azure_core::headers::COPY_STATUS)
-        .ok_or_else(|| {
-            AzureError::HeaderNotFound(azure_core::headers::COPY_STATUS.to_owned())
-        })?;
+        .ok_or_else(|| AzureError::HeaderNotFound(azure_core::headers::COPY_STATUS.to_owned()))?;
     Ok(CopyStatus::from_str(val)?)
 }

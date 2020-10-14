@@ -1,7 +1,7 @@
-use azure_cosmos::prelude::*;
-use azure_cosmos::responses::GetDocumentResponse;
 use azure_core::modify_conditions::IfMatchCondition;
 use azure_core::prelude::*;
+use azure_cosmos::prelude::*;
+use azure_cosmos::responses::GetDocumentResponse;
 use futures::stream::StreamExt;
 use std::borrow::Cow;
 use std::error::Error;

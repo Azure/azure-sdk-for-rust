@@ -1,5 +1,5 @@
-use azure_cosmos::prelude::*;
 use azure_core::prelude::*;
+use azure_cosmos::prelude::*;
 use std::borrow::Cow;
 use std::error::Error;
 #[macro_use]

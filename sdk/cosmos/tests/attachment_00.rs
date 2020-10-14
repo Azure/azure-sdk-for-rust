@@ -1,6 +1,6 @@
 #![cfg(all(test, feature = "test_e2e"))]
-use azure_cosmos::prelude::*;
 use azure_core::prelude::*;
+use azure_cosmos::prelude::*;
 use std::borrow::Cow;
 use std::error::Error;
 #[macro_use]

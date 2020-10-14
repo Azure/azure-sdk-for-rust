@@ -1,8 +1,8 @@
 #[macro_use]
 extern crate log;
 
-use azure_identity::{DefaultCredential, TokenCredential};
 use azure_core::prelude::*;
+use azure_identity::{DefaultCredential, TokenCredential};
 use azure_storage::blob::prelude::*;
 use azure_storage::core::prelude::*;
 use std::error::Error;

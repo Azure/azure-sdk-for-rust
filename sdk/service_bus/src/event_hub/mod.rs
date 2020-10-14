@@ -1,6 +1,4 @@
-use azure_core::errors::{
-    check_status_extract_body, extract_location_status_and_body, AzureError,
-};
+use azure_core::errors::{check_status_extract_body, extract_location_status_and_body, AzureError};
 use chrono::Duration;
 use hyper::{self, header, Body, StatusCode};
 use hyper_rustls::HttpsConnector;
