@@ -18,16 +18,16 @@ edition = "2018"
 anyhow = "1.0"
 thiserror = "1.0"
 reqwest = { version = "0.10", features = ["blocking", "json"] }
-tokio = { version = "0.2", features = ["full"] }
 chrono = { version = "0.4", features = ["serde"] }
 serde_json = "1.0"
 url = "2.1"
 serde = { version = "1.0", features = ["derive"] }
 getset = "0.1"
-oauth2 = { version = "3.0.0-alpha.9", features = ["reqwest-010", "futures-03"], default-features = false}
+oauth2 = { version = "4.0.0-alpha.2" }
 azure_auth_aad = { version = "0.1", path = "../auth_aad" }
 azure_sdk_core = { path = "../core", version = "0.43.5" }
 
 [dev-dependencies]
 mockito = "0.27"
 async-trait = "0.1"
+tokio = { version = "0.2", features = ["full"] }

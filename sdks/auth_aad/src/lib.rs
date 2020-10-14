@@ -6,7 +6,6 @@ use azure_sdk_core::errors::AzureError;
 use log::debug;
 use oauth2::basic::BasicClient;
 use oauth2::reqwest::async_http_client;
-use oauth2::AsyncCodeTokenRequest;
 use oauth2::{
     AuthType, AuthUrl, AuthorizationCode, CsrfToken, PkceCodeChallenge, PkceCodeVerifier,
     RedirectUrl, TokenUrl,
