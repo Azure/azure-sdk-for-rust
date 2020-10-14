@@ -20,7 +20,9 @@ jobs:
         components: rustfmt
 
     - name: fmt
-      run: cargo fmt --all -- --check
+      run: 
+        cargo fmt --all -- --check
+        ./scripts/check_json_format.sh
       if: matrix.rust == 'nightly'
 
     - name: tests

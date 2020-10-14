@@ -1,137 +1,137 @@
 {
-	"name": "PutPageBlobBuilder",
-	"derive": "Debug, Clone",
-	"uses": [
-		"crate::blob::generate_blob_uri",
-		"crate::blob::responses::PutBlobResponse",
-		"azure_core::errors::{check_status_extract_headers_and_body, AzureError}",
-		"azure_core::headers::BLOB_TYPE",
-		"azure_core::lease::LeaseId",
-		"azure_core::prelude::*",
-		"azure_core::{No, ToAssign, Yes}",
-		"azure_sdk_storage_core::prelude::*",
-		"hyper::{Method, StatusCode}",
-		"std::collections::HashMap",
-		"std::marker::PhantomData"
-	],
-	"inline": true,
-	"extra_types": [
-		"'a",
-		"C"
-	],
-	"extra_wheres": [
-		"C: Client"
-	],
-	"constructor_fields": [
-		{
-			"name": "client",
-			"field_type": "&'a C",
-			"trait_get": "ClientRequired<'a, C>"
-		}
-	],
-	"fields": [
-		{
-			"name": "container_name",
-			"field_type": "&'a str",
-			"builder_type": "ContainerNameSet",
-			"optional": false,
-			"trait_get": "ContainerNameRequired<'a>",
-			"trait_set": "ContainerNameSupport<'a>"
-		},
-		{
-			"name": "blob_name",
-			"field_type": "&'a str",
-			"builder_type": "BlobNameSet",
-			"optional": false,
-			"trait_get": "BlobNameRequired<'a>",
-			"trait_set": "BlobNameSupport<'a>"
-		},
-		{
-			"name": "content_length",
-			"field_type": "u64",
-			"initializer": "0",
-			"builder_type": "PageBlobLengthSet",
-			"optional": false,
-			"trait_get": "PageBlobLengthRequired",
-			"trait_set": "PageBlobLengthSupport"
-		},
-		{
-			"name": "sequence_number",
-			"field_type": "u64",
-			"initializer": "0",
-			"optional": true,
-			"trait_get": "SequenceNumberOption",
-			"trait_set": "SequenceNumberSupport"
-		},
-		{
-			"name": "access_tier",
-			"field_type": "&'a str",
-			"optional": true,
-			"trait_get": "AccessTierOption<'a>",
-			"trait_set": "AccessTierSupport<'a>"
-		},
-		{
-			"name": "timeout",
-			"field_type": "u64",
-			"optional": true,
-			"trait_get": "TimeoutOption",
-			"trait_set": "TimeoutSupport"
-		},
-		{
-			"name": "content_type",
-			"field_type": "&'a str",
-			"optional": true,
-			"trait_get": "ContentTypeOption<'a>",
-			"trait_set": "ContentTypeSupport<'a>"
-		},
-		{
-			"name": "content_encoding",
-			"field_type": "&'a str",
-			"optional": true,
-			"trait_get": "ContentEncodingOption<'a>",
-			"trait_set": "ContentEncodingSupport<'a>"
-		},
-		{
-			"name": "content_language",
-			"field_type": "&'a str",
-			"optional": true,
-			"trait_get": "ContentLanguageOption<'a>",
-			"trait_set": "ContentLanguageSupport<'a>"
-		},
-		{
-			"name": "cache_control",
-			"field_type": "&'a str",
-			"optional": true,
-			"trait_get": "CacheControlOption<'a>",
-			"trait_set": "CacheControlSupport<'a>"
-		},
-		{
-			"name": "content_disposition",
-			"field_type": "&'a str",
-			"optional": true,
-			"trait_get": "ContentDispositionOption<'a>",
-			"trait_set": "ContentDispositionSupport<'a>"
-		},
-		{
-			"name": "metadata",
-			"field_type": "&'a HashMap<&'a str, &'a str>",
-			"optional": true,
-			"trait_get": "MetadataOption<'a>",
-			"trait_set": "MetadataSupport<'a>"
-		},
-		{
-			"name": "lease_id",
-			"field_type": "&'a LeaseId",
-			"optional": true,
-			"trait_get": "LeaseIdOption<'a>",
-			"trait_set": "LeaseIdSupport<'a>"
-		},
-		{
-			"name": "client_request_id",
-			"field_type": "&'a str",
-			"optional": true,
-			"trait_get": "ClientRequestIdOption<'a>",
-			"trait_set": "ClientRequestIdSupport<'a>"
-		}
-	]
+  "name": "PutPageBlobBuilder",
+  "derive": "Debug, Clone",
+  "uses": [
+    "crate::blob::generate_blob_uri",
+    "crate::blob::responses::PutBlobResponse",
+    "azure_core::errors::{check_status_extract_headers_and_body, AzureError}",
+    "azure_core::headers::BLOB_TYPE",
+    "azure_core::lease::LeaseId",
+    "azure_core::prelude::*",
+    "azure_core::{No, ToAssign, Yes}",
+    "azure_sdk_storage_core::prelude::*",
+    "hyper::{Method, StatusCode}",
+    "std::collections::HashMap",
+    "std::marker::PhantomData"
+  ],
+  "inline": true,
+  "extra_types": [
+    "'a",
+    "C"
+  ],
+  "extra_wheres": [
+    "C: Client"
+  ],
+  "constructor_fields": [
+    {
+      "name": "client",
+      "field_type": "&'a C",
+      "trait_get": "ClientRequired<'a, C>"
+    }
+  ],
+  "fields": [
+    {
+      "name": "container_name",
+      "field_type": "&'a str",
+      "builder_type": "ContainerNameSet",
+      "optional": false,
+      "trait_get": "ContainerNameRequired<'a>",
+      "trait_set": "ContainerNameSupport<'a>"
+    },
+    {
+      "name": "blob_name",
+      "field_type": "&'a str",
+      "builder_type": "BlobNameSet",
+      "optional": false,
+      "trait_get": "BlobNameRequired<'a>",
+      "trait_set": "BlobNameSupport<'a>"
+    },
+    {
+      "name": "content_length",
+      "field_type": "u64",
+      "initializer": "0",
+      "builder_type": "PageBlobLengthSet",
+      "optional": false,
+      "trait_get": "PageBlobLengthRequired",
+      "trait_set": "PageBlobLengthSupport"
+    },
+    {
+      "name": "sequence_number",
+      "field_type": "u64",
+      "initializer": "0",
+      "optional": true,
+      "trait_get": "SequenceNumberOption",
+      "trait_set": "SequenceNumberSupport"
+    },
+    {
+      "name": "access_tier",
+      "field_type": "&'a str",
+      "optional": true,
+      "trait_get": "AccessTierOption<'a>",
+      "trait_set": "AccessTierSupport<'a>"
+    },
+    {
+      "name": "timeout",
+      "field_type": "u64",
+      "optional": true,
+      "trait_get": "TimeoutOption",
+      "trait_set": "TimeoutSupport"
+    },
+    {
+      "name": "content_type",
+      "field_type": "&'a str",
+      "optional": true,
+      "trait_get": "ContentTypeOption<'a>",
+      "trait_set": "ContentTypeSupport<'a>"
+    },
+    {
+      "name": "content_encoding",
+      "field_type": "&'a str",
+      "optional": true,
+      "trait_get": "ContentEncodingOption<'a>",
+      "trait_set": "ContentEncodingSupport<'a>"
+    },
+    {
+      "name": "content_language",
+      "field_type": "&'a str",
+      "optional": true,
+      "trait_get": "ContentLanguageOption<'a>",
+      "trait_set": "ContentLanguageSupport<'a>"
+    },
+    {
+      "name": "cache_control",
+      "field_type": "&'a str",
+      "optional": true,
+      "trait_get": "CacheControlOption<'a>",
+      "trait_set": "CacheControlSupport<'a>"
+    },
+    {
+      "name": "content_disposition",
+      "field_type": "&'a str",
+      "optional": true,
+      "trait_get": "ContentDispositionOption<'a>",
+      "trait_set": "ContentDispositionSupport<'a>"
+    },
+    {
+      "name": "metadata",
+      "field_type": "&'a HashMap<&'a str, &'a str>",
+      "optional": true,
+      "trait_get": "MetadataOption<'a>",
+      "trait_set": "MetadataSupport<'a>"
+    },
+    {
+      "name": "lease_id",
+      "field_type": "&'a LeaseId",
+      "optional": true,
+      "trait_get": "LeaseIdOption<'a>",
+      "trait_set": "LeaseIdSupport<'a>"
+    },
+    {
+      "name": "client_request_id",
+      "field_type": "&'a str",
+      "optional": true,
+      "trait_get": "ClientRequestIdOption<'a>",
+      "trait_set": "ClientRequestIdSupport<'a>"
+    }
+  ]
 }
