@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy: 
       matrix: 
-        rust: [nightly]
+        rust: [stable]
     steps:
     - uses: actions/checkout@v2
     - uses: actions-rs/toolchain@v1
@@ -26,7 +26,7 @@ jobs:
       run: |
         cargo fmt --all -- --check
         ./scripts/check_json_format.sh
-      if: matrix.rust == 'nightly'
+      if: matrix.rust == 'stable'
 
     - name: tests
       run: cargo test --all 
