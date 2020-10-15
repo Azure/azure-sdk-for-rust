@@ -1,9 +1,9 @@
 #[macro_use]
 extern crate log;
-use azure_core::prelude::*;
 use azure_storage::core::prelude::*;
 use azure_storage::queue::prelude::*;
 use std::error::Error;
+use std::time::Duration;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
@@ -17,15 +17,16 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .nth(1)
         .expect("Please pass the queue name as first parameter");
 
-    let client = client::with_access_key(&account, &master_key).into_queue_service_client();
+    let queue = client::with_access_key(&account, &master_key)
+        .into_queue_service_client()
+        .into_queue_name_client(&queue_name);
 
     trace!("enumerating queues");
 
-    let response = client
-        .with_queue_name_client(&queue_name)
-        .put_message()
-        .with_client_request_id("optional correlation token")
-        .with_message_body(&format!("Azure SDK for Rust rocks! {}", chrono::Utc::now()))
+    let response = queue
+        .get_messages()
+        .with_number_of_messages(2)
+        .with_visibility_timeout(Duration::from_secs(5)) // the message will become visible again after 5 secs
         .execute()
         .await?;
 
