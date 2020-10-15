@@ -36,48 +36,36 @@ struct CliTokenResponse {
 /// Enables authentication to Azure Active Directory using Azure CLI to obtain an access token.
 pub struct AzureCliCredential;
 
-#[async_trait::async_trait]
-impl TokenCredential for AzureCliCredential {
-    async fn get_token(&self, resource: &str) -> Result<TokenResponse, AzureError> {
-        let az_command = if cfg!(target_os = "windows") {
-            // on window az is a cmd and it should be called like this
-            // see https://doc.rust-lang.org/nightly/std/process/struct.Command.html
-            Command::new("cmd")
-                .args(&[
-                    "/C",
-                    "az",
-                    "account",
-                    "get-access-token",
-                    "--output",
-                    "json",
-                    "--resource",
-                    resource,
-                ])
-                .output()
+impl AzureCliCredential {
+    async fn get_access_token(resource: Option<&str>) -> Result<CliTokenResponse, AzureError> {
+        // on window az is a cmd and it should be called like this
+        // see https://doc.rust-lang.org/nightly/std/process/struct.Command.html
+        let program = if cfg!(target_os = "windows") {
+            "cmd"
         } else {
-            Command::new("az")
-                .args(&[
-                    "account",
-                    "get-access-token",
-                    "--output",
-                    "json",
-                    "--resource",
-                    resource,
-                ])
-                .output()
+            "az"
         };
+        let mut args = Vec::new();
+        if cfg!(target_os = "windows") {
+            args.push("/C");
+            args.push("az");
+        }
+        args.push("account");
+        args.push("get-access-token");
+        args.push("--output");
+        args.push("json");
+        if let Some(resource) = resource {
+            args.push("--resource");
+            args.push(resource);
+        }
 
-        let res = match az_command {
+        match Command::new(program).args(args).output() {
             Ok(az_output) => {
                 if az_output.status.success() {
                     let output = str::from_utf8(&az_output.stdout).unwrap();
-                    let tr = serde_json::from_str::<CliTokenResponse>(output)
-                        .map(|tr| TokenResponse::new(tr.access_token, tr.expires_on))
-                        .map_err(|_| {
-                            AzureError::GenericErrorWithText(
-                                "Failed to serialize response".to_string(),
-                            )
-                        })?;
+                    let tr = serde_json::from_str::<CliTokenResponse>(output).map_err(|_| {
+                        AzureError::GenericErrorWithText("Failed to serialize response".to_string())
+                    })?;
                     Ok(tr)
                 } else {
                     let output = str::from_utf8(&az_output.stderr).unwrap();
@@ -90,8 +78,26 @@ impl TokenCredential for AzureCliCredential {
                 )),
                 _ => Err(AzureError::GenericErrorWithText(e.to_string())),
             },
-        };
+        }
+    }
 
-        res
+    /// Returns the current subscription ID from the Azure CLI.
+    pub async fn get_subscription() -> Result<String, AzureError> {
+        let tr = Self::get_access_token(None).await?;
+        Ok(tr.subscription)
+    }
+
+    /// Returns the current tenant ID from the Azure CLI.
+    pub async fn get_tenant() -> Result<String, AzureError> {
+        let tr = Self::get_access_token(None).await?;
+        Ok(tr.tenant)
+    }
+}
+
+#[async_trait::async_trait]
+impl TokenCredential for AzureCliCredential {
+    async fn get_token(&self, resource: &str) -> Result<TokenResponse, AzureError> {
+        let tr = Self::get_access_token(Some(resource)).await?;
+        Ok(TokenResponse::new(tr.access_token, tr.expires_on))
     }
 }
