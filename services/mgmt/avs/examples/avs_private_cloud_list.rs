@@ -12,13 +12,13 @@ export ACCESS_TOKEN=$(az account get-access-token --query accessToken --output t
 cargo run --example avs_private_cloud_list
 */
 
-use azure_avs_mgmt::{operations::private_clouds, Result};
+use azure_mgmt_avs::{operations::private_clouds, Result};
 
 #[tokio::main]
 async fn main() -> Result<()> {
     let subscription_id = &get_subscription_id()?;
     let access_token = &get_access_token()?;
-    let config = &azure_avs_mgmt::Configuration::new(access_token);
+    let config = &azure_mgmt_avs::Configuration::new(access_token);
     let clouds = private_clouds::list_in_subscription(config, subscription_id).await?;
     println!("# of private clouds {}", clouds.value.len());
     for cloud in &clouds.value {

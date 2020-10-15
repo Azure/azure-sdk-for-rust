@@ -1,5 +1,5 @@
 [package]
-name          = "azure_avs_mgmt"
+name          = "azure_mgmt_avs"
 version       = "0.1.0"
 edition       = "2018"
 

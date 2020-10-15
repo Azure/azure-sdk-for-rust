@@ -9,7 +9,7 @@ export RESOURCE_GROUP_LOCATION=southcentralus
 cargo run --example group_create
 */
 
-use azure_resources_mgmt::{models::ResourceGroup, operations::resource_groups, Result};
+use azure_mgmt_resources::{models::ResourceGroup, operations::resource_groups, Result};
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -17,7 +17,7 @@ async fn main() -> Result<()> {
     let subscription_id = &get_subscription_id()?;
     let resource_group_name = &get_resource_group_name()?;
     let resource_group_location = get_resource_group_location()?;
-    let config = &azure_resources_mgmt::Configuration::new(access_token);
+    let config = &azure_mgmt_resources::Configuration::new(access_token);
 
     let group = ResourceGroup {
         id: None,

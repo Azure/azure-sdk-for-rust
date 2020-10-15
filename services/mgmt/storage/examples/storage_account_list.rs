@@ -1,23 +1,23 @@
 /*
-Lists the virtual , similar to:
-az vm list --query [].id
+Lists the storage accounts, similar to:
+az storage account list --query [].id
 
 export SUBSCRIPTION_ID=$(az account show --query id --output tsv)
 export ACCESS_TOKEN=$(az account get-access-token --query accessToken --output tsv)
-cargo run --example vm_list
+cargo run --example storage_account_list
 */
 
-use azure_compute_mgmt::{operations::virtual_machines, Result};
+use azure_mgmt_storage::{operations::storage_accounts, Result};
 
 #[tokio::main]
 async fn main() -> Result<()> {
     let subscription_id = &get_subscription_id()?;
     let access_token = &get_access_token()?;
-    let config = &azure_compute_mgmt::Configuration::new(access_token);
-    let vms = virtual_machines::list_all(config, subscription_id, None).await?;
-    println!("# of virtual machines {}", vms.value.len());
-    for vm in &vms.value {
-        println!("{:?}", &vm.resource.id);
+    let config = &azure_mgmt_storage::Configuration::new(access_token);
+    let accounts = storage_accounts::list(config, subscription_id).await?;
+    println!("# of storage accounts {}", accounts.value.len());
+    for account in &accounts.value {
+        println!("{:?}", account.tracked_resource.resource.id);
     }
     Ok(())
 }

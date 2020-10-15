@@ -1,5 +1,5 @@
 [package]
-name          = "azure_resources_mgmt"
+name          = "azure_mgmt_storage"
 version       = "0.1.0"
 edition       = "2018"
 
@@ -9,8 +9,9 @@ serde_json = "1.0"
 reqwest = { version = "0.10", features = ["json"] }
 
 [features]
-default = ["2020-06-01"]
-2020-06-01 = []
+default = ["2019-06-01"]
+2019-06-01 = []
+2019-08-01-preview = []
 
 [dev-dependencies]
 tokio = { version = "0.2", features = ["macros"] }
