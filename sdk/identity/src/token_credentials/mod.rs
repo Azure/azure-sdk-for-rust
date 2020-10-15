@@ -1,13 +1,22 @@
+//! Access to token credentials through various means.
+//!
+//! Supported means currently include:
+//! * The environment
+//! * Azure CLI credentials cache
+//! * Managed identity
+//! * Client secret
 mod cli_credentials;
 mod client_secret_credentials;
 mod default_credentials;
 mod environment_credentials;
 mod managed_identity_credentials;
-pub use crate::token_credentials::cli_credentials::*;
-pub use crate::token_credentials::client_secret_credentials::*;
-pub use crate::token_credentials::default_credentials::*;
-pub use crate::token_credentials::environment_credentials::*;
-pub use crate::token_credentials::managed_identity_credentials::*;
+
+pub use cli_credentials::*;
+pub use client_secret_credentials::*;
+pub use default_credentials::*;
+pub use environment_credentials::*;
+pub use managed_identity_credentials::*;
+
 use azure_core::errors::AzureError;
 use chrono::{DateTime, Utc};
 use oauth2::AccessToken;
@@ -22,10 +31,12 @@ pub struct TokenResponse {
 }
 
 impl TokenResponse {
+    /// Create a new `TokenResponse`
     pub fn new(token: AccessToken, expires_on: DateTime<Utc>) -> Self {
-        TokenResponse { token, expires_on }
+        Self { token, expires_on }
     }
 }
+
 /// Represents a credential capable of providing an OAuth token.
 #[async_trait::async_trait]
 pub trait TokenCredential {

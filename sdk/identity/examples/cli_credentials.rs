@@ -1,10 +1,10 @@
-use azure_identity::*;
+use azure_identity::token_credentials::*;
 use std::error::Error;
 use url::Url;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
-    let sub_id = AzureCliCredential::get_subscription().await?;
+    let sub_id = AzureCliCredential::get_subscription()?;
     println!("Azure cli subscription: {}", sub_id);
 
     let creds = AzureCliCredential {};

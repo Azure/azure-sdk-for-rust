@@ -1,13 +1,16 @@
 use crate::device_code_responses::*;
+
 use async_timer::timer::new_timer;
 use azure_core::errors::AzureError;
 use futures::stream::unfold;
 use log::debug;
-pub use oauth2::{ClientId, ClientSecret};
+use oauth2::ClientId;
+use serde::Deserialize;
+use url::form_urlencoded;
+
 use std::borrow::Cow;
 use std::convert::TryInto;
 use std::time::Duration;
-use url::form_urlencoded;
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct DeviceCodePhaseOneResponse<'a> {

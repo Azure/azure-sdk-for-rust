@@ -1,4 +1,4 @@
-use azure_identity::*;
+use azure_identity::token_credentials::*;
 use std::error::Error;
 use url::Url;
 

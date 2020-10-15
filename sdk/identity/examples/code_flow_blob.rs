@@ -21,7 +21,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .expect("please specify the container name as second command line parameter");
 
     // Create URL to browse for initial authorization
-    let c = authorize_code_flow(
+    let c = AuthorizeCodeFlow::new(
         client_id,
         Some(client_secret),
         &tenant_id,
@@ -35,16 +35,14 @@ async fn main() -> Result<(), Box<dyn Error>> {
     println!("c == {:?}", c);
     println!("\nbrowse this url:\n{}", c.authorize_url);
 
-    // Start a naive server to receive the redirect
-    // with the token. This naive server is blocking
-    // so you should use something better.
-    let code = naive_server(&c, 3003).unwrap();
+    // Start a naive redirect server to receive the redirect with the token.
+    // This naive server is blocking so you should use something better.
+    let code = development::naive_redirect_server(&c, 3003).unwrap();
 
     println!("code received: {:?}", code);
 
-    // Exchange the token with one that can be
-    // used for authorization
-    let token = exchange(c, code).await.unwrap();
+    // Exchange the token with one that can be used for authorization
+    let token = c.exchange(code).await.unwrap();
 
     println!("token received: {:?}", token);
 
