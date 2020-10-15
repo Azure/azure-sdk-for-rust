@@ -1,53 +1,53 @@
 [package]
-name          = "azure_storage"
-version       = "0.1.0"
-description   = "Rust wrappers around Microsoft Azure Storage REST APIs"
-readme        = "README.md"
-authors       = ["Microsoft Corp."]
-license       = "MIT"
-repository    = "https://github.com/azure/azure-sdk-for-rust"
-homepage      = "https://github.com/azure/azure-sdk-for-rust"
+authors = ["Microsoft Corp."]
+categories = ["api-bindings"]
+description = "Rust wrappers around Microsoft Azure Storage REST APIs"
 documentation = "https://docs.rs/azure_storage"
-keywords      = ["sdk", "azure", "rest", "iot", "cloud"]
-categories    = ["api-bindings"]
-edition       = "2018"
+edition = "2018"
+homepage = "https://github.com/azure/azure-sdk-for-rust"
+keywords = ["sdk", "azure", "rest", "iot", "cloud"]
+license = "MIT"
+name = "azure_storage"
+readme = "README.md"
+repository = "https://github.com/azure/azure-sdk-for-rust"
+version = "0.1.0"
 
 [dependencies]
-azure_core          = { path = "../core", version = "0.1.0" }
-ring                    = "0.16"
-base64                  = "0.13"
-chrono                  = "0.4"
-http                    = "0.2"
-futures                 = "0.3"
-hyper                   = "0.13"
-log                     = "0.4"
-mime                    = "0.3"
-quick-error             = "1.2"
-serde                   = "1.0"
-serde_derive            = "1.0"
-serde_json              = "1.0"
-serde-xml-rs            = "0.4"
-time                    = "0.2"
-url                     = "2.1"
-uuid                    = { version = "0.8", features = ["v4"] }
-smallvec                = { version = "1.4", features = ["serde"] }
-bytes                   = "0.5"
-hyper-rustls            = "0.21"
-md5                     = "0.7"
-RustyXML                = "0.3"
-percent-encoding	    = "2.1"
-failure			        = "0.1"
+RustyXML = "0.3"
+azure_core = {path = "../core", version = "0.1.0"}
+base64 = "0.13"
+bytes = "0.5"
+chrono = "0.4"
+failure = "0.1"
+futures = "0.3"
+http = "0.2"
+hyper = "0.13"
+hyper-rustls = "0.21"
+log = "0.4"
+md5 = "0.7"
+mime = "0.3"
+percent-encoding = "2.1"
+quick-error = "1.2"
+ring = "0.16"
+serde = "1.0"
+serde-xml-rs = "0.4"
+serde_derive = "1.0"
+serde_json = "1.0"
+smallvec = {version = "1.4", features = ["serde"]}
+time = "0.2"
+url = "2.1"
+uuid = {version = "0.8", features = ["v4"]}
 
 [dev-dependencies]
-tokio                   = { version = "0.2", features = ["macros"] }
-env_logger              = "0.7"
-azure_identity      = { path = "../identity" }
-url                     = "2.1"
+azure_identity = {path = "../identity"}
+env_logger = "0.7"
+tokio = {version = "0.2", features = ["macros"]}
+url = "2.1"
 
 [features]
-default                 = ["account", "blob", "queue", "table"]
-test_e2e                = []
-account                 = []
-blob                    = []
-queue                   = []
-table                   = []
+account = []
+blob = []
+default = ["account", "blob", "queue", "table"]
+queue = []
+table = []
+test_e2e = []
