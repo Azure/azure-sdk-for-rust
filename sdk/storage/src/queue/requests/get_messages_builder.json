@@ -1,22 +1,19 @@
 {
-  "name": "PutMessageBuilder",
+  "name": "GetMessagesBuilder",
   "derive": "Debug, Clone",
   "uses": [
-    "crate::queue::*",
-    "crate::responses::*",
-    "azure_core::errors::{check_status_extract_headers_and_body, AzureError}",
-    "azure_core::prelude::*",
-    "azure_core::{No, ToAssign, Yes}",
-    "hyper::StatusCode",
-    "std::borrow::Cow",
-    "std::convert::TryInto",
-    "std::marker::PhantomData",
-    "std::time::Duration"
+    "use crate::core::prelude::*",
+    "use crate::queue::prelude::*",
+    "use crate::responses::*",
+    "use azure_core::errors::{check_status_extract_headers_and_body, AzureError}",
+    "use azure_core::prelude::*",
+    "use hyper::StatusCode",
+    "use std::convert::TryInto",
+    "use std::time::Duration"
   ],
   "inline": true,
   "extra_types": [
     "'a",
-    "'b",
     "C"
   ],
   "extra_wheres": [
@@ -30,12 +27,11 @@
   ],
   "fields": [
     {
-      "name": "message_body",
-      "field_type": "Cow<'b, str>",
-      "builder_type": "MessageBodySet",
-      "optional": false,
-      "trait_get": "MessageBodyRequired",
-      "trait_set": "MessageBodySupport<'b>"
+      "name": "number_of_messages",
+      "field_type": "u32",
+      "optional": true,
+      "trait_get": "NumberOfMessagesOption",
+      "trait_set": "NumberOfMessagesSupport"
     },
     {
       "name": "visibility_timeout",
@@ -43,14 +39,6 @@
       "optional": true,
       "trait_get": "VisibilityTimeoutOption",
       "trait_set": "VisibilityTimeoutSupport"
-    },
-    {
-      "name": "message_ttl_seconds",
-      "field_type": "u64",
-      "optional": true,
-      "initializer": "25200",
-      "trait_get": "MessageTTLRequired",
-      "trait_set": "MessageTTLSupport"
     },
     {
       "name": "timeout",

@@ -107,9 +107,8 @@ impl<'a> DeviceCodePhaseOneResponse<'a> {
             Finish,
         }
 
-        unfold(
-            NextState::Continue,
-            async move |state: NextState| match state {
+        unfold(NextState::Continue, move |state: NextState| async move {
+            match state {
                 NextState::Continue => {
                     let uri = format!(
                         "https://login.microsoftonline.com/{}/oauth2/v2.0/token",
@@ -167,7 +166,7 @@ impl<'a> DeviceCodePhaseOneResponse<'a> {
                     }
                 }
                 NextState::Finish => None,
-            },
-        )
+            }
+        })
     }
 }

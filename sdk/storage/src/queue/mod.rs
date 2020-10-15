@@ -8,18 +8,28 @@ use azure_core::No;
 pub use clients::*;
 use std::borrow::Cow;
 use std::fmt::Debug;
+use std::time::Duration;
 
 //********* Request traits
 pub trait VisibilityTimeoutSupport {
     type O;
-    fn with_visibility_timeout_seconds(self, timeout: u64) -> Self::O;
+    fn with_visibility_timeout(self, timeout: Duration) -> Self::O;
+}
+
+pub trait VisibilityTimeoutOption {
+    fn visibility_timeout(&self) -> Option<Duration>;
+
+    fn to_uri_parameter(&self) -> Option<String> {
+        self.visibility_timeout()
+            .map(|visibility_timeout| format!("visibilitytimeout={}", visibility_timeout.as_secs()))
+    }
 }
 
 pub trait VisibilityTimeoutRequired {
-    fn visibility_timeout_seconds(&self) -> u64;
+    fn visibility_timeout(&self) -> Duration;
 
     fn to_uri_parameter(&self) -> String {
-        format!("visibilitytimeout={}", self.visibility_timeout_seconds())
+        format!("visibilitytimeout={}", self.visibility_timeout().as_secs())
     }
 }
 
@@ -33,6 +43,20 @@ pub trait MessageTTLRequired {
 
     fn to_uri_parameter(&self) -> String {
         format!("messagettl={}", self.message_ttl_seconds())
+    }
+}
+
+pub trait NumberOfMessagesSupport {
+    type O;
+    fn with_number_of_messages(self, number_of_messages: u32) -> Self::O;
+}
+
+pub trait NumberOfMessagesOption {
+    fn number_of_messages(&self) -> Option<u32>;
+
+    fn to_uri_parameter(&self) -> Option<String> {
+        self.number_of_messages()
+            .map(|number_of_messages| format!("numofmessages={}", number_of_messages))
     }
 }
 
@@ -81,6 +105,7 @@ pub trait QueueNameService: HasStorageClient {
     fn queue_name(&self) -> &str;
 
     fn put_message(&self) -> requests::PutMessageBuilder<'_, '_, Self::StorageClient, No>;
+    fn get_messages(&self) -> requests::GetMessagesBuilder<'_, Self::StorageClient>;
 }
 
 pub trait WithQueueNameClient<'a, 'b>: Debug + Send + Sync {

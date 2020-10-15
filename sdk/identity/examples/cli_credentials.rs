@@ -4,12 +4,11 @@ use url::Url;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
-    let sub_id = std::env::var("AZURE_SUBSCRIPTION_ID")?;
+    let sub_id = AzureCliCredential::get_subscription().await?;
+    println!("Azure cli subscription: {}", sub_id);
+
     let creds = AzureCliCredential {};
-    let res = creds
-        .get_token("https://management.azure.com/")
-        .await
-        .unwrap();
+    let res = creds.get_token("https://management.azure.com/").await?;
     println!("Azure cli response == {:?}", res);
     // Let's enumerate the Azure storage accounts
     // in the subscription. Note: this way of calling the REST API
