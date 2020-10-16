@@ -114,7 +114,7 @@ impl<'a, T: TokenCredential> KeyVaultClient<'a, T> {
     ///
     /// ```no_run
     /// use azure_key_vault::KeyVaultClient;
-    /// use azure_identity::DefaultCredential;
+    /// use azure_identity::token_credentials::DefaultCredential;
     /// use tokio::runtime::Runtime;
     ///
     /// async fn example() {
@@ -143,7 +143,7 @@ impl<'a, T: TokenCredential> KeyVaultClient<'a, T> {
     ///
     /// ```no_run
     /// use azure_key_vault::KeyVaultClient;
-    /// use azure_identity::DefaultCredential;
+    /// use azure_identity::token_credentials::DefaultCredential;
     /// use tokio::runtime::Runtime;
     ///
     /// async fn example() {
@@ -187,7 +187,7 @@ impl<'a, T: TokenCredential> KeyVaultClient<'a, T> {
     ///
     /// ```no_run
     /// use azure_key_vault::KeyVaultClient;
-    /// use azure_identity::DefaultCredential;
+    /// use azure_identity::token_credentials::DefaultCredential;
     /// use tokio::runtime::Runtime;
     ///
     /// async fn example() {
@@ -248,7 +248,7 @@ impl<'a, T: TokenCredential> KeyVaultClient<'a, T> {
     ///
     /// ```no_run
     /// use azure_key_vault::KeyVaultClient;
-    /// use azure_identity::DefaultCredential;
+    /// use azure_identity::token_credentials::DefaultCredential;
     /// use tokio::runtime::Runtime;
     ///
     /// async fn example() {
@@ -320,7 +320,7 @@ impl<'a, T: TokenCredential> KeyVaultClient<'a, T> {
     ///
     /// ```no_run
     /// use azure_key_vault::KeyVaultClient;
-    /// use azure_identity::DefaultCredential;
+    /// use azure_identity::token_credentials::DefaultCredential;
     /// use tokio::runtime::Runtime;
     ///
     /// async fn example() {
@@ -369,7 +369,7 @@ impl<'a, T: TokenCredential> KeyVaultClient<'a, T> {
     ///
     /// ```no_run
     /// use azure_key_vault::KeyVaultClient;
-    /// use azure_identity::DefaultCredential;
+    /// use azure_identity::token_credentials::DefaultCredential;
     /// use tokio::runtime::Runtime;
     ///
     /// async fn example() {
@@ -410,7 +410,7 @@ impl<'a, T: TokenCredential> KeyVaultClient<'a, T> {
     ///
     /// ```no_run
     /// use azure_key_vault::{KeyVaultClient, RecoveryLevel};
-    /// use azure_identity::DefaultCredential;
+    /// use azure_identity::token_credentials::DefaultCredential;
     /// use tokio::runtime::Runtime;
     ///
     /// async fn example() {
@@ -454,7 +454,7 @@ impl<'a, T: TokenCredential> KeyVaultClient<'a, T> {
     ///
     /// ```no_run
     /// use azure_key_vault::{KeyVaultClient, RecoveryLevel};
-    /// use azure_identity::DefaultCredential;
+    /// use azure_identity::token_credentials::DefaultCredential;
     /// use tokio::runtime::Runtime;
     /// use chrono::{Utc, Duration};
     ///
@@ -518,7 +518,7 @@ impl<'a, T: TokenCredential> KeyVaultClient<'a, T> {
     ///
     /// ```no_run
     /// use azure_key_vault::KeyVaultClient;
-    /// use azure_identity::DefaultCredential;
+    /// use azure_identity::token_credentials::DefaultCredential;
     /// use tokio::runtime::Runtime;
     ///
     /// async fn example() {
@@ -558,7 +558,7 @@ impl<'a, T: TokenCredential> KeyVaultClient<'a, T> {
     ///
     /// ```no_run
     /// use azure_key_vault::KeyVaultClient;
-    /// use azure_identity::DefaultCredential;
+    /// use azure_identity::token_credentials::DefaultCredential;
     /// use tokio::runtime::Runtime;
     ///
     /// async fn example() {
@@ -607,7 +607,7 @@ impl<'a, T: TokenCredential> KeyVaultClient<'a, T> {
     ///
     /// ```no_run
     /// use azure_key_vault::{KeyVaultClient, RecoveryLevel};
-    /// use azure_identity::DefaultCredential;
+    /// use azure_identity::token_credentials::DefaultCredential;
     /// use tokio::runtime::Runtime;
     ///
     /// async fn example() {
