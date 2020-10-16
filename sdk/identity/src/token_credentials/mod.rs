@@ -1,4 +1,4 @@
-//! Access to token credentials through various means.
+//! Access to token credentials through various means
 //!
 //! Supported means currently include:
 //! * The environment

@@ -1,7 +1,7 @@
 //! Utilities for aiding in development
 //!
 //! These utilities should not be used in production
-use crate::AuthorizeCodeFlow;
+use crate::authorization_code_flow::AuthorizationCodeFlow;
 use log::debug;
 use oauth2::{AuthorizationCode, CsrfToken};
 use thiserror::Error;
@@ -17,7 +17,7 @@ use std::net::TcpListener;
 ///
 /// This implementation should only be used for testing.
 pub fn naive_redirect_server(
-    auth_obj: &AuthorizeCodeFlow,
+    auth_obj: &AuthorizationCodeFlow,
     port: u32,
 ) -> Result<AuthorizationCode, ServerReceiveError> {
     let listener = TcpListener::bind(format!("127.0.0.1:{}", port)).unwrap();

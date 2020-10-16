@@ -1,4 +1,11 @@
-use crate::device_code_responses::*;
+//! Authorize using the device authorization grant flow
+//!
+//! This flow allows users to sign in to input-constrained devices such as a smart TV, IoT device, or printer.
+//!
+//! You can learn more about this authorization flow [here](https://docs.microsoft.com/en-us/azure/active-directory/develop/v2-oauth2-device-code).
+mod device_code_responses;
+
+pub use device_code_responses::*;
 
 use async_timer::timer::new_timer;
 use azure_core::errors::AzureError;
@@ -12,30 +19,7 @@ use std::borrow::Cow;
 use std::convert::TryInto;
 use std::time::Duration;
 
-#[derive(Debug, Clone, Deserialize)]
-pub struct DeviceCodePhaseOneResponse<'a> {
-    device_code: String,
-    user_code: String,
-    verification_uri: String,
-    expires_in: u64,
-    interval: u64,
-    message: String,
-    // the skipped fields below do not come
-    // from the Azure answer. They will be added
-    // manually after deserialization
-    #[serde(skip)]
-    client: Option<&'a reqwest::Client>,
-    #[serde(skip)]
-    tenant_id: Cow<'a, str>,
-    // we store the ClientId as string instead of
-    // the original type because it does not
-    // implement Default and it's in another
-    // create
-    #[serde(skip)]
-    client_id: String,
-}
-
-pub async fn begin_authorize_device_code_flow<'a, 'b, T>(
+pub async fn start<'a, 'b, T>(
     client: &'a reqwest::Client,
     tenant_id: T,
     client_id: &'a ClientId,
@@ -94,6 +78,29 @@ where
                         })
                 })
         })
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct DeviceCodePhaseOneResponse<'a> {
+    device_code: String,
+    user_code: String,
+    verification_uri: String,
+    expires_in: u64,
+    interval: u64,
+    message: String,
+    // the skipped fields below do not come
+    // from the Azure answer. They will be added
+    // manually after deserialization
+    #[serde(skip)]
+    client: Option<&'a reqwest::Client>,
+    #[serde(skip)]
+    tenant_id: Cow<'a, str>,
+    // we store the ClientId as string instead of
+    // the original type because it does not
+    // implement Default and it's in another
+    // create
+    #[serde(skip)]
+    client_id: String,
 }
 
 impl<'a> DeviceCodePhaseOneResponse<'a> {

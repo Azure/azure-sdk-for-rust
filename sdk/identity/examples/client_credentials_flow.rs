@@ -1,4 +1,4 @@
-use azure_identity::*;
+use azure_identity::client_credentials_flow;
 use oauth2::{ClientId, ClientSecret};
 use url::Url;
 
@@ -18,7 +18,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let client = reqwest::Client::new();
     // This will give you the final token to use in authorization.
-    let token = authorize_client_credentials_flow(
+    let token = client_credentials_flow::perform(
         client,
         &client_id,
         &client_secret,

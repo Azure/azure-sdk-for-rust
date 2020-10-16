@@ -1,4 +1,4 @@
-use azure_identity::*;
+use azure_identity::client_credentials_flow;
 use oauth2::{ClientId, ClientSecret};
 
 use std::env;
@@ -22,7 +22,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let client = reqwest::Client::new();
 
-    let token = authorize_client_credentials_flow(
+    let token = client_credentials_flow::perform(
         client,
         &client_id,
         &client_secret,

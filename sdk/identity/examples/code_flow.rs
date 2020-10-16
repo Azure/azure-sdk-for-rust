@@ -16,7 +16,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         env::var("SUBSCRIPTION_ID").expect("Missing SUBSCRIPTION_ID environment variable.");
 
     // Create URL to browse for initial authorization
-    let c = AuthorizeCodeFlow::new(
+    let c = authorization_code_flow::start(
         client_id,
         Some(client_secret),
         &tenant_id,
