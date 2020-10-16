@@ -1,7 +1,8 @@
 target
 Cargo.lock
 *.rs.bk
-.vscode
+.vscode/*
+!.vscode/extensions.json
 sample/
 /.project
 \#*\#
