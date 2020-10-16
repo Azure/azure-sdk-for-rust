@@ -1,16 +1,26 @@
 [package]
-name          = "azure_mgmt_compute"
-version       = "0.1.0"
-edition       = "2018"
+name = "azure_mgmt_compute"
+version = "0.1.0"
+edition = "2018"
 
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 reqwest = { version = "0.10", features = ["json"] }
 
-[features]
-default = ["2020-06-01"]
-2020-06-01 = []
-
 [dev-dependencies]
 tokio = { version = "0.2", features = ["macros"] }
+
+[features]
+default = ["2020-06-30"]
+2020-06-30 = []
+2020-09-30 = []
+2020-06-01 = []
+2020-05-01 = []
+2019-12-01 = []
+2019-11-01 = []
+2019-07-01 = []
+2019-03-01 = []
+2018-10-01 = []
+2018-06-01 = []
+2018-04-01 = []
