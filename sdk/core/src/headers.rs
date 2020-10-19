@@ -1,6 +1,11 @@
 pub const SERVER: &str = "server"; // -> [String]
+pub const SOURCE_IF_MODIFIED_SINCE: &str = "x-ms-source-if-modified-since";
+pub const SOURCE_IF_UNMODIFIED_SINCE: &str = "x-ms-source-if-unmodified-since";
+pub const SOURCE_IF_MATCH: &str = "x-ms-source-if-match";
+pub const SOURCE_IF_NONE_MATCH: &str = "x-ms-source-if-none-match";
 pub const RANGE_GET_CONTENT_MD5: &str = "x-ms-range-get-content-md5"; //=> [bool] }
 pub const LEASE_ID: &str = "x-ms-lease-id"; //=> [LeaseId] }
+pub const SOURCE_LEASE_ID: &str = "x-ms-source-lease-id"; //=> [LeaseId] }
 pub const CLIENT_REQUEST_ID: &str = "x-ms-client-request-id"; //=> [String] }
 pub const BLOB_PUBLIC_ACCESS: &str = "x-ms-blob-public-access"; // [PublicAccess]
 pub const REQUEST_ID: &str = "x-ms-request-id"; //=> [String] }

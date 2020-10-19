@@ -2,16 +2,17 @@
   "name": "CopyBlobBuilder",
   "derive": "Debug, Clone",
   "uses": [
-    "crate::blob::generate_blob_uri",
-    "crate::blob::responses::AcquireBlobLeaseResponse",
-    "azure_core::errors::{check_status_extract_headers_and_body, AzureError}",
-    "azure_core::headers::LEASE_ACTION",
-    "azure_core::prelude::*",
-    "azure_core::{No, ToAssign, Yes}",
-    "azure_sdk_storage_core::prelude::*",
-    "azure_core::lease::LeaseId",
-    "hyper::{Method, StatusCode}",
-    "std::marker::PhantomData"
+"crate::blob::blob::generate_blob_uri",
+"crate::blob::blob::responses::PutBlobResponse",
+"crate::core::prelude::*",
+"azure_core::errors::{check_status_extract_headers_and_body, AzureError}",
+"azure_core::lease::LeaseId",
+"azure_core::prelude::*",
+"azure_core::{No, ToAssign, Yes}",
+"crate::{RehydratePriority, RehydratePriorityOption, RehydratePrioritySupport}",
+"hyper::{Method, StatusCode}",
+"std::collections::HashMap",
+"std::marker::PhantomData"
   ],
   "inline": true,
   "extra_types": [
@@ -75,6 +76,13 @@
       "trait_set": "IfSinceConditionSupport"
     },
     {
+      "name": "if_source_since_condition",
+      "field_type": "IfSinceCondition",
+      "optional": true,
+      "trait_get": "IfSourceSinceConditionOption",
+      "trait_set": "IfSourceSinceConditionSupport"
+    },
+    {
       "name": "if_match_condition",
       "field_type": "IfMatchCondition<'a>",
       "optional": true,
@@ -82,15 +90,8 @@
       "trait_set": "IfMatchConditionSupport<'a>"
     },
     {
-      "name": "if_source_since_condition",
-      "field_type": "IfSourceSinceCondition",
-      "optional": true,
-      "trait_get": "IfSourceSinceConditionOption",
-      "trait_set": "IfSourceSinceConditionSupport"
-    },
-    {
       "name": "if_source_match_condition",
-      "field_type": "IfSourceMatchCondition<'a>",
+      "field_type": "IfMatchCondition<'a>",
       "optional": true,
       "trait_get": "IfSourceMatchConditionOption<'a>",
       "trait_set": "IfSourceMatchConditionSupport<'a>"
@@ -111,10 +112,10 @@
     },
     {
       "name": "access_tier",
-      "field_type": "&'a str",
+      "field_type": "AccessTier",
       "optional": true,
-      "trait_get": "AccessTierOption<'a>",
-      "trait_set": "AccessTierSupport<'a>"
+      "trait_get": "AccessTierOption",
+      "trait_set": "AccessTierSupport"
     },
     {
       "name": "rehydrate_priority",

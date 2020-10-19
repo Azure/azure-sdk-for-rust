@@ -648,6 +648,24 @@ pub trait IfSinceConditionOption {
     }
 }
 
+pub trait IfSourceSinceConditionSupport {
+    type O;
+    fn with_if_source_since_condition(self, if_source_since_condition: IfSinceCondition)
+        -> Self::O;
+}
+
+pub trait IfSourceSinceConditionOption {
+    fn if_source_since_condition(&self) -> Option<IfSinceCondition>;
+
+    #[must_use]
+    fn add_header(&self, mut builder: Builder) -> Builder {
+        if let Some(if_source_since_condition) = self.if_source_since_condition() {
+            builder = if_source_since_condition.add_source_header(builder);
+        }
+        builder
+    }
+}
+
 pub trait IfMatchConditionSupport<'a> {
     type O;
     fn with_if_match_condition(self, if_match_condition: IfMatchCondition<'a>) -> Self::O;
@@ -660,6 +678,23 @@ pub trait IfMatchConditionOption<'a> {
     fn add_header(&self, mut builder: Builder) -> Builder {
         if let Some(if_match_condition) = self.if_match_condition() {
             builder = if_match_condition.add_header(builder);
+        }
+        builder
+    }
+}
+
+pub trait IfSourceMatchConditionSupport<'a> {
+    type O;
+    fn with_if_source_match_condition(self, if_match_condition: IfMatchCondition<'a>) -> Self::O;
+}
+
+pub trait IfSourceMatchConditionOption<'a> {
+    fn if_source_match_condition(&self) -> Option<IfMatchCondition<'a>>;
+
+    #[must_use]
+    fn add_header(&self, mut builder: Builder) -> Builder {
+        if let Some(if_match_condition) = self.if_source_match_condition() {
+            builder = if_match_condition.add_source_header(builder);
         }
         builder
     }
@@ -720,6 +755,23 @@ pub trait LeaseIdOption<'a> {
     fn add_header(&self, mut builder: Builder) -> Builder {
         if let Some(lease_id) = self.lease_id() {
             builder = builder.header(LEASE_ID, &lease_id.to_string() as &str);
+        }
+        builder
+    }
+}
+
+pub trait SourceLeaseIdSupport<'a> {
+    type O;
+    fn with_source_lease_id(self, _: &'a LeaseId) -> Self::O;
+}
+
+pub trait SourceLeaseIdOption<'a> {
+    fn source_lease_id(&self) -> Option<&'a LeaseId>;
+
+    #[must_use]
+    fn add_header(&self, mut builder: Builder) -> Builder {
+        if let Some(lease_id) = self.source_lease_id() {
+            builder = builder.header(SOURCE_LEASE_ID, &lease_id.to_string() as &str);
         }
         builder
     }
