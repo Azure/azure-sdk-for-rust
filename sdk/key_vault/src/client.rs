@@ -1,7 +1,7 @@
 use crate::KeyVaultError;
 use anyhow::Context;
 use anyhow::Result;
-use azure_identity::{TokenCredential, TokenResponse};
+use azure_identity::token_credentials::{TokenCredential, TokenResponse};
 
 pub(crate) const PUBLIC_ENDPOINT_SUFFIX: &str = "vault.azure.net";
 pub(crate) const API_VERSION: &str = "7.0";
@@ -12,7 +12,7 @@ pub(crate) const API_VERSION: &str = "7.0";
 ///
 /// ```no_run
 /// use azure_key_vault::KeyVaultClient;
-/// use azure_identity::DefaultCredential;
+/// use azure_identity::token_credentials::DefaultCredential;
 /// let creds = DefaultCredential::default();
 /// let client = KeyVaultClient::new(&creds, &"test-key-vault");
 /// ```
@@ -33,7 +33,7 @@ impl<'a, T: TokenCredential> KeyVaultClient<'a, T> {
     ///
     /// ```no_run
     /// use azure_key_vault::KeyVaultClient;
-    /// use azure_identity::DefaultCredential;
+    /// use azure_identity::token_credentials::DefaultCredential;
     /// let creds = DefaultCredential::default();
     /// let client = KeyVaultClient::with_endpoint_suffix(&creds, &"test-keyvault", "vault.azure.net".to_owned());
     /// ```
@@ -58,7 +58,7 @@ impl<'a, T: TokenCredential> KeyVaultClient<'a, T> {
     ///
     /// ```no_run
     /// use azure_key_vault::KeyVaultClient;
-    /// use azure_identity::DefaultCredential;
+    /// use azure_identity::token_credentials::DefaultCredential;
     /// let creds = DefaultCredential::default();
     /// let client = KeyVaultClient::new(&creds, &"test-keyvault");
     /// ```

@@ -1,8 +1,8 @@
-use azure_identity::*;
+use azure_identity::client_credentials_flow;
 use oauth2::{ClientId, ClientSecret};
+
 use std::env;
 use std::error::Error;
-use std::sync::Arc;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
@@ -20,9 +20,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .nth(2)
         .expect("please specify the container name as second command line parameter");
 
-    let client = Arc::new(reqwest::Client::new());
+    let client = reqwest::Client::new();
 
-    let token = authorize_client_credentials_flow(
+    let token = client_credentials_flow::perform(
         client,
         &client_id,
         &client_secret,

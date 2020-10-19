@@ -1,4 +1,5 @@
-use azure_identity::*;
+use azure_identity::device_code_flow::{self, DeviceCodeResponse};
+use azure_identity::refresh_token;
 use azure_storage::blob::prelude::*;
 use azure_storage::core::prelude::*;
 use futures::stream::StreamExt;
@@ -24,7 +25,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // Since we are asking for the "offline_access" scope we will
     // receive the refresh token as well.
     // We are requesting access to the storage account passed as parameter.
-    let device_code_flow = begin_authorize_device_code_flow(
+    let device_code_flow = device_code_flow::start(
         &client,
         &tenant_id,
         &client_id,
@@ -88,7 +89,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // now let's refresh the token, if available
     if let Some(refresh_token) = authorization.refresh_token() {
         let refreshed_token =
-            exchange_refresh_token(&client, &tenant_id, &client_id, None, refresh_token).await?;
+            refresh_token::exchange(&client, &tenant_id, &client_id, None, refresh_token).await?;
         println!("refreshed token == {:#?}", refreshed_token);
     }
 

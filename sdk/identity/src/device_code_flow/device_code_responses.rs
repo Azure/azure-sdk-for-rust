@@ -1,7 +1,10 @@
 use oauth2::AccessToken;
+
+use serde::Deserialize;
+use thiserror::Error;
+
 use std::convert::TryInto;
 use std::fmt;
-use thiserror::Error;
 
 #[derive(Debug, Clone, PartialEq, Deserialize)]
 pub struct DeviceCodeErrorResponse {

@@ -1,18 +1,25 @@
-use crate::errors::ServerReceiveError;
-use crate::AuthObj;
+//! Utilities for aiding in development
+//!
+//! These utilities should not be used in production
+use crate::authorization_code_flow::AuthorizationCodeFlow;
 use log::debug;
 use oauth2::{AuthorizationCode, CsrfToken};
-use std::io::{BufRead, BufReader, Write};
-use std::net::TcpListener;
+use thiserror::Error;
 use url::Url;
 
-pub fn naive_server(
-    auth_obj: &AuthObj,
+use std::io::{BufRead, BufReader, Write};
+use std::net::TcpListener;
+
+/// A very naive implementation of a redirect server.
+///
+/// A ripoff of https://github.com/ramosbugs/oauth2-rs/blob/master/examples/msgraph.rs, stripped
+/// down for simplicity. This server blocks until redirected to.
+///
+/// This implementation should only be used for testing.
+pub fn naive_redirect_server(
+    auth_obj: &AuthorizationCodeFlow,
     port: u32,
 ) -> Result<AuthorizationCode, ServerReceiveError> {
-    // A very naive implementation of the redirect server.
-    // A ripoff of https://github.com/ramosbugs/oauth2-rs/blob/master/examples/msgraph.rs, stripped
-    // down for simplicity.
     let listener = TcpListener::bind(format!("127.0.0.1:{}", port)).unwrap();
     for stream in listener.incoming() {
         if let Ok(mut stream) = stream {
@@ -32,11 +39,8 @@ pub fn naive_server(
 
                 debug!("url == {}", url);
 
-                let code = match url.query_pairs().find(|pair| {
-                    let &(ref key, _) = pair;
-                    key == "code"
-                }) {
-                    Some(qp) => AuthorizationCode::new(qp.1.into_owned()),
+                let code = match url.query_pairs().find(|(key, _)| key == "code") {
+                    Some((_, value)) => AuthorizationCode::new(value.into_owned()),
                     None => {
                         return Err(ServerReceiveError::QueryPairNotFound {
                             query_pair: "code".to_owned(),
@@ -44,11 +48,8 @@ pub fn naive_server(
                     }
                 };
 
-                let state = match url.query_pairs().find(|pair| {
-                    let &(ref key, _) = pair;
-                    key == "state"
-                }) {
-                    Some(qp) => CsrfToken::new(qp.1.into_owned()),
+                let state = match url.query_pairs().find(|(key, _)| key == "state") {
+                    Some((_, value)) => CsrfToken::new(value.into_owned()),
                     None => {
                         return Err(ServerReceiveError::QueryPairNotFound {
                             query_pair: "state".to_owned(),
@@ -78,4 +79,21 @@ pub fn naive_server(
     }
 
     unreachable!()
+}
+
+#[derive(Debug, Error)]
+pub enum ServerReceiveError {
+    #[error("unexpected redirect url: {}", url)]
+    UnexpectedRedirectUrl { url: String },
+    #[error("query pair not found: {}", query_pair)]
+    QueryPairNotFound { query_pair: String },
+    #[error(
+        "State secret mismatch: expected {}, recieved: {}",
+        expected_state_secret,
+        received_state_secret
+    )]
+    StateSecretMismatch {
+        expected_state_secret: String,
+        received_state_secret: String,
+    },
 }

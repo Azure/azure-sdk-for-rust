@@ -1,7 +1,8 @@
 use azure_core::errors::AzureError;
 use chrono::{DateTime, TimeZone, Utc};
 use oauth2::AccessToken;
-use serde::de::{self, Deserialize, Deserializer};
+use serde::{de, Deserialize, Deserializer};
+
 use std::str::FromStr;
 
 #[derive(Debug, Clone, Deserialize)]
@@ -30,8 +31,7 @@ impl FromStr for LoginResponse {
     type Err = AzureError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let r: _LoginResponse = serde_json::from_str(s)?;
-        LoginResponse::from_base_response(r)
+        Ok(serde_json::from_str(s)?)
     }
 }
 
