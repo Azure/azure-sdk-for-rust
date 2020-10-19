@@ -62,6 +62,7 @@ where
     fn copy_blob_from_url<'a>(
         &'a self,
     ) -> blob::requests::CopyBlobFromUrlBuilder<'a, C, No, No, No>;
+    fn copy_blob<'a>(&'a self) -> blob::requests::CopyBlobBuilder<'a, C, No, No, No>;
     fn generate_signed_blob_url<'a>(
         &'a self,
     ) -> blob::requests::SignedUrlBuilder<'a, C, No, No, No>;
@@ -181,6 +182,10 @@ where
         &'a self,
     ) -> blob::requests::CopyBlobFromUrlBuilder<'a, C, No, No, No> {
         blob::requests::CopyBlobFromUrlBuilder::new(self)
+    }
+
+    fn copy_blob<'a>(&'a self) -> blob::requests::CopyBlobBuilder<'a, C, No, No, No> {
+        blob::requests::CopyBlobBuilder::new(self)
     }
 
     fn generate_signed_blob_url<'a>(

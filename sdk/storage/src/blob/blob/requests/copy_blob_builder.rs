@@ -1,5 +1,5 @@
 use crate::blob::blob::generate_blob_uri;
-use crate::blob::blob::responses::PutBlobResponse;
+use crate::blob::blob::responses::CopyBlobResponse;
 use crate::core::prelude::*;
 use crate::{RehydratePriority, RehydratePriorityOption, RehydratePrioritySupport};
 use azure_core::errors::{check_status_extract_headers_and_body, AzureError};
@@ -8,6 +8,7 @@ use azure_core::prelude::*;
 use azure_core::{No, ToAssign, Yes};
 use hyper::{Method, StatusCode};
 use std::collections::HashMap;
+use std::convert::TryInto;
 use std::marker::PhantomData;
 
 #[derive(Debug, Clone)]
@@ -770,16 +771,46 @@ where
     }
 }
 
-// methods callable regardless
-impl<'a, C, ContainerNameSet, BlobNameSet, SourceUrlNameSet>
-    CopyBlobBuilder<'a, C, ContainerNameSet, BlobNameSet, SourceUrlNameSet>
+// methods callable only when every mandatory field has been filled
+impl<'a, C> CopyBlobBuilder<'a, C, Yes, Yes, Yes>
 where
-    ContainerNameSet: ToAssign,
-    BlobNameSet: ToAssign,
-    SourceUrlNameSet: ToAssign,
     C: Client,
 {
-}
+    #[inline]
+    pub async fn finalize(self) -> Result<CopyBlobResponse, AzureError> {
+        let mut uri =
+            generate_blob_uri(self.client(), self.container_name(), self.blob_name(), None);
 
-// methods callable only when every mandatory field has been filled
-impl<'a, C> CopyBlobBuilder<'a, C, Yes, Yes, Yes> where C: Client {}
+        if let Some(timeout) = TimeoutOption::to_uri_parameter(&self) {
+            uri = format!("{}?{}", uri, timeout);
+        }
+
+        trace!("uri == {:?}", uri);
+
+        let future_response = self.client().perform_request(
+            &uri,
+            &Method::PUT,
+            &|mut request| {
+                request = SourceUrlRequired::add_header(&self, request);
+                request = MetadataOption::add_header(&self, request);
+                request = IfSinceConditionOption::add_header(&self, request);
+                request = IfSourceSinceConditionOption::add_header(&self, request);
+                request = IfMatchConditionOption::add_header(&self, request);
+                request = IfSourceMatchConditionOption::add_header(&self, request);
+                request = LeaseIdOption::add_header(&self, request);
+                request = SourceLeaseIdOption::add_header(&self, request);
+                request = AccessTierOption::add_header(&self, request);
+                request = RehydratePriorityOption::add_header(&self, request);
+                request = ClientRequestIdOption::add_header(&self, request);
+
+                request
+            },
+            None,
+        )?;
+
+        let (headers, _body) =
+            check_status_extract_headers_and_body(future_response, StatusCode::ACCEPTED).await?;
+
+        (&headers).try_into()
+    }
+}
