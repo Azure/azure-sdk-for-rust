@@ -1,9 +1,9 @@
 #![cfg(all(test, feature = "test_e2e"))]
 #[macro_use]
 extern crate log;
-use crate::core::prelude::*;
 use azure_core::prelude::*;
 use azure_storage::blob::prelude::*;
+use azure_storage::core::prelude::*;
 use std::collections::HashMap;
 
 #[tokio::test]

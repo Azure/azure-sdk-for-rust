@@ -1,6 +1,6 @@
 #![cfg(all(test, feature = "test_e2e"))]
-use crate::core::prelude::*;
-use azure_storage_account::prelude::*;
+use azure_storage::account::prelude::*;
+use azure_storage::core::prelude::*;
 
 #[tokio::test]
 async fn get_account_information() {
