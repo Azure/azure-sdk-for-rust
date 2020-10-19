@@ -1,0 +1,134 @@
+{
+  "name": "CopyBlobBuilder",
+  "derive": "Debug, Clone",
+  "uses": [
+    "crate::blob::generate_blob_uri",
+    "crate::blob::responses::AcquireBlobLeaseResponse",
+    "azure_core::errors::{check_status_extract_headers_and_body, AzureError}",
+    "azure_core::headers::LEASE_ACTION",
+    "azure_core::prelude::*",
+    "azure_core::{No, ToAssign, Yes}",
+    "azure_sdk_storage_core::prelude::*",
+    "azure_core::lease::LeaseId",
+    "hyper::{Method, StatusCode}",
+    "std::marker::PhantomData"
+  ],
+  "inline": true,
+  "extra_types": [
+    "'a",
+    "C"
+  ],
+  "extra_wheres": [
+    "C: Client"
+  ],
+  "constructor_fields": [
+    {
+      "name": "client",
+      "field_type": "&'a C",
+      "trait_get": "ClientRequired<'a, C>"
+    }
+  ],
+  "fields": [
+    {
+      "name": "container_name",
+      "field_type": "&'a str",
+      "builder_type": "ContainerNameSet",
+      "optional": false,
+      "trait_get": "ContainerNameRequired<'a>",
+      "trait_set": "ContainerNameSupport<'a>"
+    },
+    {
+      "name": "blob_name",
+      "field_type": "&'a str",
+      "builder_type": "BlobNameSet",
+      "optional": false,
+      "trait_get": "BlobNameRequired<'a>",
+      "trait_set": "BlobNameSupport<'a>"
+    },
+    {
+      "name": "source_url",
+      "field_type": "&'a str",
+      "builder_type": "SourceUrlNameSet",
+      "optional": false,
+      "trait_get": "SourceUrlRequired<'a>",
+      "trait_set": "SourceUrlSupport<'a>"
+    },
+    {
+      "name": "metadata",
+      "field_type": "&'a HashMap<&'a str, &'a str>",
+      "optional": true,
+      "trait_get": "MetadataOption<'a>",
+      "trait_set": "MetadataSupport<'a>"
+    },
+    {
+      "name": "timeout",
+      "field_type": "u64",
+      "optional": true,
+      "trait_get": "TimeoutOption",
+      "trait_set": "TimeoutSupport"
+    },
+    {
+      "name": "if_since_condition",
+      "field_type": "IfSinceCondition",
+      "optional": true,
+      "trait_get": "IfSinceConditionOption",
+      "trait_set": "IfSinceConditionSupport"
+    },
+    {
+      "name": "if_match_condition",
+      "field_type": "IfMatchCondition<'a>",
+      "optional": true,
+      "trait_get": "IfMatchConditionOption<'a>",
+      "trait_set": "IfMatchConditionSupport<'a>"
+    },
+    {
+      "name": "if_source_since_condition",
+      "field_type": "IfSourceSinceCondition",
+      "optional": true,
+      "trait_get": "IfSourceSinceConditionOption",
+      "trait_set": "IfSourceSinceConditionSupport"
+    },
+    {
+      "name": "if_source_match_condition",
+      "field_type": "IfSourceMatchCondition<'a>",
+      "optional": true,
+      "trait_get": "IfSourceMatchConditionOption<'a>",
+      "trait_set": "IfSourceMatchConditionSupport<'a>"
+    },
+    {
+      "name": "lease_id",
+      "field_type": "&'a LeaseId",
+      "optional": true,
+      "trait_get": "LeaseIdOption<'a>",
+      "trait_set": "LeaseIdSupport<'a>"
+    },
+    {
+      "name": "source_lease_id",
+      "field_type": "&'a LeaseId",
+      "optional": true,
+      "trait_get": "SourceLeaseIdOption<'a>",
+      "trait_set": "SourceLeaseIdSupport<'a>"
+    },
+    {
+      "name": "access_tier",
+      "field_type": "&'a str",
+      "optional": true,
+      "trait_get": "AccessTierOption<'a>",
+      "trait_set": "AccessTierSupport<'a>"
+    },
+    {
+      "name": "rehydrate_priority",
+      "field_type": "RehydratePriority",
+      "optional": true,
+      "trait_get": "RehydratePriorityOption",
+      "trait_set": "RehydratePrioritySupport"
+    },
+    {
+      "name": "client_request_id",
+      "field_type": "&'a str",
+      "optional": true,
+      "trait_get": "ClientRequestIdOption<'a>",
+      "trait_set": "ClientRequestIdSupport<'a>"
+    }
+  ]
+}

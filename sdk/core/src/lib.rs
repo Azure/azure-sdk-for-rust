@@ -89,6 +89,13 @@ impl NotAssigned for No {}
 
 create_enum!(DeleteSnapshotsMethod, (Include, "include"), (Only, "only"));
 
+create_enum!(
+    AccessTier,
+    (Hot, "Hot"),
+    (Cool, "Cool"),
+    (Archive, "Archive")
+);
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum Consistency {
     Md5([u8; 16]),
@@ -338,18 +345,18 @@ pub trait ContentLanguageOption<'a> {
     }
 }
 
-pub trait AccessTierSupport<'a> {
+pub trait AccessTierSupport {
     type O;
-    fn with_access_tier(self, access_tier: &'a str) -> Self::O;
+    fn with_access_tier(self, access_tier: AccessTier) -> Self::O;
 }
 
-pub trait AccessTierOption<'a> {
-    fn access_tier(&self) -> Option<&'a str>;
+pub trait AccessTierOption {
+    fn access_tier(&self) -> Option<AccessTier>;
 
     #[must_use]
     fn add_header(&self, mut builder: Builder) -> Builder {
         if let Some(access_tier) = self.access_tier() {
-            builder = builder.header(BLOB_ACCESS_TIER, access_tier);
+            builder = builder.header(BLOB_ACCESS_TIER, access_tier.as_ref());
         }
         builder
     }
