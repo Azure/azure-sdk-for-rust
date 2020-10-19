@@ -2,10 +2,14 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use crate::{models::*, *};
+use crate::models::*;
+use reqwest::StatusCode;
+use snafu::{ResultExt, Snafu};
 pub mod operations {
-    use crate::{models::*, *};
-    pub async fn list(configuration: &Configuration) -> Result<OperationsList> {
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
+    pub async fn list(configuration: &crate::Configuration) -> std::result::Result<OperationsList, list::Error> {
         let client = &configuration.client;
         let uri_str = &format!("{}/providers/Microsoft.SecurityInsights/operations", &configuration.base_path,);
         let mut req_builder = client.get(uri_str);
@@ -13,20 +17,46 @@ pub mod operations {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: OperationsList = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                list::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
+    }
+    pub mod list {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
 }
 pub mod alert_rules {
-    use crate::{models::*, *};
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
     pub async fn list(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         operational_insights_resource_provider: &str,
         workspace_name: &str,
-    ) -> Result<AlertRulesList> {
+    ) -> std::result::Result<AlertRulesList, list::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/alertRules",
@@ -37,18 +67,59 @@ pub mod alert_rules {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: AlertRulesList = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                list::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn get(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         operational_insights_resource_provider: &str,
         workspace_name: &str,
         rule_id: &str,
-    ) -> Result<AlertRule> {
+    ) -> std::result::Result<AlertRule, get::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/alertRules/{}",
@@ -59,19 +130,60 @@ pub mod alert_rules {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(get::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: AlertRule = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                get::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod get {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn create_or_update(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         operational_insights_resource_provider: &str,
         workspace_name: &str,
         rule_id: &str,
         alert_rule: &AlertRule,
-    ) -> Result<AlertRule> {
+    ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/alertRules/{}",
@@ -83,18 +195,69 @@ pub mod alert_rules {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(alert_rule);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(create_or_update::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(create_or_update::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
+                let rsp_value: AlertRule = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                Ok(create_or_update::Response::Ok200(rsp_value))
+            }
+            StatusCode::CREATED => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
+                let rsp_value: AlertRule = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                Ok(create_or_update::Response::Created201(rsp_value))
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                create_or_update::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod create_or_update {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(AlertRule),
+            Created201(AlertRule),
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn delete(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         operational_insights_resource_provider: &str,
         workspace_name: &str,
         rule_id: &str,
-    ) -> Result<CloudError> {
+    ) -> std::result::Result<delete::Response, delete::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/alertRules/{}",
@@ -105,19 +268,62 @@ pub mod alert_rules {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(delete::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => Ok(delete::Response::Ok200),
+            StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(delete::ResponseBytesError)?;
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(delete::DeserializeError { body })?;
+                delete::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod delete {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200,
+            NoContent204,
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn get_action(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         operational_insights_resource_provider: &str,
         workspace_name: &str,
         rule_id: &str,
         action_id: &str,
-    ) -> Result<ActionResponse> {
+    ) -> std::result::Result<ActionResponse, get_action::Error> {
         let client = &configuration.client;
         let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/alertRules/{}/actions/{}" , & configuration . base_path , subscription_id , resource_group_name , operational_insights_resource_provider , workspace_name , rule_id , action_id) ;
         let mut req_builder = client.get(uri_str);
@@ -125,12 +331,53 @@ pub mod alert_rules {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(get_action::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get_action::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get_action::ResponseBytesError)?;
+                let rsp_value: ActionResponse = serde_json::from_slice(&body).context(get_action::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get_action::ResponseBytesError)?;
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(get_action::DeserializeError { body })?;
+                get_action::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod get_action {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn create_or_update_action(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         operational_insights_resource_provider: &str,
@@ -138,7 +385,7 @@ pub mod alert_rules {
         rule_id: &str,
         action_id: &str,
         action: &ActionRequest,
-    ) -> Result<ActionResponse> {
+    ) -> std::result::Result<create_or_update_action::Response, create_or_update_action::Error> {
         let client = &configuration.client;
         let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/alertRules/{}/actions/{}" , & configuration . base_path , subscription_id , resource_group_name , operational_insights_resource_provider , workspace_name , rule_id , action_id) ;
         let mut req_builder = client.put(uri_str);
@@ -147,19 +394,72 @@ pub mod alert_rules {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(action);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(create_or_update_action::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(create_or_update_action::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update_action::ResponseBytesError)?;
+                let rsp_value: ActionResponse =
+                    serde_json::from_slice(&body).context(create_or_update_action::DeserializeError { body })?;
+                Ok(create_or_update_action::Response::Ok200(rsp_value))
+            }
+            StatusCode::CREATED => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update_action::ResponseBytesError)?;
+                let rsp_value: ActionResponse =
+                    serde_json::from_slice(&body).context(create_or_update_action::DeserializeError { body })?;
+                Ok(create_or_update_action::Response::Created201(rsp_value))
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update_action::ResponseBytesError)?;
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(create_or_update_action::DeserializeError { body })?;
+                create_or_update_action::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod create_or_update_action {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(ActionResponse),
+            Created201(ActionResponse),
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn delete_action(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         operational_insights_resource_provider: &str,
         workspace_name: &str,
         rule_id: &str,
         action_id: &str,
-    ) -> Result<CloudError> {
+    ) -> std::result::Result<delete_action::Response, delete_action::Error> {
         let client = &configuration.client;
         let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/alertRules/{}/actions/{}" , & configuration . base_path , subscription_id , resource_group_name , operational_insights_resource_provider , workspace_name , rule_id , action_id) ;
         let mut req_builder = client.delete(uri_str);
@@ -167,21 +467,66 @@ pub mod alert_rules {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(delete_action::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(delete_action::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => Ok(delete_action::Response::Ok200),
+            StatusCode::NO_CONTENT => Ok(delete_action::Response::NoContent204),
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(delete_action::ResponseBytesError)?;
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(delete_action::DeserializeError { body })?;
+                delete_action::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod delete_action {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200,
+            NoContent204,
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
 }
 pub mod actions {
-    use crate::{models::*, *};
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
     pub async fn list_by_alert_rule(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         operational_insights_resource_provider: &str,
         workspace_name: &str,
         rule_id: &str,
-    ) -> Result<ActionsList> {
+    ) -> std::result::Result<ActionsList, list_by_alert_rule::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/alertRules/{}/actions",
@@ -192,20 +537,63 @@ pub mod actions {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list_by_alert_rule::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list_by_alert_rule::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_alert_rule::ResponseBytesError)?;
+                let rsp_value: ActionsList = serde_json::from_slice(&body).context(list_by_alert_rule::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_alert_rule::ResponseBytesError)?;
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(list_by_alert_rule::DeserializeError { body })?;
+                list_by_alert_rule::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list_by_alert_rule {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
 }
 pub mod alert_rule_templates {
-    use crate::{models::*, *};
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
     pub async fn list(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         operational_insights_resource_provider: &str,
         workspace_name: &str,
-    ) -> Result<AlertRuleTemplatesList> {
+    ) -> std::result::Result<AlertRuleTemplatesList, list::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/alertRuleTemplates",
@@ -216,18 +604,59 @@ pub mod alert_rule_templates {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: AlertRuleTemplatesList = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                list::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn get(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         operational_insights_resource_provider: &str,
         workspace_name: &str,
         alert_rule_template_id: &str,
-    ) -> Result<AlertRuleTemplate> {
+    ) -> std::result::Result<AlertRuleTemplate, get::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/alertRuleTemplates/{}",
@@ -243,15 +672,58 @@ pub mod alert_rule_templates {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(get::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: AlertRuleTemplate = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                get::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod get {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
 }
 pub mod cases {
-    use crate::{models::*, *};
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
     pub async fn list(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         operational_insights_resource_provider: &str,
@@ -260,7 +732,7 @@ pub mod cases {
         orderby: Option<&str>,
         top: Option<i64>,
         skip_token: Option<&str>,
-    ) -> Result<CaseList> {
+    ) -> std::result::Result<CaseList, list::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/cases",
@@ -283,18 +755,59 @@ pub mod cases {
         if let Some(skip_token) = skip_token {
             req_builder = req_builder.query(&[("$skipToken", skip_token)]);
         }
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: CaseList = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                list::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn get(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         operational_insights_resource_provider: &str,
         workspace_name: &str,
         case_id: &str,
-    ) -> Result<Case> {
+    ) -> std::result::Result<Case, get::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/cases/{}",
@@ -305,19 +818,60 @@ pub mod cases {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(get::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: Case = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                get::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod get {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn create_or_update(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         operational_insights_resource_provider: &str,
         workspace_name: &str,
         case_id: &str,
         case: &Case,
-    ) -> Result<Case> {
+    ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/cases/{}",
@@ -329,18 +883,69 @@ pub mod cases {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(case);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(create_or_update::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(create_or_update::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
+                let rsp_value: Case = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                Ok(create_or_update::Response::Ok200(rsp_value))
+            }
+            StatusCode::CREATED => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
+                let rsp_value: Case = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                Ok(create_or_update::Response::Created201(rsp_value))
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                create_or_update::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod create_or_update {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(Case),
+            Created201(Case),
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn delete(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         operational_insights_resource_provider: &str,
         workspace_name: &str,
         case_id: &str,
-    ) -> Result<CloudError> {
+    ) -> std::result::Result<delete::Response, delete::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/cases/{}",
@@ -351,19 +956,62 @@ pub mod cases {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(delete::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => Ok(delete::Response::Ok200),
+            StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(delete::ResponseBytesError)?;
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(delete::DeserializeError { body })?;
+                delete::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod delete {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200,
+            NoContent204,
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn get_comment(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         operational_insights_resource_provider: &str,
         workspace_name: &str,
         case_id: &str,
         case_comment_id: &str,
-    ) -> Result<CaseComment> {
+    ) -> std::result::Result<CaseComment, get_comment::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/cases/{}/comments/{}",
@@ -380,15 +1028,58 @@ pub mod cases {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(get_comment::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get_comment::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get_comment::ResponseBytesError)?;
+                let rsp_value: CaseComment = serde_json::from_slice(&body).context(get_comment::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get_comment::ResponseBytesError)?;
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(get_comment::DeserializeError { body })?;
+                get_comment::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod get_comment {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
 }
 pub mod comments {
-    use crate::{models::*, *};
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
     pub async fn list_by_case(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         operational_insights_resource_provider: &str,
@@ -398,7 +1089,7 @@ pub mod comments {
         orderby: Option<&str>,
         top: Option<i64>,
         skip_token: Option<&str>,
-    ) -> Result<CaseCommentList> {
+    ) -> std::result::Result<CaseCommentList, list_by_case::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/cases/{}/comments",
@@ -421,15 +1112,58 @@ pub mod comments {
         if let Some(skip_token) = skip_token {
             req_builder = req_builder.query(&[("$skipToken", skip_token)]);
         }
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list_by_case::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list_by_case::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_case::ResponseBytesError)?;
+                let rsp_value: CaseCommentList = serde_json::from_slice(&body).context(list_by_case::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_case::ResponseBytesError)?;
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(list_by_case::DeserializeError { body })?;
+                list_by_case::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list_by_case {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
 }
 pub mod case_comments {
-    use crate::{models::*, *};
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
     pub async fn create_comment(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         operational_insights_resource_provider: &str,
@@ -437,7 +1171,7 @@ pub mod case_comments {
         case_id: &str,
         case_comment_id: &str,
         case_comment: &CaseComment,
-    ) -> Result<CaseComment> {
+    ) -> std::result::Result<CaseComment, create_comment::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/cases/{}/comments/{}",
@@ -455,20 +1189,63 @@ pub mod case_comments {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(case_comment);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(create_comment::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(create_comment::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::CREATED => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_comment::ResponseBytesError)?;
+                let rsp_value: CaseComment = serde_json::from_slice(&body).context(create_comment::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_comment::ResponseBytesError)?;
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(create_comment::DeserializeError { body })?;
+                create_comment::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod create_comment {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
 }
 pub mod bookmarks {
-    use crate::{models::*, *};
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
     pub async fn list(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         operational_insights_resource_provider: &str,
         workspace_name: &str,
-    ) -> Result<BookmarkList> {
+    ) -> std::result::Result<BookmarkList, list::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/bookmarks",
@@ -479,18 +1256,59 @@ pub mod bookmarks {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: BookmarkList = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                list::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn get(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         operational_insights_resource_provider: &str,
         workspace_name: &str,
         bookmark_id: &str,
-    ) -> Result<Bookmark> {
+    ) -> std::result::Result<Bookmark, get::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/bookmarks/{}",
@@ -506,19 +1324,60 @@ pub mod bookmarks {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(get::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: Bookmark = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                get::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod get {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn create_or_update(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         operational_insights_resource_provider: &str,
         workspace_name: &str,
         bookmark_id: &str,
         bookmark: &Bookmark,
-    ) -> Result<Bookmark> {
+    ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/bookmarks/{}",
@@ -535,18 +1394,69 @@ pub mod bookmarks {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(bookmark);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(create_or_update::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(create_or_update::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
+                let rsp_value: Bookmark = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                Ok(create_or_update::Response::Ok200(rsp_value))
+            }
+            StatusCode::CREATED => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
+                let rsp_value: Bookmark = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                Ok(create_or_update::Response::Created201(rsp_value))
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                create_or_update::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod create_or_update {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(Bookmark),
+            Created201(Bookmark),
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn delete(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         operational_insights_resource_provider: &str,
         workspace_name: &str,
         bookmark_id: &str,
-    ) -> Result<CloudError> {
+    ) -> std::result::Result<delete::Response, delete::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/bookmarks/{}",
@@ -562,15 +1472,60 @@ pub mod bookmarks {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(delete::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => Ok(delete::Response::Ok200),
+            StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(delete::ResponseBytesError)?;
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(delete::DeserializeError { body })?;
+                delete::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod delete {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200,
+            NoContent204,
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
 }
 pub mod case_relations {
-    use crate::{models::*, *};
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
     pub async fn list(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         operational_insights_resource_provider: &str,
@@ -580,7 +1535,7 @@ pub mod case_relations {
         orderby: Option<&str>,
         top: Option<i64>,
         skip_token: Option<&str>,
-    ) -> Result<CaseRelationList> {
+    ) -> std::result::Result<CaseRelationList, list::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/cases/{}/relations",
@@ -603,19 +1558,60 @@ pub mod case_relations {
         if let Some(skip_token) = skip_token {
             req_builder = req_builder.query(&[("$skipToken", skip_token)]);
         }
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: CaseRelationList = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                list::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn get_relation(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         operational_insights_resource_provider: &str,
         workspace_name: &str,
         case_id: &str,
         relation_name: &str,
-    ) -> Result<CaseRelation> {
+    ) -> std::result::Result<CaseRelation, get_relation::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/cases/{}/relations/{}",
@@ -632,12 +1628,53 @@ pub mod case_relations {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(get_relation::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get_relation::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get_relation::ResponseBytesError)?;
+                let rsp_value: CaseRelation = serde_json::from_slice(&body).context(get_relation::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get_relation::ResponseBytesError)?;
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(get_relation::DeserializeError { body })?;
+                get_relation::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod get_relation {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn create_or_update_relation(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         operational_insights_resource_provider: &str,
@@ -645,7 +1682,7 @@ pub mod case_relations {
         case_id: &str,
         relation_name: &str,
         relation_input_model: &RelationsModelInput,
-    ) -> Result<CaseRelation> {
+    ) -> std::result::Result<create_or_update_relation::Response, create_or_update_relation::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/cases/{}/relations/{}",
@@ -663,19 +1700,72 @@ pub mod case_relations {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(relation_input_model);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(create_or_update_relation::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(create_or_update_relation::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update_relation::ResponseBytesError)?;
+                let rsp_value: CaseRelation =
+                    serde_json::from_slice(&body).context(create_or_update_relation::DeserializeError { body })?;
+                Ok(create_or_update_relation::Response::Ok200(rsp_value))
+            }
+            StatusCode::CREATED => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update_relation::ResponseBytesError)?;
+                let rsp_value: CaseRelation =
+                    serde_json::from_slice(&body).context(create_or_update_relation::DeserializeError { body })?;
+                Ok(create_or_update_relation::Response::Created201(rsp_value))
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update_relation::ResponseBytesError)?;
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(create_or_update_relation::DeserializeError { body })?;
+                create_or_update_relation::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod create_or_update_relation {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(CaseRelation),
+            Created201(CaseRelation),
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn delete_relation(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         operational_insights_resource_provider: &str,
         workspace_name: &str,
         case_id: &str,
         relation_name: &str,
-    ) -> Result<CloudError> {
+    ) -> std::result::Result<delete_relation::Response, delete_relation::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/cases/{}/relations/{}",
@@ -692,15 +1782,60 @@ pub mod case_relations {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(delete_relation::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(delete_relation::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => Ok(delete_relation::Response::Ok200),
+            StatusCode::NO_CONTENT => Ok(delete_relation::Response::NoContent204),
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(delete_relation::ResponseBytesError)?;
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(delete_relation::DeserializeError { body })?;
+                delete_relation::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod delete_relation {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200,
+            NoContent204,
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
 }
 pub mod bookmark_relations {
-    use crate::{models::*, *};
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
     pub async fn list(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         operational_insights_resource_provider: &str,
@@ -710,7 +1845,7 @@ pub mod bookmark_relations {
         orderby: Option<&str>,
         top: Option<i64>,
         skip_token: Option<&str>,
-    ) -> Result<RelationList> {
+    ) -> std::result::Result<RelationList, list::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/bookmarks/{}/relations",
@@ -738,19 +1873,60 @@ pub mod bookmark_relations {
         if let Some(skip_token) = skip_token {
             req_builder = req_builder.query(&[("$skipToken", skip_token)]);
         }
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: RelationList = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                list::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn get_relation(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         operational_insights_resource_provider: &str,
         workspace_name: &str,
         bookmark_id: &str,
         relation_name: &str,
-    ) -> Result<Relation> {
+    ) -> std::result::Result<Relation, get_relation::Error> {
         let client = &configuration.client;
         let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/bookmarks/{}/relations/{}" , & configuration . base_path , subscription_id , resource_group_name , operational_insights_resource_provider , workspace_name , bookmark_id , relation_name) ;
         let mut req_builder = client.get(uri_str);
@@ -758,12 +1934,53 @@ pub mod bookmark_relations {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(get_relation::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get_relation::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get_relation::ResponseBytesError)?;
+                let rsp_value: Relation = serde_json::from_slice(&body).context(get_relation::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get_relation::ResponseBytesError)?;
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(get_relation::DeserializeError { body })?;
+                get_relation::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod get_relation {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn create_or_update_relation(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         operational_insights_resource_provider: &str,
@@ -771,7 +1988,7 @@ pub mod bookmark_relations {
         bookmark_id: &str,
         relation_name: &str,
         relation: &Relation,
-    ) -> Result<Relation> {
+    ) -> std::result::Result<create_or_update_relation::Response, create_or_update_relation::Error> {
         let client = &configuration.client;
         let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/bookmarks/{}/relations/{}" , & configuration . base_path , subscription_id , resource_group_name , operational_insights_resource_provider , workspace_name , bookmark_id , relation_name) ;
         let mut req_builder = client.put(uri_str);
@@ -780,19 +1997,70 @@ pub mod bookmark_relations {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(relation);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(create_or_update_relation::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(create_or_update_relation::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update_relation::ResponseBytesError)?;
+                let rsp_value: Relation = serde_json::from_slice(&body).context(create_or_update_relation::DeserializeError { body })?;
+                Ok(create_or_update_relation::Response::Ok200(rsp_value))
+            }
+            StatusCode::CREATED => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update_relation::ResponseBytesError)?;
+                let rsp_value: Relation = serde_json::from_slice(&body).context(create_or_update_relation::DeserializeError { body })?;
+                Ok(create_or_update_relation::Response::Created201(rsp_value))
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update_relation::ResponseBytesError)?;
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(create_or_update_relation::DeserializeError { body })?;
+                create_or_update_relation::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod create_or_update_relation {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(Relation),
+            Created201(Relation),
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn delete_relation(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         operational_insights_resource_provider: &str,
         workspace_name: &str,
         bookmark_id: &str,
         relation_name: &str,
-    ) -> Result<CloudError> {
+    ) -> std::result::Result<delete_relation::Response, delete_relation::Error> {
         let client = &configuration.client;
         let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/bookmarks/{}/relations/{}" , & configuration . base_path , subscription_id , resource_group_name , operational_insights_resource_provider , workspace_name , bookmark_id , relation_name) ;
         let mut req_builder = client.delete(uri_str);
@@ -800,22 +2068,67 @@ pub mod bookmark_relations {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(delete_relation::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(delete_relation::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => Ok(delete_relation::Response::Ok200),
+            StatusCode::NO_CONTENT => Ok(delete_relation::Response::NoContent204),
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(delete_relation::ResponseBytesError)?;
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(delete_relation::DeserializeError { body })?;
+                delete_relation::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod delete_relation {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200,
+            NoContent204,
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
 }
 pub mod bookmark {
-    use crate::{models::*, *};
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
     pub async fn expand(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         operational_insights_resource_provider: &str,
         workspace_name: &str,
         bookmark_id: &str,
         parameters: &BookmarkExpandParameters,
-    ) -> Result<BookmarkExpandResponse> {
+    ) -> std::result::Result<BookmarkExpandResponse, expand::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/bookmarks/{}/expand",
@@ -832,20 +2145,63 @@ pub mod bookmark {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(parameters);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(expand::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(expand::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(expand::ResponseBytesError)?;
+                let rsp_value: BookmarkExpandResponse = serde_json::from_slice(&body).context(expand::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(expand::ResponseBytesError)?;
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(expand::DeserializeError { body })?;
+                expand::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod expand {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
 }
 pub mod data_connectors {
-    use crate::{models::*, *};
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
     pub async fn list(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         operational_insights_resource_provider: &str,
         workspace_name: &str,
-    ) -> Result<DataConnectorList> {
+    ) -> std::result::Result<DataConnectorList, list::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/dataConnectors",
@@ -856,18 +2212,59 @@ pub mod data_connectors {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: DataConnectorList = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                list::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn get(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         operational_insights_resource_provider: &str,
         workspace_name: &str,
         data_connector_id: &str,
-    ) -> Result<DataConnector> {
+    ) -> std::result::Result<DataConnector, get::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/dataConnectors/{}",
@@ -883,19 +2280,60 @@ pub mod data_connectors {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(get::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: DataConnector = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                get::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod get {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn create_or_update(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         operational_insights_resource_provider: &str,
         workspace_name: &str,
         data_connector_id: &str,
         data_connector: &DataConnector,
-    ) -> Result<DataConnector> {
+    ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/dataConnectors/{}",
@@ -912,18 +2350,69 @@ pub mod data_connectors {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(data_connector);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(create_or_update::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(create_or_update::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
+                let rsp_value: DataConnector = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                Ok(create_or_update::Response::Ok200(rsp_value))
+            }
+            StatusCode::CREATED => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
+                let rsp_value: DataConnector = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                Ok(create_or_update::Response::Created201(rsp_value))
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                create_or_update::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod create_or_update {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(DataConnector),
+            Created201(DataConnector),
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn delete(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         operational_insights_resource_provider: &str,
         workspace_name: &str,
         data_connector_id: &str,
-    ) -> Result<CloudError> {
+    ) -> std::result::Result<delete::Response, delete::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/dataConnectors/{}",
@@ -939,21 +2428,66 @@ pub mod data_connectors {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(delete::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => Ok(delete::Response::Ok200),
+            StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(delete::ResponseBytesError)?;
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(delete::DeserializeError { body })?;
+                delete::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod delete {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200,
+            NoContent204,
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
 }
 pub mod data_connectors_check_requirements {
-    use crate::{models::*, *};
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
     pub async fn post(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         workspace_name: &str,
         operational_insights_resource_provider: &str,
         data_connectors_check_requirements: &DataConnectorsCheckRequirements,
-    ) -> Result<DataConnectorRequirementsState> {
+    ) -> std::result::Result<DataConnectorRequirementsState, post::Error> {
         let client = &configuration.client;
         let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/dataConnectorsCheckRequirements" , & configuration . base_path , subscription_id , resource_group_name , operational_insights_resource_provider , workspace_name) ;
         let mut req_builder = client.post(uri_str);
@@ -962,20 +2496,63 @@ pub mod data_connectors_check_requirements {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(data_connectors_check_requirements);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(post::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(post::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(post::ResponseBytesError)?;
+                let rsp_value: DataConnectorRequirementsState = serde_json::from_slice(&body).context(post::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(post::ResponseBytesError)?;
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(post::DeserializeError { body })?;
+                post::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod post {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
 }
 pub mod entities {
-    use crate::{models::*, *};
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
     pub async fn list(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         operational_insights_resource_provider: &str,
         workspace_name: &str,
-    ) -> Result<EntityList> {
+    ) -> std::result::Result<EntityList, list::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/entities",
@@ -986,18 +2563,59 @@ pub mod entities {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: EntityList = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                list::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn get(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         operational_insights_resource_provider: &str,
         workspace_name: &str,
         entity_id: &str,
-    ) -> Result<Entity> {
+    ) -> std::result::Result<Entity, get::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/entities/{}",
@@ -1013,19 +2631,60 @@ pub mod entities {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(get::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: Entity = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                get::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod get {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn expand(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         operational_insights_resource_provider: &str,
         workspace_name: &str,
         entity_id: &str,
         parameters: &EntityExpandParameters,
-    ) -> Result<EntityExpandResponse> {
+    ) -> std::result::Result<EntityExpandResponse, expand::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/entities/{}/expand",
@@ -1042,15 +2701,58 @@ pub mod entities {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(parameters);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(expand::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(expand::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(expand::ResponseBytesError)?;
+                let rsp_value: EntityExpandResponse = serde_json::from_slice(&body).context(expand::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(expand::ResponseBytesError)?;
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(expand::DeserializeError { body })?;
+                expand::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod expand {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
 }
 pub mod entities_relations {
-    use crate::{models::*, *};
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
     pub async fn list(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         operational_insights_resource_provider: &str,
@@ -1060,7 +2762,7 @@ pub mod entities_relations {
         orderby: Option<&str>,
         top: Option<i64>,
         skip_token: Option<&str>,
-    ) -> Result<RelationList> {
+    ) -> std::result::Result<RelationList, list::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/entities/{}/relations",
@@ -1088,22 +2790,65 @@ pub mod entities_relations {
         if let Some(skip_token) = skip_token {
             req_builder = req_builder.query(&[("$skipToken", skip_token)]);
         }
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: RelationList = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                list::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
 }
 pub mod entity_relations {
-    use crate::{models::*, *};
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
     pub async fn get_relation(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         operational_insights_resource_provider: &str,
         workspace_name: &str,
         entity_id: &str,
         relation_name: &str,
-    ) -> Result<Relation> {
+    ) -> std::result::Result<Relation, get_relation::Error> {
         let client = &configuration.client;
         let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/entities/{}/relations/{}" , & configuration . base_path , subscription_id , resource_group_name , operational_insights_resource_provider , workspace_name , entity_id , relation_name) ;
         let mut req_builder = client.get(uri_str);
@@ -1111,20 +2856,63 @@ pub mod entity_relations {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(get_relation::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get_relation::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get_relation::ResponseBytesError)?;
+                let rsp_value: Relation = serde_json::from_slice(&body).context(get_relation::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get_relation::ResponseBytesError)?;
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(get_relation::DeserializeError { body })?;
+                get_relation::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod get_relation {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
 }
 pub mod office_consents {
-    use crate::{models::*, *};
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
     pub async fn list(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         operational_insights_resource_provider: &str,
         workspace_name: &str,
-    ) -> Result<OfficeConsentList> {
+    ) -> std::result::Result<OfficeConsentList, list::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/officeConsents",
@@ -1135,18 +2923,59 @@ pub mod office_consents {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: OfficeConsentList = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                list::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn get(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         operational_insights_resource_provider: &str,
         workspace_name: &str,
         consent_id: &str,
-    ) -> Result<OfficeConsent> {
+    ) -> std::result::Result<OfficeConsent, get::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/officeConsents/{}",
@@ -1162,18 +2991,59 @@ pub mod office_consents {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(get::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: OfficeConsent = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                get::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod get {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn delete(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         operational_insights_resource_provider: &str,
         workspace_name: &str,
         consent_id: &str,
-    ) -> Result<CloudError> {
+    ) -> std::result::Result<delete::Response, delete::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/officeConsents/{}",
@@ -1189,20 +3059,65 @@ pub mod office_consents {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(delete::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => Ok(delete::Response::Ok200),
+            StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(delete::ResponseBytesError)?;
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(delete::DeserializeError { body })?;
+                delete::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod delete {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200,
+            NoContent204,
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
 }
 pub mod product_settings {
-    use crate::{models::*, *};
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
     pub async fn get_all(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         operational_insights_resource_provider: &str,
         workspace_name: &str,
-    ) -> Result<SettingList> {
+    ) -> std::result::Result<SettingList, get_all::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/settings",
@@ -1213,18 +3128,59 @@ pub mod product_settings {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(get_all::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get_all::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get_all::ResponseBytesError)?;
+                let rsp_value: SettingList = serde_json::from_slice(&body).context(get_all::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get_all::ResponseBytesError)?;
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(get_all::DeserializeError { body })?;
+                get_all::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod get_all {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn get(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         operational_insights_resource_provider: &str,
         workspace_name: &str,
         settings_name: &str,
-    ) -> Result<Settings> {
+    ) -> std::result::Result<Settings, get::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/settings/{}",
@@ -1240,19 +3196,60 @@ pub mod product_settings {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(get::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: Settings = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                get::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod get {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn update(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         operational_insights_resource_provider: &str,
         workspace_name: &str,
         settings_name: &str,
         settings: &Settings,
-    ) -> Result<Settings> {
+    ) -> std::result::Result<Settings, update::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/settings/{}",
@@ -1269,18 +3266,59 @@ pub mod product_settings {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(settings);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(update::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(update::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(update::ResponseBytesError)?;
+                let rsp_value: Settings = serde_json::from_slice(&body).context(update::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(update::ResponseBytesError)?;
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(update::DeserializeError { body })?;
+                update::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod update {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn delete(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         operational_insights_resource_provider: &str,
         workspace_name: &str,
         settings_name: &str,
-    ) -> Result<CloudError> {
+    ) -> std::result::Result<delete::Response, delete::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/settings/{}",
@@ -1296,21 +3334,66 @@ pub mod product_settings {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(delete::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => Ok(delete::Response::Ok200),
+            StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(delete::ResponseBytesError)?;
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(delete::DeserializeError { body })?;
+                delete::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod delete {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200,
+            NoContent204,
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
 }
 pub mod cases_aggregations {
-    use crate::{models::*, *};
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
     pub async fn get(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         operational_insights_resource_provider: &str,
         workspace_name: &str,
         aggregations_name: &str,
-    ) -> Result<Aggregations> {
+    ) -> std::result::Result<Aggregations, get::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/aggregations/{}",
@@ -1326,20 +3409,63 @@ pub mod cases_aggregations {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(get::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: Aggregations = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                get::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod get {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
 }
 pub mod entity_queries {
-    use crate::{models::*, *};
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
     pub async fn list(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         operational_insights_resource_provider: &str,
         workspace_name: &str,
-    ) -> Result<EntityQueryList> {
+    ) -> std::result::Result<EntityQueryList, list::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/entityQueries",
@@ -1350,18 +3476,59 @@ pub mod entity_queries {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: EntityQueryList = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                list::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn get(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         operational_insights_resource_provider: &str,
         workspace_name: &str,
         entity_query_id: &str,
-    ) -> Result<EntityQuery> {
+    ) -> std::result::Result<EntityQuery, get::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/entityQueries/{}",
@@ -1377,15 +3544,58 @@ pub mod entity_queries {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(get::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: EntityQuery = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                get::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod get {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
 }
 pub mod incidents {
-    use crate::{models::*, *};
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
     pub async fn list(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         operational_insights_resource_provider: &str,
@@ -1394,7 +3604,7 @@ pub mod incidents {
         orderby: Option<&str>,
         top: Option<i64>,
         skip_token: Option<&str>,
-    ) -> Result<IncidentList> {
+    ) -> std::result::Result<IncidentList, list::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/incidents",
@@ -1417,18 +3627,59 @@ pub mod incidents {
         if let Some(skip_token) = skip_token {
             req_builder = req_builder.query(&[("$skipToken", skip_token)]);
         }
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: IncidentList = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                list::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn get(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         operational_insights_resource_provider: &str,
         workspace_name: &str,
         incident_id: &str,
-    ) -> Result<Incident> {
+    ) -> std::result::Result<Incident, get::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/incidents/{}",
@@ -1444,19 +3695,60 @@ pub mod incidents {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(get::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: Incident = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                get::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod get {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn create_or_update(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         operational_insights_resource_provider: &str,
         workspace_name: &str,
         incident_id: &str,
         incident: &Incident,
-    ) -> Result<Incident> {
+    ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/incidents/{}",
@@ -1473,18 +3765,69 @@ pub mod incidents {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(incident);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(create_or_update::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(create_or_update::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
+                let rsp_value: Incident = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                Ok(create_or_update::Response::Ok200(rsp_value))
+            }
+            StatusCode::CREATED => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
+                let rsp_value: Incident = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                Ok(create_or_update::Response::Created201(rsp_value))
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                create_or_update::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod create_or_update {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(Incident),
+            Created201(Incident),
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn delete(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         operational_insights_resource_provider: &str,
         workspace_name: &str,
         incident_id: &str,
-    ) -> Result<CloudError> {
+    ) -> std::result::Result<delete::Response, delete::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/incidents/{}",
@@ -1500,18 +3843,61 @@ pub mod incidents {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(delete::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => Ok(delete::Response::Ok200),
+            StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(delete::ResponseBytesError)?;
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(delete::DeserializeError { body })?;
+                delete::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod delete {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200,
+            NoContent204,
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn list_of_alerts(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         operational_insights_resource_provider: &str,
         workspace_name: &str,
         incident_id: &str,
-    ) -> Result<IncidentAlertList> {
+    ) -> std::result::Result<IncidentAlertList, list_of_alerts::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/incidents/{}/alerts",
@@ -1527,18 +3913,59 @@ pub mod incidents {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list_of_alerts::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list_of_alerts::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_of_alerts::ResponseBytesError)?;
+                let rsp_value: IncidentAlertList = serde_json::from_slice(&body).context(list_of_alerts::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_of_alerts::ResponseBytesError)?;
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(list_of_alerts::DeserializeError { body })?;
+                list_of_alerts::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list_of_alerts {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn list_of_bookmarks(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         operational_insights_resource_provider: &str,
         workspace_name: &str,
         incident_id: &str,
-    ) -> Result<IncidentBookmarkList> {
+    ) -> std::result::Result<IncidentBookmarkList, list_of_bookmarks::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/incidents/{}/bookmarks",
@@ -1554,18 +3981,60 @@ pub mod incidents {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list_of_bookmarks::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list_of_bookmarks::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_of_bookmarks::ResponseBytesError)?;
+                let rsp_value: IncidentBookmarkList =
+                    serde_json::from_slice(&body).context(list_of_bookmarks::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_of_bookmarks::ResponseBytesError)?;
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(list_of_bookmarks::DeserializeError { body })?;
+                list_of_bookmarks::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list_of_bookmarks {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn list_of_entities(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         operational_insights_resource_provider: &str,
         workspace_name: &str,
         incident_id: &str,
-    ) -> Result<IncidentEntitiesResponse> {
+    ) -> std::result::Result<IncidentEntitiesResponse, list_of_entities::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/incidents/{}/entities",
@@ -1581,15 +4050,59 @@ pub mod incidents {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list_of_entities::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list_of_entities::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_of_entities::ResponseBytesError)?;
+                let rsp_value: IncidentEntitiesResponse =
+                    serde_json::from_slice(&body).context(list_of_entities::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_of_entities::ResponseBytesError)?;
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(list_of_entities::DeserializeError { body })?;
+                list_of_entities::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list_of_entities {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
 }
 pub mod incident_comments {
-    use crate::{models::*, *};
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
     pub async fn list_by_incident(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         operational_insights_resource_provider: &str,
@@ -1599,7 +4112,7 @@ pub mod incident_comments {
         orderby: Option<&str>,
         top: Option<i64>,
         skip_token: Option<&str>,
-    ) -> Result<IncidentCommentList> {
+    ) -> std::result::Result<IncidentCommentList, list_by_incident::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/incidents/{}/comments",
@@ -1627,19 +4140,60 @@ pub mod incident_comments {
         if let Some(skip_token) = skip_token {
             req_builder = req_builder.query(&[("$skipToken", skip_token)]);
         }
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list_by_incident::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list_by_incident::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_incident::ResponseBytesError)?;
+                let rsp_value: IncidentCommentList = serde_json::from_slice(&body).context(list_by_incident::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_incident::ResponseBytesError)?;
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(list_by_incident::DeserializeError { body })?;
+                list_by_incident::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list_by_incident {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn get_comment(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         operational_insights_resource_provider: &str,
         workspace_name: &str,
         incident_id: &str,
         incident_comment_id: &str,
-    ) -> Result<IncidentComment> {
+    ) -> std::result::Result<IncidentComment, get_comment::Error> {
         let client = &configuration.client;
         let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/incidents/{}/comments/{}" , & configuration . base_path , subscription_id , resource_group_name , operational_insights_resource_provider , workspace_name , incident_id , incident_comment_id) ;
         let mut req_builder = client.get(uri_str);
@@ -1647,12 +4201,53 @@ pub mod incident_comments {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(get_comment::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get_comment::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get_comment::ResponseBytesError)?;
+                let rsp_value: IncidentComment = serde_json::from_slice(&body).context(get_comment::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get_comment::ResponseBytesError)?;
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(get_comment::DeserializeError { body })?;
+                get_comment::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod get_comment {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn create_comment(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         operational_insights_resource_provider: &str,
@@ -1660,7 +4255,7 @@ pub mod incident_comments {
         incident_id: &str,
         incident_comment_id: &str,
         incident_comment: &IncidentComment,
-    ) -> Result<IncidentComment> {
+    ) -> std::result::Result<IncidentComment, create_comment::Error> {
         let client = &configuration.client;
         let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/incidents/{}/comments/{}" , & configuration . base_path , subscription_id , resource_group_name , operational_insights_resource_provider , workspace_name , incident_id , incident_comment_id) ;
         let mut req_builder = client.put(uri_str);
@@ -1669,15 +4264,58 @@ pub mod incident_comments {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(incident_comment);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(create_comment::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(create_comment::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::CREATED => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_comment::ResponseBytesError)?;
+                let rsp_value: IncidentComment = serde_json::from_slice(&body).context(create_comment::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_comment::ResponseBytesError)?;
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(create_comment::DeserializeError { body })?;
+                create_comment::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod create_comment {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
 }
 pub mod incident_relations {
-    use crate::{models::*, *};
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
     pub async fn list(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         operational_insights_resource_provider: &str,
@@ -1687,7 +4325,7 @@ pub mod incident_relations {
         orderby: Option<&str>,
         top: Option<i64>,
         skip_token: Option<&str>,
-    ) -> Result<RelationList> {
+    ) -> std::result::Result<RelationList, list::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/incidents/{}/relations",
@@ -1715,19 +4353,60 @@ pub mod incident_relations {
         if let Some(skip_token) = skip_token {
             req_builder = req_builder.query(&[("$skipToken", skip_token)]);
         }
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: RelationList = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                list::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn get_relation(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         operational_insights_resource_provider: &str,
         workspace_name: &str,
         incident_id: &str,
         relation_name: &str,
-    ) -> Result<Relation> {
+    ) -> std::result::Result<Relation, get_relation::Error> {
         let client = &configuration.client;
         let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/incidents/{}/relations/{}" , & configuration . base_path , subscription_id , resource_group_name , operational_insights_resource_provider , workspace_name , incident_id , relation_name) ;
         let mut req_builder = client.get(uri_str);
@@ -1735,12 +4414,53 @@ pub mod incident_relations {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(get_relation::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get_relation::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get_relation::ResponseBytesError)?;
+                let rsp_value: Relation = serde_json::from_slice(&body).context(get_relation::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get_relation::ResponseBytesError)?;
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(get_relation::DeserializeError { body })?;
+                get_relation::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod get_relation {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn create_or_update_relation(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         operational_insights_resource_provider: &str,
@@ -1748,7 +4468,7 @@ pub mod incident_relations {
         incident_id: &str,
         relation_name: &str,
         relation: &Relation,
-    ) -> Result<Relation> {
+    ) -> std::result::Result<create_or_update_relation::Response, create_or_update_relation::Error> {
         let client = &configuration.client;
         let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/incidents/{}/relations/{}" , & configuration . base_path , subscription_id , resource_group_name , operational_insights_resource_provider , workspace_name , incident_id , relation_name) ;
         let mut req_builder = client.put(uri_str);
@@ -1757,19 +4477,70 @@ pub mod incident_relations {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(relation);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(create_or_update_relation::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(create_or_update_relation::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update_relation::ResponseBytesError)?;
+                let rsp_value: Relation = serde_json::from_slice(&body).context(create_or_update_relation::DeserializeError { body })?;
+                Ok(create_or_update_relation::Response::Ok200(rsp_value))
+            }
+            StatusCode::CREATED => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update_relation::ResponseBytesError)?;
+                let rsp_value: Relation = serde_json::from_slice(&body).context(create_or_update_relation::DeserializeError { body })?;
+                Ok(create_or_update_relation::Response::Created201(rsp_value))
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update_relation::ResponseBytesError)?;
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(create_or_update_relation::DeserializeError { body })?;
+                create_or_update_relation::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod create_or_update_relation {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(Relation),
+            Created201(Relation),
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn delete_relation(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         operational_insights_resource_provider: &str,
         workspace_name: &str,
         incident_id: &str,
         relation_name: &str,
-    ) -> Result<CloudError> {
+    ) -> std::result::Result<delete_relation::Response, delete_relation::Error> {
         let client = &configuration.client;
         let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/incidents/{}/relations/{}" , & configuration . base_path , subscription_id , resource_group_name , operational_insights_resource_provider , workspace_name , incident_id , relation_name) ;
         let mut req_builder = client.delete(uri_str);
@@ -1777,20 +4548,65 @@ pub mod incident_relations {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(delete_relation::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(delete_relation::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => Ok(delete_relation::Response::Ok200),
+            StatusCode::NO_CONTENT => Ok(delete_relation::Response::NoContent204),
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(delete_relation::ResponseBytesError)?;
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(delete_relation::DeserializeError { body })?;
+                delete_relation::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod delete_relation {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200,
+            NoContent204,
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
 }
 pub mod watchlists {
-    use crate::{models::*, *};
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
     pub async fn list(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         operational_insights_resource_provider: &str,
         workspace_name: &str,
-    ) -> Result<WatchlistList> {
+    ) -> std::result::Result<WatchlistList, list::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/watchlists",
@@ -1801,16 +4617,57 @@ pub mod watchlists {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: WatchlistList = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                list::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn list_by_subscription(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         operational_insights_resource_provider: &str,
         workspace_name: &str,
-    ) -> Result<WatchlistList> {
+    ) -> std::result::Result<WatchlistList, list_by_subscription::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/watchlists",
@@ -1821,18 +4678,59 @@ pub mod watchlists {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list_by_subscription::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list_by_subscription::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_subscription::ResponseBytesError)?;
+                let rsp_value: WatchlistList = serde_json::from_slice(&body).context(list_by_subscription::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_subscription::ResponseBytesError)?;
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(list_by_subscription::DeserializeError { body })?;
+                list_by_subscription::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list_by_subscription {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn get(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         operational_insights_resource_provider: &str,
         workspace_name: &str,
         watchlist_alias: &str,
-    ) -> Result<Watchlist> {
+    ) -> std::result::Result<Watchlist, get::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/watchlists/{}",
@@ -1848,19 +4746,60 @@ pub mod watchlists {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(get::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: Watchlist = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                get::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod get {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn create(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         operational_insights_resource_provider: &str,
         workspace_name: &str,
         watchlist_alias: &str,
         watchlist: &Watchlist,
-    ) -> Result<Watchlist> {
+    ) -> std::result::Result<create::Response, create::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/watchlists/{}",
@@ -1877,18 +4816,69 @@ pub mod watchlists {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(watchlist);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(create::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(create::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create::ResponseBytesError)?;
+                let rsp_value: Watchlist = serde_json::from_slice(&body).context(create::DeserializeError { body })?;
+                Ok(create::Response::Ok200(rsp_value))
+            }
+            StatusCode::CREATED => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create::ResponseBytesError)?;
+                let rsp_value: Watchlist = serde_json::from_slice(&body).context(create::DeserializeError { body })?;
+                Ok(create::Response::Created201(rsp_value))
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create::ResponseBytesError)?;
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(create::DeserializeError { body })?;
+                create::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod create {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(Watchlist),
+            Created201(Watchlist),
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn delete(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         operational_insights_resource_provider: &str,
         workspace_name: &str,
         watchlist_alias: &str,
-    ) -> Result<CloudError> {
+    ) -> std::result::Result<delete::Response, delete::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/watchlists/{}",
@@ -1904,19 +4894,62 @@ pub mod watchlists {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(delete::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => Ok(delete::Response::Ok200),
+            StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(delete::ResponseBytesError)?;
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(delete::DeserializeError { body })?;
+                delete::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod delete {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200,
+            NoContent204,
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
 }
 pub async fn create_threat_intelligence(
-    configuration: &Configuration,
+    configuration: &crate::Configuration,
     subscription_id: &str,
     resource_group_name: &str,
     operational_insights_resource_provider: &str,
     workspace_name: &str,
     threat_intelligence_indicator_object_to_upsert: &ThreatIntelligenceIndicatorWithoutReadOnlyFields,
-) -> Result<ThreatIntelligenceResource> {
+) -> std::result::Result<create_threat_intelligence::Response, create_threat_intelligence::Error> {
     let client = &configuration.client;
     let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/threatIntelligence/main/createIndicator" , & configuration . base_path , subscription_id , resource_group_name , operational_insights_resource_provider , workspace_name) ;
     let mut req_builder = client.post(uri_str);
@@ -1925,14 +4958,69 @@ pub async fn create_threat_intelligence(
     }
     req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
     req_builder = req_builder.json(threat_intelligence_indicator_object_to_upsert);
-    let req = req_builder.build()?;
-    let res = client.execute(req).await?;
-    Ok(res.json().await?)
+    let req = req_builder.build().context(create_threat_intelligence::BuildRequestError)?;
+    let rsp = client.execute(req).await.context(create_threat_intelligence::ExecuteRequestError)?;
+    match rsp.status() {
+        StatusCode::OK => {
+            let body: bytes::Bytes = rsp.bytes().await.context(create_threat_intelligence::ResponseBytesError)?;
+            let rsp_value: ThreatIntelligenceResource =
+                serde_json::from_slice(&body).context(create_threat_intelligence::DeserializeError { body })?;
+            Ok(create_threat_intelligence::Response::Ok200(rsp_value))
+        }
+        StatusCode::CREATED => {
+            let body: bytes::Bytes = rsp.bytes().await.context(create_threat_intelligence::ResponseBytesError)?;
+            let rsp_value: ThreatIntelligenceResource =
+                serde_json::from_slice(&body).context(create_threat_intelligence::DeserializeError { body })?;
+            Ok(create_threat_intelligence::Response::Created201(rsp_value))
+        }
+        status_code => {
+            let body: bytes::Bytes = rsp.bytes().await.context(create_threat_intelligence::ResponseBytesError)?;
+            let rsp_value: CloudError = serde_json::from_slice(&body).context(create_threat_intelligence::DeserializeError { body })?;
+            create_threat_intelligence::DefaultResponse {
+                status_code,
+                value: rsp_value,
+            }
+            .fail()
+        }
+    }
+}
+pub mod create_threat_intelligence {
+    use crate::{models, models::*};
+    use reqwest::StatusCode;
+    use snafu::Snafu;
+    #[derive(Debug)]
+    pub enum Response {
+        Ok200(ThreatIntelligenceResource),
+        Created201(ThreatIntelligenceResource),
+    }
+    #[derive(Debug, Snafu)]
+    #[snafu(visibility(pub(crate)))]
+    pub enum Error {
+        DefaultResponse {
+            status_code: StatusCode,
+            value: models::CloudError,
+        },
+        BuildRequestError {
+            source: reqwest::Error,
+        },
+        ExecuteRequestError {
+            source: reqwest::Error,
+        },
+        ResponseBytesError {
+            source: reqwest::Error,
+        },
+        DeserializeError {
+            source: serde_json::Error,
+            body: bytes::Bytes,
+        },
+    }
 }
 pub mod threat_intelligence_indicators {
-    use crate::{models::*, *};
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
     pub async fn list(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         operational_insights_resource_provider: &str,
@@ -1941,7 +5029,7 @@ pub mod threat_intelligence_indicators {
         top: Option<i64>,
         skip_token: Option<&str>,
         orderby: Option<&str>,
-    ) -> Result<ThreatIntelligenceResourceList> {
+    ) -> std::result::Result<ThreatIntelligenceResourceList, list::Error> {
         let client = &configuration.client;
         let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/threatIntelligence/main/indicators" , & configuration . base_path , subscription_id , resource_group_name , operational_insights_resource_provider , workspace_name) ;
         let mut req_builder = client.get(uri_str);
@@ -1961,21 +5049,64 @@ pub mod threat_intelligence_indicators {
         if let Some(orderby) = orderby {
             req_builder = req_builder.query(&[("$orderby", orderby)]);
         }
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: ThreatIntelligenceResourceList = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                list::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
 }
 pub mod threat_intelligence_indicator {
-    use crate::{models::*, *};
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
     pub async fn get(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         operational_insights_resource_provider: &str,
         workspace_name: &str,
         name: &str,
-    ) -> Result<ThreatIntelligenceResource> {
+    ) -> std::result::Result<ThreatIntelligenceResource, get::Error> {
         let client = &configuration.client;
         let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/threatIntelligence/main/indicators/{}" , & configuration . base_path , subscription_id , resource_group_name , operational_insights_resource_provider , workspace_name , name) ;
         let mut req_builder = client.get(uri_str);
@@ -1983,18 +5114,59 @@ pub mod threat_intelligence_indicator {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(get::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: ThreatIntelligenceResource = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                get::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod get {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn delete(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         operational_insights_resource_provider: &str,
         workspace_name: &str,
         name: &str,
-    ) -> Result<CloudError> {
+    ) -> std::result::Result<delete::Response, delete::Error> {
         let client = &configuration.client;
         let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/threatIntelligence/main/indicators/{}" , & configuration . base_path , subscription_id , resource_group_name , operational_insights_resource_provider , workspace_name , name) ;
         let mut req_builder = client.delete(uri_str);
@@ -2002,19 +5174,62 @@ pub mod threat_intelligence_indicator {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(delete::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => Ok(delete::Response::Ok200),
+            StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(delete::ResponseBytesError)?;
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(delete::DeserializeError { body })?;
+                delete::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod delete {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200,
+            NoContent204,
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn append_tags(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         operational_insights_resource_provider: &str,
         workspace_name: &str,
         name: &str,
         threat_intelligence_append_tags_request_body: &ThreatIntelligenceAppendTagsRequestBody,
-    ) -> Result<CloudError> {
+    ) -> std::result::Result<(), append_tags::Error> {
         let client = &configuration.client;
         let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/threatIntelligence/main/indicators/{}/appendTags" , & configuration . base_path , subscription_id , resource_group_name , operational_insights_resource_provider , workspace_name , name) ;
         let mut req_builder = client.post(uri_str);
@@ -2023,19 +5238,56 @@ pub mod threat_intelligence_indicator {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(threat_intelligence_append_tags_request_body);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(append_tags::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(append_tags::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => Ok(()),
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(append_tags::ResponseBytesError)?;
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(append_tags::DeserializeError { body })?;
+                append_tags::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod append_tags {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn replace_tags(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         operational_insights_resource_provider: &str,
         workspace_name: &str,
         name: &str,
         threat_intelligence_replace_tags_model: &ThreatIntelligenceIndicatorWithoutReadOnlyFields,
-    ) -> Result<ThreatIntelligenceResource> {
+    ) -> std::result::Result<ThreatIntelligenceResource, replace_tags::Error> {
         let client = &configuration.client;
         let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/threatIntelligence/main/indicators/{}/replaceTags" , & configuration . base_path , subscription_id , resource_group_name , operational_insights_resource_provider , workspace_name , name) ;
         let mut req_builder = client.post(uri_str);
@@ -2044,22 +5296,66 @@ pub mod threat_intelligence_indicator {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(threat_intelligence_replace_tags_model);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(replace_tags::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(replace_tags::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(replace_tags::ResponseBytesError)?;
+                let rsp_value: ThreatIntelligenceResource =
+                    serde_json::from_slice(&body).context(replace_tags::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(replace_tags::ResponseBytesError)?;
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(replace_tags::DeserializeError { body })?;
+                replace_tags::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod replace_tags {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
 }
 pub mod threat_intelligence_indicator_upsert {
-    use crate::{models::*, *};
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
     pub async fn create(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         operational_insights_resource_provider: &str,
         workspace_name: &str,
         name: &str,
         threat_intelligence_indicator_object_to_upsert: &ThreatIntelligenceIndicatorWithoutReadOnlyFields,
-    ) -> Result<ThreatIntelligenceResource> {
+    ) -> std::result::Result<create::Response, create::Error> {
         let client = &configuration.client;
         let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/threatIntelligence/main/indicators/{}" , & configuration . base_path , subscription_id , resource_group_name , operational_insights_resource_provider , workspace_name , name) ;
         let mut req_builder = client.put(uri_str);
@@ -2068,21 +5364,74 @@ pub mod threat_intelligence_indicator_upsert {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(threat_intelligence_indicator_object_to_upsert);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(create::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(create::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create::ResponseBytesError)?;
+                let rsp_value: ThreatIntelligenceResource = serde_json::from_slice(&body).context(create::DeserializeError { body })?;
+                Ok(create::Response::Ok200(rsp_value))
+            }
+            StatusCode::CREATED => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create::ResponseBytesError)?;
+                let rsp_value: ThreatIntelligenceResource = serde_json::from_slice(&body).context(create::DeserializeError { body })?;
+                Ok(create::Response::Created201(rsp_value))
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create::ResponseBytesError)?;
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(create::DeserializeError { body })?;
+                create::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod create {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(ThreatIntelligenceResource),
+            Created201(ThreatIntelligenceResource),
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
 }
 pub mod threat_intelligence_indicators_list {
-    use crate::{models::*, *};
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
     pub async fn query(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         operational_insights_resource_provider: &str,
         workspace_name: &str,
         threat_intelligence_arm_stix_query: &ThreatIntelligenceArmStixQuery,
-    ) -> Result<ThreatIntelligenceResourceList> {
+    ) -> std::result::Result<ThreatIntelligenceResourceList, query::Error> {
         let client = &configuration.client;
         let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/threatIntelligence/main/queryIndicators" , & configuration . base_path , subscription_id , resource_group_name , operational_insights_resource_provider , workspace_name) ;
         let mut req_builder = client.post(uri_str);
@@ -2091,21 +5440,64 @@ pub mod threat_intelligence_indicators_list {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(threat_intelligence_arm_stix_query);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(query::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(query::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(query::ResponseBytesError)?;
+                let rsp_value: ThreatIntelligenceResourceList = serde_json::from_slice(&body).context(query::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(query::ResponseBytesError)?;
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(query::DeserializeError { body })?;
+                query::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod query {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
 }
 pub mod threat_intelligence_indicator_metrics {
-    use crate::{models::*, *};
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
     pub async fn get(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         operational_insights_resource_provider: &str,
         workspace_name: &str,
         cti_entity_kind: Option<&str>,
-    ) -> Result<ThreatIntelligenceMetricResourceList> {
+    ) -> std::result::Result<ThreatIntelligenceMetricResourceList, get::Error> {
         let client = &configuration.client;
         let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/threatIntelligence/main/metrics" , & configuration . base_path , subscription_id , resource_group_name , operational_insights_resource_provider , workspace_name) ;
         let mut req_builder = client.get(uri_str);
@@ -2116,8 +5508,50 @@ pub mod threat_intelligence_indicator_metrics {
         if let Some(cti_entity_kind) = cti_entity_kind {
             req_builder = req_builder.query(&[("ctiEntityKind", cti_entity_kind)]);
         }
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(get::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: ThreatIntelligenceMetricResourceList =
+                    serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                get::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod get {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
 }

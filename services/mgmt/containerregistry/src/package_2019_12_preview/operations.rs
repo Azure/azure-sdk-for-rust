@@ -2,16 +2,20 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use crate::{models::*, *};
+use crate::models::*;
+use reqwest::StatusCode;
+use snafu::{ResultExt, Snafu};
 pub mod export_pipelines {
-    use crate::{models::*, *};
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
     pub async fn get(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         registry_name: &str,
         export_pipeline_name: &str,
-    ) -> Result<ExportPipeline> {
+    ) -> std::result::Result<ExportPipeline, get::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerRegistry/registries/{}/exportPipelines/{}",
@@ -22,18 +26,42 @@ pub mod export_pipelines {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(get::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: ExportPipeline = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                get::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
+    }
+    pub mod get {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn create(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         registry_name: &str,
         export_pipeline_name: &str,
         export_pipeline_create_parameters: &ExportPipeline,
-    ) -> Result<ExportPipeline> {
+    ) -> std::result::Result<create::Response, create::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerRegistry/registries/{}/exportPipelines/{}",
@@ -45,17 +73,51 @@ pub mod export_pipelines {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(export_pipeline_create_parameters);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(create::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(create::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create::ResponseBytesError)?;
+                let rsp_value: ExportPipeline = serde_json::from_slice(&body).context(create::DeserializeError { body })?;
+                Ok(create::Response::Ok200(rsp_value))
+            }
+            StatusCode::CREATED => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create::ResponseBytesError)?;
+                let rsp_value: ExportPipeline = serde_json::from_slice(&body).context(create::DeserializeError { body })?;
+                Ok(create::Response::Created201(rsp_value))
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create::ResponseBytesError)?;
+                create::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
+    }
+    pub mod create {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(ExportPipeline),
+            Created201(ExportPipeline),
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn delete(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         registry_name: &str,
         export_pipeline_name: &str,
-    ) -> Result<()> {
+    ) -> std::result::Result<delete::Response, delete::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerRegistry/registries/{}/exportPipelines/{}",
@@ -66,16 +128,44 @@ pub mod export_pipelines {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(delete::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => Ok(delete::Response::Ok200),
+            StatusCode::ACCEPTED => Ok(delete::Response::Accepted202),
+            StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(delete::ResponseBytesError)?;
+                delete::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
+    }
+    pub mod delete {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200,
+            Accepted202,
+            NoContent204,
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn list(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         registry_name: &str,
-    ) -> Result<ExportPipelineListResult> {
+    ) -> std::result::Result<ExportPipelineListResult, list::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerRegistry/registries/{}/exportPipelines",
@@ -86,20 +176,46 @@ pub mod export_pipelines {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: ExportPipelineListResult = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                list::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
+    }
+    pub mod list {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
 }
 pub mod registries {
-    use crate::{models::*, *};
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
     pub async fn import_image(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         registry_name: &str,
         parameters: &ImportImageParameters,
-    ) -> Result<()> {
+    ) -> std::result::Result<import_image::Response, import_image::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerRegistry/registries/{}/importImage",
@@ -111,15 +227,41 @@ pub mod registries {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(parameters);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(import_image::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(import_image::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => Ok(import_image::Response::Ok200),
+            StatusCode::ACCEPTED => Ok(import_image::Response::Accepted202),
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(import_image::ResponseBytesError)?;
+                import_image::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
+    }
+    pub mod import_image {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200,
+            Accepted202,
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn check_name_availability(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         registry_name_check_request: &RegistryNameCheckRequest,
-    ) -> Result<RegistryNameStatus> {
+    ) -> std::result::Result<RegistryNameStatus, check_name_availability::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.ContainerRegistry/checkNameAvailability",
@@ -131,16 +273,41 @@ pub mod registries {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(registry_name_check_request);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(check_name_availability::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(check_name_availability::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(check_name_availability::ResponseBytesError)?;
+                let rsp_value: RegistryNameStatus =
+                    serde_json::from_slice(&body).context(check_name_availability::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(check_name_availability::ResponseBytesError)?;
+                check_name_availability::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
+    }
+    pub mod check_name_availability {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn get(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         registry_name: &str,
-    ) -> Result<Registry> {
+    ) -> std::result::Result<Registry, get::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerRegistry/registries/{}",
@@ -151,17 +318,41 @@ pub mod registries {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(get::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: Registry = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                get::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
+    }
+    pub mod get {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn create(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         registry_name: &str,
         registry: &Registry,
-    ) -> Result<Registry> {
+    ) -> std::result::Result<create::Response, create::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerRegistry/registries/{}",
@@ -173,17 +364,51 @@ pub mod registries {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(registry);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(create::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(create::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create::ResponseBytesError)?;
+                let rsp_value: Registry = serde_json::from_slice(&body).context(create::DeserializeError { body })?;
+                Ok(create::Response::Ok200(rsp_value))
+            }
+            StatusCode::CREATED => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create::ResponseBytesError)?;
+                let rsp_value: Registry = serde_json::from_slice(&body).context(create::DeserializeError { body })?;
+                Ok(create::Response::Created201(rsp_value))
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create::ResponseBytesError)?;
+                create::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
+    }
+    pub mod create {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(Registry),
+            Created201(Registry),
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn update(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         registry_name: &str,
         registry_update_parameters: &RegistryUpdateParameters,
-    ) -> Result<Registry> {
+    ) -> std::result::Result<update::Response, update::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerRegistry/registries/{}",
@@ -195,16 +420,50 @@ pub mod registries {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(registry_update_parameters);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(update::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(update::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(update::ResponseBytesError)?;
+                let rsp_value: Registry = serde_json::from_slice(&body).context(update::DeserializeError { body })?;
+                Ok(update::Response::Ok200(rsp_value))
+            }
+            StatusCode::CREATED => {
+                let body: bytes::Bytes = rsp.bytes().await.context(update::ResponseBytesError)?;
+                let rsp_value: Registry = serde_json::from_slice(&body).context(update::DeserializeError { body })?;
+                Ok(update::Response::Created201(rsp_value))
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(update::ResponseBytesError)?;
+                update::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
+    }
+    pub mod update {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(Registry),
+            Created201(Registry),
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn delete(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         registry_name: &str,
-    ) -> Result<()> {
+    ) -> std::result::Result<delete::Response, delete::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerRegistry/registries/{}",
@@ -215,15 +474,43 @@ pub mod registries {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(delete::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => Ok(delete::Response::Ok200),
+            StatusCode::ACCEPTED => Ok(delete::Response::Accepted202),
+            StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(delete::ResponseBytesError)?;
+                delete::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
+    }
+    pub mod delete {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200,
+            Accepted202,
+            NoContent204,
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn list_by_resource_group(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> Result<RegistryListResult> {
+    ) -> std::result::Result<RegistryListResult, list_by_resource_group::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerRegistry/registries",
@@ -234,11 +521,36 @@ pub mod registries {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list_by_resource_group::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list_by_resource_group::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_resource_group::ResponseBytesError)?;
+                let rsp_value: RegistryListResult =
+                    serde_json::from_slice(&body).context(list_by_resource_group::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_resource_group::ResponseBytesError)?;
+                list_by_resource_group::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
     }
-    pub async fn list(configuration: &Configuration, subscription_id: &str) -> Result<RegistryListResult> {
+    pub mod list_by_resource_group {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
+    }
+    pub async fn list(configuration: &crate::Configuration, subscription_id: &str) -> std::result::Result<RegistryListResult, list::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.ContainerRegistry/registries",
@@ -249,16 +561,40 @@ pub mod registries {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: RegistryListResult = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                list::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
+    }
+    pub mod list {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn list_credentials(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         registry_name: &str,
-    ) -> Result<RegistryListCredentialsResult> {
+    ) -> std::result::Result<RegistryListCredentialsResult, list_credentials::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerRegistry/registries/{}/listCredentials",
@@ -269,17 +605,42 @@ pub mod registries {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list_credentials::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list_credentials::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_credentials::ResponseBytesError)?;
+                let rsp_value: RegistryListCredentialsResult =
+                    serde_json::from_slice(&body).context(list_credentials::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_credentials::ResponseBytesError)?;
+                list_credentials::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
+    }
+    pub mod list_credentials {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn regenerate_credential(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         registry_name: &str,
         regenerate_credential_parameters: &RegenerateCredentialParameters,
-    ) -> Result<RegistryListCredentialsResult> {
+    ) -> std::result::Result<RegistryListCredentialsResult, regenerate_credential::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerRegistry/registries/{}/regenerateCredential",
@@ -291,16 +652,41 @@ pub mod registries {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(regenerate_credential_parameters);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(regenerate_credential::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(regenerate_credential::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(regenerate_credential::ResponseBytesError)?;
+                let rsp_value: RegistryListCredentialsResult =
+                    serde_json::from_slice(&body).context(regenerate_credential::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(regenerate_credential::ResponseBytesError)?;
+                regenerate_credential::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
+    }
+    pub mod regenerate_credential {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn list_usages(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         registry_name: &str,
-    ) -> Result<RegistryUsageListResult> {
+    ) -> std::result::Result<RegistryUsageListResult, list_usages::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerRegistry/registries/{}/listUsages",
@@ -311,16 +697,40 @@ pub mod registries {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list_usages::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list_usages::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_usages::ResponseBytesError)?;
+                let rsp_value: RegistryUsageListResult = serde_json::from_slice(&body).context(list_usages::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_usages::ResponseBytesError)?;
+                list_usages::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
+    }
+    pub mod list_usages {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn list_private_link_resources(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         registry_name: &str,
-    ) -> Result<PrivateLinkResourceListResult> {
+    ) -> std::result::Result<PrivateLinkResourceListResult, list_private_link_resources::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerRegistry/registries/{}/privateLinkResources",
@@ -331,17 +741,45 @@ pub mod registries {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list_private_link_resources::BuildRequestError)?;
+        let rsp = client
+            .execute(req)
+            .await
+            .context(list_private_link_resources::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_private_link_resources::ResponseBytesError)?;
+                let rsp_value: PrivateLinkResourceListResult =
+                    serde_json::from_slice(&body).context(list_private_link_resources::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_private_link_resources::ResponseBytesError)?;
+                list_private_link_resources::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
+    }
+    pub mod list_private_link_resources {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn schedule_run(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         registry_name: &str,
         run_request: &RunRequest,
-    ) -> Result<Run> {
+    ) -> std::result::Result<schedule_run::Response, schedule_run::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerRegistry/registries/{}/scheduleRun",
@@ -353,16 +791,63 @@ pub mod registries {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(run_request);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(schedule_run::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(schedule_run::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(schedule_run::ResponseBytesError)?;
+                let rsp_value: Run = serde_json::from_slice(&body).context(schedule_run::DeserializeError { body })?;
+                Ok(schedule_run::Response::Ok200(rsp_value))
+            }
+            StatusCode::ACCEPTED => Ok(schedule_run::Response::Accepted202),
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(schedule_run::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(schedule_run::DeserializeError { body })?;
+                schedule_run::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod schedule_run {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(Run),
+            Accepted202,
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn get_build_source_upload_url(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         registry_name: &str,
-    ) -> Result<SourceUploadDefinition> {
+    ) -> std::result::Result<SourceUploadDefinition, get_build_source_upload_url::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerRegistry/registries/{}/listBuildSourceUploadUrl",
@@ -373,17 +858,63 @@ pub mod registries {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(get_build_source_upload_url::BuildRequestError)?;
+        let rsp = client
+            .execute(req)
+            .await
+            .context(get_build_source_upload_url::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get_build_source_upload_url::ResponseBytesError)?;
+                let rsp_value: SourceUploadDefinition =
+                    serde_json::from_slice(&body).context(get_build_source_upload_url::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get_build_source_upload_url::ResponseBytesError)?;
+                let rsp_value: ErrorResponse =
+                    serde_json::from_slice(&body).context(get_build_source_upload_url::DeserializeError { body })?;
+                get_build_source_upload_url::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod get_build_source_upload_url {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn generate_credentials(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         registry_name: &str,
         generate_credentials_parameters: &GenerateCredentialsParameters,
-    ) -> Result<GenerateCredentialsResult> {
+    ) -> std::result::Result<generate_credentials::Response, generate_credentials::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerRegistry/registries/{}/generateCredentials",
@@ -395,20 +926,53 @@ pub mod registries {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(generate_credentials_parameters);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(generate_credentials::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(generate_credentials::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(generate_credentials::ResponseBytesError)?;
+                let rsp_value: GenerateCredentialsResult =
+                    serde_json::from_slice(&body).context(generate_credentials::DeserializeError { body })?;
+                Ok(generate_credentials::Response::Ok200(rsp_value))
+            }
+            StatusCode::ACCEPTED => Ok(generate_credentials::Response::Accepted202),
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(generate_credentials::ResponseBytesError)?;
+                generate_credentials::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
+    }
+    pub mod generate_credentials {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(GenerateCredentialsResult),
+            Accepted202,
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
 }
 pub mod import_pipelines {
-    use crate::{models::*, *};
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
     pub async fn get(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         registry_name: &str,
         import_pipeline_name: &str,
-    ) -> Result<ImportPipeline> {
+    ) -> std::result::Result<ImportPipeline, get::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerRegistry/registries/{}/importPipelines/{}",
@@ -419,18 +983,42 @@ pub mod import_pipelines {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(get::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: ImportPipeline = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                get::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
+    }
+    pub mod get {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn create(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         registry_name: &str,
         import_pipeline_name: &str,
         import_pipeline_create_parameters: &ImportPipeline,
-    ) -> Result<ImportPipeline> {
+    ) -> std::result::Result<create::Response, create::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerRegistry/registries/{}/importPipelines/{}",
@@ -442,17 +1030,51 @@ pub mod import_pipelines {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(import_pipeline_create_parameters);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(create::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(create::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create::ResponseBytesError)?;
+                let rsp_value: ImportPipeline = serde_json::from_slice(&body).context(create::DeserializeError { body })?;
+                Ok(create::Response::Ok200(rsp_value))
+            }
+            StatusCode::CREATED => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create::ResponseBytesError)?;
+                let rsp_value: ImportPipeline = serde_json::from_slice(&body).context(create::DeserializeError { body })?;
+                Ok(create::Response::Created201(rsp_value))
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create::ResponseBytesError)?;
+                create::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
+    }
+    pub mod create {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(ImportPipeline),
+            Created201(ImportPipeline),
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn delete(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         registry_name: &str,
         import_pipeline_name: &str,
-    ) -> Result<()> {
+    ) -> std::result::Result<delete::Response, delete::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerRegistry/registries/{}/importPipelines/{}",
@@ -463,16 +1085,44 @@ pub mod import_pipelines {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(delete::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => Ok(delete::Response::Ok200),
+            StatusCode::ACCEPTED => Ok(delete::Response::Accepted202),
+            StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(delete::ResponseBytesError)?;
+                delete::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
+    }
+    pub mod delete {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200,
+            Accepted202,
+            NoContent204,
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn list(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         registry_name: &str,
-    ) -> Result<ImportPipelineListResult> {
+    ) -> std::result::Result<ImportPipelineListResult, list::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerRegistry/registries/{}/importPipelines",
@@ -483,14 +1133,40 @@ pub mod import_pipelines {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: ImportPipelineListResult = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                list::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
+    }
+    pub mod list {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
 }
 pub mod operations {
-    use crate::{models::*, *};
-    pub async fn list(configuration: &Configuration) -> Result<OperationListResult> {
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
+    pub async fn list(configuration: &crate::Configuration) -> std::result::Result<OperationListResult, list::Error> {
         let client = &configuration.client;
         let uri_str = &format!("{}/providers/Microsoft.ContainerRegistry/operations", &configuration.base_path,);
         let mut req_builder = client.get(uri_str);
@@ -498,20 +1174,46 @@ pub mod operations {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: OperationListResult = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                list::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
+    }
+    pub mod list {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
 }
 pub mod pipeline_runs {
-    use crate::{models::*, *};
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
     pub async fn get(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         registry_name: &str,
         pipeline_run_name: &str,
-    ) -> Result<PipelineRun> {
+    ) -> std::result::Result<PipelineRun, get::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerRegistry/registries/{}/pipelineRuns/{}",
@@ -522,18 +1224,42 @@ pub mod pipeline_runs {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(get::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: PipelineRun = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                get::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
+    }
+    pub mod get {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn create(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         registry_name: &str,
         pipeline_run_name: &str,
         pipeline_run_create_parameters: &PipelineRun,
-    ) -> Result<PipelineRun> {
+    ) -> std::result::Result<create::Response, create::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerRegistry/registries/{}/pipelineRuns/{}",
@@ -545,17 +1271,51 @@ pub mod pipeline_runs {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(pipeline_run_create_parameters);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(create::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(create::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create::ResponseBytesError)?;
+                let rsp_value: PipelineRun = serde_json::from_slice(&body).context(create::DeserializeError { body })?;
+                Ok(create::Response::Ok200(rsp_value))
+            }
+            StatusCode::CREATED => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create::ResponseBytesError)?;
+                let rsp_value: PipelineRun = serde_json::from_slice(&body).context(create::DeserializeError { body })?;
+                Ok(create::Response::Created201(rsp_value))
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create::ResponseBytesError)?;
+                create::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
+    }
+    pub mod create {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(PipelineRun),
+            Created201(PipelineRun),
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn delete(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         registry_name: &str,
         pipeline_run_name: &str,
-    ) -> Result<()> {
+    ) -> std::result::Result<delete::Response, delete::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerRegistry/registries/{}/pipelineRuns/{}",
@@ -566,16 +1326,44 @@ pub mod pipeline_runs {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(delete::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => Ok(delete::Response::Ok200),
+            StatusCode::ACCEPTED => Ok(delete::Response::Accepted202),
+            StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(delete::ResponseBytesError)?;
+                delete::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
+    }
+    pub mod delete {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200,
+            Accepted202,
+            NoContent204,
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn list(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         registry_name: &str,
-    ) -> Result<PipelineRunListResult> {
+    ) -> std::result::Result<PipelineRunListResult, list::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerRegistry/registries/{}/pipelineRuns",
@@ -586,20 +1374,46 @@ pub mod pipeline_runs {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: PipelineRunListResult = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                list::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
+    }
+    pub mod list {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
 }
 pub mod private_endpoint_connections {
-    use crate::{models::*, *};
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
     pub async fn get(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         registry_name: &str,
         private_endpoint_connection_name: &str,
-    ) -> Result<PrivateEndpointConnection> {
+    ) -> std::result::Result<PrivateEndpointConnection, get::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerRegistry/registries/{}/privateEndpointConnections/{}",
@@ -610,18 +1424,42 @@ pub mod private_endpoint_connections {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(get::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: PrivateEndpointConnection = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                get::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
+    }
+    pub mod get {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn create_or_update(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         registry_name: &str,
         private_endpoint_connection_name: &str,
         private_endpoint_connection: &PrivateEndpointConnection,
-    ) -> Result<PrivateEndpointConnection> {
+    ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerRegistry/registries/{}/privateEndpointConnections/{}",
@@ -633,17 +1471,53 @@ pub mod private_endpoint_connections {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(private_endpoint_connection);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(create_or_update::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(create_or_update::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
+                let rsp_value: PrivateEndpointConnection =
+                    serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                Ok(create_or_update::Response::Ok200(rsp_value))
+            }
+            StatusCode::CREATED => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
+                let rsp_value: PrivateEndpointConnection =
+                    serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                Ok(create_or_update::Response::Created201(rsp_value))
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
+                create_or_update::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
+    }
+    pub mod create_or_update {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(PrivateEndpointConnection),
+            Created201(PrivateEndpointConnection),
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn delete(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         registry_name: &str,
         private_endpoint_connection_name: &str,
-    ) -> Result<()> {
+    ) -> std::result::Result<delete::Response, delete::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerRegistry/registries/{}/privateEndpointConnections/{}",
@@ -654,16 +1528,44 @@ pub mod private_endpoint_connections {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(delete::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => Ok(delete::Response::Ok200),
+            StatusCode::ACCEPTED => Ok(delete::Response::Accepted202),
+            StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(delete::ResponseBytesError)?;
+                delete::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
+    }
+    pub mod delete {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200,
+            Accepted202,
+            NoContent204,
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn list(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         registry_name: &str,
-    ) -> Result<PrivateEndpointConnectionListResult> {
+    ) -> std::result::Result<PrivateEndpointConnectionListResult, list::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerRegistry/registries/{}/privateEndpointConnections",
@@ -674,20 +1576,47 @@ pub mod private_endpoint_connections {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: PrivateEndpointConnectionListResult =
+                    serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                list::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
+    }
+    pub mod list {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
 }
 pub mod replications {
-    use crate::{models::*, *};
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
     pub async fn get(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         registry_name: &str,
         replication_name: &str,
-    ) -> Result<Replication> {
+    ) -> std::result::Result<Replication, get::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerRegistry/registries/{}/replications/{}",
@@ -698,18 +1627,42 @@ pub mod replications {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(get::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: Replication = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                get::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
+    }
+    pub mod get {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn create(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         registry_name: &str,
         replication_name: &str,
         replication: &Replication,
-    ) -> Result<Replication> {
+    ) -> std::result::Result<create::Response, create::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerRegistry/registries/{}/replications/{}",
@@ -721,18 +1674,52 @@ pub mod replications {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(replication);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(create::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(create::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create::ResponseBytesError)?;
+                let rsp_value: Replication = serde_json::from_slice(&body).context(create::DeserializeError { body })?;
+                Ok(create::Response::Ok200(rsp_value))
+            }
+            StatusCode::CREATED => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create::ResponseBytesError)?;
+                let rsp_value: Replication = serde_json::from_slice(&body).context(create::DeserializeError { body })?;
+                Ok(create::Response::Created201(rsp_value))
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create::ResponseBytesError)?;
+                create::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
+    }
+    pub mod create {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(Replication),
+            Created201(Replication),
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn update(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         registry_name: &str,
         replication_name: &str,
         replication_update_parameters: &ReplicationUpdateParameters,
-    ) -> Result<Replication> {
+    ) -> std::result::Result<update::Response, update::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerRegistry/registries/{}/replications/{}",
@@ -744,17 +1731,51 @@ pub mod replications {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(replication_update_parameters);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(update::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(update::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(update::ResponseBytesError)?;
+                let rsp_value: Replication = serde_json::from_slice(&body).context(update::DeserializeError { body })?;
+                Ok(update::Response::Ok200(rsp_value))
+            }
+            StatusCode::CREATED => {
+                let body: bytes::Bytes = rsp.bytes().await.context(update::ResponseBytesError)?;
+                let rsp_value: Replication = serde_json::from_slice(&body).context(update::DeserializeError { body })?;
+                Ok(update::Response::Created201(rsp_value))
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(update::ResponseBytesError)?;
+                update::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
+    }
+    pub mod update {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(Replication),
+            Created201(Replication),
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn delete(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         registry_name: &str,
         replication_name: &str,
-    ) -> Result<()> {
+    ) -> std::result::Result<delete::Response, delete::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerRegistry/registries/{}/replications/{}",
@@ -765,16 +1786,44 @@ pub mod replications {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(delete::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => Ok(delete::Response::Ok200),
+            StatusCode::ACCEPTED => Ok(delete::Response::Accepted202),
+            StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(delete::ResponseBytesError)?;
+                delete::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
+    }
+    pub mod delete {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200,
+            Accepted202,
+            NoContent204,
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn list(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         registry_name: &str,
-    ) -> Result<ReplicationListResult> {
+    ) -> std::result::Result<ReplicationListResult, list::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerRegistry/registries/{}/replications",
@@ -785,20 +1834,46 @@ pub mod replications {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: ReplicationListResult = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                list::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
+    }
+    pub mod list {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
 }
 pub mod webhooks {
-    use crate::{models::*, *};
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
     pub async fn get(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         registry_name: &str,
         webhook_name: &str,
-    ) -> Result<Webhook> {
+    ) -> std::result::Result<Webhook, get::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerRegistry/registries/{}/webhooks/{}",
@@ -809,18 +1884,42 @@ pub mod webhooks {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(get::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: Webhook = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                get::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
+    }
+    pub mod get {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn create(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         registry_name: &str,
         webhook_name: &str,
         webhook_create_parameters: &WebhookCreateParameters,
-    ) -> Result<Webhook> {
+    ) -> std::result::Result<create::Response, create::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerRegistry/registries/{}/webhooks/{}",
@@ -832,18 +1931,52 @@ pub mod webhooks {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(webhook_create_parameters);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(create::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(create::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create::ResponseBytesError)?;
+                let rsp_value: Webhook = serde_json::from_slice(&body).context(create::DeserializeError { body })?;
+                Ok(create::Response::Ok200(rsp_value))
+            }
+            StatusCode::CREATED => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create::ResponseBytesError)?;
+                let rsp_value: Webhook = serde_json::from_slice(&body).context(create::DeserializeError { body })?;
+                Ok(create::Response::Created201(rsp_value))
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create::ResponseBytesError)?;
+                create::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
+    }
+    pub mod create {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(Webhook),
+            Created201(Webhook),
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn update(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         registry_name: &str,
         webhook_name: &str,
         webhook_update_parameters: &WebhookUpdateParameters,
-    ) -> Result<Webhook> {
+    ) -> std::result::Result<update::Response, update::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerRegistry/registries/{}/webhooks/{}",
@@ -855,17 +1988,51 @@ pub mod webhooks {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(webhook_update_parameters);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(update::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(update::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(update::ResponseBytesError)?;
+                let rsp_value: Webhook = serde_json::from_slice(&body).context(update::DeserializeError { body })?;
+                Ok(update::Response::Ok200(rsp_value))
+            }
+            StatusCode::CREATED => {
+                let body: bytes::Bytes = rsp.bytes().await.context(update::ResponseBytesError)?;
+                let rsp_value: Webhook = serde_json::from_slice(&body).context(update::DeserializeError { body })?;
+                Ok(update::Response::Created201(rsp_value))
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(update::ResponseBytesError)?;
+                update::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
+    }
+    pub mod update {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(Webhook),
+            Created201(Webhook),
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn delete(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         registry_name: &str,
         webhook_name: &str,
-    ) -> Result<()> {
+    ) -> std::result::Result<delete::Response, delete::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerRegistry/registries/{}/webhooks/{}",
@@ -876,16 +2043,44 @@ pub mod webhooks {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(delete::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => Ok(delete::Response::Ok200),
+            StatusCode::ACCEPTED => Ok(delete::Response::Accepted202),
+            StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(delete::ResponseBytesError)?;
+                delete::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
+    }
+    pub mod delete {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200,
+            Accepted202,
+            NoContent204,
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn list(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         registry_name: &str,
-    ) -> Result<WebhookListResult> {
+    ) -> std::result::Result<WebhookListResult, list::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerRegistry/registries/{}/webhooks",
@@ -896,17 +2091,41 @@ pub mod webhooks {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: WebhookListResult = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                list::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
+    }
+    pub mod list {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn ping(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         registry_name: &str,
         webhook_name: &str,
-    ) -> Result<EventInfo> {
+    ) -> std::result::Result<EventInfo, ping::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerRegistry/registries/{}/webhooks/{}/ping",
@@ -917,17 +2136,41 @@ pub mod webhooks {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(ping::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(ping::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(ping::ResponseBytesError)?;
+                let rsp_value: EventInfo = serde_json::from_slice(&body).context(ping::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(ping::ResponseBytesError)?;
+                ping::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
+    }
+    pub mod ping {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn get_callback_config(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         registry_name: &str,
         webhook_name: &str,
-    ) -> Result<CallbackConfig> {
+    ) -> std::result::Result<CallbackConfig, get_callback_config::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerRegistry/registries/{}/webhooks/{}/getCallbackConfig",
@@ -938,17 +2181,41 @@ pub mod webhooks {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(get_callback_config::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get_callback_config::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get_callback_config::ResponseBytesError)?;
+                let rsp_value: CallbackConfig = serde_json::from_slice(&body).context(get_callback_config::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get_callback_config::ResponseBytesError)?;
+                get_callback_config::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
+    }
+    pub mod get_callback_config {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn list_events(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         registry_name: &str,
         webhook_name: &str,
-    ) -> Result<EventListResult> {
+    ) -> std::result::Result<EventListResult, list_events::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerRegistry/registries/{}/webhooks/{}/listEvents",
@@ -959,20 +2226,46 @@ pub mod webhooks {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list_events::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list_events::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_events::ResponseBytesError)?;
+                let rsp_value: EventListResult = serde_json::from_slice(&body).context(list_events::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_events::ResponseBytesError)?;
+                list_events::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
+    }
+    pub mod list_events {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
 }
 pub mod agent_pools {
-    use crate::{models::*, *};
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
     pub async fn get(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         registry_name: &str,
         agent_pool_name: &str,
-    ) -> Result<AgentPool> {
+    ) -> std::result::Result<AgentPool, get::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerRegistry/registries/{}/agentPools/{}",
@@ -983,18 +2276,59 @@ pub mod agent_pools {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(get::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: AgentPool = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                get::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod get {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn create(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         registry_name: &str,
         agent_pool_name: &str,
         agent_pool: &AgentPool,
-    ) -> Result<AgentPool> {
+    ) -> std::result::Result<create::Response, create::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerRegistry/registries/{}/agentPools/{}",
@@ -1006,18 +2340,69 @@ pub mod agent_pools {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(agent_pool);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(create::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(create::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create::ResponseBytesError)?;
+                let rsp_value: AgentPool = serde_json::from_slice(&body).context(create::DeserializeError { body })?;
+                Ok(create::Response::Ok200(rsp_value))
+            }
+            StatusCode::CREATED => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create::ResponseBytesError)?;
+                let rsp_value: AgentPool = serde_json::from_slice(&body).context(create::DeserializeError { body })?;
+                Ok(create::Response::Created201(rsp_value))
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(create::DeserializeError { body })?;
+                create::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod create {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(AgentPool),
+            Created201(AgentPool),
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn update(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         registry_name: &str,
         agent_pool_name: &str,
         update_parameters: &AgentPoolUpdateParameters,
-    ) -> Result<AgentPool> {
+    ) -> std::result::Result<update::Response, update::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerRegistry/registries/{}/agentPools/{}",
@@ -1029,17 +2414,68 @@ pub mod agent_pools {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(update_parameters);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(update::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(update::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(update::ResponseBytesError)?;
+                let rsp_value: AgentPool = serde_json::from_slice(&body).context(update::DeserializeError { body })?;
+                Ok(update::Response::Ok200(rsp_value))
+            }
+            StatusCode::CREATED => {
+                let body: bytes::Bytes = rsp.bytes().await.context(update::ResponseBytesError)?;
+                let rsp_value: AgentPool = serde_json::from_slice(&body).context(update::DeserializeError { body })?;
+                Ok(update::Response::Created201(rsp_value))
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(update::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(update::DeserializeError { body })?;
+                update::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod update {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(AgentPool),
+            Created201(AgentPool),
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn delete(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         registry_name: &str,
         agent_pool_name: &str,
-    ) -> Result<ErrorResponse> {
+    ) -> std::result::Result<delete::Response, delete::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerRegistry/registries/{}/agentPools/{}",
@@ -1050,16 +2486,61 @@ pub mod agent_pools {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(delete::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => Ok(delete::Response::Ok200),
+            StatusCode::ACCEPTED => Ok(delete::Response::Accepted202),
+            StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(delete::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(delete::DeserializeError { body })?;
+                delete::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod delete {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200,
+            Accepted202,
+            NoContent204,
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn list(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         registry_name: &str,
-    ) -> Result<AgentPoolListResult> {
+    ) -> std::result::Result<AgentPoolListResult, list::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerRegistry/registries/{}/agentPools",
@@ -1070,17 +2551,58 @@ pub mod agent_pools {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: AgentPoolListResult = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                list::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn get_queue_status(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         registry_name: &str,
         agent_pool_name: &str,
-    ) -> Result<AgentPoolQueueStatus> {
+    ) -> std::result::Result<AgentPoolQueueStatus, get_queue_status::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerRegistry/registries/{}/agentPools/{}/listQueueStatus",
@@ -1091,21 +2613,64 @@ pub mod agent_pools {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(get_queue_status::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get_queue_status::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get_queue_status::ResponseBytesError)?;
+                let rsp_value: AgentPoolQueueStatus = serde_json::from_slice(&body).context(get_queue_status::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get_queue_status::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(get_queue_status::DeserializeError { body })?;
+                get_queue_status::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod get_queue_status {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
 }
 pub mod runs {
-    use crate::{models::*, *};
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
     pub async fn list(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         registry_name: &str,
         filter: Option<&str>,
         top: Option<i64>,
-    ) -> Result<RunListResult> {
+    ) -> std::result::Result<RunListResult, list::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerRegistry/registries/{}/runs",
@@ -1122,17 +2687,58 @@ pub mod runs {
         if let Some(top) = top {
             req_builder = req_builder.query(&[("$top", top)]);
         }
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: RunListResult = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                list::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn get(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         registry_name: &str,
         run_id: &str,
-    ) -> Result<Run> {
+    ) -> std::result::Result<Run, get::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerRegistry/registries/{}/runs/{}",
@@ -1143,18 +2749,59 @@ pub mod runs {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(get::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: Run = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                get::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod get {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn update(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         registry_name: &str,
         run_id: &str,
         run_update_parameters: &RunUpdateParameters,
-    ) -> Result<Run> {
+    ) -> std::result::Result<update::Response, update::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerRegistry/registries/{}/runs/{}",
@@ -1166,17 +2813,68 @@ pub mod runs {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(run_update_parameters);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(update::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(update::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(update::ResponseBytesError)?;
+                let rsp_value: Run = serde_json::from_slice(&body).context(update::DeserializeError { body })?;
+                Ok(update::Response::Ok200(rsp_value))
+            }
+            StatusCode::CREATED => {
+                let body: bytes::Bytes = rsp.bytes().await.context(update::ResponseBytesError)?;
+                let rsp_value: Run = serde_json::from_slice(&body).context(update::DeserializeError { body })?;
+                Ok(update::Response::Created201(rsp_value))
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(update::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(update::DeserializeError { body })?;
+                update::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod update {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(Run),
+            Created201(Run),
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn get_log_sas_url(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         registry_name: &str,
         run_id: &str,
-    ) -> Result<RunGetLogResult> {
+    ) -> std::result::Result<RunGetLogResult, get_log_sas_url::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerRegistry/registries/{}/runs/{}/listLogSasUrl",
@@ -1187,17 +2885,58 @@ pub mod runs {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(get_log_sas_url::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get_log_sas_url::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get_log_sas_url::ResponseBytesError)?;
+                let rsp_value: RunGetLogResult = serde_json::from_slice(&body).context(get_log_sas_url::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get_log_sas_url::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(get_log_sas_url::DeserializeError { body })?;
+                get_log_sas_url::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod get_log_sas_url {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn cancel(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         registry_name: &str,
         run_id: &str,
-    ) -> Result<ErrorResponse> {
+    ) -> std::result::Result<cancel::Response, cancel::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerRegistry/registries/{}/runs/{}/cancel",
@@ -1208,20 +2947,65 @@ pub mod runs {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(cancel::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(cancel::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => Ok(cancel::Response::Ok200),
+            StatusCode::ACCEPTED => Ok(cancel::Response::Accepted202),
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(cancel::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(cancel::DeserializeError { body })?;
+                cancel::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod cancel {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200,
+            Accepted202,
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
 }
 pub mod task_runs {
-    use crate::{models::*, *};
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
     pub async fn get(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         registry_name: &str,
         task_run_name: &str,
-    ) -> Result<TaskRun> {
+    ) -> std::result::Result<TaskRun, get::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerRegistry/registries/{}/taskRuns/{}",
@@ -1232,18 +3016,59 @@ pub mod task_runs {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(get::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: TaskRun = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                get::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod get {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn create(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         registry_name: &str,
         task_run_name: &str,
         task_run: &TaskRun,
-    ) -> Result<TaskRun> {
+    ) -> std::result::Result<create::Response, create::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerRegistry/registries/{}/taskRuns/{}",
@@ -1255,18 +3080,69 @@ pub mod task_runs {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(task_run);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(create::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(create::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create::ResponseBytesError)?;
+                let rsp_value: TaskRun = serde_json::from_slice(&body).context(create::DeserializeError { body })?;
+                Ok(create::Response::Ok200(rsp_value))
+            }
+            StatusCode::CREATED => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create::ResponseBytesError)?;
+                let rsp_value: TaskRun = serde_json::from_slice(&body).context(create::DeserializeError { body })?;
+                Ok(create::Response::Created201(rsp_value))
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(create::DeserializeError { body })?;
+                create::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod create {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(TaskRun),
+            Created201(TaskRun),
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn update(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         registry_name: &str,
         task_run_name: &str,
         update_parameters: &TaskRunUpdateParameters,
-    ) -> Result<TaskRun> {
+    ) -> std::result::Result<update::Response, update::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerRegistry/registries/{}/taskRuns/{}",
@@ -1278,17 +3154,68 @@ pub mod task_runs {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(update_parameters);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(update::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(update::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(update::ResponseBytesError)?;
+                let rsp_value: TaskRun = serde_json::from_slice(&body).context(update::DeserializeError { body })?;
+                Ok(update::Response::Ok200(rsp_value))
+            }
+            StatusCode::CREATED => {
+                let body: bytes::Bytes = rsp.bytes().await.context(update::ResponseBytesError)?;
+                let rsp_value: TaskRun = serde_json::from_slice(&body).context(update::DeserializeError { body })?;
+                Ok(update::Response::Created201(rsp_value))
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(update::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(update::DeserializeError { body })?;
+                update::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod update {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(TaskRun),
+            Created201(TaskRun),
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn delete(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         registry_name: &str,
         task_run_name: &str,
-    ) -> Result<ErrorResponse> {
+    ) -> std::result::Result<delete::Response, delete::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerRegistry/registries/{}/taskRuns/{}",
@@ -1299,17 +3226,62 @@ pub mod task_runs {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(delete::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => Ok(delete::Response::Ok200),
+            StatusCode::ACCEPTED => Ok(delete::Response::Accepted202),
+            StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(delete::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(delete::DeserializeError { body })?;
+                delete::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod delete {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200,
+            Accepted202,
+            NoContent204,
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn get_details(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         registry_name: &str,
         task_run_name: &str,
-    ) -> Result<TaskRun> {
+    ) -> std::result::Result<TaskRun, get_details::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerRegistry/registries/{}/taskRuns/{}/listDetails",
@@ -1320,16 +3292,57 @@ pub mod task_runs {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(get_details::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get_details::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get_details::ResponseBytesError)?;
+                let rsp_value: TaskRun = serde_json::from_slice(&body).context(get_details::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get_details::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(get_details::DeserializeError { body })?;
+                get_details::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod get_details {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn list(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         registry_name: &str,
-    ) -> Result<TaskRunListResult> {
+    ) -> std::result::Result<TaskRunListResult, list::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerRegistry/registries/{}/taskRuns",
@@ -1340,19 +3353,62 @@ pub mod task_runs {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: TaskRunListResult = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                list::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
 }
 pub mod tasks {
-    use crate::{models::*, *};
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
     pub async fn list(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         registry_name: &str,
-    ) -> Result<TaskListResult> {
+    ) -> std::result::Result<TaskListResult, list::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerRegistry/registries/{}/tasks",
@@ -1363,17 +3419,58 @@ pub mod tasks {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: TaskListResult = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                list::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn get(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         registry_name: &str,
         task_name: &str,
-    ) -> Result<Task> {
+    ) -> std::result::Result<Task, get::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerRegistry/registries/{}/tasks/{}",
@@ -1384,18 +3481,59 @@ pub mod tasks {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(get::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: Task = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                get::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod get {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn create(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         registry_name: &str,
         task_name: &str,
         task_create_parameters: &Task,
-    ) -> Result<Task> {
+    ) -> std::result::Result<create::Response, create::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerRegistry/registries/{}/tasks/{}",
@@ -1407,18 +3545,69 @@ pub mod tasks {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(task_create_parameters);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(create::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(create::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create::ResponseBytesError)?;
+                let rsp_value: Task = serde_json::from_slice(&body).context(create::DeserializeError { body })?;
+                Ok(create::Response::Ok200(rsp_value))
+            }
+            StatusCode::CREATED => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create::ResponseBytesError)?;
+                let rsp_value: Task = serde_json::from_slice(&body).context(create::DeserializeError { body })?;
+                Ok(create::Response::Created201(rsp_value))
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(create::DeserializeError { body })?;
+                create::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod create {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(Task),
+            Created201(Task),
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn update(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         registry_name: &str,
         task_name: &str,
         task_update_parameters: &TaskUpdateParameters,
-    ) -> Result<Task> {
+    ) -> std::result::Result<update::Response, update::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerRegistry/registries/{}/tasks/{}",
@@ -1430,17 +3619,68 @@ pub mod tasks {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(task_update_parameters);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(update::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(update::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(update::ResponseBytesError)?;
+                let rsp_value: Task = serde_json::from_slice(&body).context(update::DeserializeError { body })?;
+                Ok(update::Response::Ok200(rsp_value))
+            }
+            StatusCode::CREATED => {
+                let body: bytes::Bytes = rsp.bytes().await.context(update::ResponseBytesError)?;
+                let rsp_value: Task = serde_json::from_slice(&body).context(update::DeserializeError { body })?;
+                Ok(update::Response::Created201(rsp_value))
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(update::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(update::DeserializeError { body })?;
+                update::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod update {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(Task),
+            Created201(Task),
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn delete(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         registry_name: &str,
         task_name: &str,
-    ) -> Result<ErrorResponse> {
+    ) -> std::result::Result<delete::Response, delete::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerRegistry/registries/{}/tasks/{}",
@@ -1451,17 +3691,62 @@ pub mod tasks {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(delete::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => Ok(delete::Response::Ok200),
+            StatusCode::ACCEPTED => Ok(delete::Response::Accepted202),
+            StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(delete::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(delete::DeserializeError { body })?;
+                delete::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod delete {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200,
+            Accepted202,
+            NoContent204,
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn get_details(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         registry_name: &str,
         task_name: &str,
-    ) -> Result<Task> {
+    ) -> std::result::Result<Task, get_details::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerRegistry/registries/{}/tasks/{}/listDetails",
@@ -1472,20 +3757,63 @@ pub mod tasks {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(get_details::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get_details::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get_details::ResponseBytesError)?;
+                let rsp_value: Task = serde_json::from_slice(&body).context(get_details::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get_details::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(get_details::DeserializeError { body })?;
+                get_details::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod get_details {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
 }
 pub mod scope_maps {
-    use crate::{models::*, *};
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
     pub async fn get(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         registry_name: &str,
         scope_map_name: &str,
-    ) -> Result<ScopeMap> {
+    ) -> std::result::Result<ScopeMap, get::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerRegistry/registries/{}/scopeMaps/{}",
@@ -1496,18 +3824,42 @@ pub mod scope_maps {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(get::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: ScopeMap = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                get::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
+    }
+    pub mod get {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn create(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         registry_name: &str,
         scope_map_name: &str,
         scope_map_create_parameters: &ScopeMap,
-    ) -> Result<ScopeMap> {
+    ) -> std::result::Result<create::Response, create::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerRegistry/registries/{}/scopeMaps/{}",
@@ -1519,18 +3871,52 @@ pub mod scope_maps {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(scope_map_create_parameters);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(create::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(create::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create::ResponseBytesError)?;
+                let rsp_value: ScopeMap = serde_json::from_slice(&body).context(create::DeserializeError { body })?;
+                Ok(create::Response::Ok200(rsp_value))
+            }
+            StatusCode::CREATED => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create::ResponseBytesError)?;
+                let rsp_value: ScopeMap = serde_json::from_slice(&body).context(create::DeserializeError { body })?;
+                Ok(create::Response::Created201(rsp_value))
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create::ResponseBytesError)?;
+                create::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
+    }
+    pub mod create {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(ScopeMap),
+            Created201(ScopeMap),
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn update(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         registry_name: &str,
         scope_map_name: &str,
         scope_map_update_parameters: &ScopeMapUpdateParameters,
-    ) -> Result<ScopeMap> {
+    ) -> std::result::Result<update::Response, update::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerRegistry/registries/{}/scopeMaps/{}",
@@ -1542,17 +3928,51 @@ pub mod scope_maps {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(scope_map_update_parameters);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(update::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(update::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(update::ResponseBytesError)?;
+                let rsp_value: ScopeMap = serde_json::from_slice(&body).context(update::DeserializeError { body })?;
+                Ok(update::Response::Ok200(rsp_value))
+            }
+            StatusCode::CREATED => {
+                let body: bytes::Bytes = rsp.bytes().await.context(update::ResponseBytesError)?;
+                let rsp_value: ScopeMap = serde_json::from_slice(&body).context(update::DeserializeError { body })?;
+                Ok(update::Response::Created201(rsp_value))
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(update::ResponseBytesError)?;
+                update::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
+    }
+    pub mod update {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(ScopeMap),
+            Created201(ScopeMap),
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn delete(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         registry_name: &str,
         scope_map_name: &str,
-    ) -> Result<()> {
+    ) -> std::result::Result<delete::Response, delete::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerRegistry/registries/{}/scopeMaps/{}",
@@ -1563,16 +3983,44 @@ pub mod scope_maps {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(delete::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => Ok(delete::Response::Ok200),
+            StatusCode::ACCEPTED => Ok(delete::Response::Accepted202),
+            StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(delete::ResponseBytesError)?;
+                delete::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
+    }
+    pub mod delete {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200,
+            Accepted202,
+            NoContent204,
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn list(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         registry_name: &str,
-    ) -> Result<ScopeMapListResult> {
+    ) -> std::result::Result<ScopeMapListResult, list::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerRegistry/registries/{}/scopeMaps",
@@ -1583,20 +4031,46 @@ pub mod scope_maps {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: ScopeMapListResult = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                list::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
+    }
+    pub mod list {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
 }
 pub mod tokens {
-    use crate::{models::*, *};
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
     pub async fn get(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         registry_name: &str,
         token_name: &str,
-    ) -> Result<Token> {
+    ) -> std::result::Result<Token, get::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerRegistry/registries/{}/tokens/{}",
@@ -1607,18 +4081,42 @@ pub mod tokens {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(get::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: Token = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                get::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
+    }
+    pub mod get {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn create(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         registry_name: &str,
         token_name: &str,
         token_create_parameters: &Token,
-    ) -> Result<Token> {
+    ) -> std::result::Result<create::Response, create::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerRegistry/registries/{}/tokens/{}",
@@ -1630,18 +4128,52 @@ pub mod tokens {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(token_create_parameters);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(create::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(create::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create::ResponseBytesError)?;
+                let rsp_value: Token = serde_json::from_slice(&body).context(create::DeserializeError { body })?;
+                Ok(create::Response::Ok200(rsp_value))
+            }
+            StatusCode::CREATED => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create::ResponseBytesError)?;
+                let rsp_value: Token = serde_json::from_slice(&body).context(create::DeserializeError { body })?;
+                Ok(create::Response::Created201(rsp_value))
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create::ResponseBytesError)?;
+                create::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
+    }
+    pub mod create {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(Token),
+            Created201(Token),
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn update(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         registry_name: &str,
         token_name: &str,
         token_update_parameters: &TokenUpdateParameters,
-    ) -> Result<Token> {
+    ) -> std::result::Result<update::Response, update::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerRegistry/registries/{}/tokens/{}",
@@ -1653,17 +4185,51 @@ pub mod tokens {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(token_update_parameters);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(update::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(update::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(update::ResponseBytesError)?;
+                let rsp_value: Token = serde_json::from_slice(&body).context(update::DeserializeError { body })?;
+                Ok(update::Response::Ok200(rsp_value))
+            }
+            StatusCode::CREATED => {
+                let body: bytes::Bytes = rsp.bytes().await.context(update::ResponseBytesError)?;
+                let rsp_value: Token = serde_json::from_slice(&body).context(update::DeserializeError { body })?;
+                Ok(update::Response::Created201(rsp_value))
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(update::ResponseBytesError)?;
+                update::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
+    }
+    pub mod update {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(Token),
+            Created201(Token),
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn delete(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         registry_name: &str,
         token_name: &str,
-    ) -> Result<()> {
+    ) -> std::result::Result<delete::Response, delete::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerRegistry/registries/{}/tokens/{}",
@@ -1674,16 +4240,44 @@ pub mod tokens {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(delete::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => Ok(delete::Response::Ok200),
+            StatusCode::ACCEPTED => Ok(delete::Response::Accepted202),
+            StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(delete::ResponseBytesError)?;
+                delete::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
+    }
+    pub mod delete {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200,
+            Accepted202,
+            NoContent204,
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn list(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         registry_name: &str,
-    ) -> Result<TokenListResult> {
+    ) -> std::result::Result<TokenListResult, list::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerRegistry/registries/{}/tokens",
@@ -1694,8 +4288,32 @@ pub mod tokens {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: TokenListResult = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                list::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
+    }
+    pub mod list {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
 }

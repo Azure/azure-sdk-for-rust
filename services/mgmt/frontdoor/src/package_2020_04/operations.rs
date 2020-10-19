@@ -2,10 +2,14 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use crate::{models::*, *};
+use crate::models::*;
+use reqwest::StatusCode;
+use snafu::{ResultExt, Snafu};
 pub mod network_experiment_profiles {
-    use crate::{models::*, *};
-    pub async fn list(configuration: &Configuration, subscription_id: &str) -> Result<ProfileList> {
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
+    pub async fn list(configuration: &crate::Configuration, subscription_id: &str) -> std::result::Result<ProfileList, list::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Network/NetworkExperimentProfiles",
@@ -16,15 +20,56 @@ pub mod network_experiment_profiles {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: ProfileList = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                list::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn list_by_resource_group(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> Result<ProfileList> {
+    ) -> std::result::Result<ProfileList, list_by_resource_group::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/NetworkExperimentProfiles",
@@ -35,16 +80,57 @@ pub mod network_experiment_profiles {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list_by_resource_group::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list_by_resource_group::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_resource_group::ResponseBytesError)?;
+                let rsp_value: ProfileList = serde_json::from_slice(&body).context(list_by_resource_group::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_resource_group::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(list_by_resource_group::DeserializeError { body })?;
+                list_by_resource_group::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list_by_resource_group {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn get(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         profile_name: &str,
-    ) -> Result<Profile> {
+    ) -> std::result::Result<Profile, get::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/NetworkExperimentProfiles/{}",
@@ -55,17 +141,58 @@ pub mod network_experiment_profiles {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(get::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: Profile = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                get::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod get {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn create_or_update(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         profile_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
         parameters: &Profile,
-    ) -> Result<Profile> {
+    ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/NetworkExperimentProfiles/{}",
@@ -77,17 +204,74 @@ pub mod network_experiment_profiles {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(parameters);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(create_or_update::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(create_or_update::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
+                let rsp_value: Profile = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                Ok(create_or_update::Response::Ok200(rsp_value))
+            }
+            StatusCode::CREATED => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
+                let rsp_value: Profile = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                Ok(create_or_update::Response::Created201(rsp_value))
+            }
+            StatusCode::ACCEPTED => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
+                let rsp_value: Profile = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                Ok(create_or_update::Response::Accepted202(rsp_value))
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                create_or_update::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod create_or_update {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(Profile),
+            Created201(Profile),
+            Accepted202(Profile),
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn update(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         profile_name: &str,
         parameters: &ProfileUpdateModel,
-    ) -> Result<Profile> {
+    ) -> std::result::Result<update::Response, update::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/NetworkExperimentProfiles/{}",
@@ -99,16 +283,67 @@ pub mod network_experiment_profiles {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(parameters);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(update::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(update::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(update::ResponseBytesError)?;
+                let rsp_value: Profile = serde_json::from_slice(&body).context(update::DeserializeError { body })?;
+                Ok(update::Response::Ok200(rsp_value))
+            }
+            StatusCode::ACCEPTED => {
+                let body: bytes::Bytes = rsp.bytes().await.context(update::ResponseBytesError)?;
+                let rsp_value: Profile = serde_json::from_slice(&body).context(update::DeserializeError { body })?;
+                Ok(update::Response::Accepted202(rsp_value))
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(update::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(update::DeserializeError { body })?;
+                update::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod update {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(Profile),
+            Accepted202(Profile),
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn delete(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         profile_name: &str,
-    ) -> Result<ErrorResponse> {
+    ) -> std::result::Result<delete::Response, delete::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/NetworkExperimentProfiles/{}",
@@ -119,19 +354,66 @@ pub mod network_experiment_profiles {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(delete::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => Ok(delete::Response::Ok200),
+            StatusCode::ACCEPTED => Ok(delete::Response::Accepted202),
+            StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(delete::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(delete::DeserializeError { body })?;
+                delete::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod delete {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200,
+            Accepted202,
+            NoContent204,
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
 }
 pub mod preconfigured_endpoints {
-    use crate::{models::*, *};
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
     pub async fn list(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         profile_name: &str,
-    ) -> Result<PreconfiguredEndpointList> {
+    ) -> std::result::Result<PreconfiguredEndpointList, list::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/NetworkExperimentProfiles/{}/PreconfiguredEndpoints",
@@ -142,19 +424,62 @@ pub mod preconfigured_endpoints {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: PreconfiguredEndpointList = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                list::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
 }
 pub mod experiments {
-    use crate::{models::*, *};
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
     pub async fn list_by_profile(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         profile_name: &str,
-    ) -> Result<ExperimentList> {
+    ) -> std::result::Result<ExperimentList, list_by_profile::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/NetworkExperimentProfiles/{}/Experiments",
@@ -165,17 +490,58 @@ pub mod experiments {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list_by_profile::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list_by_profile::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_profile::ResponseBytesError)?;
+                let rsp_value: ExperimentList = serde_json::from_slice(&body).context(list_by_profile::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_profile::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(list_by_profile::DeserializeError { body })?;
+                list_by_profile::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list_by_profile {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn get(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         profile_name: &str,
         experiment_name: &str,
-    ) -> Result<Experiment> {
+    ) -> std::result::Result<Experiment, get::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/NetworkExperimentProfiles/{}/Experiments/{}",
@@ -186,18 +552,59 @@ pub mod experiments {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(get::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: Experiment = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                get::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod get {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn create_or_update(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         profile_name: &str,
         experiment_name: &str,
         parameters: &Experiment,
-    ) -> Result<Experiment> {
+    ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/NetworkExperimentProfiles/{}/Experiments/{}",
@@ -209,18 +616,75 @@ pub mod experiments {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(parameters);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(create_or_update::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(create_or_update::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
+                let rsp_value: Experiment = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                Ok(create_or_update::Response::Ok200(rsp_value))
+            }
+            StatusCode::CREATED => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
+                let rsp_value: Experiment = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                Ok(create_or_update::Response::Created201(rsp_value))
+            }
+            StatusCode::ACCEPTED => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
+                let rsp_value: Experiment = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                Ok(create_or_update::Response::Accepted202(rsp_value))
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                create_or_update::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod create_or_update {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(Experiment),
+            Created201(Experiment),
+            Accepted202(Experiment),
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn update(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         profile_name: &str,
         experiment_name: &str,
         parameters: &ExperimentUpdateModel,
-    ) -> Result<Experiment> {
+    ) -> std::result::Result<update::Response, update::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/NetworkExperimentProfiles/{}/Experiments/{}",
@@ -232,17 +696,68 @@ pub mod experiments {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(parameters);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(update::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(update::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(update::ResponseBytesError)?;
+                let rsp_value: Experiment = serde_json::from_slice(&body).context(update::DeserializeError { body })?;
+                Ok(update::Response::Ok200(rsp_value))
+            }
+            StatusCode::ACCEPTED => {
+                let body: bytes::Bytes = rsp.bytes().await.context(update::ResponseBytesError)?;
+                let rsp_value: Experiment = serde_json::from_slice(&body).context(update::DeserializeError { body })?;
+                Ok(update::Response::Accepted202(rsp_value))
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(update::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(update::DeserializeError { body })?;
+                update::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod update {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(Experiment),
+            Accepted202(Experiment),
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn delete(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         profile_name: &str,
         experiment_name: &str,
-    ) -> Result<ErrorResponse> {
+    ) -> std::result::Result<delete::Response, delete::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/NetworkExperimentProfiles/{}/Experiments/{}",
@@ -253,15 +768,62 @@ pub mod experiments {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(delete::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => Ok(delete::Response::Ok200),
+            StatusCode::ACCEPTED => Ok(delete::Response::Accepted202),
+            StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(delete::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(delete::DeserializeError { body })?;
+                delete::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod delete {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200,
+            Accepted202,
+            NoContent204,
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
 }
 pub mod reports {
-    use crate::{models::*, *};
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
     pub async fn get_latency_scorecards(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         profile_name: &str,
@@ -269,7 +831,7 @@ pub mod reports {
         end_date_time_utc: Option<&str>,
         country: Option<&str>,
         aggregation_interval: &str,
-    ) -> Result<LatencyScorecard> {
+    ) -> std::result::Result<LatencyScorecard, get_latency_scorecards::Error> {
         let client = &configuration.client;
         let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/NetworkExperimentProfiles/{}/Experiments/{}/LatencyScorecard" , & configuration . base_path , subscription_id , resource_group_name , profile_name , experiment_name) ;
         let mut req_builder = client.get(uri_str);
@@ -284,12 +846,54 @@ pub mod reports {
             req_builder = req_builder.query(&[("country", country)]);
         }
         req_builder = req_builder.query(&[("aggregationInterval", aggregation_interval)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(get_latency_scorecards::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get_latency_scorecards::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get_latency_scorecards::ResponseBytesError)?;
+                let rsp_value: LatencyScorecard =
+                    serde_json::from_slice(&body).context(get_latency_scorecards::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get_latency_scorecards::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(get_latency_scorecards::DeserializeError { body })?;
+                get_latency_scorecards::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod get_latency_scorecards {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn get_timeseries(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         profile_name: &str,
@@ -300,7 +904,7 @@ pub mod reports {
         timeseries_type: &str,
         endpoint: Option<&str>,
         country: Option<&str>,
-    ) -> Result<Timeseries> {
+    ) -> std::result::Result<Timeseries, get_timeseries::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/NetworkExperimentProfiles/{}/Experiments/{}/Timeseries",
@@ -321,15 +925,56 @@ pub mod reports {
         if let Some(country) = country {
             req_builder = req_builder.query(&[("country", country)]);
         }
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(get_timeseries::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get_timeseries::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get_timeseries::ResponseBytesError)?;
+                let rsp_value: Timeseries = serde_json::from_slice(&body).context(get_timeseries::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get_timeseries::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(get_timeseries::DeserializeError { body })?;
+                get_timeseries::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod get_timeseries {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
 }
 pub async fn check_front_door_name_availability(
-    configuration: &Configuration,
+    configuration: &crate::Configuration,
     check_front_door_name_availability_input: &CheckNameAvailabilityInput,
-) -> Result<CheckNameAvailabilityOutput> {
+) -> std::result::Result<CheckNameAvailabilityOutput, check_front_door_name_availability::Error> {
     let client = &configuration.client;
     let uri_str = &format!(
         "{}/providers/Microsoft.Network/checkFrontDoorNameAvailability",
@@ -341,15 +986,61 @@ pub async fn check_front_door_name_availability(
     }
     req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
     req_builder = req_builder.json(check_front_door_name_availability_input);
-    let req = req_builder.build()?;
-    let res = client.execute(req).await?;
-    Ok(res.json().await?)
+    let req = req_builder.build().context(check_front_door_name_availability::BuildRequestError)?;
+    let rsp = client
+        .execute(req)
+        .await
+        .context(check_front_door_name_availability::ExecuteRequestError)?;
+    match rsp.status() {
+        StatusCode::OK => {
+            let body: bytes::Bytes = rsp.bytes().await.context(check_front_door_name_availability::ResponseBytesError)?;
+            let rsp_value: CheckNameAvailabilityOutput =
+                serde_json::from_slice(&body).context(check_front_door_name_availability::DeserializeError { body })?;
+            Ok(rsp_value)
+        }
+        status_code => {
+            let body: bytes::Bytes = rsp.bytes().await.context(check_front_door_name_availability::ResponseBytesError)?;
+            let rsp_value: ErrorResponse =
+                serde_json::from_slice(&body).context(check_front_door_name_availability::DeserializeError { body })?;
+            check_front_door_name_availability::DefaultResponse {
+                status_code,
+                value: rsp_value,
+            }
+            .fail()
+        }
+    }
+}
+pub mod check_front_door_name_availability {
+    use crate::{models, models::*};
+    use reqwest::StatusCode;
+    use snafu::Snafu;
+    #[derive(Debug, Snafu)]
+    #[snafu(visibility(pub(crate)))]
+    pub enum Error {
+        DefaultResponse {
+            status_code: StatusCode,
+            value: models::ErrorResponse,
+        },
+        BuildRequestError {
+            source: reqwest::Error,
+        },
+        ExecuteRequestError {
+            source: reqwest::Error,
+        },
+        ResponseBytesError {
+            source: reqwest::Error,
+        },
+        DeserializeError {
+            source: serde_json::Error,
+            body: bytes::Bytes,
+        },
+    }
 }
 pub async fn check_front_door_name_availability_with_subscription(
-    configuration: &Configuration,
+    configuration: &crate::Configuration,
     check_front_door_name_availability_input: &CheckNameAvailabilityInput,
     subscription_id: &str,
-) -> Result<CheckNameAvailabilityOutput> {
+) -> std::result::Result<CheckNameAvailabilityOutput, check_front_door_name_availability_with_subscription::Error> {
     let client = &configuration.client;
     let uri_str = &format!(
         "{}/subscriptions/{}/providers/Microsoft.Network/checkFrontDoorNameAvailability",
@@ -361,13 +1052,72 @@ pub async fn check_front_door_name_availability_with_subscription(
     }
     req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
     req_builder = req_builder.json(check_front_door_name_availability_input);
-    let req = req_builder.build()?;
-    let res = client.execute(req).await?;
-    Ok(res.json().await?)
+    let req = req_builder
+        .build()
+        .context(check_front_door_name_availability_with_subscription::BuildRequestError)?;
+    let rsp = client
+        .execute(req)
+        .await
+        .context(check_front_door_name_availability_with_subscription::ExecuteRequestError)?;
+    match rsp.status() {
+        StatusCode::OK => {
+            let body: bytes::Bytes = rsp
+                .bytes()
+                .await
+                .context(check_front_door_name_availability_with_subscription::ResponseBytesError)?;
+            let rsp_value: CheckNameAvailabilityOutput =
+                serde_json::from_slice(&body).context(check_front_door_name_availability_with_subscription::DeserializeError { body })?;
+            Ok(rsp_value)
+        }
+        status_code => {
+            let body: bytes::Bytes = rsp
+                .bytes()
+                .await
+                .context(check_front_door_name_availability_with_subscription::ResponseBytesError)?;
+            let rsp_value: ErrorResponse =
+                serde_json::from_slice(&body).context(check_front_door_name_availability_with_subscription::DeserializeError { body })?;
+            check_front_door_name_availability_with_subscription::DefaultResponse {
+                status_code,
+                value: rsp_value,
+            }
+            .fail()
+        }
+    }
+}
+pub mod check_front_door_name_availability_with_subscription {
+    use crate::{models, models::*};
+    use reqwest::StatusCode;
+    use snafu::Snafu;
+    #[derive(Debug, Snafu)]
+    #[snafu(visibility(pub(crate)))]
+    pub enum Error {
+        DefaultResponse {
+            status_code: StatusCode,
+            value: models::ErrorResponse,
+        },
+        BuildRequestError {
+            source: reqwest::Error,
+        },
+        ExecuteRequestError {
+            source: reqwest::Error,
+        },
+        ResponseBytesError {
+            source: reqwest::Error,
+        },
+        DeserializeError {
+            source: serde_json::Error,
+            body: bytes::Bytes,
+        },
+    }
 }
 pub mod front_doors {
-    use crate::{models::*, *};
-    pub async fn list(configuration: &Configuration, subscription_id: &str) -> Result<FrontDoorListResult> {
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
+    pub async fn list(
+        configuration: &crate::Configuration,
+        subscription_id: &str,
+    ) -> std::result::Result<FrontDoorListResult, list::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Network/frontDoors",
@@ -378,15 +1128,56 @@ pub mod front_doors {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: FrontDoorListResult = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                list::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn list_by_resource_group(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> Result<FrontDoorListResult> {
+    ) -> std::result::Result<FrontDoorListResult, list_by_resource_group::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/frontDoors",
@@ -397,16 +1188,58 @@ pub mod front_doors {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list_by_resource_group::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list_by_resource_group::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_resource_group::ResponseBytesError)?;
+                let rsp_value: FrontDoorListResult =
+                    serde_json::from_slice(&body).context(list_by_resource_group::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_resource_group::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(list_by_resource_group::DeserializeError { body })?;
+                list_by_resource_group::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list_by_resource_group {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn get(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         front_door_name: &str,
-    ) -> Result<FrontDoor> {
+    ) -> std::result::Result<FrontDoor, get::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/frontDoors/{}",
@@ -417,17 +1250,58 @@ pub mod front_doors {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(get::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: FrontDoor = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                get::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod get {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn create_or_update(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         front_door_name: &str,
         front_door_parameters: &FrontDoor,
-    ) -> Result<FrontDoor> {
+    ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/frontDoors/{}",
@@ -439,16 +1313,73 @@ pub mod front_doors {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(front_door_parameters);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(create_or_update::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(create_or_update::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
+                let rsp_value: FrontDoor = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                Ok(create_or_update::Response::Ok200(rsp_value))
+            }
+            StatusCode::CREATED => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
+                let rsp_value: FrontDoor = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                Ok(create_or_update::Response::Created201(rsp_value))
+            }
+            StatusCode::ACCEPTED => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
+                let rsp_value: FrontDoor = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                Ok(create_or_update::Response::Accepted202(rsp_value))
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                create_or_update::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod create_or_update {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(FrontDoor),
+            Created201(FrontDoor),
+            Accepted202(FrontDoor),
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn delete(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         front_door_name: &str,
-    ) -> Result<ErrorResponse> {
+    ) -> std::result::Result<delete::Response, delete::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/frontDoors/{}",
@@ -459,17 +1390,60 @@ pub mod front_doors {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(delete::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::ACCEPTED => Ok(delete::Response::Accepted202),
+            StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(delete::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(delete::DeserializeError { body })?;
+                delete::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod delete {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Accepted202,
+            NoContent204,
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn validate_custom_domain(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         front_door_name: &str,
         custom_domain_properties: &ValidateCustomDomainInput,
-    ) -> Result<ValidateCustomDomainOutput> {
+    ) -> std::result::Result<ValidateCustomDomainOutput, validate_custom_domain::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/frontDoors/{}/validateCustomDomain",
@@ -481,19 +1455,63 @@ pub mod front_doors {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(custom_domain_properties);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(validate_custom_domain::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(validate_custom_domain::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(validate_custom_domain::ResponseBytesError)?;
+                let rsp_value: ValidateCustomDomainOutput =
+                    serde_json::from_slice(&body).context(validate_custom_domain::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(validate_custom_domain::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(validate_custom_domain::DeserializeError { body })?;
+                validate_custom_domain::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod validate_custom_domain {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
 }
 pub mod frontend_endpoints {
-    use crate::{models::*, *};
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
     pub async fn list_by_front_door(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         front_door_name: &str,
-    ) -> Result<FrontendEndpointsListResult> {
+    ) -> std::result::Result<FrontendEndpointsListResult, list_by_front_door::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/frontDoors/{}/frontendEndpoints",
@@ -504,17 +1522,59 @@ pub mod frontend_endpoints {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list_by_front_door::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list_by_front_door::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_front_door::ResponseBytesError)?;
+                let rsp_value: FrontendEndpointsListResult =
+                    serde_json::from_slice(&body).context(list_by_front_door::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_front_door::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(list_by_front_door::DeserializeError { body })?;
+                list_by_front_door::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list_by_front_door {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn get(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         front_door_name: &str,
         frontend_endpoint_name: &str,
-    ) -> Result<FrontendEndpoint> {
+    ) -> std::result::Result<FrontendEndpoint, get::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/frontDoors/{}/frontendEndpoints/{}",
@@ -525,18 +1585,59 @@ pub mod frontend_endpoints {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(get::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: FrontendEndpoint = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                get::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod get {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn enable_https(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         front_door_name: &str,
         frontend_endpoint_name: &str,
         custom_https_configuration: &CustomHttpsConfiguration,
-    ) -> Result<ErrorResponse> {
+    ) -> std::result::Result<enable_https::Response, enable_https::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/frontDoors/{}/frontendEndpoints/{}/enableHttps",
@@ -548,17 +1649,60 @@ pub mod frontend_endpoints {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(custom_https_configuration);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(enable_https::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(enable_https::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => Ok(enable_https::Response::Ok200),
+            StatusCode::ACCEPTED => Ok(enable_https::Response::Accepted202),
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(enable_https::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(enable_https::DeserializeError { body })?;
+                enable_https::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod enable_https {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200,
+            Accepted202,
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn disable_https(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         front_door_name: &str,
         frontend_endpoint_name: &str,
-    ) -> Result<ErrorResponse> {
+    ) -> std::result::Result<disable_https::Response, disable_https::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/frontDoors/{}/frontendEndpoints/{}/disableHttps",
@@ -569,20 +1713,65 @@ pub mod frontend_endpoints {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(disable_https::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(disable_https::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => Ok(disable_https::Response::Ok200),
+            StatusCode::ACCEPTED => Ok(disable_https::Response::Accepted202),
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(disable_https::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(disable_https::DeserializeError { body })?;
+                disable_https::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod disable_https {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200,
+            Accepted202,
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
 }
 pub mod endpoints {
-    use crate::{models::*, *};
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
     pub async fn purge_content(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         front_door_name: &str,
         content_file_paths: &PurgeParameters,
-    ) -> Result<ErrorResponse> {
+    ) -> std::result::Result<purge_content::Response, purge_content::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/frontDoors/{}/purge",
@@ -594,19 +1783,64 @@ pub mod endpoints {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(content_file_paths);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(purge_content::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(purge_content::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => Ok(purge_content::Response::Ok200),
+            StatusCode::ACCEPTED => Ok(purge_content::Response::Accepted202),
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(purge_content::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(purge_content::DeserializeError { body })?;
+                purge_content::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod purge_content {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200,
+            Accepted202,
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
 }
 pub mod rules_engines {
-    use crate::{models::*, *};
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
     pub async fn list_by_front_door(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         front_door_name: &str,
-    ) -> Result<RulesEngineListResult> {
+    ) -> std::result::Result<RulesEngineListResult, list_by_front_door::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/frontDoors/{}/rulesEngines",
@@ -617,17 +1851,59 @@ pub mod rules_engines {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list_by_front_door::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list_by_front_door::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_front_door::ResponseBytesError)?;
+                let rsp_value: RulesEngineListResult =
+                    serde_json::from_slice(&body).context(list_by_front_door::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_front_door::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(list_by_front_door::DeserializeError { body })?;
+                list_by_front_door::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list_by_front_door {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn get(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         front_door_name: &str,
         rules_engine_name: &str,
-    ) -> Result<RulesEngine> {
+    ) -> std::result::Result<RulesEngine, get::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/frontDoors/{}/rulesEngines/{}",
@@ -638,18 +1914,59 @@ pub mod rules_engines {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(get::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: RulesEngine = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                get::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod get {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn create_or_update(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         front_door_name: &str,
         rules_engine_name: &str,
         rules_engine_parameters: &RulesEngine,
-    ) -> Result<RulesEngine> {
+    ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/frontDoors/{}/rulesEngines/{}",
@@ -661,17 +1978,74 @@ pub mod rules_engines {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(rules_engine_parameters);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(create_or_update::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(create_or_update::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
+                let rsp_value: RulesEngine = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                Ok(create_or_update::Response::Ok200(rsp_value))
+            }
+            StatusCode::CREATED => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
+                let rsp_value: RulesEngine = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                Ok(create_or_update::Response::Created201(rsp_value))
+            }
+            StatusCode::ACCEPTED => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
+                let rsp_value: RulesEngine = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                Ok(create_or_update::Response::Accepted202(rsp_value))
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                create_or_update::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod create_or_update {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(RulesEngine),
+            Created201(RulesEngine),
+            Accepted202(RulesEngine),
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn delete(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         front_door_name: &str,
         rules_engine_name: &str,
-    ) -> Result<ErrorResponse> {
+    ) -> std::result::Result<delete::Response, delete::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/frontDoors/{}/rulesEngines/{}",
@@ -682,18 +2056,63 @@ pub mod rules_engines {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(delete::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::ACCEPTED => Ok(delete::Response::Accepted202),
+            StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(delete::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(delete::DeserializeError { body })?;
+                delete::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod delete {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Accepted202,
+            NoContent204,
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
 }
 pub mod policies {
-    use crate::{models::*, *};
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
     pub async fn list(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         resource_group_name: &str,
         subscription_id: &str,
-    ) -> Result<WebApplicationFirewallPolicyList> {
+    ) -> std::result::Result<WebApplicationFirewallPolicyList, list::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/frontDoorWebApplicationFirewallPolicies",
@@ -704,16 +2123,57 @@ pub mod policies {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: WebApplicationFirewallPolicyList = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                list::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn get(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         resource_group_name: &str,
         policy_name: &str,
         subscription_id: &str,
-    ) -> Result<WebApplicationFirewallPolicy> {
+    ) -> std::result::Result<WebApplicationFirewallPolicy, get::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/FrontDoorWebApplicationFirewallPolicies/{}",
@@ -724,17 +2184,58 @@ pub mod policies {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(get::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: WebApplicationFirewallPolicy = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                get::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod get {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn create_or_update(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         resource_group_name: &str,
         policy_name: &str,
         subscription_id: &str,
         parameters: &WebApplicationFirewallPolicy,
-    ) -> Result<WebApplicationFirewallPolicy> {
+    ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/FrontDoorWebApplicationFirewallPolicies/{}",
@@ -746,11 +2247,76 @@ pub mod policies {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(parameters);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(create_or_update::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(create_or_update::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
+                let rsp_value: WebApplicationFirewallPolicy =
+                    serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                Ok(create_or_update::Response::Ok200(rsp_value))
+            }
+            StatusCode::CREATED => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
+                let rsp_value: WebApplicationFirewallPolicy =
+                    serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                Ok(create_or_update::Response::Created201(rsp_value))
+            }
+            StatusCode::ACCEPTED => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
+                let rsp_value: WebApplicationFirewallPolicy =
+                    serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                Ok(create_or_update::Response::Accepted202(rsp_value))
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                create_or_update::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
     }
-    pub async fn delete(configuration: &Configuration, resource_group_name: &str, policy_name: &str, subscription_id: &str) -> Result<()> {
+    pub mod create_or_update {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(WebApplicationFirewallPolicy),
+            Created201(WebApplicationFirewallPolicy),
+            Accepted202(WebApplicationFirewallPolicy),
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
+    }
+    pub async fn delete(
+        configuration: &crate::Configuration,
+        resource_group_name: &str,
+        policy_name: &str,
+        subscription_id: &str,
+    ) -> std::result::Result<delete::Response, delete::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/FrontDoorWebApplicationFirewallPolicies/{}",
@@ -761,14 +2327,47 @@ pub mod policies {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(delete::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => Ok(delete::Response::Ok200),
+            StatusCode::ACCEPTED => Ok(delete::Response::Accepted202),
+            StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(delete::ResponseBytesError)?;
+                delete::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
+    }
+    pub mod delete {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200,
+            Accepted202,
+            NoContent204,
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
 }
 pub mod managed_rule_sets {
-    use crate::{models::*, *};
-    pub async fn list(configuration: &Configuration, subscription_id: &str) -> Result<ManagedRuleSetDefinitionList> {
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
+    pub async fn list(
+        configuration: &crate::Configuration,
+        subscription_id: &str,
+    ) -> std::result::Result<ManagedRuleSetDefinitionList, list::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Network/FrontDoorWebApplicationFirewallManagedRuleSets",
@@ -779,8 +2378,49 @@ pub mod managed_rule_sets {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: ManagedRuleSetDefinitionList = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                list::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
 }

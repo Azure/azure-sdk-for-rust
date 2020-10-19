@@ -2,10 +2,14 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use crate::{models::*, *};
+use crate::models::*;
+use reqwest::StatusCode;
+use snafu::{ResultExt, Snafu};
 pub mod operations {
-    use crate::{models::*, *};
-    pub async fn list(configuration: &Configuration) -> Result<OperationsListResult> {
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
+    pub async fn list(configuration: &crate::Configuration) -> std::result::Result<OperationsListResult, list::Error> {
         let client = &configuration.client;
         let uri_str = &format!("{}/providers/Microsoft.Support/operations", &configuration.base_path,);
         let mut req_builder = client.get(uri_str);
@@ -13,14 +17,57 @@ pub mod operations {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: OperationsListResult = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: ExceptionResponse = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                list::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ExceptionResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
 }
 pub mod services {
-    use crate::{models::*, *};
-    pub async fn list(configuration: &Configuration) -> Result<ServicesListResult> {
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
+    pub async fn list(configuration: &crate::Configuration) -> std::result::Result<ServicesListResult, list::Error> {
         let client = &configuration.client;
         let uri_str = &format!("{}/providers/Microsoft.Support/services", &configuration.base_path,);
         let mut req_builder = client.get(uri_str);
@@ -28,11 +75,52 @@ pub mod services {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: ServicesListResult = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: ExceptionResponse = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                list::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
     }
-    pub async fn get(configuration: &Configuration, service_name: &str) -> Result<Service> {
+    pub mod list {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ExceptionResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
+    }
+    pub async fn get(configuration: &crate::Configuration, service_name: &str) -> std::result::Result<Service, get::Error> {
         let client = &configuration.client;
         let uri_str = &format!("{}/providers/Microsoft.Support/services/{}", &configuration.base_path, service_name);
         let mut req_builder = client.get(uri_str);
@@ -40,14 +128,60 @@ pub mod services {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(get::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: Service = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: ExceptionResponse = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                get::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod get {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ExceptionResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
 }
 pub mod problem_classifications {
-    use crate::{models::*, *};
-    pub async fn list(configuration: &Configuration, service_name: &str) -> Result<ProblemClassificationsListResult> {
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
+    pub async fn list(
+        configuration: &crate::Configuration,
+        service_name: &str,
+    ) -> std::result::Result<ProblemClassificationsListResult, list::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Support/services/{}/problemClassifications",
@@ -58,15 +192,56 @@ pub mod problem_classifications {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: ProblemClassificationsListResult = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: ExceptionResponse = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                list::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ExceptionResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn get(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         service_name: &str,
         problem_classification_name: &str,
-    ) -> Result<ProblemClassification> {
+    ) -> std::result::Result<ProblemClassification, get::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Support/services/{}/problemClassifications/{}",
@@ -77,18 +252,61 @@ pub mod problem_classifications {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(get::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: ProblemClassification = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: ExceptionResponse = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                get::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod get {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ExceptionResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
 }
 pub mod support_tickets {
-    use crate::{models::*, *};
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
     pub async fn check_name_availability(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         check_name_availability_input: &CheckNameAvailabilityInput,
         subscription_id: &str,
-    ) -> Result<CheckNameAvailabilityOutput> {
+    ) -> std::result::Result<CheckNameAvailabilityOutput, check_name_availability::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Support/checkNameAvailability",
@@ -100,16 +318,59 @@ pub mod support_tickets {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(check_name_availability_input);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(check_name_availability::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(check_name_availability::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(check_name_availability::ResponseBytesError)?;
+                let rsp_value: CheckNameAvailabilityOutput =
+                    serde_json::from_slice(&body).context(check_name_availability::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(check_name_availability::ResponseBytesError)?;
+                let rsp_value: ExceptionResponse =
+                    serde_json::from_slice(&body).context(check_name_availability::DeserializeError { body })?;
+                check_name_availability::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod check_name_availability {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ExceptionResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn list(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         top: Option<i64>,
         filter: Option<&str>,
         subscription_id: &str,
-    ) -> Result<SupportTicketsListResult> {
+    ) -> std::result::Result<SupportTicketsListResult, list::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Support/supportTickets",
@@ -126,11 +387,56 @@ pub mod support_tickets {
         if let Some(filter) = filter {
             req_builder = req_builder.query(&[("$filter", filter)]);
         }
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: SupportTicketsListResult = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: ExceptionResponse = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                list::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
     }
-    pub async fn get(configuration: &Configuration, support_ticket_name: &str, subscription_id: &str) -> Result<SupportTicketDetails> {
+    pub mod list {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ExceptionResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
+    }
+    pub async fn get(
+        configuration: &crate::Configuration,
+        support_ticket_name: &str,
+        subscription_id: &str,
+    ) -> std::result::Result<SupportTicketDetails, get::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Support/supportTickets/{}",
@@ -141,16 +447,57 @@ pub mod support_tickets {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(get::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: SupportTicketDetails = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: ExceptionResponse = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                get::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod get {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ExceptionResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn create(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         support_ticket_name: &str,
         create_support_ticket_parameters: &SupportTicketDetails,
         subscription_id: &str,
-    ) -> Result<SupportTicketDetails> {
+    ) -> std::result::Result<create::Response, create::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Support/supportTickets/{}",
@@ -162,16 +509,63 @@ pub mod support_tickets {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(create_support_ticket_parameters);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(create::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(create::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create::ResponseBytesError)?;
+                let rsp_value: SupportTicketDetails = serde_json::from_slice(&body).context(create::DeserializeError { body })?;
+                Ok(create::Response::Ok200(rsp_value))
+            }
+            StatusCode::ACCEPTED => Ok(create::Response::Accepted202),
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create::ResponseBytesError)?;
+                let rsp_value: ExceptionResponse = serde_json::from_slice(&body).context(create::DeserializeError { body })?;
+                create::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod create {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(SupportTicketDetails),
+            Accepted202,
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ExceptionResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn update(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         support_ticket_name: &str,
         update_support_ticket: &UpdateSupportTicket,
         subscription_id: &str,
-    ) -> Result<SupportTicketDetails> {
+    ) -> std::result::Result<SupportTicketDetails, update::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Support/supportTickets/{}",
@@ -183,19 +577,62 @@ pub mod support_tickets {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(update_support_ticket);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(update::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(update::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(update::ResponseBytesError)?;
+                let rsp_value: SupportTicketDetails = serde_json::from_slice(&body).context(update::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(update::ResponseBytesError)?;
+                let rsp_value: ExceptionResponse = serde_json::from_slice(&body).context(update::DeserializeError { body })?;
+                update::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod update {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ExceptionResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
 }
 pub mod communications {
-    use crate::{models::*, *};
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
     pub async fn check_name_availability(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         support_ticket_name: &str,
         check_name_availability_input: &CheckNameAvailabilityInput,
         subscription_id: &str,
-    ) -> Result<CheckNameAvailabilityOutput> {
+    ) -> std::result::Result<CheckNameAvailabilityOutput, check_name_availability::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Support/supportTickets/{}/checkNameAvailability",
@@ -207,17 +644,60 @@ pub mod communications {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(check_name_availability_input);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(check_name_availability::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(check_name_availability::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(check_name_availability::ResponseBytesError)?;
+                let rsp_value: CheckNameAvailabilityOutput =
+                    serde_json::from_slice(&body).context(check_name_availability::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(check_name_availability::ResponseBytesError)?;
+                let rsp_value: ExceptionResponse =
+                    serde_json::from_slice(&body).context(check_name_availability::DeserializeError { body })?;
+                check_name_availability::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod check_name_availability {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ExceptionResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn list(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         support_ticket_name: &str,
         top: Option<i64>,
         filter: Option<&str>,
         subscription_id: &str,
-    ) -> Result<CommunicationsListResult> {
+    ) -> std::result::Result<CommunicationsListResult, list::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Support/supportTickets/{}/communications",
@@ -234,16 +714,57 @@ pub mod communications {
         if let Some(filter) = filter {
             req_builder = req_builder.query(&[("$filter", filter)]);
         }
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: CommunicationsListResult = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: ExceptionResponse = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                list::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ExceptionResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn get(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         support_ticket_name: &str,
         communication_name: &str,
         subscription_id: &str,
-    ) -> Result<CommunicationDetails> {
+    ) -> std::result::Result<CommunicationDetails, get::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Support/supportTickets/{}/communications/{}",
@@ -254,17 +775,58 @@ pub mod communications {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(get::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: CommunicationDetails = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: ExceptionResponse = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                get::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod get {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ExceptionResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn create(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         support_ticket_name: &str,
         communication_name: &str,
         create_communication_parameters: &CommunicationDetails,
         subscription_id: &str,
-    ) -> Result<CommunicationDetails> {
+    ) -> std::result::Result<create::Response, create::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Support/supportTickets/{}/communications/{}",
@@ -276,8 +838,55 @@ pub mod communications {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(create_communication_parameters);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(create::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(create::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create::ResponseBytesError)?;
+                let rsp_value: CommunicationDetails = serde_json::from_slice(&body).context(create::DeserializeError { body })?;
+                Ok(create::Response::Ok200(rsp_value))
+            }
+            StatusCode::ACCEPTED => Ok(create::Response::Accepted202),
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create::ResponseBytesError)?;
+                let rsp_value: ExceptionResponse = serde_json::from_slice(&body).context(create::DeserializeError { body })?;
+                create::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod create {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(CommunicationDetails),
+            Accepted202,
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ExceptionResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
 }

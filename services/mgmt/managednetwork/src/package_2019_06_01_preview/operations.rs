@@ -2,15 +2,19 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use crate::{models::*, *};
+use crate::models::*;
+use reqwest::StatusCode;
+use snafu::{ResultExt, Snafu};
 pub mod managed_networks {
-    use crate::{models::*, *};
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
     pub async fn get(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         managed_network_name: &str,
-    ) -> Result<ManagedNetwork> {
+    ) -> std::result::Result<ManagedNetwork, get::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ManagedNetwork/managedNetworks/{}",
@@ -21,17 +25,58 @@ pub mod managed_networks {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(get::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: ManagedNetwork = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                get::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod get {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn create_or_update(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         managed_network: &ManagedNetwork,
         subscription_id: &str,
         resource_group_name: &str,
         managed_network_name: &str,
-    ) -> Result<ManagedNetwork> {
+    ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ManagedNetwork/managedNetworks/{}",
@@ -43,17 +88,68 @@ pub mod managed_networks {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(managed_network);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(create_or_update::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(create_or_update::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
+                let rsp_value: ManagedNetwork = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                Ok(create_or_update::Response::Ok200(rsp_value))
+            }
+            StatusCode::CREATED => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
+                let rsp_value: ManagedNetwork = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                Ok(create_or_update::Response::Created201(rsp_value))
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                create_or_update::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod create_or_update {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(ManagedNetwork),
+            Created201(ManagedNetwork),
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn update(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         parameters: &ManagedNetworkUpdate,
         subscription_id: &str,
         resource_group_name: &str,
         managed_network_name: &str,
-    ) -> Result<ManagedNetwork> {
+    ) -> std::result::Result<update::Response, update::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ManagedNetwork/managedNetworks/{}",
@@ -65,16 +161,67 @@ pub mod managed_networks {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(parameters);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(update::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(update::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(update::ResponseBytesError)?;
+                let rsp_value: ManagedNetwork = serde_json::from_slice(&body).context(update::DeserializeError { body })?;
+                Ok(update::Response::Ok200(rsp_value))
+            }
+            StatusCode::CREATED => {
+                let body: bytes::Bytes = rsp.bytes().await.context(update::ResponseBytesError)?;
+                let rsp_value: ManagedNetwork = serde_json::from_slice(&body).context(update::DeserializeError { body })?;
+                Ok(update::Response::Created201(rsp_value))
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(update::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(update::DeserializeError { body })?;
+                update::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod update {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(ManagedNetwork),
+            Created201(ManagedNetwork),
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn delete(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         managed_network_name: &str,
-    ) -> Result<ErrorResponse> {
+    ) -> std::result::Result<delete::Response, delete::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ManagedNetwork/managedNetworks/{}",
@@ -85,17 +232,62 @@ pub mod managed_networks {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(delete::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => Ok(delete::Response::Ok200),
+            StatusCode::ACCEPTED => Ok(delete::Response::Accepted202),
+            StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(delete::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(delete::DeserializeError { body })?;
+                delete::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod delete {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200,
+            Accepted202,
+            NoContent204,
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn list_by_resource_group(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         top: Option<i64>,
         skiptoken: Option<&str>,
-    ) -> Result<ManagedNetworkListResult> {
+    ) -> std::result::Result<ManagedNetworkListResult, list_by_resource_group::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ManagedNetwork/managedNetworks",
@@ -112,16 +304,58 @@ pub mod managed_networks {
         if let Some(skiptoken) = skiptoken {
             req_builder = req_builder.query(&[("$skiptoken", skiptoken)]);
         }
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list_by_resource_group::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list_by_resource_group::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_resource_group::ResponseBytesError)?;
+                let rsp_value: ManagedNetworkListResult =
+                    serde_json::from_slice(&body).context(list_by_resource_group::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_resource_group::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(list_by_resource_group::DeserializeError { body })?;
+                list_by_resource_group::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list_by_resource_group {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn list_by_subscription(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         top: Option<i64>,
         skiptoken: Option<&str>,
-    ) -> Result<ManagedNetworkListResult> {
+    ) -> std::result::Result<ManagedNetworkListResult, list_by_subscription::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.ManagedNetwork/managedNetworks",
@@ -138,14 +372,62 @@ pub mod managed_networks {
         if let Some(skiptoken) = skiptoken {
             req_builder = req_builder.query(&[("$skiptoken", skiptoken)]);
         }
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list_by_subscription::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list_by_subscription::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_subscription::ResponseBytesError)?;
+                let rsp_value: ManagedNetworkListResult =
+                    serde_json::from_slice(&body).context(list_by_subscription::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_subscription::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(list_by_subscription::DeserializeError { body })?;
+                list_by_subscription::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list_by_subscription {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
 }
 pub mod scope_assignments {
-    use crate::{models::*, *};
-    pub async fn get(configuration: &Configuration, scope: &str, scope_assignment_name: &str) -> Result<ScopeAssignment> {
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
+    pub async fn get(
+        configuration: &crate::Configuration,
+        scope: &str,
+        scope_assignment_name: &str,
+    ) -> std::result::Result<ScopeAssignment, get::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/{}/providers/Microsoft.ManagedNetwork/scopeAssignments/{}",
@@ -156,16 +438,57 @@ pub mod scope_assignments {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(get::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: ScopeAssignment = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                get::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod get {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn create_or_update(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         parameters: &ScopeAssignment,
         scope: &str,
         scope_assignment_name: &str,
-    ) -> Result<ScopeAssignment> {
+    ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/{}/providers/Microsoft.ManagedNetwork/scopeAssignments/{}",
@@ -177,11 +500,66 @@ pub mod scope_assignments {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(parameters);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(create_or_update::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(create_or_update::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
+                let rsp_value: ScopeAssignment = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                Ok(create_or_update::Response::Ok200(rsp_value))
+            }
+            StatusCode::CREATED => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
+                let rsp_value: ScopeAssignment = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                Ok(create_or_update::Response::Created201(rsp_value))
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                create_or_update::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
     }
-    pub async fn delete(configuration: &Configuration, scope: &str, scope_assignment_name: &str) -> Result<()> {
+    pub mod create_or_update {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(ScopeAssignment),
+            Created201(ScopeAssignment),
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
+    }
+    pub async fn delete(
+        configuration: &crate::Configuration,
+        scope: &str,
+        scope_assignment_name: &str,
+    ) -> std::result::Result<(), delete::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/{}/providers/Microsoft.ManagedNetwork/scopeAssignments/{}",
@@ -192,11 +570,28 @@ pub mod scope_assignments {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(delete::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => Ok(()),
+            status_code => delete::DefaultResponse { status_code }.fail(),
+        }
     }
-    pub async fn list(configuration: &Configuration, scope: &str) -> Result<ScopeAssignmentListResult> {
+    pub mod delete {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse { status_code: StatusCode },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
+    }
+    pub async fn list(configuration: &crate::Configuration, scope: &str) -> std::result::Result<ScopeAssignmentListResult, list::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/{}/providers/Microsoft.ManagedNetwork/scopeAssignments",
@@ -207,20 +602,63 @@ pub mod scope_assignments {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: ScopeAssignmentListResult = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                list::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
 }
 pub mod managed_network_groups {
-    use crate::{models::*, *};
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
     pub async fn get(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         managed_network_name: &str,
         managed_network_group_name: &str,
-    ) -> Result<ManagedNetworkGroup> {
+    ) -> std::result::Result<ManagedNetworkGroup, get::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ManagedNetwork/managedNetworks/{}/managedNetworkGroups/{}",
@@ -231,18 +669,59 @@ pub mod managed_network_groups {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(get::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: ManagedNetworkGroup = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                get::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod get {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn create_or_update(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         managed_network_group: &ManagedNetworkGroup,
         subscription_id: &str,
         resource_group_name: &str,
         managed_network_name: &str,
         managed_network_group_name: &str,
-    ) -> Result<ManagedNetworkGroup> {
+    ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ManagedNetwork/managedNetworks/{}/managedNetworkGroups/{}",
@@ -254,17 +733,68 @@ pub mod managed_network_groups {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(managed_network_group);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(create_or_update::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(create_or_update::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
+                let rsp_value: ManagedNetworkGroup = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                Ok(create_or_update::Response::Ok200(rsp_value))
+            }
+            StatusCode::CREATED => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
+                let rsp_value: ManagedNetworkGroup = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                Ok(create_or_update::Response::Created201(rsp_value))
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                create_or_update::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod create_or_update {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(ManagedNetworkGroup),
+            Created201(ManagedNetworkGroup),
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn delete(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         managed_network_name: &str,
         managed_network_group_name: &str,
-    ) -> Result<ErrorResponse> {
+    ) -> std::result::Result<delete::Response, delete::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ManagedNetwork/managedNetworks/{}/managedNetworkGroups/{}",
@@ -275,18 +805,63 @@ pub mod managed_network_groups {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(delete::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => Ok(delete::Response::Ok200),
+            StatusCode::ACCEPTED => Ok(delete::Response::Accepted202),
+            StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(delete::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(delete::DeserializeError { body })?;
+                delete::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod delete {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200,
+            Accepted202,
+            NoContent204,
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn list_by_managed_network(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         managed_network_name: &str,
         top: Option<i64>,
         skiptoken: Option<&str>,
-    ) -> Result<ManagedNetworkGroupListResult> {
+    ) -> std::result::Result<ManagedNetworkGroupListResult, list_by_managed_network::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ManagedNetwork/managedNetworks/{}/managedNetworkGroups",
@@ -303,20 +878,64 @@ pub mod managed_network_groups {
         if let Some(skiptoken) = skiptoken {
             req_builder = req_builder.query(&[("$skiptoken", skiptoken)]);
         }
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list_by_managed_network::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list_by_managed_network::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_managed_network::ResponseBytesError)?;
+                let rsp_value: ManagedNetworkGroupListResult =
+                    serde_json::from_slice(&body).context(list_by_managed_network::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_managed_network::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(list_by_managed_network::DeserializeError { body })?;
+                list_by_managed_network::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list_by_managed_network {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
 }
 pub mod managed_network_peering_policies {
-    use crate::{models::*, *};
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
     pub async fn get(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         managed_network_name: &str,
         managed_network_peering_policy_name: &str,
-    ) -> Result<ManagedNetworkPeeringPolicy> {
+    ) -> std::result::Result<ManagedNetworkPeeringPolicy, get::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ManagedNetwork/managedNetworks/{}/managedNetworkPeeringPolicies/{}",
@@ -327,18 +946,59 @@ pub mod managed_network_peering_policies {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(get::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: ManagedNetworkPeeringPolicy = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                get::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod get {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn create_or_update(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         managed_network_policy: &ManagedNetworkPeeringPolicy,
         subscription_id: &str,
         resource_group_name: &str,
         managed_network_name: &str,
         managed_network_peering_policy_name: &str,
-    ) -> Result<ManagedNetworkPeeringPolicy> {
+    ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ManagedNetwork/managedNetworks/{}/managedNetworkPeeringPolicies/{}",
@@ -350,17 +1010,70 @@ pub mod managed_network_peering_policies {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(managed_network_policy);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(create_or_update::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(create_or_update::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
+                let rsp_value: ManagedNetworkPeeringPolicy =
+                    serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                Ok(create_or_update::Response::Ok200(rsp_value))
+            }
+            StatusCode::CREATED => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
+                let rsp_value: ManagedNetworkPeeringPolicy =
+                    serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                Ok(create_or_update::Response::Created201(rsp_value))
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                create_or_update::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod create_or_update {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(ManagedNetworkPeeringPolicy),
+            Created201(ManagedNetworkPeeringPolicy),
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn delete(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         managed_network_name: &str,
         managed_network_peering_policy_name: &str,
-    ) -> Result<ErrorResponse> {
+    ) -> std::result::Result<delete::Response, delete::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ManagedNetwork/managedNetworks/{}/managedNetworkPeeringPolicies/{}",
@@ -371,18 +1084,63 @@ pub mod managed_network_peering_policies {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(delete::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => Ok(delete::Response::Ok200),
+            StatusCode::ACCEPTED => Ok(delete::Response::Accepted202),
+            StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(delete::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(delete::DeserializeError { body })?;
+                delete::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod delete {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200,
+            Accepted202,
+            NoContent204,
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn list_by_managed_network(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         managed_network_name: &str,
         top: Option<i64>,
         skiptoken: Option<&str>,
-    ) -> Result<ManagedNetworkPeeringPolicyListResult> {
+    ) -> std::result::Result<ManagedNetworkPeeringPolicyListResult, list_by_managed_network::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ManagedNetwork/managedNetworks/{}/managedNetworkPeeringPolicies",
@@ -399,14 +1157,58 @@ pub mod managed_network_peering_policies {
         if let Some(skiptoken) = skiptoken {
             req_builder = req_builder.query(&[("$skiptoken", skiptoken)]);
         }
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list_by_managed_network::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list_by_managed_network::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_managed_network::ResponseBytesError)?;
+                let rsp_value: ManagedNetworkPeeringPolicyListResult =
+                    serde_json::from_slice(&body).context(list_by_managed_network::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_managed_network::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(list_by_managed_network::DeserializeError { body })?;
+                list_by_managed_network::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list_by_managed_network {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
 }
 pub mod operations {
-    use crate::{models::*, *};
-    pub async fn list(configuration: &Configuration) -> Result<OperationListResult> {
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
+    pub async fn list(configuration: &crate::Configuration) -> std::result::Result<OperationListResult, list::Error> {
         let client = &configuration.client;
         let uri_str = &format!("{}/providers/Microsoft.ManagedNetwork/operations", &configuration.base_path,);
         let mut req_builder = client.get(uri_str);
@@ -414,8 +1216,49 @@ pub mod operations {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: OperationListResult = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                list::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
 }

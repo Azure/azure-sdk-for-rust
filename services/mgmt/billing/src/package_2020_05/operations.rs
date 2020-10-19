@@ -2,10 +2,17 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use crate::{models::*, *};
+use crate::models::*;
+use reqwest::StatusCode;
+use snafu::{ResultExt, Snafu};
 pub mod billing_accounts {
-    use crate::{models::*, *};
-    pub async fn list(configuration: &Configuration, expand: Option<&str>) -> Result<BillingAccountListResult> {
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
+    pub async fn list(
+        configuration: &crate::Configuration,
+        expand: Option<&str>,
+    ) -> std::result::Result<BillingAccountListResult, list::Error> {
         let client = &configuration.client;
         let uri_str = &format!("{}/providers/Microsoft.Billing/billingAccounts", &configuration.base_path,);
         let mut req_builder = client.get(uri_str);
@@ -16,11 +23,56 @@ pub mod billing_accounts {
         if let Some(expand) = expand {
             req_builder = req_builder.query(&[("$expand", expand)]);
         }
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: BillingAccountListResult = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                list::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
     }
-    pub async fn get(configuration: &Configuration, billing_account_name: &str, expand: Option<&str>) -> Result<BillingAccount> {
+    pub mod list {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
+    }
+    pub async fn get(
+        configuration: &crate::Configuration,
+        billing_account_name: &str,
+        expand: Option<&str>,
+    ) -> std::result::Result<BillingAccount, get::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}",
@@ -34,15 +86,56 @@ pub mod billing_accounts {
         if let Some(expand) = expand {
             req_builder = req_builder.query(&[("$expand", expand)]);
         }
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(get::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: BillingAccount = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                get::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod get {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn update(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         billing_account_name: &str,
         parameters: &BillingAccountUpdateRequest,
-    ) -> Result<BillingAccount> {
+    ) -> std::result::Result<update::Response, update::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}",
@@ -54,14 +147,62 @@ pub mod billing_accounts {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(parameters);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(update::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(update::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(update::ResponseBytesError)?;
+                let rsp_value: BillingAccount = serde_json::from_slice(&body).context(update::DeserializeError { body })?;
+                Ok(update::Response::Ok200(rsp_value))
+            }
+            StatusCode::ACCEPTED => Ok(update::Response::Accepted202),
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(update::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(update::DeserializeError { body })?;
+                update::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod update {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(BillingAccount),
+            Accepted202,
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn list_invoice_sections_by_create_subscription_permission(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         billing_account_name: &str,
-    ) -> Result<InvoiceSectionListWithCreateSubPermissionResult> {
+    ) -> std::result::Result<InvoiceSectionListWithCreateSubPermissionResult, list_invoice_sections_by_create_subscription_permission::Error>
+    {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/listInvoiceSectionsWithCreateSubscriptionPermission",
@@ -72,14 +213,73 @@ pub mod billing_accounts {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder
+            .build()
+            .context(list_invoice_sections_by_create_subscription_permission::BuildRequestError)?;
+        let rsp = client
+            .execute(req)
+            .await
+            .context(list_invoice_sections_by_create_subscription_permission::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp
+                    .bytes()
+                    .await
+                    .context(list_invoice_sections_by_create_subscription_permission::ResponseBytesError)?;
+                let rsp_value: InvoiceSectionListWithCreateSubPermissionResult = serde_json::from_slice(&body)
+                    .context(list_invoice_sections_by_create_subscription_permission::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp
+                    .bytes()
+                    .await
+                    .context(list_invoice_sections_by_create_subscription_permission::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body)
+                    .context(list_invoice_sections_by_create_subscription_permission::DeserializeError { body })?;
+                list_invoice_sections_by_create_subscription_permission::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list_invoice_sections_by_create_subscription_permission {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
 }
 pub mod address {
-    use crate::{models::*, *};
-    pub async fn validate(configuration: &Configuration, address: &AddressDetails) -> Result<ValidateAddressResponse> {
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
+    pub async fn validate(
+        configuration: &crate::Configuration,
+        address: &AddressDetails,
+    ) -> std::result::Result<ValidateAddressResponse, validate::Error> {
         let client = &configuration.client;
         let uri_str = &format!("{}/providers/Microsoft.Billing/validateAddress", &configuration.base_path,);
         let mut req_builder = client.post(uri_str);
@@ -88,14 +288,61 @@ pub mod address {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(address);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(validate::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(validate::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(validate::ResponseBytesError)?;
+                let rsp_value: ValidateAddressResponse = serde_json::from_slice(&body).context(validate::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(validate::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(validate::DeserializeError { body })?;
+                validate::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod validate {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
 }
 pub mod available_balances {
-    use crate::{models::*, *};
-    pub async fn get(configuration: &Configuration, billing_account_name: &str, billing_profile_name: &str) -> Result<AvailableBalance> {
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
+    pub async fn get(
+        configuration: &crate::Configuration,
+        billing_account_name: &str,
+        billing_profile_name: &str,
+    ) -> std::result::Result<AvailableBalance, get::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/billingProfiles/{}/availableBalance/default",
@@ -106,18 +353,61 @@ pub mod available_balances {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(get::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: AvailableBalance = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                get::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod get {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
 }
 pub mod instructions {
-    use crate::{models::*, *};
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
     pub async fn list_by_billing_profile(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         billing_account_name: &str,
         billing_profile_name: &str,
-    ) -> Result<InstructionListResult> {
+    ) -> std::result::Result<InstructionListResult, list_by_billing_profile::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/billingProfiles/{}/instructions",
@@ -128,16 +418,58 @@ pub mod instructions {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list_by_billing_profile::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list_by_billing_profile::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_billing_profile::ResponseBytesError)?;
+                let rsp_value: InstructionListResult =
+                    serde_json::from_slice(&body).context(list_by_billing_profile::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_billing_profile::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(list_by_billing_profile::DeserializeError { body })?;
+                list_by_billing_profile::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list_by_billing_profile {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn get(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         billing_account_name: &str,
         billing_profile_name: &str,
         instruction_name: &str,
-    ) -> Result<Instruction> {
+    ) -> std::result::Result<Instruction, get::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/billingProfiles/{}/instructions/{}",
@@ -148,17 +480,58 @@ pub mod instructions {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(get::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: Instruction = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                get::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod get {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn put(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         billing_account_name: &str,
         billing_profile_name: &str,
         instruction_name: &str,
         parameters: &Instruction,
-    ) -> Result<Instruction> {
+    ) -> std::result::Result<Instruction, put::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/billingProfiles/{}/instructions/{}",
@@ -170,18 +543,61 @@ pub mod instructions {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(parameters);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(put::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(put::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(put::ResponseBytesError)?;
+                let rsp_value: Instruction = serde_json::from_slice(&body).context(put::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(put::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(put::DeserializeError { body })?;
+                put::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod put {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
 }
 pub mod billing_profiles {
-    use crate::{models::*, *};
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
     pub async fn list_by_billing_account(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         billing_account_name: &str,
         expand: Option<&str>,
-    ) -> Result<BillingProfileListResult> {
+    ) -> std::result::Result<BillingProfileListResult, list_by_billing_account::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/billingProfiles",
@@ -195,16 +611,58 @@ pub mod billing_profiles {
         if let Some(expand) = expand {
             req_builder = req_builder.query(&[("$expand", expand)]);
         }
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list_by_billing_account::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list_by_billing_account::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_billing_account::ResponseBytesError)?;
+                let rsp_value: BillingProfileListResult =
+                    serde_json::from_slice(&body).context(list_by_billing_account::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_billing_account::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(list_by_billing_account::DeserializeError { body })?;
+                list_by_billing_account::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list_by_billing_account {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn get(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         billing_account_name: &str,
         billing_profile_name: &str,
         expand: Option<&str>,
-    ) -> Result<BillingProfile> {
+    ) -> std::result::Result<BillingProfile, get::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/billingProfiles/{}",
@@ -218,16 +676,57 @@ pub mod billing_profiles {
         if let Some(expand) = expand {
             req_builder = req_builder.query(&[("$expand", expand)]);
         }
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(get::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: BillingProfile = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                get::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod get {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn create_or_update(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         billing_account_name: &str,
         billing_profile_name: &str,
         parameters: &BillingProfile,
-    ) -> Result<BillingProfile> {
+    ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/billingProfiles/{}",
@@ -239,20 +738,69 @@ pub mod billing_profiles {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(parameters);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(create_or_update::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(create_or_update::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
+                let rsp_value: BillingProfile = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                Ok(create_or_update::Response::Ok200(rsp_value))
+            }
+            StatusCode::ACCEPTED => Ok(create_or_update::Response::Accepted202),
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                create_or_update::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod create_or_update {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(BillingProfile),
+            Accepted202,
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
 }
 pub mod customers {
-    use crate::{models::*, *};
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
     pub async fn list_by_billing_profile(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         billing_account_name: &str,
         billing_profile_name: &str,
         search: Option<&str>,
         filter: Option<&str>,
-    ) -> Result<CustomerListResult> {
+    ) -> std::result::Result<CustomerListResult, list_by_billing_profile::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/billingProfiles/{}/customers",
@@ -269,16 +817,58 @@ pub mod customers {
         if let Some(filter) = filter {
             req_builder = req_builder.query(&[("$filter", filter)]);
         }
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list_by_billing_profile::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list_by_billing_profile::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_billing_profile::ResponseBytesError)?;
+                let rsp_value: CustomerListResult =
+                    serde_json::from_slice(&body).context(list_by_billing_profile::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_billing_profile::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(list_by_billing_profile::DeserializeError { body })?;
+                list_by_billing_profile::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list_by_billing_profile {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn list_by_billing_account(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         billing_account_name: &str,
         search: Option<&str>,
         filter: Option<&str>,
-    ) -> Result<CustomerListResult> {
+    ) -> std::result::Result<CustomerListResult, list_by_billing_account::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/customers",
@@ -295,16 +885,58 @@ pub mod customers {
         if let Some(filter) = filter {
             req_builder = req_builder.query(&[("$filter", filter)]);
         }
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list_by_billing_account::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list_by_billing_account::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_billing_account::ResponseBytesError)?;
+                let rsp_value: CustomerListResult =
+                    serde_json::from_slice(&body).context(list_by_billing_account::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_billing_account::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(list_by_billing_account::DeserializeError { body })?;
+                list_by_billing_account::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list_by_billing_account {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn get(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         billing_account_name: &str,
         customer_name: &str,
         expand: Option<&str>,
-    ) -> Result<Customer> {
+    ) -> std::result::Result<Customer, get::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/customers/{}",
@@ -318,18 +950,61 @@ pub mod customers {
         if let Some(expand) = expand {
             req_builder = req_builder.query(&[("$expand", expand)]);
         }
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(get::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: Customer = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                get::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod get {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
 }
 pub mod invoice_sections {
-    use crate::{models::*, *};
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
     pub async fn list_by_billing_profile(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         billing_account_name: &str,
         billing_profile_name: &str,
-    ) -> Result<InvoiceSectionListResult> {
+    ) -> std::result::Result<InvoiceSectionListResult, list_by_billing_profile::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/billingProfiles/{}/invoiceSections",
@@ -340,16 +1015,58 @@ pub mod invoice_sections {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list_by_billing_profile::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list_by_billing_profile::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_billing_profile::ResponseBytesError)?;
+                let rsp_value: InvoiceSectionListResult =
+                    serde_json::from_slice(&body).context(list_by_billing_profile::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_billing_profile::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(list_by_billing_profile::DeserializeError { body })?;
+                list_by_billing_profile::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list_by_billing_profile {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn get(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         billing_account_name: &str,
         billing_profile_name: &str,
         invoice_section_name: &str,
-    ) -> Result<InvoiceSection> {
+    ) -> std::result::Result<InvoiceSection, get::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/billingProfiles/{}/invoiceSections/{}",
@@ -360,17 +1077,58 @@ pub mod invoice_sections {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(get::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: InvoiceSection = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                get::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod get {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn create_or_update(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         billing_account_name: &str,
         billing_profile_name: &str,
         invoice_section_name: &str,
         parameters: &InvoiceSection,
-    ) -> Result<InvoiceSection> {
+    ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/billingProfiles/{}/invoiceSections/{}",
@@ -382,18 +1140,67 @@ pub mod invoice_sections {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(parameters);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(create_or_update::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(create_or_update::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
+                let rsp_value: InvoiceSection = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                Ok(create_or_update::Response::Ok200(rsp_value))
+            }
+            StatusCode::ACCEPTED => Ok(create_or_update::Response::Accepted202),
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                create_or_update::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod create_or_update {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(InvoiceSection),
+            Accepted202,
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
 }
 pub mod billing_permissions {
-    use crate::{models::*, *};
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
     pub async fn list_by_customer(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         billing_account_name: &str,
         customer_name: &str,
-    ) -> Result<BillingPermissionsListResult> {
+    ) -> std::result::Result<BillingPermissionsListResult, list_by_customer::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/customers/{}/billingPermissions",
@@ -404,14 +1211,56 @@ pub mod billing_permissions {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list_by_customer::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list_by_customer::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_customer::ResponseBytesError)?;
+                let rsp_value: BillingPermissionsListResult =
+                    serde_json::from_slice(&body).context(list_by_customer::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_customer::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(list_by_customer::DeserializeError { body })?;
+                list_by_customer::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list_by_customer {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn list_by_billing_account(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         billing_account_name: &str,
-    ) -> Result<BillingPermissionsListResult> {
+    ) -> std::result::Result<BillingPermissionsListResult, list_by_billing_account::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/billingPermissions",
@@ -422,16 +1271,58 @@ pub mod billing_permissions {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list_by_billing_account::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list_by_billing_account::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_billing_account::ResponseBytesError)?;
+                let rsp_value: BillingPermissionsListResult =
+                    serde_json::from_slice(&body).context(list_by_billing_account::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_billing_account::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(list_by_billing_account::DeserializeError { body })?;
+                list_by_billing_account::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list_by_billing_account {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn list_by_invoice_sections(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         billing_account_name: &str,
         billing_profile_name: &str,
         invoice_section_name: &str,
-    ) -> Result<BillingPermissionsListResult> {
+    ) -> std::result::Result<BillingPermissionsListResult, list_by_invoice_sections::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/billingProfiles/{}/invoiceSections/{}/billingPermissions",
@@ -442,15 +1333,58 @@ pub mod billing_permissions {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list_by_invoice_sections::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list_by_invoice_sections::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_invoice_sections::ResponseBytesError)?;
+                let rsp_value: BillingPermissionsListResult =
+                    serde_json::from_slice(&body).context(list_by_invoice_sections::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_invoice_sections::ResponseBytesError)?;
+                let rsp_value: ErrorResponse =
+                    serde_json::from_slice(&body).context(list_by_invoice_sections::DeserializeError { body })?;
+                list_by_invoice_sections::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list_by_invoice_sections {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn list_by_billing_profile(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         billing_account_name: &str,
         billing_profile_name: &str,
-    ) -> Result<BillingPermissionsListResult> {
+    ) -> std::result::Result<BillingPermissionsListResult, list_by_billing_profile::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/billingProfiles/{}/billingPermissions",
@@ -461,18 +1395,62 @@ pub mod billing_permissions {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list_by_billing_profile::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list_by_billing_profile::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_billing_profile::ResponseBytesError)?;
+                let rsp_value: BillingPermissionsListResult =
+                    serde_json::from_slice(&body).context(list_by_billing_profile::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_billing_profile::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(list_by_billing_profile::DeserializeError { body })?;
+                list_by_billing_profile::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list_by_billing_profile {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
 }
 pub mod billing_subscriptions {
-    use crate::{models::*, *};
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
     pub async fn list_by_customer(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         billing_account_name: &str,
         customer_name: &str,
-    ) -> Result<BillingSubscriptionsListResult> {
+    ) -> std::result::Result<BillingSubscriptionsListResult, list_by_customer::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/customers/{}/billingSubscriptions",
@@ -483,14 +1461,56 @@ pub mod billing_subscriptions {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list_by_customer::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list_by_customer::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_customer::ResponseBytesError)?;
+                let rsp_value: BillingSubscriptionsListResult =
+                    serde_json::from_slice(&body).context(list_by_customer::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_customer::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(list_by_customer::DeserializeError { body })?;
+                list_by_customer::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list_by_customer {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn list_by_billing_account(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         billing_account_name: &str,
-    ) -> Result<BillingSubscriptionsListResult> {
+    ) -> std::result::Result<BillingSubscriptionsListResult, list_by_billing_account::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/billingSubscriptions",
@@ -501,15 +1521,57 @@ pub mod billing_subscriptions {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list_by_billing_account::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list_by_billing_account::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_billing_account::ResponseBytesError)?;
+                let rsp_value: BillingSubscriptionsListResult =
+                    serde_json::from_slice(&body).context(list_by_billing_account::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_billing_account::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(list_by_billing_account::DeserializeError { body })?;
+                list_by_billing_account::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list_by_billing_account {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn list_by_billing_profile(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         billing_account_name: &str,
         billing_profile_name: &str,
-    ) -> Result<BillingSubscriptionsListResult> {
+    ) -> std::result::Result<BillingSubscriptionsListResult, list_by_billing_profile::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/billingProfiles/{}/billingSubscriptions",
@@ -520,16 +1582,58 @@ pub mod billing_subscriptions {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list_by_billing_profile::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list_by_billing_profile::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_billing_profile::ResponseBytesError)?;
+                let rsp_value: BillingSubscriptionsListResult =
+                    serde_json::from_slice(&body).context(list_by_billing_profile::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_billing_profile::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(list_by_billing_profile::DeserializeError { body })?;
+                list_by_billing_profile::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list_by_billing_profile {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn list_by_invoice_section(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         billing_account_name: &str,
         billing_profile_name: &str,
         invoice_section_name: &str,
-    ) -> Result<BillingSubscriptionsListResult> {
+    ) -> std::result::Result<BillingSubscriptionsListResult, list_by_invoice_section::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/billingProfiles/{}/invoiceSections/{}/billingSubscriptions",
@@ -540,11 +1644,57 @@ pub mod billing_subscriptions {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list_by_invoice_section::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list_by_invoice_section::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_invoice_section::ResponseBytesError)?;
+                let rsp_value: BillingSubscriptionsListResult =
+                    serde_json::from_slice(&body).context(list_by_invoice_section::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_invoice_section::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(list_by_invoice_section::DeserializeError { body })?;
+                list_by_invoice_section::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
     }
-    pub async fn get(configuration: &Configuration, billing_account_name: &str, subscription_id: &str) -> Result<BillingSubscription> {
+    pub mod list_by_invoice_section {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
+    }
+    pub async fn get(
+        configuration: &crate::Configuration,
+        billing_account_name: &str,
+        subscription_id: &str,
+    ) -> std::result::Result<BillingSubscription, get::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/billingSubscriptions/{}",
@@ -555,16 +1705,57 @@ pub mod billing_subscriptions {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(get::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: BillingSubscription = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                get::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod get {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn update(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         billing_account_name: &str,
         subscription_id: &str,
         parameters: &BillingSubscription,
-    ) -> Result<BillingSubscription> {
+    ) -> std::result::Result<BillingSubscription, update::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/billingSubscriptions/{}",
@@ -576,16 +1767,57 @@ pub mod billing_subscriptions {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(parameters);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(update::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(update::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(update::ResponseBytesError)?;
+                let rsp_value: BillingSubscription = serde_json::from_slice(&body).context(update::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(update::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(update::DeserializeError { body })?;
+                update::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod update {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn move_(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         billing_account_name: &str,
         subscription_id: &str,
         parameters: &TransferBillingSubscriptionRequestProperties,
-    ) -> Result<BillingSubscription> {
+    ) -> std::result::Result<move_::Response, move_::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/billingSubscriptions/{}/move",
@@ -597,16 +1829,63 @@ pub mod billing_subscriptions {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(parameters);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(move_::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(move_::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(move_::ResponseBytesError)?;
+                let rsp_value: BillingSubscription = serde_json::from_slice(&body).context(move_::DeserializeError { body })?;
+                Ok(move_::Response::Ok200(rsp_value))
+            }
+            StatusCode::ACCEPTED => Ok(move_::Response::Accepted202),
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(move_::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(move_::DeserializeError { body })?;
+                move_::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod move_ {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(BillingSubscription),
+            Accepted202,
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn validate_move(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         billing_account_name: &str,
         subscription_id: &str,
         parameters: &TransferBillingSubscriptionRequestProperties,
-    ) -> Result<ValidateSubscriptionTransferEligibilityResult> {
+    ) -> std::result::Result<ValidateSubscriptionTransferEligibilityResult, validate_move::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/billingSubscriptions/{}/validateMoveEligibility",
@@ -618,18 +1897,62 @@ pub mod billing_subscriptions {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(parameters);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(validate_move::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(validate_move::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(validate_move::ResponseBytesError)?;
+                let rsp_value: ValidateSubscriptionTransferEligibilityResult =
+                    serde_json::from_slice(&body).context(validate_move::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(validate_move::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(validate_move::DeserializeError { body })?;
+                validate_move::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod validate_move {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
 }
 pub mod products {
-    use crate::{models::*, *};
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
     pub async fn list_by_customer(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         billing_account_name: &str,
         customer_name: &str,
-    ) -> Result<ProductsListResult> {
+    ) -> std::result::Result<ProductsListResult, list_by_customer::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/customers/{}/products",
@@ -640,15 +1963,56 @@ pub mod products {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list_by_customer::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list_by_customer::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_customer::ResponseBytesError)?;
+                let rsp_value: ProductsListResult = serde_json::from_slice(&body).context(list_by_customer::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_customer::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(list_by_customer::DeserializeError { body })?;
+                list_by_customer::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list_by_customer {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn list_by_billing_account(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         billing_account_name: &str,
         filter: Option<&str>,
-    ) -> Result<ProductsListResult> {
+    ) -> std::result::Result<ProductsListResult, list_by_billing_account::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/products",
@@ -662,16 +2026,58 @@ pub mod products {
         if let Some(filter) = filter {
             req_builder = req_builder.query(&[("$filter", filter)]);
         }
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list_by_billing_account::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list_by_billing_account::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_billing_account::ResponseBytesError)?;
+                let rsp_value: ProductsListResult =
+                    serde_json::from_slice(&body).context(list_by_billing_account::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_billing_account::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(list_by_billing_account::DeserializeError { body })?;
+                list_by_billing_account::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list_by_billing_account {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn list_by_billing_profile(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         billing_account_name: &str,
         billing_profile_name: &str,
         filter: Option<&str>,
-    ) -> Result<ProductsListResult> {
+    ) -> std::result::Result<ProductsListResult, list_by_billing_profile::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/billingProfiles/{}/products",
@@ -685,17 +2091,59 @@ pub mod products {
         if let Some(filter) = filter {
             req_builder = req_builder.query(&[("$filter", filter)]);
         }
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list_by_billing_profile::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list_by_billing_profile::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_billing_profile::ResponseBytesError)?;
+                let rsp_value: ProductsListResult =
+                    serde_json::from_slice(&body).context(list_by_billing_profile::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_billing_profile::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(list_by_billing_profile::DeserializeError { body })?;
+                list_by_billing_profile::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list_by_billing_profile {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn list_by_invoice_section(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         billing_account_name: &str,
         billing_profile_name: &str,
         invoice_section_name: &str,
         filter: Option<&str>,
-    ) -> Result<ProductsListResult> {
+    ) -> std::result::Result<ProductsListResult, list_by_invoice_section::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/billingProfiles/{}/invoiceSections/{}/products",
@@ -709,11 +2157,57 @@ pub mod products {
         if let Some(filter) = filter {
             req_builder = req_builder.query(&[("$filter", filter)]);
         }
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list_by_invoice_section::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list_by_invoice_section::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_invoice_section::ResponseBytesError)?;
+                let rsp_value: ProductsListResult =
+                    serde_json::from_slice(&body).context(list_by_invoice_section::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_invoice_section::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(list_by_invoice_section::DeserializeError { body })?;
+                list_by_invoice_section::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
     }
-    pub async fn get(configuration: &Configuration, billing_account_name: &str, product_name: &str) -> Result<Product> {
+    pub mod list_by_invoice_section {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
+    }
+    pub async fn get(
+        configuration: &crate::Configuration,
+        billing_account_name: &str,
+        product_name: &str,
+    ) -> std::result::Result<Product, get::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/products/{}",
@@ -724,16 +2218,57 @@ pub mod products {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(get::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: Product = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                get::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod get {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn update(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         billing_account_name: &str,
         product_name: &str,
         parameters: &Product,
-    ) -> Result<Product> {
+    ) -> std::result::Result<Product, update::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/products/{}",
@@ -745,16 +2280,57 @@ pub mod products {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(parameters);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(update::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(update::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(update::ResponseBytesError)?;
+                let rsp_value: Product = serde_json::from_slice(&body).context(update::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(update::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(update::DeserializeError { body })?;
+                update::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod update {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn move_(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         billing_account_name: &str,
         product_name: &str,
         parameters: &TransferProductRequestProperties,
-    ) -> Result<Product> {
+    ) -> std::result::Result<move_::Response, move_::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/products/{}/move",
@@ -766,16 +2342,63 @@ pub mod products {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(parameters);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(move_::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(move_::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(move_::ResponseBytesError)?;
+                let rsp_value: Product = serde_json::from_slice(&body).context(move_::DeserializeError { body })?;
+                Ok(move_::Response::Ok200(rsp_value))
+            }
+            StatusCode::ACCEPTED => Ok(move_::Response::Accepted202),
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(move_::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(move_::DeserializeError { body })?;
+                move_::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod move_ {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(Product),
+            Accepted202,
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn validate_move(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         billing_account_name: &str,
         product_name: &str,
         parameters: &TransferProductRequestProperties,
-    ) -> Result<ValidateProductTransferEligibilityResult> {
+    ) -> std::result::Result<ValidateProductTransferEligibilityResult, validate_move::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/products/{}/validateMoveEligibility",
@@ -787,19 +2410,63 @@ pub mod products {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(parameters);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(validate_move::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(validate_move::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(validate_move::ResponseBytesError)?;
+                let rsp_value: ValidateProductTransferEligibilityResult =
+                    serde_json::from_slice(&body).context(validate_move::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(validate_move::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(validate_move::DeserializeError { body })?;
+                validate_move::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod validate_move {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
 }
 pub mod invoices {
-    use crate::{models::*, *};
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
     pub async fn list_by_billing_account(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         billing_account_name: &str,
         period_start_date: &str,
         period_end_date: &str,
-    ) -> Result<InvoiceListResult> {
+    ) -> std::result::Result<InvoiceListResult, list_by_billing_account::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/invoices",
@@ -812,17 +2479,59 @@ pub mod invoices {
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.query(&[("periodStartDate", period_start_date)]);
         req_builder = req_builder.query(&[("periodEndDate", period_end_date)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list_by_billing_account::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list_by_billing_account::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_billing_account::ResponseBytesError)?;
+                let rsp_value: InvoiceListResult =
+                    serde_json::from_slice(&body).context(list_by_billing_account::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_billing_account::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(list_by_billing_account::DeserializeError { body })?;
+                list_by_billing_account::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list_by_billing_account {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn list_by_billing_profile(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         billing_account_name: &str,
         billing_profile_name: &str,
         period_start_date: &str,
         period_end_date: &str,
-    ) -> Result<InvoiceListResult> {
+    ) -> std::result::Result<InvoiceListResult, list_by_billing_profile::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/billingProfiles/{}/invoices",
@@ -835,11 +2544,57 @@ pub mod invoices {
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.query(&[("periodStartDate", period_start_date)]);
         req_builder = req_builder.query(&[("periodEndDate", period_end_date)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list_by_billing_profile::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list_by_billing_profile::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_billing_profile::ResponseBytesError)?;
+                let rsp_value: InvoiceListResult =
+                    serde_json::from_slice(&body).context(list_by_billing_profile::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_billing_profile::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(list_by_billing_profile::DeserializeError { body })?;
+                list_by_billing_profile::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
     }
-    pub async fn get(configuration: &Configuration, billing_account_name: &str, invoice_name: &str) -> Result<Invoice> {
+    pub mod list_by_billing_profile {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
+    }
+    pub async fn get(
+        configuration: &crate::Configuration,
+        billing_account_name: &str,
+        invoice_name: &str,
+    ) -> std::result::Result<Invoice, get::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/invoices/{}",
@@ -850,11 +2605,52 @@ pub mod invoices {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(get::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: Invoice = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                get::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
     }
-    pub async fn get_by_id(configuration: &Configuration, invoice_name: &str) -> Result<Invoice> {
+    pub mod get {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
+    }
+    pub async fn get_by_id(configuration: &crate::Configuration, invoice_name: &str) -> std::result::Result<Invoice, get_by_id::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/default/invoices/{}",
@@ -865,16 +2661,57 @@ pub mod invoices {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(get_by_id::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get_by_id::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get_by_id::ResponseBytesError)?;
+                let rsp_value: Invoice = serde_json::from_slice(&body).context(get_by_id::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get_by_id::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(get_by_id::DeserializeError { body })?;
+                get_by_id::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod get_by_id {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn download_invoice(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         billing_account_name: &str,
         invoice_name: &str,
         download_token: &str,
-    ) -> Result<DownloadUrl> {
+    ) -> std::result::Result<download_invoice::Response, download_invoice::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/invoices/{}/download",
@@ -886,15 +2723,62 @@ pub mod invoices {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.query(&[("downloadToken", download_token)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(download_invoice::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(download_invoice::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::ACCEPTED => Ok(download_invoice::Response::Accepted202),
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(download_invoice::ResponseBytesError)?;
+                let rsp_value: DownloadUrl = serde_json::from_slice(&body).context(download_invoice::DeserializeError { body })?;
+                Ok(download_invoice::Response::Ok200(rsp_value))
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(download_invoice::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(download_invoice::DeserializeError { body })?;
+                download_invoice::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod download_invoice {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Accepted202,
+            Ok200(DownloadUrl),
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn download_multiple_billing_profile_invoices(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         billing_account_name: &str,
         download_urls: &Vec<String>,
-    ) -> Result<DownloadUrl> {
+    ) -> std::result::Result<download_multiple_billing_profile_invoices::Response, download_multiple_billing_profile_invoices::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/downloadDocuments",
@@ -906,16 +2790,76 @@ pub mod invoices {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(download_urls);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder
+            .build()
+            .context(download_multiple_billing_profile_invoices::BuildRequestError)?;
+        let rsp = client
+            .execute(req)
+            .await
+            .context(download_multiple_billing_profile_invoices::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::ACCEPTED => Ok(download_multiple_billing_profile_invoices::Response::Accepted202),
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp
+                    .bytes()
+                    .await
+                    .context(download_multiple_billing_profile_invoices::ResponseBytesError)?;
+                let rsp_value: DownloadUrl =
+                    serde_json::from_slice(&body).context(download_multiple_billing_profile_invoices::DeserializeError { body })?;
+                Ok(download_multiple_billing_profile_invoices::Response::Ok200(rsp_value))
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp
+                    .bytes()
+                    .await
+                    .context(download_multiple_billing_profile_invoices::ResponseBytesError)?;
+                let rsp_value: ErrorResponse =
+                    serde_json::from_slice(&body).context(download_multiple_billing_profile_invoices::DeserializeError { body })?;
+                download_multiple_billing_profile_invoices::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod download_multiple_billing_profile_invoices {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Accepted202,
+            Ok200(DownloadUrl),
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn list_by_billing_subscription(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         period_start_date: &str,
         period_end_date: &str,
-    ) -> Result<InvoiceListResult> {
+    ) -> std::result::Result<InvoiceListResult, list_by_billing_subscription::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/default/billingSubscriptions/{}/invoices",
@@ -928,15 +2872,61 @@ pub mod invoices {
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.query(&[("periodStartDate", period_start_date)]);
         req_builder = req_builder.query(&[("periodEndDate", period_end_date)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list_by_billing_subscription::BuildRequestError)?;
+        let rsp = client
+            .execute(req)
+            .await
+            .context(list_by_billing_subscription::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_billing_subscription::ResponseBytesError)?;
+                let rsp_value: InvoiceListResult =
+                    serde_json::from_slice(&body).context(list_by_billing_subscription::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_billing_subscription::ResponseBytesError)?;
+                let rsp_value: ErrorResponse =
+                    serde_json::from_slice(&body).context(list_by_billing_subscription::DeserializeError { body })?;
+                list_by_billing_subscription::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list_by_billing_subscription {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn get_by_subscription_and_invoice_id(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         invoice_name: &str,
-    ) -> Result<Invoice> {
+    ) -> std::result::Result<Invoice, get_by_subscription_and_invoice_id::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/default/billingSubscriptions/{}/invoices/{}",
@@ -947,16 +2937,62 @@ pub mod invoices {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(get_by_subscription_and_invoice_id::BuildRequestError)?;
+        let rsp = client
+            .execute(req)
+            .await
+            .context(get_by_subscription_and_invoice_id::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get_by_subscription_and_invoice_id::ResponseBytesError)?;
+                let rsp_value: Invoice =
+                    serde_json::from_slice(&body).context(get_by_subscription_and_invoice_id::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get_by_subscription_and_invoice_id::ResponseBytesError)?;
+                let rsp_value: ErrorResponse =
+                    serde_json::from_slice(&body).context(get_by_subscription_and_invoice_id::DeserializeError { body })?;
+                get_by_subscription_and_invoice_id::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod get_by_subscription_and_invoice_id {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn download_billing_subscription_invoice(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         invoice_name: &str,
         download_token: &str,
-    ) -> Result<DownloadUrl> {
+    ) -> std::result::Result<download_billing_subscription_invoice::Response, download_billing_subscription_invoice::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/default/billingSubscriptions/{}/invoices/{}/download",
@@ -968,15 +3004,78 @@ pub mod invoices {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.query(&[("downloadToken", download_token)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder
+            .build()
+            .context(download_billing_subscription_invoice::BuildRequestError)?;
+        let rsp = client
+            .execute(req)
+            .await
+            .context(download_billing_subscription_invoice::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::ACCEPTED => Ok(download_billing_subscription_invoice::Response::Accepted202),
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp
+                    .bytes()
+                    .await
+                    .context(download_billing_subscription_invoice::ResponseBytesError)?;
+                let rsp_value: DownloadUrl =
+                    serde_json::from_slice(&body).context(download_billing_subscription_invoice::DeserializeError { body })?;
+                Ok(download_billing_subscription_invoice::Response::Ok200(rsp_value))
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp
+                    .bytes()
+                    .await
+                    .context(download_billing_subscription_invoice::ResponseBytesError)?;
+                let rsp_value: ErrorResponse =
+                    serde_json::from_slice(&body).context(download_billing_subscription_invoice::DeserializeError { body })?;
+                download_billing_subscription_invoice::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod download_billing_subscription_invoice {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Accepted202,
+            Ok200(DownloadUrl),
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn download_multiple_billing_subscription_invoices(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         download_urls: &Vec<String>,
-    ) -> Result<DownloadUrl> {
+    ) -> std::result::Result<
+        download_multiple_billing_subscription_invoices::Response,
+        download_multiple_billing_subscription_invoices::Error,
+    > {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/default/billingSubscriptions/{}/downloadDocuments",
@@ -988,18 +3087,80 @@ pub mod invoices {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(download_urls);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder
+            .build()
+            .context(download_multiple_billing_subscription_invoices::BuildRequestError)?;
+        let rsp = client
+            .execute(req)
+            .await
+            .context(download_multiple_billing_subscription_invoices::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::ACCEPTED => Ok(download_multiple_billing_subscription_invoices::Response::Accepted202),
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp
+                    .bytes()
+                    .await
+                    .context(download_multiple_billing_subscription_invoices::ResponseBytesError)?;
+                let rsp_value: DownloadUrl =
+                    serde_json::from_slice(&body).context(download_multiple_billing_subscription_invoices::DeserializeError { body })?;
+                Ok(download_multiple_billing_subscription_invoices::Response::Ok200(rsp_value))
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp
+                    .bytes()
+                    .await
+                    .context(download_multiple_billing_subscription_invoices::ResponseBytesError)?;
+                let rsp_value: ErrorResponse =
+                    serde_json::from_slice(&body).context(download_multiple_billing_subscription_invoices::DeserializeError { body })?;
+                download_multiple_billing_subscription_invoices::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod download_multiple_billing_subscription_invoices {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Accepted202,
+            Ok200(DownloadUrl),
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
 }
 pub mod transactions {
-    use crate::{models::*, *};
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
     pub async fn list_by_invoice(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         billing_account_name: &str,
         invoice_name: &str,
-    ) -> Result<TransactionListResult> {
+    ) -> std::result::Result<TransactionListResult, list_by_invoice::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/invoices/{}/transactions",
@@ -1010,18 +3171,61 @@ pub mod transactions {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list_by_invoice::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list_by_invoice::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_invoice::ResponseBytesError)?;
+                let rsp_value: TransactionListResult = serde_json::from_slice(&body).context(list_by_invoice::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_invoice::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(list_by_invoice::DeserializeError { body })?;
+                list_by_invoice::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list_by_invoice {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
 }
 pub mod policies {
-    use crate::{models::*, *};
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
     pub async fn get_by_billing_profile(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         billing_account_name: &str,
         billing_profile_name: &str,
-    ) -> Result<Policy> {
+    ) -> std::result::Result<Policy, get_by_billing_profile::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/billingProfiles/{}/policies/default",
@@ -1032,16 +3236,57 @@ pub mod policies {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(get_by_billing_profile::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get_by_billing_profile::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get_by_billing_profile::ResponseBytesError)?;
+                let rsp_value: Policy = serde_json::from_slice(&body).context(get_by_billing_profile::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get_by_billing_profile::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(get_by_billing_profile::DeserializeError { body })?;
+                get_by_billing_profile::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod get_by_billing_profile {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn update(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         billing_account_name: &str,
         billing_profile_name: &str,
         parameters: &Policy,
-    ) -> Result<Policy> {
+    ) -> std::result::Result<Policy, update::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/billingProfiles/{}/policies/default",
@@ -1053,11 +3298,56 @@ pub mod policies {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(parameters);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(update::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(update::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(update::ResponseBytesError)?;
+                let rsp_value: Policy = serde_json::from_slice(&body).context(update::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(update::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(update::DeserializeError { body })?;
+                update::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
     }
-    pub async fn get_by_customer(configuration: &Configuration, billing_account_name: &str, customer_name: &str) -> Result<CustomerPolicy> {
+    pub mod update {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
+    }
+    pub async fn get_by_customer(
+        configuration: &crate::Configuration,
+        billing_account_name: &str,
+        customer_name: &str,
+    ) -> std::result::Result<CustomerPolicy, get_by_customer::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/customers/{}/policies/default",
@@ -1068,16 +3358,57 @@ pub mod policies {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(get_by_customer::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get_by_customer::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get_by_customer::ResponseBytesError)?;
+                let rsp_value: CustomerPolicy = serde_json::from_slice(&body).context(get_by_customer::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get_by_customer::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(get_by_customer::DeserializeError { body })?;
+                get_by_customer::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod get_by_customer {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn update_customer(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         billing_account_name: &str,
         customer_name: &str,
         parameters: &CustomerPolicy,
-    ) -> Result<CustomerPolicy> {
+    ) -> std::result::Result<CustomerPolicy, update_customer::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/customers/{}/policies/default",
@@ -1089,14 +3420,57 @@ pub mod policies {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(parameters);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(update_customer::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(update_customer::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(update_customer::ResponseBytesError)?;
+                let rsp_value: CustomerPolicy = serde_json::from_slice(&body).context(update_customer::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(update_customer::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(update_customer::DeserializeError { body })?;
+                update_customer::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod update_customer {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
 }
 pub mod billing_property {
-    use crate::{models::*, *};
-    pub async fn get(configuration: &Configuration, subscription_id: &str) -> Result<BillingProperty> {
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
+    pub async fn get(configuration: &crate::Configuration, subscription_id: &str) -> std::result::Result<BillingProperty, get::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Billing/billingProperty/default",
@@ -1107,11 +3481,56 @@ pub mod billing_property {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(get::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: BillingProperty = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                get::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
     }
-    pub async fn update(configuration: &Configuration, subscription_id: &str, parameters: &BillingProperty) -> Result<BillingProperty> {
+    pub mod get {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
+    }
+    pub async fn update(
+        configuration: &crate::Configuration,
+        subscription_id: &str,
+        parameters: &BillingProperty,
+    ) -> std::result::Result<BillingProperty, update::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Billing/billingProperty/default",
@@ -1123,14 +3542,57 @@ pub mod billing_property {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(parameters);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(update::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(update::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(update::ResponseBytesError)?;
+                let rsp_value: BillingProperty = serde_json::from_slice(&body).context(update::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(update::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(update::DeserializeError { body })?;
+                update::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod update {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
 }
 pub mod operations {
-    use crate::{models::*, *};
-    pub async fn list(configuration: &Configuration) -> Result<OperationListResult> {
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
+    pub async fn list(configuration: &crate::Configuration) -> std::result::Result<OperationListResult, list::Error> {
         let client = &configuration.client;
         let uri_str = &format!("{}/providers/Microsoft.Billing/operations", &configuration.base_path,);
         let mut req_builder = client.get(uri_str);
@@ -1138,18 +3600,61 @@ pub mod operations {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: OperationListResult = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                list::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
 }
 pub mod billing_role_definitions {
-    use crate::{models::*, *};
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
     pub async fn get_by_billing_account(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         billing_account_name: &str,
         billing_role_definition_name: &str,
-    ) -> Result<BillingRoleDefinition> {
+    ) -> std::result::Result<BillingRoleDefinition, get_by_billing_account::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/billingRoleDefinitions/{}",
@@ -1160,17 +3665,59 @@ pub mod billing_role_definitions {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(get_by_billing_account::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get_by_billing_account::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get_by_billing_account::ResponseBytesError)?;
+                let rsp_value: BillingRoleDefinition =
+                    serde_json::from_slice(&body).context(get_by_billing_account::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get_by_billing_account::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(get_by_billing_account::DeserializeError { body })?;
+                get_by_billing_account::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod get_by_billing_account {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn get_by_invoice_section(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         billing_account_name: &str,
         billing_profile_name: &str,
         invoice_section_name: &str,
         billing_role_definition_name: &str,
-    ) -> Result<BillingRoleDefinition> {
+    ) -> std::result::Result<BillingRoleDefinition, get_by_invoice_section::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/billingProfiles/{}/invoiceSections/{}/billingRoleDefinitions/{}",
@@ -1181,16 +3728,58 @@ pub mod billing_role_definitions {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(get_by_invoice_section::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get_by_invoice_section::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get_by_invoice_section::ResponseBytesError)?;
+                let rsp_value: BillingRoleDefinition =
+                    serde_json::from_slice(&body).context(get_by_invoice_section::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get_by_invoice_section::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(get_by_invoice_section::DeserializeError { body })?;
+                get_by_invoice_section::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod get_by_invoice_section {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn get_by_billing_profile(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         billing_account_name: &str,
         billing_profile_name: &str,
         billing_role_definition_name: &str,
-    ) -> Result<BillingRoleDefinition> {
+    ) -> std::result::Result<BillingRoleDefinition, get_by_billing_profile::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/billingProfiles/{}/billingRoleDefinitions/{}",
@@ -1201,14 +3790,56 @@ pub mod billing_role_definitions {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(get_by_billing_profile::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get_by_billing_profile::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get_by_billing_profile::ResponseBytesError)?;
+                let rsp_value: BillingRoleDefinition =
+                    serde_json::from_slice(&body).context(get_by_billing_profile::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get_by_billing_profile::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(get_by_billing_profile::DeserializeError { body })?;
+                get_by_billing_profile::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod get_by_billing_profile {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn list_by_billing_account(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         billing_account_name: &str,
-    ) -> Result<BillingRoleDefinitionListResult> {
+    ) -> std::result::Result<BillingRoleDefinitionListResult, list_by_billing_account::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/billingRoleDefinitions",
@@ -1219,16 +3850,58 @@ pub mod billing_role_definitions {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list_by_billing_account::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list_by_billing_account::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_billing_account::ResponseBytesError)?;
+                let rsp_value: BillingRoleDefinitionListResult =
+                    serde_json::from_slice(&body).context(list_by_billing_account::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_billing_account::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(list_by_billing_account::DeserializeError { body })?;
+                list_by_billing_account::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list_by_billing_account {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn list_by_invoice_section(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         billing_account_name: &str,
         billing_profile_name: &str,
         invoice_section_name: &str,
-    ) -> Result<BillingRoleDefinitionListResult> {
+    ) -> std::result::Result<BillingRoleDefinitionListResult, list_by_invoice_section::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/billingProfiles/{}/invoiceSections/{}/billingRoleDefinitions",
@@ -1239,15 +3912,57 @@ pub mod billing_role_definitions {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list_by_invoice_section::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list_by_invoice_section::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_invoice_section::ResponseBytesError)?;
+                let rsp_value: BillingRoleDefinitionListResult =
+                    serde_json::from_slice(&body).context(list_by_invoice_section::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_invoice_section::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(list_by_invoice_section::DeserializeError { body })?;
+                list_by_invoice_section::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list_by_invoice_section {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn list_by_billing_profile(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         billing_account_name: &str,
         billing_profile_name: &str,
-    ) -> Result<BillingRoleDefinitionListResult> {
+    ) -> std::result::Result<BillingRoleDefinitionListResult, list_by_billing_profile::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/billingProfiles/{}/billingRoleDefinitions",
@@ -1258,18 +3973,62 @@ pub mod billing_role_definitions {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list_by_billing_profile::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list_by_billing_profile::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_billing_profile::ResponseBytesError)?;
+                let rsp_value: BillingRoleDefinitionListResult =
+                    serde_json::from_slice(&body).context(list_by_billing_profile::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_billing_profile::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(list_by_billing_profile::DeserializeError { body })?;
+                list_by_billing_profile::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list_by_billing_profile {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
 }
 pub mod billing_role_assignments {
-    use crate::{models::*, *};
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
     pub async fn get_by_billing_account(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         billing_account_name: &str,
         billing_role_assignment_name: &str,
-    ) -> Result<BillingRoleAssignment> {
+    ) -> std::result::Result<BillingRoleAssignment, get_by_billing_account::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/billingRoleAssignments/{}",
@@ -1280,15 +4039,57 @@ pub mod billing_role_assignments {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(get_by_billing_account::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get_by_billing_account::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get_by_billing_account::ResponseBytesError)?;
+                let rsp_value: BillingRoleAssignment =
+                    serde_json::from_slice(&body).context(get_by_billing_account::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get_by_billing_account::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(get_by_billing_account::DeserializeError { body })?;
+                get_by_billing_account::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod get_by_billing_account {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn delete_by_billing_account(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         billing_account_name: &str,
         billing_role_assignment_name: &str,
-    ) -> Result<BillingRoleAssignment> {
+    ) -> std::result::Result<BillingRoleAssignment, delete_by_billing_account::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/billingRoleAssignments/{}",
@@ -1299,17 +4100,60 @@ pub mod billing_role_assignments {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(delete_by_billing_account::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(delete_by_billing_account::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(delete_by_billing_account::ResponseBytesError)?;
+                let rsp_value: BillingRoleAssignment =
+                    serde_json::from_slice(&body).context(delete_by_billing_account::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(delete_by_billing_account::ResponseBytesError)?;
+                let rsp_value: ErrorResponse =
+                    serde_json::from_slice(&body).context(delete_by_billing_account::DeserializeError { body })?;
+                delete_by_billing_account::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod delete_by_billing_account {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn get_by_invoice_section(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         billing_account_name: &str,
         billing_profile_name: &str,
         invoice_section_name: &str,
         billing_role_assignment_name: &str,
-    ) -> Result<BillingRoleAssignment> {
+    ) -> std::result::Result<BillingRoleAssignment, get_by_invoice_section::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/billingProfiles/{}/invoiceSections/{}/billingRoleAssignments/{}",
@@ -1320,17 +4164,59 @@ pub mod billing_role_assignments {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(get_by_invoice_section::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get_by_invoice_section::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get_by_invoice_section::ResponseBytesError)?;
+                let rsp_value: BillingRoleAssignment =
+                    serde_json::from_slice(&body).context(get_by_invoice_section::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get_by_invoice_section::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(get_by_invoice_section::DeserializeError { body })?;
+                get_by_invoice_section::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod get_by_invoice_section {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn delete_by_invoice_section(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         billing_account_name: &str,
         billing_profile_name: &str,
         invoice_section_name: &str,
         billing_role_assignment_name: &str,
-    ) -> Result<BillingRoleAssignment> {
+    ) -> std::result::Result<BillingRoleAssignment, delete_by_invoice_section::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/billingProfiles/{}/invoiceSections/{}/billingRoleAssignments/{}",
@@ -1341,16 +4227,59 @@ pub mod billing_role_assignments {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(delete_by_invoice_section::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(delete_by_invoice_section::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(delete_by_invoice_section::ResponseBytesError)?;
+                let rsp_value: BillingRoleAssignment =
+                    serde_json::from_slice(&body).context(delete_by_invoice_section::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(delete_by_invoice_section::ResponseBytesError)?;
+                let rsp_value: ErrorResponse =
+                    serde_json::from_slice(&body).context(delete_by_invoice_section::DeserializeError { body })?;
+                delete_by_invoice_section::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod delete_by_invoice_section {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn get_by_billing_profile(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         billing_account_name: &str,
         billing_profile_name: &str,
         billing_role_assignment_name: &str,
-    ) -> Result<BillingRoleAssignment> {
+    ) -> std::result::Result<BillingRoleAssignment, get_by_billing_profile::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/billingProfiles/{}/billingRoleAssignments/{}",
@@ -1361,16 +4290,58 @@ pub mod billing_role_assignments {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(get_by_billing_profile::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get_by_billing_profile::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get_by_billing_profile::ResponseBytesError)?;
+                let rsp_value: BillingRoleAssignment =
+                    serde_json::from_slice(&body).context(get_by_billing_profile::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get_by_billing_profile::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(get_by_billing_profile::DeserializeError { body })?;
+                get_by_billing_profile::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod get_by_billing_profile {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn delete_by_billing_profile(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         billing_account_name: &str,
         billing_profile_name: &str,
         billing_role_assignment_name: &str,
-    ) -> Result<BillingRoleAssignment> {
+    ) -> std::result::Result<BillingRoleAssignment, delete_by_billing_profile::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/billingProfiles/{}/billingRoleAssignments/{}",
@@ -1381,14 +4352,57 @@ pub mod billing_role_assignments {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(delete_by_billing_profile::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(delete_by_billing_profile::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(delete_by_billing_profile::ResponseBytesError)?;
+                let rsp_value: BillingRoleAssignment =
+                    serde_json::from_slice(&body).context(delete_by_billing_profile::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(delete_by_billing_profile::ResponseBytesError)?;
+                let rsp_value: ErrorResponse =
+                    serde_json::from_slice(&body).context(delete_by_billing_profile::DeserializeError { body })?;
+                delete_by_billing_profile::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod delete_by_billing_profile {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn list_by_billing_account(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         billing_account_name: &str,
-    ) -> Result<BillingRoleAssignmentListResult> {
+    ) -> std::result::Result<BillingRoleAssignmentListResult, list_by_billing_account::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/billingRoleAssignments",
@@ -1399,16 +4413,58 @@ pub mod billing_role_assignments {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list_by_billing_account::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list_by_billing_account::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_billing_account::ResponseBytesError)?;
+                let rsp_value: BillingRoleAssignmentListResult =
+                    serde_json::from_slice(&body).context(list_by_billing_account::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_billing_account::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(list_by_billing_account::DeserializeError { body })?;
+                list_by_billing_account::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list_by_billing_account {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn list_by_invoice_section(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         billing_account_name: &str,
         billing_profile_name: &str,
         invoice_section_name: &str,
-    ) -> Result<BillingRoleAssignmentListResult> {
+    ) -> std::result::Result<BillingRoleAssignmentListResult, list_by_invoice_section::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/billingProfiles/{}/invoiceSections/{}/billingRoleAssignments",
@@ -1419,15 +4475,57 @@ pub mod billing_role_assignments {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list_by_invoice_section::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list_by_invoice_section::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_invoice_section::ResponseBytesError)?;
+                let rsp_value: BillingRoleAssignmentListResult =
+                    serde_json::from_slice(&body).context(list_by_invoice_section::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_invoice_section::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(list_by_invoice_section::DeserializeError { body })?;
+                list_by_invoice_section::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list_by_invoice_section {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn list_by_billing_profile(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         billing_account_name: &str,
         billing_profile_name: &str,
-    ) -> Result<BillingRoleAssignmentListResult> {
+    ) -> std::result::Result<BillingRoleAssignmentListResult, list_by_billing_profile::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/billingProfiles/{}/billingRoleAssignments",
@@ -1438,18 +4536,62 @@ pub mod billing_role_assignments {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list_by_billing_profile::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list_by_billing_profile::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_billing_profile::ResponseBytesError)?;
+                let rsp_value: BillingRoleAssignmentListResult =
+                    serde_json::from_slice(&body).context(list_by_billing_profile::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_billing_profile::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(list_by_billing_profile::DeserializeError { body })?;
+                list_by_billing_profile::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list_by_billing_profile {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
 }
 pub mod agreements {
-    use crate::{models::*, *};
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
     pub async fn list_by_billing_account(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         billing_account_name: &str,
         expand: Option<&str>,
-    ) -> Result<AgreementListResult> {
+    ) -> std::result::Result<AgreementListResult, list_by_billing_account::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/agreements",
@@ -1463,16 +4605,58 @@ pub mod agreements {
         if let Some(expand) = expand {
             req_builder = req_builder.query(&[("$expand", expand)]);
         }
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list_by_billing_account::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list_by_billing_account::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_billing_account::ResponseBytesError)?;
+                let rsp_value: AgreementListResult =
+                    serde_json::from_slice(&body).context(list_by_billing_account::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_billing_account::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(list_by_billing_account::DeserializeError { body })?;
+                list_by_billing_account::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list_by_billing_account {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn get(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         billing_account_name: &str,
         agreement_name: &str,
         expand: Option<&str>,
-    ) -> Result<Agreement> {
+    ) -> std::result::Result<Agreement, get::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/agreements/{}",
@@ -1486,14 +4670,57 @@ pub mod agreements {
         if let Some(expand) = expand {
             req_builder = req_builder.query(&[("$expand", expand)]);
         }
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(get::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: Agreement = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                get::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod get {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
 }
 pub mod enrollment_accounts {
-    use crate::{models::*, *};
-    pub async fn list(configuration: &Configuration) -> Result<EnrollmentAccountListResult> {
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
+    pub async fn list(configuration: &crate::Configuration) -> std::result::Result<EnrollmentAccountListResult, list::Error> {
         let client = &configuration.client;
         let uri_str = &format!("{}/providers/Microsoft.Billing/enrollmentAccounts", &configuration.base_path,);
         let mut req_builder = client.get(uri_str);
@@ -1501,11 +4728,52 @@ pub mod enrollment_accounts {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: EnrollmentAccountListResult = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                list::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
     }
-    pub async fn get(configuration: &Configuration, name: &str) -> Result<EnrollmentAccountSummary> {
+    pub mod list {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
+    }
+    pub async fn get(configuration: &crate::Configuration, name: &str) -> std::result::Result<EnrollmentAccountSummary, get::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Billing/enrollmentAccounts/{}",
@@ -1516,20 +4784,63 @@ pub mod enrollment_accounts {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(get::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: EnrollmentAccountSummary = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                get::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod get {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
 }
 pub mod billing_periods {
-    use crate::{models::*, *};
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
     pub async fn list(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         filter: Option<&str>,
         skiptoken: Option<&str>,
         top: Option<i64>,
-    ) -> Result<BillingPeriodsListResult> {
+    ) -> std::result::Result<BillingPeriodsListResult, list::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Billing/billingPeriods",
@@ -1549,11 +4860,56 @@ pub mod billing_periods {
         if let Some(top) = top {
             req_builder = req_builder.query(&[("$top", top)]);
         }
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: BillingPeriodsListResult = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                list::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
     }
-    pub async fn get(configuration: &Configuration, subscription_id: &str, billing_period_name: &str) -> Result<BillingPeriod> {
+    pub mod list {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
+    }
+    pub async fn get(
+        configuration: &crate::Configuration,
+        subscription_id: &str,
+        billing_period_name: &str,
+    ) -> std::result::Result<BillingPeriod, get::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Billing/billingPeriods/{}",
@@ -1564,8 +4920,49 @@ pub mod billing_periods {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(get::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: BillingPeriod = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                get::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod get {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
 }

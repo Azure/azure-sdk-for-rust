@@ -2,8 +2,10 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use crate::{models::*, *};
-pub async fn list_operations(configuration: &Configuration) -> Result<OperationListResult> {
+use crate::models::*;
+use reqwest::StatusCode;
+use snafu::{ResultExt, Snafu};
+pub async fn list_operations(configuration: &crate::Configuration) -> std::result::Result<OperationListResult, list_operations::Error> {
     let client = &configuration.client;
     let uri_str = &format!("{}/providers/Microsoft.Solutions/operations", &configuration.base_path,);
     let mut req_builder = client.get(uri_str);
@@ -11,18 +13,44 @@ pub async fn list_operations(configuration: &Configuration) -> Result<OperationL
         req_builder = req_builder.bearer_auth(token);
     }
     req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-    let req = req_builder.build()?;
-    let res = client.execute(req).await?;
-    Ok(res.json().await?)
+    let req = req_builder.build().context(list_operations::BuildRequestError)?;
+    let rsp = client.execute(req).await.context(list_operations::ExecuteRequestError)?;
+    match rsp.status() {
+        StatusCode::OK => {
+            let body: bytes::Bytes = rsp.bytes().await.context(list_operations::ResponseBytesError)?;
+            let rsp_value: OperationListResult = serde_json::from_slice(&body).context(list_operations::DeserializeError { body })?;
+            Ok(rsp_value)
+        }
+        status_code => {
+            let body: bytes::Bytes = rsp.bytes().await.context(list_operations::ResponseBytesError)?;
+            list_operations::UnexpectedResponse { status_code, body: body }.fail()
+        }
+    }
+}
+pub mod list_operations {
+    use crate::{models, models::*};
+    use reqwest::StatusCode;
+    use snafu::Snafu;
+    #[derive(Debug, Snafu)]
+    #[snafu(visibility(pub(crate)))]
+    pub enum Error {
+        UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+        BuildRequestError { source: reqwest::Error },
+        ExecuteRequestError { source: reqwest::Error },
+        ResponseBytesError { source: reqwest::Error },
+        DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+    }
 }
 pub mod appliances {
-    use crate::{models::*, *};
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
     pub async fn get(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         resource_group_name: &str,
         appliance_name: &str,
         subscription_id: &str,
-    ) -> Result<Appliance> {
+    ) -> std::result::Result<Appliance, get::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Solutions/appliances/{}",
@@ -33,17 +61,60 @@ pub mod appliances {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(get::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: Appliance = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            StatusCode::NOT_FOUND => get::NotFound404 {}.fail(),
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                get::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod get {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            NotFound404 {},
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn create_or_update(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         resource_group_name: &str,
         appliance_name: &str,
         parameters: &Appliance,
         subscription_id: &str,
-    ) -> Result<Appliance> {
+    ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Solutions/appliances/{}",
@@ -55,17 +126,68 @@ pub mod appliances {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(parameters);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(create_or_update::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(create_or_update::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
+                let rsp_value: Appliance = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                Ok(create_or_update::Response::Ok200(rsp_value))
+            }
+            StatusCode::CREATED => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
+                let rsp_value: Appliance = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                Ok(create_or_update::Response::Created201(rsp_value))
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                create_or_update::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod create_or_update {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(Appliance),
+            Created201(Appliance),
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn update(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         resource_group_name: &str,
         appliance_name: &str,
         parameters: Option<&Appliance>,
         subscription_id: &str,
-    ) -> Result<Appliance> {
+    ) -> std::result::Result<Appliance, update::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Solutions/appliances/{}",
@@ -79,16 +201,57 @@ pub mod appliances {
         if let Some(parameters) = parameters {
             req_builder = req_builder.json(parameters);
         }
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(update::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(update::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(update::ResponseBytesError)?;
+                let rsp_value: Appliance = serde_json::from_slice(&body).context(update::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(update::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(update::DeserializeError { body })?;
+                update::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod update {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn delete(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         resource_group_name: &str,
         appliance_name: &str,
         subscription_id: &str,
-    ) -> Result<ErrorResponse> {
+    ) -> std::result::Result<delete::Response, delete::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Solutions/appliances/{}",
@@ -99,15 +262,58 @@ pub mod appliances {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(delete::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
+            StatusCode::ACCEPTED => Ok(delete::Response::Accepted202),
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(delete::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(delete::DeserializeError { body })?;
+                delete::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod delete {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            NoContent204,
+            Accepted202,
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn list_by_resource_group(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         resource_group_name: &str,
         subscription_id: &str,
-    ) -> Result<ApplianceListResult> {
+    ) -> std::result::Result<ApplianceListResult, list_by_resource_group::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Solutions/appliances",
@@ -118,11 +324,56 @@ pub mod appliances {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list_by_resource_group::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list_by_resource_group::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_resource_group::ResponseBytesError)?;
+                let rsp_value: ApplianceListResult =
+                    serde_json::from_slice(&body).context(list_by_resource_group::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_resource_group::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(list_by_resource_group::DeserializeError { body })?;
+                list_by_resource_group::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
     }
-    pub async fn list_by_subscription(configuration: &Configuration, subscription_id: &str) -> Result<ApplianceListResult> {
+    pub mod list_by_resource_group {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
+    }
+    pub async fn list_by_subscription(
+        configuration: &crate::Configuration,
+        subscription_id: &str,
+    ) -> std::result::Result<ApplianceListResult, list_by_subscription::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Solutions/appliances",
@@ -133,11 +384,53 @@ pub mod appliances {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list_by_subscription::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list_by_subscription::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_subscription::ResponseBytesError)?;
+                let rsp_value: ApplianceListResult =
+                    serde_json::from_slice(&body).context(list_by_subscription::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_subscription::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(list_by_subscription::DeserializeError { body })?;
+                list_by_subscription::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
     }
-    pub async fn get_by_id(configuration: &Configuration, appliance_id: &str) -> Result<Appliance> {
+    pub mod list_by_subscription {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
+    }
+    pub async fn get_by_id(configuration: &crate::Configuration, appliance_id: &str) -> std::result::Result<Appliance, get_by_id::Error> {
         let client = &configuration.client;
         let uri_str = &format!("{}/{}", &configuration.base_path, appliance_id);
         let mut req_builder = client.get(uri_str);
@@ -145,11 +438,58 @@ pub mod appliances {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(get_by_id::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get_by_id::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get_by_id::ResponseBytesError)?;
+                let rsp_value: Appliance = serde_json::from_slice(&body).context(get_by_id::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            StatusCode::NOT_FOUND => get_by_id::NotFound404 {}.fail(),
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get_by_id::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(get_by_id::DeserializeError { body })?;
+                get_by_id::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
     }
-    pub async fn create_or_update_by_id(configuration: &Configuration, appliance_id: &str, parameters: &Appliance) -> Result<Appliance> {
+    pub mod get_by_id {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            NotFound404 {},
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
+    }
+    pub async fn create_or_update_by_id(
+        configuration: &crate::Configuration,
+        appliance_id: &str,
+        parameters: &Appliance,
+    ) -> std::result::Result<create_or_update_by_id::Response, create_or_update_by_id::Error> {
         let client = &configuration.client;
         let uri_str = &format!("{}/{}", &configuration.base_path, appliance_id);
         let mut req_builder = client.put(uri_str);
@@ -158,11 +498,66 @@ pub mod appliances {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(parameters);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(create_or_update_by_id::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(create_or_update_by_id::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update_by_id::ResponseBytesError)?;
+                let rsp_value: Appliance = serde_json::from_slice(&body).context(create_or_update_by_id::DeserializeError { body })?;
+                Ok(create_or_update_by_id::Response::Ok200(rsp_value))
+            }
+            StatusCode::CREATED => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update_by_id::ResponseBytesError)?;
+                let rsp_value: Appliance = serde_json::from_slice(&body).context(create_or_update_by_id::DeserializeError { body })?;
+                Ok(create_or_update_by_id::Response::Created201(rsp_value))
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update_by_id::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(create_or_update_by_id::DeserializeError { body })?;
+                create_or_update_by_id::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
     }
-    pub async fn update_by_id(configuration: &Configuration, appliance_id: &str, parameters: Option<&Appliance>) -> Result<Appliance> {
+    pub mod create_or_update_by_id {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(Appliance),
+            Created201(Appliance),
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
+    }
+    pub async fn update_by_id(
+        configuration: &crate::Configuration,
+        appliance_id: &str,
+        parameters: Option<&Appliance>,
+    ) -> std::result::Result<Appliance, update_by_id::Error> {
         let client = &configuration.client;
         let uri_str = &format!("{}/{}", &configuration.base_path, appliance_id);
         let mut req_builder = client.patch(uri_str);
@@ -173,11 +568,55 @@ pub mod appliances {
         if let Some(parameters) = parameters {
             req_builder = req_builder.json(parameters);
         }
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(update_by_id::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(update_by_id::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(update_by_id::ResponseBytesError)?;
+                let rsp_value: Appliance = serde_json::from_slice(&body).context(update_by_id::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(update_by_id::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(update_by_id::DeserializeError { body })?;
+                update_by_id::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
     }
-    pub async fn delete_by_id(configuration: &Configuration, appliance_id: &str) -> Result<ErrorResponse> {
+    pub mod update_by_id {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
+    }
+    pub async fn delete_by_id(
+        configuration: &crate::Configuration,
+        appliance_id: &str,
+    ) -> std::result::Result<delete_by_id::Response, delete_by_id::Error> {
         let client = &configuration.client;
         let uri_str = &format!("{}/{}", &configuration.base_path, appliance_id);
         let mut req_builder = client.delete(uri_str);
@@ -185,19 +624,64 @@ pub mod appliances {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(delete_by_id::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(delete_by_id::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::NO_CONTENT => Ok(delete_by_id::Response::NoContent204),
+            StatusCode::ACCEPTED => Ok(delete_by_id::Response::Accepted202),
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(delete_by_id::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(delete_by_id::DeserializeError { body })?;
+                delete_by_id::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod delete_by_id {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            NoContent204,
+            Accepted202,
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
 }
 pub mod appliance_definitions {
-    use crate::{models::*, *};
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
     pub async fn get(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         resource_group_name: &str,
         appliance_definition_name: &str,
         subscription_id: &str,
-    ) -> Result<ApplianceDefinition> {
+    ) -> std::result::Result<ApplianceDefinition, get::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Solutions/applianceDefinitions/{}",
@@ -208,17 +692,60 @@ pub mod appliance_definitions {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(get::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: ApplianceDefinition = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            StatusCode::NOT_FOUND => get::NotFound404 {}.fail(),
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                get::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod get {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            NotFound404 {},
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn create_or_update(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         resource_group_name: &str,
         appliance_definition_name: &str,
         parameters: &ApplianceDefinition,
         subscription_id: &str,
-    ) -> Result<ApplianceDefinition> {
+    ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Solutions/applianceDefinitions/{}",
@@ -230,16 +757,67 @@ pub mod appliance_definitions {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(parameters);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(create_or_update::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(create_or_update::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
+                let rsp_value: ApplianceDefinition = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                Ok(create_or_update::Response::Ok200(rsp_value))
+            }
+            StatusCode::CREATED => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
+                let rsp_value: ApplianceDefinition = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                Ok(create_or_update::Response::Created201(rsp_value))
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                create_or_update::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod create_or_update {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(ApplianceDefinition),
+            Created201(ApplianceDefinition),
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn delete(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         resource_group_name: &str,
         appliance_definition_name: &str,
         subscription_id: &str,
-    ) -> Result<ErrorResponse> {
+    ) -> std::result::Result<delete::Response, delete::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Solutions/applianceDefinitions/{}",
@@ -250,15 +828,60 @@ pub mod appliance_definitions {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(delete::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
+            StatusCode::OK => Ok(delete::Response::Ok200),
+            StatusCode::ACCEPTED => Ok(delete::Response::Accepted202),
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(delete::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(delete::DeserializeError { body })?;
+                delete::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod delete {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            NoContent204,
+            Ok200,
+            Accepted202,
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn list_by_resource_group(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         resource_group_name: &str,
         subscription_id: &str,
-    ) -> Result<ApplianceDefinitionListResult> {
+    ) -> std::result::Result<ApplianceDefinitionListResult, list_by_resource_group::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Solutions/applianceDefinitions",
@@ -269,11 +892,56 @@ pub mod appliance_definitions {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list_by_resource_group::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list_by_resource_group::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_resource_group::ResponseBytesError)?;
+                let rsp_value: ApplianceDefinitionListResult =
+                    serde_json::from_slice(&body).context(list_by_resource_group::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_resource_group::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(list_by_resource_group::DeserializeError { body })?;
+                list_by_resource_group::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
     }
-    pub async fn get_by_id(configuration: &Configuration, appliance_definition_id: &str) -> Result<ApplianceDefinition> {
+    pub mod list_by_resource_group {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
+    }
+    pub async fn get_by_id(
+        configuration: &crate::Configuration,
+        appliance_definition_id: &str,
+    ) -> std::result::Result<ApplianceDefinition, get_by_id::Error> {
         let client = &configuration.client;
         let uri_str = &format!("{}/{}", &configuration.base_path, appliance_definition_id);
         let mut req_builder = client.get(uri_str);
@@ -281,15 +949,58 @@ pub mod appliance_definitions {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(get_by_id::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get_by_id::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get_by_id::ResponseBytesError)?;
+                let rsp_value: ApplianceDefinition = serde_json::from_slice(&body).context(get_by_id::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            StatusCode::NOT_FOUND => get_by_id::NotFound404 {}.fail(),
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get_by_id::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(get_by_id::DeserializeError { body })?;
+                get_by_id::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod get_by_id {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            NotFound404 {},
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn create_or_update_by_id(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         appliance_definition_id: &str,
         parameters: &ApplianceDefinition,
-    ) -> Result<ApplianceDefinition> {
+    ) -> std::result::Result<create_or_update_by_id::Response, create_or_update_by_id::Error> {
         let client = &configuration.client;
         let uri_str = &format!("{}/{}", &configuration.base_path, appliance_definition_id);
         let mut req_builder = client.put(uri_str);
@@ -298,11 +1009,67 @@ pub mod appliance_definitions {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(parameters);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(create_or_update_by_id::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(create_or_update_by_id::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update_by_id::ResponseBytesError)?;
+                let rsp_value: ApplianceDefinition =
+                    serde_json::from_slice(&body).context(create_or_update_by_id::DeserializeError { body })?;
+                Ok(create_or_update_by_id::Response::Ok200(rsp_value))
+            }
+            StatusCode::CREATED => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update_by_id::ResponseBytesError)?;
+                let rsp_value: ApplianceDefinition =
+                    serde_json::from_slice(&body).context(create_or_update_by_id::DeserializeError { body })?;
+                Ok(create_or_update_by_id::Response::Created201(rsp_value))
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update_by_id::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(create_or_update_by_id::DeserializeError { body })?;
+                create_or_update_by_id::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
     }
-    pub async fn delete_by_id(configuration: &Configuration, appliance_definition_id: &str) -> Result<ErrorResponse> {
+    pub mod create_or_update_by_id {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(ApplianceDefinition),
+            Created201(ApplianceDefinition),
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
+    }
+    pub async fn delete_by_id(
+        configuration: &crate::Configuration,
+        appliance_definition_id: &str,
+    ) -> std::result::Result<delete_by_id::Response, delete_by_id::Error> {
         let client = &configuration.client;
         let uri_str = &format!("{}/{}", &configuration.base_path, appliance_definition_id);
         let mut req_builder = client.delete(uri_str);
@@ -310,8 +1077,53 @@ pub mod appliance_definitions {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(delete_by_id::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(delete_by_id::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::NO_CONTENT => Ok(delete_by_id::Response::NoContent204),
+            StatusCode::OK => Ok(delete_by_id::Response::Ok200),
+            StatusCode::ACCEPTED => Ok(delete_by_id::Response::Accepted202),
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(delete_by_id::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(delete_by_id::DeserializeError { body })?;
+                delete_by_id::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod delete_by_id {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            NoContent204,
+            Ok200,
+            Accepted202,
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
 }

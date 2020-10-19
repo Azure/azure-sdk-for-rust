@@ -7,7 +7,9 @@ export ACCESS_TOKEN=$(az account get-access-token --query accessToken --output t
 cargo run --example vm_list
 */
 
-use azure_mgmt_compute::{operations::virtual_machines, Result};
+use azure_mgmt_compute::operations::virtual_machines;
+
+type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
 #[tokio::main]
 async fn main() -> Result<()> {

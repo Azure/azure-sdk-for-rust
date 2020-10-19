@@ -2,10 +2,19 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use crate::{models::*, *};
+use crate::models::*;
+use reqwest::StatusCode;
+use snafu::{ResultExt, Snafu};
 pub mod domains {
-    use crate::{models::*, *};
-    pub async fn get(configuration: &Configuration, subscription_id: &str, resource_group_name: &str, domain_name: &str) -> Result<Domain> {
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
+    pub async fn get(
+        configuration: &crate::Configuration,
+        subscription_id: &str,
+        resource_group_name: &str,
+        domain_name: &str,
+    ) -> std::result::Result<Domain, get::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventGrid/domains/{}",
@@ -16,17 +25,38 @@ pub mod domains {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(get::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: Domain = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => get::DefaultResponse { status_code }.fail(),
+        }
+    }
+    pub mod get {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse { status_code: StatusCode },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn create_or_update(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         domain_name: &str,
         domain_info: &Domain,
-    ) -> Result<Domain> {
+    ) -> std::result::Result<Domain, create_or_update::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventGrid/domains/{}",
@@ -38,17 +68,38 @@ pub mod domains {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(domain_info);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(create_or_update::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(create_or_update::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::CREATED => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
+                let rsp_value: Domain = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => create_or_update::DefaultResponse { status_code }.fail(),
+        }
+    }
+    pub mod create_or_update {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse { status_code: StatusCode },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn update(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         domain_name: &str,
         domain_update_parameters: &DomainUpdateParameters,
-    ) -> Result<Domain> {
+    ) -> std::result::Result<Domain, update::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventGrid/domains/{}",
@@ -60,11 +111,37 @@ pub mod domains {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(domain_update_parameters);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(update::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(update::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::CREATED => {
+                let body: bytes::Bytes = rsp.bytes().await.context(update::ResponseBytesError)?;
+                let rsp_value: Domain = serde_json::from_slice(&body).context(update::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => update::DefaultResponse { status_code }.fail(),
+        }
     }
-    pub async fn delete(configuration: &Configuration, subscription_id: &str, resource_group_name: &str, domain_name: &str) -> Result<()> {
+    pub mod update {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse { status_code: StatusCode },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
+    }
+    pub async fn delete(
+        configuration: &crate::Configuration,
+        subscription_id: &str,
+        resource_group_name: &str,
+        domain_name: &str,
+    ) -> std::result::Result<delete::Response, delete::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventGrid/domains/{}",
@@ -75,16 +152,39 @@ pub mod domains {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(delete::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::ACCEPTED => Ok(delete::Response::Accepted202),
+            StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
+            status_code => delete::DefaultResponse { status_code }.fail(),
+        }
+    }
+    pub mod delete {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Accepted202,
+            NoContent204,
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse { status_code: StatusCode },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn list_by_subscription(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         filter: Option<&str>,
         top: Option<i64>,
-    ) -> Result<DomainsListResult> {
+    ) -> std::result::Result<DomainsListResult, list_by_subscription::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.EventGrid/domains",
@@ -101,17 +201,39 @@ pub mod domains {
         if let Some(top) = top {
             req_builder = req_builder.query(&[("$top", top)]);
         }
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list_by_subscription::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list_by_subscription::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_subscription::ResponseBytesError)?;
+                let rsp_value: DomainsListResult =
+                    serde_json::from_slice(&body).context(list_by_subscription::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => list_by_subscription::DefaultResponse { status_code }.fail(),
+        }
+    }
+    pub mod list_by_subscription {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse { status_code: StatusCode },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn list_by_resource_group(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         filter: Option<&str>,
         top: Option<i64>,
-    ) -> Result<DomainsListResult> {
+    ) -> std::result::Result<DomainsListResult, list_by_resource_group::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventGrid/domains",
@@ -128,16 +250,38 @@ pub mod domains {
         if let Some(top) = top {
             req_builder = req_builder.query(&[("$top", top)]);
         }
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list_by_resource_group::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list_by_resource_group::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_resource_group::ResponseBytesError)?;
+                let rsp_value: DomainsListResult =
+                    serde_json::from_slice(&body).context(list_by_resource_group::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => list_by_resource_group::DefaultResponse { status_code }.fail(),
+        }
+    }
+    pub mod list_by_resource_group {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse { status_code: StatusCode },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn list_shared_access_keys(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         domain_name: &str,
-    ) -> Result<DomainSharedAccessKeys> {
+    ) -> std::result::Result<DomainSharedAccessKeys, list_shared_access_keys::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventGrid/domains/{}/listKeys",
@@ -148,17 +292,39 @@ pub mod domains {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list_shared_access_keys::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list_shared_access_keys::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_shared_access_keys::ResponseBytesError)?;
+                let rsp_value: DomainSharedAccessKeys =
+                    serde_json::from_slice(&body).context(list_shared_access_keys::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => list_shared_access_keys::DefaultResponse { status_code }.fail(),
+        }
+    }
+    pub mod list_shared_access_keys {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse { status_code: StatusCode },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn regenerate_key(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         domain_name: &str,
         regenerate_key_request: &DomainRegenerateKeyRequest,
-    ) -> Result<DomainSharedAccessKeys> {
+    ) -> std::result::Result<DomainSharedAccessKeys, regenerate_key::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventGrid/domains/{}/regenerateKey",
@@ -170,20 +336,43 @@ pub mod domains {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(regenerate_key_request);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(regenerate_key::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(regenerate_key::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(regenerate_key::ResponseBytesError)?;
+                let rsp_value: DomainSharedAccessKeys = serde_json::from_slice(&body).context(regenerate_key::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => regenerate_key::DefaultResponse { status_code }.fail(),
+        }
+    }
+    pub mod regenerate_key {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse { status_code: StatusCode },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
 }
 pub mod domain_topics {
-    use crate::{models::*, *};
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
     pub async fn get(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         domain_name: &str,
         domain_topic_name: &str,
-    ) -> Result<DomainTopic> {
+    ) -> std::result::Result<DomainTopic, get::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventGrid/domains/{}/topics/{}",
@@ -194,17 +383,38 @@ pub mod domain_topics {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(get::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: DomainTopic = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => get::DefaultResponse { status_code }.fail(),
+        }
+    }
+    pub mod get {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse { status_code: StatusCode },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn create_or_update(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         domain_name: &str,
         domain_topic_name: &str,
-    ) -> Result<DomainTopic> {
+    ) -> std::result::Result<DomainTopic, create_or_update::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventGrid/domains/{}/topics/{}",
@@ -215,17 +425,38 @@ pub mod domain_topics {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(create_or_update::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(create_or_update::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::CREATED => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
+                let rsp_value: DomainTopic = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => create_or_update::DefaultResponse { status_code }.fail(),
+        }
+    }
+    pub mod create_or_update {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse { status_code: StatusCode },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn delete(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         domain_name: &str,
         domain_topic_name: &str,
-    ) -> Result<()> {
+    ) -> std::result::Result<delete::Response, delete::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventGrid/domains/{}/topics/{}",
@@ -236,18 +467,41 @@ pub mod domain_topics {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(delete::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::ACCEPTED => Ok(delete::Response::Accepted202),
+            StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
+            status_code => delete::DefaultResponse { status_code }.fail(),
+        }
+    }
+    pub mod delete {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Accepted202,
+            NoContent204,
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse { status_code: StatusCode },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn list_by_domain(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         domain_name: &str,
         filter: Option<&str>,
         top: Option<i64>,
-    ) -> Result<DomainTopicsListResult> {
+    ) -> std::result::Result<DomainTopicsListResult, list_by_domain::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventGrid/domains/{}/topics",
@@ -264,14 +518,41 @@ pub mod domain_topics {
         if let Some(top) = top {
             req_builder = req_builder.query(&[("$top", top)]);
         }
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list_by_domain::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list_by_domain::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_domain::ResponseBytesError)?;
+                let rsp_value: DomainTopicsListResult = serde_json::from_slice(&body).context(list_by_domain::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => list_by_domain::DefaultResponse { status_code }.fail(),
+        }
+    }
+    pub mod list_by_domain {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse { status_code: StatusCode },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
 }
 pub mod event_subscriptions {
-    use crate::{models::*, *};
-    pub async fn get(configuration: &Configuration, scope: &str, event_subscription_name: &str) -> Result<EventSubscription> {
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
+    pub async fn get(
+        configuration: &crate::Configuration,
+        scope: &str,
+        event_subscription_name: &str,
+    ) -> std::result::Result<EventSubscription, get::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/{}/providers/Microsoft.EventGrid/eventSubscriptions/{}",
@@ -282,16 +563,37 @@ pub mod event_subscriptions {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(get::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: EventSubscription = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => get::DefaultResponse { status_code }.fail(),
+        }
+    }
+    pub mod get {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse { status_code: StatusCode },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn create_or_update(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         scope: &str,
         event_subscription_name: &str,
         event_subscription_info: &EventSubscription,
-    ) -> Result<EventSubscription> {
+    ) -> std::result::Result<EventSubscription, create_or_update::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/{}/providers/Microsoft.EventGrid/eventSubscriptions/{}",
@@ -303,16 +605,37 @@ pub mod event_subscriptions {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(event_subscription_info);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(create_or_update::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(create_or_update::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::CREATED => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
+                let rsp_value: EventSubscription = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => create_or_update::DefaultResponse { status_code }.fail(),
+        }
+    }
+    pub mod create_or_update {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse { status_code: StatusCode },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn update(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         scope: &str,
         event_subscription_name: &str,
         event_subscription_update_parameters: &EventSubscriptionUpdateParameters,
-    ) -> Result<EventSubscription> {
+    ) -> std::result::Result<EventSubscription, update::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/{}/providers/Microsoft.EventGrid/eventSubscriptions/{}",
@@ -324,11 +647,36 @@ pub mod event_subscriptions {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(event_subscription_update_parameters);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(update::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(update::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::CREATED => {
+                let body: bytes::Bytes = rsp.bytes().await.context(update::ResponseBytesError)?;
+                let rsp_value: EventSubscription = serde_json::from_slice(&body).context(update::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => update::DefaultResponse { status_code }.fail(),
+        }
     }
-    pub async fn delete(configuration: &Configuration, scope: &str, event_subscription_name: &str) -> Result<()> {
+    pub mod update {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse { status_code: StatusCode },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
+    }
+    pub async fn delete(
+        configuration: &crate::Configuration,
+        scope: &str,
+        event_subscription_name: &str,
+    ) -> std::result::Result<delete::Response, delete::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/{}/providers/Microsoft.EventGrid/eventSubscriptions/{}",
@@ -339,15 +687,40 @@ pub mod event_subscriptions {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(delete::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => Ok(delete::Response::Ok200),
+            StatusCode::ACCEPTED => Ok(delete::Response::Accepted202),
+            StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
+            status_code => delete::DefaultResponse { status_code }.fail(),
+        }
+    }
+    pub mod delete {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200,
+            Accepted202,
+            NoContent204,
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse { status_code: StatusCode },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn get_full_url(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         scope: &str,
         event_subscription_name: &str,
-    ) -> Result<EventSubscriptionFullUrl> {
+    ) -> std::result::Result<EventSubscriptionFullUrl, get_full_url::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/{}/providers/Microsoft.EventGrid/eventSubscriptions/{}/getFullUrl",
@@ -358,17 +731,38 @@ pub mod event_subscriptions {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(get_full_url::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get_full_url::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get_full_url::ResponseBytesError)?;
+                let rsp_value: EventSubscriptionFullUrl = serde_json::from_slice(&body).context(get_full_url::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => get_full_url::DefaultResponse { status_code }.fail(),
+        }
+    }
+    pub mod get_full_url {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse { status_code: StatusCode },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn list_global_by_subscription(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         filter: Option<&str>,
         top: Option<i64>,
         label: Option<&str>,
-    ) -> Result<EventSubscriptionsListResult> {
+    ) -> std::result::Result<EventSubscriptionsListResult, list_global_by_subscription::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.EventGrid/eventSubscriptions",
@@ -388,18 +782,43 @@ pub mod event_subscriptions {
         if let Some(label) = label {
             req_builder = req_builder.query(&[("label", label)]);
         }
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list_global_by_subscription::BuildRequestError)?;
+        let rsp = client
+            .execute(req)
+            .await
+            .context(list_global_by_subscription::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_global_by_subscription::ResponseBytesError)?;
+                let rsp_value: EventSubscriptionsListResult =
+                    serde_json::from_slice(&body).context(list_global_by_subscription::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => list_global_by_subscription::DefaultResponse { status_code }.fail(),
+        }
+    }
+    pub mod list_global_by_subscription {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse { status_code: StatusCode },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn list_global_by_subscription_for_topic_type(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         topic_type_name: &str,
         filter: Option<&str>,
         top: Option<i64>,
         label: Option<&str>,
-    ) -> Result<EventSubscriptionsListResult> {
+    ) -> std::result::Result<EventSubscriptionsListResult, list_global_by_subscription_for_topic_type::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.EventGrid/topicTypes/{}/eventSubscriptions",
@@ -419,18 +838,48 @@ pub mod event_subscriptions {
         if let Some(label) = label {
             req_builder = req_builder.query(&[("label", label)]);
         }
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder
+            .build()
+            .context(list_global_by_subscription_for_topic_type::BuildRequestError)?;
+        let rsp = client
+            .execute(req)
+            .await
+            .context(list_global_by_subscription_for_topic_type::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp
+                    .bytes()
+                    .await
+                    .context(list_global_by_subscription_for_topic_type::ResponseBytesError)?;
+                let rsp_value: EventSubscriptionsListResult =
+                    serde_json::from_slice(&body).context(list_global_by_subscription_for_topic_type::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => list_global_by_subscription_for_topic_type::DefaultResponse { status_code }.fail(),
+        }
+    }
+    pub mod list_global_by_subscription_for_topic_type {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse { status_code: StatusCode },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn list_global_by_resource_group(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         filter: Option<&str>,
         top: Option<i64>,
         label: Option<&str>,
-    ) -> Result<EventSubscriptionsListResult> {
+    ) -> std::result::Result<EventSubscriptionsListResult, list_global_by_resource_group::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventGrid/eventSubscriptions",
@@ -450,19 +899,44 @@ pub mod event_subscriptions {
         if let Some(label) = label {
             req_builder = req_builder.query(&[("label", label)]);
         }
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list_global_by_resource_group::BuildRequestError)?;
+        let rsp = client
+            .execute(req)
+            .await
+            .context(list_global_by_resource_group::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_global_by_resource_group::ResponseBytesError)?;
+                let rsp_value: EventSubscriptionsListResult =
+                    serde_json::from_slice(&body).context(list_global_by_resource_group::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => list_global_by_resource_group::DefaultResponse { status_code }.fail(),
+        }
+    }
+    pub mod list_global_by_resource_group {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse { status_code: StatusCode },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn list_global_by_resource_group_for_topic_type(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         topic_type_name: &str,
         filter: Option<&str>,
         top: Option<i64>,
         label: Option<&str>,
-    ) -> Result<EventSubscriptionsListResult> {
+    ) -> std::result::Result<EventSubscriptionsListResult, list_global_by_resource_group_for_topic_type::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventGrid/topicTypes/{}/eventSubscriptions",
@@ -482,18 +956,48 @@ pub mod event_subscriptions {
         if let Some(label) = label {
             req_builder = req_builder.query(&[("label", label)]);
         }
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder
+            .build()
+            .context(list_global_by_resource_group_for_topic_type::BuildRequestError)?;
+        let rsp = client
+            .execute(req)
+            .await
+            .context(list_global_by_resource_group_for_topic_type::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp
+                    .bytes()
+                    .await
+                    .context(list_global_by_resource_group_for_topic_type::ResponseBytesError)?;
+                let rsp_value: EventSubscriptionsListResult =
+                    serde_json::from_slice(&body).context(list_global_by_resource_group_for_topic_type::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => list_global_by_resource_group_for_topic_type::DefaultResponse { status_code }.fail(),
+        }
+    }
+    pub mod list_global_by_resource_group_for_topic_type {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse { status_code: StatusCode },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn list_regional_by_subscription(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         location: &str,
         filter: Option<&str>,
         top: Option<i64>,
         label: Option<&str>,
-    ) -> Result<EventSubscriptionsListResult> {
+    ) -> std::result::Result<EventSubscriptionsListResult, list_regional_by_subscription::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.EventGrid/locations/{}/eventSubscriptions",
@@ -513,19 +1017,44 @@ pub mod event_subscriptions {
         if let Some(label) = label {
             req_builder = req_builder.query(&[("label", label)]);
         }
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list_regional_by_subscription::BuildRequestError)?;
+        let rsp = client
+            .execute(req)
+            .await
+            .context(list_regional_by_subscription::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_regional_by_subscription::ResponseBytesError)?;
+                let rsp_value: EventSubscriptionsListResult =
+                    serde_json::from_slice(&body).context(list_regional_by_subscription::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => list_regional_by_subscription::DefaultResponse { status_code }.fail(),
+        }
+    }
+    pub mod list_regional_by_subscription {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse { status_code: StatusCode },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn list_regional_by_resource_group(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         location: &str,
         filter: Option<&str>,
         top: Option<i64>,
         label: Option<&str>,
-    ) -> Result<EventSubscriptionsListResult> {
+    ) -> std::result::Result<EventSubscriptionsListResult, list_regional_by_resource_group::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventGrid/locations/{}/eventSubscriptions",
@@ -545,19 +1074,44 @@ pub mod event_subscriptions {
         if let Some(label) = label {
             req_builder = req_builder.query(&[("label", label)]);
         }
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list_regional_by_resource_group::BuildRequestError)?;
+        let rsp = client
+            .execute(req)
+            .await
+            .context(list_regional_by_resource_group::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_regional_by_resource_group::ResponseBytesError)?;
+                let rsp_value: EventSubscriptionsListResult =
+                    serde_json::from_slice(&body).context(list_regional_by_resource_group::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => list_regional_by_resource_group::DefaultResponse { status_code }.fail(),
+        }
+    }
+    pub mod list_regional_by_resource_group {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse { status_code: StatusCode },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn list_regional_by_subscription_for_topic_type(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         location: &str,
         topic_type_name: &str,
         filter: Option<&str>,
         top: Option<i64>,
         label: Option<&str>,
-    ) -> Result<EventSubscriptionsListResult> {
+    ) -> std::result::Result<EventSubscriptionsListResult, list_regional_by_subscription_for_topic_type::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.EventGrid/locations/{}/topicTypes/{}/eventSubscriptions",
@@ -577,12 +1131,42 @@ pub mod event_subscriptions {
         if let Some(label) = label {
             req_builder = req_builder.query(&[("label", label)]);
         }
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder
+            .build()
+            .context(list_regional_by_subscription_for_topic_type::BuildRequestError)?;
+        let rsp = client
+            .execute(req)
+            .await
+            .context(list_regional_by_subscription_for_topic_type::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp
+                    .bytes()
+                    .await
+                    .context(list_regional_by_subscription_for_topic_type::ResponseBytesError)?;
+                let rsp_value: EventSubscriptionsListResult =
+                    serde_json::from_slice(&body).context(list_regional_by_subscription_for_topic_type::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => list_regional_by_subscription_for_topic_type::DefaultResponse { status_code }.fail(),
+        }
+    }
+    pub mod list_regional_by_subscription_for_topic_type {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse { status_code: StatusCode },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn list_regional_by_resource_group_for_topic_type(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         location: &str,
@@ -590,7 +1174,7 @@ pub mod event_subscriptions {
         filter: Option<&str>,
         top: Option<i64>,
         label: Option<&str>,
-    ) -> Result<EventSubscriptionsListResult> {
+    ) -> std::result::Result<EventSubscriptionsListResult, list_regional_by_resource_group_for_topic_type::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventGrid/locations/{}/topicTypes/{}/eventSubscriptions",
@@ -610,12 +1194,42 @@ pub mod event_subscriptions {
         if let Some(label) = label {
             req_builder = req_builder.query(&[("label", label)]);
         }
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder
+            .build()
+            .context(list_regional_by_resource_group_for_topic_type::BuildRequestError)?;
+        let rsp = client
+            .execute(req)
+            .await
+            .context(list_regional_by_resource_group_for_topic_type::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp
+                    .bytes()
+                    .await
+                    .context(list_regional_by_resource_group_for_topic_type::ResponseBytesError)?;
+                let rsp_value: EventSubscriptionsListResult =
+                    serde_json::from_slice(&body).context(list_regional_by_resource_group_for_topic_type::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => list_regional_by_resource_group_for_topic_type::DefaultResponse { status_code }.fail(),
+        }
+    }
+    pub mod list_regional_by_resource_group_for_topic_type {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse { status_code: StatusCode },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn list_by_resource(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         provider_namespace: &str,
@@ -624,7 +1238,7 @@ pub mod event_subscriptions {
         filter: Option<&str>,
         top: Option<i64>,
         label: Option<&str>,
-    ) -> Result<EventSubscriptionsListResult> {
+    ) -> std::result::Result<EventSubscriptionsListResult, list_by_resource::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.EventGrid/eventSubscriptions",
@@ -644,12 +1258,34 @@ pub mod event_subscriptions {
         if let Some(label) = label {
             req_builder = req_builder.query(&[("label", label)]);
         }
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list_by_resource::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list_by_resource::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_resource::ResponseBytesError)?;
+                let rsp_value: EventSubscriptionsListResult =
+                    serde_json::from_slice(&body).context(list_by_resource::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => list_by_resource::DefaultResponse { status_code }.fail(),
+        }
+    }
+    pub mod list_by_resource {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse { status_code: StatusCode },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn list_by_domain_topic(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         domain_name: &str,
@@ -657,7 +1293,7 @@ pub mod event_subscriptions {
         filter: Option<&str>,
         top: Option<i64>,
         label: Option<&str>,
-    ) -> Result<EventSubscriptionsListResult> {
+    ) -> std::result::Result<EventSubscriptionsListResult, list_by_domain_topic::Error> {
         let client = &configuration.client;
         let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventGrid/domains/{}/topics/{}/providers/Microsoft.EventGrid/eventSubscriptions" , & configuration . base_path , subscription_id , resource_group_name , domain_name , topic_name) ;
         let mut req_builder = client.get(uri_str);
@@ -674,14 +1310,38 @@ pub mod event_subscriptions {
         if let Some(label) = label {
             req_builder = req_builder.query(&[("label", label)]);
         }
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list_by_domain_topic::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list_by_domain_topic::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_domain_topic::ResponseBytesError)?;
+                let rsp_value: EventSubscriptionsListResult =
+                    serde_json::from_slice(&body).context(list_by_domain_topic::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => list_by_domain_topic::DefaultResponse { status_code }.fail(),
+        }
+    }
+    pub mod list_by_domain_topic {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse { status_code: StatusCode },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
 }
 pub mod operations {
-    use crate::{models::*, *};
-    pub async fn list(configuration: &Configuration) -> Result<OperationsListResult> {
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
+    pub async fn list(configuration: &crate::Configuration) -> std::result::Result<OperationsListResult, list::Error> {
         let client = &configuration.client;
         let uri_str = &format!("{}/providers/Microsoft.EventGrid/operations", &configuration.base_path,);
         let mut req_builder = client.get(uri_str);
@@ -689,14 +1349,42 @@ pub mod operations {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: OperationsListResult = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => list::DefaultResponse { status_code }.fail(),
+        }
+    }
+    pub mod list {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse { status_code: StatusCode },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
 }
 pub mod topics {
-    use crate::{models::*, *};
-    pub async fn get(configuration: &Configuration, subscription_id: &str, resource_group_name: &str, topic_name: &str) -> Result<Topic> {
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
+    pub async fn get(
+        configuration: &crate::Configuration,
+        subscription_id: &str,
+        resource_group_name: &str,
+        topic_name: &str,
+    ) -> std::result::Result<Topic, get::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventGrid/topics/{}",
@@ -707,17 +1395,38 @@ pub mod topics {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(get::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: Topic = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => get::DefaultResponse { status_code }.fail(),
+        }
+    }
+    pub mod get {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse { status_code: StatusCode },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn create_or_update(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         topic_name: &str,
         topic_info: &Topic,
-    ) -> Result<Topic> {
+    ) -> std::result::Result<Topic, create_or_update::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventGrid/topics/{}",
@@ -729,17 +1438,38 @@ pub mod topics {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(topic_info);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(create_or_update::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(create_or_update::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::CREATED => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
+                let rsp_value: Topic = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => create_or_update::DefaultResponse { status_code }.fail(),
+        }
+    }
+    pub mod create_or_update {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse { status_code: StatusCode },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn update(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         topic_name: &str,
         topic_update_parameters: &TopicUpdateParameters,
-    ) -> Result<Topic> {
+    ) -> std::result::Result<Topic, update::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventGrid/topics/{}",
@@ -751,11 +1481,37 @@ pub mod topics {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(topic_update_parameters);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(update::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(update::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::CREATED => {
+                let body: bytes::Bytes = rsp.bytes().await.context(update::ResponseBytesError)?;
+                let rsp_value: Topic = serde_json::from_slice(&body).context(update::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => update::DefaultResponse { status_code }.fail(),
+        }
     }
-    pub async fn delete(configuration: &Configuration, subscription_id: &str, resource_group_name: &str, topic_name: &str) -> Result<()> {
+    pub mod update {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse { status_code: StatusCode },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
+    }
+    pub async fn delete(
+        configuration: &crate::Configuration,
+        subscription_id: &str,
+        resource_group_name: &str,
+        topic_name: &str,
+    ) -> std::result::Result<delete::Response, delete::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventGrid/topics/{}",
@@ -766,16 +1522,39 @@ pub mod topics {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(delete::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::ACCEPTED => Ok(delete::Response::Accepted202),
+            StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
+            status_code => delete::DefaultResponse { status_code }.fail(),
+        }
+    }
+    pub mod delete {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Accepted202,
+            NoContent204,
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse { status_code: StatusCode },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn list_by_subscription(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         filter: Option<&str>,
         top: Option<i64>,
-    ) -> Result<TopicsListResult> {
+    ) -> std::result::Result<TopicsListResult, list_by_subscription::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.EventGrid/topics",
@@ -792,17 +1571,38 @@ pub mod topics {
         if let Some(top) = top {
             req_builder = req_builder.query(&[("$top", top)]);
         }
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list_by_subscription::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list_by_subscription::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_subscription::ResponseBytesError)?;
+                let rsp_value: TopicsListResult = serde_json::from_slice(&body).context(list_by_subscription::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => list_by_subscription::DefaultResponse { status_code }.fail(),
+        }
+    }
+    pub mod list_by_subscription {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse { status_code: StatusCode },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn list_by_resource_group(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         filter: Option<&str>,
         top: Option<i64>,
-    ) -> Result<TopicsListResult> {
+    ) -> std::result::Result<TopicsListResult, list_by_resource_group::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventGrid/topics",
@@ -819,16 +1619,38 @@ pub mod topics {
         if let Some(top) = top {
             req_builder = req_builder.query(&[("$top", top)]);
         }
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list_by_resource_group::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list_by_resource_group::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_resource_group::ResponseBytesError)?;
+                let rsp_value: TopicsListResult =
+                    serde_json::from_slice(&body).context(list_by_resource_group::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => list_by_resource_group::DefaultResponse { status_code }.fail(),
+        }
+    }
+    pub mod list_by_resource_group {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse { status_code: StatusCode },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn list_shared_access_keys(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         topic_name: &str,
-    ) -> Result<TopicSharedAccessKeys> {
+    ) -> std::result::Result<TopicSharedAccessKeys, list_shared_access_keys::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventGrid/topics/{}/listKeys",
@@ -839,17 +1661,39 @@ pub mod topics {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list_shared_access_keys::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list_shared_access_keys::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_shared_access_keys::ResponseBytesError)?;
+                let rsp_value: TopicSharedAccessKeys =
+                    serde_json::from_slice(&body).context(list_shared_access_keys::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => list_shared_access_keys::DefaultResponse { status_code }.fail(),
+        }
+    }
+    pub mod list_shared_access_keys {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse { status_code: StatusCode },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn regenerate_key(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         topic_name: &str,
         regenerate_key_request: &TopicRegenerateKeyRequest,
-    ) -> Result<TopicSharedAccessKeys> {
+    ) -> std::result::Result<TopicSharedAccessKeys, regenerate_key::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventGrid/topics/{}/regenerateKey",
@@ -861,18 +1705,39 @@ pub mod topics {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(regenerate_key_request);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(regenerate_key::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(regenerate_key::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(regenerate_key::ResponseBytesError)?;
+                let rsp_value: TopicSharedAccessKeys = serde_json::from_slice(&body).context(regenerate_key::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => regenerate_key::DefaultResponse { status_code }.fail(),
+        }
+    }
+    pub mod regenerate_key {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse { status_code: StatusCode },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn list_event_types(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         provider_namespace: &str,
         resource_type_name: &str,
         resource_name: &str,
-    ) -> Result<EventTypesListResult> {
+    ) -> std::result::Result<EventTypesListResult, list_event_types::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.EventGrid/eventTypes",
@@ -883,14 +1748,37 @@ pub mod topics {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list_event_types::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list_event_types::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_event_types::ResponseBytesError)?;
+                let rsp_value: EventTypesListResult = serde_json::from_slice(&body).context(list_event_types::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => list_event_types::DefaultResponse { status_code }.fail(),
+        }
+    }
+    pub mod list_event_types {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse { status_code: StatusCode },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
 }
 pub mod topic_types {
-    use crate::{models::*, *};
-    pub async fn list(configuration: &Configuration) -> Result<TopicTypesListResult> {
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
+    pub async fn list(configuration: &crate::Configuration) -> std::result::Result<TopicTypesListResult, list::Error> {
         let client = &configuration.client;
         let uri_str = &format!("{}/providers/Microsoft.EventGrid/topicTypes", &configuration.base_path,);
         let mut req_builder = client.get(uri_str);
@@ -898,11 +1786,32 @@ pub mod topic_types {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: TopicTypesListResult = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => list::DefaultResponse { status_code }.fail(),
+        }
     }
-    pub async fn get(configuration: &Configuration, topic_type_name: &str) -> Result<TopicTypeInfo> {
+    pub mod list {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse { status_code: StatusCode },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
+    }
+    pub async fn get(configuration: &crate::Configuration, topic_type_name: &str) -> std::result::Result<TopicTypeInfo, get::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.EventGrid/topicTypes/{}",
@@ -913,11 +1822,35 @@ pub mod topic_types {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(get::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: TopicTypeInfo = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => get::DefaultResponse { status_code }.fail(),
+        }
     }
-    pub async fn list_event_types(configuration: &Configuration, topic_type_name: &str) -> Result<EventTypesListResult> {
+    pub mod get {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse { status_code: StatusCode },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
+    }
+    pub async fn list_event_types(
+        configuration: &crate::Configuration,
+        topic_type_name: &str,
+    ) -> std::result::Result<EventTypesListResult, list_event_types::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.EventGrid/topicTypes/{}/eventTypes",
@@ -928,8 +1861,29 @@ pub mod topic_types {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list_event_types::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list_event_types::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_event_types::ResponseBytesError)?;
+                let rsp_value: EventTypesListResult = serde_json::from_slice(&body).context(list_event_types::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => list_event_types::DefaultResponse { status_code }.fail(),
+        }
+    }
+    pub mod list_event_types {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse { status_code: StatusCode },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
 }

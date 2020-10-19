@@ -2,10 +2,14 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use crate::{models::*, *};
+use crate::models::*;
+use reqwest::StatusCode;
+use snafu::{ResultExt, Snafu};
 pub mod operations {
-    use crate::{models::*, *};
-    pub async fn list(configuration: &Configuration) -> Result<OperationListResult> {
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
+    pub async fn list(configuration: &crate::Configuration) -> std::result::Result<OperationListResult, list::Error> {
         let client = &configuration.client;
         let uri_str = &format!("{}/providers/Microsoft.Storage/operations", &configuration.base_path,);
         let mut req_builder = client.get(uri_str);
@@ -13,14 +17,43 @@ pub mod operations {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: OperationListResult = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                list::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
+    }
+    pub mod list {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
 }
 pub mod skus {
-    use crate::{models::*, *};
-    pub async fn list(configuration: &Configuration, subscription_id: &str) -> Result<StorageSkuListResult> {
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
+    pub async fn list(
+        configuration: &crate::Configuration,
+        subscription_id: &str,
+    ) -> std::result::Result<StorageSkuListResult, list::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Storage/skus",
@@ -31,18 +64,44 @@ pub mod skus {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: StorageSkuListResult = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                list::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
+    }
+    pub mod list {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
 }
 pub mod storage_accounts {
-    use crate::{models::*, *};
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
     pub async fn check_name_availability(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         account_name: &StorageAccountCheckNameAvailabilityParameters,
         subscription_id: &str,
-    ) -> Result<CheckNameAvailabilityResult> {
+    ) -> std::result::Result<CheckNameAvailabilityResult, check_name_availability::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Storage/checkNameAvailability",
@@ -54,16 +113,41 @@ pub mod storage_accounts {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(account_name);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(check_name_availability::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(check_name_availability::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(check_name_availability::ResponseBytesError)?;
+                let rsp_value: CheckNameAvailabilityResult =
+                    serde_json::from_slice(&body).context(check_name_availability::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(check_name_availability::ResponseBytesError)?;
+                check_name_availability::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
+    }
+    pub mod check_name_availability {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn get_properties(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         resource_group_name: &str,
         account_name: &str,
         subscription_id: &str,
-    ) -> Result<StorageAccount> {
+    ) -> std::result::Result<StorageAccount, get_properties::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}",
@@ -74,17 +158,41 @@ pub mod storage_accounts {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(get_properties::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get_properties::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get_properties::ResponseBytesError)?;
+                let rsp_value: StorageAccount = serde_json::from_slice(&body).context(get_properties::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get_properties::ResponseBytesError)?;
+                get_properties::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
+    }
+    pub mod get_properties {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn create(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         resource_group_name: &str,
         account_name: &str,
         parameters: &StorageAccountCreateParameters,
         subscription_id: &str,
-    ) -> Result<StorageAccount> {
+    ) -> std::result::Result<create::Response, create::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}",
@@ -96,17 +204,47 @@ pub mod storage_accounts {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(parameters);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(create::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(create::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create::ResponseBytesError)?;
+                let rsp_value: StorageAccount = serde_json::from_slice(&body).context(create::DeserializeError { body })?;
+                Ok(create::Response::Ok200(rsp_value))
+            }
+            StatusCode::ACCEPTED => Ok(create::Response::Accepted202),
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create::ResponseBytesError)?;
+                create::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
+    }
+    pub mod create {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(StorageAccount),
+            Accepted202,
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn update(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         resource_group_name: &str,
         account_name: &str,
         parameters: &StorageAccountUpdateParameters,
         subscription_id: &str,
-    ) -> Result<StorageAccount> {
+    ) -> std::result::Result<StorageAccount, update::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}",
@@ -118,11 +256,40 @@ pub mod storage_accounts {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(parameters);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(update::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(update::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(update::ResponseBytesError)?;
+                let rsp_value: StorageAccount = serde_json::from_slice(&body).context(update::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(update::ResponseBytesError)?;
+                update::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
     }
-    pub async fn delete(configuration: &Configuration, resource_group_name: &str, account_name: &str, subscription_id: &str) -> Result<()> {
+    pub mod update {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
+    }
+    pub async fn delete(
+        configuration: &crate::Configuration,
+        resource_group_name: &str,
+        account_name: &str,
+        subscription_id: &str,
+    ) -> std::result::Result<delete::Response, delete::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}",
@@ -133,11 +300,40 @@ pub mod storage_accounts {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(delete::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => Ok(delete::Response::Ok200),
+            StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(delete::ResponseBytesError)?;
+                delete::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
     }
-    pub async fn list(configuration: &Configuration, subscription_id: &str) -> Result<StorageAccountListResult> {
+    pub mod delete {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200,
+            NoContent204,
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
+    }
+    pub async fn list(
+        configuration: &crate::Configuration,
+        subscription_id: &str,
+    ) -> std::result::Result<StorageAccountListResult, list::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Storage/storageAccounts",
@@ -148,15 +344,39 @@ pub mod storage_accounts {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: StorageAccountListResult = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                list::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
+    }
+    pub mod list {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn list_by_resource_group(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         resource_group_name: &str,
         subscription_id: &str,
-    ) -> Result<StorageAccountListResult> {
+    ) -> std::result::Result<StorageAccountListResult, list_by_resource_group::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts",
@@ -167,16 +387,41 @@ pub mod storage_accounts {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list_by_resource_group::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list_by_resource_group::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_resource_group::ResponseBytesError)?;
+                let rsp_value: StorageAccountListResult =
+                    serde_json::from_slice(&body).context(list_by_resource_group::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_resource_group::ResponseBytesError)?;
+                list_by_resource_group::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
+    }
+    pub mod list_by_resource_group {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn list_keys(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         resource_group_name: &str,
         account_name: &str,
         subscription_id: &str,
-    ) -> Result<StorageAccountListKeysResult> {
+    ) -> std::result::Result<StorageAccountListKeysResult, list_keys::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/listKeys",
@@ -187,17 +432,42 @@ pub mod storage_accounts {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list_keys::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list_keys::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_keys::ResponseBytesError)?;
+                let rsp_value: StorageAccountListKeysResult =
+                    serde_json::from_slice(&body).context(list_keys::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_keys::ResponseBytesError)?;
+                list_keys::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
+    }
+    pub mod list_keys {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn regenerate_key(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         resource_group_name: &str,
         account_name: &str,
         regenerate_key: &StorageAccountRegenerateKeyParameters,
         subscription_id: &str,
-    ) -> Result<StorageAccountListKeysResult> {
+    ) -> std::result::Result<StorageAccountListKeysResult, regenerate_key::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/regenerateKey",
@@ -209,17 +479,42 @@ pub mod storage_accounts {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(regenerate_key);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(regenerate_key::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(regenerate_key::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(regenerate_key::ResponseBytesError)?;
+                let rsp_value: StorageAccountListKeysResult =
+                    serde_json::from_slice(&body).context(regenerate_key::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(regenerate_key::ResponseBytesError)?;
+                regenerate_key::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
+    }
+    pub mod regenerate_key {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn list_account_sas(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         resource_group_name: &str,
         account_name: &str,
         parameters: &AccountSasParameters,
         subscription_id: &str,
-    ) -> Result<ListAccountSasResponse> {
+    ) -> std::result::Result<ListAccountSasResponse, list_account_sas::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/ListAccountSas",
@@ -231,17 +526,42 @@ pub mod storage_accounts {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(parameters);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list_account_sas::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list_account_sas::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_account_sas::ResponseBytesError)?;
+                let rsp_value: ListAccountSasResponse =
+                    serde_json::from_slice(&body).context(list_account_sas::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_account_sas::ResponseBytesError)?;
+                list_account_sas::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
+    }
+    pub mod list_account_sas {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn list_service_sas(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         resource_group_name: &str,
         account_name: &str,
         parameters: &ServiceSasParameters,
         subscription_id: &str,
-    ) -> Result<ListServiceSasResponse> {
+    ) -> std::result::Result<ListServiceSasResponse, list_service_sas::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/ListServiceSas",
@@ -253,17 +573,42 @@ pub mod storage_accounts {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(parameters);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list_service_sas::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list_service_sas::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_service_sas::ResponseBytesError)?;
+                let rsp_value: ListServiceSasResponse =
+                    serde_json::from_slice(&body).context(list_service_sas::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_service_sas::ResponseBytesError)?;
+                list_service_sas::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
+    }
+    pub mod list_service_sas {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn get_management_policies(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         resource_group_name: &str,
         account_name: &str,
         subscription_id: &str,
         management_policy_name: &str,
-    ) -> Result<StorageAccountManagementPolicies> {
+    ) -> std::result::Result<StorageAccountManagementPolicies, get_management_policies::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/managementPolicies/{}",
@@ -274,18 +619,43 @@ pub mod storage_accounts {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(get_management_policies::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get_management_policies::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get_management_policies::ResponseBytesError)?;
+                let rsp_value: StorageAccountManagementPolicies =
+                    serde_json::from_slice(&body).context(get_management_policies::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get_management_policies::ResponseBytesError)?;
+                get_management_policies::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
+    }
+    pub mod get_management_policies {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn create_or_update_management_policies(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         resource_group_name: &str,
         account_name: &str,
         subscription_id: &str,
         management_policy_name: &str,
         properties: &ManagementPoliciesRulesSetParameter,
-    ) -> Result<StorageAccountManagementPolicies> {
+    ) -> std::result::Result<StorageAccountManagementPolicies, create_or_update_management_policies::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/managementPolicies/{}",
@@ -297,17 +667,53 @@ pub mod storage_accounts {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(properties);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder
+            .build()
+            .context(create_or_update_management_policies::BuildRequestError)?;
+        let rsp = client
+            .execute(req)
+            .await
+            .context(create_or_update_management_policies::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp
+                    .bytes()
+                    .await
+                    .context(create_or_update_management_policies::ResponseBytesError)?;
+                let rsp_value: StorageAccountManagementPolicies =
+                    serde_json::from_slice(&body).context(create_or_update_management_policies::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp
+                    .bytes()
+                    .await
+                    .context(create_or_update_management_policies::ResponseBytesError)?;
+                create_or_update_management_policies::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
+    }
+    pub mod create_or_update_management_policies {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn delete_management_policies(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         resource_group_name: &str,
         account_name: &str,
         subscription_id: &str,
         management_policy_name: &str,
-    ) -> Result<()> {
+    ) -> std::result::Result<delete_management_policies::Response, delete_management_policies::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/managementPolicies/{}",
@@ -318,14 +724,42 @@ pub mod storage_accounts {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(delete_management_policies::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(delete_management_policies::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => Ok(delete_management_policies::Response::Ok200),
+            StatusCode::NO_CONTENT => Ok(delete_management_policies::Response::NoContent204),
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(delete_management_policies::ResponseBytesError)?;
+                delete_management_policies::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
+    }
+    pub mod delete_management_policies {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200,
+            NoContent204,
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
 }
 pub mod usages {
-    use crate::{models::*, *};
-    pub async fn list(configuration: &Configuration, subscription_id: &str) -> Result<UsageListResult> {
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
+    pub async fn list(configuration: &crate::Configuration, subscription_id: &str) -> std::result::Result<UsageListResult, list::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Storage/usages",
@@ -336,11 +770,39 @@ pub mod usages {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: UsageListResult = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                list::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
     }
-    pub async fn list_by_location(configuration: &Configuration, subscription_id: &str, location: &str) -> Result<UsageListResult> {
+    pub mod list {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
+    }
+    pub async fn list_by_location(
+        configuration: &crate::Configuration,
+        subscription_id: &str,
+        location: &str,
+    ) -> std::result::Result<UsageListResult, list_by_location::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Storage/locations/{}/usages",
@@ -351,19 +813,45 @@ pub mod usages {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list_by_location::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list_by_location::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_location::ResponseBytesError)?;
+                let rsp_value: UsageListResult = serde_json::from_slice(&body).context(list_by_location::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_location::ResponseBytesError)?;
+                list_by_location::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
+    }
+    pub mod list_by_location {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
 }
 pub mod blob_containers {
-    use crate::{models::*, *};
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
     pub async fn list(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         resource_group_name: &str,
         account_name: &str,
         subscription_id: &str,
-    ) -> Result<ListContainerItems> {
+    ) -> std::result::Result<ListContainerItems, list::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/blobServices/default/containers",
@@ -374,17 +862,41 @@ pub mod blob_containers {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: ListContainerItems = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                list::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
+    }
+    pub mod list {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn get(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         resource_group_name: &str,
         account_name: &str,
         container_name: &str,
         subscription_id: &str,
-    ) -> Result<BlobContainer> {
+    ) -> std::result::Result<BlobContainer, get::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/blobServices/default/containers/{}",
@@ -395,18 +907,42 @@ pub mod blob_containers {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(get::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: BlobContainer = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                get::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
+    }
+    pub mod get {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn create(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         resource_group_name: &str,
         account_name: &str,
         container_name: &str,
         blob_container: &BlobContainer,
         subscription_id: &str,
-    ) -> Result<BlobContainer> {
+    ) -> std::result::Result<BlobContainer, create::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/blobServices/default/containers/{}",
@@ -418,18 +954,42 @@ pub mod blob_containers {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(blob_container);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(create::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(create::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::CREATED => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create::ResponseBytesError)?;
+                let rsp_value: BlobContainer = serde_json::from_slice(&body).context(create::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create::ResponseBytesError)?;
+                create::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
+    }
+    pub mod create {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn update(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         resource_group_name: &str,
         account_name: &str,
         container_name: &str,
         blob_container: &BlobContainer,
         subscription_id: &str,
-    ) -> Result<BlobContainer> {
+    ) -> std::result::Result<BlobContainer, update::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/blobServices/default/containers/{}",
@@ -441,17 +1001,41 @@ pub mod blob_containers {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(blob_container);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(update::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(update::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(update::ResponseBytesError)?;
+                let rsp_value: BlobContainer = serde_json::from_slice(&body).context(update::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(update::ResponseBytesError)?;
+                update::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
+    }
+    pub mod update {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn delete(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         resource_group_name: &str,
         account_name: &str,
         container_name: &str,
         subscription_id: &str,
-    ) -> Result<()> {
+    ) -> std::result::Result<delete::Response, delete::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/blobServices/default/containers/{}",
@@ -462,18 +1046,44 @@ pub mod blob_containers {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(delete::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => Ok(delete::Response::Ok200),
+            StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(delete::ResponseBytesError)?;
+                delete::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
+    }
+    pub mod delete {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200,
+            NoContent204,
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn set_legal_hold(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         resource_group_name: &str,
         account_name: &str,
         container_name: &str,
         subscription_id: &str,
         legal_hold: &LegalHold,
-    ) -> Result<LegalHold> {
+    ) -> std::result::Result<LegalHold, set_legal_hold::Error> {
         let client = &configuration.client;
         let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/blobServices/default/containers/{}/setLegalHold" , & configuration . base_path , subscription_id , resource_group_name , account_name , container_name) ;
         let mut req_builder = client.post(uri_str);
@@ -482,18 +1092,42 @@ pub mod blob_containers {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(legal_hold);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(set_legal_hold::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(set_legal_hold::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(set_legal_hold::ResponseBytesError)?;
+                let rsp_value: LegalHold = serde_json::from_slice(&body).context(set_legal_hold::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(set_legal_hold::ResponseBytesError)?;
+                set_legal_hold::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
+    }
+    pub mod set_legal_hold {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn clear_legal_hold(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         resource_group_name: &str,
         account_name: &str,
         container_name: &str,
         subscription_id: &str,
         legal_hold: &LegalHold,
-    ) -> Result<LegalHold> {
+    ) -> std::result::Result<LegalHold, clear_legal_hold::Error> {
         let client = &configuration.client;
         let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/blobServices/default/containers/{}/clearLegalHold" , & configuration . base_path , subscription_id , resource_group_name , account_name , container_name) ;
         let mut req_builder = client.post(uri_str);
@@ -502,19 +1136,43 @@ pub mod blob_containers {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(legal_hold);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(clear_legal_hold::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(clear_legal_hold::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(clear_legal_hold::ResponseBytesError)?;
+                let rsp_value: LegalHold = serde_json::from_slice(&body).context(clear_legal_hold::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(clear_legal_hold::ResponseBytesError)?;
+                clear_legal_hold::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
+    }
+    pub mod clear_legal_hold {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn get_immutability_policy(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         resource_group_name: &str,
         account_name: &str,
         container_name: &str,
         immutability_policy_name: &str,
         subscription_id: &str,
         if_match: Option<&str>,
-    ) -> Result<ImmutabilityPolicy> {
+    ) -> std::result::Result<ImmutabilityPolicy, get_immutability_policy::Error> {
         let client = &configuration.client;
         let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/blobServices/default/containers/{}/immutabilityPolicies/{}" , & configuration . base_path , subscription_id , resource_group_name , account_name , container_name , immutability_policy_name) ;
         let mut req_builder = client.get(uri_str);
@@ -525,12 +1183,37 @@ pub mod blob_containers {
         if let Some(if_match) = if_match {
             req_builder = req_builder.header("If-Match", if_match);
         }
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(get_immutability_policy::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get_immutability_policy::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get_immutability_policy::ResponseBytesError)?;
+                let rsp_value: ImmutabilityPolicy =
+                    serde_json::from_slice(&body).context(get_immutability_policy::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get_immutability_policy::ResponseBytesError)?;
+                get_immutability_policy::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
+    }
+    pub mod get_immutability_policy {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn create_or_update_immutability_policy(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         resource_group_name: &str,
         account_name: &str,
         container_name: &str,
@@ -538,7 +1221,7 @@ pub mod blob_containers {
         subscription_id: &str,
         parameters: Option<&ImmutabilityPolicy>,
         if_match: Option<&str>,
-    ) -> Result<ImmutabilityPolicy> {
+    ) -> std::result::Result<ImmutabilityPolicy, create_or_update_immutability_policy::Error> {
         let client = &configuration.client;
         let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/blobServices/default/containers/{}/immutabilityPolicies/{}" , & configuration . base_path , subscription_id , resource_group_name , account_name , container_name , immutability_policy_name) ;
         let mut req_builder = client.put(uri_str);
@@ -552,19 +1235,55 @@ pub mod blob_containers {
         if let Some(if_match) = if_match {
             req_builder = req_builder.header("If-Match", if_match);
         }
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder
+            .build()
+            .context(create_or_update_immutability_policy::BuildRequestError)?;
+        let rsp = client
+            .execute(req)
+            .await
+            .context(create_or_update_immutability_policy::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp
+                    .bytes()
+                    .await
+                    .context(create_or_update_immutability_policy::ResponseBytesError)?;
+                let rsp_value: ImmutabilityPolicy =
+                    serde_json::from_slice(&body).context(create_or_update_immutability_policy::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp
+                    .bytes()
+                    .await
+                    .context(create_or_update_immutability_policy::ResponseBytesError)?;
+                create_or_update_immutability_policy::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
+    }
+    pub mod create_or_update_immutability_policy {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn delete_immutability_policy(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         resource_group_name: &str,
         account_name: &str,
         container_name: &str,
         immutability_policy_name: &str,
         subscription_id: &str,
         if_match: &str,
-    ) -> Result<ImmutabilityPolicy> {
+    ) -> std::result::Result<ImmutabilityPolicy, delete_immutability_policy::Error> {
         let client = &configuration.client;
         let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/blobServices/default/containers/{}/immutabilityPolicies/{}" , & configuration . base_path , subscription_id , resource_group_name , account_name , container_name , immutability_policy_name) ;
         let mut req_builder = client.delete(uri_str);
@@ -573,18 +1292,43 @@ pub mod blob_containers {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.header("If-Match", if_match);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(delete_immutability_policy::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(delete_immutability_policy::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(delete_immutability_policy::ResponseBytesError)?;
+                let rsp_value: ImmutabilityPolicy =
+                    serde_json::from_slice(&body).context(delete_immutability_policy::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(delete_immutability_policy::ResponseBytesError)?;
+                delete_immutability_policy::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
+    }
+    pub mod delete_immutability_policy {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn lock_immutability_policy(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         resource_group_name: &str,
         account_name: &str,
         container_name: &str,
         subscription_id: &str,
         if_match: &str,
-    ) -> Result<ImmutabilityPolicy> {
+    ) -> std::result::Result<ImmutabilityPolicy, lock_immutability_policy::Error> {
         let client = &configuration.client;
         let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/blobServices/default/containers/{}/immutabilityPolicies/default/lock" , & configuration . base_path , subscription_id , resource_group_name , account_name , container_name) ;
         let mut req_builder = client.post(uri_str);
@@ -593,19 +1337,44 @@ pub mod blob_containers {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.header("If-Match", if_match);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(lock_immutability_policy::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(lock_immutability_policy::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(lock_immutability_policy::ResponseBytesError)?;
+                let rsp_value: ImmutabilityPolicy =
+                    serde_json::from_slice(&body).context(lock_immutability_policy::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(lock_immutability_policy::ResponseBytesError)?;
+                lock_immutability_policy::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
+    }
+    pub mod lock_immutability_policy {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn extend_immutability_policy(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         resource_group_name: &str,
         account_name: &str,
         container_name: &str,
         subscription_id: &str,
         parameters: Option<&ImmutabilityPolicy>,
         if_match: &str,
-    ) -> Result<ImmutabilityPolicy> {
+    ) -> std::result::Result<ImmutabilityPolicy, extend_immutability_policy::Error> {
         let client = &configuration.client;
         let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/blobServices/default/containers/{}/immutabilityPolicies/default/extend" , & configuration . base_path , subscription_id , resource_group_name , account_name , container_name) ;
         let mut req_builder = client.post(uri_str);
@@ -617,18 +1386,43 @@ pub mod blob_containers {
             req_builder = req_builder.json(parameters);
         }
         req_builder = req_builder.header("If-Match", if_match);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(extend_immutability_policy::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(extend_immutability_policy::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(extend_immutability_policy::ResponseBytesError)?;
+                let rsp_value: ImmutabilityPolicy =
+                    serde_json::from_slice(&body).context(extend_immutability_policy::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(extend_immutability_policy::ResponseBytesError)?;
+                extend_immutability_policy::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
+    }
+    pub mod extend_immutability_policy {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn lease(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         resource_group_name: &str,
         account_name: &str,
         container_name: &str,
         subscription_id: &str,
         parameters: Option<&LeaseContainerRequest>,
-    ) -> Result<LeaseContainerResponse> {
+    ) -> std::result::Result<LeaseContainerResponse, lease::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.Storage/storageAccounts/{}/blobServices/default/containers/{}/lease",
@@ -642,8 +1436,32 @@ pub mod blob_containers {
         if let Some(parameters) = parameters {
             req_builder = req_builder.json(parameters);
         }
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(lease::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(lease::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(lease::ResponseBytesError)?;
+                let rsp_value: LeaseContainerResponse = serde_json::from_slice(&body).context(lease::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(lease::ResponseBytesError)?;
+                lease::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
+    }
+    pub mod lease {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
 }

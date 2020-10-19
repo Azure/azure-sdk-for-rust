@@ -9,7 +9,9 @@ export RESOURCE_GROUP_LOCATION=southcentralus
 cargo run --example group_create
 */
 
-use azure_mgmt_resources::{models::ResourceGroup, operations::resource_groups, Result};
+use azure_mgmt_resources::{models::ResourceGroup, operations::resource_groups};
+
+type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
 #[tokio::main]
 async fn main() -> Result<()> {

@@ -7,8 +7,6 @@ pub use package_composite_v1::{models, operations, API_VERSION};
 mod package_2019_01_preview_only;
 #[cfg(feature = "package-2019-01-preview-only")]
 pub use package_2019_01_preview_only::{models, operations, API_VERSION};
-pub type Error = Box<dyn std::error::Error + Send + Sync>;
-pub type Result<T> = std::result::Result<T, Error>;
 pub struct Configuration {
     pub api_version: String,
     pub client: reqwest::Client,

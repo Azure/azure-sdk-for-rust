@@ -2,8 +2,10 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use crate::{models::*, *};
-pub async fn resources(configuration: &Configuration, query: &QueryRequest) -> Result<QueryResponse> {
+use crate::models::*;
+use reqwest::StatusCode;
+use snafu::{ResultExt, Snafu};
+pub async fn resources(configuration: &crate::Configuration, query: &QueryRequest) -> std::result::Result<QueryResponse, resources::Error> {
     let client = &configuration.client;
     let uri_str = &format!("{}/providers/Microsoft.ResourceGraph/resources", &configuration.base_path,);
     let mut req_builder = client.post(uri_str);
@@ -12,11 +14,55 @@ pub async fn resources(configuration: &Configuration, query: &QueryRequest) -> R
     }
     req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
     req_builder = req_builder.json(query);
-    let req = req_builder.build()?;
-    let res = client.execute(req).await?;
-    Ok(res.json().await?)
+    let req = req_builder.build().context(resources::BuildRequestError)?;
+    let rsp = client.execute(req).await.context(resources::ExecuteRequestError)?;
+    match rsp.status() {
+        StatusCode::OK => {
+            let body: bytes::Bytes = rsp.bytes().await.context(resources::ResponseBytesError)?;
+            let rsp_value: QueryResponse = serde_json::from_slice(&body).context(resources::DeserializeError { body })?;
+            Ok(rsp_value)
+        }
+        status_code => {
+            let body: bytes::Bytes = rsp.bytes().await.context(resources::ResponseBytesError)?;
+            let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(resources::DeserializeError { body })?;
+            resources::DefaultResponse {
+                status_code,
+                value: rsp_value,
+            }
+            .fail()
+        }
+    }
 }
-pub async fn resource_changes(configuration: &Configuration, parameters: &ResourceChangesRequestParameters) -> Result<ResourceChangeList> {
+pub mod resources {
+    use crate::{models, models::*};
+    use reqwest::StatusCode;
+    use snafu::Snafu;
+    #[derive(Debug, Snafu)]
+    #[snafu(visibility(pub(crate)))]
+    pub enum Error {
+        DefaultResponse {
+            status_code: StatusCode,
+            value: models::ErrorResponse,
+        },
+        BuildRequestError {
+            source: reqwest::Error,
+        },
+        ExecuteRequestError {
+            source: reqwest::Error,
+        },
+        ResponseBytesError {
+            source: reqwest::Error,
+        },
+        DeserializeError {
+            source: serde_json::Error,
+            body: bytes::Bytes,
+        },
+    }
+}
+pub async fn resource_changes(
+    configuration: &crate::Configuration,
+    parameters: &ResourceChangesRequestParameters,
+) -> std::result::Result<ResourceChangeList, resource_changes::Error> {
     let client = &configuration.client;
     let uri_str = &format!("{}/providers/Microsoft.ResourceGraph/resourceChanges", &configuration.base_path,);
     let mut req_builder = client.post(uri_str);
@@ -25,14 +71,55 @@ pub async fn resource_changes(configuration: &Configuration, parameters: &Resour
     }
     req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
     req_builder = req_builder.json(parameters);
-    let req = req_builder.build()?;
-    let res = client.execute(req).await?;
-    Ok(res.json().await?)
+    let req = req_builder.build().context(resource_changes::BuildRequestError)?;
+    let rsp = client.execute(req).await.context(resource_changes::ExecuteRequestError)?;
+    match rsp.status() {
+        StatusCode::OK => {
+            let body: bytes::Bytes = rsp.bytes().await.context(resource_changes::ResponseBytesError)?;
+            let rsp_value: ResourceChangeList = serde_json::from_slice(&body).context(resource_changes::DeserializeError { body })?;
+            Ok(rsp_value)
+        }
+        status_code => {
+            let body: bytes::Bytes = rsp.bytes().await.context(resource_changes::ResponseBytesError)?;
+            let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(resource_changes::DeserializeError { body })?;
+            resource_changes::DefaultResponse {
+                status_code,
+                value: rsp_value,
+            }
+            .fail()
+        }
+    }
+}
+pub mod resource_changes {
+    use crate::{models, models::*};
+    use reqwest::StatusCode;
+    use snafu::Snafu;
+    #[derive(Debug, Snafu)]
+    #[snafu(visibility(pub(crate)))]
+    pub enum Error {
+        DefaultResponse {
+            status_code: StatusCode,
+            value: models::ErrorResponse,
+        },
+        BuildRequestError {
+            source: reqwest::Error,
+        },
+        ExecuteRequestError {
+            source: reqwest::Error,
+        },
+        ResponseBytesError {
+            source: reqwest::Error,
+        },
+        DeserializeError {
+            source: serde_json::Error,
+            body: bytes::Bytes,
+        },
+    }
 }
 pub async fn resource_change_details(
-    configuration: &Configuration,
+    configuration: &crate::Configuration,
     parameters: &ResourceChangeDetailsRequestParameters,
-) -> Result<ResourceChangeData> {
+) -> std::result::Result<ResourceChangeData, resource_change_details::Error> {
     let client = &configuration.client;
     let uri_str = &format!(
         "{}/providers/Microsoft.ResourceGraph/resourceChangeDetails",
@@ -44,13 +131,57 @@ pub async fn resource_change_details(
     }
     req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
     req_builder = req_builder.json(parameters);
-    let req = req_builder.build()?;
-    let res = client.execute(req).await?;
-    Ok(res.json().await?)
+    let req = req_builder.build().context(resource_change_details::BuildRequestError)?;
+    let rsp = client.execute(req).await.context(resource_change_details::ExecuteRequestError)?;
+    match rsp.status() {
+        StatusCode::OK => {
+            let body: bytes::Bytes = rsp.bytes().await.context(resource_change_details::ResponseBytesError)?;
+            let rsp_value: ResourceChangeData =
+                serde_json::from_slice(&body).context(resource_change_details::DeserializeError { body })?;
+            Ok(rsp_value)
+        }
+        status_code => {
+            let body: bytes::Bytes = rsp.bytes().await.context(resource_change_details::ResponseBytesError)?;
+            let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(resource_change_details::DeserializeError { body })?;
+            resource_change_details::DefaultResponse {
+                status_code,
+                value: rsp_value,
+            }
+            .fail()
+        }
+    }
+}
+pub mod resource_change_details {
+    use crate::{models, models::*};
+    use reqwest::StatusCode;
+    use snafu::Snafu;
+    #[derive(Debug, Snafu)]
+    #[snafu(visibility(pub(crate)))]
+    pub enum Error {
+        DefaultResponse {
+            status_code: StatusCode,
+            value: models::ErrorResponse,
+        },
+        BuildRequestError {
+            source: reqwest::Error,
+        },
+        ExecuteRequestError {
+            source: reqwest::Error,
+        },
+        ResponseBytesError {
+            source: reqwest::Error,
+        },
+        DeserializeError {
+            source: serde_json::Error,
+            body: bytes::Bytes,
+        },
+    }
 }
 pub mod operations {
-    use crate::{models::*, *};
-    pub async fn list(configuration: &Configuration) -> Result<OperationListResult> {
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
+    pub async fn list(configuration: &crate::Configuration) -> std::result::Result<OperationListResult, list::Error> {
         let client = &configuration.client;
         let uri_str = &format!("{}/providers/Microsoft.ResourceGraph/operations", &configuration.base_path,);
         let mut req_builder = client.get(uri_str);
@@ -58,14 +189,44 @@ pub mod operations {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: OperationListResult = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                list::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
+    }
+    pub mod list {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
 }
 pub mod graph_query {
-    use crate::{models::*, *};
-    pub async fn list(configuration: &Configuration, subscription_id: &str, resource_group_name: &str) -> Result<GraphQueryListResult> {
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
+    pub async fn list(
+        configuration: &crate::Configuration,
+        subscription_id: &str,
+        resource_group_name: &str,
+    ) -> std::result::Result<GraphQueryListResult, list::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ResourceGraph/queries",
@@ -76,16 +237,57 @@ pub mod graph_query {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: GraphQueryListResult = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: GraphQueryError = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                list::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::GraphQueryError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn get(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         resource_name: &str,
-    ) -> Result<GraphQueryResource> {
+    ) -> std::result::Result<GraphQueryResource, get::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ResourceGraph/queries/{}",
@@ -96,17 +298,58 @@ pub mod graph_query {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(get::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: GraphQueryResource = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: GraphQueryError = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                get::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod get {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::GraphQueryError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn create_or_update(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         resource_name: &str,
         properties: &GraphQueryResource,
-    ) -> Result<GraphQueryResource> {
+    ) -> std::result::Result<GraphQueryResource, create_or_update::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ResourceGraph/queries/{}",
@@ -118,17 +361,58 @@ pub mod graph_query {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(properties);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(create_or_update::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(create_or_update::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
+                let rsp_value: GraphQueryResource = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
+                let rsp_value: GraphQueryError = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                create_or_update::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod create_or_update {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::GraphQueryError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn update(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         resource_name: &str,
         body: &GraphQueryUpdateParameters,
-    ) -> Result<GraphQueryResource> {
+    ) -> std::result::Result<GraphQueryResource, update::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ResourceGraph/queries/{}",
@@ -140,16 +424,57 @@ pub mod graph_query {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(body);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(update::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(update::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(update::ResponseBytesError)?;
+                let rsp_value: GraphQueryResource = serde_json::from_slice(&body).context(update::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(update::ResponseBytesError)?;
+                let rsp_value: GraphQueryError = serde_json::from_slice(&body).context(update::DeserializeError { body })?;
+                update::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod update {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::GraphQueryError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
     pub async fn delete(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         subscription_id: &str,
         resource_group_name: &str,
         resource_name: &str,
-    ) -> Result<GraphQueryError> {
+    ) -> std::result::Result<delete::Response, delete::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ResourceGraph/queries/{}",
@@ -160,8 +485,51 @@ pub mod graph_query {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(delete::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => Ok(delete::Response::Ok200),
+            StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(delete::ResponseBytesError)?;
+                let rsp_value: GraphQueryError = serde_json::from_slice(&body).context(delete::DeserializeError { body })?;
+                delete::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod delete {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200,
+            NoContent204,
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::GraphQueryError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
     }
 }

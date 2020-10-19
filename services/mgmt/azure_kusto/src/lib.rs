@@ -55,8 +55,6 @@ pub use schema_2018_09_07_preview::{models, operations, API_VERSION};
 mod schema_2017_09_07_privatepreview;
 #[cfg(feature = "schema-2017-09-07-privatepreview")]
 pub use schema_2017_09_07_privatepreview::{models, operations, API_VERSION};
-pub type Error = Box<dyn std::error::Error + Send + Sync>;
-pub type Result<T> = std::result::Result<T, Error>;
 pub struct Configuration {
     pub api_version: String,
     pub client: reqwest::Client,

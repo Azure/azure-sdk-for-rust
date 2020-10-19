@@ -7,8 +7,6 @@ pub use package_2019_12_01::{models, operations, API_VERSION};
 mod package_2020_01_01;
 #[cfg(feature = "package-2020-01-01")]
 pub use package_2020_01_01::{models, operations, API_VERSION};
-pub type Error = Box<dyn std::error::Error + Send + Sync>;
-pub type Result<T> = std::result::Result<T, Error>;
 pub struct Configuration {
     pub api_version: String,
     pub client: reqwest::Client,

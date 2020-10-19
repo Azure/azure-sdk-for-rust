@@ -171,8 +171,6 @@ pub use package_managedapplications_2017_09::{models, operations, API_VERSION};
 mod package_managedapplications_2016_09;
 #[cfg(feature = "package-managedapplications-2016-09")]
 pub use package_managedapplications_2016_09::{models, operations, API_VERSION};
-pub type Error = Box<dyn std::error::Error + Send + Sync>;
-pub type Result<T> = std::result::Result<T, Error>;
 pub struct Configuration {
     pub api_version: String,
     pub client: reqwest::Client,

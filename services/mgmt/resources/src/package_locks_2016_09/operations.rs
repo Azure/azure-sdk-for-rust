@@ -2,10 +2,14 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use crate::{models::*, *};
+use crate::models::*;
+use reqwest::StatusCode;
+use snafu::{ResultExt, Snafu};
 pub mod authorization_operations {
-    use crate::{models::*, *};
-    pub async fn list(configuration: &Configuration) -> Result<OperationListResult> {
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
+    pub async fn list(configuration: &crate::Configuration) -> std::result::Result<OperationListResult, list::Error> {
         let client = &configuration.client;
         let uri_str = &format!("{}/providers/Microsoft.Authorization/operations", &configuration.base_path,);
         let mut req_builder = client.get(uri_str);
@@ -13,19 +17,45 @@ pub mod authorization_operations {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: OperationListResult = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                list::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
+    }
+    pub mod list {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
 }
 pub mod management_locks {
-    use crate::{models::*, *};
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
     pub async fn get_at_resource_group_level(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         resource_group_name: &str,
         lock_name: &str,
         subscription_id: &str,
-    ) -> Result<ManagementLockObject> {
+    ) -> std::result::Result<ManagementLockObject, get_at_resource_group_level::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Authorization/locks/{}",
@@ -36,17 +66,45 @@ pub mod management_locks {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(get_at_resource_group_level::BuildRequestError)?;
+        let rsp = client
+            .execute(req)
+            .await
+            .context(get_at_resource_group_level::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get_at_resource_group_level::ResponseBytesError)?;
+                let rsp_value: ManagementLockObject =
+                    serde_json::from_slice(&body).context(get_at_resource_group_level::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get_at_resource_group_level::ResponseBytesError)?;
+                get_at_resource_group_level::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
+    }
+    pub mod get_at_resource_group_level {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn create_or_update_at_resource_group_level(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         resource_group_name: &str,
         lock_name: &str,
         parameters: &ManagementLockObject,
         subscription_id: &str,
-    ) -> Result<ManagementLockObject> {
+    ) -> std::result::Result<create_or_update_at_resource_group_level::Response, create_or_update_at_resource_group_level::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Authorization/locks/{}",
@@ -58,16 +116,66 @@ pub mod management_locks {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(parameters);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder
+            .build()
+            .context(create_or_update_at_resource_group_level::BuildRequestError)?;
+        let rsp = client
+            .execute(req)
+            .await
+            .context(create_or_update_at_resource_group_level::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp
+                    .bytes()
+                    .await
+                    .context(create_or_update_at_resource_group_level::ResponseBytesError)?;
+                let rsp_value: ManagementLockObject =
+                    serde_json::from_slice(&body).context(create_or_update_at_resource_group_level::DeserializeError { body })?;
+                Ok(create_or_update_at_resource_group_level::Response::Ok200(rsp_value))
+            }
+            StatusCode::CREATED => {
+                let body: bytes::Bytes = rsp
+                    .bytes()
+                    .await
+                    .context(create_or_update_at_resource_group_level::ResponseBytesError)?;
+                let rsp_value: ManagementLockObject =
+                    serde_json::from_slice(&body).context(create_or_update_at_resource_group_level::DeserializeError { body })?;
+                Ok(create_or_update_at_resource_group_level::Response::Created201(rsp_value))
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp
+                    .bytes()
+                    .await
+                    .context(create_or_update_at_resource_group_level::ResponseBytesError)?;
+                create_or_update_at_resource_group_level::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
+    }
+    pub mod create_or_update_at_resource_group_level {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(ManagementLockObject),
+            Created201(ManagementLockObject),
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn delete_at_resource_group_level(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         resource_group_name: &str,
         lock_name: &str,
         subscription_id: &str,
-    ) -> Result<()> {
+    ) -> std::result::Result<delete_at_resource_group_level::Response, delete_at_resource_group_level::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Authorization/locks/{}",
@@ -78,11 +186,44 @@ pub mod management_locks {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(delete_at_resource_group_level::BuildRequestError)?;
+        let rsp = client
+            .execute(req)
+            .await
+            .context(delete_at_resource_group_level::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::NO_CONTENT => Ok(delete_at_resource_group_level::Response::NoContent204),
+            StatusCode::OK => Ok(delete_at_resource_group_level::Response::Ok200),
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(delete_at_resource_group_level::ResponseBytesError)?;
+                delete_at_resource_group_level::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
     }
-    pub async fn get_by_scope(configuration: &Configuration, scope: &str, lock_name: &str) -> Result<ManagementLockObject> {
+    pub mod delete_at_resource_group_level {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            NoContent204,
+            Ok200,
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
+    }
+    pub async fn get_by_scope(
+        configuration: &crate::Configuration,
+        scope: &str,
+        lock_name: &str,
+    ) -> std::result::Result<ManagementLockObject, get_by_scope::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/{}/providers/Microsoft.Authorization/locks/{}",
@@ -93,16 +234,40 @@ pub mod management_locks {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(get_by_scope::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get_by_scope::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get_by_scope::ResponseBytesError)?;
+                let rsp_value: ManagementLockObject = serde_json::from_slice(&body).context(get_by_scope::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get_by_scope::ResponseBytesError)?;
+                get_by_scope::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
+    }
+    pub mod get_by_scope {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn create_or_update_by_scope(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         scope: &str,
         lock_name: &str,
         parameters: &ManagementLockObject,
-    ) -> Result<ManagementLockObject> {
+    ) -> std::result::Result<create_or_update_by_scope::Response, create_or_update_by_scope::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/{}/providers/Microsoft.Authorization/locks/{}",
@@ -114,11 +279,51 @@ pub mod management_locks {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(parameters);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(create_or_update_by_scope::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(create_or_update_by_scope::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update_by_scope::ResponseBytesError)?;
+                let rsp_value: ManagementLockObject =
+                    serde_json::from_slice(&body).context(create_or_update_by_scope::DeserializeError { body })?;
+                Ok(create_or_update_by_scope::Response::Ok200(rsp_value))
+            }
+            StatusCode::CREATED => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update_by_scope::ResponseBytesError)?;
+                let rsp_value: ManagementLockObject =
+                    serde_json::from_slice(&body).context(create_or_update_by_scope::DeserializeError { body })?;
+                Ok(create_or_update_by_scope::Response::Created201(rsp_value))
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update_by_scope::ResponseBytesError)?;
+                create_or_update_by_scope::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
     }
-    pub async fn delete_by_scope(configuration: &Configuration, scope: &str, lock_name: &str) -> Result<()> {
+    pub mod create_or_update_by_scope {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(ManagementLockObject),
+            Created201(ManagementLockObject),
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
+    }
+    pub async fn delete_by_scope(
+        configuration: &crate::Configuration,
+        scope: &str,
+        lock_name: &str,
+    ) -> std::result::Result<delete_by_scope::Response, delete_by_scope::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/{}/providers/Microsoft.Authorization/locks/{}",
@@ -129,12 +334,38 @@ pub mod management_locks {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(delete_by_scope::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(delete_by_scope::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::NO_CONTENT => Ok(delete_by_scope::Response::NoContent204),
+            StatusCode::OK => Ok(delete_by_scope::Response::Ok200),
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(delete_by_scope::ResponseBytesError)?;
+                delete_by_scope::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
+    }
+    pub mod delete_by_scope {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            NoContent204,
+            Ok200,
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn get_at_resource_level(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         resource_group_name: &str,
         resource_provider_namespace: &str,
         parent_resource_path: &str,
@@ -142,7 +373,7 @@ pub mod management_locks {
         resource_name: &str,
         lock_name: &str,
         subscription_id: &str,
-    ) -> Result<ManagementLockObject> {
+    ) -> std::result::Result<ManagementLockObject, get_at_resource_level::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourcegroups/{}/providers/{}/{}/{}/{}/providers/Microsoft.Authorization/locks/{}",
@@ -160,12 +391,37 @@ pub mod management_locks {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(get_at_resource_level::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get_at_resource_level::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get_at_resource_level::ResponseBytesError)?;
+                let rsp_value: ManagementLockObject =
+                    serde_json::from_slice(&body).context(get_at_resource_level::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get_at_resource_level::ResponseBytesError)?;
+                get_at_resource_level::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
+    }
+    pub mod get_at_resource_level {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn create_or_update_at_resource_level(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         resource_group_name: &str,
         resource_provider_namespace: &str,
         parent_resource_path: &str,
@@ -174,7 +430,7 @@ pub mod management_locks {
         lock_name: &str,
         parameters: &ManagementLockObject,
         subscription_id: &str,
-    ) -> Result<ManagementLockObject> {
+    ) -> std::result::Result<create_or_update_at_resource_level::Response, create_or_update_at_resource_level::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourcegroups/{}/providers/{}/{}/{}/{}/providers/Microsoft.Authorization/locks/{}",
@@ -193,12 +449,51 @@ pub mod management_locks {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(parameters);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(create_or_update_at_resource_level::BuildRequestError)?;
+        let rsp = client
+            .execute(req)
+            .await
+            .context(create_or_update_at_resource_level::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update_at_resource_level::ResponseBytesError)?;
+                let rsp_value: ManagementLockObject =
+                    serde_json::from_slice(&body).context(create_or_update_at_resource_level::DeserializeError { body })?;
+                Ok(create_or_update_at_resource_level::Response::Ok200(rsp_value))
+            }
+            StatusCode::CREATED => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update_at_resource_level::ResponseBytesError)?;
+                let rsp_value: ManagementLockObject =
+                    serde_json::from_slice(&body).context(create_or_update_at_resource_level::DeserializeError { body })?;
+                Ok(create_or_update_at_resource_level::Response::Created201(rsp_value))
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update_at_resource_level::ResponseBytesError)?;
+                create_or_update_at_resource_level::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
+    }
+    pub mod create_or_update_at_resource_level {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(ManagementLockObject),
+            Created201(ManagementLockObject),
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn delete_at_resource_level(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         resource_group_name: &str,
         resource_provider_namespace: &str,
         parent_resource_path: &str,
@@ -206,7 +501,7 @@ pub mod management_locks {
         resource_name: &str,
         lock_name: &str,
         subscription_id: &str,
-    ) -> Result<()> {
+    ) -> std::result::Result<delete_at_resource_level::Response, delete_at_resource_level::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourcegroups/{}/providers/{}/{}/{}/{}/providers/Microsoft.Authorization/locks/{}",
@@ -224,15 +519,41 @@ pub mod management_locks {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(delete_at_resource_level::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(delete_at_resource_level::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::NO_CONTENT => Ok(delete_at_resource_level::Response::NoContent204),
+            StatusCode::OK => Ok(delete_at_resource_level::Response::Ok200),
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(delete_at_resource_level::ResponseBytesError)?;
+                delete_at_resource_level::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
+    }
+    pub mod delete_at_resource_level {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            NoContent204,
+            Ok200,
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn get_at_subscription_level(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         lock_name: &str,
         subscription_id: &str,
-    ) -> Result<ManagementLockObject> {
+    ) -> std::result::Result<ManagementLockObject, get_at_subscription_level::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Authorization/locks/{}",
@@ -243,16 +564,41 @@ pub mod management_locks {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(get_at_subscription_level::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get_at_subscription_level::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get_at_subscription_level::ResponseBytesError)?;
+                let rsp_value: ManagementLockObject =
+                    serde_json::from_slice(&body).context(get_at_subscription_level::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get_at_subscription_level::ResponseBytesError)?;
+                get_at_subscription_level::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
+    }
+    pub mod get_at_subscription_level {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn create_or_update_at_subscription_level(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         lock_name: &str,
         parameters: &ManagementLockObject,
         subscription_id: &str,
-    ) -> Result<ManagementLockObject> {
+    ) -> std::result::Result<create_or_update_at_subscription_level::Response, create_or_update_at_subscription_level::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Authorization/locks/{}",
@@ -264,11 +610,65 @@ pub mod management_locks {
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
         req_builder = req_builder.json(parameters);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder
+            .build()
+            .context(create_or_update_at_subscription_level::BuildRequestError)?;
+        let rsp = client
+            .execute(req)
+            .await
+            .context(create_or_update_at_subscription_level::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::CREATED => {
+                let body: bytes::Bytes = rsp
+                    .bytes()
+                    .await
+                    .context(create_or_update_at_subscription_level::ResponseBytesError)?;
+                let rsp_value: ManagementLockObject =
+                    serde_json::from_slice(&body).context(create_or_update_at_subscription_level::DeserializeError { body })?;
+                Ok(create_or_update_at_subscription_level::Response::Created201(rsp_value))
+            }
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp
+                    .bytes()
+                    .await
+                    .context(create_or_update_at_subscription_level::ResponseBytesError)?;
+                let rsp_value: ManagementLockObject =
+                    serde_json::from_slice(&body).context(create_or_update_at_subscription_level::DeserializeError { body })?;
+                Ok(create_or_update_at_subscription_level::Response::Ok200(rsp_value))
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp
+                    .bytes()
+                    .await
+                    .context(create_or_update_at_subscription_level::ResponseBytesError)?;
+                create_or_update_at_subscription_level::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
     }
-    pub async fn delete_at_subscription_level(configuration: &Configuration, lock_name: &str, subscription_id: &str) -> Result<()> {
+    pub mod create_or_update_at_subscription_level {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Created201(ManagementLockObject),
+            Ok200(ManagementLockObject),
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
+    }
+    pub async fn delete_at_subscription_level(
+        configuration: &crate::Configuration,
+        lock_name: &str,
+        subscription_id: &str,
+    ) -> std::result::Result<delete_at_subscription_level::Response, delete_at_subscription_level::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Authorization/locks/{}",
@@ -279,16 +679,45 @@ pub mod management_locks {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(delete_at_subscription_level::BuildRequestError)?;
+        let rsp = client
+            .execute(req)
+            .await
+            .context(delete_at_subscription_level::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::NO_CONTENT => Ok(delete_at_subscription_level::Response::NoContent204),
+            StatusCode::OK => Ok(delete_at_subscription_level::Response::Ok200),
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(delete_at_subscription_level::ResponseBytesError)?;
+                delete_at_subscription_level::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
+    }
+    pub mod delete_at_subscription_level {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            NoContent204,
+            Ok200,
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn list_at_resource_group_level(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         resource_group_name: &str,
         filter: Option<&str>,
         subscription_id: &str,
-    ) -> Result<ManagementLockListResult> {
+    ) -> std::result::Result<ManagementLockListResult, list_at_resource_group_level::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Authorization/locks",
@@ -302,12 +731,40 @@ pub mod management_locks {
         if let Some(filter) = filter {
             req_builder = req_builder.query(&[("$filter", filter)]);
         }
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list_at_resource_group_level::BuildRequestError)?;
+        let rsp = client
+            .execute(req)
+            .await
+            .context(list_at_resource_group_level::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_at_resource_group_level::ResponseBytesError)?;
+                let rsp_value: ManagementLockListResult =
+                    serde_json::from_slice(&body).context(list_at_resource_group_level::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_at_resource_group_level::ResponseBytesError)?;
+                list_at_resource_group_level::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
+    }
+    pub mod list_at_resource_group_level {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn list_at_resource_level(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         resource_group_name: &str,
         resource_provider_namespace: &str,
         parent_resource_path: &str,
@@ -315,7 +772,7 @@ pub mod management_locks {
         resource_name: &str,
         filter: Option<&str>,
         subscription_id: &str,
-    ) -> Result<ManagementLockListResult> {
+    ) -> std::result::Result<ManagementLockListResult, list_at_resource_level::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourcegroups/{}/providers/{}/{}/{}/{}/providers/Microsoft.Authorization/locks",
@@ -335,15 +792,40 @@ pub mod management_locks {
         if let Some(filter) = filter {
             req_builder = req_builder.query(&[("$filter", filter)]);
         }
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list_at_resource_level::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list_at_resource_level::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_at_resource_level::ResponseBytesError)?;
+                let rsp_value: ManagementLockListResult =
+                    serde_json::from_slice(&body).context(list_at_resource_level::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_at_resource_level::ResponseBytesError)?;
+                list_at_resource_level::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
+    }
+    pub mod list_at_resource_level {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn list_at_subscription_level(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         filter: Option<&str>,
         subscription_id: &str,
-    ) -> Result<ManagementLockListResult> {
+    ) -> std::result::Result<ManagementLockListResult, list_at_subscription_level::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Authorization/locks",
@@ -357,11 +839,40 @@ pub mod management_locks {
         if let Some(filter) = filter {
             req_builder = req_builder.query(&[("$filter", filter)]);
         }
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list_at_subscription_level::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list_at_subscription_level::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_at_subscription_level::ResponseBytesError)?;
+                let rsp_value: ManagementLockListResult =
+                    serde_json::from_slice(&body).context(list_at_subscription_level::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_at_subscription_level::ResponseBytesError)?;
+                list_at_subscription_level::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
     }
-    pub async fn list_by_scope(configuration: &Configuration, scope: &str, filter: Option<&str>) -> Result<ManagementLockListResult> {
+    pub mod list_at_subscription_level {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
+    }
+    pub async fn list_by_scope(
+        configuration: &crate::Configuration,
+        scope: &str,
+        filter: Option<&str>,
+    ) -> std::result::Result<ManagementLockListResult, list_by_scope::Error> {
         let client = &configuration.client;
         let uri_str = &format!("{}/{}/providers/Microsoft.Authorization/locks", &configuration.base_path, scope);
         let mut req_builder = client.get(uri_str);
@@ -372,8 +883,33 @@ pub mod management_locks {
         if let Some(filter) = filter {
             req_builder = req_builder.query(&[("$filter", filter)]);
         }
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list_by_scope::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list_by_scope::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_scope::ResponseBytesError)?;
+                let rsp_value: ManagementLockListResult =
+                    serde_json::from_slice(&body).context(list_by_scope::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_scope::ResponseBytesError)?;
+                list_by_scope::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
+    }
+    pub mod list_by_scope {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
 }

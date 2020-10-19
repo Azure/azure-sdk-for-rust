@@ -2,8 +2,10 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use crate::{models::*, *};
-pub async fn list_operations(configuration: &Configuration) -> Result<OperationListResult> {
+use crate::models::*;
+use reqwest::StatusCode;
+use snafu::{ResultExt, Snafu};
+pub async fn list_operations(configuration: &crate::Configuration) -> std::result::Result<OperationListResult, list_operations::Error> {
     let client = &configuration.client;
     let uri_str = &format!("{}/providers/Microsoft.Features/operations", &configuration.base_path,);
     let mut req_builder = client.get(uri_str);
@@ -11,13 +13,42 @@ pub async fn list_operations(configuration: &Configuration) -> Result<OperationL
         req_builder = req_builder.bearer_auth(token);
     }
     req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-    let req = req_builder.build()?;
-    let res = client.execute(req).await?;
-    Ok(res.json().await?)
+    let req = req_builder.build().context(list_operations::BuildRequestError)?;
+    let rsp = client.execute(req).await.context(list_operations::ExecuteRequestError)?;
+    match rsp.status() {
+        StatusCode::OK => {
+            let body: bytes::Bytes = rsp.bytes().await.context(list_operations::ResponseBytesError)?;
+            let rsp_value: OperationListResult = serde_json::from_slice(&body).context(list_operations::DeserializeError { body })?;
+            Ok(rsp_value)
+        }
+        status_code => {
+            let body: bytes::Bytes = rsp.bytes().await.context(list_operations::ResponseBytesError)?;
+            list_operations::UnexpectedResponse { status_code, body: body }.fail()
+        }
+    }
+}
+pub mod list_operations {
+    use crate::{models, models::*};
+    use reqwest::StatusCode;
+    use snafu::Snafu;
+    #[derive(Debug, Snafu)]
+    #[snafu(visibility(pub(crate)))]
+    pub enum Error {
+        UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+        BuildRequestError { source: reqwest::Error },
+        ExecuteRequestError { source: reqwest::Error },
+        ResponseBytesError { source: reqwest::Error },
+        DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+    }
 }
 pub mod features {
-    use crate::{models::*, *};
-    pub async fn list_all(configuration: &Configuration, subscription_id: &str) -> Result<FeatureOperationsListResult> {
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
+    pub async fn list_all(
+        configuration: &crate::Configuration,
+        subscription_id: &str,
+    ) -> std::result::Result<FeatureOperationsListResult, list_all::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Features/features",
@@ -28,15 +59,39 @@ pub mod features {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list_all::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list_all::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_all::ResponseBytesError)?;
+                let rsp_value: FeatureOperationsListResult = serde_json::from_slice(&body).context(list_all::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_all::ResponseBytesError)?;
+                list_all::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
+    }
+    pub mod list_all {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn list(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         resource_provider_namespace: &str,
         subscription_id: &str,
-    ) -> Result<FeatureOperationsListResult> {
+    ) -> std::result::Result<FeatureOperationsListResult, list::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Features/providers/{}/features",
@@ -47,16 +102,40 @@ pub mod features {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(list::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: FeatureOperationsListResult = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                list::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
+    }
+    pub mod list {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn get(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         resource_provider_namespace: &str,
         feature_name: &str,
         subscription_id: &str,
-    ) -> Result<FeatureResult> {
+    ) -> std::result::Result<FeatureResult, get::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Features/providers/{}/features/{}",
@@ -67,16 +146,40 @@ pub mod features {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(get::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: FeatureResult = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                get::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
+    }
+    pub mod get {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn register(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         resource_provider_namespace: &str,
         feature_name: &str,
         subscription_id: &str,
-    ) -> Result<FeatureResult> {
+    ) -> std::result::Result<FeatureResult, register::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Features/providers/{}/features/{}/register",
@@ -87,16 +190,40 @@ pub mod features {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(register::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(register::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(register::ResponseBytesError)?;
+                let rsp_value: FeatureResult = serde_json::from_slice(&body).context(register::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(register::ResponseBytesError)?;
+                register::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
+    }
+    pub mod register {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
     pub async fn unregister(
-        configuration: &Configuration,
+        configuration: &crate::Configuration,
         resource_provider_namespace: &str,
         feature_name: &str,
         subscription_id: &str,
-    ) -> Result<FeatureResult> {
+    ) -> std::result::Result<FeatureResult, unregister::Error> {
         let client = &configuration.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Features/providers/{}/features/{}/unregister",
@@ -107,8 +234,32 @@ pub mod features {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build()?;
-        let res = client.execute(req).await?;
-        Ok(res.json().await?)
+        let req = req_builder.build().context(unregister::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(unregister::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(unregister::ResponseBytesError)?;
+                let rsp_value: FeatureResult = serde_json::from_slice(&body).context(unregister::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(unregister::ResponseBytesError)?;
+                unregister::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
+    }
+    pub mod unregister {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        }
     }
 }

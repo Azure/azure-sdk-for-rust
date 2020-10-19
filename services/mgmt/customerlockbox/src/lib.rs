@@ -3,8 +3,6 @@
 mod package_2018_02_28_preview;
 #[cfg(feature = "package-2018-02-28-preview")]
 pub use package_2018_02_28_preview::{models, operations, API_VERSION};
-pub type Error = Box<dyn std::error::Error + Send + Sync>;
-pub type Result<T> = std::result::Result<T, Error>;
 pub struct Configuration {
     pub api_version: String,
     pub client: reqwest::Client,
