@@ -1,0 +1,6 @@
+{
+    "recommendations": [
+        "matklad.rust-analyzer",
+        "bungcip.better-toml"
+    ]
+}
