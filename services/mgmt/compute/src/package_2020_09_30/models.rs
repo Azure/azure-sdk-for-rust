@@ -3133,7 +3133,7 @@ pub struct DiskProperties {
     #[serde(rename = "diskMBpsReadOnly", skip_serializing_if = "Option::is_none")]
     pub disk_m_bps_read_only: Option<i64>,
     #[serde(rename = "diskState", skip_serializing)]
-    pub disk_state: Option<disk_properties::DiskState>,
+    pub disk_state: Option<DiskState>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub encryption: Option<Encryption>,
     #[serde(rename = "maxShares", skip_serializing_if = "Option::is_none")]
@@ -3144,6 +3144,8 @@ pub struct DiskProperties {
     pub network_access_policy: Option<NetworkAccessPolicy>,
     #[serde(rename = "diskAccessId", skip_serializing_if = "Option::is_none")]
     pub disk_access_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tier: Option<String>,
 }
 mod disk_properties {
     use super::*;
@@ -3156,16 +3158,6 @@ mod disk_properties {
     pub enum HyperVGeneration {
         V1,
         V2,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum DiskState {
-        Unattached,
-        Attached,
-        Reserved,
-        #[serde(rename = "ActiveSAS")]
-        ActiveSas,
-        ReadyToUpload,
-        ActiveUpload,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -3182,6 +3174,8 @@ pub struct SnapshotProperties {
     pub disk_size_gb: Option<i32>,
     #[serde(rename = "diskSizeBytes", skip_serializing)]
     pub disk_size_bytes: Option<i64>,
+    #[serde(rename = "diskState", skip_serializing)]
+    pub disk_state: Option<DiskState>,
     #[serde(rename = "uniqueId", skip_serializing)]
     pub unique_id: Option<String>,
     #[serde(rename = "encryptionSettingsCollection", skip_serializing_if = "Option::is_none")]
@@ -3218,7 +3212,7 @@ pub struct ShareInfoElement {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EncryptionSetProperties {
     #[serde(rename = "encryptionType", skip_serializing_if = "Option::is_none")]
-    pub encryption_type: Option<EncryptionType>,
+    pub encryption_type: Option<DiskEncryptionSetType>,
     #[serde(rename = "activeKey", skip_serializing_if = "Option::is_none")]
     pub active_key: Option<KeyVaultAndKeyReference>,
     #[serde(rename = "previousKeys", skip_serializing)]
@@ -3267,6 +3261,11 @@ pub enum EncryptionType {
     EncryptionAtRestWithPlatformAndCustomerKeys,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum DiskEncryptionSetType {
+    EncryptionAtRestWithCustomerKey,
+    EncryptionAtRestWithPlatformAndCustomerKeys,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Encryption {
     #[serde(rename = "diskEncryptionSetId", skip_serializing_if = "Option::is_none")]
     pub disk_encryption_set_id: Option<String>,
@@ -3303,6 +3302,8 @@ pub struct DiskUpdateProperties {
     pub network_access_policy: Option<NetworkAccessPolicy>,
     #[serde(rename = "diskAccessId", skip_serializing_if = "Option::is_none")]
     pub disk_access_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tier: Option<String>,
 }
 mod disk_update_properties {
     use super::*;
@@ -3338,9 +3339,19 @@ mod snapshot_update_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DiskEncryptionSetUpdateProperties {
     #[serde(rename = "encryptionType", skip_serializing_if = "Option::is_none")]
-    pub encryption_type: Option<EncryptionType>,
+    pub encryption_type: Option<DiskEncryptionSetType>,
     #[serde(rename = "activeKey", skip_serializing_if = "Option::is_none")]
     pub active_key: Option<KeyVaultAndKeyReference>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum DiskState {
+    Unattached,
+    Attached,
+    Reserved,
+    #[serde(rename = "ActiveSAS")]
+    ActiveSas,
+    ReadyToUpload,
+    ActiveUpload,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CreationData {
@@ -3360,6 +3371,8 @@ pub struct CreationData {
     pub source_unique_id: Option<String>,
     #[serde(rename = "uploadSizeBytes", skip_serializing_if = "Option::is_none")]
     pub upload_size_bytes: Option<i64>,
+    #[serde(rename = "logicalSectorSize", skip_serializing_if = "Option::is_none")]
+    pub logical_sector_size: Option<i32>,
 }
 mod creation_data {
     use super::*;
@@ -3461,6 +3474,12 @@ pub struct DiskEncryptionSetUpdate {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DiskEncryptionSetList {
     pub value: Vec<DiskEncryptionSet>,
+    #[serde(rename = "nextLink", skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ResourceUriList {
+    pub value: Vec<String>,
     #[serde(rename = "nextLink", skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }

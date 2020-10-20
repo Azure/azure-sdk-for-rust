@@ -8549,6 +8549,68 @@ pub mod disk_encryption_sets {
             },
         }
     }
+    pub async fn list_associated_resources(
+        configuration: &crate::Configuration,
+        subscription_id: &str,
+        resource_group_name: &str,
+        disk_encryption_set_name: &str,
+    ) -> std::result::Result<ResourceUriList, list_associated_resources::Error> {
+        let client = &configuration.client;
+        let uri_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/diskEncryptionSets/{}/associatedResources",
+            &configuration.base_path, subscription_id, resource_group_name, disk_encryption_set_name
+        );
+        let mut req_builder = client.get(uri_str);
+        if let Some(token) = &configuration.bearer_access_token {
+            req_builder = req_builder.bearer_auth(token);
+        }
+        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        let req = req_builder.build().context(list_associated_resources::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list_associated_resources::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_associated_resources::ResponseBytesError)?;
+                let rsp_value: ResourceUriList =
+                    serde_json::from_slice(&body).context(list_associated_resources::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_associated_resources::ResponseBytesError)?;
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(list_associated_resources::DeserializeError { body })?;
+                list_associated_resources::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list_associated_resources {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
+    }
 }
 pub mod disk_accesses {
     use crate::models::*;
