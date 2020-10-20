@@ -48,3 +48,9 @@ azure_mgmt_storage_2018_02 = { package = "azure_mgmt_storage", git = "https://gi
 
 ## Data Plane Crates
 The control plane crates will be named `azure_svc_${specification_directory}`, such as `azure_svc_storage`. 
+
+## Examples
+There are a few examples:
+- [mgmt/resources/examples/group_create.rs](mgmt/resources/examples/group_create.rs)
+- [mgmt/compute/examples/vm_list.rs](mgmt/compute/examples/vm_list.rs)
+- [mgmt/vmware/examples/vmware_private_cloud_list.rs](mgmt/vmware/examples/vmware_private_cloud_list.rs)
