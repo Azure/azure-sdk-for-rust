@@ -1,4 +1,4 @@
-use azure_identity::ClientSecretCredential;
+use azure_identity::token_credentials::ClientSecretCredential;
 use azure_key_vault::KeyVaultClient;
 use std::env;
 
