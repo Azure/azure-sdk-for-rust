@@ -30,10 +30,12 @@ uuid = { version = "0.8", features = ["v4"] }
 bytes = "0.5"
 hyper-rustls = "0.21"
 failure = "0.1"
+async-trait = "0.1.36"
+oauth2 = { version = "4.0.0-alpha.2" }
 
 [dev-dependencies]
-tokio = "0.2"
-env_logger = "0.7"
+tokio = "0.3"
+env_logger = "0.8"
 
 [features]
 test_e2e = []
