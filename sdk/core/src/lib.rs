@@ -23,28 +23,23 @@ pub mod range;
 mod stored_access_policy;
 pub mod util;
 
-use errors::{check_status_extract_body_2, AzureError};
+use errors::AzureError;
 use headers::*;
 use lease::LeaseId;
 use modify_conditions::{IfMatchCondition, IfSinceCondition, SequenceNumberCondition};
 pub use stored_access_policy::{StoredAccessPolicy, StoredAccessPolicyList};
-use util::HeaderMapExt;
 
 use base64::encode;
 use chrono::{DateTime, Utc};
 use http::request::Builder;
-use http::status::StatusCode;
-use http::HeaderMap;
 use hyper::header::{
     CONTENT_ENCODING, CONTENT_LANGUAGE, CONTENT_LENGTH, CONTENT_TYPE, IF_MODIFIED_SINCE, RANGE,
     USER_AGENT,
 };
-use hyper::{Body, Client, Request};
 use oauth2::AccessToken;
 use uuid::Uuid;
 
 use std::collections::HashMap;
-use std::convert::TryFrom;
 use std::fmt::Debug;
 
 pub type RequestId = Uuid;
