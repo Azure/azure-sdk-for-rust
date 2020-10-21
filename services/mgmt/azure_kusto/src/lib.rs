@@ -55,13 +55,13 @@ pub use schema_2018_09_07_preview::{models, operations, API_VERSION};
 mod schema_2017_09_07_privatepreview;
 #[cfg(feature = "schema-2017-09-07-privatepreview")]
 pub use schema_2017_09_07_privatepreview::{models, operations, API_VERSION};
-pub struct Configuration {
+pub struct OperationConfig {
     pub api_version: String,
     pub client: reqwest::Client,
     pub base_path: String,
     pub bearer_access_token: Option<String>,
 }
-impl Configuration {
+impl OperationConfig {
     pub fn new(bearer_access_token: &str) -> Self {
         Self {
             bearer_access_token: Some(bearer_access_token.to_owned()),
@@ -69,7 +69,7 @@ impl Configuration {
         }
     }
 }
-impl Default for Configuration {
+impl Default for OperationConfig {
     fn default() -> Self {
         Self {
             api_version: API_VERSION.to_owned(),

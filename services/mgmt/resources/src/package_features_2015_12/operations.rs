@@ -5,14 +5,16 @@
 use crate::models::*;
 use reqwest::StatusCode;
 use snafu::{ResultExt, Snafu};
-pub async fn list_operations(configuration: &crate::Configuration) -> std::result::Result<OperationListResult, list_operations::Error> {
-    let client = &configuration.client;
-    let uri_str = &format!("{}/providers/Microsoft.Features/operations", &configuration.base_path,);
+pub async fn list_operations(
+    operation_config: &crate::OperationConfig,
+) -> std::result::Result<OperationListResult, list_operations::Error> {
+    let client = &operation_config.client;
+    let uri_str = &format!("{}/providers/Microsoft.Features/operations", &operation_config.base_path,);
     let mut req_builder = client.get(uri_str);
-    if let Some(token) = &configuration.bearer_access_token {
+    if let Some(token) = &operation_config.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
-    req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
     let req = req_builder.build().context(list_operations::BuildRequestError)?;
     let rsp = client.execute(req).await.context(list_operations::ExecuteRequestError)?;
     match rsp.status() {
@@ -46,19 +48,19 @@ pub mod features {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn list_all(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
     ) -> std::result::Result<FeatureOperationsListResult, list_all::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Features/features",
-            &configuration.base_path, subscription_id
+            &operation_config.base_path, subscription_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_all::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_all::ExecuteRequestError)?;
         match rsp.status() {
@@ -88,20 +90,20 @@ pub mod features {
         }
     }
     pub async fn list(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         resource_provider_namespace: &str,
         subscription_id: &str,
     ) -> std::result::Result<FeatureOperationsListResult, list::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Features/providers/{}/features",
-            &configuration.base_path, subscription_id, resource_provider_namespace
+            &operation_config.base_path, subscription_id, resource_provider_namespace
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
         match rsp.status() {
@@ -131,21 +133,21 @@ pub mod features {
         }
     }
     pub async fn get(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         resource_provider_namespace: &str,
         feature_name: &str,
         subscription_id: &str,
     ) -> std::result::Result<FeatureResult, get::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Features/providers/{}/features/{}",
-            &configuration.base_path, subscription_id, resource_provider_namespace, feature_name
+            &operation_config.base_path, subscription_id, resource_provider_namespace, feature_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
         match rsp.status() {
@@ -175,21 +177,21 @@ pub mod features {
         }
     }
     pub async fn register(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         resource_provider_namespace: &str,
         feature_name: &str,
         subscription_id: &str,
     ) -> std::result::Result<FeatureResult, register::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Features/providers/{}/features/{}/register",
-            &configuration.base_path, subscription_id, resource_provider_namespace, feature_name
+            &operation_config.base_path, subscription_id, resource_provider_namespace, feature_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(register::BuildRequestError)?;
         let rsp = client.execute(req).await.context(register::ExecuteRequestError)?;
         match rsp.status() {
@@ -219,21 +221,21 @@ pub mod features {
         }
     }
     pub async fn unregister(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         resource_provider_namespace: &str,
         feature_name: &str,
         subscription_id: &str,
     ) -> std::result::Result<FeatureResult, unregister::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Features/providers/{}/features/{}/unregister",
-            &configuration.base_path, subscription_id, resource_provider_namespace, feature_name
+            &operation_config.base_path, subscription_id, resource_provider_namespace, feature_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(unregister::BuildRequestError)?;
         let rsp = client.execute(req).await.context(unregister::ExecuteRequestError)?;
         match rsp.status() {

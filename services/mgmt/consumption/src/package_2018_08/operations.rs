@@ -10,7 +10,7 @@ pub mod usage_details {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn list(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         expand: Option<&str>,
         filter: Option<&str>,
@@ -18,16 +18,16 @@ pub mod usage_details {
         top: Option<i64>,
         apply: Option<&str>,
     ) -> std::result::Result<UsageDetailsListResult, list::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Consumption/usageDetails",
-            &configuration.base_path, subscription_id
+            &operation_config.base_path, subscription_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(expand) = expand {
             req_builder = req_builder.query(&[("$expand", expand)]);
         }
@@ -89,7 +89,7 @@ pub mod usage_details {
         }
     }
     pub async fn list_by_billing_period(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         billing_period_name: &str,
         expand: Option<&str>,
@@ -98,16 +98,16 @@ pub mod usage_details {
         skiptoken: Option<&str>,
         top: Option<i64>,
     ) -> std::result::Result<UsageDetailsListResult, list_by_billing_period::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Billing/billingPeriods/{}/providers/Microsoft.Consumption/usageDetails",
-            &configuration.base_path, subscription_id, billing_period_name
+            &operation_config.base_path, subscription_id, billing_period_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(expand) = expand {
             req_builder = req_builder.query(&[("$expand", expand)]);
         }
@@ -170,7 +170,7 @@ pub mod usage_details {
         }
     }
     pub async fn list_by_billing_account(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         billing_account_id: &str,
         expand: Option<&str>,
         filter: Option<&str>,
@@ -178,16 +178,16 @@ pub mod usage_details {
         top: Option<i64>,
         apply: Option<&str>,
     ) -> std::result::Result<UsageDetailsListResult, list_by_billing_account::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/providers/Microsoft.Consumption/usageDetails",
-            &configuration.base_path, billing_account_id
+            &operation_config.base_path, billing_account_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(expand) = expand {
             req_builder = req_builder.query(&[("$expand", expand)]);
         }
@@ -250,7 +250,7 @@ pub mod usage_details {
         }
     }
     pub async fn list_for_billing_period_by_billing_account(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         billing_account_id: &str,
         billing_period_name: &str,
         expand: Option<&str>,
@@ -259,13 +259,13 @@ pub mod usage_details {
         skiptoken: Option<&str>,
         top: Option<i64>,
     ) -> std::result::Result<UsageDetailsListResult, list_for_billing_period_by_billing_account::Error> {
-        let client = &configuration.client;
-        let uri_str = & format ! ("{}/providers/Microsoft.Billing/billingAccounts/{}/providers/Microsoft.Billing/billingPeriods/{}/providers/Microsoft.Consumption/usageDetails" , & configuration . base_path , billing_account_id , billing_period_name) ;
+        let client = &operation_config.client;
+        let uri_str = & format ! ("{}/providers/Microsoft.Billing/billingAccounts/{}/providers/Microsoft.Billing/billingPeriods/{}/providers/Microsoft.Consumption/usageDetails" , & operation_config . base_path , billing_account_id , billing_period_name) ;
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(expand) = expand {
             req_builder = req_builder.query(&[("$expand", expand)]);
         }
@@ -340,7 +340,7 @@ pub mod usage_details {
         }
     }
     pub async fn list_by_department(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         department_id: &str,
         expand: Option<&str>,
         filter: Option<&str>,
@@ -348,16 +348,16 @@ pub mod usage_details {
         top: Option<i64>,
         apply: Option<&str>,
     ) -> std::result::Result<UsageDetailsListResult, list_by_department::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Billing/departments/{}/providers/Microsoft.Consumption/usageDetails",
-            &configuration.base_path, department_id
+            &operation_config.base_path, department_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(expand) = expand {
             req_builder = req_builder.query(&[("$expand", expand)]);
         }
@@ -420,7 +420,7 @@ pub mod usage_details {
         }
     }
     pub async fn list_for_billing_period_by_department(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         department_id: &str,
         billing_period_name: &str,
         expand: Option<&str>,
@@ -429,13 +429,13 @@ pub mod usage_details {
         skiptoken: Option<&str>,
         top: Option<i64>,
     ) -> std::result::Result<UsageDetailsListResult, list_for_billing_period_by_department::Error> {
-        let client = &configuration.client;
-        let uri_str = & format ! ("{}/providers/Microsoft.Billing/departments/{}/providers/Microsoft.Billing/billingPeriods/{}/providers/Microsoft.Consumption/usageDetails" , & configuration . base_path , department_id , billing_period_name) ;
+        let client = &operation_config.client;
+        let uri_str = & format ! ("{}/providers/Microsoft.Billing/departments/{}/providers/Microsoft.Billing/billingPeriods/{}/providers/Microsoft.Consumption/usageDetails" , & operation_config . base_path , department_id , billing_period_name) ;
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(expand) = expand {
             req_builder = req_builder.query(&[("$expand", expand)]);
         }
@@ -510,7 +510,7 @@ pub mod usage_details {
         }
     }
     pub async fn list_by_enrollment_account(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         enrollment_account_id: &str,
         expand: Option<&str>,
         filter: Option<&str>,
@@ -518,16 +518,16 @@ pub mod usage_details {
         top: Option<i64>,
         apply: Option<&str>,
     ) -> std::result::Result<UsageDetailsListResult, list_by_enrollment_account::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Billing/enrollmentAccounts/{}/providers/Microsoft.Consumption/usageDetails",
-            &configuration.base_path, enrollment_account_id
+            &operation_config.base_path, enrollment_account_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(expand) = expand {
             req_builder = req_builder.query(&[("$expand", expand)]);
         }
@@ -591,7 +591,7 @@ pub mod usage_details {
         }
     }
     pub async fn list_for_billing_period_by_enrollment_account(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         enrollment_account_id: &str,
         billing_period_name: &str,
         expand: Option<&str>,
@@ -600,13 +600,13 @@ pub mod usage_details {
         skiptoken: Option<&str>,
         top: Option<i64>,
     ) -> std::result::Result<UsageDetailsListResult, list_for_billing_period_by_enrollment_account::Error> {
-        let client = &configuration.client;
-        let uri_str = & format ! ("{}/providers/Microsoft.Billing/enrollmentAccounts/{}/providers/Microsoft.Billing/billingPeriods/{}/providers/Microsoft.Consumption/usageDetails" , & configuration . base_path , enrollment_account_id , billing_period_name) ;
+        let client = &operation_config.client;
+        let uri_str = & format ! ("{}/providers/Microsoft.Billing/enrollmentAccounts/{}/providers/Microsoft.Billing/billingPeriods/{}/providers/Microsoft.Consumption/usageDetails" , & operation_config . base_path , enrollment_account_id , billing_period_name) ;
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(expand) = expand {
             req_builder = req_builder.query(&[("$expand", expand)]);
         }
@@ -681,7 +681,7 @@ pub mod usage_details {
         }
     }
     pub async fn list_by_management_group(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         management_group_id: &str,
         expand: Option<&str>,
         filter: Option<&str>,
@@ -689,16 +689,16 @@ pub mod usage_details {
         top: Option<i64>,
         apply: Option<&str>,
     ) -> std::result::Result<UsageDetailsListResult, list_by_management_group::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Management/managementGroups/{}/providers/Microsoft.Consumption/usageDetails",
-            &configuration.base_path, management_group_id
+            &operation_config.base_path, management_group_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(expand) = expand {
             req_builder = req_builder.query(&[("$expand", expand)]);
         }
@@ -762,7 +762,7 @@ pub mod usage_details {
         }
     }
     pub async fn list_for_billing_period_by_management_group(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         management_group_id: &str,
         billing_period_name: &str,
         expand: Option<&str>,
@@ -771,13 +771,13 @@ pub mod usage_details {
         skiptoken: Option<&str>,
         top: Option<i64>,
     ) -> std::result::Result<UsageDetailsListResult, list_for_billing_period_by_management_group::Error> {
-        let client = &configuration.client;
-        let uri_str = & format ! ("{}/providers/Microsoft.Management/managementGroups/{}/providers/Microsoft.Billing/billingPeriods/{}/providers/Microsoft.Consumption/usageDetails" , & configuration . base_path , management_group_id , billing_period_name) ;
+        let client = &operation_config.client;
+        let uri_str = & format ! ("{}/providers/Microsoft.Management/managementGroups/{}/providers/Microsoft.Billing/billingPeriods/{}/providers/Microsoft.Consumption/usageDetails" , & operation_config . base_path , management_group_id , billing_period_name) ;
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(expand) = expand {
             req_builder = req_builder.query(&[("$expand", expand)]);
         }
@@ -857,22 +857,22 @@ pub mod marketplaces {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn list(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         filter: Option<&str>,
         top: Option<i64>,
         skiptoken: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<MarketplacesListResult, list::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Consumption/marketplaces",
-            &configuration.base_path, subscription_id
+            &operation_config.base_path, subscription_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(filter) = filter {
             req_builder = req_builder.query(&[("$filter", filter)]);
         }
@@ -928,23 +928,23 @@ pub mod marketplaces {
         }
     }
     pub async fn list_by_billing_period(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         filter: Option<&str>,
         top: Option<i64>,
         skiptoken: Option<&str>,
         subscription_id: &str,
         billing_period_name: &str,
     ) -> std::result::Result<MarketplacesListResult, list_by_billing_period::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Billing/billingPeriods/{}/providers/Microsoft.Consumption/marketplaces",
-            &configuration.base_path, subscription_id, billing_period_name
+            &operation_config.base_path, subscription_id, billing_period_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(filter) = filter {
             req_builder = req_builder.query(&[("$filter", filter)]);
         }
@@ -1001,22 +1001,22 @@ pub mod marketplaces {
         }
     }
     pub async fn list_by_billing_account(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         filter: Option<&str>,
         top: Option<i64>,
         skiptoken: Option<&str>,
         billing_account_id: &str,
     ) -> std::result::Result<MarketplacesListResult, list_by_billing_account::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/providers/Microsoft.Consumption/marketplaces",
-            &configuration.base_path, billing_account_id
+            &operation_config.base_path, billing_account_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(filter) = filter {
             req_builder = req_builder.query(&[("$filter", filter)]);
         }
@@ -1073,20 +1073,20 @@ pub mod marketplaces {
         }
     }
     pub async fn list_for_billing_period_by_billing_account(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         filter: Option<&str>,
         top: Option<i64>,
         skiptoken: Option<&str>,
         billing_account_id: &str,
         billing_period_name: &str,
     ) -> std::result::Result<MarketplacesListResult, list_for_billing_period_by_billing_account::Error> {
-        let client = &configuration.client;
-        let uri_str = & format ! ("{}/providers/Microsoft.Billing/billingAccounts/{}/providers/Microsoft.Billing/billingPeriods/{}/providers/Microsoft.Consumption/marketplaces" , & configuration . base_path , billing_account_id , billing_period_name) ;
+        let client = &operation_config.client;
+        let uri_str = & format ! ("{}/providers/Microsoft.Billing/billingAccounts/{}/providers/Microsoft.Billing/billingPeriods/{}/providers/Microsoft.Consumption/marketplaces" , & operation_config . base_path , billing_account_id , billing_period_name) ;
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(filter) = filter {
             req_builder = req_builder.query(&[("$filter", filter)]);
         }
@@ -1155,22 +1155,22 @@ pub mod marketplaces {
         }
     }
     pub async fn list_by_department(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         filter: Option<&str>,
         top: Option<i64>,
         skiptoken: Option<&str>,
         department_id: &str,
     ) -> std::result::Result<MarketplacesListResult, list_by_department::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Billing/departments/{}/providers/Microsoft.Consumption/marketplaces",
-            &configuration.base_path, department_id
+            &operation_config.base_path, department_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(filter) = filter {
             req_builder = req_builder.query(&[("$filter", filter)]);
         }
@@ -1227,20 +1227,20 @@ pub mod marketplaces {
         }
     }
     pub async fn list_for_billing_period_by_department(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         filter: Option<&str>,
         top: Option<i64>,
         skiptoken: Option<&str>,
         department_id: &str,
         billing_period_name: &str,
     ) -> std::result::Result<MarketplacesListResult, list_for_billing_period_by_department::Error> {
-        let client = &configuration.client;
-        let uri_str = & format ! ("{}/providers/Microsoft.Billing/departments/{}/providers/Microsoft.Billing/billingPeriods/{}/providers/Microsoft.Consumption/marketplaces" , & configuration . base_path , department_id , billing_period_name) ;
+        let client = &operation_config.client;
+        let uri_str = & format ! ("{}/providers/Microsoft.Billing/departments/{}/providers/Microsoft.Billing/billingPeriods/{}/providers/Microsoft.Consumption/marketplaces" , & operation_config . base_path , department_id , billing_period_name) ;
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(filter) = filter {
             req_builder = req_builder.query(&[("$filter", filter)]);
         }
@@ -1309,22 +1309,22 @@ pub mod marketplaces {
         }
     }
     pub async fn list_by_enrollment_account(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         filter: Option<&str>,
         top: Option<i64>,
         skiptoken: Option<&str>,
         enrollment_account_id: &str,
     ) -> std::result::Result<MarketplacesListResult, list_by_enrollment_account::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Billing/enrollmentAccounts/{}/providers/Microsoft.Consumption/marketplaces",
-            &configuration.base_path, enrollment_account_id
+            &operation_config.base_path, enrollment_account_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(filter) = filter {
             req_builder = req_builder.query(&[("$filter", filter)]);
         }
@@ -1382,20 +1382,20 @@ pub mod marketplaces {
         }
     }
     pub async fn list_for_billing_period_by_enrollment_account(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         filter: Option<&str>,
         top: Option<i64>,
         skiptoken: Option<&str>,
         enrollment_account_id: &str,
         billing_period_name: &str,
     ) -> std::result::Result<MarketplacesListResult, list_for_billing_period_by_enrollment_account::Error> {
-        let client = &configuration.client;
-        let uri_str = & format ! ("{}/providers/Microsoft.Billing/enrollmentAccounts/{}/providers/Microsoft.Billing/billingPeriods/{}/providers/Microsoft.Consumption/marketplaces" , & configuration . base_path , enrollment_account_id , billing_period_name) ;
+        let client = &operation_config.client;
+        let uri_str = & format ! ("{}/providers/Microsoft.Billing/enrollmentAccounts/{}/providers/Microsoft.Billing/billingPeriods/{}/providers/Microsoft.Consumption/marketplaces" , & operation_config . base_path , enrollment_account_id , billing_period_name) ;
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(filter) = filter {
             req_builder = req_builder.query(&[("$filter", filter)]);
         }
@@ -1469,19 +1469,19 @@ pub mod balances {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn get_by_billing_account(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         billing_account_id: &str,
     ) -> std::result::Result<Balance, get_by_billing_account::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/providers/Microsoft.Consumption/balances",
-            &configuration.base_path, billing_account_id
+            &operation_config.base_path, billing_account_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get_by_billing_account::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get_by_billing_account::ExecuteRequestError)?;
         match rsp.status() {
@@ -1528,17 +1528,17 @@ pub mod balances {
         }
     }
     pub async fn get_for_billing_period_by_billing_account(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         billing_account_id: &str,
         billing_period_name: &str,
     ) -> std::result::Result<Balance, get_for_billing_period_by_billing_account::Error> {
-        let client = &configuration.client;
-        let uri_str = & format ! ("{}/providers/Microsoft.Billing/billingAccounts/{}/providers/Microsoft.Billing/billingPeriods/{}/providers/Microsoft.Consumption/balances" , & configuration . base_path , billing_account_id , billing_period_name) ;
+        let client = &operation_config.client;
+        let uri_str = & format ! ("{}/providers/Microsoft.Billing/billingAccounts/{}/providers/Microsoft.Billing/billingPeriods/{}/providers/Microsoft.Consumption/balances" , & operation_config . base_path , billing_account_id , billing_period_name) ;
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder
             .build()
             .context(get_for_billing_period_by_billing_account::BuildRequestError)?;
@@ -1603,21 +1603,21 @@ pub mod reservations_summaries {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn list_by_reservation_order(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         reservation_order_id: &str,
         grain: &str,
         filter: Option<&str>,
     ) -> std::result::Result<ReservationSummariesListResult, list_by_reservation_order::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Capacity/reservationorders/{}/providers/Microsoft.Consumption/reservationSummaries",
-            &configuration.base_path, reservation_order_id
+            &operation_config.base_path, reservation_order_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.query(&[("grain", grain)]);
         if let Some(filter) = filter {
             req_builder = req_builder.query(&[("$filter", filter)]);
@@ -1670,22 +1670,22 @@ pub mod reservations_summaries {
         }
     }
     pub async fn list_by_reservation_order_and_reservation(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         reservation_order_id: &str,
         reservation_id: &str,
         grain: &str,
         filter: Option<&str>,
     ) -> std::result::Result<ReservationSummariesListResult, list_by_reservation_order_and_reservation::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Capacity/reservationorders/{}/reservations/{}/providers/Microsoft.Consumption/reservationSummaries",
-            &configuration.base_path, reservation_order_id, reservation_id
+            &operation_config.base_path, reservation_order_id, reservation_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.query(&[("grain", grain)]);
         if let Some(filter) = filter {
             req_builder = req_builder.query(&[("$filter", filter)]);
@@ -1754,20 +1754,20 @@ pub mod reservations_details {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn list_by_reservation_order(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         reservation_order_id: &str,
         filter: &str,
     ) -> std::result::Result<ReservationDetailsListResult, list_by_reservation_order::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Capacity/reservationorders/{}/providers/Microsoft.Consumption/reservationDetails",
-            &configuration.base_path, reservation_order_id
+            &operation_config.base_path, reservation_order_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.query(&[("$filter", filter)]);
         let req = req_builder.build().context(list_by_reservation_order::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_by_reservation_order::ExecuteRequestError)?;
@@ -1817,21 +1817,21 @@ pub mod reservations_details {
         }
     }
     pub async fn list_by_reservation_order_and_reservation(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         reservation_order_id: &str,
         reservation_id: &str,
         filter: &str,
     ) -> std::result::Result<ReservationDetailsListResult, list_by_reservation_order_and_reservation::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Capacity/reservationorders/{}/reservations/{}/providers/Microsoft.Consumption/reservationDetails",
-            &configuration.base_path, reservation_order_id, reservation_id
+            &operation_config.base_path, reservation_order_id, reservation_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.query(&[("$filter", filter)]);
         let req = req_builder
             .build()
@@ -1897,20 +1897,20 @@ pub mod reservation_recommendations {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn list(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         filter: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<ReservationRecommendationsListResult, list::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Consumption/reservationRecommendations",
-            &configuration.base_path, subscription_id
+            &operation_config.base_path, subscription_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(filter) = filter {
             req_builder = req_builder.query(&[("$filter", filter)]);
         }
@@ -1965,17 +1965,20 @@ pub mod budgets {
     use crate::models::*;
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
-    pub async fn list(configuration: &crate::Configuration, subscription_id: &str) -> std::result::Result<BudgetsListResult, list::Error> {
-        let client = &configuration.client;
+    pub async fn list(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+    ) -> std::result::Result<BudgetsListResult, list::Error> {
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Consumption/budgets",
-            &configuration.base_path, subscription_id
+            &operation_config.base_path, subscription_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
         match rsp.status() {
@@ -2022,20 +2025,20 @@ pub mod budgets {
         }
     }
     pub async fn list_by_resource_group_name(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
     ) -> std::result::Result<BudgetsListResult, list_by_resource_group_name::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Consumption/budgets",
-            &configuration.base_path, subscription_id, resource_group_name
+            &operation_config.base_path, subscription_id, resource_group_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_by_resource_group_name::BuildRequestError)?;
         let rsp = client
             .execute(req)
@@ -2087,20 +2090,20 @@ pub mod budgets {
         }
     }
     pub async fn get(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         budget_name: &str,
     ) -> std::result::Result<Budget, get::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Consumption/budgets/{}",
-            &configuration.base_path, subscription_id, budget_name
+            &operation_config.base_path, subscription_id, budget_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
         match rsp.status() {
@@ -2147,21 +2150,21 @@ pub mod budgets {
         }
     }
     pub async fn create_or_update(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         budget_name: &str,
         parameters: &Budget,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Consumption/budgets/{}",
-            &configuration.base_path, subscription_id, budget_name
+            &operation_config.base_path, subscription_id, budget_name
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(parameters);
         let req = req_builder.build().context(create_or_update::BuildRequestError)?;
         let rsp = client.execute(req).await.context(create_or_update::ExecuteRequestError)?;
@@ -2219,20 +2222,20 @@ pub mod budgets {
         }
     }
     pub async fn delete(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         budget_name: &str,
     ) -> std::result::Result<(), delete::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Consumption/budgets/{}",
-            &configuration.base_path, subscription_id, budget_name
+            &operation_config.base_path, subscription_id, budget_name
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(delete::BuildRequestError)?;
         let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
         match rsp.status() {
@@ -2275,21 +2278,21 @@ pub mod budgets {
         }
     }
     pub async fn get_by_resource_group_name(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         budget_name: &str,
     ) -> std::result::Result<Budget, get_by_resource_group_name::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Consumption/budgets/{}",
-            &configuration.base_path, subscription_id, resource_group_name, budget_name
+            &operation_config.base_path, subscription_id, resource_group_name, budget_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get_by_resource_group_name::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get_by_resource_group_name::ExecuteRequestError)?;
         match rsp.status() {
@@ -2337,22 +2340,22 @@ pub mod budgets {
         }
     }
     pub async fn create_or_update_by_resource_group_name(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         budget_name: &str,
         parameters: &Budget,
     ) -> std::result::Result<create_or_update_by_resource_group_name::Response, create_or_update_by_resource_group_name::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Consumption/budgets/{}",
-            &configuration.base_path, subscription_id, resource_group_name, budget_name
+            &operation_config.base_path, subscription_id, resource_group_name, budget_name
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(parameters);
         let req = req_builder
             .build()
@@ -2427,21 +2430,21 @@ pub mod budgets {
         }
     }
     pub async fn delete_by_resource_group_name(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         budget_name: &str,
     ) -> std::result::Result<(), delete_by_resource_group_name::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Consumption/budgets/{}",
-            &configuration.base_path, subscription_id, resource_group_name, budget_name
+            &operation_config.base_path, subscription_id, resource_group_name, budget_name
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(delete_by_resource_group_name::BuildRequestError)?;
         let rsp = client
             .execute(req)
@@ -2493,22 +2496,22 @@ pub mod price_sheet {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn get(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         expand: Option<&str>,
         skiptoken: Option<&str>,
         top: Option<i64>,
         subscription_id: &str,
     ) -> std::result::Result<PriceSheetResult, get::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Consumption/pricesheets/default",
-            &configuration.base_path, subscription_id
+            &operation_config.base_path, subscription_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(expand) = expand {
             req_builder = req_builder.query(&[("$expand", expand)]);
         }
@@ -2564,23 +2567,23 @@ pub mod price_sheet {
         }
     }
     pub async fn get_by_billing_period(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         expand: Option<&str>,
         skiptoken: Option<&str>,
         top: Option<i64>,
         subscription_id: &str,
         billing_period_name: &str,
     ) -> std::result::Result<PriceSheetResult, get_by_billing_period::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Billing/billingPeriods/{}/providers/Microsoft.Consumption/pricesheets/default",
-            &configuration.base_path, subscription_id, billing_period_name
+            &operation_config.base_path, subscription_id, billing_period_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(expand) = expand {
             req_builder = req_builder.query(&[("$expand", expand)]);
         }
@@ -2641,17 +2644,17 @@ pub mod tags {
     use crate::models::*;
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
-    pub async fn get(configuration: &crate::Configuration, billing_account_id: &str) -> std::result::Result<TagsResult, get::Error> {
-        let client = &configuration.client;
+    pub async fn get(operation_config: &crate::OperationConfig, billing_account_id: &str) -> std::result::Result<TagsResult, get::Error> {
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.CostManagement/billingAccounts/{}/providers/Microsoft.Consumption/tags",
-            &configuration.base_path, billing_account_id
+            &operation_config.base_path, billing_account_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
         match rsp.status() {
@@ -2703,20 +2706,20 @@ pub mod forecasts {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn list(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         filter: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<ForecastsListResult, list::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Consumption/forecasts",
-            &configuration.base_path, subscription_id
+            &operation_config.base_path, subscription_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(filter) = filter {
             req_builder = req_builder.query(&[("$filter", filter)]);
         }
@@ -2770,14 +2773,14 @@ pub mod operations {
     use crate::models::*;
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
-    pub async fn list(configuration: &crate::Configuration) -> std::result::Result<OperationListResult, list::Error> {
-        let client = &configuration.client;
-        let uri_str = &format!("{}/providers/Microsoft.Consumption/operations", &configuration.base_path,);
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationListResult, list::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!("{}/providers/Microsoft.Consumption/operations", &operation_config.base_path,);
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
         match rsp.status() {
@@ -2829,20 +2832,20 @@ pub mod aggregated_cost {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn get_by_management_group(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         management_group_id: &str,
         filter: Option<&str>,
     ) -> std::result::Result<ManagementGroupAggregatedCostResult, get_by_management_group::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Management/managementGroups/{}/providers/Microsoft.Consumption/aggregatedcost",
-            &configuration.base_path, management_group_id
+            &operation_config.base_path, management_group_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(filter) = filter {
             req_builder = req_builder.query(&[("$filter", filter)]);
         }
@@ -2893,17 +2896,17 @@ pub mod aggregated_cost {
         }
     }
     pub async fn get_for_billing_period_by_management_group(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         management_group_id: &str,
         billing_period_name: &str,
     ) -> std::result::Result<ManagementGroupAggregatedCostResult, get_for_billing_period_by_management_group::Error> {
-        let client = &configuration.client;
-        let uri_str = & format ! ("{}/providers/Microsoft.Management/managementGroups/{}/providers/Microsoft.Billing/billingPeriods/{}/Microsoft.Consumption/aggregatedcost" , & configuration . base_path , management_group_id , billing_period_name) ;
+        let client = &operation_config.client;
+        let uri_str = & format ! ("{}/providers/Microsoft.Management/managementGroups/{}/providers/Microsoft.Billing/billingPeriods/{}/Microsoft.Consumption/aggregatedcost" , & operation_config . base_path , management_group_id , billing_period_name) ;
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder
             .build()
             .context(get_for_billing_period_by_management_group::BuildRequestError)?;
@@ -2968,21 +2971,21 @@ pub mod charges {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn list_by_enrollment_account(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         billing_account_id: &str,
         enrollment_account_id: &str,
         filter: Option<&str>,
     ) -> std::result::Result<ChargesListResult, list_by_enrollment_account::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/enrollmentAccounts/{}/providers/Microsoft.Consumption/charges",
-            &configuration.base_path, billing_account_id, enrollment_account_id
+            &operation_config.base_path, billing_account_id, enrollment_account_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(filter) = filter {
             req_builder = req_builder.query(&[("$filter", filter)]);
         }
@@ -3034,19 +3037,19 @@ pub mod charges {
         }
     }
     pub async fn list_for_billing_period_by_enrollment_account(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         billing_account_id: &str,
         enrollment_account_id: &str,
         billing_period_name: &str,
         filter: Option<&str>,
     ) -> std::result::Result<ChargeSummary, list_for_billing_period_by_enrollment_account::Error> {
-        let client = &configuration.client;
-        let uri_str = & format ! ("{}/providers/Microsoft.Billing/billingAccounts/{}/enrollmentAccounts/{}/providers/Microsoft.Billing/billingPeriods/{}/providers/Microsoft.Consumption/charges" , & configuration . base_path , billing_account_id , enrollment_account_id , billing_period_name) ;
+        let client = &operation_config.client;
+        let uri_str = & format ! ("{}/providers/Microsoft.Billing/billingAccounts/{}/enrollmentAccounts/{}/providers/Microsoft.Billing/billingPeriods/{}/providers/Microsoft.Consumption/charges" , & operation_config . base_path , billing_account_id , enrollment_account_id , billing_period_name) ;
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(filter) = filter {
             req_builder = req_builder.query(&[("$filter", filter)]);
         }
@@ -3109,21 +3112,21 @@ pub mod charges {
         }
     }
     pub async fn list_by_department(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         billing_account_id: &str,
         department_id: &str,
         filter: Option<&str>,
     ) -> std::result::Result<ChargesListResult, list_by_department::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/departments/{}/providers/Microsoft.Consumption/charges",
-            &configuration.base_path, billing_account_id, department_id
+            &operation_config.base_path, billing_account_id, department_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(filter) = filter {
             req_builder = req_builder.query(&[("$filter", filter)]);
         }
@@ -3173,19 +3176,19 @@ pub mod charges {
         }
     }
     pub async fn list_for_billing_period_by_department(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         billing_account_id: &str,
         department_id: &str,
         billing_period_name: &str,
         filter: Option<&str>,
     ) -> std::result::Result<ChargeSummary, list_for_billing_period_by_department::Error> {
-        let client = &configuration.client;
-        let uri_str = & format ! ("{}/providers/Microsoft.Billing/billingAccounts/{}/departments/{}/providers/Microsoft.Billing/billingPeriods/{}/providers/Microsoft.Consumption/charges" , & configuration . base_path , billing_account_id , department_id , billing_period_name) ;
+        let client = &operation_config.client;
+        let uri_str = & format ! ("{}/providers/Microsoft.Billing/billingAccounts/{}/departments/{}/providers/Microsoft.Billing/billingPeriods/{}/providers/Microsoft.Consumption/charges" , & operation_config . base_path , billing_account_id , department_id , billing_period_name) ;
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(filter) = filter {
             req_builder = req_builder.query(&[("$filter", filter)]);
         }

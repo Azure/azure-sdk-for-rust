@@ -10,22 +10,22 @@ pub mod lab {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn list_by_subscription(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         filter: Option<&str>,
         top: Option<i64>,
         order_by: Option<&str>,
     ) -> std::result::Result<ResponseWithContinuationLab, list_by_subscription::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.DevTestLab/labs",
-            &configuration.base_path, subscription_id
+            &operation_config.base_path, subscription_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(filter) = filter {
             req_builder = req_builder.query(&[("$filter", filter)]);
         }
@@ -82,23 +82,23 @@ pub mod lab {
         }
     }
     pub async fn list_by_resource_group(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         filter: Option<&str>,
         top: Option<i64>,
         order_by: Option<&str>,
     ) -> std::result::Result<ResponseWithContinuationLab, list_by_resource_group::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DevTestLab/labs",
-            &configuration.base_path, subscription_id, resource_group_name
+            &operation_config.base_path, subscription_id, resource_group_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(filter) = filter {
             req_builder = req_builder.query(&[("$filter", filter)]);
         }
@@ -155,21 +155,21 @@ pub mod lab {
         }
     }
     pub async fn get_resource(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         name: &str,
     ) -> std::result::Result<Lab, get_resource::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DevTestLab/labs/{}",
-            &configuration.base_path, subscription_id, resource_group_name, name
+            &operation_config.base_path, subscription_id, resource_group_name, name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get_resource::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get_resource::ExecuteRequestError)?;
         match rsp.status() {
@@ -216,22 +216,22 @@ pub mod lab {
         }
     }
     pub async fn create_or_update_resource(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         name: &str,
         lab: &Lab,
     ) -> std::result::Result<create_or_update_resource::Response, create_or_update_resource::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DevTestLab/labs/{}",
-            &configuration.base_path, subscription_id, resource_group_name, name
+            &operation_config.base_path, subscription_id, resource_group_name, name
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(lab);
         let req = req_builder.build().context(create_or_update_resource::BuildRequestError)?;
         let rsp = client.execute(req).await.context(create_or_update_resource::ExecuteRequestError)?;
@@ -289,22 +289,22 @@ pub mod lab {
         }
     }
     pub async fn patch_resource(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         name: &str,
         lab: &Lab,
     ) -> std::result::Result<Lab, patch_resource::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DevTestLab/labs/{}",
-            &configuration.base_path, subscription_id, resource_group_name, name
+            &operation_config.base_path, subscription_id, resource_group_name, name
         );
         let mut req_builder = client.patch(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(lab);
         let req = req_builder.build().context(patch_resource::BuildRequestError)?;
         let rsp = client.execute(req).await.context(patch_resource::ExecuteRequestError)?;
@@ -352,21 +352,21 @@ pub mod lab {
         }
     }
     pub async fn delete_resource(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         name: &str,
     ) -> std::result::Result<delete_resource::Response, delete_resource::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DevTestLab/labs/{}",
-            &configuration.base_path, subscription_id, resource_group_name, name
+            &operation_config.base_path, subscription_id, resource_group_name, name
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(delete_resource::BuildRequestError)?;
         let rsp = client.execute(req).await.context(delete_resource::ExecuteRequestError)?;
         match rsp.status() {
@@ -415,22 +415,22 @@ pub mod lab {
         }
     }
     pub async fn create_environment(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         name: &str,
         lab_virtual_machine: &LabVirtualMachine,
     ) -> std::result::Result<create_environment::Response, create_environment::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DevTestLab/labs/{}/createEnvironment",
-            &configuration.base_path, subscription_id, resource_group_name, name
+            &operation_config.base_path, subscription_id, resource_group_name, name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(lab_virtual_machine);
         let req = req_builder.build().context(create_environment::BuildRequestError)?;
         let rsp = client.execute(req).await.context(create_environment::ExecuteRequestError)?;
@@ -480,22 +480,22 @@ pub mod lab {
         }
     }
     pub async fn generate_upload_uri(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         name: &str,
         generate_upload_uri_parameter: &GenerateUploadUriParameter,
     ) -> std::result::Result<GenerateUploadUriResponse, generate_upload_uri::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DevTestLab/labs/{}/generateUploadUri",
-            &configuration.base_path, subscription_id, resource_group_name, name
+            &operation_config.base_path, subscription_id, resource_group_name, name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(generate_upload_uri_parameter);
         let req = req_builder.build().context(generate_upload_uri::BuildRequestError)?;
         let rsp = client.execute(req).await.context(generate_upload_uri::ExecuteRequestError)?;
@@ -544,21 +544,21 @@ pub mod lab {
         }
     }
     pub async fn list_vhds(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         name: &str,
     ) -> std::result::Result<ResponseWithContinuationLabVhd, list_vhds::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DevTestLab/labs/{}/listVhds",
-            &configuration.base_path, subscription_id, resource_group_name, name
+            &operation_config.base_path, subscription_id, resource_group_name, name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_vhds::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_vhds::ExecuteRequestError)?;
         match rsp.status() {
@@ -611,7 +611,7 @@ pub mod artifact_source {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn list(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         lab_name: &str,
@@ -619,16 +619,16 @@ pub mod artifact_source {
         top: Option<i64>,
         order_by: Option<&str>,
     ) -> std::result::Result<ResponseWithContinuationArtifactSource, list::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DevTestLab/labs/{}/artifactsources",
-            &configuration.base_path, subscription_id, resource_group_name, lab_name
+            &operation_config.base_path, subscription_id, resource_group_name, lab_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(filter) = filter {
             req_builder = req_builder.query(&[("$filter", filter)]);
         }
@@ -685,22 +685,22 @@ pub mod artifact_source {
         }
     }
     pub async fn get_resource(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         lab_name: &str,
         name: &str,
     ) -> std::result::Result<ArtifactSource, get_resource::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DevTestLab/labs/{}/artifactsources/{}",
-            &configuration.base_path, subscription_id, resource_group_name, lab_name, name
+            &operation_config.base_path, subscription_id, resource_group_name, lab_name, name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get_resource::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get_resource::ExecuteRequestError)?;
         match rsp.status() {
@@ -747,23 +747,23 @@ pub mod artifact_source {
         }
     }
     pub async fn create_or_update_resource(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         lab_name: &str,
         name: &str,
         artifact_source: &ArtifactSource,
     ) -> std::result::Result<create_or_update_resource::Response, create_or_update_resource::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DevTestLab/labs/{}/artifactsources/{}",
-            &configuration.base_path, subscription_id, resource_group_name, lab_name, name
+            &operation_config.base_path, subscription_id, resource_group_name, lab_name, name
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(artifact_source);
         let req = req_builder.build().context(create_or_update_resource::BuildRequestError)?;
         let rsp = client.execute(req).await.context(create_or_update_resource::ExecuteRequestError)?;
@@ -823,23 +823,23 @@ pub mod artifact_source {
         }
     }
     pub async fn patch_resource(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         lab_name: &str,
         name: &str,
         artifact_source: &ArtifactSource,
     ) -> std::result::Result<ArtifactSource, patch_resource::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DevTestLab/labs/{}/artifactsources/{}",
-            &configuration.base_path, subscription_id, resource_group_name, lab_name, name
+            &operation_config.base_path, subscription_id, resource_group_name, lab_name, name
         );
         let mut req_builder = client.patch(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(artifact_source);
         let req = req_builder.build().context(patch_resource::BuildRequestError)?;
         let rsp = client.execute(req).await.context(patch_resource::ExecuteRequestError)?;
@@ -887,22 +887,22 @@ pub mod artifact_source {
         }
     }
     pub async fn delete_resource(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         lab_name: &str,
         name: &str,
     ) -> std::result::Result<delete_resource::Response, delete_resource::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DevTestLab/labs/{}/artifactsources/{}",
-            &configuration.base_path, subscription_id, resource_group_name, lab_name, name
+            &operation_config.base_path, subscription_id, resource_group_name, lab_name, name
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(delete_resource::BuildRequestError)?;
         let rsp = client.execute(req).await.context(delete_resource::ExecuteRequestError)?;
         match rsp.status() {
@@ -956,7 +956,7 @@ pub mod artifact {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn list(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         lab_name: &str,
@@ -965,16 +965,16 @@ pub mod artifact {
         top: Option<i64>,
         order_by: Option<&str>,
     ) -> std::result::Result<ResponseWithContinuationArtifact, list::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DevTestLab/labs/{}/artifactsources/{}/artifacts",
-            &configuration.base_path, subscription_id, resource_group_name, lab_name, artifact_source_name
+            &operation_config.base_path, subscription_id, resource_group_name, lab_name, artifact_source_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(filter) = filter {
             req_builder = req_builder.query(&[("$filter", filter)]);
         }
@@ -1030,23 +1030,23 @@ pub mod artifact {
         }
     }
     pub async fn get_resource(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         lab_name: &str,
         artifact_source_name: &str,
         name: &str,
     ) -> std::result::Result<Artifact, get_resource::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DevTestLab/labs/{}/artifactsources/{}/artifacts/{}",
-            &configuration.base_path, subscription_id, resource_group_name, lab_name, artifact_source_name, name
+            &operation_config.base_path, subscription_id, resource_group_name, lab_name, artifact_source_name, name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get_resource::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get_resource::ExecuteRequestError)?;
         match rsp.status() {
@@ -1093,7 +1093,7 @@ pub mod artifact {
         }
     }
     pub async fn generate_arm_template(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         lab_name: &str,
@@ -1101,13 +1101,13 @@ pub mod artifact {
         name: &str,
         generate_arm_template_request: &GenerateArmTemplateRequest,
     ) -> std::result::Result<ArmTemplateInfo, generate_arm_template::Error> {
-        let client = &configuration.client;
-        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DevTestLab/labs/{}/artifactsources/{}/artifacts/{}/generateArmTemplate" , & configuration . base_path , subscription_id , resource_group_name , lab_name , artifact_source_name , name) ;
+        let client = &operation_config.client;
+        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DevTestLab/labs/{}/artifactsources/{}/artifacts/{}/generateArmTemplate" , & operation_config . base_path , subscription_id , resource_group_name , lab_name , artifact_source_name , name) ;
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(generate_arm_template_request);
         let req = req_builder.build().context(generate_arm_template::BuildRequestError)?;
         let rsp = client.execute(req).await.context(generate_arm_template::ExecuteRequestError)?;
@@ -1160,7 +1160,7 @@ pub mod cost_insight {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn list(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         lab_name: &str,
@@ -1168,16 +1168,16 @@ pub mod cost_insight {
         top: Option<i64>,
         order_by: Option<&str>,
     ) -> std::result::Result<ResponseWithContinuationCostInsight, list::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DevTestLab/labs/{}/costinsights",
-            &configuration.base_path, subscription_id, resource_group_name, lab_name
+            &operation_config.base_path, subscription_id, resource_group_name, lab_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(filter) = filter {
             req_builder = req_builder.query(&[("$filter", filter)]);
         }
@@ -1234,22 +1234,22 @@ pub mod cost_insight {
         }
     }
     pub async fn get_resource(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         lab_name: &str,
         name: &str,
     ) -> std::result::Result<CostInsight, get_resource::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DevTestLab/labs/{}/costinsights/{}",
-            &configuration.base_path, subscription_id, resource_group_name, lab_name, name
+            &operation_config.base_path, subscription_id, resource_group_name, lab_name, name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get_resource::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get_resource::ExecuteRequestError)?;
         match rsp.status() {
@@ -1296,22 +1296,22 @@ pub mod cost_insight {
         }
     }
     pub async fn refresh_data(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         lab_name: &str,
         name: &str,
     ) -> std::result::Result<refresh_data::Response, refresh_data::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DevTestLab/labs/{}/costinsights/{}/refreshData",
-            &configuration.base_path, subscription_id, resource_group_name, lab_name, name
+            &operation_config.base_path, subscription_id, resource_group_name, lab_name, name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(refresh_data::BuildRequestError)?;
         let rsp = client.execute(req).await.context(refresh_data::ExecuteRequestError)?;
         match rsp.status() {
@@ -1365,7 +1365,7 @@ pub mod cost {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn list(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         lab_name: &str,
@@ -1373,16 +1373,16 @@ pub mod cost {
         top: Option<i64>,
         order_by: Option<&str>,
     ) -> std::result::Result<ResponseWithContinuationCost, list::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DevTestLab/labs/{}/costs",
-            &configuration.base_path, subscription_id, resource_group_name, lab_name
+            &operation_config.base_path, subscription_id, resource_group_name, lab_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(filter) = filter {
             req_builder = req_builder.query(&[("$filter", filter)]);
         }
@@ -1438,22 +1438,22 @@ pub mod cost {
         }
     }
     pub async fn get_resource(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         lab_name: &str,
         name: &str,
     ) -> std::result::Result<Cost, get_resource::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DevTestLab/labs/{}/costs/{}",
-            &configuration.base_path, subscription_id, resource_group_name, lab_name, name
+            &operation_config.base_path, subscription_id, resource_group_name, lab_name, name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get_resource::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get_resource::ExecuteRequestError)?;
         match rsp.status() {
@@ -1500,22 +1500,22 @@ pub mod cost {
         }
     }
     pub async fn refresh_data(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         lab_name: &str,
         name: &str,
     ) -> std::result::Result<refresh_data::Response, refresh_data::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DevTestLab/labs/{}/costs/{}/refreshData",
-            &configuration.base_path, subscription_id, resource_group_name, lab_name, name
+            &operation_config.base_path, subscription_id, resource_group_name, lab_name, name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(refresh_data::BuildRequestError)?;
         let rsp = client.execute(req).await.context(refresh_data::ExecuteRequestError)?;
         match rsp.status() {
@@ -1569,7 +1569,7 @@ pub mod custom_image {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn list(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         lab_name: &str,
@@ -1577,16 +1577,16 @@ pub mod custom_image {
         top: Option<i64>,
         order_by: Option<&str>,
     ) -> std::result::Result<ResponseWithContinuationCustomImage, list::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DevTestLab/labs/{}/customimages",
-            &configuration.base_path, subscription_id, resource_group_name, lab_name
+            &operation_config.base_path, subscription_id, resource_group_name, lab_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(filter) = filter {
             req_builder = req_builder.query(&[("$filter", filter)]);
         }
@@ -1643,22 +1643,22 @@ pub mod custom_image {
         }
     }
     pub async fn get_resource(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         lab_name: &str,
         name: &str,
     ) -> std::result::Result<CustomImage, get_resource::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DevTestLab/labs/{}/customimages/{}",
-            &configuration.base_path, subscription_id, resource_group_name, lab_name, name
+            &operation_config.base_path, subscription_id, resource_group_name, lab_name, name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get_resource::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get_resource::ExecuteRequestError)?;
         match rsp.status() {
@@ -1705,23 +1705,23 @@ pub mod custom_image {
         }
     }
     pub async fn create_or_update_resource(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         lab_name: &str,
         name: &str,
         custom_image: &CustomImage,
     ) -> std::result::Result<create_or_update_resource::Response, create_or_update_resource::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DevTestLab/labs/{}/customimages/{}",
-            &configuration.base_path, subscription_id, resource_group_name, lab_name, name
+            &operation_config.base_path, subscription_id, resource_group_name, lab_name, name
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(custom_image);
         let req = req_builder.build().context(create_or_update_resource::BuildRequestError)?;
         let rsp = client.execute(req).await.context(create_or_update_resource::ExecuteRequestError)?;
@@ -1779,22 +1779,22 @@ pub mod custom_image {
         }
     }
     pub async fn delete_resource(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         lab_name: &str,
         name: &str,
     ) -> std::result::Result<delete_resource::Response, delete_resource::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DevTestLab/labs/{}/customimages/{}",
-            &configuration.base_path, subscription_id, resource_group_name, lab_name, name
+            &operation_config.base_path, subscription_id, resource_group_name, lab_name, name
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(delete_resource::BuildRequestError)?;
         let rsp = client.execute(req).await.context(delete_resource::ExecuteRequestError)?;
         match rsp.status() {
@@ -1848,7 +1848,7 @@ pub mod formula {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn list(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         lab_name: &str,
@@ -1856,16 +1856,16 @@ pub mod formula {
         top: Option<i64>,
         order_by: Option<&str>,
     ) -> std::result::Result<ResponseWithContinuationFormula, list::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DevTestLab/labs/{}/formulas",
-            &configuration.base_path, subscription_id, resource_group_name, lab_name
+            &operation_config.base_path, subscription_id, resource_group_name, lab_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(filter) = filter {
             req_builder = req_builder.query(&[("$filter", filter)]);
         }
@@ -1921,22 +1921,22 @@ pub mod formula {
         }
     }
     pub async fn get_resource(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         lab_name: &str,
         name: &str,
     ) -> std::result::Result<Formula, get_resource::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DevTestLab/labs/{}/formulas/{}",
-            &configuration.base_path, subscription_id, resource_group_name, lab_name, name
+            &operation_config.base_path, subscription_id, resource_group_name, lab_name, name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get_resource::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get_resource::ExecuteRequestError)?;
         match rsp.status() {
@@ -1983,23 +1983,23 @@ pub mod formula {
         }
     }
     pub async fn create_or_update_resource(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         lab_name: &str,
         name: &str,
         formula: &Formula,
     ) -> std::result::Result<create_or_update_resource::Response, create_or_update_resource::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DevTestLab/labs/{}/formulas/{}",
-            &configuration.base_path, subscription_id, resource_group_name, lab_name, name
+            &operation_config.base_path, subscription_id, resource_group_name, lab_name, name
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(formula);
         let req = req_builder.build().context(create_or_update_resource::BuildRequestError)?;
         let rsp = client.execute(req).await.context(create_or_update_resource::ExecuteRequestError)?;
@@ -2057,22 +2057,22 @@ pub mod formula {
         }
     }
     pub async fn delete_resource(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         lab_name: &str,
         name: &str,
     ) -> std::result::Result<delete_resource::Response, delete_resource::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DevTestLab/labs/{}/formulas/{}",
-            &configuration.base_path, subscription_id, resource_group_name, lab_name, name
+            &operation_config.base_path, subscription_id, resource_group_name, lab_name, name
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(delete_resource::BuildRequestError)?;
         let rsp = client.execute(req).await.context(delete_resource::ExecuteRequestError)?;
         match rsp.status() {
@@ -2126,7 +2126,7 @@ pub mod gallery_image {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn list(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         lab_name: &str,
@@ -2134,16 +2134,16 @@ pub mod gallery_image {
         top: Option<i64>,
         order_by: Option<&str>,
     ) -> std::result::Result<ResponseWithContinuationGalleryImage, list::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DevTestLab/labs/{}/galleryimages",
-            &configuration.base_path, subscription_id, resource_group_name, lab_name
+            &operation_config.base_path, subscription_id, resource_group_name, lab_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(filter) = filter {
             req_builder = req_builder.query(&[("$filter", filter)]);
         }
@@ -2205,23 +2205,23 @@ pub mod policy_set {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn evaluate_policies(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         lab_name: &str,
         name: &str,
         evaluate_policies_request: &EvaluatePoliciesRequest,
     ) -> std::result::Result<EvaluatePoliciesResponse, evaluate_policies::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DevTestLab/labs/{}/policysets/{}/evaluatePolicies",
-            &configuration.base_path, subscription_id, resource_group_name, lab_name, name
+            &operation_config.base_path, subscription_id, resource_group_name, lab_name, name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(evaluate_policies_request);
         let req = req_builder.build().context(evaluate_policies::BuildRequestError)?;
         let rsp = client.execute(req).await.context(evaluate_policies::ExecuteRequestError)?;
@@ -2275,7 +2275,7 @@ pub mod policy {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn list(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         lab_name: &str,
@@ -2284,16 +2284,16 @@ pub mod policy {
         top: Option<i64>,
         order_by: Option<&str>,
     ) -> std::result::Result<ResponseWithContinuationPolicy, list::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DevTestLab/labs/{}/policysets/{}/policies",
-            &configuration.base_path, subscription_id, resource_group_name, lab_name, policy_set_name
+            &operation_config.base_path, subscription_id, resource_group_name, lab_name, policy_set_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(filter) = filter {
             req_builder = req_builder.query(&[("$filter", filter)]);
         }
@@ -2349,23 +2349,23 @@ pub mod policy {
         }
     }
     pub async fn get_resource(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         lab_name: &str,
         policy_set_name: &str,
         name: &str,
     ) -> std::result::Result<Policy, get_resource::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DevTestLab/labs/{}/policysets/{}/policies/{}",
-            &configuration.base_path, subscription_id, resource_group_name, lab_name, policy_set_name, name
+            &operation_config.base_path, subscription_id, resource_group_name, lab_name, policy_set_name, name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get_resource::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get_resource::ExecuteRequestError)?;
         match rsp.status() {
@@ -2412,7 +2412,7 @@ pub mod policy {
         }
     }
     pub async fn create_or_update_resource(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         lab_name: &str,
@@ -2420,16 +2420,16 @@ pub mod policy {
         name: &str,
         policy: &Policy,
     ) -> std::result::Result<create_or_update_resource::Response, create_or_update_resource::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DevTestLab/labs/{}/policysets/{}/policies/{}",
-            &configuration.base_path, subscription_id, resource_group_name, lab_name, policy_set_name, name
+            &operation_config.base_path, subscription_id, resource_group_name, lab_name, policy_set_name, name
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(policy);
         let req = req_builder.build().context(create_or_update_resource::BuildRequestError)?;
         let rsp = client.execute(req).await.context(create_or_update_resource::ExecuteRequestError)?;
@@ -2487,7 +2487,7 @@ pub mod policy {
         }
     }
     pub async fn patch_resource(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         lab_name: &str,
@@ -2495,16 +2495,16 @@ pub mod policy {
         name: &str,
         policy: &Policy,
     ) -> std::result::Result<Policy, patch_resource::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DevTestLab/labs/{}/policysets/{}/policies/{}",
-            &configuration.base_path, subscription_id, resource_group_name, lab_name, policy_set_name, name
+            &operation_config.base_path, subscription_id, resource_group_name, lab_name, policy_set_name, name
         );
         let mut req_builder = client.patch(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(policy);
         let req = req_builder.build().context(patch_resource::BuildRequestError)?;
         let rsp = client.execute(req).await.context(patch_resource::ExecuteRequestError)?;
@@ -2552,23 +2552,23 @@ pub mod policy {
         }
     }
     pub async fn delete_resource(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         lab_name: &str,
         policy_set_name: &str,
         name: &str,
     ) -> std::result::Result<delete_resource::Response, delete_resource::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DevTestLab/labs/{}/policysets/{}/policies/{}",
-            &configuration.base_path, subscription_id, resource_group_name, lab_name, policy_set_name, name
+            &operation_config.base_path, subscription_id, resource_group_name, lab_name, policy_set_name, name
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(delete_resource::BuildRequestError)?;
         let rsp = client.execute(req).await.context(delete_resource::ExecuteRequestError)?;
         match rsp.status() {
@@ -2622,7 +2622,7 @@ pub mod schedule {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn list(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         lab_name: &str,
@@ -2630,16 +2630,16 @@ pub mod schedule {
         top: Option<i64>,
         order_by: Option<&str>,
     ) -> std::result::Result<ResponseWithContinuationSchedule, list::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DevTestLab/labs/{}/schedules",
-            &configuration.base_path, subscription_id, resource_group_name, lab_name
+            &operation_config.base_path, subscription_id, resource_group_name, lab_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(filter) = filter {
             req_builder = req_builder.query(&[("$filter", filter)]);
         }
@@ -2695,22 +2695,22 @@ pub mod schedule {
         }
     }
     pub async fn get_resource(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         lab_name: &str,
         name: &str,
     ) -> std::result::Result<Schedule, get_resource::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DevTestLab/labs/{}/schedules/{}",
-            &configuration.base_path, subscription_id, resource_group_name, lab_name, name
+            &operation_config.base_path, subscription_id, resource_group_name, lab_name, name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get_resource::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get_resource::ExecuteRequestError)?;
         match rsp.status() {
@@ -2757,23 +2757,23 @@ pub mod schedule {
         }
     }
     pub async fn create_or_update_resource(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         lab_name: &str,
         name: &str,
         schedule: &Schedule,
     ) -> std::result::Result<create_or_update_resource::Response, create_or_update_resource::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DevTestLab/labs/{}/schedules/{}",
-            &configuration.base_path, subscription_id, resource_group_name, lab_name, name
+            &operation_config.base_path, subscription_id, resource_group_name, lab_name, name
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(schedule);
         let req = req_builder.build().context(create_or_update_resource::BuildRequestError)?;
         let rsp = client.execute(req).await.context(create_or_update_resource::ExecuteRequestError)?;
@@ -2831,23 +2831,23 @@ pub mod schedule {
         }
     }
     pub async fn patch_resource(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         lab_name: &str,
         name: &str,
         schedule: &Schedule,
     ) -> std::result::Result<Schedule, patch_resource::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DevTestLab/labs/{}/schedules/{}",
-            &configuration.base_path, subscription_id, resource_group_name, lab_name, name
+            &operation_config.base_path, subscription_id, resource_group_name, lab_name, name
         );
         let mut req_builder = client.patch(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(schedule);
         let req = req_builder.build().context(patch_resource::BuildRequestError)?;
         let rsp = client.execute(req).await.context(patch_resource::ExecuteRequestError)?;
@@ -2895,22 +2895,22 @@ pub mod schedule {
         }
     }
     pub async fn delete_resource(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         lab_name: &str,
         name: &str,
     ) -> std::result::Result<delete_resource::Response, delete_resource::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DevTestLab/labs/{}/schedules/{}",
-            &configuration.base_path, subscription_id, resource_group_name, lab_name, name
+            &operation_config.base_path, subscription_id, resource_group_name, lab_name, name
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(delete_resource::BuildRequestError)?;
         let rsp = client.execute(req).await.context(delete_resource::ExecuteRequestError)?;
         match rsp.status() {
@@ -2959,22 +2959,22 @@ pub mod schedule {
         }
     }
     pub async fn execute(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         lab_name: &str,
         name: &str,
     ) -> std::result::Result<execute::Response, execute::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DevTestLab/labs/{}/schedules/{}/execute",
-            &configuration.base_path, subscription_id, resource_group_name, lab_name, name
+            &operation_config.base_path, subscription_id, resource_group_name, lab_name, name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(execute::BuildRequestError)?;
         let rsp = client.execute(req).await.context(execute::ExecuteRequestError)?;
         match rsp.status() {
@@ -3028,7 +3028,7 @@ pub mod virtual_machine {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn list(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         lab_name: &str,
@@ -3036,16 +3036,16 @@ pub mod virtual_machine {
         top: Option<i64>,
         order_by: Option<&str>,
     ) -> std::result::Result<ResponseWithContinuationLabVirtualMachine, list::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DevTestLab/labs/{}/virtualmachines",
-            &configuration.base_path, subscription_id, resource_group_name, lab_name
+            &operation_config.base_path, subscription_id, resource_group_name, lab_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(filter) = filter {
             req_builder = req_builder.query(&[("$filter", filter)]);
         }
@@ -3102,22 +3102,22 @@ pub mod virtual_machine {
         }
     }
     pub async fn get_resource(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         lab_name: &str,
         name: &str,
     ) -> std::result::Result<LabVirtualMachine, get_resource::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DevTestLab/labs/{}/virtualmachines/{}",
-            &configuration.base_path, subscription_id, resource_group_name, lab_name, name
+            &operation_config.base_path, subscription_id, resource_group_name, lab_name, name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get_resource::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get_resource::ExecuteRequestError)?;
         match rsp.status() {
@@ -3164,23 +3164,23 @@ pub mod virtual_machine {
         }
     }
     pub async fn create_or_update_resource(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         lab_name: &str,
         name: &str,
         lab_virtual_machine: &LabVirtualMachine,
     ) -> std::result::Result<create_or_update_resource::Response, create_or_update_resource::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DevTestLab/labs/{}/virtualmachines/{}",
-            &configuration.base_path, subscription_id, resource_group_name, lab_name, name
+            &operation_config.base_path, subscription_id, resource_group_name, lab_name, name
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(lab_virtual_machine);
         let req = req_builder.build().context(create_or_update_resource::BuildRequestError)?;
         let rsp = client.execute(req).await.context(create_or_update_resource::ExecuteRequestError)?;
@@ -3240,23 +3240,23 @@ pub mod virtual_machine {
         }
     }
     pub async fn patch_resource(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         lab_name: &str,
         name: &str,
         lab_virtual_machine: &LabVirtualMachine,
     ) -> std::result::Result<LabVirtualMachine, patch_resource::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DevTestLab/labs/{}/virtualmachines/{}",
-            &configuration.base_path, subscription_id, resource_group_name, lab_name, name
+            &operation_config.base_path, subscription_id, resource_group_name, lab_name, name
         );
         let mut req_builder = client.patch(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(lab_virtual_machine);
         let req = req_builder.build().context(patch_resource::BuildRequestError)?;
         let rsp = client.execute(req).await.context(patch_resource::ExecuteRequestError)?;
@@ -3304,22 +3304,22 @@ pub mod virtual_machine {
         }
     }
     pub async fn delete_resource(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         lab_name: &str,
         name: &str,
     ) -> std::result::Result<delete_resource::Response, delete_resource::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DevTestLab/labs/{}/virtualmachines/{}",
-            &configuration.base_path, subscription_id, resource_group_name, lab_name, name
+            &operation_config.base_path, subscription_id, resource_group_name, lab_name, name
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(delete_resource::BuildRequestError)?;
         let rsp = client.execute(req).await.context(delete_resource::ExecuteRequestError)?;
         match rsp.status() {
@@ -3368,23 +3368,23 @@ pub mod virtual_machine {
         }
     }
     pub async fn apply_artifacts(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         lab_name: &str,
         name: &str,
         apply_artifacts_request: &ApplyArtifactsRequest,
     ) -> std::result::Result<apply_artifacts::Response, apply_artifacts::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DevTestLab/labs/{}/virtualmachines/{}/applyArtifacts",
-            &configuration.base_path, subscription_id, resource_group_name, lab_name, name
+            &operation_config.base_path, subscription_id, resource_group_name, lab_name, name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(apply_artifacts_request);
         let req = req_builder.build().context(apply_artifacts::BuildRequestError)?;
         let rsp = client.execute(req).await.context(apply_artifacts::ExecuteRequestError)?;
@@ -3434,22 +3434,22 @@ pub mod virtual_machine {
         }
     }
     pub async fn start(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         lab_name: &str,
         name: &str,
     ) -> std::result::Result<start::Response, start::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DevTestLab/labs/{}/virtualmachines/{}/start",
-            &configuration.base_path, subscription_id, resource_group_name, lab_name, name
+            &operation_config.base_path, subscription_id, resource_group_name, lab_name, name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(start::BuildRequestError)?;
         let rsp = client.execute(req).await.context(start::ExecuteRequestError)?;
         match rsp.status() {
@@ -3498,22 +3498,22 @@ pub mod virtual_machine {
         }
     }
     pub async fn stop(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         lab_name: &str,
         name: &str,
     ) -> std::result::Result<stop::Response, stop::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DevTestLab/labs/{}/virtualmachines/{}/stop",
-            &configuration.base_path, subscription_id, resource_group_name, lab_name, name
+            &operation_config.base_path, subscription_id, resource_group_name, lab_name, name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(stop::BuildRequestError)?;
         let rsp = client.execute(req).await.context(stop::ExecuteRequestError)?;
         match rsp.status() {
@@ -3567,7 +3567,7 @@ pub mod virtual_network {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn list(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         lab_name: &str,
@@ -3575,16 +3575,16 @@ pub mod virtual_network {
         top: Option<i64>,
         order_by: Option<&str>,
     ) -> std::result::Result<ResponseWithContinuationVirtualNetwork, list::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DevTestLab/labs/{}/virtualnetworks",
-            &configuration.base_path, subscription_id, resource_group_name, lab_name
+            &operation_config.base_path, subscription_id, resource_group_name, lab_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(filter) = filter {
             req_builder = req_builder.query(&[("$filter", filter)]);
         }
@@ -3641,22 +3641,22 @@ pub mod virtual_network {
         }
     }
     pub async fn get_resource(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         lab_name: &str,
         name: &str,
     ) -> std::result::Result<VirtualNetwork, get_resource::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DevTestLab/labs/{}/virtualnetworks/{}",
-            &configuration.base_path, subscription_id, resource_group_name, lab_name, name
+            &operation_config.base_path, subscription_id, resource_group_name, lab_name, name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get_resource::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get_resource::ExecuteRequestError)?;
         match rsp.status() {
@@ -3703,23 +3703,23 @@ pub mod virtual_network {
         }
     }
     pub async fn create_or_update_resource(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         lab_name: &str,
         name: &str,
         virtual_network: &VirtualNetwork,
     ) -> std::result::Result<create_or_update_resource::Response, create_or_update_resource::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DevTestLab/labs/{}/virtualnetworks/{}",
-            &configuration.base_path, subscription_id, resource_group_name, lab_name, name
+            &operation_config.base_path, subscription_id, resource_group_name, lab_name, name
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(virtual_network);
         let req = req_builder.build().context(create_or_update_resource::BuildRequestError)?;
         let rsp = client.execute(req).await.context(create_or_update_resource::ExecuteRequestError)?;
@@ -3779,23 +3779,23 @@ pub mod virtual_network {
         }
     }
     pub async fn patch_resource(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         lab_name: &str,
         name: &str,
         virtual_network: &VirtualNetwork,
     ) -> std::result::Result<VirtualNetwork, patch_resource::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DevTestLab/labs/{}/virtualnetworks/{}",
-            &configuration.base_path, subscription_id, resource_group_name, lab_name, name
+            &operation_config.base_path, subscription_id, resource_group_name, lab_name, name
         );
         let mut req_builder = client.patch(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(virtual_network);
         let req = req_builder.build().context(patch_resource::BuildRequestError)?;
         let rsp = client.execute(req).await.context(patch_resource::ExecuteRequestError)?;
@@ -3843,22 +3843,22 @@ pub mod virtual_network {
         }
     }
     pub async fn delete_resource(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         lab_name: &str,
         name: &str,
     ) -> std::result::Result<delete_resource::Response, delete_resource::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DevTestLab/labs/{}/virtualnetworks/{}",
-            &configuration.base_path, subscription_id, resource_group_name, lab_name, name
+            &operation_config.base_path, subscription_id, resource_group_name, lab_name, name
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(delete_resource::BuildRequestError)?;
         let rsp = client.execute(req).await.context(delete_resource::ExecuteRequestError)?;
         match rsp.status() {

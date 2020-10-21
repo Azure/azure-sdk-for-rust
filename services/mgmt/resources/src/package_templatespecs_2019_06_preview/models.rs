@@ -19,6 +19,8 @@ pub struct TemplateSpecProperties {
     pub description: Option<String>,
     #[serde(rename = "displayName", skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+    #[serde(skip_serializing)]
+    pub versions: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TemplateSpecsListResult {
@@ -95,6 +97,15 @@ pub struct TemplateSpecTemplateArtifact {
     #[serde(flatten)]
     pub template_spec_artifact: TemplateSpecArtifact,
     pub template: serde_json::Value,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct TemplateSpecVersionInfo {
+    #[serde(skip_serializing)]
+    pub description: Option<String>,
+    #[serde(rename = "timeCreated", skip_serializing)]
+    pub time_created: Option<String>,
+    #[serde(rename = "timeModified", skip_serializing)]
+    pub time_modified: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TemplateSpecsError {

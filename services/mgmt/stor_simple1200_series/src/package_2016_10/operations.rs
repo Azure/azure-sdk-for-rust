@@ -9,17 +9,17 @@ pub mod managers {
     use crate::models::*;
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
-    pub async fn list(configuration: &crate::Configuration, subscription_id: &str) -> std::result::Result<ManagerList, list::Error> {
-        let client = &configuration.client;
+    pub async fn list(operation_config: &crate::OperationConfig, subscription_id: &str) -> std::result::Result<ManagerList, list::Error> {
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.StorSimple/managers",
-            &configuration.base_path, subscription_id
+            &operation_config.base_path, subscription_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
         match rsp.status() {
@@ -54,20 +54,20 @@ pub mod managers {
         }
     }
     pub async fn list_by_resource_group(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
     ) -> std::result::Result<ManagerList, list_by_resource_group::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorSimple/managers",
-            &configuration.base_path, subscription_id, resource_group_name
+            &operation_config.base_path, subscription_id, resource_group_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_by_resource_group::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_by_resource_group::ExecuteRequestError)?;
         match rsp.status() {
@@ -102,21 +102,21 @@ pub mod managers {
         }
     }
     pub async fn get(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         manager_name: &str,
     ) -> std::result::Result<Manager, get::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorSimple/managers/{}",
-            &configuration.base_path, subscription_id, resource_group_name, manager_name
+            &operation_config.base_path, subscription_id, resource_group_name, manager_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
         match rsp.status() {
@@ -151,22 +151,22 @@ pub mod managers {
         }
     }
     pub async fn create_or_update(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         manager: &Manager,
         subscription_id: &str,
         resource_group_name: &str,
         manager_name: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorSimple/managers/{}",
-            &configuration.base_path, subscription_id, resource_group_name, manager_name
+            &operation_config.base_path, subscription_id, resource_group_name, manager_name
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(manager);
         let req = req_builder.build().context(create_or_update::BuildRequestError)?;
         let rsp = client.execute(req).await.context(create_or_update::ExecuteRequestError)?;
@@ -212,22 +212,22 @@ pub mod managers {
         }
     }
     pub async fn update(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         parameters: &ManagerPatch,
         subscription_id: &str,
         resource_group_name: &str,
         manager_name: &str,
     ) -> std::result::Result<Manager, update::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorSimple/managers/{}",
-            &configuration.base_path, subscription_id, resource_group_name, manager_name
+            &operation_config.base_path, subscription_id, resource_group_name, manager_name
         );
         let mut req_builder = client.patch(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(parameters);
         let req = req_builder.build().context(update::BuildRequestError)?;
         let rsp = client.execute(req).await.context(update::ExecuteRequestError)?;
@@ -263,21 +263,21 @@ pub mod managers {
         }
     }
     pub async fn delete(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         manager_name: &str,
     ) -> std::result::Result<delete::Response, delete::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorSimple/managers/{}",
-            &configuration.base_path, subscription_id, resource_group_name, manager_name
+            &operation_config.base_path, subscription_id, resource_group_name, manager_name
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(delete::BuildRequestError)?;
         let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
         match rsp.status() {
@@ -314,23 +314,23 @@ pub mod managers {
         }
     }
     pub async fn upload_registration_certificate(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         certificate_name: &str,
         upload_certificate_requestrequest: &UploadCertificateRequest,
         subscription_id: &str,
         resource_group_name: &str,
         manager_name: &str,
     ) -> std::result::Result<UploadCertificateResponse, upload_registration_certificate::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorSimple/managers/{}/certificates/{}",
-            &configuration.base_path, subscription_id, resource_group_name, manager_name, certificate_name
+            &operation_config.base_path, subscription_id, resource_group_name, manager_name, certificate_name
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(upload_certificate_requestrequest);
         let req = req_builder.build().context(upload_registration_certificate::BuildRequestError)?;
         let rsp = client
@@ -370,21 +370,21 @@ pub mod managers {
         }
     }
     pub async fn get_encryption_settings(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         manager_name: &str,
     ) -> std::result::Result<EncryptionSettings, get_encryption_settings::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorSimple/managers/{}/encryptionSettings/default",
-            &configuration.base_path, subscription_id, resource_group_name, manager_name
+            &operation_config.base_path, subscription_id, resource_group_name, manager_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get_encryption_settings::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get_encryption_settings::ExecuteRequestError)?;
         match rsp.status() {
@@ -420,21 +420,21 @@ pub mod managers {
         }
     }
     pub async fn get_extended_info(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         manager_name: &str,
     ) -> std::result::Result<ManagerExtendedInfo, get_extended_info::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorSimple/managers/{}/extendedInformation/vaultExtendedInfo",
-            &configuration.base_path, subscription_id, resource_group_name, manager_name
+            &operation_config.base_path, subscription_id, resource_group_name, manager_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get_extended_info::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get_extended_info::ExecuteRequestError)?;
         match rsp.status() {
@@ -469,22 +469,22 @@ pub mod managers {
         }
     }
     pub async fn create_extended_info(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         manager_extended_info: &ManagerExtendedInfo,
         subscription_id: &str,
         resource_group_name: &str,
         manager_name: &str,
     ) -> std::result::Result<ManagerExtendedInfo, create_extended_info::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorSimple/managers/{}/extendedInformation/vaultExtendedInfo",
-            &configuration.base_path, subscription_id, resource_group_name, manager_name
+            &operation_config.base_path, subscription_id, resource_group_name, manager_name
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(manager_extended_info);
         let req = req_builder.build().context(create_extended_info::BuildRequestError)?;
         let rsp = client.execute(req).await.context(create_extended_info::ExecuteRequestError)?;
@@ -521,23 +521,23 @@ pub mod managers {
         }
     }
     pub async fn update_extended_info(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         manager_extended_info: &ManagerExtendedInfo,
         subscription_id: &str,
         resource_group_name: &str,
         manager_name: &str,
         if_match: &str,
     ) -> std::result::Result<ManagerExtendedInfo, update_extended_info::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorSimple/managers/{}/extendedInformation/vaultExtendedInfo",
-            &configuration.base_path, subscription_id, resource_group_name, manager_name
+            &operation_config.base_path, subscription_id, resource_group_name, manager_name
         );
         let mut req_builder = client.patch(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(manager_extended_info);
         req_builder = req_builder.header("If-Match", if_match);
         let req = req_builder.build().context(update_extended_info::BuildRequestError)?;
@@ -575,21 +575,21 @@ pub mod managers {
         }
     }
     pub async fn delete_extended_info(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         manager_name: &str,
     ) -> std::result::Result<(), delete_extended_info::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorSimple/managers/{}/extendedInformation/vaultExtendedInfo",
-            &configuration.base_path, subscription_id, resource_group_name, manager_name
+            &operation_config.base_path, subscription_id, resource_group_name, manager_name
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(delete_extended_info::BuildRequestError)?;
         let rsp = client.execute(req).await.context(delete_extended_info::ExecuteRequestError)?;
         match rsp.status() {
@@ -620,21 +620,21 @@ pub mod managers {
         }
     }
     pub async fn get_encryption_key(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         manager_name: &str,
     ) -> std::result::Result<SymmetricEncryptedSecret, get_encryption_key::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorSimple/managers/{}/getEncryptionKey",
-            &configuration.base_path, subscription_id, resource_group_name, manager_name
+            &operation_config.base_path, subscription_id, resource_group_name, manager_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get_encryption_key::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get_encryption_key::ExecuteRequestError)?;
         match rsp.status() {
@@ -670,22 +670,22 @@ pub mod managers {
         }
     }
     pub async fn list_metrics(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         manager_name: &str,
         filter: Option<&str>,
     ) -> std::result::Result<MetricList, list_metrics::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorSimple/managers/{}/metrics",
-            &configuration.base_path, subscription_id, resource_group_name, manager_name
+            &operation_config.base_path, subscription_id, resource_group_name, manager_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(filter) = filter {
             req_builder = req_builder.query(&[("$filter", filter)]);
         }
@@ -723,21 +723,21 @@ pub mod managers {
         }
     }
     pub async fn list_metric_definition(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         manager_name: &str,
     ) -> std::result::Result<MetricDefinitionList, list_metric_definition::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorSimple/managers/{}/metricsDefinitions",
-            &configuration.base_path, subscription_id, resource_group_name, manager_name
+            &operation_config.base_path, subscription_id, resource_group_name, manager_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_metric_definition::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_metric_definition::ExecuteRequestError)?;
         match rsp.status() {
@@ -777,14 +777,14 @@ pub mod available_provider_operations {
     use crate::models::*;
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
-    pub async fn list(configuration: &crate::Configuration) -> std::result::Result<AvailableProviderOperations, list::Error> {
-        let client = &configuration.client;
-        let uri_str = &format!("{}/providers/Microsoft.StorSimple/operations", &configuration.base_path,);
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<AvailableProviderOperations, list::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!("{}/providers/Microsoft.StorSimple/operations", &operation_config.base_path,);
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
         match rsp.status() {
@@ -824,21 +824,21 @@ pub mod access_control_records {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn list_by_manager(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         manager_name: &str,
     ) -> std::result::Result<AccessControlRecordList, list_by_manager::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorSimple/managers/{}/accessControlRecords",
-            &configuration.base_path, subscription_id, resource_group_name, manager_name
+            &operation_config.base_path, subscription_id, resource_group_name, manager_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_by_manager::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_by_manager::ExecuteRequestError)?;
         match rsp.status() {
@@ -874,22 +874,22 @@ pub mod access_control_records {
         }
     }
     pub async fn get(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         access_control_record_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
         manager_name: &str,
     ) -> std::result::Result<AccessControlRecord, get::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorSimple/managers/{}/accessControlRecords/{}",
-            &configuration.base_path, subscription_id, resource_group_name, manager_name, access_control_record_name
+            &operation_config.base_path, subscription_id, resource_group_name, manager_name, access_control_record_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
         match rsp.status() {
@@ -924,23 +924,23 @@ pub mod access_control_records {
         }
     }
     pub async fn create_or_update(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         access_control_record_name: &str,
         access_control_record: &AccessControlRecord,
         subscription_id: &str,
         resource_group_name: &str,
         manager_name: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorSimple/managers/{}/accessControlRecords/{}",
-            &configuration.base_path, subscription_id, resource_group_name, manager_name, access_control_record_name
+            &operation_config.base_path, subscription_id, resource_group_name, manager_name, access_control_record_name
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(access_control_record);
         let req = req_builder.build().context(create_or_update::BuildRequestError)?;
         let rsp = client.execute(req).await.context(create_or_update::ExecuteRequestError)?;
@@ -982,22 +982,22 @@ pub mod access_control_records {
         }
     }
     pub async fn delete(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         access_control_record_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
         manager_name: &str,
     ) -> std::result::Result<delete::Response, delete::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorSimple/managers/{}/accessControlRecords/{}",
-            &configuration.base_path, subscription_id, resource_group_name, manager_name, access_control_record_name
+            &operation_config.base_path, subscription_id, resource_group_name, manager_name, access_control_record_name
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(delete::BuildRequestError)?;
         let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
         match rsp.status() {
@@ -1039,22 +1039,22 @@ pub mod alerts {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn list_by_manager(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         manager_name: &str,
         filter: Option<&str>,
     ) -> std::result::Result<AlertList, list_by_manager::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorSimple/managers/{}/alerts",
-            &configuration.base_path, subscription_id, resource_group_name, manager_name
+            &operation_config.base_path, subscription_id, resource_group_name, manager_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(filter) = filter {
             req_builder = req_builder.query(&[("$filter", filter)]);
         }
@@ -1092,22 +1092,22 @@ pub mod alerts {
         }
     }
     pub async fn clear(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         request: &ClearAlertRequest,
         subscription_id: &str,
         resource_group_name: &str,
         manager_name: &str,
     ) -> std::result::Result<(), clear::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorSimple/managers/{}/clearAlerts",
-            &configuration.base_path, subscription_id, resource_group_name, manager_name
+            &operation_config.base_path, subscription_id, resource_group_name, manager_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(request);
         let req = req_builder.build().context(clear::BuildRequestError)?;
         let rsp = client.execute(req).await.context(clear::ExecuteRequestError)?;
@@ -1139,23 +1139,23 @@ pub mod alerts {
         }
     }
     pub async fn send_test_email(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         device_name: &str,
         request: &SendTestAlertEmailRequest,
         subscription_id: &str,
         resource_group_name: &str,
         manager_name: &str,
     ) -> std::result::Result<(), send_test_email::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorSimple/managers/{}/devices/{}/sendTestAlertEmail",
-            &configuration.base_path, subscription_id, resource_group_name, manager_name, device_name
+            &operation_config.base_path, subscription_id, resource_group_name, manager_name, device_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(request);
         let req = req_builder.build().context(send_test_email::BuildRequestError)?;
         let rsp = client.execute(req).await.context(send_test_email::ExecuteRequestError)?;
@@ -1192,22 +1192,22 @@ pub mod backups {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn list_by_manager(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         manager_name: &str,
         filter: Option<&str>,
     ) -> std::result::Result<BackupList, list_by_manager::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorSimple/managers/{}/backups",
-            &configuration.base_path, subscription_id, resource_group_name, manager_name
+            &operation_config.base_path, subscription_id, resource_group_name, manager_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(filter) = filter {
             req_builder = req_builder.query(&[("$filter", filter)]);
         }
@@ -1245,7 +1245,7 @@ pub mod backups {
         }
     }
     pub async fn list_by_device(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         device_name: &str,
         for_failover: Option<bool>,
         subscription_id: &str,
@@ -1253,16 +1253,16 @@ pub mod backups {
         manager_name: &str,
         filter: Option<&str>,
     ) -> std::result::Result<BackupList, list_by_device::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorSimple/managers/{}/devices/{}/backups",
-            &configuration.base_path, subscription_id, resource_group_name, manager_name, device_name
+            &operation_config.base_path, subscription_id, resource_group_name, manager_name, device_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(for_failover) = for_failover {
             req_builder = req_builder.query(&[("forFailover", for_failover)]);
         }
@@ -1303,23 +1303,23 @@ pub mod backups {
         }
     }
     pub async fn delete(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         device_name: &str,
         backup_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
         manager_name: &str,
     ) -> std::result::Result<delete::Response, delete::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorSimple/managers/{}/devices/{}/backups/{}",
-            &configuration.base_path, subscription_id, resource_group_name, manager_name, device_name, backup_name
+            &operation_config.base_path, subscription_id, resource_group_name, manager_name, device_name, backup_name
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(delete::BuildRequestError)?;
         let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
         match rsp.status() {
@@ -1356,7 +1356,7 @@ pub mod backups {
         }
     }
     pub async fn clone(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         device_name: &str,
         backup_name: &str,
         element_name: &str,
@@ -1365,16 +1365,16 @@ pub mod backups {
         resource_group_name: &str,
         manager_name: &str,
     ) -> std::result::Result<clone::Response, clone::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorSimple/managers/{}/devices/{}/backups/{}/elements/{}/clone",
-            &configuration.base_path, subscription_id, resource_group_name, manager_name, device_name, backup_name, element_name
+            &operation_config.base_path, subscription_id, resource_group_name, manager_name, device_name, backup_name, element_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(clone_request);
         let req = req_builder.build().context(clone::BuildRequestError)?;
         let rsp = client.execute(req).await.context(clone::ExecuteRequestError)?;
@@ -1417,22 +1417,22 @@ pub mod devices {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn list_by_manager(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         manager_name: &str,
         expand: Option<&str>,
     ) -> std::result::Result<DeviceList, list_by_manager::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorSimple/managers/{}/devices",
-            &configuration.base_path, subscription_id, resource_group_name, manager_name
+            &operation_config.base_path, subscription_id, resource_group_name, manager_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(expand) = expand {
             req_builder = req_builder.query(&[("$expand", expand)]);
         }
@@ -1470,23 +1470,23 @@ pub mod devices {
         }
     }
     pub async fn get(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         device_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
         manager_name: &str,
         expand: Option<&str>,
     ) -> std::result::Result<Device, get::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorSimple/managers/{}/devices/{}",
-            &configuration.base_path, subscription_id, resource_group_name, manager_name, device_name
+            &operation_config.base_path, subscription_id, resource_group_name, manager_name, device_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(expand) = expand {
             req_builder = req_builder.query(&[("$expand", expand)]);
         }
@@ -1524,23 +1524,23 @@ pub mod devices {
         }
     }
     pub async fn patch(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         device_name: &str,
         device_patch: &DevicePatch,
         subscription_id: &str,
         resource_group_name: &str,
         manager_name: &str,
     ) -> std::result::Result<patch::Response, patch::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorSimple/managers/{}/devices/{}",
-            &configuration.base_path, subscription_id, resource_group_name, manager_name, device_name
+            &operation_config.base_path, subscription_id, resource_group_name, manager_name, device_name
         );
         let mut req_builder = client.patch(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(device_patch);
         let req = req_builder.build().context(patch::BuildRequestError)?;
         let rsp = client.execute(req).await.context(patch::ExecuteRequestError)?;
@@ -1582,22 +1582,22 @@ pub mod devices {
         }
     }
     pub async fn delete(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         device_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
         manager_name: &str,
     ) -> std::result::Result<delete::Response, delete::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorSimple/managers/{}/devices/{}",
-            &configuration.base_path, subscription_id, resource_group_name, manager_name, device_name
+            &operation_config.base_path, subscription_id, resource_group_name, manager_name, device_name
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(delete::BuildRequestError)?;
         let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
         match rsp.status() {
@@ -1634,22 +1634,22 @@ pub mod devices {
         }
     }
     pub async fn get_alert_settings(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         device_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
         manager_name: &str,
     ) -> std::result::Result<AlertSettings, get_alert_settings::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorSimple/managers/{}/devices/{}/alertSettings/default",
-            &configuration.base_path, subscription_id, resource_group_name, manager_name, device_name
+            &operation_config.base_path, subscription_id, resource_group_name, manager_name, device_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get_alert_settings::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get_alert_settings::ExecuteRequestError)?;
         match rsp.status() {
@@ -1684,23 +1684,23 @@ pub mod devices {
         }
     }
     pub async fn create_or_update_alert_settings(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         device_name: &str,
         alert_settings: &AlertSettings,
         subscription_id: &str,
         resource_group_name: &str,
         manager_name: &str,
     ) -> std::result::Result<create_or_update_alert_settings::Response, create_or_update_alert_settings::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorSimple/managers/{}/devices/{}/alertSettings/default",
-            &configuration.base_path, subscription_id, resource_group_name, manager_name, device_name
+            &operation_config.base_path, subscription_id, resource_group_name, manager_name, device_name
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(alert_settings);
         let req = req_builder.build().context(create_or_update_alert_settings::BuildRequestError)?;
         let rsp = client
@@ -1746,22 +1746,22 @@ pub mod devices {
         }
     }
     pub async fn deactivate(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         device_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
         manager_name: &str,
     ) -> std::result::Result<deactivate::Response, deactivate::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorSimple/managers/{}/devices/{}/deactivate",
-            &configuration.base_path, subscription_id, resource_group_name, manager_name, device_name
+            &operation_config.base_path, subscription_id, resource_group_name, manager_name, device_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(deactivate::BuildRequestError)?;
         let rsp = client.execute(req).await.context(deactivate::ExecuteRequestError)?;
         match rsp.status() {
@@ -1798,22 +1798,22 @@ pub mod devices {
         }
     }
     pub async fn download_updates(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         device_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
         manager_name: &str,
     ) -> std::result::Result<download_updates::Response, download_updates::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorSimple/managers/{}/devices/{}/download",
-            &configuration.base_path, subscription_id, resource_group_name, manager_name, device_name
+            &operation_config.base_path, subscription_id, resource_group_name, manager_name, device_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(download_updates::BuildRequestError)?;
         let rsp = client.execute(req).await.context(download_updates::ExecuteRequestError)?;
         match rsp.status() {
@@ -1850,23 +1850,23 @@ pub mod devices {
         }
     }
     pub async fn failover(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         device_name: &str,
         failover_request: &FailoverRequest,
         subscription_id: &str,
         resource_group_name: &str,
         manager_name: &str,
     ) -> std::result::Result<failover::Response, failover::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorSimple/managers/{}/devices/{}/failover",
-            &configuration.base_path, subscription_id, resource_group_name, manager_name, device_name
+            &operation_config.base_path, subscription_id, resource_group_name, manager_name, device_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(failover_request);
         let req = req_builder.build().context(failover::BuildRequestError)?;
         let rsp = client.execute(req).await.context(failover::ExecuteRequestError)?;
@@ -1904,23 +1904,23 @@ pub mod devices {
         }
     }
     pub async fn list_failover_target(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         device_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
         manager_name: &str,
         expand: Option<&str>,
     ) -> std::result::Result<DeviceList, list_failover_target::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorSimple/managers/{}/devices/{}/failoverTargets",
-            &configuration.base_path, subscription_id, resource_group_name, manager_name, device_name
+            &operation_config.base_path, subscription_id, resource_group_name, manager_name, device_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(expand) = expand {
             req_builder = req_builder.query(&[("$expand", expand)]);
         }
@@ -1958,22 +1958,22 @@ pub mod devices {
         }
     }
     pub async fn install_updates(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         device_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
         manager_name: &str,
     ) -> std::result::Result<install_updates::Response, install_updates::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorSimple/managers/{}/devices/{}/install",
-            &configuration.base_path, subscription_id, resource_group_name, manager_name, device_name
+            &operation_config.base_path, subscription_id, resource_group_name, manager_name, device_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(install_updates::BuildRequestError)?;
         let rsp = client.execute(req).await.context(install_updates::ExecuteRequestError)?;
         match rsp.status() {
@@ -2010,23 +2010,23 @@ pub mod devices {
         }
     }
     pub async fn list_metrics(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         device_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
         manager_name: &str,
         filter: Option<&str>,
     ) -> std::result::Result<MetricList, list_metrics::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorSimple/managers/{}/devices/{}/metrics",
-            &configuration.base_path, subscription_id, resource_group_name, manager_name, device_name
+            &operation_config.base_path, subscription_id, resource_group_name, manager_name, device_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(filter) = filter {
             req_builder = req_builder.query(&[("$filter", filter)]);
         }
@@ -2064,22 +2064,22 @@ pub mod devices {
         }
     }
     pub async fn list_metric_definition(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         device_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
         manager_name: &str,
     ) -> std::result::Result<MetricDefinitionList, list_metric_definition::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorSimple/managers/{}/devices/{}/metricsDefinitions",
-            &configuration.base_path, subscription_id, resource_group_name, manager_name, device_name
+            &operation_config.base_path, subscription_id, resource_group_name, manager_name, device_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_metric_definition::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_metric_definition::ExecuteRequestError)?;
         match rsp.status() {
@@ -2115,22 +2115,22 @@ pub mod devices {
         }
     }
     pub async fn get_network_settings(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         device_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
         manager_name: &str,
     ) -> std::result::Result<NetworkSettings, get_network_settings::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorSimple/managers/{}/devices/{}/networkSettings/default",
-            &configuration.base_path, subscription_id, resource_group_name, manager_name, device_name
+            &operation_config.base_path, subscription_id, resource_group_name, manager_name, device_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get_network_settings::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get_network_settings::ExecuteRequestError)?;
         match rsp.status() {
@@ -2165,22 +2165,22 @@ pub mod devices {
         }
     }
     pub async fn scan_for_updates(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         device_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
         manager_name: &str,
     ) -> std::result::Result<scan_for_updates::Response, scan_for_updates::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorSimple/managers/{}/devices/{}/scanForUpdates",
-            &configuration.base_path, subscription_id, resource_group_name, manager_name, device_name
+            &operation_config.base_path, subscription_id, resource_group_name, manager_name, device_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(scan_for_updates::BuildRequestError)?;
         let rsp = client.execute(req).await.context(scan_for_updates::ExecuteRequestError)?;
         match rsp.status() {
@@ -2217,23 +2217,23 @@ pub mod devices {
         }
     }
     pub async fn create_or_update_security_settings(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         device_name: &str,
         security_settings: &SecuritySettings,
         subscription_id: &str,
         resource_group_name: &str,
         manager_name: &str,
     ) -> std::result::Result<create_or_update_security_settings::Response, create_or_update_security_settings::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorSimple/managers/{}/devices/{}/securitySettings/default/update",
-            &configuration.base_path, subscription_id, resource_group_name, manager_name, device_name
+            &operation_config.base_path, subscription_id, resource_group_name, manager_name, device_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(security_settings);
         let req = req_builder.build().context(create_or_update_security_settings::BuildRequestError)?;
         let rsp = client
@@ -2275,22 +2275,22 @@ pub mod devices {
         }
     }
     pub async fn get_time_settings(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         device_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
         manager_name: &str,
     ) -> std::result::Result<TimeSettings, get_time_settings::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorSimple/managers/{}/devices/{}/timeSettings/default",
-            &configuration.base_path, subscription_id, resource_group_name, manager_name, device_name
+            &operation_config.base_path, subscription_id, resource_group_name, manager_name, device_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get_time_settings::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get_time_settings::ExecuteRequestError)?;
         match rsp.status() {
@@ -2325,22 +2325,22 @@ pub mod devices {
         }
     }
     pub async fn get_update_summary(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         device_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
         manager_name: &str,
     ) -> std::result::Result<Updates, get_update_summary::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorSimple/managers/{}/devices/{}/updateSummary/default",
-            &configuration.base_path, subscription_id, resource_group_name, manager_name, device_name
+            &operation_config.base_path, subscription_id, resource_group_name, manager_name, device_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get_update_summary::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get_update_summary::ExecuteRequestError)?;
         match rsp.status() {
@@ -2380,22 +2380,22 @@ pub mod backup_schedule_groups {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn list_by_device(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         device_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
         manager_name: &str,
     ) -> std::result::Result<BackupScheduleGroupList, list_by_device::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorSimple/managers/{}/devices/{}/backupScheduleGroups",
-            &configuration.base_path, subscription_id, resource_group_name, manager_name, device_name
+            &operation_config.base_path, subscription_id, resource_group_name, manager_name, device_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_by_device::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_by_device::ExecuteRequestError)?;
         match rsp.status() {
@@ -2431,23 +2431,23 @@ pub mod backup_schedule_groups {
         }
     }
     pub async fn get(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         device_name: &str,
         schedule_group_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
         manager_name: &str,
     ) -> std::result::Result<BackupScheduleGroup, get::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorSimple/managers/{}/devices/{}/backupScheduleGroups/{}",
-            &configuration.base_path, subscription_id, resource_group_name, manager_name, device_name, schedule_group_name
+            &operation_config.base_path, subscription_id, resource_group_name, manager_name, device_name, schedule_group_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
         match rsp.status() {
@@ -2482,7 +2482,7 @@ pub mod backup_schedule_groups {
         }
     }
     pub async fn create_or_update(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         device_name: &str,
         schedule_group_name: &str,
         schedule_group: &BackupScheduleGroup,
@@ -2490,16 +2490,16 @@ pub mod backup_schedule_groups {
         resource_group_name: &str,
         manager_name: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorSimple/managers/{}/devices/{}/backupScheduleGroups/{}",
-            &configuration.base_path, subscription_id, resource_group_name, manager_name, device_name, schedule_group_name
+            &operation_config.base_path, subscription_id, resource_group_name, manager_name, device_name, schedule_group_name
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(schedule_group);
         let req = req_builder.build().context(create_or_update::BuildRequestError)?;
         let rsp = client.execute(req).await.context(create_or_update::ExecuteRequestError)?;
@@ -2541,23 +2541,23 @@ pub mod backup_schedule_groups {
         }
     }
     pub async fn delete(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         device_name: &str,
         schedule_group_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
         manager_name: &str,
     ) -> std::result::Result<delete::Response, delete::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorSimple/managers/{}/devices/{}/backupScheduleGroups/{}",
-            &configuration.base_path, subscription_id, resource_group_name, manager_name, device_name, schedule_group_name
+            &operation_config.base_path, subscription_id, resource_group_name, manager_name, device_name, schedule_group_name
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(delete::BuildRequestError)?;
         let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
         match rsp.status() {
@@ -2599,22 +2599,22 @@ pub mod chap_settings {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn list_by_device(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         device_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
         manager_name: &str,
     ) -> std::result::Result<ChapSettingsList, list_by_device::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorSimple/managers/{}/devices/{}/chapSettings",
-            &configuration.base_path, subscription_id, resource_group_name, manager_name, device_name
+            &operation_config.base_path, subscription_id, resource_group_name, manager_name, device_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_by_device::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_by_device::ExecuteRequestError)?;
         match rsp.status() {
@@ -2649,23 +2649,23 @@ pub mod chap_settings {
         }
     }
     pub async fn get(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         device_name: &str,
         chap_user_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
         manager_name: &str,
     ) -> std::result::Result<ChapSettings, get::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorSimple/managers/{}/devices/{}/chapSettings/{}",
-            &configuration.base_path, subscription_id, resource_group_name, manager_name, device_name, chap_user_name
+            &operation_config.base_path, subscription_id, resource_group_name, manager_name, device_name, chap_user_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
         match rsp.status() {
@@ -2700,7 +2700,7 @@ pub mod chap_settings {
         }
     }
     pub async fn create_or_update(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         device_name: &str,
         chap_user_name: &str,
         chap_setting: &ChapSettings,
@@ -2708,16 +2708,16 @@ pub mod chap_settings {
         resource_group_name: &str,
         manager_name: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorSimple/managers/{}/devices/{}/chapSettings/{}",
-            &configuration.base_path, subscription_id, resource_group_name, manager_name, device_name, chap_user_name
+            &operation_config.base_path, subscription_id, resource_group_name, manager_name, device_name, chap_user_name
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(chap_setting);
         let req = req_builder.build().context(create_or_update::BuildRequestError)?;
         let rsp = client.execute(req).await.context(create_or_update::ExecuteRequestError)?;
@@ -2759,23 +2759,23 @@ pub mod chap_settings {
         }
     }
     pub async fn delete(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         device_name: &str,
         chap_user_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
         manager_name: &str,
     ) -> std::result::Result<delete::Response, delete::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorSimple/managers/{}/devices/{}/chapSettings/{}",
-            &configuration.base_path, subscription_id, resource_group_name, manager_name, device_name, chap_user_name
+            &operation_config.base_path, subscription_id, resource_group_name, manager_name, device_name, chap_user_name
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(delete::BuildRequestError)?;
         let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
         match rsp.status() {
@@ -2817,22 +2817,22 @@ pub mod iscsi_disks {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn list_by_device(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         device_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
         manager_name: &str,
     ) -> std::result::Result<IscsiDiskList, list_by_device::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorSimple/managers/{}/devices/{}/disks",
-            &configuration.base_path, subscription_id, resource_group_name, manager_name, device_name
+            &operation_config.base_path, subscription_id, resource_group_name, manager_name, device_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_by_device::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_by_device::ExecuteRequestError)?;
         match rsp.status() {
@@ -2867,23 +2867,23 @@ pub mod iscsi_disks {
         }
     }
     pub async fn list_by_iscsi_server(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         device_name: &str,
         iscsi_server_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
         manager_name: &str,
     ) -> std::result::Result<IscsiDiskList, list_by_iscsi_server::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorSimple/managers/{}/devices/{}/iscsiservers/{}/disks",
-            &configuration.base_path, subscription_id, resource_group_name, manager_name, device_name, iscsi_server_name
+            &operation_config.base_path, subscription_id, resource_group_name, manager_name, device_name, iscsi_server_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_by_iscsi_server::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_by_iscsi_server::ExecuteRequestError)?;
         match rsp.status() {
@@ -2918,7 +2918,7 @@ pub mod iscsi_disks {
         }
     }
     pub async fn get(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         device_name: &str,
         iscsi_server_name: &str,
         disk_name: &str,
@@ -2926,16 +2926,16 @@ pub mod iscsi_disks {
         resource_group_name: &str,
         manager_name: &str,
     ) -> std::result::Result<IscsiDisk, get::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorSimple/managers/{}/devices/{}/iscsiservers/{}/disks/{}",
-            &configuration.base_path, subscription_id, resource_group_name, manager_name, device_name, iscsi_server_name, disk_name
+            &operation_config.base_path, subscription_id, resource_group_name, manager_name, device_name, iscsi_server_name, disk_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
         match rsp.status() {
@@ -2970,7 +2970,7 @@ pub mod iscsi_disks {
         }
     }
     pub async fn create_or_update(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         device_name: &str,
         iscsi_server_name: &str,
         disk_name: &str,
@@ -2979,16 +2979,16 @@ pub mod iscsi_disks {
         resource_group_name: &str,
         manager_name: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorSimple/managers/{}/devices/{}/iscsiservers/{}/disks/{}",
-            &configuration.base_path, subscription_id, resource_group_name, manager_name, device_name, iscsi_server_name, disk_name
+            &operation_config.base_path, subscription_id, resource_group_name, manager_name, device_name, iscsi_server_name, disk_name
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(iscsi_disk);
         let req = req_builder.build().context(create_or_update::BuildRequestError)?;
         let rsp = client.execute(req).await.context(create_or_update::ExecuteRequestError)?;
@@ -3030,7 +3030,7 @@ pub mod iscsi_disks {
         }
     }
     pub async fn delete(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         device_name: &str,
         iscsi_server_name: &str,
         disk_name: &str,
@@ -3038,16 +3038,16 @@ pub mod iscsi_disks {
         resource_group_name: &str,
         manager_name: &str,
     ) -> std::result::Result<delete::Response, delete::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorSimple/managers/{}/devices/{}/iscsiservers/{}/disks/{}",
-            &configuration.base_path, subscription_id, resource_group_name, manager_name, device_name, iscsi_server_name, disk_name
+            &operation_config.base_path, subscription_id, resource_group_name, manager_name, device_name, iscsi_server_name, disk_name
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(delete::BuildRequestError)?;
         let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
         match rsp.status() {
@@ -3084,7 +3084,7 @@ pub mod iscsi_disks {
         }
     }
     pub async fn list_metrics(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         device_name: &str,
         iscsi_server_name: &str,
         disk_name: &str,
@@ -3093,16 +3093,16 @@ pub mod iscsi_disks {
         manager_name: &str,
         filter: Option<&str>,
     ) -> std::result::Result<MetricList, list_metrics::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorSimple/managers/{}/devices/{}/iscsiservers/{}/disks/{}/metrics",
-            &configuration.base_path, subscription_id, resource_group_name, manager_name, device_name, iscsi_server_name, disk_name
+            &operation_config.base_path, subscription_id, resource_group_name, manager_name, device_name, iscsi_server_name, disk_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(filter) = filter {
             req_builder = req_builder.query(&[("$filter", filter)]);
         }
@@ -3140,7 +3140,7 @@ pub mod iscsi_disks {
         }
     }
     pub async fn list_metric_definition(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         device_name: &str,
         iscsi_server_name: &str,
         disk_name: &str,
@@ -3148,13 +3148,13 @@ pub mod iscsi_disks {
         resource_group_name: &str,
         manager_name: &str,
     ) -> std::result::Result<MetricDefinitionList, list_metric_definition::Error> {
-        let client = &configuration.client;
-        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorSimple/managers/{}/devices/{}/iscsiservers/{}/disks/{}/metricsDefinitions" , & configuration . base_path , subscription_id , resource_group_name , manager_name , device_name , iscsi_server_name , disk_name) ;
+        let client = &operation_config.client;
+        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorSimple/managers/{}/devices/{}/iscsiservers/{}/disks/{}/metricsDefinitions" , & operation_config . base_path , subscription_id , resource_group_name , manager_name , device_name , iscsi_server_name , disk_name) ;
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_metric_definition::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_metric_definition::ExecuteRequestError)?;
         match rsp.status() {
@@ -3195,22 +3195,22 @@ pub mod file_servers {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn list_by_device(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         device_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
         manager_name: &str,
     ) -> std::result::Result<FileServerList, list_by_device::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorSimple/managers/{}/devices/{}/fileservers",
-            &configuration.base_path, subscription_id, resource_group_name, manager_name, device_name
+            &operation_config.base_path, subscription_id, resource_group_name, manager_name, device_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_by_device::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_by_device::ExecuteRequestError)?;
         match rsp.status() {
@@ -3245,23 +3245,23 @@ pub mod file_servers {
         }
     }
     pub async fn get(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         device_name: &str,
         file_server_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
         manager_name: &str,
     ) -> std::result::Result<FileServer, get::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorSimple/managers/{}/devices/{}/fileservers/{}",
-            &configuration.base_path, subscription_id, resource_group_name, manager_name, device_name, file_server_name
+            &operation_config.base_path, subscription_id, resource_group_name, manager_name, device_name, file_server_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
         match rsp.status() {
@@ -3296,7 +3296,7 @@ pub mod file_servers {
         }
     }
     pub async fn create_or_update(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         device_name: &str,
         file_server_name: &str,
         file_server: &FileServer,
@@ -3304,16 +3304,16 @@ pub mod file_servers {
         resource_group_name: &str,
         manager_name: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorSimple/managers/{}/devices/{}/fileservers/{}",
-            &configuration.base_path, subscription_id, resource_group_name, manager_name, device_name, file_server_name
+            &operation_config.base_path, subscription_id, resource_group_name, manager_name, device_name, file_server_name
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(file_server);
         let req = req_builder.build().context(create_or_update::BuildRequestError)?;
         let rsp = client.execute(req).await.context(create_or_update::ExecuteRequestError)?;
@@ -3355,23 +3355,23 @@ pub mod file_servers {
         }
     }
     pub async fn delete(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         device_name: &str,
         file_server_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
         manager_name: &str,
     ) -> std::result::Result<delete::Response, delete::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorSimple/managers/{}/devices/{}/fileservers/{}",
-            &configuration.base_path, subscription_id, resource_group_name, manager_name, device_name, file_server_name
+            &operation_config.base_path, subscription_id, resource_group_name, manager_name, device_name, file_server_name
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(delete::BuildRequestError)?;
         let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
         match rsp.status() {
@@ -3408,23 +3408,23 @@ pub mod file_servers {
         }
     }
     pub async fn backup_now(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         device_name: &str,
         file_server_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
         manager_name: &str,
     ) -> std::result::Result<backup_now::Response, backup_now::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorSimple/managers/{}/devices/{}/fileservers/{}/backup",
-            &configuration.base_path, subscription_id, resource_group_name, manager_name, device_name, file_server_name
+            &operation_config.base_path, subscription_id, resource_group_name, manager_name, device_name, file_server_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(backup_now::BuildRequestError)?;
         let rsp = client.execute(req).await.context(backup_now::ExecuteRequestError)?;
         match rsp.status() {
@@ -3461,7 +3461,7 @@ pub mod file_servers {
         }
     }
     pub async fn list_metrics(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         device_name: &str,
         file_server_name: &str,
         subscription_id: &str,
@@ -3469,16 +3469,16 @@ pub mod file_servers {
         manager_name: &str,
         filter: Option<&str>,
     ) -> std::result::Result<MetricList, list_metrics::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorSimple/managers/{}/devices/{}/fileservers/{}/metrics",
-            &configuration.base_path, subscription_id, resource_group_name, manager_name, device_name, file_server_name
+            &operation_config.base_path, subscription_id, resource_group_name, manager_name, device_name, file_server_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(filter) = filter {
             req_builder = req_builder.query(&[("$filter", filter)]);
         }
@@ -3516,23 +3516,23 @@ pub mod file_servers {
         }
     }
     pub async fn list_metric_definition(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         device_name: &str,
         file_server_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
         manager_name: &str,
     ) -> std::result::Result<MetricDefinitionList, list_metric_definition::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorSimple/managers/{}/devices/{}/fileservers/{}/metricsDefinitions",
-            &configuration.base_path, subscription_id, resource_group_name, manager_name, device_name, file_server_name
+            &operation_config.base_path, subscription_id, resource_group_name, manager_name, device_name, file_server_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_metric_definition::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_metric_definition::ExecuteRequestError)?;
         match rsp.status() {
@@ -3568,21 +3568,21 @@ pub mod file_servers {
         }
     }
     pub async fn list_by_manager(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         manager_name: &str,
     ) -> std::result::Result<FileServerList, list_by_manager::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorSimple/managers/{}/fileservers",
-            &configuration.base_path, subscription_id, resource_group_name, manager_name
+            &operation_config.base_path, subscription_id, resource_group_name, manager_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_by_manager::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_by_manager::ExecuteRequestError)?;
         match rsp.status() {
@@ -3622,23 +3622,23 @@ pub mod file_shares {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn list_by_file_server(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         device_name: &str,
         file_server_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
         manager_name: &str,
     ) -> std::result::Result<FileShareList, list_by_file_server::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorSimple/managers/{}/devices/{}/fileservers/{}/shares",
-            &configuration.base_path, subscription_id, resource_group_name, manager_name, device_name, file_server_name
+            &operation_config.base_path, subscription_id, resource_group_name, manager_name, device_name, file_server_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_by_file_server::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_by_file_server::ExecuteRequestError)?;
         match rsp.status() {
@@ -3673,7 +3673,7 @@ pub mod file_shares {
         }
     }
     pub async fn get(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         device_name: &str,
         file_server_name: &str,
         share_name: &str,
@@ -3681,16 +3681,16 @@ pub mod file_shares {
         resource_group_name: &str,
         manager_name: &str,
     ) -> std::result::Result<FileShare, get::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorSimple/managers/{}/devices/{}/fileservers/{}/shares/{}",
-            &configuration.base_path, subscription_id, resource_group_name, manager_name, device_name, file_server_name, share_name
+            &operation_config.base_path, subscription_id, resource_group_name, manager_name, device_name, file_server_name, share_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
         match rsp.status() {
@@ -3725,7 +3725,7 @@ pub mod file_shares {
         }
     }
     pub async fn create_or_update(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         device_name: &str,
         file_server_name: &str,
         share_name: &str,
@@ -3734,16 +3734,16 @@ pub mod file_shares {
         resource_group_name: &str,
         manager_name: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorSimple/managers/{}/devices/{}/fileservers/{}/shares/{}",
-            &configuration.base_path, subscription_id, resource_group_name, manager_name, device_name, file_server_name, share_name
+            &operation_config.base_path, subscription_id, resource_group_name, manager_name, device_name, file_server_name, share_name
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(file_share);
         let req = req_builder.build().context(create_or_update::BuildRequestError)?;
         let rsp = client.execute(req).await.context(create_or_update::ExecuteRequestError)?;
@@ -3785,7 +3785,7 @@ pub mod file_shares {
         }
     }
     pub async fn delete(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         device_name: &str,
         file_server_name: &str,
         share_name: &str,
@@ -3793,16 +3793,16 @@ pub mod file_shares {
         resource_group_name: &str,
         manager_name: &str,
     ) -> std::result::Result<delete::Response, delete::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorSimple/managers/{}/devices/{}/fileservers/{}/shares/{}",
-            &configuration.base_path, subscription_id, resource_group_name, manager_name, device_name, file_server_name, share_name
+            &operation_config.base_path, subscription_id, resource_group_name, manager_name, device_name, file_server_name, share_name
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(delete::BuildRequestError)?;
         let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
         match rsp.status() {
@@ -3839,7 +3839,7 @@ pub mod file_shares {
         }
     }
     pub async fn list_metrics(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         device_name: &str,
         file_server_name: &str,
         share_name: &str,
@@ -3848,16 +3848,16 @@ pub mod file_shares {
         manager_name: &str,
         filter: Option<&str>,
     ) -> std::result::Result<MetricList, list_metrics::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorSimple/managers/{}/devices/{}/fileservers/{}/shares/{}/metrics",
-            &configuration.base_path, subscription_id, resource_group_name, manager_name, device_name, file_server_name, share_name
+            &operation_config.base_path, subscription_id, resource_group_name, manager_name, device_name, file_server_name, share_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(filter) = filter {
             req_builder = req_builder.query(&[("$filter", filter)]);
         }
@@ -3895,7 +3895,7 @@ pub mod file_shares {
         }
     }
     pub async fn list_metric_definition(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         device_name: &str,
         file_server_name: &str,
         share_name: &str,
@@ -3903,13 +3903,13 @@ pub mod file_shares {
         resource_group_name: &str,
         manager_name: &str,
     ) -> std::result::Result<MetricDefinitionList, list_metric_definition::Error> {
-        let client = &configuration.client;
-        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorSimple/managers/{}/devices/{}/fileservers/{}/shares/{}/metricsDefinitions" , & configuration . base_path , subscription_id , resource_group_name , manager_name , device_name , file_server_name , share_name) ;
+        let client = &operation_config.client;
+        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorSimple/managers/{}/devices/{}/fileservers/{}/shares/{}/metricsDefinitions" , & operation_config . base_path , subscription_id , resource_group_name , manager_name , device_name , file_server_name , share_name) ;
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_metric_definition::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_metric_definition::ExecuteRequestError)?;
         match rsp.status() {
@@ -3945,22 +3945,22 @@ pub mod file_shares {
         }
     }
     pub async fn list_by_device(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         device_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
         manager_name: &str,
     ) -> std::result::Result<FileShareList, list_by_device::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorSimple/managers/{}/devices/{}/shares",
-            &configuration.base_path, subscription_id, resource_group_name, manager_name, device_name
+            &operation_config.base_path, subscription_id, resource_group_name, manager_name, device_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_by_device::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_by_device::ExecuteRequestError)?;
         match rsp.status() {
@@ -4000,22 +4000,22 @@ pub mod iscsi_servers {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn list_by_device(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         device_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
         manager_name: &str,
     ) -> std::result::Result<IscsiServerList, list_by_device::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorSimple/managers/{}/devices/{}/iscsiservers",
-            &configuration.base_path, subscription_id, resource_group_name, manager_name, device_name
+            &operation_config.base_path, subscription_id, resource_group_name, manager_name, device_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_by_device::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_by_device::ExecuteRequestError)?;
         match rsp.status() {
@@ -4050,23 +4050,23 @@ pub mod iscsi_servers {
         }
     }
     pub async fn get(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         device_name: &str,
         iscsi_server_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
         manager_name: &str,
     ) -> std::result::Result<IscsiServer, get::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorSimple/managers/{}/devices/{}/iscsiservers/{}",
-            &configuration.base_path, subscription_id, resource_group_name, manager_name, device_name, iscsi_server_name
+            &operation_config.base_path, subscription_id, resource_group_name, manager_name, device_name, iscsi_server_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
         match rsp.status() {
@@ -4101,7 +4101,7 @@ pub mod iscsi_servers {
         }
     }
     pub async fn create_or_update(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         device_name: &str,
         iscsi_server_name: &str,
         iscsi_server: &IscsiServer,
@@ -4109,16 +4109,16 @@ pub mod iscsi_servers {
         resource_group_name: &str,
         manager_name: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorSimple/managers/{}/devices/{}/iscsiservers/{}",
-            &configuration.base_path, subscription_id, resource_group_name, manager_name, device_name, iscsi_server_name
+            &operation_config.base_path, subscription_id, resource_group_name, manager_name, device_name, iscsi_server_name
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(iscsi_server);
         let req = req_builder.build().context(create_or_update::BuildRequestError)?;
         let rsp = client.execute(req).await.context(create_or_update::ExecuteRequestError)?;
@@ -4160,23 +4160,23 @@ pub mod iscsi_servers {
         }
     }
     pub async fn delete(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         device_name: &str,
         iscsi_server_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
         manager_name: &str,
     ) -> std::result::Result<delete::Response, delete::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorSimple/managers/{}/devices/{}/iscsiservers/{}",
-            &configuration.base_path, subscription_id, resource_group_name, manager_name, device_name, iscsi_server_name
+            &operation_config.base_path, subscription_id, resource_group_name, manager_name, device_name, iscsi_server_name
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(delete::BuildRequestError)?;
         let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
         match rsp.status() {
@@ -4213,23 +4213,23 @@ pub mod iscsi_servers {
         }
     }
     pub async fn backup_now(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         device_name: &str,
         iscsi_server_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
         manager_name: &str,
     ) -> std::result::Result<backup_now::Response, backup_now::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorSimple/managers/{}/devices/{}/iscsiservers/{}/backup",
-            &configuration.base_path, subscription_id, resource_group_name, manager_name, device_name, iscsi_server_name
+            &operation_config.base_path, subscription_id, resource_group_name, manager_name, device_name, iscsi_server_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(backup_now::BuildRequestError)?;
         let rsp = client.execute(req).await.context(backup_now::ExecuteRequestError)?;
         match rsp.status() {
@@ -4266,7 +4266,7 @@ pub mod iscsi_servers {
         }
     }
     pub async fn list_metrics(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         device_name: &str,
         iscsi_server_name: &str,
         subscription_id: &str,
@@ -4274,16 +4274,16 @@ pub mod iscsi_servers {
         manager_name: &str,
         filter: Option<&str>,
     ) -> std::result::Result<MetricList, list_metrics::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorSimple/managers/{}/devices/{}/iscsiservers/{}/metrics",
-            &configuration.base_path, subscription_id, resource_group_name, manager_name, device_name, iscsi_server_name
+            &operation_config.base_path, subscription_id, resource_group_name, manager_name, device_name, iscsi_server_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(filter) = filter {
             req_builder = req_builder.query(&[("$filter", filter)]);
         }
@@ -4321,20 +4321,20 @@ pub mod iscsi_servers {
         }
     }
     pub async fn list_metric_definition(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         device_name: &str,
         iscsi_server_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
         manager_name: &str,
     ) -> std::result::Result<MetricDefinitionList, list_metric_definition::Error> {
-        let client = &configuration.client;
-        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorSimple/managers/{}/devices/{}/iscsiservers/{}/metricsDefinitions" , & configuration . base_path , subscription_id , resource_group_name , manager_name , device_name , iscsi_server_name) ;
+        let client = &operation_config.client;
+        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorSimple/managers/{}/devices/{}/iscsiservers/{}/metricsDefinitions" , & operation_config . base_path , subscription_id , resource_group_name , manager_name , device_name , iscsi_server_name) ;
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_metric_definition::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_metric_definition::ExecuteRequestError)?;
         match rsp.status() {
@@ -4370,21 +4370,21 @@ pub mod iscsi_servers {
         }
     }
     pub async fn list_by_manager(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         manager_name: &str,
     ) -> std::result::Result<IscsiServerList, list_by_manager::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorSimple/managers/{}/iscsiservers",
-            &configuration.base_path, subscription_id, resource_group_name, manager_name
+            &operation_config.base_path, subscription_id, resource_group_name, manager_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_by_manager::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_by_manager::ExecuteRequestError)?;
         match rsp.status() {
@@ -4424,23 +4424,23 @@ pub mod jobs {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn list_by_device(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         device_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
         manager_name: &str,
         filter: Option<&str>,
     ) -> std::result::Result<JobList, list_by_device::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorSimple/managers/{}/devices/{}/jobs",
-            &configuration.base_path, subscription_id, resource_group_name, manager_name, device_name
+            &operation_config.base_path, subscription_id, resource_group_name, manager_name, device_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(filter) = filter {
             req_builder = req_builder.query(&[("$filter", filter)]);
         }
@@ -4478,23 +4478,23 @@ pub mod jobs {
         }
     }
     pub async fn get(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         device_name: &str,
         job_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
         manager_name: &str,
     ) -> std::result::Result<Job, get::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorSimple/managers/{}/devices/{}/jobs/{}",
-            &configuration.base_path, subscription_id, resource_group_name, manager_name, device_name, job_name
+            &operation_config.base_path, subscription_id, resource_group_name, manager_name, device_name, job_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
         match rsp.status() {
@@ -4529,22 +4529,22 @@ pub mod jobs {
         }
     }
     pub async fn list_by_manager(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         manager_name: &str,
         filter: Option<&str>,
     ) -> std::result::Result<JobList, list_by_manager::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorSimple/managers/{}/jobs",
-            &configuration.base_path, subscription_id, resource_group_name, manager_name
+            &operation_config.base_path, subscription_id, resource_group_name, manager_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(filter) = filter {
             req_builder = req_builder.query(&[("$filter", filter)]);
         }
@@ -4587,21 +4587,21 @@ pub mod storage_account_credentials {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn list_by_manager(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         manager_name: &str,
     ) -> std::result::Result<StorageAccountCredentialList, list_by_manager::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorSimple/managers/{}/storageAccountCredentials",
-            &configuration.base_path, subscription_id, resource_group_name, manager_name
+            &operation_config.base_path, subscription_id, resource_group_name, manager_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_by_manager::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_by_manager::ExecuteRequestError)?;
         match rsp.status() {
@@ -4637,22 +4637,22 @@ pub mod storage_account_credentials {
         }
     }
     pub async fn get(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         credential_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
         manager_name: &str,
     ) -> std::result::Result<StorageAccountCredential, get::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorSimple/managers/{}/storageAccountCredentials/{}",
-            &configuration.base_path, subscription_id, resource_group_name, manager_name, credential_name
+            &operation_config.base_path, subscription_id, resource_group_name, manager_name, credential_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
         match rsp.status() {
@@ -4687,23 +4687,23 @@ pub mod storage_account_credentials {
         }
     }
     pub async fn create_or_update(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         credential_name: &str,
         storage_account: &StorageAccountCredential,
         subscription_id: &str,
         resource_group_name: &str,
         manager_name: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorSimple/managers/{}/storageAccountCredentials/{}",
-            &configuration.base_path, subscription_id, resource_group_name, manager_name, credential_name
+            &operation_config.base_path, subscription_id, resource_group_name, manager_name, credential_name
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(storage_account);
         let req = req_builder.build().context(create_or_update::BuildRequestError)?;
         let rsp = client.execute(req).await.context(create_or_update::ExecuteRequestError)?;
@@ -4746,22 +4746,22 @@ pub mod storage_account_credentials {
         }
     }
     pub async fn delete(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         credential_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
         manager_name: &str,
     ) -> std::result::Result<delete::Response, delete::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorSimple/managers/{}/storageAccountCredentials/{}",
-            &configuration.base_path, subscription_id, resource_group_name, manager_name, credential_name
+            &operation_config.base_path, subscription_id, resource_group_name, manager_name, credential_name
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(delete::BuildRequestError)?;
         let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
         match rsp.status() {
@@ -4803,21 +4803,21 @@ pub mod storage_domains {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn list_by_manager(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         manager_name: &str,
     ) -> std::result::Result<StorageDomainList, list_by_manager::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorSimple/managers/{}/storageDomains",
-            &configuration.base_path, subscription_id, resource_group_name, manager_name
+            &operation_config.base_path, subscription_id, resource_group_name, manager_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_by_manager::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_by_manager::ExecuteRequestError)?;
         match rsp.status() {
@@ -4852,22 +4852,22 @@ pub mod storage_domains {
         }
     }
     pub async fn get(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         storage_domain_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
         manager_name: &str,
     ) -> std::result::Result<StorageDomain, get::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorSimple/managers/{}/storageDomains/{}",
-            &configuration.base_path, subscription_id, resource_group_name, manager_name, storage_domain_name
+            &operation_config.base_path, subscription_id, resource_group_name, manager_name, storage_domain_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
         match rsp.status() {
@@ -4902,23 +4902,23 @@ pub mod storage_domains {
         }
     }
     pub async fn create_or_update(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         storage_domain_name: &str,
         storage_domain: &StorageDomain,
         subscription_id: &str,
         resource_group_name: &str,
         manager_name: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorSimple/managers/{}/storageDomains/{}",
-            &configuration.base_path, subscription_id, resource_group_name, manager_name, storage_domain_name
+            &operation_config.base_path, subscription_id, resource_group_name, manager_name, storage_domain_name
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(storage_domain);
         let req = req_builder.build().context(create_or_update::BuildRequestError)?;
         let rsp = client.execute(req).await.context(create_or_update::ExecuteRequestError)?;
@@ -4960,22 +4960,22 @@ pub mod storage_domains {
         }
     }
     pub async fn delete(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         storage_domain_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
         manager_name: &str,
     ) -> std::result::Result<delete::Response, delete::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorSimple/managers/{}/storageDomains/{}",
-            &configuration.base_path, subscription_id, resource_group_name, manager_name, storage_domain_name
+            &operation_config.base_path, subscription_id, resource_group_name, manager_name, storage_domain_name
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(delete::BuildRequestError)?;
         let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
         match rsp.status() {

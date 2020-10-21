@@ -20,7 +20,7 @@ type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 async fn main() -> Result<()> {
     let subscription_id = &get_subscription_id()?;
     let access_token = &get_access_token()?;
-    let config = &azure_mgmt_vmware::Configuration::new(access_token);
+    let config = &azure_mgmt_vmware::OperationConfig::new(access_token);
     let clouds = private_clouds::list_in_subscription(config, subscription_id).await?;
     println!("# of private clouds {}", clouds.value.len());
     for cloud in &clouds.value {

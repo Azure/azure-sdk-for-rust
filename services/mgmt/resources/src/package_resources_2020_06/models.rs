@@ -56,6 +56,8 @@ pub struct DeploymentProperties {
     pub debug_setting: Option<DebugSetting>,
     #[serde(rename = "onErrorDeployment", skip_serializing_if = "Option::is_none")]
     pub on_error_deployment: Option<OnErrorDeployment>,
+    #[serde(rename = "expressionEvaluationOptions", skip_serializing_if = "Option::is_none")]
+    pub expression_evaluation_options: Option<ExpressionEvaluationOptions>,
 }
 mod deployment_properties {
     use super::*;
@@ -808,6 +810,20 @@ pub struct StatusMessage {
     pub status: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorResponse>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ExpressionEvaluationOptions {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub scope: Option<expression_evaluation_options::Scope>,
+}
+mod expression_evaluation_options {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Scope {
+        NotSpecified,
+        Outer,
+        Inner,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorResponse {

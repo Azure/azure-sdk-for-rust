@@ -1324,6 +1324,10 @@ mod microsoft_security_incident_creation_alert_rule_common_properties {
         AzureActiveDirectoryIdentityProtection,
         #[serde(rename = "Azure Security Center for IoT")]
         AzureSecurityCenterForIoT,
+        #[serde(rename = "Office 365 Advanced Threat Protection")]
+        Office365AdvancedThreatProtection,
+        #[serde(rename = "Microsoft Defender Advanced Threat Protection")]
+        MicrosoftDefenderAdvancedThreatProtection,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

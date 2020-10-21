@@ -5,37 +5,37 @@
 use crate::models::*;
 use reqwest::StatusCode;
 use snafu::{ResultExt, Snafu};
-pub mod virtual_network_functions {
+pub mod network_functions {
     use crate::models::*;
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn get(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         resource_group_name: &str,
-        virtual_network_function_name: &str,
+        network_function_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<VirtualNetworkFunction, get::Error> {
-        let client = &configuration.client;
+    ) -> std::result::Result<NetworkFunction, get::Error> {
+        let client = &operation_config.client;
         let uri_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridNetwork/virtualNetworkFunctions/{}",
-            &configuration.base_path, subscription_id, resource_group_name, virtual_network_function_name
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridNetwork/networkFunctions/{}",
+            &operation_config.base_path, subscription_id, resource_group_name, network_function_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
         match rsp.status() {
             StatusCode::OK => {
                 let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
-                let rsp_value: VirtualNetworkFunction = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                let rsp_value: NetworkFunction = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
                 Ok(rsp_value)
             }
             status_code => {
                 let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
-                let rsp_value: ErrorDetails = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
                 get::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -53,7 +53,7 @@ pub mod virtual_network_functions {
         pub enum Error {
             DefaultResponse {
                 status_code: StatusCode,
-                value: models::ErrorDetails,
+                value: models::ErrorResponse,
             },
             BuildRequestError {
                 source: reqwest::Error,
@@ -71,41 +71,39 @@ pub mod virtual_network_functions {
         }
     }
     pub async fn create_or_update(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         resource_group_name: &str,
-        virtual_network_function_name: &str,
-        parameters: &VirtualNetworkFunction,
+        network_function_name: &str,
+        parameters: &NetworkFunction,
         subscription_id: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridNetwork/virtualNetworkFunctions/{}",
-            &configuration.base_path, subscription_id, resource_group_name, virtual_network_function_name
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridNetwork/networkFunctions/{}",
+            &operation_config.base_path, subscription_id, resource_group_name, network_function_name
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(parameters);
         let req = req_builder.build().context(create_or_update::BuildRequestError)?;
         let rsp = client.execute(req).await.context(create_or_update::ExecuteRequestError)?;
         match rsp.status() {
             StatusCode::OK => {
                 let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
-                let rsp_value: VirtualNetworkFunction =
-                    serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                let rsp_value: NetworkFunction = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             StatusCode::CREATED => {
                 let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
-                let rsp_value: VirtualNetworkFunction =
-                    serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                let rsp_value: NetworkFunction = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
             status_code => {
                 let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
-                let rsp_value: ErrorDetails = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
                 create_or_update::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -120,15 +118,15 @@ pub mod virtual_network_functions {
         use snafu::Snafu;
         #[derive(Debug)]
         pub enum Response {
-            Ok200(VirtualNetworkFunction),
-            Created201(VirtualNetworkFunction),
+            Ok200(NetworkFunction),
+            Created201(NetworkFunction),
         }
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
             DefaultResponse {
                 status_code: StatusCode,
-                value: models::ErrorDetails,
+                value: models::ErrorResponse,
             },
             BuildRequestError {
                 source: reqwest::Error,
@@ -146,34 +144,34 @@ pub mod virtual_network_functions {
         }
     }
     pub async fn update_tags(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         resource_group_name: &str,
-        virtual_network_function_name: &str,
+        network_function_name: &str,
         parameters: &TagsObject,
         subscription_id: &str,
-    ) -> std::result::Result<VirtualNetworkFunction, update_tags::Error> {
-        let client = &configuration.client;
+    ) -> std::result::Result<NetworkFunction, update_tags::Error> {
+        let client = &operation_config.client;
         let uri_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridNetwork/virtualNetworkFunctions/{}",
-            &configuration.base_path, subscription_id, resource_group_name, virtual_network_function_name
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridNetwork/networkFunctions/{}",
+            &operation_config.base_path, subscription_id, resource_group_name, network_function_name
         );
         let mut req_builder = client.patch(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(parameters);
         let req = req_builder.build().context(update_tags::BuildRequestError)?;
         let rsp = client.execute(req).await.context(update_tags::ExecuteRequestError)?;
         match rsp.status() {
             StatusCode::OK => {
                 let body: bytes::Bytes = rsp.bytes().await.context(update_tags::ResponseBytesError)?;
-                let rsp_value: VirtualNetworkFunction = serde_json::from_slice(&body).context(update_tags::DeserializeError { body })?;
+                let rsp_value: NetworkFunction = serde_json::from_slice(&body).context(update_tags::DeserializeError { body })?;
                 Ok(rsp_value)
             }
             status_code => {
                 let body: bytes::Bytes = rsp.bytes().await.context(update_tags::ResponseBytesError)?;
-                let rsp_value: ErrorDetails = serde_json::from_slice(&body).context(update_tags::DeserializeError { body })?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(update_tags::DeserializeError { body })?;
                 update_tags::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -191,7 +189,7 @@ pub mod virtual_network_functions {
         pub enum Error {
             DefaultResponse {
                 status_code: StatusCode,
-                value: models::ErrorDetails,
+                value: models::ErrorResponse,
             },
             BuildRequestError {
                 source: reqwest::Error,
@@ -209,21 +207,21 @@ pub mod virtual_network_functions {
         }
     }
     pub async fn delete(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         resource_group_name: &str,
-        virtual_network_function_name: &str,
+        network_function_name: &str,
         subscription_id: &str,
     ) -> std::result::Result<delete::Response, delete::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridNetwork/virtualNetworkFunctions/{}",
-            &configuration.base_path, subscription_id, resource_group_name, virtual_network_function_name
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridNetwork/networkFunctions/{}",
+            &operation_config.base_path, subscription_id, resource_group_name, network_function_name
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(delete::BuildRequestError)?;
         let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
         match rsp.status() {
@@ -232,7 +230,7 @@ pub mod virtual_network_functions {
             StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let body: bytes::Bytes = rsp.bytes().await.context(delete::ResponseBytesError)?;
-                let rsp_value: ErrorDetails = serde_json::from_slice(&body).context(delete::DeserializeError { body })?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(delete::DeserializeError { body })?;
                 delete::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -256,7 +254,7 @@ pub mod virtual_network_functions {
         pub enum Error {
             DefaultResponse {
                 status_code: StatusCode,
-                value: models::ErrorDetails,
+                value: models::ErrorResponse,
             },
             BuildRequestError {
                 source: reqwest::Error,
@@ -274,31 +272,31 @@ pub mod virtual_network_functions {
         }
     }
     pub async fn list_by_subscription(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
-    ) -> std::result::Result<VirtualNetworkFunctionListResult, list_by_subscription::Error> {
-        let client = &configuration.client;
+    ) -> std::result::Result<NetworkFunctionListResult, list_by_subscription::Error> {
+        let client = &operation_config.client;
         let uri_str = &format!(
-            "{}/subscriptions/{}/providers/Microsoft.HybridNetwork/virtualNetworkFunctions",
-            &configuration.base_path, subscription_id
+            "{}/subscriptions/{}/providers/Microsoft.HybridNetwork/networkFunctions",
+            &operation_config.base_path, subscription_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_by_subscription::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_by_subscription::ExecuteRequestError)?;
         match rsp.status() {
             StatusCode::OK => {
                 let body: bytes::Bytes = rsp.bytes().await.context(list_by_subscription::ResponseBytesError)?;
-                let rsp_value: VirtualNetworkFunctionListResult =
+                let rsp_value: NetworkFunctionListResult =
                     serde_json::from_slice(&body).context(list_by_subscription::DeserializeError { body })?;
                 Ok(rsp_value)
             }
             status_code => {
                 let body: bytes::Bytes = rsp.bytes().await.context(list_by_subscription::ResponseBytesError)?;
-                let rsp_value: ErrorDetails = serde_json::from_slice(&body).context(list_by_subscription::DeserializeError { body })?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(list_by_subscription::DeserializeError { body })?;
                 list_by_subscription::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -316,7 +314,7 @@ pub mod virtual_network_functions {
         pub enum Error {
             DefaultResponse {
                 status_code: StatusCode,
-                value: models::ErrorDetails,
+                value: models::ErrorResponse,
             },
             BuildRequestError {
                 source: reqwest::Error,
@@ -334,32 +332,32 @@ pub mod virtual_network_functions {
         }
     }
     pub async fn list_by_resource_group(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<VirtualNetworkFunctionListResult, list_by_resource_group::Error> {
-        let client = &configuration.client;
+    ) -> std::result::Result<NetworkFunctionListResult, list_by_resource_group::Error> {
+        let client = &operation_config.client;
         let uri_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridNetwork/virtualNetworkFunctions",
-            &configuration.base_path, subscription_id, resource_group_name
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridNetwork/networkFunctions",
+            &operation_config.base_path, subscription_id, resource_group_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_by_resource_group::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_by_resource_group::ExecuteRequestError)?;
         match rsp.status() {
             StatusCode::OK => {
                 let body: bytes::Bytes = rsp.bytes().await.context(list_by_resource_group::ResponseBytesError)?;
-                let rsp_value: VirtualNetworkFunctionListResult =
+                let rsp_value: NetworkFunctionListResult =
                     serde_json::from_slice(&body).context(list_by_resource_group::DeserializeError { body })?;
                 Ok(rsp_value)
             }
             status_code => {
                 let body: bytes::Bytes = rsp.bytes().await.context(list_by_resource_group::ResponseBytesError)?;
-                let rsp_value: ErrorDetails = serde_json::from_slice(&body).context(list_by_resource_group::DeserializeError { body })?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(list_by_resource_group::DeserializeError { body })?;
                 list_by_resource_group::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -377,7 +375,7 @@ pub mod virtual_network_functions {
         pub enum Error {
             DefaultResponse {
                 status_code: StatusCode,
-                value: models::ErrorDetails,
+                value: models::ErrorResponse,
             },
             BuildRequestError {
                 source: reqwest::Error,
@@ -400,21 +398,21 @@ pub mod devices {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn get(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         device_name: &str,
         subscription_id: &str,
     ) -> std::result::Result<Device, get::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridNetwork/devices/{}",
-            &configuration.base_path, subscription_id, resource_group_name, device_name
+            &operation_config.base_path, subscription_id, resource_group_name, device_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
         match rsp.status() {
@@ -425,7 +423,7 @@ pub mod devices {
             }
             status_code => {
                 let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
-                let rsp_value: ErrorDetails = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
                 get::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -443,7 +441,7 @@ pub mod devices {
         pub enum Error {
             DefaultResponse {
                 status_code: StatusCode,
-                value: models::ErrorDetails,
+                value: models::ErrorResponse,
             },
             BuildRequestError {
                 source: reqwest::Error,
@@ -461,22 +459,22 @@ pub mod devices {
         }
     }
     pub async fn create_or_update(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         device_name: &str,
         parameters: &Device,
         subscription_id: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridNetwork/devices/{}",
-            &configuration.base_path, subscription_id, resource_group_name, device_name
+            &operation_config.base_path, subscription_id, resource_group_name, device_name
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(parameters);
         let req = req_builder.build().context(create_or_update::BuildRequestError)?;
         let rsp = client.execute(req).await.context(create_or_update::ExecuteRequestError)?;
@@ -493,7 +491,7 @@ pub mod devices {
             }
             status_code => {
                 let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
-                let rsp_value: ErrorDetails = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
                 create_or_update::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -516,7 +514,7 @@ pub mod devices {
         pub enum Error {
             DefaultResponse {
                 status_code: StatusCode,
-                value: models::ErrorDetails,
+                value: models::ErrorResponse,
             },
             BuildRequestError {
                 source: reqwest::Error,
@@ -534,22 +532,22 @@ pub mod devices {
         }
     }
     pub async fn update_tags(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         device_name: &str,
         parameters: &TagsObject,
         subscription_id: &str,
     ) -> std::result::Result<Device, update_tags::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridNetwork/devices/{}",
-            &configuration.base_path, subscription_id, resource_group_name, device_name
+            &operation_config.base_path, subscription_id, resource_group_name, device_name
         );
         let mut req_builder = client.patch(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(parameters);
         let req = req_builder.build().context(update_tags::BuildRequestError)?;
         let rsp = client.execute(req).await.context(update_tags::ExecuteRequestError)?;
@@ -561,7 +559,7 @@ pub mod devices {
             }
             status_code => {
                 let body: bytes::Bytes = rsp.bytes().await.context(update_tags::ResponseBytesError)?;
-                let rsp_value: ErrorDetails = serde_json::from_slice(&body).context(update_tags::DeserializeError { body })?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(update_tags::DeserializeError { body })?;
                 update_tags::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -579,7 +577,7 @@ pub mod devices {
         pub enum Error {
             DefaultResponse {
                 status_code: StatusCode,
-                value: models::ErrorDetails,
+                value: models::ErrorResponse,
             },
             BuildRequestError {
                 source: reqwest::Error,
@@ -597,21 +595,21 @@ pub mod devices {
         }
     }
     pub async fn delete(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         device_name: &str,
         subscription_id: &str,
     ) -> std::result::Result<delete::Response, delete::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridNetwork/devices/{}",
-            &configuration.base_path, subscription_id, resource_group_name, device_name
+            &operation_config.base_path, subscription_id, resource_group_name, device_name
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(delete::BuildRequestError)?;
         let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
         match rsp.status() {
@@ -620,7 +618,7 @@ pub mod devices {
             StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let body: bytes::Bytes = rsp.bytes().await.context(delete::ResponseBytesError)?;
-                let rsp_value: ErrorDetails = serde_json::from_slice(&body).context(delete::DeserializeError { body })?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(delete::DeserializeError { body })?;
                 delete::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -644,7 +642,7 @@ pub mod devices {
         pub enum Error {
             DefaultResponse {
                 status_code: StatusCode,
-                value: models::ErrorDetails,
+                value: models::ErrorResponse,
             },
             BuildRequestError {
                 source: reqwest::Error,
@@ -662,19 +660,19 @@ pub mod devices {
         }
     }
     pub async fn list_by_subscription(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
     ) -> std::result::Result<DeviceListResult, list_by_subscription::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.HybridNetwork/devices",
-            &configuration.base_path, subscription_id
+            &operation_config.base_path, subscription_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_by_subscription::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_by_subscription::ExecuteRequestError)?;
         match rsp.status() {
@@ -685,7 +683,7 @@ pub mod devices {
             }
             status_code => {
                 let body: bytes::Bytes = rsp.bytes().await.context(list_by_subscription::ResponseBytesError)?;
-                let rsp_value: ErrorDetails = serde_json::from_slice(&body).context(list_by_subscription::DeserializeError { body })?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(list_by_subscription::DeserializeError { body })?;
                 list_by_subscription::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -703,7 +701,7 @@ pub mod devices {
         pub enum Error {
             DefaultResponse {
                 status_code: StatusCode,
-                value: models::ErrorDetails,
+                value: models::ErrorResponse,
             },
             BuildRequestError {
                 source: reqwest::Error,
@@ -721,20 +719,20 @@ pub mod devices {
         }
     }
     pub async fn list_by_resource_group(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         subscription_id: &str,
     ) -> std::result::Result<DeviceListResult, list_by_resource_group::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridNetwork/devices",
-            &configuration.base_path, subscription_id, resource_group_name
+            &operation_config.base_path, subscription_id, resource_group_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_by_resource_group::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_by_resource_group::ExecuteRequestError)?;
         match rsp.status() {
@@ -746,7 +744,7 @@ pub mod devices {
             }
             status_code => {
                 let body: bytes::Bytes = rsp.bytes().await.context(list_by_resource_group::ResponseBytesError)?;
-                let rsp_value: ErrorDetails = serde_json::from_slice(&body).context(list_by_resource_group::DeserializeError { body })?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(list_by_resource_group::DeserializeError { body })?;
                 list_by_resource_group::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -764,7 +762,7 @@ pub mod devices {
         pub enum Error {
             DefaultResponse {
                 status_code: StatusCode,
-                value: models::ErrorDetails,
+                value: models::ErrorResponse,
             },
             BuildRequestError {
                 source: reqwest::Error,
@@ -782,21 +780,21 @@ pub mod devices {
         }
     }
     pub async fn list_registration_key(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         device_name: &str,
         subscription_id: &str,
     ) -> std::result::Result<DeviceRegistrationKey, list_registration_key::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridNetwork/devices/{}/listRegistrationKey",
-            &configuration.base_path, subscription_id, resource_group_name, device_name
+            &operation_config.base_path, subscription_id, resource_group_name, device_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_registration_key::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_registration_key::ExecuteRequestError)?;
         match rsp.status() {
@@ -808,7 +806,7 @@ pub mod devices {
             }
             status_code => {
                 let body: bytes::Bytes = rsp.bytes().await.context(list_registration_key::ResponseBytesError)?;
-                let rsp_value: ErrorDetails = serde_json::from_slice(&body).context(list_registration_key::DeserializeError { body })?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(list_registration_key::DeserializeError { body })?;
                 list_registration_key::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -826,7 +824,7 @@ pub mod devices {
         pub enum Error {
             DefaultResponse {
                 status_code: StatusCode,
-                value: models::ErrorDetails,
+                value: models::ErrorResponse,
             },
             BuildRequestError {
                 source: reqwest::Error,
@@ -848,14 +846,14 @@ pub mod operations {
     use crate::models::*;
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
-    pub async fn list(configuration: &crate::Configuration) -> std::result::Result<OperationList, list::Error> {
-        let client = &configuration.client;
-        let uri_str = &format!("{}/providers/Microsoft.HybridNetwork/operations", &configuration.base_path,);
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationList, list::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!("{}/providers/Microsoft.HybridNetwork/operations", &operation_config.base_path,);
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
         match rsp.status() {
@@ -866,7 +864,7 @@ pub mod operations {
             }
             status_code => {
                 let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
-                let rsp_value: ErrorDetails = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
                 list::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -884,7 +882,7 @@ pub mod operations {
         pub enum Error {
             DefaultResponse {
                 status_code: StatusCode,
-                value: models::ErrorDetails,
+                value: models::ErrorResponse,
             },
             BuildRequestError {
                 source: reqwest::Error,
@@ -907,20 +905,20 @@ pub mod vendors {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn get(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         vendor_name: &str,
         subscription_id: &str,
     ) -> std::result::Result<Vendor, get::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.HybridNetwork/vendors/{}",
-            &configuration.base_path, subscription_id, vendor_name
+            &operation_config.base_path, subscription_id, vendor_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
         match rsp.status() {
@@ -931,7 +929,7 @@ pub mod vendors {
             }
             status_code => {
                 let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
-                let rsp_value: ErrorDetails = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
                 get::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -949,7 +947,7 @@ pub mod vendors {
         pub enum Error {
             DefaultResponse {
                 status_code: StatusCode,
-                value: models::ErrorDetails,
+                value: models::ErrorResponse,
             },
             BuildRequestError {
                 source: reqwest::Error,
@@ -967,21 +965,21 @@ pub mod vendors {
         }
     }
     pub async fn create_or_update(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         vendor_name: &str,
         parameters: Option<&Vendor>,
         subscription_id: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.HybridNetwork/vendors/{}",
-            &configuration.base_path, subscription_id, vendor_name
+            &operation_config.base_path, subscription_id, vendor_name
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(parameters) = parameters {
             req_builder = req_builder.json(parameters);
         }
@@ -1000,7 +998,7 @@ pub mod vendors {
             }
             status_code => {
                 let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
-                let rsp_value: ErrorDetails = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
                 create_or_update::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -1023,7 +1021,7 @@ pub mod vendors {
         pub enum Error {
             DefaultResponse {
                 status_code: StatusCode,
-                value: models::ErrorDetails,
+                value: models::ErrorResponse,
             },
             BuildRequestError {
                 source: reqwest::Error,
@@ -1041,20 +1039,20 @@ pub mod vendors {
         }
     }
     pub async fn delete(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         vendor_name: &str,
         subscription_id: &str,
     ) -> std::result::Result<delete::Response, delete::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.HybridNetwork/vendors/{}",
-            &configuration.base_path, subscription_id, vendor_name
+            &operation_config.base_path, subscription_id, vendor_name
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(delete::BuildRequestError)?;
         let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
         match rsp.status() {
@@ -1063,7 +1061,7 @@ pub mod vendors {
             StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let body: bytes::Bytes = rsp.bytes().await.context(delete::ResponseBytesError)?;
-                let rsp_value: ErrorDetails = serde_json::from_slice(&body).context(delete::DeserializeError { body })?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(delete::DeserializeError { body })?;
                 delete::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -1087,7 +1085,7 @@ pub mod vendors {
         pub enum Error {
             DefaultResponse {
                 status_code: StatusCode,
-                value: models::ErrorDetails,
+                value: models::ErrorResponse,
             },
             BuildRequestError {
                 source: reqwest::Error,
@@ -1105,19 +1103,19 @@ pub mod vendors {
         }
     }
     pub async fn list_by_subscription(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
     ) -> std::result::Result<VendorListResult, list_by_subscription::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.HybridNetwork/vendors",
-            &configuration.base_path, subscription_id
+            &operation_config.base_path, subscription_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_by_subscription::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_by_subscription::ExecuteRequestError)?;
         match rsp.status() {
@@ -1128,7 +1126,7 @@ pub mod vendors {
             }
             status_code => {
                 let body: bytes::Bytes = rsp.bytes().await.context(list_by_subscription::ResponseBytesError)?;
-                let rsp_value: ErrorDetails = serde_json::from_slice(&body).context(list_by_subscription::DeserializeError { body })?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(list_by_subscription::DeserializeError { body })?;
                 list_by_subscription::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -1146,7 +1144,7 @@ pub mod vendors {
         pub enum Error {
             DefaultResponse {
                 status_code: StatusCode,
-                value: models::ErrorDetails,
+                value: models::ErrorResponse,
             },
             BuildRequestError {
                 source: reqwest::Error,
@@ -1169,21 +1167,21 @@ pub mod vendor_skus {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn get(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         vendor_name: &str,
         sku_name: &str,
         subscription_id: &str,
     ) -> std::result::Result<VendorSku, get::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.HybridNetwork/vendors/{}/vendorSkus/{}",
-            &configuration.base_path, subscription_id, vendor_name, sku_name
+            &operation_config.base_path, subscription_id, vendor_name, sku_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
         match rsp.status() {
@@ -1194,7 +1192,7 @@ pub mod vendor_skus {
             }
             status_code => {
                 let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
-                let rsp_value: ErrorDetails = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
                 get::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -1212,7 +1210,7 @@ pub mod vendor_skus {
         pub enum Error {
             DefaultResponse {
                 status_code: StatusCode,
-                value: models::ErrorDetails,
+                value: models::ErrorResponse,
             },
             BuildRequestError {
                 source: reqwest::Error,
@@ -1230,22 +1228,22 @@ pub mod vendor_skus {
         }
     }
     pub async fn create_or_update(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         vendor_name: &str,
         sku_name: &str,
         parameters: &VendorSku,
         subscription_id: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.HybridNetwork/vendors/{}/vendorSkus/{}",
-            &configuration.base_path, subscription_id, vendor_name, sku_name
+            &operation_config.base_path, subscription_id, vendor_name, sku_name
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(parameters);
         let req = req_builder.build().context(create_or_update::BuildRequestError)?;
         let rsp = client.execute(req).await.context(create_or_update::ExecuteRequestError)?;
@@ -1262,7 +1260,7 @@ pub mod vendor_skus {
             }
             status_code => {
                 let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
-                let rsp_value: ErrorDetails = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
                 create_or_update::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -1285,7 +1283,7 @@ pub mod vendor_skus {
         pub enum Error {
             DefaultResponse {
                 status_code: StatusCode,
-                value: models::ErrorDetails,
+                value: models::ErrorResponse,
             },
             BuildRequestError {
                 source: reqwest::Error,
@@ -1303,21 +1301,21 @@ pub mod vendor_skus {
         }
     }
     pub async fn delete(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         vendor_name: &str,
         sku_name: &str,
         subscription_id: &str,
     ) -> std::result::Result<delete::Response, delete::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.HybridNetwork/vendors/{}/vendorSkus/{}",
-            &configuration.base_path, subscription_id, vendor_name, sku_name
+            &operation_config.base_path, subscription_id, vendor_name, sku_name
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(delete::BuildRequestError)?;
         let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
         match rsp.status() {
@@ -1326,7 +1324,7 @@ pub mod vendor_skus {
             StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let body: bytes::Bytes = rsp.bytes().await.context(delete::ResponseBytesError)?;
-                let rsp_value: ErrorDetails = serde_json::from_slice(&body).context(delete::DeserializeError { body })?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(delete::DeserializeError { body })?;
                 delete::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -1350,7 +1348,7 @@ pub mod vendor_skus {
         pub enum Error {
             DefaultResponse {
                 status_code: StatusCode,
-                value: models::ErrorDetails,
+                value: models::ErrorResponse,
             },
             BuildRequestError {
                 source: reqwest::Error,
@@ -1368,20 +1366,20 @@ pub mod vendor_skus {
         }
     }
     pub async fn list(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         vendor_name: &str,
         subscription_id: &str,
     ) -> std::result::Result<VendorSkuListResult, list::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.HybridNetwork/vendors/{}/vendorSkus",
-            &configuration.base_path, subscription_id, vendor_name
+            &operation_config.base_path, subscription_id, vendor_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
         match rsp.status() {
@@ -1392,7 +1390,7 @@ pub mod vendor_skus {
             }
             status_code => {
                 let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
-                let rsp_value: ErrorDetails = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
                 list::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -1410,216 +1408,7 @@ pub mod vendor_skus {
         pub enum Error {
             DefaultResponse {
                 status_code: StatusCode,
-                value: models::ErrorDetails,
-            },
-            BuildRequestError {
-                source: reqwest::Error,
-            },
-            ExecuteRequestError {
-                source: reqwest::Error,
-            },
-            ResponseBytesError {
-                source: reqwest::Error,
-            },
-            DeserializeError {
-                source: serde_json::Error,
-                body: bytes::Bytes,
-            },
-        }
-    }
-}
-pub mod vendor_virtual_network_functions {
-    use crate::models::*;
-    use reqwest::StatusCode;
-    use snafu::{ResultExt, Snafu};
-    pub async fn get(
-        configuration: &crate::Configuration,
-        location_name: &str,
-        vendor_name: &str,
-        service_key: &str,
-        subscription_id: &str,
-    ) -> std::result::Result<VendorVirtualNetworkFunction, get::Error> {
-        let client = &configuration.client;
-        let uri_str = &format!(
-            "{}/subscriptions/{}/providers/Microsoft.HybridNetwork/locations/{}/vendors/{}/virtualNetworkFunctions/{}",
-            &configuration.base_path, subscription_id, location_name, vendor_name, service_key
-        );
-        let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
-        }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        let req = req_builder.build().context(get::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
-        match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
-                let rsp_value: VendorVirtualNetworkFunction = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
-                let rsp_value: ErrorDetails = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
-                get::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                }
-                .fail()
-            }
-        }
-    }
-    pub mod get {
-        use crate::{models, models::*};
-        use reqwest::StatusCode;
-        use snafu::Snafu;
-        #[derive(Debug, Snafu)]
-        #[snafu(visibility(pub(crate)))]
-        pub enum Error {
-            DefaultResponse {
-                status_code: StatusCode,
-                value: models::ErrorDetails,
-            },
-            BuildRequestError {
-                source: reqwest::Error,
-            },
-            ExecuteRequestError {
-                source: reqwest::Error,
-            },
-            ResponseBytesError {
-                source: reqwest::Error,
-            },
-            DeserializeError {
-                source: serde_json::Error,
-                body: bytes::Bytes,
-            },
-        }
-    }
-    pub async fn create_or_update(
-        configuration: &crate::Configuration,
-        location_name: &str,
-        vendor_name: &str,
-        service_key: &str,
-        parameters: &VendorVirtualNetworkFunction,
-        subscription_id: &str,
-    ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
-        let client = &configuration.client;
-        let uri_str = &format!(
-            "{}/subscriptions/{}/providers/Microsoft.HybridNetwork/locations/{}/vendors/{}/virtualNetworkFunctions/{}",
-            &configuration.base_path, subscription_id, location_name, vendor_name, service_key
-        );
-        let mut req_builder = client.put(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
-        }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        req_builder = req_builder.json(parameters);
-        let req = req_builder.build().context(create_or_update::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(create_or_update::ExecuteRequestError)?;
-        match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
-                let rsp_value: VendorVirtualNetworkFunction =
-                    serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
-                Ok(create_or_update::Response::Ok200(rsp_value))
-            }
-            StatusCode::CREATED => {
-                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
-                let rsp_value: VendorVirtualNetworkFunction =
-                    serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
-                Ok(create_or_update::Response::Created201(rsp_value))
-            }
-            status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
-                let rsp_value: ErrorDetails = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
-                create_or_update::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                }
-                .fail()
-            }
-        }
-    }
-    pub mod create_or_update {
-        use crate::{models, models::*};
-        use reqwest::StatusCode;
-        use snafu::Snafu;
-        #[derive(Debug)]
-        pub enum Response {
-            Ok200(VendorVirtualNetworkFunction),
-            Created201(VendorVirtualNetworkFunction),
-        }
-        #[derive(Debug, Snafu)]
-        #[snafu(visibility(pub(crate)))]
-        pub enum Error {
-            DefaultResponse {
-                status_code: StatusCode,
-                value: models::ErrorDetails,
-            },
-            BuildRequestError {
-                source: reqwest::Error,
-            },
-            ExecuteRequestError {
-                source: reqwest::Error,
-            },
-            ResponseBytesError {
-                source: reqwest::Error,
-            },
-            DeserializeError {
-                source: serde_json::Error,
-                body: bytes::Bytes,
-            },
-        }
-    }
-    pub async fn list(
-        configuration: &crate::Configuration,
-        location_name: &str,
-        vendor_name: &str,
-        filter: Option<&str>,
-        subscription_id: &str,
-    ) -> std::result::Result<VendorVirtualNetworkFunctionListResult, list::Error> {
-        let client = &configuration.client;
-        let uri_str = &format!(
-            "{}/subscriptions/{}/providers/Microsoft.HybridNetwork/locations/{}/vendors/{}/virtualNetworkFunctions",
-            &configuration.base_path, subscription_id, location_name, vendor_name
-        );
-        let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
-        }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
-        if let Some(filter) = filter {
-            req_builder = req_builder.query(&[("$filter", filter)]);
-        }
-        let req = req_builder.build().context(list::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
-        match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
-                let rsp_value: VendorVirtualNetworkFunctionListResult =
-                    serde_json::from_slice(&body).context(list::DeserializeError { body })?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
-                let rsp_value: ErrorDetails = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
-                list::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                }
-                .fail()
-            }
-        }
-    }
-    pub mod list {
-        use crate::{models, models::*};
-        use reqwest::StatusCode;
-        use snafu::Snafu;
-        #[derive(Debug, Snafu)]
-        #[snafu(visibility(pub(crate)))]
-        pub enum Error {
-            DefaultResponse {
-                status_code: StatusCode,
-                value: models::ErrorDetails,
+                value: models::ErrorResponse,
             },
             BuildRequestError {
                 source: reqwest::Error,
@@ -1642,21 +1431,21 @@ pub mod vendor_sku_preview {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn list(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         vendor_name: &str,
         sku_name: &str,
         subscription_id: &str,
     ) -> std::result::Result<PreviewSubscriptionsList, list::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.HybridNetwork/vendors/{}/vendorSkus/{}/previewSubscriptions",
-            &configuration.base_path, subscription_id, vendor_name, sku_name
+            &operation_config.base_path, subscription_id, vendor_name, sku_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
         match rsp.status() {
@@ -1667,7 +1456,7 @@ pub mod vendor_sku_preview {
             }
             status_code => {
                 let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
-                let rsp_value: ErrorDetails = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
                 list::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -1685,7 +1474,7 @@ pub mod vendor_sku_preview {
         pub enum Error {
             DefaultResponse {
                 status_code: StatusCode,
-                value: models::ErrorDetails,
+                value: models::ErrorResponse,
             },
             BuildRequestError {
                 source: reqwest::Error,
@@ -1703,22 +1492,22 @@ pub mod vendor_sku_preview {
         }
     }
     pub async fn get(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         vendor_name: &str,
         sku_name: &str,
         preview_subscription: &str,
         subscription_id: &str,
     ) -> std::result::Result<PreviewSubscription, get::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.HybridNetwork/vendors/{}/vendorSkus/{}/previewSubscriptions/{}",
-            &configuration.base_path, subscription_id, vendor_name, sku_name, preview_subscription
+            &operation_config.base_path, subscription_id, vendor_name, sku_name, preview_subscription
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
         match rsp.status() {
@@ -1729,7 +1518,7 @@ pub mod vendor_sku_preview {
             }
             status_code => {
                 let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
-                let rsp_value: ErrorDetails = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
                 get::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -1747,7 +1536,7 @@ pub mod vendor_sku_preview {
         pub enum Error {
             DefaultResponse {
                 status_code: StatusCode,
-                value: models::ErrorDetails,
+                value: models::ErrorResponse,
             },
             BuildRequestError {
                 source: reqwest::Error,
@@ -1765,23 +1554,23 @@ pub mod vendor_sku_preview {
         }
     }
     pub async fn create_or_update(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         vendor_name: &str,
         sku_name: &str,
         preview_subscription: &str,
         parameters: &PreviewSubscription,
         subscription_id: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.HybridNetwork/vendors/{}/vendorSkus/{}/previewSubscriptions/{}",
-            &configuration.base_path, subscription_id, vendor_name, sku_name, preview_subscription
+            &operation_config.base_path, subscription_id, vendor_name, sku_name, preview_subscription
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(parameters);
         let req = req_builder.build().context(create_or_update::BuildRequestError)?;
         let rsp = client.execute(req).await.context(create_or_update::ExecuteRequestError)?;
@@ -1798,7 +1587,7 @@ pub mod vendor_sku_preview {
             }
             status_code => {
                 let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
-                let rsp_value: ErrorDetails = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
                 create_or_update::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -1821,7 +1610,7 @@ pub mod vendor_sku_preview {
         pub enum Error {
             DefaultResponse {
                 status_code: StatusCode,
-                value: models::ErrorDetails,
+                value: models::ErrorResponse,
             },
             BuildRequestError {
                 source: reqwest::Error,
@@ -1839,22 +1628,22 @@ pub mod vendor_sku_preview {
         }
     }
     pub async fn delete(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         vendor_name: &str,
         sku_name: &str,
         preview_subscription: &str,
         subscription_id: &str,
     ) -> std::result::Result<delete::Response, delete::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.HybridNetwork/vendors/{}/vendorSkus/{}/previewSubscriptions/{}",
-            &configuration.base_path, subscription_id, vendor_name, sku_name, preview_subscription
+            &operation_config.base_path, subscription_id, vendor_name, sku_name, preview_subscription
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(delete::BuildRequestError)?;
         let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
         match rsp.status() {
@@ -1863,7 +1652,7 @@ pub mod vendor_sku_preview {
             StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let body: bytes::Bytes = rsp.bytes().await.context(delete::ResponseBytesError)?;
-                let rsp_value: ErrorDetails = serde_json::from_slice(&body).context(delete::DeserializeError { body })?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(delete::DeserializeError { body })?;
                 delete::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -1887,7 +1676,7 @@ pub mod vendor_sku_preview {
         pub enum Error {
             DefaultResponse {
                 status_code: StatusCode,
-                value: models::ErrorDetails,
+                value: models::ErrorResponse,
             },
             BuildRequestError {
                 source: reqwest::Error,
@@ -1905,36 +1694,35 @@ pub mod vendor_sku_preview {
         }
     }
 }
-pub mod virtual_network_function_vendors {
+pub mod network_function_vendors {
     use crate::models::*;
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn list(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
-    ) -> std::result::Result<VirtualNetworkFunctionVendorListResult, list::Error> {
-        let client = &configuration.client;
+    ) -> std::result::Result<NetworkFunctionVendorListResult, list::Error> {
+        let client = &operation_config.client;
         let uri_str = &format!(
-            "{}/subscriptions/{}/providers/Microsoft.HybridNetwork/virtualNetworkFunctionVendors",
-            &configuration.base_path, subscription_id
+            "{}/subscriptions/{}/providers/Microsoft.HybridNetwork/networkFunctionVendors",
+            &operation_config.base_path, subscription_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
         match rsp.status() {
             StatusCode::OK => {
                 let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
-                let rsp_value: VirtualNetworkFunctionVendorListResult =
-                    serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                let rsp_value: NetworkFunctionVendorListResult = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
                 Ok(rsp_value)
             }
             status_code => {
                 let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
-                let rsp_value: ErrorDetails = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
                 list::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -1952,7 +1740,7 @@ pub mod virtual_network_function_vendors {
         pub enum Error {
             DefaultResponse {
                 status_code: StatusCode,
-                value: models::ErrorDetails,
+                value: models::ErrorResponse,
             },
             BuildRequestError {
                 source: reqwest::Error,
@@ -1970,37 +1758,37 @@ pub mod virtual_network_function_vendors {
         }
     }
 }
-pub mod virtual_network_function_vendor_skus {
+pub mod network_function_vendor_skus {
     use crate::models::*;
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn list_by_vendor(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         vendor_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<VirtualNetworkFunctionSkuListResult, list_by_vendor::Error> {
-        let client = &configuration.client;
+    ) -> std::result::Result<NetworkFunctionSkuListResult, list_by_vendor::Error> {
+        let client = &operation_config.client;
         let uri_str = &format!(
-            "{}/subscriptions/{}/providers/Microsoft.HybridNetwork/virtualNetworkFunctionVendors/{}/vendorSkus",
-            &configuration.base_path, subscription_id, vendor_name
+            "{}/subscriptions/{}/providers/Microsoft.HybridNetwork/networkFunctionVendors/{}/vendorSkus",
+            &operation_config.base_path, subscription_id, vendor_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_by_vendor::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_by_vendor::ExecuteRequestError)?;
         match rsp.status() {
             StatusCode::OK => {
                 let body: bytes::Bytes = rsp.bytes().await.context(list_by_vendor::ResponseBytesError)?;
-                let rsp_value: VirtualNetworkFunctionSkuListResult =
+                let rsp_value: NetworkFunctionSkuListResult =
                     serde_json::from_slice(&body).context(list_by_vendor::DeserializeError { body })?;
                 Ok(rsp_value)
             }
             status_code => {
                 let body: bytes::Bytes = rsp.bytes().await.context(list_by_vendor::ResponseBytesError)?;
-                let rsp_value: ErrorDetails = serde_json::from_slice(&body).context(list_by_vendor::DeserializeError { body })?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(list_by_vendor::DeserializeError { body })?;
                 list_by_vendor::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -2018,7 +1806,211 @@ pub mod virtual_network_function_vendor_skus {
         pub enum Error {
             DefaultResponse {
                 status_code: StatusCode,
-                value: models::ErrorDetails,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
+    }
+    pub async fn list_by_sku(
+        operation_config: &crate::OperationConfig,
+        vendor_name: &str,
+        vendor_sku_name: &str,
+        subscription_id: &str,
+    ) -> std::result::Result<NetworkFunctionSkuDetails, list_by_sku::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!(
+            "{}/subscriptions/{}/providers/Microsoft.HybridNetwork/networkFunctionVendors/{}/vendorSkus/{}",
+            &operation_config.base_path, subscription_id, vendor_name, vendor_sku_name
+        );
+        let mut req_builder = client.get(uri_str);
+        if let Some(token) = &operation_config.bearer_access_token {
+            req_builder = req_builder.bearer_auth(token);
+        }
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let req = req_builder.build().context(list_by_sku::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list_by_sku::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_sku::ResponseBytesError)?;
+                let rsp_value: NetworkFunctionSkuDetails = serde_json::from_slice(&body).context(list_by_sku::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_sku::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(list_by_sku::DeserializeError { body })?;
+                list_by_sku::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list_by_sku {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
+    }
+}
+pub mod vendor_network_functions {
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
+    pub async fn get(
+        operation_config: &crate::OperationConfig,
+        location_name: &str,
+        vendor_name: &str,
+        service_key: &str,
+        subscription_id: &str,
+    ) -> std::result::Result<VendorNetworkFunction, get::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!(
+            "{}/subscriptions/{}/providers/Microsoft.HybridNetwork/locations/{}/vendors/{}/networkFunctions/{}",
+            &operation_config.base_path, subscription_id, location_name, vendor_name, service_key
+        );
+        let mut req_builder = client.get(uri_str);
+        if let Some(token) = &operation_config.bearer_access_token {
+            req_builder = req_builder.bearer_auth(token);
+        }
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let req = req_builder.build().context(get::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: VendorNetworkFunction = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                get::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod get {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
+    }
+    pub async fn create_or_update(
+        operation_config: &crate::OperationConfig,
+        location_name: &str,
+        vendor_name: &str,
+        service_key: &str,
+        parameters: &VendorNetworkFunction,
+        subscription_id: &str,
+    ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!(
+            "{}/subscriptions/{}/providers/Microsoft.HybridNetwork/locations/{}/vendors/{}/networkFunctions/{}",
+            &operation_config.base_path, subscription_id, location_name, vendor_name, service_key
+        );
+        let mut req_builder = client.put(uri_str);
+        if let Some(token) = &operation_config.bearer_access_token {
+            req_builder = req_builder.bearer_auth(token);
+        }
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.json(parameters);
+        let req = req_builder.build().context(create_or_update::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(create_or_update::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
+                let rsp_value: VendorNetworkFunction =
+                    serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                Ok(create_or_update::Response::Ok200(rsp_value))
+            }
+            StatusCode::CREATED => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
+                let rsp_value: VendorNetworkFunction =
+                    serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                Ok(create_or_update::Response::Created201(rsp_value))
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                create_or_update::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod create_or_update {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(VendorNetworkFunction),
+            Created201(VendorNetworkFunction),
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
             },
             BuildRequestError {
                 source: reqwest::Error,
@@ -2036,32 +2028,36 @@ pub mod virtual_network_function_vendor_skus {
         }
     }
     pub async fn list(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
+        location_name: &str,
         vendor_name: &str,
-        vendor_sku_name: &str,
+        filter: Option<&str>,
         subscription_id: &str,
-    ) -> std::result::Result<VirtualNetworkFunctionSkuDetails, list::Error> {
-        let client = &configuration.client;
+    ) -> std::result::Result<VendorNetworkFunctionListResult, list::Error> {
+        let client = &operation_config.client;
         let uri_str = &format!(
-            "{}/subscriptions/{}/providers/Microsoft.HybridNetwork/virtualNetworkFunctionVendors/{}/vendorSkus/{}",
-            &configuration.base_path, subscription_id, vendor_name, vendor_sku_name
+            "{}/subscriptions/{}/providers/Microsoft.HybridNetwork/locations/{}/vendors/{}/networkFunctions",
+            &operation_config.base_path, subscription_id, location_name, vendor_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        if let Some(filter) = filter {
+            req_builder = req_builder.query(&[("$filter", filter)]);
+        }
         let req = req_builder.build().context(list::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
         match rsp.status() {
             StatusCode::OK => {
                 let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
-                let rsp_value: VirtualNetworkFunctionSkuDetails = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                let rsp_value: VendorNetworkFunctionListResult = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
                 Ok(rsp_value)
             }
             status_code => {
                 let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
-                let rsp_value: ErrorDetails = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
                 list::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -2079,7 +2075,333 @@ pub mod virtual_network_function_vendor_skus {
         pub enum Error {
             DefaultResponse {
                 status_code: StatusCode,
-                value: models::ErrorDetails,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
+    }
+}
+pub mod role_instances {
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
+    pub async fn start(
+        operation_config: &crate::OperationConfig,
+        location_name: &str,
+        vendor_name: &str,
+        service_key: &str,
+        role_instance_name: &str,
+        subscription_id: &str,
+    ) -> std::result::Result<start::Response, start::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!(
+            "{}/subscriptions/{}/providers/Microsoft.HybridNetwork/locations/{}/vendors/{}/networkFunctions/{}/roleInstances/{}/start",
+            &operation_config.base_path, subscription_id, location_name, vendor_name, service_key, role_instance_name
+        );
+        let mut req_builder = client.post(uri_str);
+        if let Some(token) = &operation_config.bearer_access_token {
+            req_builder = req_builder.bearer_auth(token);
+        }
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let req = req_builder.build().context(start::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(start::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => Ok(start::Response::Ok200),
+            StatusCode::ACCEPTED => Ok(start::Response::Accepted202),
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(start::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(start::DeserializeError { body })?;
+                start::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod start {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200,
+            Accepted202,
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
+    }
+    pub async fn stop(
+        operation_config: &crate::OperationConfig,
+        location_name: &str,
+        vendor_name: &str,
+        service_key: &str,
+        role_instance_name: &str,
+        subscription_id: &str,
+    ) -> std::result::Result<stop::Response, stop::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!(
+            "{}/subscriptions/{}/providers/Microsoft.HybridNetwork/locations/{}/vendors/{}/networkFunctions/{}/roleInstances/{}/stop",
+            &operation_config.base_path, subscription_id, location_name, vendor_name, service_key, role_instance_name
+        );
+        let mut req_builder = client.post(uri_str);
+        if let Some(token) = &operation_config.bearer_access_token {
+            req_builder = req_builder.bearer_auth(token);
+        }
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let req = req_builder.build().context(stop::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(stop::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => Ok(stop::Response::Ok200),
+            StatusCode::ACCEPTED => Ok(stop::Response::Accepted202),
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(stop::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(stop::DeserializeError { body })?;
+                stop::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod stop {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200,
+            Accepted202,
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
+    }
+    pub async fn restart(
+        operation_config: &crate::OperationConfig,
+        location_name: &str,
+        vendor_name: &str,
+        service_key: &str,
+        role_instance_name: &str,
+        subscription_id: &str,
+    ) -> std::result::Result<restart::Response, restart::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!(
+            "{}/subscriptions/{}/providers/Microsoft.HybridNetwork/locations/{}/vendors/{}/networkFunctions/{}/roleInstances/{}/restart",
+            &operation_config.base_path, subscription_id, location_name, vendor_name, service_key, role_instance_name
+        );
+        let mut req_builder = client.post(uri_str);
+        if let Some(token) = &operation_config.bearer_access_token {
+            req_builder = req_builder.bearer_auth(token);
+        }
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let req = req_builder.build().context(restart::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(restart::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => Ok(restart::Response::Ok200),
+            StatusCode::ACCEPTED => Ok(restart::Response::Accepted202),
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(restart::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(restart::DeserializeError { body })?;
+                restart::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod restart {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200,
+            Accepted202,
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
+    }
+    pub async fn get(
+        operation_config: &crate::OperationConfig,
+        location_name: &str,
+        vendor_name: &str,
+        service_key: &str,
+        role_instance_name: &str,
+        subscription_id: &str,
+    ) -> std::result::Result<RoleInstance, get::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!(
+            "{}/subscriptions/{}/providers/Microsoft.HybridNetwork/locations/{}/vendors/{}/networkFunctions/{}/roleInstances/{}",
+            &operation_config.base_path, subscription_id, location_name, vendor_name, service_key, role_instance_name
+        );
+        let mut req_builder = client.get(uri_str);
+        if let Some(token) = &operation_config.bearer_access_token {
+            req_builder = req_builder.bearer_auth(token);
+        }
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let req = req_builder.build().context(get::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: RoleInstance = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                get::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod get {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+        }
+    }
+    pub async fn list(
+        operation_config: &crate::OperationConfig,
+        location_name: &str,
+        vendor_name: &str,
+        service_key: &str,
+        subscription_id: &str,
+    ) -> std::result::Result<NetworkFunctionRoleInstanceListResult, list::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!(
+            "{}/subscriptions/{}/providers/Microsoft.HybridNetwork/locations/{}/vendors/{}/networkFunctions/{}/roleInstances",
+            &operation_config.base_path, subscription_id, location_name, vendor_name, service_key
+        );
+        let mut req_builder = client.get(uri_str);
+        if let Some(token) = &operation_config.bearer_access_token {
+            req_builder = req_builder.bearer_auth(token);
+        }
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let req = req_builder.build().context(list::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: NetworkFunctionRoleInstanceListResult =
+                    serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                list::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
             },
             BuildRequestError {
                 source: reqwest::Error,

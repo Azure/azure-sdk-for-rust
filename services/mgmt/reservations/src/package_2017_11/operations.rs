@@ -6,19 +6,19 @@ use crate::models::*;
 use reqwest::StatusCode;
 use snafu::{ResultExt, Snafu};
 pub async fn get_catalog(
-    configuration: &crate::Configuration,
+    operation_config: &crate::OperationConfig,
     subscription_id: &str,
 ) -> std::result::Result<Vec<Catalog>, get_catalog::Error> {
-    let client = &configuration.client;
+    let client = &operation_config.client;
     let uri_str = &format!(
         "{}/subscriptions/{}/providers/Microsoft.Capacity/catalogs",
-        &configuration.base_path, subscription_id
+        &operation_config.base_path, subscription_id
     );
     let mut req_builder = client.get(uri_str);
-    if let Some(token) = &configuration.bearer_access_token {
+    if let Some(token) = &operation_config.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
-    req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
     let req = req_builder.build().context(get_catalog::BuildRequestError)?;
     let rsp = client.execute(req).await.context(get_catalog::ExecuteRequestError)?;
     match rsp.status() {
@@ -53,19 +53,19 @@ pub mod get_catalog {
     }
 }
 pub async fn get_applied_reservation_list(
-    configuration: &crate::Configuration,
+    operation_config: &crate::OperationConfig,
     subscription_id: &str,
 ) -> std::result::Result<AppliedReservations, get_applied_reservation_list::Error> {
-    let client = &configuration.client;
+    let client = &operation_config.client;
     let uri_str = &format!(
         "{}/subscriptions/{}/providers/Microsoft.Capacity/appliedReservations",
-        &configuration.base_path, subscription_id
+        &operation_config.base_path, subscription_id
     );
     let mut req_builder = client.get(uri_str);
-    if let Some(token) = &configuration.bearer_access_token {
+    if let Some(token) = &operation_config.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
-    req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
     let req = req_builder.build().context(get_applied_reservation_list::BuildRequestError)?;
     let rsp = client
         .execute(req)
@@ -107,14 +107,14 @@ pub mod reservation_order {
     use crate::models::*;
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
-    pub async fn list(configuration: &crate::Configuration) -> std::result::Result<ReservationOrderList, list::Error> {
-        let client = &configuration.client;
-        let uri_str = &format!("{}/providers/Microsoft.Capacity/reservationOrders", &configuration.base_path,);
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<ReservationOrderList, list::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!("{}/providers/Microsoft.Capacity/reservationOrders", &operation_config.base_path,);
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
         match rsp.status() {
@@ -149,19 +149,19 @@ pub mod reservation_order {
         }
     }
     pub async fn get(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         reservation_order_id: &str,
     ) -> std::result::Result<ReservationOrderResponse, get::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Capacity/reservationOrders/{}",
-            &configuration.base_path, reservation_order_id
+            &operation_config.base_path, reservation_order_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
         match rsp.status() {
@@ -201,20 +201,20 @@ pub mod reservation {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn split(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         reservation_order_id: &str,
         body: &SplitRequest,
     ) -> std::result::Result<split::Response, split::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Capacity/reservationOrders/{}/split",
-            &configuration.base_path, reservation_order_id
+            &operation_config.base_path, reservation_order_id
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(body);
         let req = req_builder.build().context(split::BuildRequestError)?;
         let rsp = client.execute(req).await.context(split::ExecuteRequestError)?;
@@ -256,20 +256,20 @@ pub mod reservation {
         }
     }
     pub async fn merge(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         reservation_order_id: &str,
         body: &MergeRequest,
     ) -> std::result::Result<merge::Response, merge::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Capacity/reservationOrders/{}/merge",
-            &configuration.base_path, reservation_order_id
+            &operation_config.base_path, reservation_order_id
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(body);
         let req = req_builder.build().context(merge::BuildRequestError)?;
         let rsp = client.execute(req).await.context(merge::ExecuteRequestError)?;
@@ -311,19 +311,19 @@ pub mod reservation {
         }
     }
     pub async fn list(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         reservation_order_id: &str,
     ) -> std::result::Result<ReservationList, list::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Capacity/reservationOrders/{}/reservations",
-            &configuration.base_path, reservation_order_id
+            &operation_config.base_path, reservation_order_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
         match rsp.status() {
@@ -358,20 +358,20 @@ pub mod reservation {
         }
     }
     pub async fn get(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         reservation_id: &str,
         reservation_order_id: &str,
     ) -> std::result::Result<ReservationResponse, get::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Capacity/reservationOrders/{}/reservations/{}",
-            &configuration.base_path, reservation_order_id, reservation_id
+            &operation_config.base_path, reservation_order_id, reservation_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
         match rsp.status() {
@@ -406,21 +406,21 @@ pub mod reservation {
         }
     }
     pub async fn update(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         reservation_order_id: &str,
         reservation_id: &str,
         parameters: &Patch,
     ) -> std::result::Result<update::Response, update::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Capacity/reservationOrders/{}/reservations/{}",
-            &configuration.base_path, reservation_order_id, reservation_id
+            &operation_config.base_path, reservation_order_id, reservation_id
         );
         let mut req_builder = client.patch(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(parameters);
         let req = req_builder.build().context(update::BuildRequestError)?;
         let rsp = client.execute(req).await.context(update::ExecuteRequestError)?;
@@ -462,20 +462,20 @@ pub mod reservation {
         }
     }
     pub async fn list_revisions(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         reservation_id: &str,
         reservation_order_id: &str,
     ) -> std::result::Result<ReservationList, list_revisions::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Capacity/reservationOrders/{}/reservations/{}/revisions",
-            &configuration.base_path, reservation_order_id, reservation_id
+            &operation_config.base_path, reservation_order_id, reservation_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_revisions::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_revisions::ExecuteRequestError)?;
         match rsp.status() {
@@ -514,14 +514,14 @@ pub mod operation {
     use crate::models::*;
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
-    pub async fn list(configuration: &crate::Configuration) -> std::result::Result<OperationList, list::Error> {
-        let client = &configuration.client;
-        let uri_str = &format!("{}/providers/Microsoft.Capacity/operations", &configuration.base_path,);
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationList, list::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!("{}/providers/Microsoft.Capacity/operations", &operation_config.base_path,);
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
         match rsp.status() {

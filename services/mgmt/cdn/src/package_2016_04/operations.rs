@@ -10,19 +10,19 @@ pub mod profiles {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn list_by_subscription_id(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
     ) -> std::result::Result<ProfileListResult, list_by_subscription_id::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Cdn/profiles",
-            &configuration.base_path, subscription_id
+            &operation_config.base_path, subscription_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_by_subscription_id::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_by_subscription_id::ExecuteRequestError)?;
         match rsp.status() {
@@ -70,20 +70,20 @@ pub mod profiles {
         }
     }
     pub async fn list_by_resource_group(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         subscription_id: &str,
     ) -> std::result::Result<ProfileListResult, list_by_resource_group::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles",
-            &configuration.base_path, subscription_id, resource_group_name
+            &operation_config.base_path, subscription_id, resource_group_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_by_resource_group::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_by_resource_group::ExecuteRequestError)?;
         match rsp.status() {
@@ -131,21 +131,21 @@ pub mod profiles {
         }
     }
     pub async fn get(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         profile_name: &str,
         resource_group_name: &str,
         subscription_id: &str,
     ) -> std::result::Result<Profile, get::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}",
-            &configuration.base_path, subscription_id, resource_group_name, profile_name
+            &operation_config.base_path, subscription_id, resource_group_name, profile_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
         match rsp.status() {
@@ -192,22 +192,22 @@ pub mod profiles {
         }
     }
     pub async fn create(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         profile_name: &str,
         profile_properties: &ProfileCreateParameters,
         resource_group_name: &str,
         subscription_id: &str,
     ) -> std::result::Result<create::Response, create::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}",
-            &configuration.base_path, subscription_id, resource_group_name, profile_name
+            &operation_config.base_path, subscription_id, resource_group_name, profile_name
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(profile_properties);
         let req = req_builder.build().context(create::BuildRequestError)?;
         let rsp = client.execute(req).await.context(create::ExecuteRequestError)?;
@@ -271,22 +271,22 @@ pub mod profiles {
         }
     }
     pub async fn update(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         profile_name: &str,
         profile_properties: &ProfileUpdateParameters,
         resource_group_name: &str,
         subscription_id: &str,
     ) -> std::result::Result<update::Response, update::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}",
-            &configuration.base_path, subscription_id, resource_group_name, profile_name
+            &operation_config.base_path, subscription_id, resource_group_name, profile_name
         );
         let mut req_builder = client.patch(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(profile_properties);
         let req = req_builder.build().context(update::BuildRequestError)?;
         let rsp = client.execute(req).await.context(update::ExecuteRequestError)?;
@@ -344,21 +344,21 @@ pub mod profiles {
         }
     }
     pub async fn delete_if_exists(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         profile_name: &str,
         resource_group_name: &str,
         subscription_id: &str,
     ) -> std::result::Result<delete_if_exists::Response, delete_if_exists::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}",
-            &configuration.base_path, subscription_id, resource_group_name, profile_name
+            &operation_config.base_path, subscription_id, resource_group_name, profile_name
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(delete_if_exists::BuildRequestError)?;
         let rsp = client.execute(req).await.context(delete_if_exists::ExecuteRequestError)?;
         match rsp.status() {
@@ -407,21 +407,21 @@ pub mod profiles {
         }
     }
     pub async fn generate_sso_uri(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         profile_name: &str,
         resource_group_name: &str,
         subscription_id: &str,
     ) -> std::result::Result<SsoUri, generate_sso_uri::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/generateSsoUri",
-            &configuration.base_path, subscription_id, resource_group_name, profile_name
+            &operation_config.base_path, subscription_id, resource_group_name, profile_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(generate_sso_uri::BuildRequestError)?;
         let rsp = client.execute(req).await.context(generate_sso_uri::ExecuteRequestError)?;
         match rsp.status() {
@@ -473,21 +473,21 @@ pub mod endpoints {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn list_by_profile(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         profile_name: &str,
         resource_group_name: &str,
         subscription_id: &str,
     ) -> std::result::Result<EndpointListResult, list_by_profile::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/endpoints",
-            &configuration.base_path, subscription_id, resource_group_name, profile_name
+            &operation_config.base_path, subscription_id, resource_group_name, profile_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_by_profile::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_by_profile::ExecuteRequestError)?;
         match rsp.status() {
@@ -534,22 +534,22 @@ pub mod endpoints {
         }
     }
     pub async fn get(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         endpoint_name: &str,
         profile_name: &str,
         resource_group_name: &str,
         subscription_id: &str,
     ) -> std::result::Result<Endpoint, get::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/endpoints/{}",
-            &configuration.base_path, subscription_id, resource_group_name, profile_name, endpoint_name
+            &operation_config.base_path, subscription_id, resource_group_name, profile_name, endpoint_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
         match rsp.status() {
@@ -596,23 +596,23 @@ pub mod endpoints {
         }
     }
     pub async fn create(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         endpoint_name: &str,
         endpoint_properties: &EndpointCreateParameters,
         profile_name: &str,
         resource_group_name: &str,
         subscription_id: &str,
     ) -> std::result::Result<create::Response, create::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/endpoints/{}",
-            &configuration.base_path, subscription_id, resource_group_name, profile_name, endpoint_name
+            &operation_config.base_path, subscription_id, resource_group_name, profile_name, endpoint_name
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(endpoint_properties);
         let req = req_builder.build().context(create::BuildRequestError)?;
         let rsp = client.execute(req).await.context(create::ExecuteRequestError)?;
@@ -676,23 +676,23 @@ pub mod endpoints {
         }
     }
     pub async fn update(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         endpoint_name: &str,
         endpoint_properties: &EndpointUpdateParameters,
         profile_name: &str,
         resource_group_name: &str,
         subscription_id: &str,
     ) -> std::result::Result<update::Response, update::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/endpoints/{}",
-            &configuration.base_path, subscription_id, resource_group_name, profile_name, endpoint_name
+            &operation_config.base_path, subscription_id, resource_group_name, profile_name, endpoint_name
         );
         let mut req_builder = client.patch(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(endpoint_properties);
         let req = req_builder.build().context(update::BuildRequestError)?;
         let rsp = client.execute(req).await.context(update::ExecuteRequestError)?;
@@ -750,22 +750,22 @@ pub mod endpoints {
         }
     }
     pub async fn delete_if_exists(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         endpoint_name: &str,
         profile_name: &str,
         resource_group_name: &str,
         subscription_id: &str,
     ) -> std::result::Result<delete_if_exists::Response, delete_if_exists::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/endpoints/{}",
-            &configuration.base_path, subscription_id, resource_group_name, profile_name, endpoint_name
+            &operation_config.base_path, subscription_id, resource_group_name, profile_name, endpoint_name
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(delete_if_exists::BuildRequestError)?;
         let rsp = client.execute(req).await.context(delete_if_exists::ExecuteRequestError)?;
         match rsp.status() {
@@ -814,22 +814,22 @@ pub mod endpoints {
         }
     }
     pub async fn start(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         endpoint_name: &str,
         profile_name: &str,
         resource_group_name: &str,
         subscription_id: &str,
     ) -> std::result::Result<Endpoint, start::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/endpoints/{}/start",
-            &configuration.base_path, subscription_id, resource_group_name, profile_name, endpoint_name
+            &operation_config.base_path, subscription_id, resource_group_name, profile_name, endpoint_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(start::BuildRequestError)?;
         let rsp = client.execute(req).await.context(start::ExecuteRequestError)?;
         match rsp.status() {
@@ -876,22 +876,22 @@ pub mod endpoints {
         }
     }
     pub async fn stop(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         endpoint_name: &str,
         profile_name: &str,
         resource_group_name: &str,
         subscription_id: &str,
     ) -> std::result::Result<Endpoint, stop::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/endpoints/{}/stop",
-            &configuration.base_path, subscription_id, resource_group_name, profile_name, endpoint_name
+            &operation_config.base_path, subscription_id, resource_group_name, profile_name, endpoint_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(stop::BuildRequestError)?;
         let rsp = client.execute(req).await.context(stop::ExecuteRequestError)?;
         match rsp.status() {
@@ -938,23 +938,23 @@ pub mod endpoints {
         }
     }
     pub async fn purge_content(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         endpoint_name: &str,
         content_file_paths: &PurgeParameters,
         profile_name: &str,
         resource_group_name: &str,
         subscription_id: &str,
     ) -> std::result::Result<(), purge_content::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/endpoints/{}/purge",
-            &configuration.base_path, subscription_id, resource_group_name, profile_name, endpoint_name
+            &operation_config.base_path, subscription_id, resource_group_name, profile_name, endpoint_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(content_file_paths);
         let req = req_builder.build().context(purge_content::BuildRequestError)?;
         let rsp = client.execute(req).await.context(purge_content::ExecuteRequestError)?;
@@ -998,23 +998,23 @@ pub mod endpoints {
         }
     }
     pub async fn load_content(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         endpoint_name: &str,
         content_file_paths: &LoadParameters,
         profile_name: &str,
         resource_group_name: &str,
         subscription_id: &str,
     ) -> std::result::Result<(), load_content::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/endpoints/{}/load",
-            &configuration.base_path, subscription_id, resource_group_name, profile_name, endpoint_name
+            &operation_config.base_path, subscription_id, resource_group_name, profile_name, endpoint_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(content_file_paths);
         let req = req_builder.build().context(load_content::BuildRequestError)?;
         let rsp = client.execute(req).await.context(load_content::ExecuteRequestError)?;
@@ -1058,23 +1058,23 @@ pub mod endpoints {
         }
     }
     pub async fn validate_custom_domain(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         endpoint_name: &str,
         custom_domain_properties: &ValidateCustomDomainInput,
         profile_name: &str,
         resource_group_name: &str,
         subscription_id: &str,
     ) -> std::result::Result<ValidateCustomDomainOutput, validate_custom_domain::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/endpoints/{}/validateCustomDomain",
-            &configuration.base_path, subscription_id, resource_group_name, profile_name, endpoint_name
+            &operation_config.base_path, subscription_id, resource_group_name, profile_name, endpoint_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(custom_domain_properties);
         let req = req_builder.build().context(validate_custom_domain::BuildRequestError)?;
         let rsp = client.execute(req).await.context(validate_custom_domain::ExecuteRequestError)?;
@@ -1128,22 +1128,22 @@ pub mod origins {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn list_by_endpoint(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         endpoint_name: &str,
         profile_name: &str,
         resource_group_name: &str,
         subscription_id: &str,
     ) -> std::result::Result<OriginListResult, list_by_endpoint::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/endpoints/{}/origins",
-            &configuration.base_path, subscription_id, resource_group_name, profile_name, endpoint_name
+            &operation_config.base_path, subscription_id, resource_group_name, profile_name, endpoint_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_by_endpoint::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_by_endpoint::ExecuteRequestError)?;
         match rsp.status() {
@@ -1190,23 +1190,23 @@ pub mod origins {
         }
     }
     pub async fn get(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         origin_name: &str,
         endpoint_name: &str,
         profile_name: &str,
         resource_group_name: &str,
         subscription_id: &str,
     ) -> std::result::Result<Origin, get::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/endpoints/{}/origins/{}",
-            &configuration.base_path, subscription_id, resource_group_name, profile_name, endpoint_name, origin_name
+            &operation_config.base_path, subscription_id, resource_group_name, profile_name, endpoint_name, origin_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
         match rsp.status() {
@@ -1253,7 +1253,7 @@ pub mod origins {
         }
     }
     pub async fn create(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         origin_name: &str,
         origin_properties: &OriginParameters,
         endpoint_name: &str,
@@ -1261,16 +1261,16 @@ pub mod origins {
         resource_group_name: &str,
         subscription_id: &str,
     ) -> std::result::Result<create::Response, create::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/endpoints/{}/origins/{}",
-            &configuration.base_path, subscription_id, resource_group_name, profile_name, endpoint_name, origin_name
+            &operation_config.base_path, subscription_id, resource_group_name, profile_name, endpoint_name, origin_name
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(origin_properties);
         let req = req_builder.build().context(create::BuildRequestError)?;
         let rsp = client.execute(req).await.context(create::ExecuteRequestError)?;
@@ -1334,7 +1334,7 @@ pub mod origins {
         }
     }
     pub async fn update(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         origin_name: &str,
         origin_properties: &OriginParameters,
         endpoint_name: &str,
@@ -1342,16 +1342,16 @@ pub mod origins {
         resource_group_name: &str,
         subscription_id: &str,
     ) -> std::result::Result<update::Response, update::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/endpoints/{}/origins/{}",
-            &configuration.base_path, subscription_id, resource_group_name, profile_name, endpoint_name, origin_name
+            &operation_config.base_path, subscription_id, resource_group_name, profile_name, endpoint_name, origin_name
         );
         let mut req_builder = client.patch(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(origin_properties);
         let req = req_builder.build().context(update::BuildRequestError)?;
         let rsp = client.execute(req).await.context(update::ExecuteRequestError)?;
@@ -1409,23 +1409,23 @@ pub mod origins {
         }
     }
     pub async fn delete_if_exists(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         origin_name: &str,
         endpoint_name: &str,
         profile_name: &str,
         resource_group_name: &str,
         subscription_id: &str,
     ) -> std::result::Result<delete_if_exists::Response, delete_if_exists::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/endpoints/{}/origins/{}",
-            &configuration.base_path, subscription_id, resource_group_name, profile_name, endpoint_name, origin_name
+            &operation_config.base_path, subscription_id, resource_group_name, profile_name, endpoint_name, origin_name
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(delete_if_exists::BuildRequestError)?;
         let rsp = client.execute(req).await.context(delete_if_exists::ExecuteRequestError)?;
         match rsp.status() {
@@ -1483,22 +1483,22 @@ pub mod custom_domains {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn list_by_endpoint(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         endpoint_name: &str,
         profile_name: &str,
         resource_group_name: &str,
         subscription_id: &str,
     ) -> std::result::Result<CustomDomainListResult, list_by_endpoint::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/endpoints/{}/customDomains",
-            &configuration.base_path, subscription_id, resource_group_name, profile_name, endpoint_name
+            &operation_config.base_path, subscription_id, resource_group_name, profile_name, endpoint_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_by_endpoint::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_by_endpoint::ExecuteRequestError)?;
         match rsp.status() {
@@ -1546,23 +1546,23 @@ pub mod custom_domains {
         }
     }
     pub async fn get(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         custom_domain_name: &str,
         endpoint_name: &str,
         profile_name: &str,
         resource_group_name: &str,
         subscription_id: &str,
     ) -> std::result::Result<CustomDomain, get::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/endpoints/{}/customDomains/{}",
-            &configuration.base_path, subscription_id, resource_group_name, profile_name, endpoint_name, custom_domain_name
+            &operation_config.base_path, subscription_id, resource_group_name, profile_name, endpoint_name, custom_domain_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
         match rsp.status() {
@@ -1609,7 +1609,7 @@ pub mod custom_domains {
         }
     }
     pub async fn create(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         custom_domain_name: &str,
         custom_domain_properties: &CustomDomainParameters,
         endpoint_name: &str,
@@ -1617,16 +1617,16 @@ pub mod custom_domains {
         resource_group_name: &str,
         subscription_id: &str,
     ) -> std::result::Result<create::Response, create::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/endpoints/{}/customDomains/{}",
-            &configuration.base_path, subscription_id, resource_group_name, profile_name, endpoint_name, custom_domain_name
+            &operation_config.base_path, subscription_id, resource_group_name, profile_name, endpoint_name, custom_domain_name
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(custom_domain_properties);
         let req = req_builder.build().context(create::BuildRequestError)?;
         let rsp = client.execute(req).await.context(create::ExecuteRequestError)?;
@@ -1690,7 +1690,7 @@ pub mod custom_domains {
         }
     }
     pub async fn update(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         custom_domain_name: &str,
         custom_domain_properties: &CustomDomainParameters,
         endpoint_name: &str,
@@ -1698,16 +1698,16 @@ pub mod custom_domains {
         resource_group_name: &str,
         subscription_id: &str,
     ) -> std::result::Result<update::Response, update::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/endpoints/{}/customDomains/{}",
-            &configuration.base_path, subscription_id, resource_group_name, profile_name, endpoint_name, custom_domain_name
+            &operation_config.base_path, subscription_id, resource_group_name, profile_name, endpoint_name, custom_domain_name
         );
         let mut req_builder = client.patch(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(custom_domain_properties);
         let req = req_builder.build().context(update::BuildRequestError)?;
         let rsp = client.execute(req).await.context(update::ExecuteRequestError)?;
@@ -1752,23 +1752,23 @@ pub mod custom_domains {
         }
     }
     pub async fn delete_if_exists(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         custom_domain_name: &str,
         endpoint_name: &str,
         profile_name: &str,
         resource_group_name: &str,
         subscription_id: &str,
     ) -> std::result::Result<delete_if_exists::Response, delete_if_exists::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/endpoints/{}/customDomains/{}",
-            &configuration.base_path, subscription_id, resource_group_name, profile_name, endpoint_name, custom_domain_name
+            &operation_config.base_path, subscription_id, resource_group_name, profile_name, endpoint_name, custom_domain_name
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(delete_if_exists::BuildRequestError)?;
         let rsp = client.execute(req).await.context(delete_if_exists::ExecuteRequestError)?;
         match rsp.status() {
@@ -1828,16 +1828,16 @@ pub mod name_availability {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn check_name_availability(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         check_name_availability_input: &CheckNameAvailabilityInput,
     ) -> std::result::Result<CheckNameAvailabilityOutput, check_name_availability::Error> {
-        let client = &configuration.client;
-        let uri_str = &format!("{}/providers/Microsoft.Cdn/checkNameAvailability", &configuration.base_path,);
+        let client = &operation_config.client;
+        let uri_str = &format!("{}/providers/Microsoft.Cdn/checkNameAvailability", &operation_config.base_path,);
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(check_name_availability_input);
         let req = req_builder.build().context(check_name_availability::BuildRequestError)?;
         let rsp = client.execute(req).await.context(check_name_availability::ExecuteRequestError)?;
@@ -1890,14 +1890,14 @@ pub mod operations {
     use crate::models::*;
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
-    pub async fn list(configuration: &crate::Configuration) -> std::result::Result<OperationListResult, list::Error> {
-        let client = &configuration.client;
-        let uri_str = &format!("{}/providers/Microsoft.Cdn/operations", &configuration.base_path,);
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationListResult, list::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!("{}/providers/Microsoft.Cdn/operations", &operation_config.base_path,);
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
         match rsp.status() {

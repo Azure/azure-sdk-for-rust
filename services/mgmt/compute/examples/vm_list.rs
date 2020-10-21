@@ -15,7 +15,7 @@ type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 async fn main() -> Result<()> {
     let subscription_id = &get_subscription_id()?;
     let access_token = &get_access_token()?;
-    let config = &azure_mgmt_compute::Configuration::new(access_token);
+    let config = &azure_mgmt_compute::OperationConfig::new(access_token);
     let vms = virtual_machines::list_all(config, subscription_id, None).await?;
     println!("# of virtual machines {}", vms.value.len());
     for vm in &vms.value {
