@@ -10,22 +10,22 @@ pub mod linked_services {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn get(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         workspace_name: &str,
         linked_service_name: &str,
         subscription_id: &str,
     ) -> std::result::Result<LinkedService, get::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}/linkedServices/{}",
-            &configuration.base_path, subscription_id, resource_group_name, workspace_name, linked_service_name
+            &operation_config.base_path, subscription_id, resource_group_name, workspace_name, linked_service_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
         match rsp.status() {
@@ -55,23 +55,23 @@ pub mod linked_services {
         }
     }
     pub async fn create_or_update(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         workspace_name: &str,
         linked_service_name: &str,
         parameters: &LinkedService,
         subscription_id: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}/linkedServices/{}",
-            &configuration.base_path, subscription_id, resource_group_name, workspace_name, linked_service_name
+            &operation_config.base_path, subscription_id, resource_group_name, workspace_name, linked_service_name
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(parameters);
         let req = req_builder.build().context(create_or_update::BuildRequestError)?;
         let rsp = client.execute(req).await.context(create_or_update::ExecuteRequestError)?;
@@ -112,22 +112,22 @@ pub mod linked_services {
         }
     }
     pub async fn delete(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         workspace_name: &str,
         linked_service_name: &str,
         subscription_id: &str,
     ) -> std::result::Result<delete::Response, delete::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}/linkedServices/{}",
-            &configuration.base_path, subscription_id, resource_group_name, workspace_name, linked_service_name
+            &operation_config.base_path, subscription_id, resource_group_name, workspace_name, linked_service_name
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(delete::BuildRequestError)?;
         let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
         match rsp.status() {
@@ -159,21 +159,21 @@ pub mod linked_services {
         }
     }
     pub async fn list_by_workspace(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         workspace_name: &str,
         subscription_id: &str,
     ) -> std::result::Result<LinkedServiceListResult, list_by_workspace::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}/linkedServices",
-            &configuration.base_path, subscription_id, resource_group_name, workspace_name
+            &operation_config.base_path, subscription_id, resource_group_name, workspace_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_by_workspace::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_by_workspace::ExecuteRequestError)?;
         match rsp.status() {
@@ -209,22 +209,22 @@ pub mod data_sources {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn get(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         workspace_name: &str,
         data_source_name: &str,
         subscription_id: &str,
     ) -> std::result::Result<DataSource, get::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}/dataSources/{}",
-            &configuration.base_path, subscription_id, resource_group_name, workspace_name, data_source_name
+            &operation_config.base_path, subscription_id, resource_group_name, workspace_name, data_source_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
         match rsp.status() {
@@ -254,23 +254,23 @@ pub mod data_sources {
         }
     }
     pub async fn create_or_update(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         workspace_name: &str,
         data_source_name: &str,
         parameters: &DataSource,
         subscription_id: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}/dataSources/{}",
-            &configuration.base_path, subscription_id, resource_group_name, workspace_name, data_source_name
+            &operation_config.base_path, subscription_id, resource_group_name, workspace_name, data_source_name
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(parameters);
         let req = req_builder.build().context(create_or_update::BuildRequestError)?;
         let rsp = client.execute(req).await.context(create_or_update::ExecuteRequestError)?;
@@ -311,22 +311,22 @@ pub mod data_sources {
         }
     }
     pub async fn delete(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         workspace_name: &str,
         data_source_name: &str,
         subscription_id: &str,
     ) -> std::result::Result<delete::Response, delete::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}/dataSources/{}",
-            &configuration.base_path, subscription_id, resource_group_name, workspace_name, data_source_name
+            &operation_config.base_path, subscription_id, resource_group_name, workspace_name, data_source_name
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(delete::BuildRequestError)?;
         let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
         match rsp.status() {
@@ -358,23 +358,23 @@ pub mod data_sources {
         }
     }
     pub async fn list_by_workspace(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         workspace_name: &str,
         filter: &str,
         skiptoken: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<DataSourceListResult, list_by_workspace::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}/dataSources",
-            &configuration.base_path, subscription_id, resource_group_name, workspace_name
+            &operation_config.base_path, subscription_id, resource_group_name, workspace_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.query(&[("$filter", filter)]);
         if let Some(skiptoken) = skiptoken {
             req_builder = req_builder.query(&[("$skiptoken", skiptoken)]);
@@ -414,22 +414,22 @@ pub mod workspaces {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn disable_intelligence_pack(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         workspace_name: &str,
         intelligence_pack_name: &str,
         subscription_id: &str,
     ) -> std::result::Result<(), disable_intelligence_pack::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}/intelligencePacks/{}/Disable",
-            &configuration.base_path, subscription_id, resource_group_name, workspace_name, intelligence_pack_name
+            &operation_config.base_path, subscription_id, resource_group_name, workspace_name, intelligence_pack_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(disable_intelligence_pack::BuildRequestError)?;
         let rsp = client.execute(req).await.context(disable_intelligence_pack::ExecuteRequestError)?;
         match rsp.status() {
@@ -455,22 +455,22 @@ pub mod workspaces {
         }
     }
     pub async fn enable_intelligence_pack(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         workspace_name: &str,
         intelligence_pack_name: &str,
         subscription_id: &str,
     ) -> std::result::Result<(), enable_intelligence_pack::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}/intelligencePacks/{}/Enable",
-            &configuration.base_path, subscription_id, resource_group_name, workspace_name, intelligence_pack_name
+            &operation_config.base_path, subscription_id, resource_group_name, workspace_name, intelligence_pack_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(enable_intelligence_pack::BuildRequestError)?;
         let rsp = client.execute(req).await.context(enable_intelligence_pack::ExecuteRequestError)?;
         match rsp.status() {
@@ -496,21 +496,21 @@ pub mod workspaces {
         }
     }
     pub async fn list_intelligence_packs(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         workspace_name: &str,
         subscription_id: &str,
     ) -> std::result::Result<Vec<IntelligencePack>, list_intelligence_packs::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}/intelligencePacks",
-            &configuration.base_path, subscription_id, resource_group_name, workspace_name
+            &operation_config.base_path, subscription_id, resource_group_name, workspace_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_intelligence_packs::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_intelligence_packs::ExecuteRequestError)?;
         match rsp.status() {
@@ -541,21 +541,21 @@ pub mod workspaces {
         }
     }
     pub async fn get_shared_keys(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         workspace_name: &str,
         subscription_id: &str,
     ) -> std::result::Result<SharedKeys, get_shared_keys::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}/sharedKeys",
-            &configuration.base_path, subscription_id, resource_group_name, workspace_name
+            &operation_config.base_path, subscription_id, resource_group_name, workspace_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get_shared_keys::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get_shared_keys::ExecuteRequestError)?;
         match rsp.status() {
@@ -585,21 +585,21 @@ pub mod workspaces {
         }
     }
     pub async fn list_usages(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         workspace_name: &str,
         subscription_id: &str,
     ) -> std::result::Result<WorkspaceListUsagesResult, list_usages::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}/usages",
-            &configuration.base_path, subscription_id, resource_group_name, workspace_name
+            &operation_config.base_path, subscription_id, resource_group_name, workspace_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_usages::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_usages::ExecuteRequestError)?;
         match rsp.status() {
@@ -629,21 +629,21 @@ pub mod workspaces {
         }
     }
     pub async fn list_management_groups(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         workspace_name: &str,
         subscription_id: &str,
     ) -> std::result::Result<WorkspaceListManagementGroupsResult, list_management_groups::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}/managementGroups",
-            &configuration.base_path, subscription_id, resource_group_name, workspace_name
+            &operation_config.base_path, subscription_id, resource_group_name, workspace_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_management_groups::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_management_groups::ExecuteRequestError)?;
         match rsp.status() {
@@ -674,20 +674,20 @@ pub mod workspaces {
         }
     }
     pub async fn list_by_resource_group(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         subscription_id: &str,
     ) -> std::result::Result<WorkspaceListResult, list_by_resource_group::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.OperationalInsights/workspaces",
-            &configuration.base_path, subscription_id, resource_group_name
+            &operation_config.base_path, subscription_id, resource_group_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_by_resource_group::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_by_resource_group::ExecuteRequestError)?;
         match rsp.status() {
@@ -718,19 +718,19 @@ pub mod workspaces {
         }
     }
     pub async fn list(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
     ) -> std::result::Result<WorkspaceListResult, list::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.OperationalInsights/workspaces",
-            &configuration.base_path, subscription_id
+            &operation_config.base_path, subscription_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
         match rsp.status() {
@@ -760,21 +760,21 @@ pub mod workspaces {
         }
     }
     pub async fn get(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         workspace_name: &str,
         subscription_id: &str,
     ) -> std::result::Result<Workspace, get::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}",
-            &configuration.base_path, subscription_id, resource_group_name, workspace_name
+            &operation_config.base_path, subscription_id, resource_group_name, workspace_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
         match rsp.status() {
@@ -804,22 +804,22 @@ pub mod workspaces {
         }
     }
     pub async fn create_or_update(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         workspace_name: &str,
         parameters: &Workspace,
         subscription_id: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}",
-            &configuration.base_path, subscription_id, resource_group_name, workspace_name
+            &operation_config.base_path, subscription_id, resource_group_name, workspace_name
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(parameters);
         let req = req_builder.build().context(create_or_update::BuildRequestError)?;
         let rsp = client.execute(req).await.context(create_or_update::ExecuteRequestError)?;
@@ -860,22 +860,22 @@ pub mod workspaces {
         }
     }
     pub async fn update(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         workspace_name: &str,
         parameters: &Workspace,
         subscription_id: &str,
     ) -> std::result::Result<Workspace, update::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}",
-            &configuration.base_path, subscription_id, resource_group_name, workspace_name
+            &operation_config.base_path, subscription_id, resource_group_name, workspace_name
         );
         let mut req_builder = client.patch(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(parameters);
         let req = req_builder.build().context(update::BuildRequestError)?;
         let rsp = client.execute(req).await.context(update::ExecuteRequestError)?;
@@ -906,21 +906,21 @@ pub mod workspaces {
         }
     }
     pub async fn delete(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         workspace_name: &str,
         subscription_id: &str,
     ) -> std::result::Result<delete::Response, delete::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}",
-            &configuration.base_path, subscription_id, resource_group_name, workspace_name
+            &operation_config.base_path, subscription_id, resource_group_name, workspace_name
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(delete::BuildRequestError)?;
         let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
         match rsp.status() {
@@ -956,14 +956,14 @@ pub mod operations {
     use crate::models::*;
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
-    pub async fn list(configuration: &crate::Configuration) -> std::result::Result<OperationListResult, list::Error> {
-        let client = &configuration.client;
-        let uri_str = &format!("{}/providers/Microsoft.OperationalInsights/operations", &configuration.base_path,);
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationListResult, list::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!("{}/providers/Microsoft.OperationalInsights/operations", &operation_config.base_path,);
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
         match rsp.status() {
@@ -994,21 +994,21 @@ pub mod operations {
     }
 }
 pub async fn get_async_operations_status(
-    configuration: &crate::Configuration,
+    operation_config: &crate::OperationConfig,
     location: &str,
     async_operation_id: &str,
     subscription_id: &str,
 ) -> std::result::Result<OperationStatus, get_async_operations_status::Error> {
-    let client = &configuration.client;
+    let client = &operation_config.client;
     let uri_str = &format!(
         "{}/subscriptions/{}/providers/Microsoft.OperationalInsights/locations/{}/operationStatuses/{}",
-        &configuration.base_path, subscription_id, location, async_operation_id
+        &operation_config.base_path, subscription_id, location, async_operation_id
     );
     let mut req_builder = client.get(uri_str);
-    if let Some(token) = &configuration.bearer_access_token {
+    if let Some(token) = &operation_config.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
-    req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
     let req = req_builder.build().context(get_async_operations_status::BuildRequestError)?;
     let rsp = client
         .execute(req)

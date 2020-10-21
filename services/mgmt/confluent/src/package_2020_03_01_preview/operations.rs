@@ -9,14 +9,14 @@ pub mod organization_operations {
     use crate::models::*;
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
-    pub async fn list(configuration: &crate::Configuration) -> std::result::Result<OperationListResult, list::Error> {
-        let client = &configuration.client;
-        let uri_str = &format!("{}/providers/Microsoft.Confluent/operations", &configuration.base_path,);
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationListResult, list::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!("{}/providers/Microsoft.Confluent/operations", &operation_config.base_path,);
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
         match rsp.status() {
@@ -69,19 +69,19 @@ pub mod organization {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn list_by_subscription(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
     ) -> std::result::Result<OrganizationResourceListResult, list_by_subscription::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Confluent/organizations",
-            &configuration.base_path, subscription_id
+            &operation_config.base_path, subscription_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_by_subscription::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_by_subscription::ExecuteRequestError)?;
         match rsp.status() {
@@ -130,20 +130,20 @@ pub mod organization {
         }
     }
     pub async fn list_by_resource_group(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
     ) -> std::result::Result<OrganizationResourceListResult, list_by_resource_group::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Confluent/organizations",
-            &configuration.base_path, subscription_id, resource_group_name
+            &operation_config.base_path, subscription_id, resource_group_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_by_resource_group::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_by_resource_group::ExecuteRequestError)?;
         match rsp.status() {
@@ -192,21 +192,21 @@ pub mod organization {
         }
     }
     pub async fn get(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         organization_name: &str,
     ) -> std::result::Result<OrganizationResource, get::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Confluent/organizations/{}",
-            &configuration.base_path, subscription_id, resource_group_name, organization_name
+            &operation_config.base_path, subscription_id, resource_group_name, organization_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
         match rsp.status() {
@@ -254,22 +254,22 @@ pub mod organization {
         }
     }
     pub async fn create(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         organization_name: &str,
         body: Option<&OrganizationResource>,
     ) -> std::result::Result<create::Response, create::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Confluent/organizations/{}",
-            &configuration.base_path, subscription_id, resource_group_name, organization_name
+            &operation_config.base_path, subscription_id, resource_group_name, organization_name
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(body) = body {
             req_builder = req_builder.json(body);
         }
@@ -330,22 +330,22 @@ pub mod organization {
         }
     }
     pub async fn update(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         organization_name: &str,
         body: Option<&OrganizationResourceUpdate>,
     ) -> std::result::Result<OrganizationResource, update::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Confluent/organizations/{}",
-            &configuration.base_path, subscription_id, resource_group_name, organization_name
+            &operation_config.base_path, subscription_id, resource_group_name, organization_name
         );
         let mut req_builder = client.patch(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(body) = body {
             req_builder = req_builder.json(body);
         }
@@ -396,21 +396,21 @@ pub mod organization {
         }
     }
     pub async fn delete(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         organization_name: &str,
     ) -> std::result::Result<delete::Response, delete::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Confluent/organizations/{}",
-            &configuration.base_path, subscription_id, resource_group_name, organization_name
+            &operation_config.base_path, subscription_id, resource_group_name, organization_name
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(delete::BuildRequestError)?;
         let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
         match rsp.status() {

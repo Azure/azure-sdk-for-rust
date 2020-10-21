@@ -19,7 +19,7 @@ async fn main() -> Result<()> {
     let subscription_id = &get_subscription_id()?;
     let resource_group_name = &get_resource_group_name()?;
     let resource_group_location = get_resource_group_location()?;
-    let config = &azure_mgmt_resources::Configuration::new(access_token);
+    let config = &azure_mgmt_resources::OperationConfig::new(access_token);
 
     let group = ResourceGroup {
         id: None,

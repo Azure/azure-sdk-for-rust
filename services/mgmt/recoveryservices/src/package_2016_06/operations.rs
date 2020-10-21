@@ -10,23 +10,23 @@ pub mod vault_certificates {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn create(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         vault_name: &str,
         certificate_name: &str,
         certificate_request: &CertificateRequest,
     ) -> std::result::Result<VaultCertificateResponse, create::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/Subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/certificates/{}",
-            &configuration.base_path, subscription_id, resource_group_name, vault_name, certificate_name
+            &operation_config.base_path, subscription_id, resource_group_name, vault_name, certificate_name
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(certificate_request);
         let req = req_builder.build().context(create::BuildRequestError)?;
         let rsp = client.execute(req).await.context(create::ExecuteRequestError)?;
@@ -62,22 +62,22 @@ pub mod registered_identities {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn delete(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         vault_name: &str,
         identity_name: &str,
     ) -> std::result::Result<(), delete::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/Subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/registeredIdentities/{}",
-            &configuration.base_path, subscription_id, resource_group_name, vault_name, identity_name
+            &operation_config.base_path, subscription_id, resource_group_name, vault_name, identity_name
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(delete::BuildRequestError)?;
         let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
         match rsp.status() {
@@ -108,21 +108,21 @@ pub mod replication_usages {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn list(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         vault_name: &str,
     ) -> std::result::Result<ReplicationUsageList, list::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/Subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationUsages",
-            &configuration.base_path, subscription_id, resource_group_name, vault_name
+            &operation_config.base_path, subscription_id, resource_group_name, vault_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
         match rsp.status() {
@@ -157,21 +157,21 @@ pub mod private_link_resources {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn list(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         vault_name: &str,
     ) -> std::result::Result<PrivateLinkResources, list::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/privateLinkResources",
-            &configuration.base_path, subscription_id, resource_group_name, vault_name
+            &operation_config.base_path, subscription_id, resource_group_name, vault_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
         match rsp.status() {
@@ -201,22 +201,22 @@ pub mod private_link_resources {
         }
     }
     pub async fn get(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         vault_name: &str,
         private_link_resource_name: &str,
     ) -> std::result::Result<PrivateLinkResource, get::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/privateLinkResources/{}",
-            &configuration.base_path, subscription_id, resource_group_name, vault_name, private_link_resource_name
+            &operation_config.base_path, subscription_id, resource_group_name, vault_name, private_link_resource_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
         match rsp.status() {
@@ -251,22 +251,22 @@ pub mod recovery_services {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn check_name_availability(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         location: &str,
         input: &CheckNameAvailabilityParameters,
     ) -> std::result::Result<CheckNameAvailabilityResult, check_name_availability::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/locations/{}/checkNameAvailability",
-            &configuration.base_path, subscription_id, resource_group_name, location
+            &operation_config.base_path, subscription_id, resource_group_name, location
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(input);
         let req = req_builder.build().context(check_name_availability::BuildRequestError)?;
         let rsp = client.execute(req).await.context(check_name_availability::ExecuteRequestError)?;
@@ -303,19 +303,19 @@ pub mod vaults {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn list_by_subscription_id(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
     ) -> std::result::Result<VaultList, list_by_subscription_id::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.RecoveryServices/vaults",
-            &configuration.base_path, subscription_id
+            &operation_config.base_path, subscription_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_by_subscription_id::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_by_subscription_id::ExecuteRequestError)?;
         match rsp.status() {
@@ -345,20 +345,20 @@ pub mod vaults {
         }
     }
     pub async fn list_by_resource_group(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
     ) -> std::result::Result<VaultList, list_by_resource_group::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults",
-            &configuration.base_path, subscription_id, resource_group_name
+            &operation_config.base_path, subscription_id, resource_group_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_by_resource_group::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_by_resource_group::ExecuteRequestError)?;
         match rsp.status() {
@@ -388,21 +388,21 @@ pub mod vaults {
         }
     }
     pub async fn get(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         vault_name: &str,
     ) -> std::result::Result<Vault, get::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}",
-            &configuration.base_path, subscription_id, resource_group_name, vault_name
+            &operation_config.base_path, subscription_id, resource_group_name, vault_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
         match rsp.status() {
@@ -432,22 +432,22 @@ pub mod vaults {
         }
     }
     pub async fn create_or_update(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         vault_name: &str,
         vault: &Vault,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}",
-            &configuration.base_path, subscription_id, resource_group_name, vault_name
+            &operation_config.base_path, subscription_id, resource_group_name, vault_name
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(vault);
         let req = req_builder.build().context(create_or_update::BuildRequestError)?;
         let rsp = client.execute(req).await.context(create_or_update::ExecuteRequestError)?;
@@ -488,22 +488,22 @@ pub mod vaults {
         }
     }
     pub async fn update(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         vault_name: &str,
         vault: &PatchVault,
     ) -> std::result::Result<update::Response, update::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}",
-            &configuration.base_path, subscription_id, resource_group_name, vault_name
+            &operation_config.base_path, subscription_id, resource_group_name, vault_name
         );
         let mut req_builder = client.patch(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(vault);
         let req = req_builder.build().context(update::BuildRequestError)?;
         let rsp = client.execute(req).await.context(update::ExecuteRequestError)?;
@@ -544,21 +544,21 @@ pub mod vaults {
         }
     }
     pub async fn delete(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         vault_name: &str,
     ) -> std::result::Result<(), delete::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}",
-            &configuration.base_path, subscription_id, resource_group_name, vault_name
+            &operation_config.base_path, subscription_id, resource_group_name, vault_name
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(delete::BuildRequestError)?;
         let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
         match rsp.status() {
@@ -588,14 +588,14 @@ pub mod operations {
     use crate::models::*;
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
-    pub async fn list(configuration: &crate::Configuration) -> std::result::Result<ClientDiscoveryResponse, list::Error> {
-        let client = &configuration.client;
-        let uri_str = &format!("{}/providers/Microsoft.RecoveryServices/operations", &configuration.base_path,);
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<ClientDiscoveryResponse, list::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!("{}/providers/Microsoft.RecoveryServices/operations", &operation_config.base_path,);
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
         match rsp.status() {
@@ -630,21 +630,21 @@ pub mod vault_extended_info {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn get(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         vault_name: &str,
     ) -> std::result::Result<VaultExtendedInfoResource, get::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/extendedInformation/vaultExtendedInfo",
-            &configuration.base_path, subscription_id, resource_group_name, vault_name
+            &operation_config.base_path, subscription_id, resource_group_name, vault_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
         match rsp.status() {
@@ -674,22 +674,22 @@ pub mod vault_extended_info {
         }
     }
     pub async fn create_or_update(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         vault_name: &str,
         resource_resource_extended_info_details: &VaultExtendedInfoResource,
     ) -> std::result::Result<VaultExtendedInfoResource, create_or_update::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/extendedInformation/vaultExtendedInfo",
-            &configuration.base_path, subscription_id, resource_group_name, vault_name
+            &operation_config.base_path, subscription_id, resource_group_name, vault_name
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(resource_resource_extended_info_details);
         let req = req_builder.build().context(create_or_update::BuildRequestError)?;
         let rsp = client.execute(req).await.context(create_or_update::ExecuteRequestError)?;
@@ -721,22 +721,22 @@ pub mod vault_extended_info {
         }
     }
     pub async fn update(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         vault_name: &str,
         resource_resource_extended_info_details: &VaultExtendedInfoResource,
     ) -> std::result::Result<VaultExtendedInfoResource, update::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/extendedInformation/vaultExtendedInfo",
-            &configuration.base_path, subscription_id, resource_group_name, vault_name
+            &operation_config.base_path, subscription_id, resource_group_name, vault_name
         );
         let mut req_builder = client.patch(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(resource_resource_extended_info_details);
         let req = req_builder.build().context(update::BuildRequestError)?;
         let rsp = client.execute(req).await.context(update::ExecuteRequestError)?;
@@ -772,21 +772,21 @@ pub mod usages {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn list_by_vaults(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         vault_name: &str,
     ) -> std::result::Result<VaultUsageList, list_by_vaults::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/Subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/usages",
-            &configuration.base_path, subscription_id, resource_group_name, vault_name
+            &operation_config.base_path, subscription_id, resource_group_name, vault_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_by_vaults::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_by_vaults::ExecuteRequestError)?;
         match rsp.status() {

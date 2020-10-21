@@ -10,19 +10,19 @@ pub mod virtual_machine_image_template {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn list(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
     ) -> std::result::Result<ImageTemplateListResult, list::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.VirtualMachineImages/imageTemplates",
-            &configuration.base_path, subscription_id
+            &operation_config.base_path, subscription_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
         match rsp.status() {
@@ -57,20 +57,20 @@ pub mod virtual_machine_image_template {
         }
     }
     pub async fn list_by_resource_group(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         subscription_id: &str,
     ) -> std::result::Result<ImageTemplateListResult, list_by_resource_group::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.VirtualMachineImages/imageTemplates",
-            &configuration.base_path, subscription_id, resource_group_name
+            &operation_config.base_path, subscription_id, resource_group_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_by_resource_group::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_by_resource_group::ExecuteRequestError)?;
         match rsp.status() {
@@ -106,21 +106,21 @@ pub mod virtual_machine_image_template {
         }
     }
     pub async fn get(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         image_template_name: &str,
     ) -> std::result::Result<ImageTemplate, get::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.VirtualMachineImages/imageTemplates/{}",
-            &configuration.base_path, subscription_id, resource_group_name, image_template_name
+            &operation_config.base_path, subscription_id, resource_group_name, image_template_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
         match rsp.status() {
@@ -155,22 +155,22 @@ pub mod virtual_machine_image_template {
         }
     }
     pub async fn create_or_update(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         parameters: &ImageTemplate,
         subscription_id: &str,
         resource_group_name: &str,
         image_template_name: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.VirtualMachineImages/imageTemplates/{}",
-            &configuration.base_path, subscription_id, resource_group_name, image_template_name
+            &operation_config.base_path, subscription_id, resource_group_name, image_template_name
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(parameters);
         let req = req_builder.build().context(create_or_update::BuildRequestError)?;
         let rsp = client.execute(req).await.context(create_or_update::ExecuteRequestError)?;
@@ -216,22 +216,22 @@ pub mod virtual_machine_image_template {
         }
     }
     pub async fn update(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         parameters: &ImageTemplateUpdateParameters,
         subscription_id: &str,
         resource_group_name: &str,
         image_template_name: &str,
     ) -> std::result::Result<ImageTemplate, update::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.VirtualMachineImages/imageTemplates/{}",
-            &configuration.base_path, subscription_id, resource_group_name, image_template_name
+            &operation_config.base_path, subscription_id, resource_group_name, image_template_name
         );
         let mut req_builder = client.patch(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(parameters);
         let req = req_builder.build().context(update::BuildRequestError)?;
         let rsp = client.execute(req).await.context(update::ExecuteRequestError)?;
@@ -267,21 +267,21 @@ pub mod virtual_machine_image_template {
         }
     }
     pub async fn delete(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         image_template_name: &str,
     ) -> std::result::Result<delete::Response, delete::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.VirtualMachineImages/imageTemplates/{}",
-            &configuration.base_path, subscription_id, resource_group_name, image_template_name
+            &operation_config.base_path, subscription_id, resource_group_name, image_template_name
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(delete::BuildRequestError)?;
         let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
         match rsp.status() {
@@ -320,21 +320,21 @@ pub mod virtual_machine_image_template {
         }
     }
     pub async fn run(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         image_template_name: &str,
     ) -> std::result::Result<run::Response, run::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.VirtualMachineImages/imageTemplates/{}/run",
-            &configuration.base_path, subscription_id, resource_group_name, image_template_name
+            &operation_config.base_path, subscription_id, resource_group_name, image_template_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(run::BuildRequestError)?;
         let rsp = client.execute(req).await.context(run::ExecuteRequestError)?;
         match rsp.status() {
@@ -371,21 +371,21 @@ pub mod virtual_machine_image_template {
         }
     }
     pub async fn list_run_outputs(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         image_template_name: &str,
     ) -> std::result::Result<RunOutputCollection, list_run_outputs::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.VirtualMachineImages/imageTemplates/{}/runOutputs",
-            &configuration.base_path, subscription_id, resource_group_name, image_template_name
+            &operation_config.base_path, subscription_id, resource_group_name, image_template_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_run_outputs::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_run_outputs::ExecuteRequestError)?;
         match rsp.status() {
@@ -420,22 +420,22 @@ pub mod virtual_machine_image_template {
         }
     }
     pub async fn get_run_output(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         image_template_name: &str,
         run_output_name: &str,
     ) -> std::result::Result<RunOutput, get_run_output::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.VirtualMachineImages/imageTemplates/{}/runOutputs/{}",
-            &configuration.base_path, subscription_id, resource_group_name, image_template_name, run_output_name
+            &operation_config.base_path, subscription_id, resource_group_name, image_template_name, run_output_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get_run_output::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get_run_output::ExecuteRequestError)?;
         match rsp.status() {
@@ -474,14 +474,17 @@ pub mod operations {
     use crate::models::*;
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
-    pub async fn list(configuration: &crate::Configuration) -> std::result::Result<OperationListResult, list::Error> {
-        let client = &configuration.client;
-        let uri_str = &format!("{}/providers/Microsoft.VirtualMachineImages/operations", &configuration.base_path,);
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationListResult, list::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!(
+            "{}/providers/Microsoft.VirtualMachineImages/operations",
+            &operation_config.base_path,
+        );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
         match rsp.status() {

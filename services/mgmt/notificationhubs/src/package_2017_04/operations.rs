@@ -9,14 +9,14 @@ pub mod operations {
     use crate::models::*;
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
-    pub async fn list(configuration: &crate::Configuration) -> std::result::Result<OperationListResult, list::Error> {
-        let client = &configuration.client;
-        let uri_str = &format!("{}/providers/Microsoft.NotificationHubs/operations", &configuration.base_path,);
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationListResult, list::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!("{}/providers/Microsoft.NotificationHubs/operations", &operation_config.base_path,);
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
         match rsp.status() {
@@ -68,20 +68,20 @@ pub mod namespaces {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn check_availability(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         parameters: &CheckAvailabilityParameters,
         subscription_id: &str,
     ) -> std::result::Result<CheckAvailabilityResult, check_availability::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.NotificationHubs/checkNamespaceAvailability",
-            &configuration.base_path, subscription_id
+            &operation_config.base_path, subscription_id
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(parameters);
         let req = req_builder.build().context(check_availability::BuildRequestError)?;
         let rsp = client.execute(req).await.context(check_availability::ExecuteRequestError)?;
@@ -113,21 +113,21 @@ pub mod namespaces {
         }
     }
     pub async fn get(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         namespace_name: &str,
         subscription_id: &str,
     ) -> std::result::Result<NamespaceResource, get::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.NotificationHubs/namespaces/{}",
-            &configuration.base_path, subscription_id, resource_group_name, namespace_name
+            &operation_config.base_path, subscription_id, resource_group_name, namespace_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
         match rsp.status() {
@@ -157,22 +157,22 @@ pub mod namespaces {
         }
     }
     pub async fn create_or_update(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         namespace_name: &str,
         parameters: &NamespaceCreateOrUpdateParameters,
         subscription_id: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.NotificationHubs/namespaces/{}",
-            &configuration.base_path, subscription_id, resource_group_name, namespace_name
+            &operation_config.base_path, subscription_id, resource_group_name, namespace_name
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(parameters);
         let req = req_builder.build().context(create_or_update::BuildRequestError)?;
         let rsp = client.execute(req).await.context(create_or_update::ExecuteRequestError)?;
@@ -213,22 +213,22 @@ pub mod namespaces {
         }
     }
     pub async fn patch(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         namespace_name: &str,
         parameters: &NamespacePatchParameters,
         subscription_id: &str,
     ) -> std::result::Result<NamespaceResource, patch::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.NotificationHubs/namespaces/{}",
-            &configuration.base_path, subscription_id, resource_group_name, namespace_name
+            &operation_config.base_path, subscription_id, resource_group_name, namespace_name
         );
         let mut req_builder = client.patch(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(parameters);
         let req = req_builder.build().context(patch::BuildRequestError)?;
         let rsp = client.execute(req).await.context(patch::ExecuteRequestError)?;
@@ -259,21 +259,21 @@ pub mod namespaces {
         }
     }
     pub async fn delete(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         namespace_name: &str,
         subscription_id: &str,
     ) -> std::result::Result<delete::Response, delete::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.NotificationHubs/namespaces/{}",
-            &configuration.base_path, subscription_id, resource_group_name, namespace_name
+            &operation_config.base_path, subscription_id, resource_group_name, namespace_name
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(delete::BuildRequestError)?;
         let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
         match rsp.status() {
@@ -307,22 +307,22 @@ pub mod namespaces {
         }
     }
     pub async fn get_authorization_rule(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         namespace_name: &str,
         authorization_rule_name: &str,
         subscription_id: &str,
     ) -> std::result::Result<SharedAccessAuthorizationRuleResource, get_authorization_rule::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.NotificationHubs/namespaces/{}/AuthorizationRules/{}",
-            &configuration.base_path, subscription_id, resource_group_name, namespace_name, authorization_rule_name
+            &operation_config.base_path, subscription_id, resource_group_name, namespace_name, authorization_rule_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get_authorization_rule::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get_authorization_rule::ExecuteRequestError)?;
         match rsp.status() {
@@ -353,23 +353,23 @@ pub mod namespaces {
         }
     }
     pub async fn create_or_update_authorization_rule(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         namespace_name: &str,
         authorization_rule_name: &str,
         parameters: &SharedAccessAuthorizationRuleCreateOrUpdateParameters,
         subscription_id: &str,
     ) -> std::result::Result<SharedAccessAuthorizationRuleResource, create_or_update_authorization_rule::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.NotificationHubs/namespaces/{}/AuthorizationRules/{}",
-            &configuration.base_path, subscription_id, resource_group_name, namespace_name, authorization_rule_name
+            &operation_config.base_path, subscription_id, resource_group_name, namespace_name, authorization_rule_name
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(parameters);
         let req = req_builder
             .build()
@@ -406,22 +406,22 @@ pub mod namespaces {
         }
     }
     pub async fn delete_authorization_rule(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         namespace_name: &str,
         authorization_rule_name: &str,
         subscription_id: &str,
     ) -> std::result::Result<delete_authorization_rule::Response, delete_authorization_rule::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.NotificationHubs/namespaces/{}/AuthorizationRules/{}",
-            &configuration.base_path, subscription_id, resource_group_name, namespace_name, authorization_rule_name
+            &operation_config.base_path, subscription_id, resource_group_name, namespace_name, authorization_rule_name
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(delete_authorization_rule::BuildRequestError)?;
         let rsp = client.execute(req).await.context(delete_authorization_rule::ExecuteRequestError)?;
         match rsp.status() {
@@ -453,20 +453,20 @@ pub mod namespaces {
         }
     }
     pub async fn list(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         subscription_id: &str,
     ) -> std::result::Result<NamespaceListResult, list::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.NotificationHubs/namespaces",
-            &configuration.base_path, subscription_id, resource_group_name
+            &operation_config.base_path, subscription_id, resource_group_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
         match rsp.status() {
@@ -496,19 +496,19 @@ pub mod namespaces {
         }
     }
     pub async fn list_all(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
     ) -> std::result::Result<NamespaceListResult, list_all::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.NotificationHubs/namespaces",
-            &configuration.base_path, subscription_id
+            &operation_config.base_path, subscription_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_all::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_all::ExecuteRequestError)?;
         match rsp.status() {
@@ -538,21 +538,21 @@ pub mod namespaces {
         }
     }
     pub async fn list_authorization_rules(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         namespace_name: &str,
         subscription_id: &str,
     ) -> std::result::Result<SharedAccessAuthorizationRuleListResult, list_authorization_rules::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.NotificationHubs/namespaces/{}/AuthorizationRules",
-            &configuration.base_path, subscription_id, resource_group_name, namespace_name
+            &operation_config.base_path, subscription_id, resource_group_name, namespace_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_authorization_rules::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_authorization_rules::ExecuteRequestError)?;
         match rsp.status() {
@@ -583,22 +583,22 @@ pub mod namespaces {
         }
     }
     pub async fn list_keys(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         namespace_name: &str,
         authorization_rule_name: &str,
         subscription_id: &str,
     ) -> std::result::Result<SharedAccessAuthorizationRuleListResult, list_keys::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.NotificationHubs/namespaces/{}/AuthorizationRules/{}/listKeys",
-            &configuration.base_path, subscription_id, resource_group_name, namespace_name, authorization_rule_name
+            &operation_config.base_path, subscription_id, resource_group_name, namespace_name, authorization_rule_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_keys::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_keys::ExecuteRequestError)?;
         match rsp.status() {
@@ -629,23 +629,23 @@ pub mod namespaces {
         }
     }
     pub async fn regenerate_keys(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         namespace_name: &str,
         authorization_rule_name: &str,
         parameters: &PolicykeyResource,
         subscription_id: &str,
     ) -> std::result::Result<ResourceListKeys, regenerate_keys::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.NotificationHubs/namespaces/{}/AuthorizationRules/{}/regenerateKeys",
-            &configuration.base_path, subscription_id, resource_group_name, namespace_name, authorization_rule_name
+            &operation_config.base_path, subscription_id, resource_group_name, namespace_name, authorization_rule_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(parameters);
         let req = req_builder.build().context(regenerate_keys::BuildRequestError)?;
         let rsp = client.execute(req).await.context(regenerate_keys::ExecuteRequestError)?;
@@ -681,22 +681,22 @@ pub mod notification_hubs {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn check_notification_hub_availability(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         namespace_name: &str,
         parameters: &CheckAvailabilityParameters,
         subscription_id: &str,
     ) -> std::result::Result<CheckAvailabilityResult, check_notification_hub_availability::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.NotificationHubs/namespaces/{}/checkNotificationHubAvailability",
-            &configuration.base_path, subscription_id, resource_group_name, namespace_name
+            &operation_config.base_path, subscription_id, resource_group_name, namespace_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(parameters);
         let req = req_builder
             .build()
@@ -733,22 +733,22 @@ pub mod notification_hubs {
         }
     }
     pub async fn get(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         namespace_name: &str,
         notification_hub_name: &str,
         subscription_id: &str,
     ) -> std::result::Result<NotificationHubResource, get::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.NotificationHubs/namespaces/{}/notificationHubs/{}",
-            &configuration.base_path, subscription_id, resource_group_name, namespace_name, notification_hub_name
+            &operation_config.base_path, subscription_id, resource_group_name, namespace_name, notification_hub_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
         match rsp.status() {
@@ -778,23 +778,23 @@ pub mod notification_hubs {
         }
     }
     pub async fn create_or_update(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         namespace_name: &str,
         notification_hub_name: &str,
         parameters: &NotificationHubCreateOrUpdateParameters,
         subscription_id: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.NotificationHubs/namespaces/{}/notificationHubs/{}",
-            &configuration.base_path, subscription_id, resource_group_name, namespace_name, notification_hub_name
+            &operation_config.base_path, subscription_id, resource_group_name, namespace_name, notification_hub_name
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(parameters);
         let req = req_builder.build().context(create_or_update::BuildRequestError)?;
         let rsp = client.execute(req).await.context(create_or_update::ExecuteRequestError)?;
@@ -837,23 +837,23 @@ pub mod notification_hubs {
         }
     }
     pub async fn patch(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         namespace_name: &str,
         notification_hub_name: &str,
         parameters: Option<&NotificationHubPatchParameters>,
         subscription_id: &str,
     ) -> std::result::Result<NotificationHubResource, patch::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.NotificationHubs/namespaces/{}/notificationHubs/{}",
-            &configuration.base_path, subscription_id, resource_group_name, namespace_name, notification_hub_name
+            &operation_config.base_path, subscription_id, resource_group_name, namespace_name, notification_hub_name
         );
         let mut req_builder = client.patch(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(parameters) = parameters {
             req_builder = req_builder.json(parameters);
         }
@@ -886,22 +886,22 @@ pub mod notification_hubs {
         }
     }
     pub async fn delete(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         namespace_name: &str,
         notification_hub_name: &str,
         subscription_id: &str,
     ) -> std::result::Result<(), delete::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.NotificationHubs/namespaces/{}/notificationHubs/{}",
-            &configuration.base_path, subscription_id, resource_group_name, namespace_name, notification_hub_name
+            &operation_config.base_path, subscription_id, resource_group_name, namespace_name, notification_hub_name
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(delete::BuildRequestError)?;
         let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
         match rsp.status() {
@@ -927,23 +927,23 @@ pub mod notification_hubs {
         }
     }
     pub async fn debug_send(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         namespace_name: &str,
         notification_hub_name: &str,
         parameters: Option<&DebugSendParameters>,
         subscription_id: &str,
     ) -> std::result::Result<DebugSendResponse, debug_send::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.NotificationHubs/namespaces/{}/notificationHubs/{}/debugsend",
-            &configuration.base_path, subscription_id, resource_group_name, namespace_name, notification_hub_name
+            &operation_config.base_path, subscription_id, resource_group_name, namespace_name, notification_hub_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(parameters) = parameters {
             req_builder = req_builder.json(parameters);
         }
@@ -976,20 +976,20 @@ pub mod notification_hubs {
         }
     }
     pub async fn get_authorization_rule(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         namespace_name: &str,
         notification_hub_name: &str,
         authorization_rule_name: &str,
         subscription_id: &str,
     ) -> std::result::Result<SharedAccessAuthorizationRuleResource, get_authorization_rule::Error> {
-        let client = &configuration.client;
-        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.NotificationHubs/namespaces/{}/notificationHubs/{}/AuthorizationRules/{}" , & configuration . base_path , subscription_id , resource_group_name , namespace_name , notification_hub_name , authorization_rule_name) ;
+        let client = &operation_config.client;
+        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.NotificationHubs/namespaces/{}/notificationHubs/{}/AuthorizationRules/{}" , & operation_config . base_path , subscription_id , resource_group_name , namespace_name , notification_hub_name , authorization_rule_name) ;
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get_authorization_rule::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get_authorization_rule::ExecuteRequestError)?;
         match rsp.status() {
@@ -1020,7 +1020,7 @@ pub mod notification_hubs {
         }
     }
     pub async fn create_or_update_authorization_rule(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         namespace_name: &str,
         notification_hub_name: &str,
@@ -1028,13 +1028,13 @@ pub mod notification_hubs {
         parameters: &SharedAccessAuthorizationRuleCreateOrUpdateParameters,
         subscription_id: &str,
     ) -> std::result::Result<SharedAccessAuthorizationRuleResource, create_or_update_authorization_rule::Error> {
-        let client = &configuration.client;
-        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.NotificationHubs/namespaces/{}/notificationHubs/{}/AuthorizationRules/{}" , & configuration . base_path , subscription_id , resource_group_name , namespace_name , notification_hub_name , authorization_rule_name) ;
+        let client = &operation_config.client;
+        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.NotificationHubs/namespaces/{}/notificationHubs/{}/AuthorizationRules/{}" , & operation_config . base_path , subscription_id , resource_group_name , namespace_name , notification_hub_name , authorization_rule_name) ;
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(parameters);
         let req = req_builder
             .build()
@@ -1071,20 +1071,20 @@ pub mod notification_hubs {
         }
     }
     pub async fn delete_authorization_rule(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         namespace_name: &str,
         notification_hub_name: &str,
         authorization_rule_name: &str,
         subscription_id: &str,
     ) -> std::result::Result<delete_authorization_rule::Response, delete_authorization_rule::Error> {
-        let client = &configuration.client;
-        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.NotificationHubs/namespaces/{}/notificationHubs/{}/AuthorizationRules/{}" , & configuration . base_path , subscription_id , resource_group_name , namespace_name , notification_hub_name , authorization_rule_name) ;
+        let client = &operation_config.client;
+        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.NotificationHubs/namespaces/{}/notificationHubs/{}/AuthorizationRules/{}" , & operation_config . base_path , subscription_id , resource_group_name , namespace_name , notification_hub_name , authorization_rule_name) ;
         let mut req_builder = client.delete(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(delete_authorization_rule::BuildRequestError)?;
         let rsp = client.execute(req).await.context(delete_authorization_rule::ExecuteRequestError)?;
         match rsp.status() {
@@ -1116,21 +1116,21 @@ pub mod notification_hubs {
         }
     }
     pub async fn list(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         namespace_name: &str,
         subscription_id: &str,
     ) -> std::result::Result<NotificationHubListResult, list::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.NotificationHubs/namespaces/{}/notificationHubs",
-            &configuration.base_path, subscription_id, resource_group_name, namespace_name
+            &operation_config.base_path, subscription_id, resource_group_name, namespace_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
         match rsp.status() {
@@ -1160,19 +1160,19 @@ pub mod notification_hubs {
         }
     }
     pub async fn list_authorization_rules(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         namespace_name: &str,
         notification_hub_name: &str,
         subscription_id: &str,
     ) -> std::result::Result<SharedAccessAuthorizationRuleListResult, list_authorization_rules::Error> {
-        let client = &configuration.client;
-        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.NotificationHubs/namespaces/{}/notificationHubs/{}/AuthorizationRules" , & configuration . base_path , subscription_id , resource_group_name , namespace_name , notification_hub_name) ;
+        let client = &operation_config.client;
+        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.NotificationHubs/namespaces/{}/notificationHubs/{}/AuthorizationRules" , & operation_config . base_path , subscription_id , resource_group_name , namespace_name , notification_hub_name) ;
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_authorization_rules::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_authorization_rules::ExecuteRequestError)?;
         match rsp.status() {
@@ -1203,20 +1203,20 @@ pub mod notification_hubs {
         }
     }
     pub async fn list_keys(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         namespace_name: &str,
         notification_hub_name: &str,
         authorization_rule_name: &str,
         subscription_id: &str,
     ) -> std::result::Result<ResourceListKeys, list_keys::Error> {
-        let client = &configuration.client;
-        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.NotificationHubs/namespaces/{}/notificationHubs/{}/AuthorizationRules/{}/listKeys" , & configuration . base_path , subscription_id , resource_group_name , namespace_name , notification_hub_name , authorization_rule_name) ;
+        let client = &operation_config.client;
+        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.NotificationHubs/namespaces/{}/notificationHubs/{}/AuthorizationRules/{}/listKeys" , & operation_config . base_path , subscription_id , resource_group_name , namespace_name , notification_hub_name , authorization_rule_name) ;
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_keys::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_keys::ExecuteRequestError)?;
         match rsp.status() {
@@ -1246,7 +1246,7 @@ pub mod notification_hubs {
         }
     }
     pub async fn regenerate_keys(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         namespace_name: &str,
         notification_hub_name: &str,
@@ -1254,13 +1254,13 @@ pub mod notification_hubs {
         parameters: &PolicykeyResource,
         subscription_id: &str,
     ) -> std::result::Result<ResourceListKeys, regenerate_keys::Error> {
-        let client = &configuration.client;
-        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.NotificationHubs/namespaces/{}/notificationHubs/{}/AuthorizationRules/{}/regenerateKeys" , & configuration . base_path , subscription_id , resource_group_name , namespace_name , notification_hub_name , authorization_rule_name) ;
+        let client = &operation_config.client;
+        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.NotificationHubs/namespaces/{}/notificationHubs/{}/AuthorizationRules/{}/regenerateKeys" , & operation_config . base_path , subscription_id , resource_group_name , namespace_name , notification_hub_name , authorization_rule_name) ;
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(parameters);
         let req = req_builder.build().context(regenerate_keys::BuildRequestError)?;
         let rsp = client.execute(req).await.context(regenerate_keys::ExecuteRequestError)?;
@@ -1291,22 +1291,22 @@ pub mod notification_hubs {
         }
     }
     pub async fn get_pns_credentials(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         namespace_name: &str,
         notification_hub_name: &str,
         subscription_id: &str,
     ) -> std::result::Result<PnsCredentialsResource, get_pns_credentials::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.NotificationHubs/namespaces/{}/notificationHubs/{}/pnsCredentials",
-            &configuration.base_path, subscription_id, resource_group_name, namespace_name, notification_hub_name
+            &operation_config.base_path, subscription_id, resource_group_name, namespace_name, notification_hub_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get_pns_credentials::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get_pns_credentials::ExecuteRequestError)?;
         match rsp.status() {

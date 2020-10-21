@@ -3,13 +3,13 @@
 mod package_2016_01;
 #[cfg(feature = "package-2016-01")]
 pub use package_2016_01::{models, operations, API_VERSION};
-pub struct Configuration {
+pub struct OperationConfig {
     pub api_version: String,
     pub client: reqwest::Client,
     pub base_path: String,
     pub bearer_access_token: Option<String>,
 }
-impl Configuration {
+impl OperationConfig {
     pub fn new(bearer_access_token: &str) -> Self {
         Self {
             bearer_access_token: Some(bearer_access_token.to_owned()),
@@ -17,7 +17,7 @@ impl Configuration {
         }
     }
 }
-impl Default for Configuration {
+impl Default for OperationConfig {
     fn default() -> Self {
         Self {
             api_version: API_VERSION.to_owned(),

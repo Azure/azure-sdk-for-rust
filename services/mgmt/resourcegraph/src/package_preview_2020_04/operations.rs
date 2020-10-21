@@ -5,14 +5,17 @@
 use crate::models::*;
 use reqwest::StatusCode;
 use snafu::{ResultExt, Snafu};
-pub async fn resources(configuration: &crate::Configuration, query: &QueryRequest) -> std::result::Result<QueryResponse, resources::Error> {
-    let client = &configuration.client;
-    let uri_str = &format!("{}/providers/Microsoft.ResourceGraph/resources", &configuration.base_path,);
+pub async fn resources(
+    operation_config: &crate::OperationConfig,
+    query: &QueryRequest,
+) -> std::result::Result<QueryResponse, resources::Error> {
+    let client = &operation_config.client;
+    let uri_str = &format!("{}/providers/Microsoft.ResourceGraph/resources", &operation_config.base_path,);
     let mut req_builder = client.post(uri_str);
-    if let Some(token) = &configuration.bearer_access_token {
+    if let Some(token) = &operation_config.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
-    req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
     req_builder = req_builder.json(query);
     let req = req_builder.build().context(resources::BuildRequestError)?;
     let rsp = client.execute(req).await.context(resources::ExecuteRequestError)?;
@@ -60,16 +63,16 @@ pub mod resources {
     }
 }
 pub async fn resource_changes(
-    configuration: &crate::Configuration,
+    operation_config: &crate::OperationConfig,
     parameters: &ResourceChangesRequestParameters,
 ) -> std::result::Result<ResourceChangeList, resource_changes::Error> {
-    let client = &configuration.client;
-    let uri_str = &format!("{}/providers/Microsoft.ResourceGraph/resourceChanges", &configuration.base_path,);
+    let client = &operation_config.client;
+    let uri_str = &format!("{}/providers/Microsoft.ResourceGraph/resourceChanges", &operation_config.base_path,);
     let mut req_builder = client.post(uri_str);
-    if let Some(token) = &configuration.bearer_access_token {
+    if let Some(token) = &operation_config.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
-    req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
     req_builder = req_builder.json(parameters);
     let req = req_builder.build().context(resource_changes::BuildRequestError)?;
     let rsp = client.execute(req).await.context(resource_changes::ExecuteRequestError)?;
@@ -117,19 +120,19 @@ pub mod resource_changes {
     }
 }
 pub async fn resource_change_details(
-    configuration: &crate::Configuration,
+    operation_config: &crate::OperationConfig,
     parameters: &ResourceChangeDetailsRequestParameters,
 ) -> std::result::Result<ResourceChangeData, resource_change_details::Error> {
-    let client = &configuration.client;
+    let client = &operation_config.client;
     let uri_str = &format!(
         "{}/providers/Microsoft.ResourceGraph/resourceChangeDetails",
-        &configuration.base_path,
+        &operation_config.base_path,
     );
     let mut req_builder = client.post(uri_str);
-    if let Some(token) = &configuration.bearer_access_token {
+    if let Some(token) = &operation_config.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
-    req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
     req_builder = req_builder.json(parameters);
     let req = req_builder.build().context(resource_change_details::BuildRequestError)?;
     let rsp = client.execute(req).await.context(resource_change_details::ExecuteRequestError)?;
@@ -181,14 +184,14 @@ pub mod operations {
     use crate::models::*;
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
-    pub async fn list(configuration: &crate::Configuration) -> std::result::Result<OperationListResult, list::Error> {
-        let client = &configuration.client;
-        let uri_str = &format!("{}/providers/Microsoft.ResourceGraph/operations", &configuration.base_path,);
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationListResult, list::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!("{}/providers/Microsoft.ResourceGraph/operations", &operation_config.base_path,);
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
         match rsp.status() {

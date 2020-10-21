@@ -9,14 +9,14 @@ pub mod private_store_offers {
     use crate::models::*;
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
-    pub async fn list(configuration: &crate::Configuration) -> std::result::Result<OfferListResponse, list::Error> {
-        let client = &configuration.client;
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OfferListResponse, list::Error> {
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Marketplace/privateStores/{}/offers",
-            &configuration.base_path, private_store_id
+            &operation_config.base_path, private_store_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
         let req = req_builder.build().context(list::BuildRequestError)?;
@@ -69,14 +69,14 @@ pub mod private_store_private_offers {
     use crate::models::*;
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
-    pub async fn list(configuration: &crate::Configuration) -> std::result::Result<OfferListResponse, list::Error> {
-        let client = &configuration.client;
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OfferListResponse, list::Error> {
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Marketplace/privateStores/{}/offers",
-            &configuration.base_path, subscription_id, private_store_id
+            &operation_config.base_path, subscription_id, private_store_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
         let req = req_builder.build().context(list::BuildRequestError)?;
@@ -129,14 +129,14 @@ pub mod private_store_offer {
     use crate::models::*;
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
-    pub async fn get(configuration: &crate::Configuration) -> std::result::Result<Offer, get::Error> {
-        let client = &configuration.client;
+    pub async fn get(operation_config: &crate::OperationConfig) -> std::result::Result<Offer, get::Error> {
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Marketplace/privateStores/{}/offers/{}",
-            &configuration.base_path, private_store_id, offer_id
+            &operation_config.base_path, private_store_id, offer_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
         let req = req_builder.build().context(get::BuildRequestError)?;
@@ -185,16 +185,16 @@ pub mod private_store_offer {
         }
     }
     pub async fn create_or_update(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         payload: Option<&Offer>,
     ) -> std::result::Result<Offer, create_or_update::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Marketplace/privateStores/{}/offers/{}",
-            &configuration.base_path, private_store_id, offer_id
+            &operation_config.base_path, private_store_id, offer_id
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
         if let Some(payload) = payload {
@@ -245,14 +245,14 @@ pub mod private_store_offer {
             },
         }
     }
-    pub async fn delete(configuration: &crate::Configuration) -> std::result::Result<(), delete::Error> {
-        let client = &configuration.client;
+    pub async fn delete(operation_config: &crate::OperationConfig) -> std::result::Result<(), delete::Error> {
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Marketplace/privateStores/{}/offers/{}",
-            &configuration.base_path, private_store_id, offer_id
+            &operation_config.base_path, private_store_id, offer_id
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
         let req = req_builder.build().context(delete::BuildRequestError)?;
@@ -301,14 +301,14 @@ pub mod private_store_private_offer {
     use crate::models::*;
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
-    pub async fn get(configuration: &crate::Configuration) -> std::result::Result<Offer, get::Error> {
-        let client = &configuration.client;
+    pub async fn get(operation_config: &crate::OperationConfig) -> std::result::Result<Offer, get::Error> {
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Marketplace/privateStores/{}/offers/{}",
-            &configuration.base_path, subscription_id, private_store_id, offer_id
+            &operation_config.base_path, subscription_id, private_store_id, offer_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
         let req = req_builder.build().context(get::BuildRequestError)?;
@@ -357,16 +357,16 @@ pub mod private_store_private_offer {
         }
     }
     pub async fn create_or_update(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         payload: Option<&Offer>,
     ) -> std::result::Result<Offer, create_or_update::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Marketplace/privateStores/{}/offers/{}",
-            &configuration.base_path, subscription_id, private_store_id, offer_id
+            &operation_config.base_path, subscription_id, private_store_id, offer_id
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
         if let Some(payload) = payload {
@@ -422,11 +422,11 @@ pub mod private_store {
     use crate::models::*;
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
-    pub async fn list(configuration: &crate::Configuration) -> std::result::Result<PrivateStoreList, list::Error> {
-        let client = &configuration.client;
-        let uri_str = &format!("{}/providers/Microsoft.Marketplace/privateStores", &configuration.base_path,);
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<PrivateStoreList, list::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!("{}/providers/Microsoft.Marketplace/privateStores", &operation_config.base_path,);
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
         let req = req_builder.build().context(list::BuildRequestError)?;
@@ -457,14 +457,14 @@ pub mod private_store {
             DeserializeError { source: serde_json::Error, body: bytes::Bytes },
         }
     }
-    pub async fn get(configuration: &crate::Configuration) -> std::result::Result<PrivateStore, get::Error> {
-        let client = &configuration.client;
+    pub async fn get(operation_config: &crate::OperationConfig) -> std::result::Result<PrivateStore, get::Error> {
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Marketplace/privateStores/{}",
-            &configuration.base_path, private_store_id
+            &operation_config.base_path, private_store_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
         let req = req_builder.build().context(get::BuildRequestError)?;
@@ -513,16 +513,16 @@ pub mod private_store {
         }
     }
     pub async fn create_or_update(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         payload: Option<&PrivateStore>,
     ) -> std::result::Result<(), create_or_update::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Marketplace/privateStores/{}",
-            &configuration.base_path, private_store_id
+            &operation_config.base_path, private_store_id
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
         if let Some(payload) = payload {
@@ -569,14 +569,14 @@ pub mod private_store {
             },
         }
     }
-    pub async fn delete(configuration: &crate::Configuration) -> std::result::Result<(), delete::Error> {
-        let client = &configuration.client;
+    pub async fn delete(operation_config: &crate::OperationConfig) -> std::result::Result<(), delete::Error> {
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Marketplace/privateStores/{}",
-            &configuration.base_path, private_store_id
+            &operation_config.base_path, private_store_id
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
         let req = req_builder.build().context(delete::BuildRequestError)?;
@@ -625,14 +625,14 @@ pub mod operations {
     use crate::models::*;
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
-    pub async fn list(configuration: &crate::Configuration) -> std::result::Result<OperationListResult, list::Error> {
-        let client = &configuration.client;
-        let uri_str = &format!("{}/providers/Microsoft.Marketplace/operations", &configuration.base_path,);
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationListResult, list::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!("{}/providers/Microsoft.Marketplace/operations", &operation_config.base_path,);
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
         match rsp.status() {

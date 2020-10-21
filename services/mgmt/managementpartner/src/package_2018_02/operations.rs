@@ -9,17 +9,17 @@ pub mod partner {
     use crate::models::*;
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
-    pub async fn get(configuration: &crate::Configuration, partner_id: &str) -> std::result::Result<PartnerResponse, get::Error> {
-        let client = &configuration.client;
+    pub async fn get(operation_config: &crate::OperationConfig, partner_id: &str) -> std::result::Result<PartnerResponse, get::Error> {
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.ManagementPartner/partners/{}",
-            &configuration.base_path, partner_id
+            &operation_config.base_path, partner_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
         match rsp.status() {
@@ -53,17 +53,20 @@ pub mod partner {
             DeserializeError { source: serde_json::Error, body: bytes::Bytes },
         }
     }
-    pub async fn create(configuration: &crate::Configuration, partner_id: &str) -> std::result::Result<PartnerResponse, create::Error> {
-        let client = &configuration.client;
+    pub async fn create(
+        operation_config: &crate::OperationConfig,
+        partner_id: &str,
+    ) -> std::result::Result<PartnerResponse, create::Error> {
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.ManagementPartner/partners/{}",
-            &configuration.base_path, partner_id
+            &operation_config.base_path, partner_id
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(create::BuildRequestError)?;
         let rsp = client.execute(req).await.context(create::ExecuteRequestError)?;
         match rsp.status() {
@@ -97,17 +100,20 @@ pub mod partner {
             DeserializeError { source: serde_json::Error, body: bytes::Bytes },
         }
     }
-    pub async fn update(configuration: &crate::Configuration, partner_id: &str) -> std::result::Result<PartnerResponse, update::Error> {
-        let client = &configuration.client;
+    pub async fn update(
+        operation_config: &crate::OperationConfig,
+        partner_id: &str,
+    ) -> std::result::Result<PartnerResponse, update::Error> {
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.ManagementPartner/partners/{}",
-            &configuration.base_path, partner_id
+            &operation_config.base_path, partner_id
         );
         let mut req_builder = client.patch(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(update::BuildRequestError)?;
         let rsp = client.execute(req).await.context(update::ExecuteRequestError)?;
         match rsp.status() {
@@ -141,17 +147,17 @@ pub mod partner {
             DeserializeError { source: serde_json::Error, body: bytes::Bytes },
         }
     }
-    pub async fn delete(configuration: &crate::Configuration, partner_id: &str) -> std::result::Result<(), delete::Error> {
-        let client = &configuration.client;
+    pub async fn delete(operation_config: &crate::OperationConfig, partner_id: &str) -> std::result::Result<(), delete::Error> {
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.ManagementPartner/partners/{}",
-            &configuration.base_path, partner_id
+            &operation_config.base_path, partner_id
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(delete::BuildRequestError)?;
         let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
         match rsp.status() {
@@ -186,14 +192,14 @@ pub mod operation {
     use crate::models::*;
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
-    pub async fn list(configuration: &crate::Configuration) -> std::result::Result<OperationList, list::Error> {
-        let client = &configuration.client;
-        let uri_str = &format!("{}/providers/Microsoft.ManagementPartner/operations", &configuration.base_path,);
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationList, list::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!("{}/providers/Microsoft.ManagementPartner/operations", &operation_config.base_path,);
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
         match rsp.status() {
@@ -232,14 +238,14 @@ pub mod partners {
     use crate::models::*;
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
-    pub async fn get(configuration: &crate::Configuration) -> std::result::Result<PartnerResponse, get::Error> {
-        let client = &configuration.client;
-        let uri_str = &format!("{}/providers/Microsoft.ManagementPartner/partners", &configuration.base_path,);
+    pub async fn get(operation_config: &crate::OperationConfig) -> std::result::Result<PartnerResponse, get::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!("{}/providers/Microsoft.ManagementPartner/partners", &operation_config.base_path,);
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
         match rsp.status() {

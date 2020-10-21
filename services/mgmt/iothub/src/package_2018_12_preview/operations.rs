@@ -9,14 +9,14 @@ pub mod operations {
     use crate::models::*;
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
-    pub async fn list(configuration: &crate::Configuration) -> std::result::Result<OperationListResult, list::Error> {
-        let client = &configuration.client;
-        let uri_str = &format!("{}/providers/Microsoft.Devices/operations", &configuration.base_path,);
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationListResult, list::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!("{}/providers/Microsoft.Devices/operations", &operation_config.base_path,);
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
         match rsp.status() {
@@ -68,21 +68,21 @@ pub mod iot_hub_resource {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn get(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         resource_name: &str,
     ) -> std::result::Result<IotHubDescription, get::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Devices/IotHubs/{}",
-            &configuration.base_path, subscription_id, resource_group_name, resource_name
+            &operation_config.base_path, subscription_id, resource_group_name, resource_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
         match rsp.status() {
@@ -129,23 +129,23 @@ pub mod iot_hub_resource {
         }
     }
     pub async fn create_or_update(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         resource_name: &str,
         iot_hub_description: &IotHubDescription,
         if_match: Option<&str>,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Devices/IotHubs/{}",
-            &configuration.base_path, subscription_id, resource_group_name, resource_name
+            &operation_config.base_path, subscription_id, resource_group_name, resource_name
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(iot_hub_description);
         if let Some(if_match) = if_match {
             req_builder = req_builder.header("If-Match", if_match);
@@ -206,22 +206,22 @@ pub mod iot_hub_resource {
         }
     }
     pub async fn update(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         resource_name: &str,
         iot_hub_tags: &TagsResource,
     ) -> std::result::Result<IotHubDescription, update::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Devices/IotHubs/{}",
-            &configuration.base_path, subscription_id, resource_group_name, resource_name
+            &operation_config.base_path, subscription_id, resource_group_name, resource_name
         );
         let mut req_builder = client.patch(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(iot_hub_tags);
         let req = req_builder.build().context(update::BuildRequestError)?;
         let rsp = client.execute(req).await.context(update::ExecuteRequestError)?;
@@ -252,21 +252,21 @@ pub mod iot_hub_resource {
         }
     }
     pub async fn delete(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         resource_name: &str,
     ) -> std::result::Result<delete::Response, delete::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Devices/IotHubs/{}",
-            &configuration.base_path, subscription_id, resource_group_name, resource_name
+            &operation_config.base_path, subscription_id, resource_group_name, resource_name
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(delete::BuildRequestError)?;
         let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
         match rsp.status() {
@@ -333,19 +333,19 @@ pub mod iot_hub_resource {
         }
     }
     pub async fn list_by_subscription(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
     ) -> std::result::Result<IotHubDescriptionListResult, list_by_subscription::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Devices/IotHubs",
-            &configuration.base_path, subscription_id
+            &operation_config.base_path, subscription_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_by_subscription::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_by_subscription::ExecuteRequestError)?;
         match rsp.status() {
@@ -393,20 +393,20 @@ pub mod iot_hub_resource {
         }
     }
     pub async fn list_by_resource_group(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
     ) -> std::result::Result<IotHubDescriptionListResult, list_by_resource_group::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Devices/IotHubs",
-            &configuration.base_path, subscription_id, resource_group_name
+            &operation_config.base_path, subscription_id, resource_group_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_by_resource_group::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_by_resource_group::ExecuteRequestError)?;
         match rsp.status() {
@@ -454,21 +454,21 @@ pub mod iot_hub_resource {
         }
     }
     pub async fn get_stats(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         resource_name: &str,
     ) -> std::result::Result<RegistryStatistics, get_stats::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Devices/IotHubs/{}/IotHubStats",
-            &configuration.base_path, subscription_id, resource_group_name, resource_name
+            &operation_config.base_path, subscription_id, resource_group_name, resource_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get_stats::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get_stats::ExecuteRequestError)?;
         match rsp.status() {
@@ -515,21 +515,21 @@ pub mod iot_hub_resource {
         }
     }
     pub async fn get_valid_skus(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         resource_name: &str,
     ) -> std::result::Result<IotHubSkuDescriptionListResult, get_valid_skus::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Devices/IotHubs/{}/skus",
-            &configuration.base_path, subscription_id, resource_group_name, resource_name
+            &operation_config.base_path, subscription_id, resource_group_name, resource_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get_valid_skus::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get_valid_skus::ExecuteRequestError)?;
         match rsp.status() {
@@ -577,22 +577,22 @@ pub mod iot_hub_resource {
         }
     }
     pub async fn list_event_hub_consumer_groups(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         resource_name: &str,
         event_hub_endpoint_name: &str,
     ) -> std::result::Result<EventHubConsumerGroupsListResult, list_event_hub_consumer_groups::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Devices/IotHubs/{}/eventHubEndpoints/{}/ConsumerGroups",
-            &configuration.base_path, subscription_id, resource_group_name, resource_name, event_hub_endpoint_name
+            &operation_config.base_path, subscription_id, resource_group_name, resource_name, event_hub_endpoint_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_event_hub_consumer_groups::BuildRequestError)?;
         let rsp = client
             .execute(req)
@@ -644,23 +644,23 @@ pub mod iot_hub_resource {
         }
     }
     pub async fn get_event_hub_consumer_group(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         resource_name: &str,
         event_hub_endpoint_name: &str,
         name: &str,
     ) -> std::result::Result<EventHubConsumerGroupInfo, get_event_hub_consumer_group::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Devices/IotHubs/{}/eventHubEndpoints/{}/ConsumerGroups/{}",
-            &configuration.base_path, subscription_id, resource_group_name, resource_name, event_hub_endpoint_name, name
+            &operation_config.base_path, subscription_id, resource_group_name, resource_name, event_hub_endpoint_name, name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get_event_hub_consumer_group::BuildRequestError)?;
         let rsp = client
             .execute(req)
@@ -712,23 +712,23 @@ pub mod iot_hub_resource {
         }
     }
     pub async fn create_event_hub_consumer_group(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         resource_name: &str,
         event_hub_endpoint_name: &str,
         name: &str,
     ) -> std::result::Result<EventHubConsumerGroupInfo, create_event_hub_consumer_group::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Devices/IotHubs/{}/eventHubEndpoints/{}/ConsumerGroups/{}",
-            &configuration.base_path, subscription_id, resource_group_name, resource_name, event_hub_endpoint_name, name
+            &operation_config.base_path, subscription_id, resource_group_name, resource_name, event_hub_endpoint_name, name
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(create_event_hub_consumer_group::BuildRequestError)?;
         let rsp = client
             .execute(req)
@@ -780,23 +780,23 @@ pub mod iot_hub_resource {
         }
     }
     pub async fn delete_event_hub_consumer_group(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         resource_name: &str,
         event_hub_endpoint_name: &str,
         name: &str,
     ) -> std::result::Result<(), delete_event_hub_consumer_group::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Devices/IotHubs/{}/eventHubEndpoints/{}/ConsumerGroups/{}",
-            &configuration.base_path, subscription_id, resource_group_name, resource_name, event_hub_endpoint_name, name
+            &operation_config.base_path, subscription_id, resource_group_name, resource_name, event_hub_endpoint_name, name
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(delete_event_hub_consumer_group::BuildRequestError)?;
         let rsp = client
             .execute(req)
@@ -843,21 +843,21 @@ pub mod iot_hub_resource {
         }
     }
     pub async fn list_jobs(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         resource_name: &str,
     ) -> std::result::Result<JobResponseListResult, list_jobs::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Devices/IotHubs/{}/jobs",
-            &configuration.base_path, subscription_id, resource_group_name, resource_name
+            &operation_config.base_path, subscription_id, resource_group_name, resource_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_jobs::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_jobs::ExecuteRequestError)?;
         match rsp.status() {
@@ -904,22 +904,22 @@ pub mod iot_hub_resource {
         }
     }
     pub async fn get_job(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         resource_name: &str,
         job_id: &str,
     ) -> std::result::Result<JobResponse, get_job::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Devices/IotHubs/{}/jobs/{}",
-            &configuration.base_path, subscription_id, resource_group_name, resource_name, job_id
+            &operation_config.base_path, subscription_id, resource_group_name, resource_name, job_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get_job::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get_job::ExecuteRequestError)?;
         match rsp.status() {
@@ -966,21 +966,21 @@ pub mod iot_hub_resource {
         }
     }
     pub async fn get_quota_metrics(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         resource_name: &str,
     ) -> std::result::Result<IotHubQuotaMetricInfoListResult, get_quota_metrics::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Devices/IotHubs/{}/quotaMetrics",
-            &configuration.base_path, subscription_id, resource_group_name, resource_name
+            &operation_config.base_path, subscription_id, resource_group_name, resource_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get_quota_metrics::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get_quota_metrics::ExecuteRequestError)?;
         match rsp.status() {
@@ -1028,21 +1028,21 @@ pub mod iot_hub_resource {
         }
     }
     pub async fn get_endpoint_health(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         iot_hub_name: &str,
     ) -> std::result::Result<EndpointHealthDataListResult, get_endpoint_health::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Devices/IotHubs/{}/routingEndpointsHealth",
-            &configuration.base_path, subscription_id, resource_group_name, iot_hub_name
+            &operation_config.base_path, subscription_id, resource_group_name, iot_hub_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get_endpoint_health::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get_endpoint_health::ExecuteRequestError)?;
         match rsp.status() {
@@ -1090,20 +1090,20 @@ pub mod iot_hub_resource {
         }
     }
     pub async fn check_name_availability(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         operation_inputs: &OperationInputs,
     ) -> std::result::Result<IotHubNameAvailabilityInfo, check_name_availability::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Devices/checkNameAvailability",
-            &configuration.base_path, subscription_id
+            &operation_config.base_path, subscription_id
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(operation_inputs);
         let req = req_builder.build().context(check_name_availability::BuildRequestError)?;
         let rsp = client.execute(req).await.context(check_name_availability::ExecuteRequestError)?;
@@ -1152,22 +1152,22 @@ pub mod iot_hub_resource {
         }
     }
     pub async fn test_all_routes(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         input: &TestAllRoutesInput,
         iot_hub_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
     ) -> std::result::Result<TestAllRoutesResult, test_all_routes::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Devices/IotHubs/{}/routing/routes/$testall",
-            &configuration.base_path, subscription_id, resource_group_name, iot_hub_name
+            &operation_config.base_path, subscription_id, resource_group_name, iot_hub_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(input);
         let req = req_builder.build().context(test_all_routes::BuildRequestError)?;
         let rsp = client.execute(req).await.context(test_all_routes::ExecuteRequestError)?;
@@ -1215,22 +1215,22 @@ pub mod iot_hub_resource {
         }
     }
     pub async fn test_route(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         input: &TestRouteInput,
         iot_hub_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
     ) -> std::result::Result<TestRouteResult, test_route::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Devices/IotHubs/{}/routing/routes/$testnew",
-            &configuration.base_path, subscription_id, resource_group_name, iot_hub_name
+            &operation_config.base_path, subscription_id, resource_group_name, iot_hub_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(input);
         let req = req_builder.build().context(test_route::BuildRequestError)?;
         let rsp = client.execute(req).await.context(test_route::ExecuteRequestError)?;
@@ -1278,21 +1278,21 @@ pub mod iot_hub_resource {
         }
     }
     pub async fn list_keys(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         resource_name: &str,
     ) -> std::result::Result<SharedAccessSignatureAuthorizationRuleListResult, list_keys::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Devices/IotHubs/{}/listkeys",
-            &configuration.base_path, subscription_id, resource_group_name, resource_name
+            &operation_config.base_path, subscription_id, resource_group_name, resource_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_keys::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_keys::ExecuteRequestError)?;
         match rsp.status() {
@@ -1340,22 +1340,22 @@ pub mod iot_hub_resource {
         }
     }
     pub async fn get_keys_for_key_name(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         resource_name: &str,
         key_name: &str,
     ) -> std::result::Result<SharedAccessSignatureAuthorizationRule, get_keys_for_key_name::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Devices/IotHubs/{}/IotHubKeys/{}/listkeys",
-            &configuration.base_path, subscription_id, resource_group_name, resource_name, key_name
+            &operation_config.base_path, subscription_id, resource_group_name, resource_name, key_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get_keys_for_key_name::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get_keys_for_key_name::ExecuteRequestError)?;
         match rsp.status() {
@@ -1403,22 +1403,22 @@ pub mod iot_hub_resource {
         }
     }
     pub async fn export_devices(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         resource_name: &str,
         export_devices_parameters: &ExportDevicesRequest,
     ) -> std::result::Result<JobResponse, export_devices::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Devices/IotHubs/{}/exportDevices",
-            &configuration.base_path, subscription_id, resource_group_name, resource_name
+            &operation_config.base_path, subscription_id, resource_group_name, resource_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(export_devices_parameters);
         let req = req_builder.build().context(export_devices::BuildRequestError)?;
         let rsp = client.execute(req).await.context(export_devices::ExecuteRequestError)?;
@@ -1466,22 +1466,22 @@ pub mod iot_hub_resource {
         }
     }
     pub async fn import_devices(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         resource_name: &str,
         import_devices_parameters: &ImportDevicesRequest,
     ) -> std::result::Result<JobResponse, import_devices::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Devices/IotHubs/{}/importDevices",
-            &configuration.base_path, subscription_id, resource_group_name, resource_name
+            &operation_config.base_path, subscription_id, resource_group_name, resource_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(import_devices_parameters);
         let req = req_builder.build().context(import_devices::BuildRequestError)?;
         let rsp = client.execute(req).await.context(import_devices::ExecuteRequestError)?;
@@ -1534,19 +1534,19 @@ pub mod resource_provider_common {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn get_subscription_quota(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
     ) -> std::result::Result<UserSubscriptionQuotaListResult, get_subscription_quota::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Devices/usages",
-            &configuration.base_path, subscription_id
+            &operation_config.base_path, subscription_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get_subscription_quota::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get_subscription_quota::ExecuteRequestError)?;
         match rsp.status() {
@@ -1599,21 +1599,21 @@ pub mod certificates {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn list_by_iot_hub(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         resource_name: &str,
     ) -> std::result::Result<CertificateListDescription, list_by_iot_hub::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Devices/IotHubs/{}/certificates",
-            &configuration.base_path, subscription_id, resource_group_name, resource_name
+            &operation_config.base_path, subscription_id, resource_group_name, resource_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_by_iot_hub::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_by_iot_hub::ExecuteRequestError)?;
         match rsp.status() {
@@ -1661,22 +1661,22 @@ pub mod certificates {
         }
     }
     pub async fn get(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         resource_name: &str,
         certificate_name: &str,
     ) -> std::result::Result<CertificateDescription, get::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Devices/IotHubs/{}/certificates/{}",
-            &configuration.base_path, subscription_id, resource_group_name, resource_name, certificate_name
+            &operation_config.base_path, subscription_id, resource_group_name, resource_name, certificate_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
         match rsp.status() {
@@ -1723,7 +1723,7 @@ pub mod certificates {
         }
     }
     pub async fn create_or_update(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         resource_name: &str,
@@ -1731,16 +1731,16 @@ pub mod certificates {
         certificate_description: &CertificateBodyDescription,
         if_match: Option<&str>,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Devices/IotHubs/{}/certificates/{}",
-            &configuration.base_path, subscription_id, resource_group_name, resource_name, certificate_name
+            &operation_config.base_path, subscription_id, resource_group_name, resource_name, certificate_name
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(certificate_description);
         if let Some(if_match) = if_match {
             req_builder = req_builder.header("If-Match", if_match);
@@ -1803,23 +1803,23 @@ pub mod certificates {
         }
     }
     pub async fn delete(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         resource_name: &str,
         certificate_name: &str,
         if_match: &str,
     ) -> std::result::Result<delete::Response, delete::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Devices/IotHubs/{}/certificates/{}",
-            &configuration.base_path, subscription_id, resource_group_name, resource_name, certificate_name
+            &operation_config.base_path, subscription_id, resource_group_name, resource_name, certificate_name
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.header("If-Match", if_match);
         let req = req_builder.build().context(delete::BuildRequestError)?;
         let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
@@ -1869,23 +1869,23 @@ pub mod certificates {
         }
     }
     pub async fn generate_verification_code(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         resource_name: &str,
         certificate_name: &str,
         if_match: &str,
     ) -> std::result::Result<CertificateWithNonceDescription, generate_verification_code::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Devices/IotHubs/{}/certificates/{}/generateVerificationCode",
-            &configuration.base_path, subscription_id, resource_group_name, resource_name, certificate_name
+            &operation_config.base_path, subscription_id, resource_group_name, resource_name, certificate_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.header("If-Match", if_match);
         let req = req_builder.build().context(generate_verification_code::BuildRequestError)?;
         let rsp = client.execute(req).await.context(generate_verification_code::ExecuteRequestError)?;
@@ -1935,7 +1935,7 @@ pub mod certificates {
         }
     }
     pub async fn verify(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         resource_name: &str,
@@ -1943,16 +1943,16 @@ pub mod certificates {
         certificate_verification_body: &CertificateVerificationDescription,
         if_match: &str,
     ) -> std::result::Result<CertificateDescription, verify::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Devices/IotHubs/{}/certificates/{}/verify",
-            &configuration.base_path, subscription_id, resource_group_name, resource_name, certificate_name
+            &operation_config.base_path, subscription_id, resource_group_name, resource_name, certificate_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(certificate_verification_body);
         req_builder = req_builder.header("If-Match", if_match);
         let req = req_builder.build().context(verify::BuildRequestError)?;

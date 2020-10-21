@@ -10,7 +10,7 @@ pub mod usage_aggregates {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn list(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         reported_start_time: &str,
         reported_end_time: &str,
         show_details: Option<bool>,
@@ -18,16 +18,16 @@ pub mod usage_aggregates {
         continuation_token: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<UsageAggregationListResult, list::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Commerce/UsageAggregates",
-            &configuration.base_path, subscription_id
+            &operation_config.base_path, subscription_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.query(&[("reportedStartTime", reported_start_time)]);
         req_builder = req_builder.query(&[("reportedEndTime", reported_end_time)]);
         if let Some(show_details) = show_details {
@@ -90,20 +90,20 @@ pub mod rate_card {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn get(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         filter: &str,
         subscription_id: &str,
     ) -> std::result::Result<ResourceRateCardInfo, get::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Commerce/RateCard",
-            &configuration.base_path, subscription_id
+            &operation_config.base_path, subscription_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.query(&[("$filter", filter)]);
         let req = req_builder.build().context(get::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;

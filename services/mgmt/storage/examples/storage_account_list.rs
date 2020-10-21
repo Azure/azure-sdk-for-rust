@@ -15,7 +15,7 @@ type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 async fn main() -> Result<()> {
     let subscription_id = &get_subscription_id()?;
     let access_token = &get_access_token()?;
-    let config = &azure_mgmt_storage::Configuration::new(access_token);
+    let config = &azure_mgmt_storage::OperationConfig::new(access_token);
     let accounts = storage_accounts::list(config, subscription_id).await?;
     println!("# of storage accounts {}", accounts.value.len());
     for account in &accounts.value {

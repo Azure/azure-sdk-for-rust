@@ -10,19 +10,19 @@ pub mod guest_configuration_assignments {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn get(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         guest_configuration_assignment_name: &str,
         subscription_id: &str,
         vm_name: &str,
     ) -> std::result::Result<GuestConfigurationAssignment, get::Error> {
-        let client = &configuration.client;
-        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/virtualMachines/{}/providers/Microsoft.GuestConfiguration/guestConfigurationAssignments/{}" , & configuration . base_path , subscription_id , resource_group_name , vm_name , guest_configuration_assignment_name) ;
+        let client = &operation_config.client;
+        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/virtualMachines/{}/providers/Microsoft.GuestConfiguration/guestConfigurationAssignments/{}" , & operation_config . base_path , subscription_id , resource_group_name , vm_name , guest_configuration_assignment_name) ;
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
         match rsp.status() {
@@ -69,20 +69,20 @@ pub mod guest_configuration_assignments {
         }
     }
     pub async fn create_or_update(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         guest_configuration_assignment_name: &str,
         parameters: &GuestConfigurationAssignment,
         subscription_id: &str,
         resource_group_name: &str,
         vm_name: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
-        let client = &configuration.client;
-        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/virtualMachines/{}/providers/Microsoft.GuestConfiguration/guestConfigurationAssignments/{}" , & configuration . base_path , subscription_id , resource_group_name , vm_name , guest_configuration_assignment_name) ;
+        let client = &operation_config.client;
+        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/virtualMachines/{}/providers/Microsoft.GuestConfiguration/guestConfigurationAssignments/{}" , & operation_config . base_path , subscription_id , resource_group_name , vm_name , guest_configuration_assignment_name) ;
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(parameters);
         let req = req_builder.build().context(create_or_update::BuildRequestError)?;
         let rsp = client.execute(req).await.context(create_or_update::ExecuteRequestError)?;
@@ -142,19 +142,19 @@ pub mod guest_configuration_assignments {
         }
     }
     pub async fn delete(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         guest_configuration_assignment_name: &str,
         subscription_id: &str,
         vm_name: &str,
     ) -> std::result::Result<(), delete::Error> {
-        let client = &configuration.client;
-        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/virtualMachines/{}/providers/Microsoft.GuestConfiguration/guestConfigurationAssignments/{}" , & configuration . base_path , subscription_id , resource_group_name , vm_name , guest_configuration_assignment_name) ;
+        let client = &operation_config.client;
+        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/virtualMachines/{}/providers/Microsoft.GuestConfiguration/guestConfigurationAssignments/{}" , & operation_config . base_path , subscription_id , resource_group_name , vm_name , guest_configuration_assignment_name) ;
         let mut req_builder = client.delete(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(delete::BuildRequestError)?;
         let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
         match rsp.status() {
@@ -197,18 +197,18 @@ pub mod guest_configuration_assignments {
         }
     }
     pub async fn list(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         subscription_id: &str,
         vm_name: &str,
     ) -> std::result::Result<GuestConfigurationAssignmentList, list::Error> {
-        let client = &configuration.client;
-        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/virtualMachines/{}/providers/Microsoft.GuestConfiguration/guestConfigurationAssignments" , & configuration . base_path , subscription_id , resource_group_name , vm_name) ;
+        let client = &operation_config.client;
+        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/virtualMachines/{}/providers/Microsoft.GuestConfiguration/guestConfigurationAssignments" , & operation_config . base_path , subscription_id , resource_group_name , vm_name) ;
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
         match rsp.status() {
@@ -260,19 +260,19 @@ pub mod guest_configuration_assignment_reports {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn list(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         guest_configuration_assignment_name: &str,
         subscription_id: &str,
         vm_name: &str,
     ) -> std::result::Result<GuestConfigurationAssignmentReportList, list::Error> {
-        let client = &configuration.client;
-        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/virtualMachines/{}/providers/Microsoft.GuestConfiguration/guestConfigurationAssignments/{}/reports" , & configuration . base_path , subscription_id , resource_group_name , vm_name , guest_configuration_assignment_name) ;
+        let client = &operation_config.client;
+        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/virtualMachines/{}/providers/Microsoft.GuestConfiguration/guestConfigurationAssignments/{}/reports" , & operation_config . base_path , subscription_id , resource_group_name , vm_name , guest_configuration_assignment_name) ;
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
         match rsp.status() {
@@ -320,20 +320,20 @@ pub mod guest_configuration_assignment_reports {
         }
     }
     pub async fn get(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         guest_configuration_assignment_name: &str,
         report_id: &str,
         subscription_id: &str,
         vm_name: &str,
     ) -> std::result::Result<GuestConfigurationAssignmentReport, get::Error> {
-        let client = &configuration.client;
-        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/virtualMachines/{}/providers/Microsoft.GuestConfiguration/guestConfigurationAssignments/{}/reports/{}" , & configuration . base_path , subscription_id , resource_group_name , vm_name , guest_configuration_assignment_name , report_id) ;
+        let client = &operation_config.client;
+        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/virtualMachines/{}/providers/Microsoft.GuestConfiguration/guestConfigurationAssignments/{}/reports/{}" , & operation_config . base_path , subscription_id , resource_group_name , vm_name , guest_configuration_assignment_name , report_id) ;
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
         match rsp.status() {
@@ -386,19 +386,19 @@ pub mod guest_configuration_hcrp_assignments {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn get(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         guest_configuration_assignment_name: &str,
         subscription_id: &str,
         machine_name: &str,
     ) -> std::result::Result<GuestConfigurationAssignment, get::Error> {
-        let client = &configuration.client;
-        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridCompute/machines/{}/providers/Microsoft.GuestConfiguration/guestConfigurationAssignments/{}" , & configuration . base_path , subscription_id , resource_group_name , machine_name , guest_configuration_assignment_name) ;
+        let client = &operation_config.client;
+        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridCompute/machines/{}/providers/Microsoft.GuestConfiguration/guestConfigurationAssignments/{}" , & operation_config . base_path , subscription_id , resource_group_name , machine_name , guest_configuration_assignment_name) ;
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
         match rsp.status() {
@@ -445,20 +445,20 @@ pub mod guest_configuration_hcrp_assignments {
         }
     }
     pub async fn create_or_update(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         guest_configuration_assignment_name: &str,
         parameters: &GuestConfigurationAssignment,
         subscription_id: &str,
         resource_group_name: &str,
         machine_name: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
-        let client = &configuration.client;
-        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridCompute/machines/{}/providers/Microsoft.GuestConfiguration/guestConfigurationAssignments/{}" , & configuration . base_path , subscription_id , resource_group_name , machine_name , guest_configuration_assignment_name) ;
+        let client = &operation_config.client;
+        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridCompute/machines/{}/providers/Microsoft.GuestConfiguration/guestConfigurationAssignments/{}" , & operation_config . base_path , subscription_id , resource_group_name , machine_name , guest_configuration_assignment_name) ;
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(parameters);
         let req = req_builder.build().context(create_or_update::BuildRequestError)?;
         let rsp = client.execute(req).await.context(create_or_update::ExecuteRequestError)?;
@@ -518,19 +518,19 @@ pub mod guest_configuration_hcrp_assignments {
         }
     }
     pub async fn delete(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         guest_configuration_assignment_name: &str,
         subscription_id: &str,
         machine_name: &str,
     ) -> std::result::Result<(), delete::Error> {
-        let client = &configuration.client;
-        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridCompute/machines/{}/providers/Microsoft.GuestConfiguration/guestConfigurationAssignments/{}" , & configuration . base_path , subscription_id , resource_group_name , machine_name , guest_configuration_assignment_name) ;
+        let client = &operation_config.client;
+        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridCompute/machines/{}/providers/Microsoft.GuestConfiguration/guestConfigurationAssignments/{}" , & operation_config . base_path , subscription_id , resource_group_name , machine_name , guest_configuration_assignment_name) ;
         let mut req_builder = client.delete(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(delete::BuildRequestError)?;
         let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
         match rsp.status() {
@@ -573,18 +573,18 @@ pub mod guest_configuration_hcrp_assignments {
         }
     }
     pub async fn list(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         subscription_id: &str,
         machine_name: &str,
     ) -> std::result::Result<GuestConfigurationAssignmentList, list::Error> {
-        let client = &configuration.client;
-        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridCompute/machines/{}/providers/Microsoft.GuestConfiguration/guestConfigurationAssignments" , & configuration . base_path , subscription_id , resource_group_name , machine_name) ;
+        let client = &operation_config.client;
+        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridCompute/machines/{}/providers/Microsoft.GuestConfiguration/guestConfigurationAssignments" , & operation_config . base_path , subscription_id , resource_group_name , machine_name) ;
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
         match rsp.status() {
@@ -636,19 +636,19 @@ pub mod guest_configuration_hcrp_assignment_reports {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn list(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         guest_configuration_assignment_name: &str,
         subscription_id: &str,
         machine_name: &str,
     ) -> std::result::Result<GuestConfigurationAssignmentReportList, list::Error> {
-        let client = &configuration.client;
-        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridCompute/machines/{}/providers/Microsoft.GuestConfiguration/guestConfigurationAssignments/{}/reports" , & configuration . base_path , subscription_id , resource_group_name , machine_name , guest_configuration_assignment_name) ;
+        let client = &operation_config.client;
+        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridCompute/machines/{}/providers/Microsoft.GuestConfiguration/guestConfigurationAssignments/{}/reports" , & operation_config . base_path , subscription_id , resource_group_name , machine_name , guest_configuration_assignment_name) ;
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
         match rsp.status() {
@@ -696,20 +696,20 @@ pub mod guest_configuration_hcrp_assignment_reports {
         }
     }
     pub async fn get(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         guest_configuration_assignment_name: &str,
         report_id: &str,
         subscription_id: &str,
         machine_name: &str,
     ) -> std::result::Result<GuestConfigurationAssignmentReport, get::Error> {
-        let client = &configuration.client;
-        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridCompute/machines/{}/providers/Microsoft.GuestConfiguration/guestConfigurationAssignments/{}/reports/{}" , & configuration . base_path , subscription_id , resource_group_name , machine_name , guest_configuration_assignment_name , report_id) ;
+        let client = &operation_config.client;
+        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridCompute/machines/{}/providers/Microsoft.GuestConfiguration/guestConfigurationAssignments/{}/reports/{}" , & operation_config . base_path , subscription_id , resource_group_name , machine_name , guest_configuration_assignment_name , report_id) ;
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
         match rsp.status() {
@@ -761,14 +761,14 @@ pub mod operations {
     use crate::models::*;
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
-    pub async fn list(configuration: &crate::Configuration) -> std::result::Result<OperationList, list::Error> {
-        let client = &configuration.client;
-        let uri_str = &format!("{}/providers/Microsoft.GuestConfiguration/operations", &configuration.base_path,);
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationList, list::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!("{}/providers/Microsoft.GuestConfiguration/operations", &operation_config.base_path,);
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
         match rsp.status() {

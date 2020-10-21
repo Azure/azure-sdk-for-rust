@@ -5,14 +5,16 @@
 use crate::models::*;
 use reqwest::StatusCode;
 use snafu::{ResultExt, Snafu};
-pub async fn list_operations(configuration: &crate::Configuration) -> std::result::Result<OperationListResult, list_operations::Error> {
-    let client = &configuration.client;
-    let uri_str = &format!("{}/providers/Microsoft.Solutions/operations", &configuration.base_path,);
+pub async fn list_operations(
+    operation_config: &crate::OperationConfig,
+) -> std::result::Result<OperationListResult, list_operations::Error> {
+    let client = &operation_config.client;
+    let uri_str = &format!("{}/providers/Microsoft.Solutions/operations", &operation_config.base_path,);
     let mut req_builder = client.get(uri_str);
-    if let Some(token) = &configuration.bearer_access_token {
+    if let Some(token) = &operation_config.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
-    req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
     let req = req_builder.build().context(list_operations::BuildRequestError)?;
     let rsp = client.execute(req).await.context(list_operations::ExecuteRequestError)?;
     match rsp.status() {
@@ -46,21 +48,21 @@ pub mod appliances {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn get(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         appliance_name: &str,
         subscription_id: &str,
     ) -> std::result::Result<Appliance, get::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Solutions/appliances/{}",
-            &configuration.base_path, subscription_id, resource_group_name, appliance_name
+            &operation_config.base_path, subscription_id, resource_group_name, appliance_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
         match rsp.status() {
@@ -109,22 +111,22 @@ pub mod appliances {
         }
     }
     pub async fn create_or_update(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         appliance_name: &str,
         parameters: &Appliance,
         subscription_id: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Solutions/appliances/{}",
-            &configuration.base_path, subscription_id, resource_group_name, appliance_name
+            &operation_config.base_path, subscription_id, resource_group_name, appliance_name
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(parameters);
         let req = req_builder.build().context(create_or_update::BuildRequestError)?;
         let rsp = client.execute(req).await.context(create_or_update::ExecuteRequestError)?;
@@ -182,22 +184,22 @@ pub mod appliances {
         }
     }
     pub async fn update(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         appliance_name: &str,
         parameters: Option<&Appliance>,
         subscription_id: &str,
     ) -> std::result::Result<Appliance, update::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Solutions/appliances/{}",
-            &configuration.base_path, subscription_id, resource_group_name, appliance_name
+            &operation_config.base_path, subscription_id, resource_group_name, appliance_name
         );
         let mut req_builder = client.patch(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(parameters) = parameters {
             req_builder = req_builder.json(parameters);
         }
@@ -247,21 +249,21 @@ pub mod appliances {
         }
     }
     pub async fn delete(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         appliance_name: &str,
         subscription_id: &str,
     ) -> std::result::Result<delete::Response, delete::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Solutions/appliances/{}",
-            &configuration.base_path, subscription_id, resource_group_name, appliance_name
+            &operation_config.base_path, subscription_id, resource_group_name, appliance_name
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(delete::BuildRequestError)?;
         let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
         match rsp.status() {
@@ -310,20 +312,20 @@ pub mod appliances {
         }
     }
     pub async fn list_by_resource_group(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         subscription_id: &str,
     ) -> std::result::Result<ApplianceListResult, list_by_resource_group::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Solutions/appliances",
-            &configuration.base_path, subscription_id, resource_group_name
+            &operation_config.base_path, subscription_id, resource_group_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_by_resource_group::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_by_resource_group::ExecuteRequestError)?;
         match rsp.status() {
@@ -371,19 +373,19 @@ pub mod appliances {
         }
     }
     pub async fn list_by_subscription(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
     ) -> std::result::Result<ApplianceListResult, list_by_subscription::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Solutions/appliances",
-            &configuration.base_path, subscription_id
+            &operation_config.base_path, subscription_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_by_subscription::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_by_subscription::ExecuteRequestError)?;
         match rsp.status() {
@@ -430,14 +432,17 @@ pub mod appliances {
             },
         }
     }
-    pub async fn get_by_id(configuration: &crate::Configuration, appliance_id: &str) -> std::result::Result<Appliance, get_by_id::Error> {
-        let client = &configuration.client;
-        let uri_str = &format!("{}/{}", &configuration.base_path, appliance_id);
+    pub async fn get_by_id(
+        operation_config: &crate::OperationConfig,
+        appliance_id: &str,
+    ) -> std::result::Result<Appliance, get_by_id::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!("{}/{}", &operation_config.base_path, appliance_id);
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get_by_id::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get_by_id::ExecuteRequestError)?;
         match rsp.status() {
@@ -486,17 +491,17 @@ pub mod appliances {
         }
     }
     pub async fn create_or_update_by_id(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         appliance_id: &str,
         parameters: &Appliance,
     ) -> std::result::Result<create_or_update_by_id::Response, create_or_update_by_id::Error> {
-        let client = &configuration.client;
-        let uri_str = &format!("{}/{}", &configuration.base_path, appliance_id);
+        let client = &operation_config.client;
+        let uri_str = &format!("{}/{}", &operation_config.base_path, appliance_id);
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(parameters);
         let req = req_builder.build().context(create_or_update_by_id::BuildRequestError)?;
         let rsp = client.execute(req).await.context(create_or_update_by_id::ExecuteRequestError)?;
@@ -554,17 +559,17 @@ pub mod appliances {
         }
     }
     pub async fn update_by_id(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         appliance_id: &str,
         parameters: Option<&Appliance>,
     ) -> std::result::Result<Appliance, update_by_id::Error> {
-        let client = &configuration.client;
-        let uri_str = &format!("{}/{}", &configuration.base_path, appliance_id);
+        let client = &operation_config.client;
+        let uri_str = &format!("{}/{}", &operation_config.base_path, appliance_id);
         let mut req_builder = client.patch(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(parameters) = parameters {
             req_builder = req_builder.json(parameters);
         }
@@ -614,16 +619,16 @@ pub mod appliances {
         }
     }
     pub async fn delete_by_id(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         appliance_id: &str,
     ) -> std::result::Result<delete_by_id::Response, delete_by_id::Error> {
-        let client = &configuration.client;
-        let uri_str = &format!("{}/{}", &configuration.base_path, appliance_id);
+        let client = &operation_config.client;
+        let uri_str = &format!("{}/{}", &operation_config.base_path, appliance_id);
         let mut req_builder = client.delete(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(delete_by_id::BuildRequestError)?;
         let rsp = client.execute(req).await.context(delete_by_id::ExecuteRequestError)?;
         match rsp.status() {
@@ -677,21 +682,21 @@ pub mod appliance_definitions {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn get(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         appliance_definition_name: &str,
         subscription_id: &str,
     ) -> std::result::Result<ApplianceDefinition, get::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Solutions/applianceDefinitions/{}",
-            &configuration.base_path, subscription_id, resource_group_name, appliance_definition_name
+            &operation_config.base_path, subscription_id, resource_group_name, appliance_definition_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
         match rsp.status() {
@@ -740,22 +745,22 @@ pub mod appliance_definitions {
         }
     }
     pub async fn create_or_update(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         appliance_definition_name: &str,
         parameters: &ApplianceDefinition,
         subscription_id: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Solutions/applianceDefinitions/{}",
-            &configuration.base_path, subscription_id, resource_group_name, appliance_definition_name
+            &operation_config.base_path, subscription_id, resource_group_name, appliance_definition_name
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(parameters);
         let req = req_builder.build().context(create_or_update::BuildRequestError)?;
         let rsp = client.execute(req).await.context(create_or_update::ExecuteRequestError)?;
@@ -813,21 +818,21 @@ pub mod appliance_definitions {
         }
     }
     pub async fn delete(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         appliance_definition_name: &str,
         subscription_id: &str,
     ) -> std::result::Result<delete::Response, delete::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Solutions/applianceDefinitions/{}",
-            &configuration.base_path, subscription_id, resource_group_name, appliance_definition_name
+            &operation_config.base_path, subscription_id, resource_group_name, appliance_definition_name
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(delete::BuildRequestError)?;
         let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
         match rsp.status() {
@@ -878,20 +883,20 @@ pub mod appliance_definitions {
         }
     }
     pub async fn list_by_resource_group(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         subscription_id: &str,
     ) -> std::result::Result<ApplianceDefinitionListResult, list_by_resource_group::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Solutions/applianceDefinitions",
-            &configuration.base_path, subscription_id, resource_group_name
+            &operation_config.base_path, subscription_id, resource_group_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_by_resource_group::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_by_resource_group::ExecuteRequestError)?;
         match rsp.status() {
@@ -939,16 +944,16 @@ pub mod appliance_definitions {
         }
     }
     pub async fn get_by_id(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         appliance_definition_id: &str,
     ) -> std::result::Result<ApplianceDefinition, get_by_id::Error> {
-        let client = &configuration.client;
-        let uri_str = &format!("{}/{}", &configuration.base_path, appliance_definition_id);
+        let client = &operation_config.client;
+        let uri_str = &format!("{}/{}", &operation_config.base_path, appliance_definition_id);
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get_by_id::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get_by_id::ExecuteRequestError)?;
         match rsp.status() {
@@ -997,17 +1002,17 @@ pub mod appliance_definitions {
         }
     }
     pub async fn create_or_update_by_id(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         appliance_definition_id: &str,
         parameters: &ApplianceDefinition,
     ) -> std::result::Result<create_or_update_by_id::Response, create_or_update_by_id::Error> {
-        let client = &configuration.client;
-        let uri_str = &format!("{}/{}", &configuration.base_path, appliance_definition_id);
+        let client = &operation_config.client;
+        let uri_str = &format!("{}/{}", &operation_config.base_path, appliance_definition_id);
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(parameters);
         let req = req_builder.build().context(create_or_update_by_id::BuildRequestError)?;
         let rsp = client.execute(req).await.context(create_or_update_by_id::ExecuteRequestError)?;
@@ -1067,16 +1072,16 @@ pub mod appliance_definitions {
         }
     }
     pub async fn delete_by_id(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         appliance_definition_id: &str,
     ) -> std::result::Result<delete_by_id::Response, delete_by_id::Error> {
-        let client = &configuration.client;
-        let uri_str = &format!("{}/{}", &configuration.base_path, appliance_definition_id);
+        let client = &operation_config.client;
+        let uri_str = &format!("{}/{}", &operation_config.base_path, appliance_definition_id);
         let mut req_builder = client.delete(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(delete_by_id::BuildRequestError)?;
         let rsp = client.execute(req).await.context(delete_by_id::ExecuteRequestError)?;
         match rsp.status() {

@@ -19,13 +19,13 @@ pub use package_2019_09_01_preview::{models, operations, API_VERSION};
 mod package_2019_08_01_preview;
 #[cfg(feature = "package-2019-08-01-preview")]
 pub use package_2019_08_01_preview::{models, operations, API_VERSION};
-pub struct Configuration {
+pub struct OperationConfig {
     pub api_version: String,
     pub client: reqwest::Client,
     pub base_path: String,
     pub bearer_access_token: Option<String>,
 }
-impl Configuration {
+impl OperationConfig {
     pub fn new(bearer_access_token: &str) -> Self {
         Self {
             bearer_access_token: Some(bearer_access_token.to_owned()),
@@ -33,7 +33,7 @@ impl Configuration {
         }
     }
 }
-impl Default for Configuration {
+impl Default for OperationConfig {
     fn default() -> Self {
         Self {
             api_version: API_VERSION.to_owned(),

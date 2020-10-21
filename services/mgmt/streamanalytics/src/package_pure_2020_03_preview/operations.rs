@@ -10,21 +10,21 @@ pub mod clusters {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn get(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         cluster_name: &str,
     ) -> std::result::Result<Cluster, get::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StreamAnalytics/clusters/{}",
-            &configuration.base_path, subscription_id, resource_group_name, cluster_name
+            &operation_config.base_path, subscription_id, resource_group_name, cluster_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
         match rsp.status() {
@@ -59,7 +59,7 @@ pub mod clusters {
         }
     }
     pub async fn create_or_update(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         cluster: &Cluster,
         subscription_id: &str,
         resource_group_name: &str,
@@ -67,16 +67,16 @@ pub mod clusters {
         if_match: Option<&str>,
         if_none_match: Option<&str>,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StreamAnalytics/clusters/{}",
-            &configuration.base_path, subscription_id, resource_group_name, cluster_name
+            &operation_config.base_path, subscription_id, resource_group_name, cluster_name
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(cluster);
         if let Some(if_match) = if_match {
             req_builder = req_builder.header("If-Match", if_match);
@@ -128,23 +128,23 @@ pub mod clusters {
         }
     }
     pub async fn update(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         cluster: &Cluster,
         subscription_id: &str,
         resource_group_name: &str,
         cluster_name: &str,
         if_match: Option<&str>,
     ) -> std::result::Result<update::Response, update::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StreamAnalytics/clusters/{}",
-            &configuration.base_path, subscription_id, resource_group_name, cluster_name
+            &operation_config.base_path, subscription_id, resource_group_name, cluster_name
         );
         let mut req_builder = client.patch(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(cluster);
         if let Some(if_match) = if_match {
             req_builder = req_builder.header("If-Match", if_match);
@@ -189,21 +189,21 @@ pub mod clusters {
         }
     }
     pub async fn delete(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         cluster_name: &str,
     ) -> std::result::Result<delete::Response, delete::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StreamAnalytics/clusters/{}",
-            &configuration.base_path, subscription_id, resource_group_name, cluster_name
+            &operation_config.base_path, subscription_id, resource_group_name, cluster_name
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(delete::BuildRequestError)?;
         let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
         match rsp.status() {
@@ -242,19 +242,19 @@ pub mod clusters {
         }
     }
     pub async fn list_by_subscription(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
     ) -> std::result::Result<ClusterListResult, list_by_subscription::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.StreamAnalytics/clusters",
-            &configuration.base_path, subscription_id
+            &operation_config.base_path, subscription_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_by_subscription::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_by_subscription::ExecuteRequestError)?;
         match rsp.status() {
@@ -290,20 +290,20 @@ pub mod clusters {
         }
     }
     pub async fn list_by_resource_group(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
     ) -> std::result::Result<ClusterListResult, list_by_resource_group::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StreamAnalytics/clusters",
-            &configuration.base_path, subscription_id, resource_group_name
+            &operation_config.base_path, subscription_id, resource_group_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_by_resource_group::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_by_resource_group::ExecuteRequestError)?;
         match rsp.status() {
@@ -339,21 +339,21 @@ pub mod clusters {
         }
     }
     pub async fn list_streaming_jobs(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         cluster_name: &str,
     ) -> std::result::Result<ClusterJobListResult, list_streaming_jobs::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StreamAnalytics/clusters/{}/listStreamingJobs",
-            &configuration.base_path, subscription_id, resource_group_name, cluster_name
+            &operation_config.base_path, subscription_id, resource_group_name, cluster_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_streaming_jobs::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_streaming_jobs::ExecuteRequestError)?;
         match rsp.status() {
@@ -394,22 +394,22 @@ pub mod private_endpoints {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn get(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         cluster_name: &str,
         private_endpoint_name: &str,
     ) -> std::result::Result<PrivateEndpoint, get::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StreamAnalytics/clusters/{}/privateEndpoints/{}",
-            &configuration.base_path, subscription_id, resource_group_name, cluster_name, private_endpoint_name
+            &operation_config.base_path, subscription_id, resource_group_name, cluster_name, private_endpoint_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
         match rsp.status() {
@@ -444,7 +444,7 @@ pub mod private_endpoints {
         }
     }
     pub async fn create_or_update(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         private_endpoint: &PrivateEndpoint,
         subscription_id: &str,
         resource_group_name: &str,
@@ -453,16 +453,16 @@ pub mod private_endpoints {
         if_match: Option<&str>,
         if_none_match: Option<&str>,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StreamAnalytics/clusters/{}/privateEndpoints/{}",
-            &configuration.base_path, subscription_id, resource_group_name, cluster_name, private_endpoint_name
+            &operation_config.base_path, subscription_id, resource_group_name, cluster_name, private_endpoint_name
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(private_endpoint);
         if let Some(if_match) = if_match {
             req_builder = req_builder.header("If-Match", if_match);
@@ -514,22 +514,22 @@ pub mod private_endpoints {
         }
     }
     pub async fn delete(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         cluster_name: &str,
         private_endpoint_name: &str,
     ) -> std::result::Result<delete::Response, delete::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StreamAnalytics/clusters/{}/privateEndpoints/{}",
-            &configuration.base_path, subscription_id, resource_group_name, cluster_name, private_endpoint_name
+            &operation_config.base_path, subscription_id, resource_group_name, cluster_name, private_endpoint_name
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(delete::BuildRequestError)?;
         let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
         match rsp.status() {
@@ -568,21 +568,21 @@ pub mod private_endpoints {
         }
     }
     pub async fn list_by_cluster(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         cluster_name: &str,
     ) -> std::result::Result<PrivateEndpointListResult, list_by_cluster::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StreamAnalytics/clusters/{}/privateEndpoints",
-            &configuration.base_path, subscription_id, resource_group_name, cluster_name
+            &operation_config.base_path, subscription_id, resource_group_name, cluster_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_by_cluster::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_by_cluster::ExecuteRequestError)?;
         match rsp.status() {

@@ -10,22 +10,22 @@ pub mod account {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn get_storage_account(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         account_name: &str,
         storage_account_name: &str,
         subscription_id: &str,
     ) -> std::result::Result<StorageAccountInfo, get_storage_account::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataLakeAnalytics/accounts/{}/StorageAccounts/{}",
-            &configuration.base_path, subscription_id, resource_group_name, account_name, storage_account_name
+            &operation_config.base_path, subscription_id, resource_group_name, account_name, storage_account_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get_storage_account::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get_storage_account::ExecuteRequestError)?;
         match rsp.status() {
@@ -56,23 +56,23 @@ pub mod account {
         }
     }
     pub async fn add_storage_account(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         account_name: &str,
         storage_account_name: &str,
         parameters: &AddStorageAccountParameters,
         subscription_id: &str,
     ) -> std::result::Result<(), add_storage_account::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataLakeAnalytics/accounts/{}/StorageAccounts/{}",
-            &configuration.base_path, subscription_id, resource_group_name, account_name, storage_account_name
+            &operation_config.base_path, subscription_id, resource_group_name, account_name, storage_account_name
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(parameters);
         let req = req_builder.build().context(add_storage_account::BuildRequestError)?;
         let rsp = client.execute(req).await.context(add_storage_account::ExecuteRequestError)?;
@@ -99,23 +99,23 @@ pub mod account {
         }
     }
     pub async fn update_storage_account(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         account_name: &str,
         storage_account_name: &str,
         parameters: &AddStorageAccountParameters,
         subscription_id: &str,
     ) -> std::result::Result<(), update_storage_account::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataLakeAnalytics/accounts/{}/StorageAccounts/{}",
-            &configuration.base_path, subscription_id, resource_group_name, account_name, storage_account_name
+            &operation_config.base_path, subscription_id, resource_group_name, account_name, storage_account_name
         );
         let mut req_builder = client.patch(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(parameters);
         let req = req_builder.build().context(update_storage_account::BuildRequestError)?;
         let rsp = client.execute(req).await.context(update_storage_account::ExecuteRequestError)?;
@@ -142,22 +142,22 @@ pub mod account {
         }
     }
     pub async fn delete_storage_account(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         account_name: &str,
         storage_account_name: &str,
         subscription_id: &str,
     ) -> std::result::Result<(), delete_storage_account::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataLakeAnalytics/accounts/{}/StorageAccounts/{}",
-            &configuration.base_path, subscription_id, resource_group_name, account_name, storage_account_name
+            &operation_config.base_path, subscription_id, resource_group_name, account_name, storage_account_name
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(delete_storage_account::BuildRequestError)?;
         let rsp = client.execute(req).await.context(delete_storage_account::ExecuteRequestError)?;
         match rsp.status() {
@@ -183,23 +183,23 @@ pub mod account {
         }
     }
     pub async fn get_storage_container(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         account_name: &str,
         storage_account_name: &str,
         container_name: &str,
         subscription_id: &str,
     ) -> std::result::Result<BlobContainer, get_storage_container::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataLakeAnalytics/accounts/{}/StorageAccounts/{}/Containers/{}",
-            &configuration.base_path, subscription_id, resource_group_name, account_name, storage_account_name, container_name
+            &operation_config.base_path, subscription_id, resource_group_name, account_name, storage_account_name, container_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get_storage_container::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get_storage_container::ExecuteRequestError)?;
         match rsp.status() {
@@ -229,22 +229,22 @@ pub mod account {
         }
     }
     pub async fn list_storage_containers(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         account_name: &str,
         storage_account_name: &str,
         subscription_id: &str,
     ) -> std::result::Result<ListBlobContainersResult, list_storage_containers::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataLakeAnalytics/accounts/{}/StorageAccounts/{}/Containers",
-            &configuration.base_path, subscription_id, resource_group_name, account_name, storage_account_name
+            &operation_config.base_path, subscription_id, resource_group_name, account_name, storage_account_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_storage_containers::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_storage_containers::ExecuteRequestError)?;
         match rsp.status() {
@@ -275,20 +275,20 @@ pub mod account {
         }
     }
     pub async fn list_sas_tokens(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         account_name: &str,
         storage_account_name: &str,
         container_name: &str,
         subscription_id: &str,
     ) -> std::result::Result<ListSasTokensResult, list_sas_tokens::Error> {
-        let client = &configuration.client;
-        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataLakeAnalytics/accounts/{}/StorageAccounts/{}/Containers/{}/listSasTokens" , & configuration . base_path , subscription_id , resource_group_name , account_name , storage_account_name , container_name) ;
+        let client = &operation_config.client;
+        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataLakeAnalytics/accounts/{}/StorageAccounts/{}/Containers/{}/listSasTokens" , & operation_config . base_path , subscription_id , resource_group_name , account_name , storage_account_name , container_name) ;
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_sas_tokens::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_sas_tokens::ExecuteRequestError)?;
         match rsp.status() {
@@ -318,22 +318,22 @@ pub mod account {
         }
     }
     pub async fn get_data_lake_store_account(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         account_name: &str,
         data_lake_store_account_name: &str,
         subscription_id: &str,
     ) -> std::result::Result<DataLakeStoreAccountInfo, get_data_lake_store_account::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataLakeAnalytics/accounts/{}/DataLakeStoreAccounts/{}",
-            &configuration.base_path, subscription_id, resource_group_name, account_name, data_lake_store_account_name
+            &operation_config.base_path, subscription_id, resource_group_name, account_name, data_lake_store_account_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get_data_lake_store_account::BuildRequestError)?;
         let rsp = client
             .execute(req)
@@ -367,23 +367,23 @@ pub mod account {
         }
     }
     pub async fn add_data_lake_store_account(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         account_name: &str,
         data_lake_store_account_name: &str,
         parameters: &AddDataLakeStoreParameters,
         subscription_id: &str,
     ) -> std::result::Result<(), add_data_lake_store_account::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataLakeAnalytics/accounts/{}/DataLakeStoreAccounts/{}",
-            &configuration.base_path, subscription_id, resource_group_name, account_name, data_lake_store_account_name
+            &operation_config.base_path, subscription_id, resource_group_name, account_name, data_lake_store_account_name
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(parameters);
         let req = req_builder.build().context(add_data_lake_store_account::BuildRequestError)?;
         let rsp = client
@@ -413,22 +413,22 @@ pub mod account {
         }
     }
     pub async fn delete_data_lake_store_account(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         account_name: &str,
         data_lake_store_account_name: &str,
         subscription_id: &str,
     ) -> std::result::Result<(), delete_data_lake_store_account::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataLakeAnalytics/accounts/{}/DataLakeStoreAccounts/{}",
-            &configuration.base_path, subscription_id, resource_group_name, account_name, data_lake_store_account_name
+            &operation_config.base_path, subscription_id, resource_group_name, account_name, data_lake_store_account_name
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(delete_data_lake_store_account::BuildRequestError)?;
         let rsp = client
             .execute(req)
@@ -457,7 +457,7 @@ pub mod account {
         }
     }
     pub async fn list_storage_accounts(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         account_name: &str,
         filter: Option<&str>,
@@ -471,16 +471,16 @@ pub mod account {
         format: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<DataLakeAnalyticsAccountListStorageAccountsResult, list_storage_accounts::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataLakeAnalytics/accounts/{}/StorageAccounts/",
-            &configuration.base_path, subscription_id, resource_group_name, account_name
+            &operation_config.base_path, subscription_id, resource_group_name, account_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(filter) = filter {
             req_builder = req_builder.query(&[("$filter", filter)]);
         }
@@ -538,7 +538,7 @@ pub mod account {
         }
     }
     pub async fn list_data_lake_store_accounts(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         account_name: &str,
         filter: Option<&str>,
@@ -552,16 +552,16 @@ pub mod account {
         format: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<DataLakeAnalyticsAccountListDataLakeStoreResult, list_data_lake_store_accounts::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataLakeAnalytics/accounts/{}/DataLakeStoreAccounts/",
-            &configuration.base_path, subscription_id, resource_group_name, account_name
+            &operation_config.base_path, subscription_id, resource_group_name, account_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(filter) = filter {
             req_builder = req_builder.query(&[("$filter", filter)]);
         }
@@ -622,7 +622,7 @@ pub mod account {
         }
     }
     pub async fn list_by_resource_group(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         filter: Option<&str>,
         top: Option<i64>,
@@ -635,16 +635,16 @@ pub mod account {
         format: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<DataLakeAnalyticsAccountListResult, list_by_resource_group::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataLakeAnalytics/accounts",
-            &configuration.base_path, subscription_id, resource_group_name
+            &operation_config.base_path, subscription_id, resource_group_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(filter) = filter {
             req_builder = req_builder.query(&[("$filter", filter)]);
         }
@@ -702,7 +702,7 @@ pub mod account {
         }
     }
     pub async fn list(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         filter: Option<&str>,
         top: Option<i64>,
         skip: Option<i64>,
@@ -714,16 +714,16 @@ pub mod account {
         format: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<DataLakeAnalyticsAccountListResult, list::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.DataLakeAnalytics/accounts",
-            &configuration.base_path, subscription_id
+            &operation_config.base_path, subscription_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(filter) = filter {
             req_builder = req_builder.query(&[("$filter", filter)]);
         }
@@ -781,21 +781,21 @@ pub mod account {
         }
     }
     pub async fn get(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         account_name: &str,
         subscription_id: &str,
     ) -> std::result::Result<DataLakeAnalyticsAccount, get::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataLakeAnalytics/accounts/{}",
-            &configuration.base_path, subscription_id, resource_group_name, account_name
+            &operation_config.base_path, subscription_id, resource_group_name, account_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
         match rsp.status() {
@@ -825,21 +825,21 @@ pub mod account {
         }
     }
     pub async fn delete(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         account_name: &str,
         subscription_id: &str,
     ) -> std::result::Result<delete::Response, delete::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataLakeAnalytics/accounts/{}",
-            &configuration.base_path, subscription_id, resource_group_name, account_name
+            &operation_config.base_path, subscription_id, resource_group_name, account_name
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(delete::BuildRequestError)?;
         let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
         match rsp.status() {
@@ -875,22 +875,22 @@ pub mod account {
         }
     }
     pub async fn create(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         name: &str,
         parameters: &DataLakeAnalyticsAccount,
         subscription_id: &str,
     ) -> std::result::Result<create::Response, create::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataLakeAnalytics/accounts/{}",
-            &configuration.base_path, subscription_id, resource_group_name, name
+            &operation_config.base_path, subscription_id, resource_group_name, name
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(parameters);
         let req = req_builder.build().context(create::BuildRequestError)?;
         let rsp = client.execute(req).await.context(create::ExecuteRequestError)?;
@@ -931,22 +931,22 @@ pub mod account {
         }
     }
     pub async fn update(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         name: &str,
         parameters: &DataLakeAnalyticsAccount,
         subscription_id: &str,
     ) -> std::result::Result<update::Response, update::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataLakeAnalytics/accounts/{}",
-            &configuration.base_path, subscription_id, resource_group_name, name
+            &operation_config.base_path, subscription_id, resource_group_name, name
         );
         let mut req_builder = client.patch(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(parameters);
         let req = req_builder.build().context(update::BuildRequestError)?;
         let rsp = client.execute(req).await.context(update::ExecuteRequestError)?;

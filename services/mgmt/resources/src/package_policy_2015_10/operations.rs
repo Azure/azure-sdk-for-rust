@@ -10,20 +10,20 @@ pub mod policy_assignments {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn get(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         scope: &str,
         policy_assignment_name: &str,
     ) -> std::result::Result<PolicyAssignment, get::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/{}/providers/Microsoft.Authorization/policyassignments/{}",
-            &configuration.base_path, scope, policy_assignment_name
+            &operation_config.base_path, scope, policy_assignment_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
         match rsp.status() {
@@ -53,21 +53,21 @@ pub mod policy_assignments {
         }
     }
     pub async fn create(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         scope: &str,
         policy_assignment_name: &str,
         parameters: &PolicyAssignment,
     ) -> std::result::Result<PolicyAssignment, create::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/{}/providers/Microsoft.Authorization/policyassignments/{}",
-            &configuration.base_path, scope, policy_assignment_name
+            &operation_config.base_path, scope, policy_assignment_name
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(parameters);
         let req = req_builder.build().context(create::BuildRequestError)?;
         let rsp = client.execute(req).await.context(create::ExecuteRequestError)?;
@@ -98,20 +98,20 @@ pub mod policy_assignments {
         }
     }
     pub async fn delete(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         scope: &str,
         policy_assignment_name: &str,
     ) -> std::result::Result<PolicyAssignment, delete::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/{}/providers/Microsoft.Authorization/policyassignments/{}",
-            &configuration.base_path, scope, policy_assignment_name
+            &operation_config.base_path, scope, policy_assignment_name
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(delete::BuildRequestError)?;
         let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
         match rsp.status() {
@@ -141,21 +141,21 @@ pub mod policy_assignments {
         }
     }
     pub async fn list_for_resource_group(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         filter: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<PolicyAssignmentListResult, list_for_resource_group::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Authorization/policyAssignments",
-            &configuration.base_path, subscription_id, resource_group_name
+            &operation_config.base_path, subscription_id, resource_group_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(filter) = filter {
             req_builder = req_builder.query(&[("$filter", filter)]);
         }
@@ -189,7 +189,7 @@ pub mod policy_assignments {
         }
     }
     pub async fn list_for_resource(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         resource_provider_namespace: &str,
         parent_resource_path: &str,
@@ -198,10 +198,10 @@ pub mod policy_assignments {
         filter: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<PolicyAssignmentListResult, list_for_resource::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourcegroups/{}/providers/{}/{}/{}/{}/providers/Microsoft.Authorization/policyassignments",
-            &configuration.base_path,
+            &operation_config.base_path,
             subscription_id,
             resource_group_name,
             resource_provider_namespace,
@@ -210,10 +210,10 @@ pub mod policy_assignments {
             resource_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(filter) = filter {
             req_builder = req_builder.query(&[("$filter", filter)]);
         }
@@ -247,20 +247,20 @@ pub mod policy_assignments {
         }
     }
     pub async fn list(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         filter: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<PolicyAssignmentListResult, list::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Authorization/policyassignments",
-            &configuration.base_path, subscription_id
+            &operation_config.base_path, subscription_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(filter) = filter {
             req_builder = req_builder.query(&[("$filter", filter)]);
         }
@@ -293,16 +293,16 @@ pub mod policy_assignments {
         }
     }
     pub async fn get_by_id(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         policy_assignment_id: &str,
     ) -> std::result::Result<PolicyAssignment, get_by_id::Error> {
-        let client = &configuration.client;
-        let uri_str = &format!("{}/{}", &configuration.base_path, policy_assignment_id);
+        let client = &operation_config.client;
+        let uri_str = &format!("{}/{}", &operation_config.base_path, policy_assignment_id);
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get_by_id::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get_by_id::ExecuteRequestError)?;
         match rsp.status() {
@@ -332,17 +332,17 @@ pub mod policy_assignments {
         }
     }
     pub async fn create_by_id(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         policy_assignment_id: &str,
         parameters: &PolicyAssignment,
     ) -> std::result::Result<PolicyAssignment, create_by_id::Error> {
-        let client = &configuration.client;
-        let uri_str = &format!("{}/{}", &configuration.base_path, policy_assignment_id);
+        let client = &operation_config.client;
+        let uri_str = &format!("{}/{}", &operation_config.base_path, policy_assignment_id);
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(parameters);
         let req = req_builder.build().context(create_by_id::BuildRequestError)?;
         let rsp = client.execute(req).await.context(create_by_id::ExecuteRequestError)?;
@@ -373,16 +373,16 @@ pub mod policy_assignments {
         }
     }
     pub async fn delete_by_id(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         policy_assignment_id: &str,
     ) -> std::result::Result<PolicyAssignment, delete_by_id::Error> {
-        let client = &configuration.client;
-        let uri_str = &format!("{}/{}", &configuration.base_path, policy_assignment_id);
+        let client = &operation_config.client;
+        let uri_str = &format!("{}/{}", &operation_config.base_path, policy_assignment_id);
         let mut req_builder = client.delete(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(delete_by_id::BuildRequestError)?;
         let rsp = client.execute(req).await.context(delete_by_id::ExecuteRequestError)?;
         match rsp.status() {
@@ -417,20 +417,20 @@ pub mod policy_definitions {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn get(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         policy_definition_name: &str,
         subscription_id: &str,
     ) -> std::result::Result<PolicyDefinition, get::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Authorization/policydefinitions/{}",
-            &configuration.base_path, subscription_id, policy_definition_name
+            &operation_config.base_path, subscription_id, policy_definition_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
         match rsp.status() {
@@ -460,21 +460,21 @@ pub mod policy_definitions {
         }
     }
     pub async fn create_or_update(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         policy_definition_name: &str,
         parameters: &PolicyDefinition,
         subscription_id: &str,
     ) -> std::result::Result<PolicyDefinition, create_or_update::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Authorization/policydefinitions/{}",
-            &configuration.base_path, subscription_id, policy_definition_name
+            &operation_config.base_path, subscription_id, policy_definition_name
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(parameters);
         let req = req_builder.build().context(create_or_update::BuildRequestError)?;
         let rsp = client.execute(req).await.context(create_or_update::ExecuteRequestError)?;
@@ -505,20 +505,20 @@ pub mod policy_definitions {
         }
     }
     pub async fn delete(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         policy_definition_name: &str,
         subscription_id: &str,
     ) -> std::result::Result<delete::Response, delete::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Authorization/policydefinitions/{}",
-            &configuration.base_path, subscription_id, policy_definition_name
+            &operation_config.base_path, subscription_id, policy_definition_name
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(delete::BuildRequestError)?;
         let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
         match rsp.status() {
@@ -550,20 +550,20 @@ pub mod policy_definitions {
         }
     }
     pub async fn list(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         filter: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<PolicyDefinitionListResult, list::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Authorization/policydefinitions",
-            &configuration.base_path, subscription_id
+            &operation_config.base_path, subscription_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(filter) = filter {
             req_builder = req_builder.query(&[("$filter", filter)]);
         }

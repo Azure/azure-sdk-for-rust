@@ -10,17 +10,17 @@ pub mod management_groups {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn list(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         cache_control: Option<&str>,
         skiptoken: Option<&str>,
     ) -> std::result::Result<ManagementGroupListResult, list::Error> {
-        let client = &configuration.client;
-        let uri_str = &format!("{}/providers/Microsoft.Management/managementGroups", &configuration.base_path,);
+        let client = &operation_config.client;
+        let uri_str = &format!("{}/providers/Microsoft.Management/managementGroups", &operation_config.base_path,);
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(cache_control) = cache_control {
             req_builder = req_builder.header("Cache-Control", cache_control);
         }
@@ -73,22 +73,22 @@ pub mod management_groups {
         }
     }
     pub async fn get(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         group_id: &str,
         expand: Option<&str>,
         recurse: Option<bool>,
         cache_control: Option<&str>,
     ) -> std::result::Result<ManagementGroup, get::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Management/managementGroups/{}",
-            &configuration.base_path, group_id
+            &operation_config.base_path, group_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(expand) = expand {
             req_builder = req_builder.query(&[("$expand", expand)]);
         }
@@ -144,21 +144,21 @@ pub mod management_groups {
         }
     }
     pub async fn create_or_update(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         group_id: &str,
         create_management_group_request: &CreateManagementGroupRequest,
         cache_control: Option<&str>,
     ) -> std::result::Result<ManagementGroup, create_or_update::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Management/managementGroups/{}",
-            &configuration.base_path, group_id
+            &operation_config.base_path, group_id
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(create_management_group_request);
         if let Some(cache_control) = cache_control {
             req_builder = req_builder.header("Cache-Control", cache_control);
@@ -209,21 +209,21 @@ pub mod management_groups {
         }
     }
     pub async fn update(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         group_id: &str,
         create_management_group_request: &CreateManagementGroupRequest,
         cache_control: Option<&str>,
     ) -> std::result::Result<ManagementGroup, update::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Management/managementGroups/{}",
-            &configuration.base_path, group_id
+            &operation_config.base_path, group_id
         );
         let mut req_builder = client.patch(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(create_management_group_request);
         if let Some(cache_control) = cache_control {
             req_builder = req_builder.header("Cache-Control", cache_control);
@@ -274,20 +274,20 @@ pub mod management_groups {
         }
     }
     pub async fn delete(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         group_id: &str,
         cache_control: Option<&str>,
     ) -> std::result::Result<delete::Response, delete::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Management/managementGroups/{}",
-            &configuration.base_path, group_id
+            &operation_config.base_path, group_id
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(cache_control) = cache_control {
             req_builder = req_builder.header("Cache-Control", cache_control);
         }
@@ -344,21 +344,21 @@ pub mod management_group_subscriptions {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn create(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         group_id: &str,
         subscription_id: &str,
         cache_control: Option<&str>,
     ) -> std::result::Result<(), create::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Management/managementGroups/{}/subscriptions/{}",
-            &configuration.base_path, group_id, subscription_id
+            &operation_config.base_path, group_id, subscription_id
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(cache_control) = cache_control {
             req_builder = req_builder.header("Cache-Control", cache_control);
         }
@@ -404,21 +404,21 @@ pub mod management_group_subscriptions {
         }
     }
     pub async fn delete(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         group_id: &str,
         subscription_id: &str,
         cache_control: Option<&str>,
     ) -> std::result::Result<(), delete::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Management/managementGroups/{}/subscriptions/{}",
-            &configuration.base_path, group_id, subscription_id
+            &operation_config.base_path, group_id, subscription_id
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(cache_control) = cache_control {
             req_builder = req_builder.header("Cache-Control", cache_control);
         }
@@ -468,14 +468,14 @@ pub mod operations {
     use crate::models::*;
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
-    pub async fn list(configuration: &crate::Configuration) -> std::result::Result<OperationListResult, list::Error> {
-        let client = &configuration.client;
-        let uri_str = &format!("{}/providers/Microsoft.Management/operations", &configuration.base_path,);
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationListResult, list::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!("{}/providers/Microsoft.Management/operations", &operation_config.base_path,);
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
         match rsp.status() {

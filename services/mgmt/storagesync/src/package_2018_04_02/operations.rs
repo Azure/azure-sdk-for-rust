@@ -9,14 +9,14 @@ pub mod operations {
     use crate::models::*;
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
-    pub async fn list(configuration: &crate::Configuration) -> std::result::Result<OperationEntityListResult, list::Error> {
-        let client = &configuration.client;
-        let uri_str = &format!("{}/providers/Microsoft.StorageSync/operations", &configuration.base_path,);
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationEntityListResult, list::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!("{}/providers/Microsoft.StorageSync/operations", &operation_config.base_path,);
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
         match rsp.status() {
@@ -68,21 +68,21 @@ pub mod storage_sync_services {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn check_name_availability(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         location_name: &str,
         subscription_id: &str,
         parameters: &CheckNameAvailabilityParameters,
     ) -> std::result::Result<CheckNameAvailabilityResult, check_name_availability::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.StorageSync/locations/{}/checkNameAvailability",
-            &configuration.base_path, subscription_id, location_name
+            &operation_config.base_path, subscription_id, location_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(parameters);
         let req = req_builder.build().context(check_name_availability::BuildRequestError)?;
         let rsp = client.execute(req).await.context(check_name_availability::ExecuteRequestError)?;
@@ -114,21 +114,21 @@ pub mod storage_sync_services {
         }
     }
     pub async fn get(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         storage_sync_service_name: &str,
     ) -> std::result::Result<StorageSyncService, get::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorageSync/storageSyncServices/{}",
-            &configuration.base_path, subscription_id, resource_group_name, storage_sync_service_name
+            &operation_config.base_path, subscription_id, resource_group_name, storage_sync_service_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
         match rsp.status() {
@@ -175,22 +175,22 @@ pub mod storage_sync_services {
         }
     }
     pub async fn create(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         storage_sync_service_name: &str,
         parameters: &StorageSyncServiceCreateParameters,
     ) -> std::result::Result<StorageSyncService, create::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorageSync/storageSyncServices/{}",
-            &configuration.base_path, subscription_id, resource_group_name, storage_sync_service_name
+            &operation_config.base_path, subscription_id, resource_group_name, storage_sync_service_name
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(parameters);
         let req = req_builder.build().context(create::BuildRequestError)?;
         let rsp = client.execute(req).await.context(create::ExecuteRequestError)?;
@@ -238,22 +238,22 @@ pub mod storage_sync_services {
         }
     }
     pub async fn update(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         storage_sync_service_name: &str,
         parameters: Option<&StorageSyncServiceUpdateParameters>,
     ) -> std::result::Result<StorageSyncService, update::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorageSync/storageSyncServices/{}",
-            &configuration.base_path, subscription_id, resource_group_name, storage_sync_service_name
+            &operation_config.base_path, subscription_id, resource_group_name, storage_sync_service_name
         );
         let mut req_builder = client.patch(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(parameters) = parameters {
             req_builder = req_builder.json(parameters);
         }
@@ -303,21 +303,21 @@ pub mod storage_sync_services {
         }
     }
     pub async fn delete(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         storage_sync_service_name: &str,
     ) -> std::result::Result<delete::Response, delete::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorageSync/storageSyncServices/{}",
-            &configuration.base_path, subscription_id, resource_group_name, storage_sync_service_name
+            &operation_config.base_path, subscription_id, resource_group_name, storage_sync_service_name
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(delete::BuildRequestError)?;
         let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
         match rsp.status() {
@@ -366,20 +366,20 @@ pub mod storage_sync_services {
         }
     }
     pub async fn list_by_resource_group(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
     ) -> std::result::Result<StorageSyncServiceArray, list_by_resource_group::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorageSync/storageSyncServices",
-            &configuration.base_path, subscription_id, resource_group_name
+            &operation_config.base_path, subscription_id, resource_group_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_by_resource_group::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_by_resource_group::ExecuteRequestError)?;
         match rsp.status() {
@@ -428,19 +428,19 @@ pub mod storage_sync_services {
         }
     }
     pub async fn list_by_subscription(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
     ) -> std::result::Result<StorageSyncServiceArray, list_by_subscription::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.StorageSync/storageSyncServices",
-            &configuration.base_path, subscription_id
+            &operation_config.base_path, subscription_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_by_subscription::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_by_subscription::ExecuteRequestError)?;
         match rsp.status() {
@@ -493,21 +493,21 @@ pub mod sync_groups {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn list_by_storage_sync_service(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         storage_sync_service_name: &str,
     ) -> std::result::Result<SyncGroupArray, list_by_storage_sync_service::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorageSync/storageSyncServices/{}/syncGroups",
-            &configuration.base_path, subscription_id, resource_group_name, storage_sync_service_name
+            &operation_config.base_path, subscription_id, resource_group_name, storage_sync_service_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_by_storage_sync_service::BuildRequestError)?;
         let rsp = client
             .execute(req)
@@ -559,22 +559,22 @@ pub mod sync_groups {
         }
     }
     pub async fn get(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         storage_sync_service_name: &str,
         sync_group_name: &str,
     ) -> std::result::Result<SyncGroup, get::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorageSync/storageSyncServices/{}/syncGroups/{}",
-            &configuration.base_path, subscription_id, resource_group_name, storage_sync_service_name, sync_group_name
+            &operation_config.base_path, subscription_id, resource_group_name, storage_sync_service_name, sync_group_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
         match rsp.status() {
@@ -621,23 +621,23 @@ pub mod sync_groups {
         }
     }
     pub async fn create(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         storage_sync_service_name: &str,
         sync_group_name: &str,
         parameters: &SyncGroupCreateParameters,
     ) -> std::result::Result<SyncGroup, create::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorageSync/storageSyncServices/{}/syncGroups/{}",
-            &configuration.base_path, subscription_id, resource_group_name, storage_sync_service_name, sync_group_name
+            &operation_config.base_path, subscription_id, resource_group_name, storage_sync_service_name, sync_group_name
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(parameters);
         let req = req_builder.build().context(create::BuildRequestError)?;
         let rsp = client.execute(req).await.context(create::ExecuteRequestError)?;
@@ -685,22 +685,22 @@ pub mod sync_groups {
         }
     }
     pub async fn delete(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         storage_sync_service_name: &str,
         sync_group_name: &str,
     ) -> std::result::Result<delete::Response, delete::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorageSync/storageSyncServices/{}/syncGroups/{}",
-            &configuration.base_path, subscription_id, resource_group_name, storage_sync_service_name, sync_group_name
+            &operation_config.base_path, subscription_id, resource_group_name, storage_sync_service_name, sync_group_name
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(delete::BuildRequestError)?;
         let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
         match rsp.status() {
@@ -754,23 +754,28 @@ pub mod cloud_endpoints {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn get(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         storage_sync_service_name: &str,
         sync_group_name: &str,
         cloud_endpoint_name: &str,
     ) -> std::result::Result<CloudEndpoint, get::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorageSync/storageSyncServices/{}/syncGroups/{}/cloudEndpoints/{}",
-            &configuration.base_path, subscription_id, resource_group_name, storage_sync_service_name, sync_group_name, cloud_endpoint_name
+            &operation_config.base_path,
+            subscription_id,
+            resource_group_name,
+            storage_sync_service_name,
+            sync_group_name,
+            cloud_endpoint_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
         match rsp.status() {
@@ -817,7 +822,7 @@ pub mod cloud_endpoints {
         }
     }
     pub async fn create(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         storage_sync_service_name: &str,
@@ -825,16 +830,21 @@ pub mod cloud_endpoints {
         cloud_endpoint_name: &str,
         parameters: &CloudEndpointCreateParameters,
     ) -> std::result::Result<create::Response, create::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorageSync/storageSyncServices/{}/syncGroups/{}/cloudEndpoints/{}",
-            &configuration.base_path, subscription_id, resource_group_name, storage_sync_service_name, sync_group_name, cloud_endpoint_name
+            &operation_config.base_path,
+            subscription_id,
+            resource_group_name,
+            storage_sync_service_name,
+            sync_group_name,
+            cloud_endpoint_name
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(parameters);
         let req = req_builder.build().context(create::BuildRequestError)?;
         let rsp = client.execute(req).await.context(create::ExecuteRequestError)?;
@@ -888,23 +898,28 @@ pub mod cloud_endpoints {
         }
     }
     pub async fn delete(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         storage_sync_service_name: &str,
         sync_group_name: &str,
         cloud_endpoint_name: &str,
     ) -> std::result::Result<delete::Response, delete::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorageSync/storageSyncServices/{}/syncGroups/{}/cloudEndpoints/{}",
-            &configuration.base_path, subscription_id, resource_group_name, storage_sync_service_name, sync_group_name, cloud_endpoint_name
+            &operation_config.base_path,
+            subscription_id,
+            resource_group_name,
+            storage_sync_service_name,
+            sync_group_name,
+            cloud_endpoint_name
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(delete::BuildRequestError)?;
         let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
         match rsp.status() {
@@ -955,22 +970,22 @@ pub mod cloud_endpoints {
         }
     }
     pub async fn list_by_sync_group(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         storage_sync_service_name: &str,
         sync_group_name: &str,
     ) -> std::result::Result<CloudEndpointArray, list_by_sync_group::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorageSync/storageSyncServices/{}/syncGroups/{}/cloudEndpoints",
-            &configuration.base_path, subscription_id, resource_group_name, storage_sync_service_name, sync_group_name
+            &operation_config.base_path, subscription_id, resource_group_name, storage_sync_service_name, sync_group_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_by_sync_group::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_by_sync_group::ExecuteRequestError)?;
         match rsp.status() {
@@ -1017,7 +1032,7 @@ pub mod cloud_endpoints {
         }
     }
     pub async fn pre_backup(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         storage_sync_service_name: &str,
@@ -1025,13 +1040,13 @@ pub mod cloud_endpoints {
         cloud_endpoint_name: &str,
         parameters: &BackupRequest,
     ) -> std::result::Result<pre_backup::Response, pre_backup::Error> {
-        let client = &configuration.client;
-        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorageSync/storageSyncServices/{}/syncGroups/{}/cloudEndpoints/{}/prebackup" , & configuration . base_path , subscription_id , resource_group_name , storage_sync_service_name , sync_group_name , cloud_endpoint_name) ;
+        let client = &operation_config.client;
+        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorageSync/storageSyncServices/{}/syncGroups/{}/cloudEndpoints/{}/prebackup" , & operation_config . base_path , subscription_id , resource_group_name , storage_sync_service_name , sync_group_name , cloud_endpoint_name) ;
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(parameters);
         let req = req_builder.build().context(pre_backup::BuildRequestError)?;
         let rsp = client.execute(req).await.context(pre_backup::ExecuteRequestError)?;
@@ -1081,7 +1096,7 @@ pub mod cloud_endpoints {
         }
     }
     pub async fn post_backup(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         storage_sync_service_name: &str,
@@ -1089,13 +1104,13 @@ pub mod cloud_endpoints {
         cloud_endpoint_name: &str,
         parameters: &BackupRequest,
     ) -> std::result::Result<post_backup::Response, post_backup::Error> {
-        let client = &configuration.client;
-        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorageSync/storageSyncServices/{}/syncGroups/{}/cloudEndpoints/{}/postbackup" , & configuration . base_path , subscription_id , resource_group_name , storage_sync_service_name , sync_group_name , cloud_endpoint_name) ;
+        let client = &operation_config.client;
+        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorageSync/storageSyncServices/{}/syncGroups/{}/cloudEndpoints/{}/postbackup" , & operation_config . base_path , subscription_id , resource_group_name , storage_sync_service_name , sync_group_name , cloud_endpoint_name) ;
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(parameters);
         let req = req_builder.build().context(post_backup::BuildRequestError)?;
         let rsp = client.execute(req).await.context(post_backup::ExecuteRequestError)?;
@@ -1149,7 +1164,7 @@ pub mod cloud_endpoints {
         }
     }
     pub async fn pre_restore(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         storage_sync_service_name: &str,
@@ -1157,13 +1172,13 @@ pub mod cloud_endpoints {
         cloud_endpoint_name: &str,
         parameters: &PreRestoreRequest,
     ) -> std::result::Result<pre_restore::Response, pre_restore::Error> {
-        let client = &configuration.client;
-        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorageSync/storageSyncServices/{}/syncGroups/{}/cloudEndpoints/{}/prerestore" , & configuration . base_path , subscription_id , resource_group_name , storage_sync_service_name , sync_group_name , cloud_endpoint_name) ;
+        let client = &operation_config.client;
+        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorageSync/storageSyncServices/{}/syncGroups/{}/cloudEndpoints/{}/prerestore" , & operation_config . base_path , subscription_id , resource_group_name , storage_sync_service_name , sync_group_name , cloud_endpoint_name) ;
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(parameters);
         let req = req_builder.build().context(pre_restore::BuildRequestError)?;
         let rsp = client.execute(req).await.context(pre_restore::ExecuteRequestError)?;
@@ -1213,20 +1228,20 @@ pub mod cloud_endpoints {
         }
     }
     pub async fn restoreheartbeat(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         storage_sync_service_name: &str,
         sync_group_name: &str,
         cloud_endpoint_name: &str,
     ) -> std::result::Result<(), restoreheartbeat::Error> {
-        let client = &configuration.client;
-        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorageSync/storageSyncServices/{}/syncGroups/{}/cloudEndpoints/{}/restoreheartbeat" , & configuration . base_path , subscription_id , resource_group_name , storage_sync_service_name , sync_group_name , cloud_endpoint_name) ;
+        let client = &operation_config.client;
+        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorageSync/storageSyncServices/{}/syncGroups/{}/cloudEndpoints/{}/restoreheartbeat" , & operation_config . base_path , subscription_id , resource_group_name , storage_sync_service_name , sync_group_name , cloud_endpoint_name) ;
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(restoreheartbeat::BuildRequestError)?;
         let rsp = client.execute(req).await.context(restoreheartbeat::ExecuteRequestError)?;
         match rsp.status() {
@@ -1269,7 +1284,7 @@ pub mod cloud_endpoints {
         }
     }
     pub async fn post_restore(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         storage_sync_service_name: &str,
@@ -1277,13 +1292,13 @@ pub mod cloud_endpoints {
         cloud_endpoint_name: &str,
         parameters: &PostRestoreRequest,
     ) -> std::result::Result<post_restore::Response, post_restore::Error> {
-        let client = &configuration.client;
-        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorageSync/storageSyncServices/{}/syncGroups/{}/cloudEndpoints/{}/postrestore" , & configuration . base_path , subscription_id , resource_group_name , storage_sync_service_name , sync_group_name , cloud_endpoint_name) ;
+        let client = &operation_config.client;
+        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorageSync/storageSyncServices/{}/syncGroups/{}/cloudEndpoints/{}/postrestore" , & operation_config . base_path , subscription_id , resource_group_name , storage_sync_service_name , sync_group_name , cloud_endpoint_name) ;
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(parameters);
         let req = req_builder.build().context(post_restore::BuildRequestError)?;
         let rsp = client.execute(req).await.context(post_restore::ExecuteRequestError)?;
@@ -1338,17 +1353,17 @@ pub mod server_endpoints {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn get(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         storage_sync_service_name: &str,
         sync_group_name: &str,
         server_endpoint_name: &str,
     ) -> std::result::Result<ServerEndpoint, get::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorageSync/storageSyncServices/{}/syncGroups/{}/serverEndpoints/{}",
-            &configuration.base_path,
+            &operation_config.base_path,
             subscription_id,
             resource_group_name,
             storage_sync_service_name,
@@ -1356,10 +1371,10 @@ pub mod server_endpoints {
             server_endpoint_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
         match rsp.status() {
@@ -1406,7 +1421,7 @@ pub mod server_endpoints {
         }
     }
     pub async fn create(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         storage_sync_service_name: &str,
@@ -1414,10 +1429,10 @@ pub mod server_endpoints {
         server_endpoint_name: &str,
         parameters: &ServerEndpointCreateParameters,
     ) -> std::result::Result<create::Response, create::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorageSync/storageSyncServices/{}/syncGroups/{}/serverEndpoints/{}",
-            &configuration.base_path,
+            &operation_config.base_path,
             subscription_id,
             resource_group_name,
             storage_sync_service_name,
@@ -1425,10 +1440,10 @@ pub mod server_endpoints {
             server_endpoint_name
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(parameters);
         let req = req_builder.build().context(create::BuildRequestError)?;
         let rsp = client.execute(req).await.context(create::ExecuteRequestError)?;
@@ -1482,7 +1497,7 @@ pub mod server_endpoints {
         }
     }
     pub async fn update(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         storage_sync_service_name: &str,
@@ -1490,10 +1505,10 @@ pub mod server_endpoints {
         server_endpoint_name: &str,
         parameters: Option<&ServerEndpointUpdateParameters>,
     ) -> std::result::Result<update::Response, update::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorageSync/storageSyncServices/{}/syncGroups/{}/serverEndpoints/{}",
-            &configuration.base_path,
+            &operation_config.base_path,
             subscription_id,
             resource_group_name,
             storage_sync_service_name,
@@ -1501,10 +1516,10 @@ pub mod server_endpoints {
             server_endpoint_name
         );
         let mut req_builder = client.patch(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(parameters) = parameters {
             req_builder = req_builder.json(parameters);
         }
@@ -1560,17 +1575,17 @@ pub mod server_endpoints {
         }
     }
     pub async fn delete(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         storage_sync_service_name: &str,
         sync_group_name: &str,
         server_endpoint_name: &str,
     ) -> std::result::Result<delete::Response, delete::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorageSync/storageSyncServices/{}/syncGroups/{}/serverEndpoints/{}",
-            &configuration.base_path,
+            &operation_config.base_path,
             subscription_id,
             resource_group_name,
             storage_sync_service_name,
@@ -1578,10 +1593,10 @@ pub mod server_endpoints {
             server_endpoint_name
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(delete::BuildRequestError)?;
         let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
         match rsp.status() {
@@ -1630,22 +1645,22 @@ pub mod server_endpoints {
         }
     }
     pub async fn list_by_sync_group(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         storage_sync_service_name: &str,
         sync_group_name: &str,
     ) -> std::result::Result<ServerEndpointArray, list_by_sync_group::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorageSync/storageSyncServices/{}/syncGroups/{}/serverEndpoints",
-            &configuration.base_path, subscription_id, resource_group_name, storage_sync_service_name, sync_group_name
+            &operation_config.base_path, subscription_id, resource_group_name, storage_sync_service_name, sync_group_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_by_sync_group::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_by_sync_group::ExecuteRequestError)?;
         match rsp.status() {
@@ -1693,7 +1708,7 @@ pub mod server_endpoints {
         }
     }
     pub async fn recall_action(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         storage_sync_service_name: &str,
@@ -1701,13 +1716,13 @@ pub mod server_endpoints {
         server_endpoint_name: &str,
         parameters: &RecallActionParameters,
     ) -> std::result::Result<recall_action::Response, recall_action::Error> {
-        let client = &configuration.client;
-        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorageSync/storageSyncServices/{}/syncGroups/{}/serverEndpoints/{}/recallAction" , & configuration . base_path , subscription_id , resource_group_name , storage_sync_service_name , sync_group_name , server_endpoint_name) ;
+        let client = &operation_config.client;
+        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorageSync/storageSyncServices/{}/syncGroups/{}/serverEndpoints/{}/recallAction" , & operation_config . base_path , subscription_id , resource_group_name , storage_sync_service_name , sync_group_name , server_endpoint_name) ;
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(parameters);
         let req = req_builder.build().context(recall_action::BuildRequestError)?;
         let rsp = client.execute(req).await.context(recall_action::ExecuteRequestError)?;
@@ -1762,21 +1777,21 @@ pub mod registered_servers {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn list_by_storage_sync_service(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         storage_sync_service_name: &str,
     ) -> std::result::Result<RegisteredServerArray, list_by_storage_sync_service::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorageSync/storageSyncServices/{}/registeredServers",
-            &configuration.base_path, subscription_id, resource_group_name, storage_sync_service_name
+            &operation_config.base_path, subscription_id, resource_group_name, storage_sync_service_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_by_storage_sync_service::BuildRequestError)?;
         let rsp = client
             .execute(req)
@@ -1828,22 +1843,22 @@ pub mod registered_servers {
         }
     }
     pub async fn get(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         storage_sync_service_name: &str,
         server_id: &str,
     ) -> std::result::Result<RegisteredServer, get::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorageSync/storageSyncServices/{}/registeredServers/{}",
-            &configuration.base_path, subscription_id, resource_group_name, storage_sync_service_name, server_id
+            &operation_config.base_path, subscription_id, resource_group_name, storage_sync_service_name, server_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
         match rsp.status() {
@@ -1890,23 +1905,23 @@ pub mod registered_servers {
         }
     }
     pub async fn create(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         storage_sync_service_name: &str,
         server_id: &str,
         parameters: &RegisteredServerCreateParameters,
     ) -> std::result::Result<create::Response, create::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorageSync/storageSyncServices/{}/registeredServers/{}",
-            &configuration.base_path, subscription_id, resource_group_name, storage_sync_service_name, server_id
+            &operation_config.base_path, subscription_id, resource_group_name, storage_sync_service_name, server_id
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(parameters);
         let req = req_builder.build().context(create::BuildRequestError)?;
         let rsp = client.execute(req).await.context(create::ExecuteRequestError)?;
@@ -1960,22 +1975,22 @@ pub mod registered_servers {
         }
     }
     pub async fn delete(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         storage_sync_service_name: &str,
         server_id: &str,
     ) -> std::result::Result<delete::Response, delete::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorageSync/storageSyncServices/{}/registeredServers/{}",
-            &configuration.base_path, subscription_id, resource_group_name, storage_sync_service_name, server_id
+            &operation_config.base_path, subscription_id, resource_group_name, storage_sync_service_name, server_id
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(delete::BuildRequestError)?;
         let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
         match rsp.status() {
@@ -2031,22 +2046,22 @@ pub mod workflows {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn get(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         storage_sync_service_name: &str,
         workflow_id: &str,
     ) -> std::result::Result<Workflow, get::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorageSync/storageSyncServices/{}/workflows/{}",
-            &configuration.base_path, subscription_id, resource_group_name, storage_sync_service_name, workflow_id
+            &operation_config.base_path, subscription_id, resource_group_name, storage_sync_service_name, workflow_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
         match rsp.status() {
@@ -2093,22 +2108,22 @@ pub mod workflows {
         }
     }
     pub async fn abort(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         storage_sync_service_name: &str,
         workflow_id: &str,
     ) -> std::result::Result<(), abort::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorageSync/storageSyncServices/{}/workflows/{}/abort",
-            &configuration.base_path, subscription_id, resource_group_name, storage_sync_service_name, workflow_id
+            &operation_config.base_path, subscription_id, resource_group_name, storage_sync_service_name, workflow_id
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(abort::BuildRequestError)?;
         let rsp = client.execute(req).await.context(abort::ExecuteRequestError)?;
         match rsp.status() {

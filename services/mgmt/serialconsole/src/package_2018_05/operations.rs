@@ -5,14 +5,16 @@
 use crate::models::*;
 use reqwest::StatusCode;
 use snafu::{ResultExt, Snafu};
-pub async fn list_operations(configuration: &crate::Configuration) -> std::result::Result<SerialConsoleOperations, list_operations::Error> {
-    let client = &configuration.client;
-    let uri_str = &format!("{}/providers/Microsoft.SerialConsole/operations", &configuration.base_path,);
+pub async fn list_operations(
+    operation_config: &crate::OperationConfig,
+) -> std::result::Result<SerialConsoleOperations, list_operations::Error> {
+    let client = &operation_config.client;
+    let uri_str = &format!("{}/providers/Microsoft.SerialConsole/operations", &operation_config.base_path,);
     let mut req_builder = client.get(uri_str);
-    if let Some(token) = &configuration.bearer_access_token {
+    if let Some(token) = &operation_config.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
-    req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
     let req = req_builder.build().context(list_operations::BuildRequestError)?;
     let rsp = client.execute(req).await.context(list_operations::ExecuteRequestError)?;
     match rsp.status() {
@@ -42,20 +44,20 @@ pub mod list_operations {
     }
 }
 pub async fn get_console_status(
-    configuration: &crate::Configuration,
+    operation_config: &crate::OperationConfig,
     subscription_id: &str,
     default: &str,
 ) -> std::result::Result<SerialConsoleStatus, get_console_status::Error> {
-    let client = &configuration.client;
+    let client = &operation_config.client;
     let uri_str = &format!(
         "{}/subscriptions/{}/providers/Microsoft.SerialConsole/consoleServices/{}",
-        &configuration.base_path, subscription_id, default
+        &operation_config.base_path, subscription_id, default
     );
     let mut req_builder = client.get(uri_str);
-    if let Some(token) = &configuration.bearer_access_token {
+    if let Some(token) = &operation_config.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
-    req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
     let req = req_builder.build().context(get_console_status::BuildRequestError)?;
     let rsp = client.execute(req).await.context(get_console_status::ExecuteRequestError)?;
     match rsp.status() {
@@ -106,20 +108,20 @@ pub mod get_console_status {
     }
 }
 pub async fn disable_console(
-    configuration: &crate::Configuration,
+    operation_config: &crate::OperationConfig,
     subscription_id: &str,
     default: &str,
 ) -> std::result::Result<DisableSerialConsoleResult, disable_console::Error> {
-    let client = &configuration.client;
+    let client = &operation_config.client;
     let uri_str = &format!(
         "{}/subscriptions/{}/providers/Microsoft.SerialConsole/consoleServices/{}/disableConsole",
-        &configuration.base_path, subscription_id, default
+        &operation_config.base_path, subscription_id, default
     );
     let mut req_builder = client.post(uri_str);
-    if let Some(token) = &configuration.bearer_access_token {
+    if let Some(token) = &operation_config.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
-    req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
     let req = req_builder.build().context(disable_console::BuildRequestError)?;
     let rsp = client.execute(req).await.context(disable_console::ExecuteRequestError)?;
     match rsp.status() {
@@ -171,20 +173,20 @@ pub mod disable_console {
     }
 }
 pub async fn enable_console(
-    configuration: &crate::Configuration,
+    operation_config: &crate::OperationConfig,
     subscription_id: &str,
     default: &str,
 ) -> std::result::Result<EnableSerialConsoleResult, enable_console::Error> {
-    let client = &configuration.client;
+    let client = &operation_config.client;
     let uri_str = &format!(
         "{}/subscriptions/{}/providers/Microsoft.SerialConsole/consoleServices/{}/enableConsole",
-        &configuration.base_path, subscription_id, default
+        &operation_config.base_path, subscription_id, default
     );
     let mut req_builder = client.post(uri_str);
-    if let Some(token) = &configuration.bearer_access_token {
+    if let Some(token) = &operation_config.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
-    req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
     let req = req_builder.build().context(enable_console::BuildRequestError)?;
     let rsp = client.execute(req).await.context(enable_console::ExecuteRequestError)?;
     match rsp.status() {

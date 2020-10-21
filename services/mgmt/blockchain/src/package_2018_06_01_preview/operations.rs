@@ -10,21 +10,21 @@ pub mod blockchain_members {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn get(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         blockchain_member_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
     ) -> std::result::Result<BlockchainMember, get::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Blockchain/blockchainMembers/{}",
-            &configuration.base_path, subscription_id, resource_group_name, blockchain_member_name
+            &operation_config.base_path, subscription_id, resource_group_name, blockchain_member_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
         match rsp.status() {
@@ -54,22 +54,22 @@ pub mod blockchain_members {
         }
     }
     pub async fn create(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         blockchain_member_name: &str,
         blockchain_member: Option<&BlockchainMember>,
         subscription_id: &str,
         resource_group_name: &str,
     ) -> std::result::Result<create::Response, create::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Blockchain/blockchainMembers/{}",
-            &configuration.base_path, subscription_id, resource_group_name, blockchain_member_name
+            &operation_config.base_path, subscription_id, resource_group_name, blockchain_member_name
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(blockchain_member) = blockchain_member {
             req_builder = req_builder.json(blockchain_member);
         }
@@ -112,22 +112,22 @@ pub mod blockchain_members {
         }
     }
     pub async fn update(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         blockchain_member_name: &str,
         blockchain_member: Option<&BlockchainMemberUpdate>,
         subscription_id: &str,
         resource_group_name: &str,
     ) -> std::result::Result<BlockchainMember, update::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Blockchain/blockchainMembers/{}",
-            &configuration.base_path, subscription_id, resource_group_name, blockchain_member_name
+            &operation_config.base_path, subscription_id, resource_group_name, blockchain_member_name
         );
         let mut req_builder = client.patch(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(blockchain_member) = blockchain_member {
             req_builder = req_builder.json(blockchain_member);
         }
@@ -160,21 +160,21 @@ pub mod blockchain_members {
         }
     }
     pub async fn delete(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         blockchain_member_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
     ) -> std::result::Result<delete::Response, delete::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Blockchain/blockchainMembers/{}",
-            &configuration.base_path, subscription_id, resource_group_name, blockchain_member_name
+            &operation_config.base_path, subscription_id, resource_group_name, blockchain_member_name
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(delete::BuildRequestError)?;
         let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
         match rsp.status() {
@@ -206,20 +206,20 @@ pub mod blockchain_members {
         }
     }
     pub async fn list(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
     ) -> std::result::Result<BlockchainMemberCollection, list::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Blockchain/blockchainMembers",
-            &configuration.base_path, subscription_id, resource_group_name
+            &operation_config.base_path, subscription_id, resource_group_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
         match rsp.status() {
@@ -249,19 +249,19 @@ pub mod blockchain_members {
         }
     }
     pub async fn list_all(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
     ) -> std::result::Result<BlockchainMemberCollection, list_all::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Blockchain/blockchainMembers",
-            &configuration.base_path, subscription_id
+            &operation_config.base_path, subscription_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_all::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_all::ExecuteRequestError)?;
         match rsp.status() {
@@ -291,21 +291,21 @@ pub mod blockchain_members {
         }
     }
     pub async fn list_consortium_members(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         blockchain_member_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
     ) -> std::result::Result<ConsortiumMemberCollection, list_consortium_members::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Blockchain/blockchainMembers/{}/consortiumMembers",
-            &configuration.base_path, subscription_id, resource_group_name, blockchain_member_name
+            &operation_config.base_path, subscription_id, resource_group_name, blockchain_member_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_consortium_members::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_consortium_members::ExecuteRequestError)?;
         match rsp.status() {
@@ -336,21 +336,21 @@ pub mod blockchain_members {
         }
     }
     pub async fn list_api_keys(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         blockchain_member_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
     ) -> std::result::Result<ApiKeyCollection, list_api_keys::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Blockchain/blockchainMembers/{}/listApiKeys",
-            &configuration.base_path, subscription_id, resource_group_name, blockchain_member_name
+            &operation_config.base_path, subscription_id, resource_group_name, blockchain_member_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_api_keys::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_api_keys::ExecuteRequestError)?;
         match rsp.status() {
@@ -380,22 +380,22 @@ pub mod blockchain_members {
         }
     }
     pub async fn list_regenerate_api_keys(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         blockchain_member_name: &str,
         api_key: Option<&ApiKey>,
         subscription_id: &str,
         resource_group_name: &str,
     ) -> std::result::Result<ApiKeyCollection, list_regenerate_api_keys::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Blockchain/blockchainMembers/{}/regenerateApiKeys",
-            &configuration.base_path, subscription_id, resource_group_name, blockchain_member_name
+            &operation_config.base_path, subscription_id, resource_group_name, blockchain_member_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(api_key) = api_key {
             req_builder = req_builder.json(api_key);
         }
@@ -434,21 +434,21 @@ pub mod blockchain_member_operation_results {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn get(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         location_name: &str,
         operation_id: &str,
         subscription_id: &str,
     ) -> std::result::Result<get::Response, get::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Blockchain/locations/{}/blockchainMemberOperationResults/{}",
-            &configuration.base_path, subscription_id, location_name, operation_id
+            &operation_config.base_path, subscription_id, location_name, operation_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
         match rsp.status() {
@@ -489,21 +489,21 @@ pub mod locations {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn check_name_availability(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         location_name: &str,
         name_availability_request: Option<&NameAvailabilityRequest>,
         subscription_id: &str,
     ) -> std::result::Result<NameAvailability, check_name_availability::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Blockchain/locations/{}/checkNameAvailability",
-            &configuration.base_path, subscription_id, location_name
+            &operation_config.base_path, subscription_id, location_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(name_availability_request) = name_availability_request {
             req_builder = req_builder.json(name_availability_request);
         }
@@ -537,20 +537,20 @@ pub mod locations {
         }
     }
     pub async fn list_consortiums(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         location_name: &str,
         subscription_id: &str,
     ) -> std::result::Result<ConsortiumCollection, list_consortiums::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Blockchain/locations/{}/listConsortiums",
-            &configuration.base_path, subscription_id, location_name
+            &operation_config.base_path, subscription_id, location_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_consortiums::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_consortiums::ExecuteRequestError)?;
         match rsp.status() {
@@ -584,14 +584,14 @@ pub mod operations {
     use crate::models::*;
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
-    pub async fn list(configuration: &crate::Configuration) -> std::result::Result<ResourceProviderOperationCollection, list::Error> {
-        let client = &configuration.client;
-        let uri_str = &format!("{}/providers/Microsoft.Blockchain/operations", &configuration.base_path,);
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<ResourceProviderOperationCollection, list::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!("{}/providers/Microsoft.Blockchain/operations", &operation_config.base_path,);
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
         match rsp.status() {
@@ -627,19 +627,19 @@ pub mod skus {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn list(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
     ) -> std::result::Result<ResourceTypeSkuCollection, list::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Blockchain/skus",
-            &configuration.base_path, subscription_id
+            &operation_config.base_path, subscription_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
         match rsp.status() {
@@ -674,22 +674,22 @@ pub mod transaction_nodes {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn get(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         blockchain_member_name: &str,
         transaction_node_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
     ) -> std::result::Result<TransactionNode, get::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Blockchain/blockchainMembers/{}/transactionNodes/{}",
-            &configuration.base_path, subscription_id, resource_group_name, blockchain_member_name, transaction_node_name
+            &operation_config.base_path, subscription_id, resource_group_name, blockchain_member_name, transaction_node_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
         match rsp.status() {
@@ -719,23 +719,23 @@ pub mod transaction_nodes {
         }
     }
     pub async fn create(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         blockchain_member_name: &str,
         transaction_node_name: &str,
         transaction_node: Option<&TransactionNode>,
         subscription_id: &str,
         resource_group_name: &str,
     ) -> std::result::Result<create::Response, create::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Blockchain/blockchainMembers/{}/transactionNodes/{}",
-            &configuration.base_path, subscription_id, resource_group_name, blockchain_member_name, transaction_node_name
+            &operation_config.base_path, subscription_id, resource_group_name, blockchain_member_name, transaction_node_name
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(transaction_node) = transaction_node {
             req_builder = req_builder.json(transaction_node);
         }
@@ -778,23 +778,23 @@ pub mod transaction_nodes {
         }
     }
     pub async fn update(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         blockchain_member_name: &str,
         transaction_node_name: &str,
         transaction_node: Option<&TransactionNodeUpdate>,
         subscription_id: &str,
         resource_group_name: &str,
     ) -> std::result::Result<TransactionNode, update::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Blockchain/blockchainMembers/{}/transactionNodes/{}",
-            &configuration.base_path, subscription_id, resource_group_name, blockchain_member_name, transaction_node_name
+            &operation_config.base_path, subscription_id, resource_group_name, blockchain_member_name, transaction_node_name
         );
         let mut req_builder = client.patch(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(transaction_node) = transaction_node {
             req_builder = req_builder.json(transaction_node);
         }
@@ -827,22 +827,22 @@ pub mod transaction_nodes {
         }
     }
     pub async fn delete(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         blockchain_member_name: &str,
         transaction_node_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
     ) -> std::result::Result<delete::Response, delete::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Blockchain/blockchainMembers/{}/transactionNodes/{}",
-            &configuration.base_path, subscription_id, resource_group_name, blockchain_member_name, transaction_node_name
+            &operation_config.base_path, subscription_id, resource_group_name, blockchain_member_name, transaction_node_name
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(delete::BuildRequestError)?;
         let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
         match rsp.status() {
@@ -874,21 +874,21 @@ pub mod transaction_nodes {
         }
     }
     pub async fn list(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         blockchain_member_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
     ) -> std::result::Result<TransactionNodeCollection, list::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Blockchain/blockchainMembers/{}/transactionNodes",
-            &configuration.base_path, subscription_id, resource_group_name, blockchain_member_name
+            &operation_config.base_path, subscription_id, resource_group_name, blockchain_member_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
         match rsp.status() {
@@ -918,22 +918,22 @@ pub mod transaction_nodes {
         }
     }
     pub async fn list_api_keys(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         blockchain_member_name: &str,
         transaction_node_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
     ) -> std::result::Result<ApiKeyCollection, list_api_keys::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Blockchain/blockchainMembers/{}/transactionNodes/{}/listApiKeys",
-            &configuration.base_path, subscription_id, resource_group_name, blockchain_member_name, transaction_node_name
+            &operation_config.base_path, subscription_id, resource_group_name, blockchain_member_name, transaction_node_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_api_keys::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_api_keys::ExecuteRequestError)?;
         match rsp.status() {
@@ -963,20 +963,20 @@ pub mod transaction_nodes {
         }
     }
     pub async fn list_regenerate_api_keys(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         blockchain_member_name: &str,
         transaction_node_name: &str,
         api_key: Option<&ApiKey>,
         subscription_id: &str,
         resource_group_name: &str,
     ) -> std::result::Result<ApiKeyCollection, list_regenerate_api_keys::Error> {
-        let client = &configuration.client;
-        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Blockchain/blockchainMembers/{}/transactionNodes/{}/regenerateApiKeys" , & configuration . base_path , subscription_id , resource_group_name , blockchain_member_name , transaction_node_name) ;
+        let client = &operation_config.client;
+        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Blockchain/blockchainMembers/{}/transactionNodes/{}/regenerateApiKeys" , & operation_config . base_path , subscription_id , resource_group_name , blockchain_member_name , transaction_node_name) ;
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(api_key) = api_key {
             req_builder = req_builder.json(api_key);
         }

@@ -9,14 +9,14 @@ pub mod operations {
     use crate::models::*;
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
-    pub async fn list(configuration: &crate::Configuration) -> std::result::Result<AvailableProviderOperations, list::Error> {
-        let client = &configuration.client;
-        let uri_str = &format!("{}/providers/Microsoft.HybridData/operations", &configuration.base_path,);
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<AvailableProviderOperations, list::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!("{}/providers/Microsoft.HybridData/operations", &operation_config.base_path,);
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
         match rsp.status() {
@@ -50,17 +50,20 @@ pub mod data_managers {
     use crate::models::*;
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
-    pub async fn list(configuration: &crate::Configuration, subscription_id: &str) -> std::result::Result<DataManagerList, list::Error> {
-        let client = &configuration.client;
+    pub async fn list(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+    ) -> std::result::Result<DataManagerList, list::Error> {
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.HybridData/dataManagers",
-            &configuration.base_path, subscription_id
+            &operation_config.base_path, subscription_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
         match rsp.status() {
@@ -90,20 +93,20 @@ pub mod data_managers {
         }
     }
     pub async fn list_by_resource_group(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
     ) -> std::result::Result<DataManagerList, list_by_resource_group::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridData/dataManagers",
-            &configuration.base_path, subscription_id, resource_group_name
+            &operation_config.base_path, subscription_id, resource_group_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_by_resource_group::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_by_resource_group::ExecuteRequestError)?;
         match rsp.status() {
@@ -134,21 +137,21 @@ pub mod data_managers {
         }
     }
     pub async fn get(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         data_manager_name: &str,
     ) -> std::result::Result<DataManager, get::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridData/dataManagers/{}",
-            &configuration.base_path, subscription_id, resource_group_name, data_manager_name
+            &operation_config.base_path, subscription_id, resource_group_name, data_manager_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
         match rsp.status() {
@@ -178,22 +181,22 @@ pub mod data_managers {
         }
     }
     pub async fn create(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         data_manager_name: &str,
         data_manager: &DataManager,
     ) -> std::result::Result<create::Response, create::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridData/dataManagers/{}",
-            &configuration.base_path, subscription_id, resource_group_name, data_manager_name
+            &operation_config.base_path, subscription_id, resource_group_name, data_manager_name
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(data_manager);
         let req = req_builder.build().context(create::BuildRequestError)?;
         let rsp = client.execute(req).await.context(create::ExecuteRequestError)?;
@@ -230,23 +233,23 @@ pub mod data_managers {
         }
     }
     pub async fn update(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         data_manager_name: &str,
         if_match: Option<&str>,
         data_manager_update_parameter: &DataManagerUpdateParameter,
     ) -> std::result::Result<update::Response, update::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridData/dataManagers/{}",
-            &configuration.base_path, subscription_id, resource_group_name, data_manager_name
+            &operation_config.base_path, subscription_id, resource_group_name, data_manager_name
         );
         let mut req_builder = client.patch(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(if_match) = if_match {
             req_builder = req_builder.header("If-Match", if_match);
         }
@@ -286,21 +289,21 @@ pub mod data_managers {
         }
     }
     pub async fn delete(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         data_manager_name: &str,
     ) -> std::result::Result<delete::Response, delete::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridData/dataManagers/{}",
-            &configuration.base_path, subscription_id, resource_group_name, data_manager_name
+            &operation_config.base_path, subscription_id, resource_group_name, data_manager_name
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(delete::BuildRequestError)?;
         let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
         match rsp.status() {
@@ -337,21 +340,21 @@ pub mod data_services {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn list_by_data_manager(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         data_manager_name: &str,
     ) -> std::result::Result<DataServiceList, list_by_data_manager::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridData/dataManagers/{}/dataServices",
-            &configuration.base_path, subscription_id, resource_group_name, data_manager_name
+            &operation_config.base_path, subscription_id, resource_group_name, data_manager_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_by_data_manager::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_by_data_manager::ExecuteRequestError)?;
         match rsp.status() {
@@ -381,22 +384,22 @@ pub mod data_services {
         }
     }
     pub async fn get(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         data_service_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
         data_manager_name: &str,
     ) -> std::result::Result<DataService, get::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridData/dataManagers/{}/dataServices/{}",
-            &configuration.base_path, subscription_id, resource_group_name, data_manager_name, data_service_name
+            &operation_config.base_path, subscription_id, resource_group_name, data_manager_name, data_service_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
         match rsp.status() {
@@ -431,23 +434,23 @@ pub mod job_definitions {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn list_by_data_service(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         data_service_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
         data_manager_name: &str,
         filter: Option<&str>,
     ) -> std::result::Result<JobDefinitionList, list_by_data_service::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridData/dataManagers/{}/dataServices/{}/jobDefinitions",
-            &configuration.base_path, subscription_id, resource_group_name, data_manager_name, data_service_name
+            &operation_config.base_path, subscription_id, resource_group_name, data_manager_name, data_service_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(filter) = filter {
             req_builder = req_builder.query(&[("$filter", filter)]);
         }
@@ -481,23 +484,23 @@ pub mod job_definitions {
         }
     }
     pub async fn get(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         data_service_name: &str,
         job_definition_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
         data_manager_name: &str,
     ) -> std::result::Result<JobDefinition, get::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridData/dataManagers/{}/dataServices/{}/jobDefinitions/{}",
-            &configuration.base_path, subscription_id, resource_group_name, data_manager_name, data_service_name, job_definition_name
+            &operation_config.base_path, subscription_id, resource_group_name, data_manager_name, data_service_name, job_definition_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
         match rsp.status() {
@@ -527,7 +530,7 @@ pub mod job_definitions {
         }
     }
     pub async fn create_or_update(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         data_service_name: &str,
         job_definition_name: &str,
         job_definition: &JobDefinition,
@@ -535,16 +538,16 @@ pub mod job_definitions {
         resource_group_name: &str,
         data_manager_name: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridData/dataManagers/{}/dataServices/{}/jobDefinitions/{}",
-            &configuration.base_path, subscription_id, resource_group_name, data_manager_name, data_service_name, job_definition_name
+            &operation_config.base_path, subscription_id, resource_group_name, data_manager_name, data_service_name, job_definition_name
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(job_definition);
         let req = req_builder.build().context(create_or_update::BuildRequestError)?;
         let rsp = client.execute(req).await.context(create_or_update::ExecuteRequestError)?;
@@ -581,23 +584,23 @@ pub mod job_definitions {
         }
     }
     pub async fn delete(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         data_service_name: &str,
         job_definition_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
         data_manager_name: &str,
     ) -> std::result::Result<delete::Response, delete::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridData/dataManagers/{}/dataServices/{}/jobDefinitions/{}",
-            &configuration.base_path, subscription_id, resource_group_name, data_manager_name, data_service_name, job_definition_name
+            &operation_config.base_path, subscription_id, resource_group_name, data_manager_name, data_service_name, job_definition_name
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(delete::BuildRequestError)?;
         let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
         match rsp.status() {
@@ -629,7 +632,7 @@ pub mod job_definitions {
         }
     }
     pub async fn run(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         data_service_name: &str,
         job_definition_name: &str,
         run_parameters: &RunParameters,
@@ -637,16 +640,16 @@ pub mod job_definitions {
         resource_group_name: &str,
         data_manager_name: &str,
     ) -> std::result::Result<run::Response, run::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridData/dataManagers/{}/dataServices/{}/jobDefinitions/{}/run",
-            &configuration.base_path, subscription_id, resource_group_name, data_manager_name, data_service_name, job_definition_name
+            &operation_config.base_path, subscription_id, resource_group_name, data_manager_name, data_service_name, job_definition_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(run_parameters);
         let req = req_builder.build().context(run::BuildRequestError)?;
         let rsp = client.execute(req).await.context(run::ExecuteRequestError)?;
@@ -679,22 +682,22 @@ pub mod job_definitions {
         }
     }
     pub async fn list_by_data_manager(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         data_manager_name: &str,
         filter: Option<&str>,
     ) -> std::result::Result<JobDefinitionList, list_by_data_manager::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridData/dataManagers/{}/jobDefinitions",
-            &configuration.base_path, subscription_id, resource_group_name, data_manager_name
+            &operation_config.base_path, subscription_id, resource_group_name, data_manager_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(filter) = filter {
             req_builder = req_builder.query(&[("$filter", filter)]);
         }
@@ -733,7 +736,7 @@ pub mod jobs {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn list_by_job_definition(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         data_service_name: &str,
         job_definition_name: &str,
         subscription_id: &str,
@@ -741,16 +744,16 @@ pub mod jobs {
         data_manager_name: &str,
         filter: Option<&str>,
     ) -> std::result::Result<JobList, list_by_job_definition::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridData/dataManagers/{}/dataServices/{}/jobDefinitions/{}/jobs",
-            &configuration.base_path, subscription_id, resource_group_name, data_manager_name, data_service_name, job_definition_name
+            &operation_config.base_path, subscription_id, resource_group_name, data_manager_name, data_service_name, job_definition_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(filter) = filter {
             req_builder = req_builder.query(&[("$filter", filter)]);
         }
@@ -783,7 +786,7 @@ pub mod jobs {
         }
     }
     pub async fn get(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         data_service_name: &str,
         job_definition_name: &str,
         job_id: &str,
@@ -792,13 +795,13 @@ pub mod jobs {
         data_manager_name: &str,
         expand: Option<&str>,
     ) -> std::result::Result<Job, get::Error> {
-        let client = &configuration.client;
-        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridData/dataManagers/{}/dataServices/{}/jobDefinitions/{}/jobs/{}" , & configuration . base_path , subscription_id , resource_group_name , data_manager_name , data_service_name , job_definition_name , job_id) ;
+        let client = &operation_config.client;
+        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridData/dataManagers/{}/dataServices/{}/jobDefinitions/{}/jobs/{}" , & operation_config . base_path , subscription_id , resource_group_name , data_manager_name , data_service_name , job_definition_name , job_id) ;
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(expand) = expand {
             req_builder = req_builder.query(&[("$expand", expand)]);
         }
@@ -831,7 +834,7 @@ pub mod jobs {
         }
     }
     pub async fn cancel(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         data_service_name: &str,
         job_definition_name: &str,
         job_id: &str,
@@ -839,13 +842,13 @@ pub mod jobs {
         resource_group_name: &str,
         data_manager_name: &str,
     ) -> std::result::Result<cancel::Response, cancel::Error> {
-        let client = &configuration.client;
-        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridData/dataManagers/{}/dataServices/{}/jobDefinitions/{}/jobs/{}/cancel" , & configuration . base_path , subscription_id , resource_group_name , data_manager_name , data_service_name , job_definition_name , job_id) ;
+        let client = &operation_config.client;
+        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridData/dataManagers/{}/dataServices/{}/jobDefinitions/{}/jobs/{}/cancel" , & operation_config . base_path , subscription_id , resource_group_name , data_manager_name , data_service_name , job_definition_name , job_id) ;
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(cancel::BuildRequestError)?;
         let rsp = client.execute(req).await.context(cancel::ExecuteRequestError)?;
         match rsp.status() {
@@ -877,7 +880,7 @@ pub mod jobs {
         }
     }
     pub async fn resume(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         data_service_name: &str,
         job_definition_name: &str,
         job_id: &str,
@@ -885,13 +888,13 @@ pub mod jobs {
         resource_group_name: &str,
         data_manager_name: &str,
     ) -> std::result::Result<resume::Response, resume::Error> {
-        let client = &configuration.client;
-        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridData/dataManagers/{}/dataServices/{}/jobDefinitions/{}/jobs/{}/resume" , & configuration . base_path , subscription_id , resource_group_name , data_manager_name , data_service_name , job_definition_name , job_id) ;
+        let client = &operation_config.client;
+        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridData/dataManagers/{}/dataServices/{}/jobDefinitions/{}/jobs/{}/resume" , & operation_config . base_path , subscription_id , resource_group_name , data_manager_name , data_service_name , job_definition_name , job_id) ;
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(resume::BuildRequestError)?;
         let rsp = client.execute(req).await.context(resume::ExecuteRequestError)?;
         match rsp.status() {
@@ -923,23 +926,23 @@ pub mod jobs {
         }
     }
     pub async fn list_by_data_service(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         data_service_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
         data_manager_name: &str,
         filter: Option<&str>,
     ) -> std::result::Result<JobList, list_by_data_service::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridData/dataManagers/{}/dataServices/{}/jobs",
-            &configuration.base_path, subscription_id, resource_group_name, data_manager_name, data_service_name
+            &operation_config.base_path, subscription_id, resource_group_name, data_manager_name, data_service_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(filter) = filter {
             req_builder = req_builder.query(&[("$filter", filter)]);
         }
@@ -972,22 +975,22 @@ pub mod jobs {
         }
     }
     pub async fn list_by_data_manager(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         data_manager_name: &str,
         filter: Option<&str>,
     ) -> std::result::Result<JobList, list_by_data_manager::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridData/dataManagers/{}/jobs",
-            &configuration.base_path, subscription_id, resource_group_name, data_manager_name
+            &operation_config.base_path, subscription_id, resource_group_name, data_manager_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(filter) = filter {
             req_builder = req_builder.query(&[("$filter", filter)]);
         }
@@ -1025,22 +1028,22 @@ pub mod data_stores {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn list_by_data_manager(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         data_manager_name: &str,
         filter: Option<&str>,
     ) -> std::result::Result<DataStoreList, list_by_data_manager::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridData/dataManagers/{}/dataStores",
-            &configuration.base_path, subscription_id, resource_group_name, data_manager_name
+            &operation_config.base_path, subscription_id, resource_group_name, data_manager_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(filter) = filter {
             req_builder = req_builder.query(&[("$filter", filter)]);
         }
@@ -1073,22 +1076,22 @@ pub mod data_stores {
         }
     }
     pub async fn get(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         data_store_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
         data_manager_name: &str,
     ) -> std::result::Result<DataStore, get::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridData/dataManagers/{}/dataStores/{}",
-            &configuration.base_path, subscription_id, resource_group_name, data_manager_name, data_store_name
+            &operation_config.base_path, subscription_id, resource_group_name, data_manager_name, data_store_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
         match rsp.status() {
@@ -1118,23 +1121,23 @@ pub mod data_stores {
         }
     }
     pub async fn create_or_update(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         data_store_name: &str,
         data_store: &DataStore,
         subscription_id: &str,
         resource_group_name: &str,
         data_manager_name: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridData/dataManagers/{}/dataStores/{}",
-            &configuration.base_path, subscription_id, resource_group_name, data_manager_name, data_store_name
+            &operation_config.base_path, subscription_id, resource_group_name, data_manager_name, data_store_name
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(data_store);
         let req = req_builder.build().context(create_or_update::BuildRequestError)?;
         let rsp = client.execute(req).await.context(create_or_update::ExecuteRequestError)?;
@@ -1171,22 +1174,22 @@ pub mod data_stores {
         }
     }
     pub async fn delete(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         data_store_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
         data_manager_name: &str,
     ) -> std::result::Result<delete::Response, delete::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridData/dataManagers/{}/dataStores/{}",
-            &configuration.base_path, subscription_id, resource_group_name, data_manager_name, data_store_name
+            &operation_config.base_path, subscription_id, resource_group_name, data_manager_name, data_store_name
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(delete::BuildRequestError)?;
         let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
         match rsp.status() {
@@ -1223,21 +1226,21 @@ pub mod data_store_types {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn list_by_data_manager(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         data_manager_name: &str,
     ) -> std::result::Result<DataStoreTypeList, list_by_data_manager::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridData/dataManagers/{}/dataStoreTypes",
-            &configuration.base_path, subscription_id, resource_group_name, data_manager_name
+            &operation_config.base_path, subscription_id, resource_group_name, data_manager_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_by_data_manager::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_by_data_manager::ExecuteRequestError)?;
         match rsp.status() {
@@ -1268,22 +1271,22 @@ pub mod data_store_types {
         }
     }
     pub async fn get(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         data_store_type_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
         data_manager_name: &str,
     ) -> std::result::Result<DataStoreType, get::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridData/dataManagers/{}/dataStoreTypes/{}",
-            &configuration.base_path, subscription_id, resource_group_name, data_manager_name, data_store_type_name
+            &operation_config.base_path, subscription_id, resource_group_name, data_manager_name, data_store_type_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
         match rsp.status() {
@@ -1318,21 +1321,21 @@ pub mod public_keys {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn list_by_data_manager(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         data_manager_name: &str,
     ) -> std::result::Result<PublicKeyList, list_by_data_manager::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridData/dataManagers/{}/publicKeys",
-            &configuration.base_path, subscription_id, resource_group_name, data_manager_name
+            &operation_config.base_path, subscription_id, resource_group_name, data_manager_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_by_data_manager::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_by_data_manager::ExecuteRequestError)?;
         match rsp.status() {
@@ -1362,22 +1365,22 @@ pub mod public_keys {
         }
     }
     pub async fn get(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         public_key_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
         data_manager_name: &str,
     ) -> std::result::Result<PublicKey, get::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridData/dataManagers/{}/publicKeys/{}",
-            &configuration.base_path, subscription_id, resource_group_name, data_manager_name, public_key_name
+            &operation_config.base_path, subscription_id, resource_group_name, data_manager_name, public_key_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
         match rsp.status() {

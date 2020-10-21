@@ -6,20 +6,20 @@ use crate::models::*;
 use reqwest::StatusCode;
 use snafu::{ResultExt, Snafu};
 pub async fn get_user_settings_with_location(
-    configuration: &crate::Configuration,
+    operation_config: &crate::OperationConfig,
     user_settings_name: &str,
     location: &str,
 ) -> std::result::Result<UserSettingsResponse, get_user_settings_with_location::Error> {
-    let client = &configuration.client;
+    let client = &operation_config.client;
     let uri_str = &format!(
         "{}/providers/Microsoft.Portal/locations/{}/userSettings/{}",
-        &configuration.base_path, location, user_settings_name
+        &operation_config.base_path, location, user_settings_name
     );
     let mut req_builder = client.get(uri_str);
-    if let Some(token) = &configuration.bearer_access_token {
+    if let Some(token) = &operation_config.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
-    req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
     let req = req_builder.build().context(get_user_settings_with_location::BuildRequestError)?;
     let rsp = client
         .execute(req)
@@ -71,21 +71,21 @@ pub mod get_user_settings_with_location {
     }
 }
 pub async fn put_user_settings_with_location(
-    configuration: &crate::Configuration,
+    operation_config: &crate::OperationConfig,
     user_settings_name: &str,
     location: &str,
     parameters: &CloudShellUserSettings,
 ) -> std::result::Result<UserSettingsResponse, put_user_settings_with_location::Error> {
-    let client = &configuration.client;
+    let client = &operation_config.client;
     let uri_str = &format!(
         "{}/providers/Microsoft.Portal/locations/{}/userSettings/{}",
-        &configuration.base_path, location, user_settings_name
+        &operation_config.base_path, location, user_settings_name
     );
     let mut req_builder = client.put(uri_str);
-    if let Some(token) = &configuration.bearer_access_token {
+    if let Some(token) = &operation_config.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
-    req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
     req_builder = req_builder.json(parameters);
     let req = req_builder.build().context(put_user_settings_with_location::BuildRequestError)?;
     let rsp = client
@@ -138,21 +138,21 @@ pub mod put_user_settings_with_location {
     }
 }
 pub async fn patch_user_settings_with_location(
-    configuration: &crate::Configuration,
+    operation_config: &crate::OperationConfig,
     user_settings_name: &str,
     location: &str,
     parameters: &CloudShellPatchUserSettings,
 ) -> std::result::Result<UserSettingsResponse, patch_user_settings_with_location::Error> {
-    let client = &configuration.client;
+    let client = &operation_config.client;
     let uri_str = &format!(
         "{}/providers/Microsoft.Portal/locations/{}/userSettings/{}",
-        &configuration.base_path, location, user_settings_name
+        &operation_config.base_path, location, user_settings_name
     );
     let mut req_builder = client.patch(uri_str);
-    if let Some(token) = &configuration.bearer_access_token {
+    if let Some(token) = &operation_config.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
-    req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
     req_builder = req_builder.json(parameters);
     let req = req_builder.build().context(patch_user_settings_with_location::BuildRequestError)?;
     let rsp = client
@@ -205,20 +205,20 @@ pub mod patch_user_settings_with_location {
     }
 }
 pub async fn delete_user_settings_with_location(
-    configuration: &crate::Configuration,
+    operation_config: &crate::OperationConfig,
     user_settings_name: &str,
     location: &str,
 ) -> std::result::Result<delete_user_settings_with_location::Response, delete_user_settings_with_location::Error> {
-    let client = &configuration.client;
+    let client = &operation_config.client;
     let uri_str = &format!(
         "{}/providers/Microsoft.Portal/locations/{}/userSettings/{}",
-        &configuration.base_path, location, user_settings_name
+        &operation_config.base_path, location, user_settings_name
     );
     let mut req_builder = client.delete(uri_str);
-    if let Some(token) = &configuration.bearer_access_token {
+    if let Some(token) = &operation_config.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
-    req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
     let req = req_builder.build().context(delete_user_settings_with_location::BuildRequestError)?;
     let rsp = client
         .execute(req)
@@ -271,20 +271,20 @@ pub mod delete_user_settings_with_location {
     }
 }
 pub async fn get_console_with_location(
-    configuration: &crate::Configuration,
+    operation_config: &crate::OperationConfig,
     console_name: &str,
     location: &str,
 ) -> std::result::Result<CloudShellConsole, get_console_with_location::Error> {
-    let client = &configuration.client;
+    let client = &operation_config.client;
     let uri_str = &format!(
         "{}/providers/Microsoft.Portal/locations/{}/consoles/{}",
-        &configuration.base_path, location, console_name
+        &operation_config.base_path, location, console_name
     );
     let mut req_builder = client.get(uri_str);
-    if let Some(token) = &configuration.bearer_access_token {
+    if let Some(token) = &operation_config.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
-    req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
     let req = req_builder.build().context(get_console_with_location::BuildRequestError)?;
     let rsp = client.execute(req).await.context(get_console_with_location::ExecuteRequestError)?;
     match rsp.status() {
@@ -332,20 +332,20 @@ pub mod get_console_with_location {
     }
 }
 pub async fn put_console_with_location(
-    configuration: &crate::Configuration,
+    operation_config: &crate::OperationConfig,
     console_name: &str,
     location: &str,
 ) -> std::result::Result<put_console_with_location::Response, put_console_with_location::Error> {
-    let client = &configuration.client;
+    let client = &operation_config.client;
     let uri_str = &format!(
         "{}/providers/Microsoft.Portal/locations/{}/consoles/{}",
-        &configuration.base_path, location, console_name
+        &operation_config.base_path, location, console_name
     );
     let mut req_builder = client.put(uri_str);
-    if let Some(token) = &configuration.bearer_access_token {
+    if let Some(token) = &operation_config.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
-    req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
     let req = req_builder.build().context(put_console_with_location::BuildRequestError)?;
     let rsp = client.execute(req).await.context(put_console_with_location::ExecuteRequestError)?;
     match rsp.status() {
@@ -404,20 +404,20 @@ pub mod put_console_with_location {
     }
 }
 pub async fn delete_console_with_location(
-    configuration: &crate::Configuration,
+    operation_config: &crate::OperationConfig,
     console_name: &str,
     location: &str,
 ) -> std::result::Result<delete_console_with_location::Response, delete_console_with_location::Error> {
-    let client = &configuration.client;
+    let client = &operation_config.client;
     let uri_str = &format!(
         "{}/providers/Microsoft.Portal/locations/{}/consoles/{}",
-        &configuration.base_path, location, console_name
+        &operation_config.base_path, location, console_name
     );
     let mut req_builder = client.delete(uri_str);
-    if let Some(token) = &configuration.bearer_access_token {
+    if let Some(token) = &operation_config.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
-    req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
     let req = req_builder.build().context(delete_console_with_location::BuildRequestError)?;
     let rsp = client
         .execute(req)
@@ -470,17 +470,17 @@ pub mod delete_console_with_location {
     }
 }
 pub async fn keep_alive_with_location(
-    configuration: &crate::Configuration,
+    operation_config: &crate::OperationConfig,
     console_name: &str,
     location: &str,
 ) -> std::result::Result<(), keep_alive_with_location::Error> {
-    let client = &configuration.client;
+    let client = &operation_config.client;
     let uri_str = &format!(
         "{}/providers/Microsoft.Portal/locations/{}/consoles/{}/keepAlive",
-        &configuration.base_path, location, console_name
+        &operation_config.base_path, location, console_name
     );
     let mut req_builder = client.post(uri_str);
-    if let Some(token) = &configuration.bearer_access_token {
+    if let Some(token) = &operation_config.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
     let req = req_builder.build().context(keep_alive_with_location::BuildRequestError)?;
@@ -525,19 +525,19 @@ pub mod keep_alive_with_location {
     }
 }
 pub async fn get_user_settings(
-    configuration: &crate::Configuration,
+    operation_config: &crate::OperationConfig,
     user_settings_name: &str,
 ) -> std::result::Result<UserSettingsResponse, get_user_settings::Error> {
-    let client = &configuration.client;
+    let client = &operation_config.client;
     let uri_str = &format!(
         "{}/providers/Microsoft.Portal/userSettings/{}",
-        &configuration.base_path, user_settings_name
+        &operation_config.base_path, user_settings_name
     );
     let mut req_builder = client.get(uri_str);
-    if let Some(token) = &configuration.bearer_access_token {
+    if let Some(token) = &operation_config.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
-    req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
     let req = req_builder.build().context(get_user_settings::BuildRequestError)?;
     let rsp = client.execute(req).await.context(get_user_settings::ExecuteRequestError)?;
     match rsp.status() {
@@ -584,20 +584,20 @@ pub mod get_user_settings {
     }
 }
 pub async fn put_user_settings(
-    configuration: &crate::Configuration,
+    operation_config: &crate::OperationConfig,
     user_settings_name: &str,
     parameters: &CloudShellUserSettings,
 ) -> std::result::Result<UserSettingsResponse, put_user_settings::Error> {
-    let client = &configuration.client;
+    let client = &operation_config.client;
     let uri_str = &format!(
         "{}/providers/Microsoft.Portal/userSettings/{}",
-        &configuration.base_path, user_settings_name
+        &operation_config.base_path, user_settings_name
     );
     let mut req_builder = client.put(uri_str);
-    if let Some(token) = &configuration.bearer_access_token {
+    if let Some(token) = &operation_config.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
-    req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
     req_builder = req_builder.json(parameters);
     let req = req_builder.build().context(put_user_settings::BuildRequestError)?;
     let rsp = client.execute(req).await.context(put_user_settings::ExecuteRequestError)?;
@@ -645,20 +645,20 @@ pub mod put_user_settings {
     }
 }
 pub async fn patch_user_settings(
-    configuration: &crate::Configuration,
+    operation_config: &crate::OperationConfig,
     user_settings_name: &str,
     parameters: &CloudShellPatchUserSettings,
 ) -> std::result::Result<UserSettingsResponse, patch_user_settings::Error> {
-    let client = &configuration.client;
+    let client = &operation_config.client;
     let uri_str = &format!(
         "{}/providers/Microsoft.Portal/userSettings/{}",
-        &configuration.base_path, user_settings_name
+        &operation_config.base_path, user_settings_name
     );
     let mut req_builder = client.patch(uri_str);
-    if let Some(token) = &configuration.bearer_access_token {
+    if let Some(token) = &operation_config.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
-    req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
     req_builder = req_builder.json(parameters);
     let req = req_builder.build().context(patch_user_settings::BuildRequestError)?;
     let rsp = client.execute(req).await.context(patch_user_settings::ExecuteRequestError)?;
@@ -706,19 +706,19 @@ pub mod patch_user_settings {
     }
 }
 pub async fn delete_user_settings(
-    configuration: &crate::Configuration,
+    operation_config: &crate::OperationConfig,
     user_settings_name: &str,
 ) -> std::result::Result<delete_user_settings::Response, delete_user_settings::Error> {
-    let client = &configuration.client;
+    let client = &operation_config.client;
     let uri_str = &format!(
         "{}/providers/Microsoft.Portal/userSettings/{}",
-        &configuration.base_path, user_settings_name
+        &operation_config.base_path, user_settings_name
     );
     let mut req_builder = client.delete(uri_str);
-    if let Some(token) = &configuration.bearer_access_token {
+    if let Some(token) = &operation_config.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
-    req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
     let req = req_builder.build().context(delete_user_settings::BuildRequestError)?;
     let rsp = client.execute(req).await.context(delete_user_settings::ExecuteRequestError)?;
     match rsp.status() {
@@ -767,16 +767,19 @@ pub mod delete_user_settings {
     }
 }
 pub async fn get_console(
-    configuration: &crate::Configuration,
+    operation_config: &crate::OperationConfig,
     console_name: &str,
 ) -> std::result::Result<CloudShellConsole, get_console::Error> {
-    let client = &configuration.client;
-    let uri_str = &format!("{}/providers/Microsoft.Portal/consoles/{}", &configuration.base_path, console_name);
+    let client = &operation_config.client;
+    let uri_str = &format!(
+        "{}/providers/Microsoft.Portal/consoles/{}",
+        &operation_config.base_path, console_name
+    );
     let mut req_builder = client.get(uri_str);
-    if let Some(token) = &configuration.bearer_access_token {
+    if let Some(token) = &operation_config.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
-    req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
     let req = req_builder.build().context(get_console::BuildRequestError)?;
     let rsp = client.execute(req).await.context(get_console::ExecuteRequestError)?;
     match rsp.status() {
@@ -823,17 +826,20 @@ pub mod get_console {
     }
 }
 pub async fn put_console(
-    configuration: &crate::Configuration,
+    operation_config: &crate::OperationConfig,
     console_name: &str,
     parameters: &ConsoleDefinition,
 ) -> std::result::Result<put_console::Response, put_console::Error> {
-    let client = &configuration.client;
-    let uri_str = &format!("{}/providers/Microsoft.Portal/consoles/{}", &configuration.base_path, console_name);
+    let client = &operation_config.client;
+    let uri_str = &format!(
+        "{}/providers/Microsoft.Portal/consoles/{}",
+        &operation_config.base_path, console_name
+    );
     let mut req_builder = client.put(uri_str);
-    if let Some(token) = &configuration.bearer_access_token {
+    if let Some(token) = &operation_config.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
-    req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
     req_builder = req_builder.json(parameters);
     let req = req_builder.build().context(put_console::BuildRequestError)?;
     let rsp = client.execute(req).await.context(put_console::ExecuteRequestError)?;
@@ -891,16 +897,19 @@ pub mod put_console {
     }
 }
 pub async fn delete_console(
-    configuration: &crate::Configuration,
+    operation_config: &crate::OperationConfig,
     console_name: &str,
 ) -> std::result::Result<delete_console::Response, delete_console::Error> {
-    let client = &configuration.client;
-    let uri_str = &format!("{}/providers/Microsoft.Portal/consoles/{}", &configuration.base_path, console_name);
+    let client = &operation_config.client;
+    let uri_str = &format!(
+        "{}/providers/Microsoft.Portal/consoles/{}",
+        &operation_config.base_path, console_name
+    );
     let mut req_builder = client.delete(uri_str);
-    if let Some(token) = &configuration.bearer_access_token {
+    if let Some(token) = &operation_config.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
-    req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+    req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
     let req = req_builder.build().context(delete_console::BuildRequestError)?;
     let rsp = client.execute(req).await.context(delete_console::ExecuteRequestError)?;
     match rsp.status() {
@@ -948,14 +957,14 @@ pub mod delete_console {
         },
     }
 }
-pub async fn keep_alive(configuration: &crate::Configuration, console_name: &str) -> std::result::Result<(), keep_alive::Error> {
-    let client = &configuration.client;
+pub async fn keep_alive(operation_config: &crate::OperationConfig, console_name: &str) -> std::result::Result<(), keep_alive::Error> {
+    let client = &operation_config.client;
     let uri_str = &format!(
         "{}/providers/Microsoft.Portal/consoles/{}/keepAlive",
-        &configuration.base_path, console_name
+        &operation_config.base_path, console_name
     );
     let mut req_builder = client.post(uri_str);
-    if let Some(token) = &configuration.bearer_access_token {
+    if let Some(token) = &operation_config.bearer_access_token {
         req_builder = req_builder.bearer_auth(token);
     }
     let req = req_builder.build().context(keep_alive::BuildRequestError)?;

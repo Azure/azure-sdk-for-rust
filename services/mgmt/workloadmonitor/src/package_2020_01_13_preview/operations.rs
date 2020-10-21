@@ -9,14 +9,14 @@ pub mod operations {
     use crate::models::*;
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
-    pub async fn list(configuration: &crate::Configuration) -> std::result::Result<OperationList, list::Error> {
-        let client = &configuration.client;
-        let uri_str = &format!("{}/providers/Microsoft.WorkloadMonitor/operations", &configuration.base_path,);
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationList, list::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!("{}/providers/Microsoft.WorkloadMonitor/operations", &operation_config.base_path,);
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
         match rsp.status() {
@@ -68,7 +68,7 @@ pub mod monitors {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn list(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         resource_namespace: &str,
@@ -77,16 +77,16 @@ pub mod monitors {
         filter: Option<&str>,
         expand: Option<&str>,
     ) -> std::result::Result<MonitorList, list::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.WorkloadMonitor/monitors",
-            &configuration.base_path, subscription_id, resource_group_name, resource_namespace, resource_type, resource_name
+            &operation_config.base_path, subscription_id, resource_group_name, resource_namespace, resource_type, resource_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(filter) = filter {
             req_builder = req_builder.query(&[("$filter", filter)]);
         }
@@ -139,7 +139,7 @@ pub mod monitors {
         }
     }
     pub async fn get(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         resource_namespace: &str,
@@ -148,16 +148,16 @@ pub mod monitors {
         monitor_id: &str,
         expand: Option<&str>,
     ) -> std::result::Result<Monitor, get::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.WorkloadMonitor/monitors/{}",
-            &configuration.base_path, subscription_id, resource_group_name, resource_namespace, resource_type, resource_name, monitor_id
+            &operation_config.base_path, subscription_id, resource_group_name, resource_namespace, resource_type, resource_name, monitor_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(expand) = expand {
             req_builder = req_builder.query(&[("$expand", expand)]);
         }
@@ -207,7 +207,7 @@ pub mod monitors {
         }
     }
     pub async fn list_state_changes(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         resource_namespace: &str,
@@ -219,16 +219,16 @@ pub mod monitors {
         start_timestamp_utc: Option<&str>,
         end_timestamp_utc: Option<&str>,
     ) -> std::result::Result<MonitorStateChangeList, list_state_changes::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.WorkloadMonitor/monitors/{}/history",
-            &configuration.base_path, subscription_id, resource_group_name, resource_namespace, resource_type, resource_name, monitor_id
+            &operation_config.base_path, subscription_id, resource_group_name, resource_namespace, resource_type, resource_name, monitor_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(filter) = filter {
             req_builder = req_builder.query(&[("$filter", filter)]);
         }
@@ -288,7 +288,7 @@ pub mod monitors {
         }
     }
     pub async fn get_state_change(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         resource_namespace: &str,
@@ -298,10 +298,10 @@ pub mod monitors {
         timestamp_unix: &str,
         expand: Option<&str>,
     ) -> std::result::Result<MonitorStateChange, get_state_change::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.WorkloadMonitor/monitors/{}/history/{}",
-            &configuration.base_path,
+            &operation_config.base_path,
             subscription_id,
             resource_group_name,
             resource_namespace,
@@ -311,10 +311,10 @@ pub mod monitors {
             timestamp_unix
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(expand) = expand {
             req_builder = req_builder.query(&[("$expand", expand)]);
         }

@@ -10,16 +10,16 @@ pub mod locations {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn list(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         accept_language: Option<&str>,
     ) -> std::result::Result<LocationsResponse, list::Error> {
-        let client = &configuration.client;
-        let uri_str = &format!("{}/providers/Microsoft.ImportExport/locations", &configuration.base_path,);
+        let client = &operation_config.client;
+        let uri_str = &format!("{}/providers/Microsoft.ImportExport/locations", &operation_config.base_path,);
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(accept_language) = accept_language {
             req_builder = req_builder.header("Accept-Language", accept_language);
         }
@@ -69,20 +69,20 @@ pub mod locations {
         }
     }
     pub async fn get(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         location_name: &str,
         accept_language: Option<&str>,
     ) -> std::result::Result<Location, get::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.ImportExport/locations/{}",
-            &configuration.base_path, location_name
+            &operation_config.base_path, location_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(accept_language) = accept_language {
             req_builder = req_builder.header("Accept-Language", accept_language);
         }
@@ -137,22 +137,22 @@ pub mod jobs {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn list_by_subscription(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         top: Option<i64>,
         filter: Option<&str>,
         subscription_id: &str,
         accept_language: Option<&str>,
     ) -> std::result::Result<ListJobsResponse, list_by_subscription::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.ImportExport/jobs",
-            &configuration.base_path, subscription_id
+            &operation_config.base_path, subscription_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(top) = top {
             req_builder = req_builder.query(&[("$top", top)]);
         }
@@ -208,23 +208,23 @@ pub mod jobs {
         }
     }
     pub async fn list_by_resource_group(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         top: Option<i64>,
         filter: Option<&str>,
         subscription_id: &str,
         resource_group_name: &str,
         accept_language: Option<&str>,
     ) -> std::result::Result<ListJobsResponse, list_by_resource_group::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ImportExport/jobs",
-            &configuration.base_path, subscription_id, resource_group_name
+            &operation_config.base_path, subscription_id, resource_group_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(top) = top {
             req_builder = req_builder.query(&[("$top", top)]);
         }
@@ -281,22 +281,22 @@ pub mod jobs {
         }
     }
     pub async fn get(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         job_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
         accept_language: Option<&str>,
     ) -> std::result::Result<JobResponse, get::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ImportExport/jobs/{}",
-            &configuration.base_path, subscription_id, resource_group_name, job_name
+            &operation_config.base_path, subscription_id, resource_group_name, job_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(accept_language) = accept_language {
             req_builder = req_builder.header("Accept-Language", accept_language);
         }
@@ -346,7 +346,7 @@ pub mod jobs {
         }
     }
     pub async fn create(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         job_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
@@ -354,16 +354,16 @@ pub mod jobs {
         x_ms_client_tenant_id: Option<&str>,
         body: &PutJobParameters,
     ) -> std::result::Result<create::Response, create::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ImportExport/jobs/{}",
-            &configuration.base_path, subscription_id, resource_group_name, job_name
+            &operation_config.base_path, subscription_id, resource_group_name, job_name
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(accept_language) = accept_language {
             req_builder = req_builder.header("Accept-Language", accept_language);
         }
@@ -427,23 +427,23 @@ pub mod jobs {
         }
     }
     pub async fn update(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         job_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
         accept_language: Option<&str>,
         body: &UpdateJobParameters,
     ) -> std::result::Result<JobResponse, update::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ImportExport/jobs/{}",
-            &configuration.base_path, subscription_id, resource_group_name, job_name
+            &operation_config.base_path, subscription_id, resource_group_name, job_name
         );
         let mut req_builder = client.patch(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(accept_language) = accept_language {
             req_builder = req_builder.header("Accept-Language", accept_language);
         }
@@ -494,22 +494,22 @@ pub mod jobs {
         }
     }
     pub async fn delete(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         job_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
         accept_language: Option<&str>,
     ) -> std::result::Result<(), delete::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ImportExport/jobs/{}",
-            &configuration.base_path, subscription_id, resource_group_name, job_name
+            &operation_config.base_path, subscription_id, resource_group_name, job_name
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(accept_language) = accept_language {
             req_builder = req_builder.header("Accept-Language", accept_language);
         }
@@ -560,22 +560,22 @@ pub mod bit_locker_keys {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn list(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         job_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
         accept_language: Option<&str>,
     ) -> std::result::Result<GetBitLockerKeysResponse, list::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ImportExport/jobs/{}/listBitLockerKeys",
-            &configuration.base_path, subscription_id, resource_group_name, job_name
+            &operation_config.base_path, subscription_id, resource_group_name, job_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(accept_language) = accept_language {
             req_builder = req_builder.header("Accept-Language", accept_language);
         }
@@ -630,16 +630,16 @@ pub mod operations {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn list(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         accept_language: Option<&str>,
     ) -> std::result::Result<ListOperationsResponse, list::Error> {
-        let client = &configuration.client;
-        let uri_str = &format!("{}/providers/Microsoft.ImportExport/operations", &configuration.base_path,);
+        let client = &operation_config.client;
+        let uri_str = &format!("{}/providers/Microsoft.ImportExport/operations", &operation_config.base_path,);
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(accept_language) = accept_language {
             req_builder = req_builder.header("Accept-Language", accept_language);
         }

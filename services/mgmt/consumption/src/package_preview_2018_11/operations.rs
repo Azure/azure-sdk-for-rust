@@ -9,14 +9,14 @@ pub mod operations {
     use crate::models::*;
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
-    pub async fn list(configuration: &crate::Configuration) -> std::result::Result<OperationListResult, list::Error> {
-        let client = &configuration.client;
-        let uri_str = &format!("{}/providers/Microsoft.Consumption/operations", &configuration.base_path,);
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationListResult, list::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!("{}/providers/Microsoft.Consumption/operations", &operation_config.base_path,);
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
         match rsp.status() {
@@ -68,20 +68,20 @@ pub mod credit_summary_by_billing_profile {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn get(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         billing_account_id: &str,
         billing_profile_id: &str,
     ) -> std::result::Result<CreditSummary, get::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/billingProfiles/{}/providers/Microsoft.Consumption/credits/balanceSummary",
-            &configuration.base_path, billing_account_id, billing_profile_id
+            &operation_config.base_path, billing_account_id, billing_profile_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
         match rsp.status() {
@@ -133,22 +133,22 @@ pub mod events_by_billing_profile {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn list(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         billing_account_id: &str,
         billing_profile_id: &str,
         start_date: &str,
         end_date: &str,
     ) -> std::result::Result<Events, list::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/billingProfiles/{}/providers/Microsoft.Consumption/events",
-            &configuration.base_path, billing_account_id, billing_profile_id
+            &operation_config.base_path, billing_account_id, billing_profile_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.query(&[("startDate", start_date)]);
         req_builder = req_builder.query(&[("endDate", end_date)]);
         let req = req_builder.build().context(list::BuildRequestError)?;
@@ -202,20 +202,20 @@ pub mod lots_by_billing_profile {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn list(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         billing_account_id: &str,
         billing_profile_id: &str,
     ) -> std::result::Result<Lots, list::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/billingProfiles/{}/providers/Microsoft.Consumption/lots",
-            &configuration.base_path, billing_account_id, billing_profile_id
+            &operation_config.base_path, billing_account_id, billing_profile_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
         match rsp.status() {
@@ -267,20 +267,20 @@ pub mod invoice_pricesheet {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn download(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         billing_account_id: &str,
         invoice_name: &str,
     ) -> std::result::Result<download::Response, download::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Consumption/billingAccounts/{}/invoices/{}/pricesheet/default/download",
-            &configuration.base_path, billing_account_id, invoice_name
+            &operation_config.base_path, billing_account_id, invoice_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(download::BuildRequestError)?;
         let rsp = client.execute(req).await.context(download::ExecuteRequestError)?;
         match rsp.status() {
@@ -338,20 +338,20 @@ pub mod billing_profile_pricesheet {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn download(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         billing_account_id: &str,
         billing_profile_id: &str,
     ) -> std::result::Result<download::Response, download::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Consumption/billingAccounts/{}/billingProfiles/{}/pricesheet/default/download",
-            &configuration.base_path, billing_account_id, billing_profile_id
+            &operation_config.base_path, billing_account_id, billing_profile_id
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(download::BuildRequestError)?;
         let rsp = client.execute(req).await.context(download::ExecuteRequestError)?;
         match rsp.status() {
@@ -409,22 +409,22 @@ pub mod charges_by_billing_account {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn list(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         billing_account_id: &str,
         start_date: &str,
         end_date: &str,
         apply: Option<&str>,
     ) -> std::result::Result<ChargesListByBillingAccount, list::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/providers/Microsoft.Consumption/charges",
-            &configuration.base_path, billing_account_id
+            &operation_config.base_path, billing_account_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.query(&[("startDate", start_date)]);
         req_builder = req_builder.query(&[("endDate", end_date)]);
         if let Some(apply) = apply {
@@ -481,22 +481,22 @@ pub mod charges_by_billing_profile {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn list(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         billing_account_id: &str,
         billing_profile_id: &str,
         start_date: &str,
         end_date: &str,
     ) -> std::result::Result<ChargesListByBillingProfile, list::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/billingProfiles/{}/providers/Microsoft.Consumption/charges",
-            &configuration.base_path, billing_account_id, billing_profile_id
+            &operation_config.base_path, billing_account_id, billing_profile_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.query(&[("startDate", start_date)]);
         req_builder = req_builder.query(&[("endDate", end_date)]);
         let req = req_builder.build().context(list::BuildRequestError)?;
@@ -550,23 +550,23 @@ pub mod charges_by_invoice_section {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn list(
-        configuration: &crate::Configuration,
+        operation_config: &crate::OperationConfig,
         billing_account_id: &str,
         invoice_section_id: &str,
         start_date: &str,
         end_date: &str,
         apply: Option<&str>,
     ) -> std::result::Result<ChargesListByInvoiceSection, list::Error> {
-        let client = &configuration.client;
+        let client = &operation_config.client;
         let uri_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/invoiceSections/{}/providers/Microsoft.Consumption/charges",
-            &configuration.base_path, billing_account_id, invoice_section_id
+            &operation_config.base_path, billing_account_id, invoice_section_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &configuration.bearer_access_token {
+        if let Some(token) = &operation_config.bearer_access_token {
             req_builder = req_builder.bearer_auth(token);
         }
-        req_builder = req_builder.query(&[("api-version", &configuration.api_version)]);
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.query(&[("startDate", start_date)]);
         req_builder = req_builder.query(&[("endDate", end_date)]);
         if let Some(apply) = apply {
