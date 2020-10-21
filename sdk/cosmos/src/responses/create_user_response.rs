@@ -1,7 +1,7 @@
 use crate::from_headers::*;
 use crate::User;
 use azure_core::errors::AzureError;
-use azure_core::{etag_from_headers, session_token_from_headers};
+use azure_core::headers::{etag_from_headers, session_token_from_headers};
 use http::HeaderMap;
 use std::convert::TryInto;
 

@@ -1,7 +1,8 @@
 use crate::blob::blob::{incomplete_vector_from_response, Blob};
 use azure_core::errors::AzureError;
+use azure_core::headers::{date_from_headers, request_id_from_headers};
 use azure_core::incompletevector::IncompleteVector;
-use azure_core::{date_from_headers, request_id_from_headers, RequestId};
+use azure_core::RequestId;
 use chrono::{DateTime, Utc};
 use http::HeaderMap;
 
