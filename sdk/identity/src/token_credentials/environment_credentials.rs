@@ -1,5 +1,6 @@
-use super::{ClientSecretCredential, TokenCredential, TokenResponse};
+use super::ClientSecretCredential;
 use azure_core::errors::AzureError;
+use azure_core::{TokenCredential, TokenResponse};
 
 const AZURE_TENANT_ID_ENV_KEY: &str = "AZURE_TENANT_ID";
 const AZURE_CLIENT_ID_ENV_KEY: &str = "AZURE_CLIENT_ID";

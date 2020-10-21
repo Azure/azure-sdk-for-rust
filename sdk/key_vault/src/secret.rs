@@ -1,7 +1,7 @@
 use crate::KeyVaultClient;
 use crate::{client::API_VERSION, KeyVaultError};
 use anyhow::{Context, Result};
-use azure_identity::token_credentials::TokenCredential;
+use azure_core::TokenCredential;
 use chrono::serde::ts_seconds;
 use chrono::{DateTime, Utc};
 use getset::Getters;
@@ -641,7 +641,7 @@ mod tests {
 
     use async_trait;
     use azure_core::errors::AzureError;
-    use azure_identity::token_credentials::{TokenCredential, TokenResponse};
+    use azure_core::{TokenCredential, TokenResponse};
     use chrono::{Duration, Utc};
     use mockito::{mock, Matcher};
     use oauth2::AccessToken;

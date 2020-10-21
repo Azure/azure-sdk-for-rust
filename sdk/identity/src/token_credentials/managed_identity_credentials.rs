@@ -1,6 +1,5 @@
-use super::{TokenCredential, TokenResponse};
-
 use azure_core::errors::AzureError;
+use azure_core::{TokenCredential, TokenResponse};
 use chrono::{DateTime, Utc};
 use oauth2::AccessToken;
 use serde::Deserialize;

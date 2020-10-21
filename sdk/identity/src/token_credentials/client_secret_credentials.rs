@@ -1,6 +1,5 @@
-use super::{TokenCredential, TokenResponse};
-
 use azure_core::errors::AzureError;
+use azure_core::{TokenCredential, TokenResponse};
 use chrono::Utc;
 use oauth2::{
     basic::BasicClient, reqwest::async_http_client, AccessToken, AuthType, AuthUrl, Scope, TokenUrl,
