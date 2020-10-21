@@ -1,8 +1,6 @@
-use super::{
-    AzureCliCredential, EnvironmentCredential, ManagedIdentityCredential, TokenCredential,
-    TokenResponse,
-};
+use super::{AzureCliCredential, EnvironmentCredential, ManagedIdentityCredential};
 use azure_core::errors::AzureError;
+use azure_core::{TokenCredential, TokenResponse};
 use log::debug;
 
 /// Provides a mechanism of selectively disabling credentials used for a `DefaultCredential` instance

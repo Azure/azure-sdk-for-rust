@@ -7,42 +7,71 @@ extern crate log;
 extern crate quick_error;
 #[macro_use]
 extern crate serde_derive;
+
 #[macro_use]
 pub mod errors;
 pub mod parsing;
 #[macro_use]
 pub mod enumerations;
+pub mod ba512_range;
+pub mod headers;
 pub mod incompletevector;
 pub mod lease;
-pub mod util;
-use crate::util::HeaderMapExt;
-use std::fmt::Debug;
-pub mod ba512_range;
-use base64::encode;
 pub mod modify_conditions;
-use self::modify_conditions::{IfMatchCondition, IfSinceCondition, SequenceNumberCondition};
-pub mod headers;
+pub mod prelude;
 pub mod range;
-use self::headers::*;
+mod stored_access_policy;
+pub mod util;
+
+use errors::{check_status_extract_body_2, AzureError};
+use headers::*;
+use lease::LeaseId;
+use modify_conditions::{IfMatchCondition, IfSinceCondition, SequenceNumberCondition};
+pub use stored_access_policy::{StoredAccessPolicy, StoredAccessPolicyList};
+use util::HeaderMapExt;
+
+use base64::encode;
+use chrono::{DateTime, Utc};
+use http::request::Builder;
+use http::status::StatusCode;
+use http::HeaderMap;
 use hyper::header::{
     HeaderName, CONTENT_ENCODING, CONTENT_LANGUAGE, CONTENT_LENGTH, CONTENT_TYPE, DATE, ETAG,
     IF_MODIFIED_SINCE, LAST_MODIFIED, RANGE, USER_AGENT,
 };
+use hyper::{Body, Client, Request};
+use oauth2::AccessToken;
 use uuid::Uuid;
-pub type RequestId = Uuid;
-pub type SessionToken = String;
-use crate::errors::{check_status_extract_body_2, AzureError};
-use crate::lease::LeaseId;
-use http::request::Builder;
-use http::HeaderMap;
+
 use std::collections::HashMap;
 use std::convert::TryFrom;
-mod stored_access_policy;
-pub use self::stored_access_policy::{StoredAccessPolicy, StoredAccessPolicyList};
-pub mod prelude;
-use chrono::{DateTime, Utc};
-use http::status::StatusCode;
-use hyper::{Body, Client, Request};
+use std::fmt::Debug;
+
+pub type RequestId = Uuid;
+pub type SessionToken = String;
+
+/// Represents an Azure service bearer access token with expiry information.
+#[derive(Debug, Clone)]
+pub struct TokenResponse {
+    /// Get the access token value.
+    pub token: AccessToken,
+    /// Gets the time when the provided token expires.
+    pub expires_on: DateTime<Utc>,
+}
+
+impl TokenResponse {
+    /// Create a new `TokenResponse`
+    pub fn new(token: AccessToken, expires_on: DateTime<Utc>) -> Self {
+        Self { token, expires_on }
+    }
+}
+
+/// Represents a credential capable of providing an OAuth token.
+#[async_trait::async_trait]
+pub trait TokenCredential {
+    /// Gets a `TokenResponse` for the specified resource
+    async fn get_token(&self, resource: &str) -> Result<TokenResponse, AzureError>;
+}
 
 #[macro_export]
 macro_rules! response_from_headers {
