@@ -1,8 +1,8 @@
 use azure_core::errors::AzureError;
-use azure_core::{
+use azure_core::headers::{
     account_kind_from_headers, date_from_headers, request_id_from_headers, sku_name_from_headers,
-    RequestId,
 };
+use azure_core::RequestId;
 use chrono::{DateTime, Utc};
 use http::HeaderMap;
 

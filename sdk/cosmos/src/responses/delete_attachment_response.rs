@@ -1,7 +1,8 @@
 use crate::from_headers::*;
 use crate::ResourceQuota;
 use azure_core::errors::AzureError;
-use azure_core::{session_token_from_headers, SessionToken};
+use azure_core::headers::session_token_from_headers;
+use azure_core::SessionToken;
 use chrono::{DateTime, Utc};
 use http::HeaderMap;
 

@@ -1,9 +1,10 @@
 use crate::blob::blob::BlockWithSizeList;
 use azure_core::errors::AzureError;
-use azure_core::{
+use azure_core::headers::{
     date_from_headers, etag_from_headers_optional, last_modified_from_headers_optional,
-    request_id_from_headers, RequestId,
+    request_id_from_headers,
 };
+use azure_core::RequestId;
 use chrono::{DateTime, Utc};
 use http::HeaderMap;
 use std::str::from_utf8;

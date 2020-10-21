@@ -1,8 +1,9 @@
 use azure_core::errors::AzureError;
-use azure_core::{
+use azure_core::headers::{
     consistency_from_headers, date_from_headers, request_id_from_headers,
-    request_server_encrypted_from_headers, Consistency, RequestId,
+    request_server_encrypted_from_headers,
 };
+use azure_core::{Consistency, RequestId};
 use chrono::{DateTime, Utc};
 use http::HeaderMap;
 
