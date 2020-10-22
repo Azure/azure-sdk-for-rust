@@ -23,7 +23,7 @@ pub mod range;
 mod stored_access_policy;
 pub mod util;
 
-pub use errors::AzureError;
+use errors::AzureError;
 use headers::*;
 use lease::LeaseId;
 use modify_conditions::{IfMatchCondition, IfSinceCondition, SequenceNumberCondition};

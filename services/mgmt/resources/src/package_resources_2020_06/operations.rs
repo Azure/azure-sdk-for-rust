@@ -4638,7 +4638,7 @@ pub mod resource_groups {
                 body: bytes::Bytes,
             },
             GetTokenError {
-                source: azure_core::AzureError,
+                source: azure_core::errors::AzureError,
             },
         }
     }
