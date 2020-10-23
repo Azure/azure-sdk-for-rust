@@ -18,7 +18,7 @@ pub struct ServerKeyProperties {
     #[serde(rename = "creationDate", skip_serializing)]
     pub creation_date: Option<String>,
 }
-mod server_key_properties {
+pub mod server_key_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ServerKeyType {
@@ -156,7 +156,7 @@ pub struct ServerProperties {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
-mod server_properties {
+pub mod server_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum State {
@@ -231,7 +231,7 @@ pub struct ServerPropertiesForUpdate {
     #[serde(rename = "maintenanceWindow", skip_serializing_if = "Option::is_none")]
     pub maintenance_window: Option<MaintenanceWindow>,
 }
-mod server_properties_for_update {
+pub mod server_properties_for_update {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum HaEnabled {
@@ -269,7 +269,7 @@ pub struct Sku {
     pub name: String,
     pub tier: sku::Tier,
 }
-mod sku {
+pub mod sku {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Tier {
@@ -313,7 +313,7 @@ pub struct ConfigurationProperties {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub source: Option<String>,
 }
-mod configuration_properties {
+pub mod configuration_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum DataType {
@@ -359,7 +359,7 @@ pub struct Operation {
     #[serde(skip_serializing)]
     pub properties: Option<serde_json::Value>,
 }
-mod operation {
+pub mod operation {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Origin {
@@ -420,7 +420,7 @@ pub struct Identity {
     #[serde(rename = "type", skip_serializing_if = "Option::is_none")]
     pub type_: Option<identity::Type>,
 }
-mod identity {
+pub mod identity {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {

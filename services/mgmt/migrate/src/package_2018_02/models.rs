@@ -46,7 +46,7 @@ pub struct ProjectProperties {
     #[serde(rename = "provisioningState", skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<project_properties::ProvisioningState>,
 }
-mod project_properties {
+pub mod project_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum DiscoveryStatus {
@@ -141,7 +141,7 @@ pub struct AssessmentProperties {
     #[serde(rename = "numberOfMachines", skip_serializing)]
     pub number_of_machines: Option<i32>,
 }
-mod assessment_properties {
+pub mod assessment_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum AzureLocation {
@@ -423,7 +423,7 @@ pub struct MachineProperties {
     #[serde(rename = "networkAdapters", skip_serializing)]
     pub network_adapters: Option<serde_json::Value>,
 }
-mod machine_properties {
+pub mod machine_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum BootType {
@@ -479,7 +479,7 @@ pub struct AssessedDisk {
     #[serde(rename = "suitabilityExplanation", skip_serializing)]
     pub suitability_explanation: Option<assessed_disk::SuitabilityExplanation>,
 }
-mod assessed_disk {
+pub mod assessed_disk {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum RecommendedDiskType {
@@ -566,7 +566,7 @@ pub struct AssessedNetworkAdapter {
     #[serde(rename = "suitabilityExplanation", skip_serializing)]
     pub suitability_explanation: Option<assessed_network_adapter::SuitabilityExplanation>,
 }
-mod assessed_network_adapter {
+pub mod assessed_network_adapter {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Suitability {
@@ -659,7 +659,7 @@ pub struct AssessedMachineProperties {
     #[serde(rename = "updatedTimestamp", skip_serializing)]
     pub updated_timestamp: Option<String>,
 }
-mod assessed_machine_properties {
+pub mod assessed_machine_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum BootType {
@@ -1004,7 +1004,7 @@ pub struct CheckNameAvailabilityParameters {
     #[serde(rename = "type")]
     pub type_: check_name_availability_parameters::Type,
 }
-mod check_name_availability_parameters {
+pub mod check_name_availability_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
@@ -1021,7 +1021,7 @@ pub struct CheckNameAvailabilityResult {
     #[serde(skip_serializing)]
     pub message: Option<String>,
 }
-mod check_name_availability_result {
+pub mod check_name_availability_result {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Reason {

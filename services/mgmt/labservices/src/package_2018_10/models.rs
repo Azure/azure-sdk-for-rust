@@ -153,7 +153,7 @@ pub struct EnvironmentSettingProperties {
     #[serde(rename = "latestOperationResult", skip_serializing_if = "Option::is_none")]
     pub latest_operation_result: Option<LatestOperationResult>,
 }
-mod environment_setting_properties {
+pub mod environment_setting_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum PublishingState {
@@ -184,7 +184,7 @@ pub struct EnvironmentSettingPropertiesFragment {
     #[serde(rename = "uniqueIdentifier", skip_serializing_if = "Option::is_none")]
     pub unique_identifier: Option<String>,
 }
-mod environment_setting_properties_fragment {
+pub mod environment_setting_properties_fragment {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ConfigurationState {
@@ -205,7 +205,7 @@ pub struct EnvironmentSize {
     #[serde(rename = "minMemory", skip_serializing)]
     pub min_memory: Option<f64>,
 }
-mod environment_size {
+pub mod environment_size {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Name {
@@ -221,7 +221,7 @@ pub struct EnvironmentSizeFragment {
     #[serde(rename = "vmSizes", skip_serializing_if = "Vec::is_empty")]
     pub vm_sizes: Vec<SizeInfoFragment>,
 }
-mod environment_size_fragment {
+pub mod environment_size_fragment {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Name {
@@ -418,7 +418,7 @@ pub struct LabProperties {
     #[serde(rename = "latestOperationResult", skip_serializing_if = "Option::is_none")]
     pub latest_operation_result: Option<LatestOperationResult>,
 }
-mod lab_properties {
+pub mod lab_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum UserAccessMode {
@@ -439,7 +439,7 @@ pub struct LabPropertiesFragment {
     #[serde(rename = "uniqueIdentifier", skip_serializing_if = "Option::is_none")]
     pub unique_identifier: Option<String>,
 }
-mod lab_properties_fragment {
+pub mod lab_properties_fragment {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum UserAccessMode {
@@ -559,7 +559,7 @@ pub struct PersonalPreferencesOperationsPayload {
     #[serde(rename = "labResourceId", skip_serializing_if = "Option::is_none")]
     pub lab_resource_id: Option<String>,
 }
-mod personal_preferences_operations_payload {
+pub mod personal_preferences_operations_payload {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum AddRemove {
@@ -664,7 +664,7 @@ pub struct ResourceSettingCreationParameters {
     #[serde(rename = "referenceVmCreationParameters")]
     pub reference_vm_creation_parameters: ReferenceVmCreationParameters,
 }
-mod resource_setting_creation_parameters {
+pub mod resource_setting_creation_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Size {
@@ -688,7 +688,7 @@ pub struct ResourceSettings {
     #[serde(rename = "referenceVm")]
     pub reference_vm: ReferenceVm,
 }
-mod resource_settings {
+pub mod resource_settings {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Size {
@@ -706,7 +706,7 @@ pub struct ResourceSettingsFragment {
     #[serde(rename = "referenceVm", skip_serializing_if = "Option::is_none")]
     pub reference_vm: Option<ReferenceVmFragment>,
 }
-mod resource_settings_fragment {
+pub mod resource_settings_fragment {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Size {
@@ -764,7 +764,7 @@ pub struct SizeAvailability {
     #[serde(rename = "isAvailable", skip_serializing_if = "Option::is_none")]
     pub is_available: Option<bool>,
 }
-mod size_availability {
+pub mod size_availability {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum SizeCategory {

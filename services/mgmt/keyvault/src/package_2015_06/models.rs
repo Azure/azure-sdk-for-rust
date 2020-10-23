@@ -7,7 +7,7 @@ pub struct Sku {
     pub family: sku::Family,
     pub name: sku::Name,
 }
-mod sku {
+pub mod sku {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Family {

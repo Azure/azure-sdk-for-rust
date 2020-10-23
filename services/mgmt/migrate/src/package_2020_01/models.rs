@@ -231,7 +231,7 @@ pub struct HyperVMachineProperties {
     #[serde(skip_serializing)]
     pub errors: Vec<HealthErrorDetails>,
 }
-mod hyper_v_machine_properties {
+pub mod hyper_v_machine_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum HighAvailability {
@@ -474,7 +474,7 @@ pub struct RunAsAccountProperties {
     #[serde(rename = "updatedTimestamp", skip_serializing)]
     pub updated_timestamp: Option<String>,
 }
-mod run_as_account_properties {
+pub mod run_as_account_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum CredentialType {
@@ -721,7 +721,7 @@ pub struct VMwareDisk {
     #[serde(skip_serializing)]
     pub path: Option<String>,
 }
-mod v_mware_disk {
+pub mod v_mware_disk {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum DiskMode {
@@ -885,7 +885,7 @@ pub struct Machine {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
-mod machine {
+pub mod machine {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Properties_monitoringState {
@@ -926,7 +926,7 @@ pub struct AgentConfiguration {
     #[serde(rename = "clockGranularity", skip_serializing_if = "Option::is_none")]
     pub clock_granularity: Option<i32>,
 }
-mod agent_configuration {
+pub mod agent_configuration {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum RebootStatus {
@@ -949,7 +949,7 @@ pub struct MachineResourcesConfiguration {
     #[serde(rename = "cpuSpeedAccuracy", skip_serializing_if = "Option::is_none")]
     pub cpu_speed_accuracy: Option<machine_resources_configuration::CpuSpeedAccuracy>,
 }
-mod machine_resources_configuration {
+pub mod machine_resources_configuration {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum CpuSpeedAccuracy {
@@ -985,7 +985,7 @@ pub struct OperatingSystemConfiguration {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub bitness: Option<operating_system_configuration::Bitness>,
 }
-mod operating_system_configuration {
+pub mod operating_system_configuration {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Family {
@@ -1019,7 +1019,7 @@ pub struct VirtualMachineConfiguration {
     #[serde(rename = "nativeHostMachineId", skip_serializing_if = "Option::is_none")]
     pub native_host_machine_id: Option<String>,
 }
-mod virtual_machine_configuration {
+pub mod virtual_machine_configuration {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum VirtualMachineType {
@@ -1046,7 +1046,7 @@ pub struct HypervisorConfiguration {
     #[serde(rename = "nativeHostMachineId", skip_serializing_if = "Option::is_none")]
     pub native_host_machine_id: Option<String>,
 }
-mod hypervisor_configuration {
+pub mod hypervisor_configuration {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum HypervisorType {

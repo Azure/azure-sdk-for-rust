@@ -103,7 +103,7 @@ pub struct DeviceServiceNameAvailabilityInfo {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
-mod device_service_name_availability_info {
+pub mod device_service_name_availability_info {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Reason {

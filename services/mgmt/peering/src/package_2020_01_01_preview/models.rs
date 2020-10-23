@@ -28,7 +28,7 @@ pub struct Peering {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
-mod peering {
+pub mod peering {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Kind {
@@ -47,7 +47,7 @@ pub struct PeeringSku {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub size: Option<peering_sku::Size>,
 }
-mod peering_sku {
+pub mod peering_sku {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Tier {
@@ -77,7 +77,7 @@ pub struct PeeringProperties {
     #[serde(rename = "provisioningState", skip_serializing)]
     pub provisioning_state: Option<peering_properties::ProvisioningState>,
 }
-mod peering_properties {
+pub mod peering_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
@@ -98,7 +98,7 @@ pub struct PeeringPropertiesDirect {
     #[serde(rename = "directPeeringType", skip_serializing_if = "Option::is_none")]
     pub direct_peering_type: Option<peering_properties_direct::DirectPeeringType>,
 }
-mod peering_properties_direct {
+pub mod peering_properties_direct {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum DirectPeeringType {
@@ -138,7 +138,7 @@ pub struct DirectConnection {
     #[serde(rename = "errorMessage", skip_serializing)]
     pub error_message: Option<String>,
 }
-mod direct_connection {
+pub mod direct_connection {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum SessionAddressProvider {
@@ -175,7 +175,7 @@ pub struct ExchangeConnection {
     #[serde(rename = "errorMessage", skip_serializing)]
     pub error_message: Option<String>,
 }
-mod exchange_connection {
+pub mod exchange_connection {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ConnectionState {
@@ -214,7 +214,7 @@ pub struct BgpSession {
     #[serde(rename = "md5AuthenticationKey", skip_serializing_if = "Option::is_none")]
     pub md5_authentication_key: Option<String>,
 }
-mod bgp_session {
+pub mod bgp_session {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum SessionStateV4 {
@@ -292,7 +292,7 @@ pub struct PeerAsnProperties {
     #[serde(rename = "errorMessage", skip_serializing)]
     pub error_message: Option<String>,
 }
-mod peer_asn_properties {
+pub mod peer_asn_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ValidationState {
@@ -311,7 +311,7 @@ pub struct ContactDetail {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub phone: Option<String>,
 }
-mod contact_detail {
+pub mod contact_detail {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Role {
@@ -345,7 +345,7 @@ pub struct PeeringLocation {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub properties: Option<PeeringLocationProperties>,
 }
-mod peering_location {
+pub mod peering_location {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Kind {
@@ -389,7 +389,7 @@ pub struct DirectPeeringFacility {
     #[serde(rename = "peeringDBFacilityLink", skip_serializing_if = "Option::is_none")]
     pub peering_db_facility_link: Option<String>,
 }
-mod direct_peering_facility {
+pub mod direct_peering_facility {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum DirectPeeringType {
@@ -443,7 +443,7 @@ pub struct PeeringRegisteredAsnProperties {
     #[serde(rename = "provisioningState", skip_serializing)]
     pub provisioning_state: Option<peering_registered_asn_properties::ProvisioningState>,
 }
-mod peering_registered_asn_properties {
+pub mod peering_registered_asn_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
@@ -480,7 +480,7 @@ pub struct PeeringRegisteredPrefixProperties {
     #[serde(rename = "provisioningState", skip_serializing)]
     pub provisioning_state: Option<peering_registered_prefix_properties::ProvisioningState>,
 }
-mod peering_registered_prefix_properties {
+pub mod peering_registered_prefix_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum PrefixValidationState {
@@ -571,7 +571,7 @@ pub struct PeeringServicePrefixProperties {
     #[serde(rename = "provisioningState", skip_serializing)]
     pub provisioning_state: Option<peering_service_prefix_properties::ProvisioningState>,
 }
-mod peering_service_prefix_properties {
+pub mod peering_service_prefix_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum PrefixValidationState {
@@ -662,7 +662,7 @@ pub struct PeeringServiceProperties {
     #[serde(rename = "provisioningState", skip_serializing)]
     pub provisioning_state: Option<peering_service_properties::ProvisioningState>,
 }
-mod peering_service_properties {
+pub mod peering_service_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {

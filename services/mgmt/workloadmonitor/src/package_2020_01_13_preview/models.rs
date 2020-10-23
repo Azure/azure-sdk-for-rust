@@ -105,7 +105,7 @@ pub struct Operation {
     pub display: operation::Display,
     pub origin: String,
 }
-mod operation {
+pub mod operation {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Display {
@@ -120,7 +120,7 @@ pub struct DefaultError {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub error: Option<default_error::Error>,
 }
-mod default_error {
+pub mod default_error {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Error {

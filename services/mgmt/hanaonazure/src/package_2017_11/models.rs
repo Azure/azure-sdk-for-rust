@@ -52,7 +52,7 @@ pub struct HanaInstanceProperties {
     #[serde(rename = "provisioningState", skip_serializing)]
     pub provisioning_state: Option<hana_instance_properties::ProvisioningState>,
 }
-mod hana_instance_properties {
+pub mod hana_instance_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum PowerState {
@@ -87,7 +87,7 @@ pub struct HardwareProfile {
     #[serde(rename = "hanaInstanceSize", skip_serializing)]
     pub hana_instance_size: Option<hardware_profile::HanaInstanceSize>,
 }
-mod hardware_profile {
+pub mod hardware_profile {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum HardwareType {
@@ -281,7 +281,7 @@ pub struct SapMonitorProperties {
     #[serde(rename = "logAnalyticsWorkspaceSharedKey", skip_serializing_if = "Option::is_none")]
     pub log_analytics_workspace_shared_key: Option<String>,
 }
-mod sap_monitor_properties {
+pub mod sap_monitor_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {

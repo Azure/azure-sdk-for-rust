@@ -14,7 +14,7 @@ pub struct Artifact {
     pub azure_resource_base: AzureResourceBase,
     pub kind: artifact::Kind,
 }
-mod artifact {
+pub mod artifact {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Kind {
@@ -65,7 +65,7 @@ pub struct ResourceProviderOperation {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub display: Option<resource_provider_operation::Display>,
 }
-mod resource_provider_operation {
+pub mod resource_provider_operation {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Display {
@@ -92,7 +92,7 @@ pub struct SharedBlueprintProperties {
     #[serde(rename = "resourceGroups", skip_serializing_if = "Option::is_none")]
     pub resource_groups: Option<serde_json::Value>,
 }
-mod shared_blueprint_properties {
+pub mod shared_blueprint_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum TargetScope {
@@ -210,7 +210,7 @@ pub struct ParameterDefinition {
     #[serde(rename = "allowedValues", skip_serializing_if = "Vec::is_empty")]
     pub allowed_values: Vec<serde_json::Value>,
 }
-mod parameter_definition {
+pub mod parameter_definition {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
@@ -312,7 +312,7 @@ pub struct ManagedServiceIdentity {
     #[serde(rename = "userAssignedIdentities", skip_serializing_if = "Option::is_none")]
     pub user_assigned_identities: Option<serde_json::Value>,
 }
-mod managed_service_identity {
+pub mod managed_service_identity {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
@@ -337,7 +337,7 @@ pub struct AssignmentLockSettings {
     #[serde(rename = "excludedActions", skip_serializing_if = "Vec::is_empty")]
     pub excluded_actions: Vec<String>,
 }
-mod assignment_lock_settings {
+pub mod assignment_lock_settings {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Mode {
@@ -364,7 +364,7 @@ pub struct AssignmentProperties {
     #[serde(rename = "provisioningState", skip_serializing)]
     pub provisioning_state: Option<assignment_properties::ProvisioningState>,
 }
-mod assignment_properties {
+pub mod assignment_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {

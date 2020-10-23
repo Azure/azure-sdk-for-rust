@@ -24,7 +24,7 @@ pub struct LogSettings {
     #[serde(rename = "retentionPolicy", skip_serializing_if = "Option::is_none")]
     pub retention_policy: Option<RetentionPolicy>,
 }
-mod log_settings {
+pub mod log_settings {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Category {
@@ -109,7 +109,7 @@ pub struct DiagnosticSettingsCategory {
     #[serde(rename = "categoryType", skip_serializing_if = "Option::is_none")]
     pub category_type: Option<diagnostic_settings_category::CategoryType>,
 }
-mod diagnostic_settings_category {
+pub mod diagnostic_settings_category {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum CategoryType {

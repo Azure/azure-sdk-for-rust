@@ -106,7 +106,7 @@ pub struct OfferTermInfo {
     #[serde(rename = "EffectiveDate", skip_serializing_if = "Option::is_none")]
     pub effective_date: Option<String>,
 }
-mod offer_term_info {
+pub mod offer_term_info {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Name {

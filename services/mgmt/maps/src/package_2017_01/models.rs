@@ -72,7 +72,7 @@ pub struct MapsKeySpecification {
     #[serde(rename = "keyType")]
     pub key_type: maps_key_specification::KeyType,
 }
-mod maps_key_specification {
+pub mod maps_key_specification {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum KeyType {

@@ -13,7 +13,7 @@ pub struct IoTSpacesProperties {
     #[serde(rename = "storageContainer", skip_serializing_if = "Option::is_none")]
     pub storage_container: Option<StorageContainerProperties>,
 }
-mod io_t_spaces_properties {
+pub mod io_t_spaces_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
@@ -39,7 +39,7 @@ pub struct StorageContainerProperties {
 pub struct IoTSpacesSkuInfo {
     pub name: io_t_spaces_sku_info::Name,
 }
-mod io_t_spaces_sku_info {
+pub mod io_t_spaces_sku_info {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Name {
@@ -130,7 +130,7 @@ pub struct IoTSpacesNameAvailabilityInfo {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
-mod io_t_spaces_name_availability_info {
+pub mod io_t_spaces_name_availability_info {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Reason {

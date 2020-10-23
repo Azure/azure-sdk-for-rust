@@ -26,7 +26,7 @@ pub struct PolicyAssignmentProperties {
     #[serde(rename = "enforcementMode", skip_serializing_if = "Option::is_none")]
     pub enforcement_mode: Option<policy_assignment_properties::EnforcementMode>,
 }
-mod policy_assignment_properties {
+pub mod policy_assignment_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum EnforcementMode {
@@ -80,7 +80,7 @@ pub struct Identity {
     #[serde(rename = "type", skip_serializing_if = "Option::is_none")]
     pub type_: Option<identity::Type>,
 }
-mod identity {
+pub mod identity {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
@@ -105,7 +105,7 @@ pub struct PolicyDefinitionProperties {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub parameters: Option<ParameterDefinitions>,
 }
-mod policy_definition_properties {
+pub mod policy_definition_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum PolicyType {
@@ -126,7 +126,7 @@ pub struct ParameterDefinitionsValue {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub metadata: Option<parameter_definitions_value::Metadata>,
 }
-mod parameter_definitions_value {
+pub mod parameter_definitions_value {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
@@ -183,7 +183,7 @@ pub struct PolicySetDefinitionProperties {
     #[serde(rename = "policyDefinitionGroups", skip_serializing_if = "Vec::is_empty")]
     pub policy_definition_groups: Vec<PolicyDefinitionGroup>,
 }
-mod policy_set_definition_properties {
+pub mod policy_set_definition_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum PolicyType {

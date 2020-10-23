@@ -70,7 +70,7 @@ pub struct InputDescriptor {
     #[serde(rename = "possibleValues", skip_serializing_if = "Vec::is_empty")]
     pub possible_values: Vec<InputValue>,
 }
-mod input_descriptor {
+pub mod input_descriptor {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
@@ -133,7 +133,7 @@ pub struct CodeRepository {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
-mod code_repository {
+pub mod code_repository {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum RepositoryType {
@@ -150,7 +150,7 @@ pub struct Authorization {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub parameters: Option<serde_json::Value>,
 }
-mod authorization {
+pub mod authorization {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum AuthorizationType {

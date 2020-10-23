@@ -8,7 +8,7 @@ pub struct RegistryNameCheckRequest {
     #[serde(rename = "type")]
     pub type_: registry_name_check_request::Type,
 }
-mod registry_name_check_request {
+pub mod registry_name_check_request {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
@@ -64,7 +64,7 @@ pub struct Sku {
     #[serde(skip_serializing)]
     pub tier: Option<sku::Tier>,
 }
-mod sku {
+pub mod sku {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Tier {
@@ -84,7 +84,7 @@ pub struct RegistryProperties {
     #[serde(rename = "storageAccount", skip_serializing_if = "Option::is_none")]
     pub storage_account: Option<StorageAccountProperties>,
 }
-mod registry_properties {
+pub mod registry_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
@@ -154,7 +154,7 @@ pub struct RegistryPassword {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
 }
-mod registry_password {
+pub mod registry_password {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Name {
@@ -168,7 +168,7 @@ mod registry_password {
 pub struct RegenerateCredentialParameters {
     pub name: regenerate_credential_parameters::Name,
 }
-mod regenerate_credential_parameters {
+pub mod regenerate_credential_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Name {

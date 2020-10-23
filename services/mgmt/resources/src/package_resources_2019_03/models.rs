@@ -51,7 +51,7 @@ pub struct DeploymentProperties {
     #[serde(rename = "onErrorDeployment", skip_serializing_if = "Option::is_none")]
     pub on_error_deployment: Option<OnErrorDeployment>,
 }
-mod deployment_properties {
+pub mod deployment_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Mode {
@@ -182,7 +182,7 @@ pub struct DeploymentPropertiesExtended {
     #[serde(rename = "onErrorDeployment", skip_serializing_if = "Option::is_none")]
     pub on_error_deployment: Option<OnErrorDeploymentExtended>,
 }
-mod deployment_properties_extended {
+pub mod deployment_properties_extended {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Mode {
@@ -197,7 +197,7 @@ pub struct OnErrorDeployment {
     #[serde(rename = "deploymentName", skip_serializing_if = "Option::is_none")]
     pub deployment_name: Option<String>,
 }
-mod on_error_deployment {
+pub mod on_error_deployment {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
@@ -214,7 +214,7 @@ pub struct OnErrorDeploymentExtended {
     #[serde(rename = "deploymentName", skip_serializing_if = "Option::is_none")]
     pub deployment_name: Option<String>,
 }
-mod on_error_deployment_extended {
+pub mod on_error_deployment_extended {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
@@ -323,7 +323,7 @@ pub struct Identity {
     #[serde(rename = "userAssignedIdentities", skip_serializing_if = "Option::is_none")]
     pub user_assigned_identities: Option<serde_json::Value>,
 }
-mod identity {
+pub mod identity {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
@@ -522,7 +522,7 @@ pub struct Operation {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
 }
-mod operation {
+pub mod operation {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Display {

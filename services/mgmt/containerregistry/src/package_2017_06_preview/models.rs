@@ -8,7 +8,7 @@ pub struct RegistryNameCheckRequest {
     #[serde(rename = "type")]
     pub type_: registry_name_check_request::Type,
 }
-mod registry_name_check_request {
+pub mod registry_name_check_request {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
@@ -64,7 +64,7 @@ pub struct Sku {
     #[serde(skip_serializing)]
     pub tier: Option<sku::Tier>,
 }
-mod sku {
+pub mod sku {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Name {
@@ -97,7 +97,7 @@ pub struct RegistryProperties {
     #[serde(rename = "storageAccount", skip_serializing_if = "Option::is_none")]
     pub storage_account: Option<StorageAccountProperties>,
 }
-mod registry_properties {
+pub mod registry_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
@@ -159,7 +159,7 @@ pub struct RegistryPassword {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
 }
-mod registry_password {
+pub mod registry_password {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Name {
@@ -173,7 +173,7 @@ mod registry_password {
 pub struct RegenerateCredentialParameters {
     pub name: regenerate_credential_parameters::Name,
 }
-mod regenerate_credential_parameters {
+pub mod regenerate_credential_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Name {
@@ -199,7 +199,7 @@ pub struct RegistryUsage {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub unit: Option<registry_usage::Unit>,
 }
-mod registry_usage {
+pub mod registry_usage {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Unit {
@@ -221,7 +221,7 @@ pub struct ReplicationProperties {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub status: Option<Status>,
 }
-mod replication_properties {
+pub mod replication_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
@@ -262,7 +262,7 @@ pub struct WebhookProperties {
     #[serde(rename = "provisioningState", skip_serializing)]
     pub provisioning_state: Option<webhook_properties::ProvisioningState>,
 }
-mod webhook_properties {
+pub mod webhook_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
@@ -301,7 +301,7 @@ pub struct WebhookPropertiesCreateParameters {
     pub scope: Option<String>,
     pub actions: Vec<String>,
 }
-mod webhook_properties_create_parameters {
+pub mod webhook_properties_create_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
@@ -331,7 +331,7 @@ pub struct WebhookPropertiesUpdateParameters {
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub actions: Vec<String>,
 }
-mod webhook_properties_update_parameters {
+pub mod webhook_properties_update_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {

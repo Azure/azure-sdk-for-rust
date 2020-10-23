@@ -13,7 +13,7 @@ pub struct PolicyDefinitionProperties {
     #[serde(rename = "policyRule", skip_serializing_if = "Option::is_none")]
     pub policy_rule: Option<serde_json::Value>,
 }
-mod policy_definition_properties {
+pub mod policy_definition_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum PolicyType {

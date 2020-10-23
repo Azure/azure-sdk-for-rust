@@ -49,7 +49,7 @@ pub struct DiskSku {
     #[serde(skip_serializing)]
     pub tier: Option<String>,
 }
-mod disk_sku {
+pub mod disk_sku {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Name {
@@ -70,7 +70,7 @@ pub struct SnapshotSku {
     #[serde(skip_serializing)]
     pub tier: Option<String>,
 }
-mod snapshot_sku {
+pub mod snapshot_sku {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Name {
@@ -105,7 +105,7 @@ pub struct DiskProperties {
     #[serde(rename = "diskState", skip_serializing)]
     pub disk_state: Option<disk_properties::DiskState>,
 }
-mod disk_properties {
+pub mod disk_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum OsType {
@@ -145,7 +145,7 @@ pub struct SnapshotProperties {
     #[serde(rename = "provisioningState", skip_serializing)]
     pub provisioning_state: Option<String>,
 }
-mod snapshot_properties {
+pub mod snapshot_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum OsType {
@@ -203,7 +203,7 @@ pub struct DiskUpdateProperties {
     #[serde(rename = "diskMBpsReadWrite", skip_serializing_if = "Option::is_none")]
     pub disk_m_bps_read_write: Option<i32>,
 }
-mod disk_update_properties {
+pub mod disk_update_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum OsType {
@@ -220,7 +220,7 @@ pub struct SnapshotUpdateProperties {
     #[serde(rename = "encryptionSettingsCollection", skip_serializing_if = "Option::is_none")]
     pub encryption_settings_collection: Option<EncryptionSettingsCollection>,
 }
-mod snapshot_update_properties {
+pub mod snapshot_update_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum OsType {
@@ -241,7 +241,7 @@ pub struct CreationData {
     #[serde(rename = "sourceResourceId", skip_serializing_if = "Option::is_none")]
     pub source_resource_id: Option<String>,
 }
-mod creation_data {
+pub mod creation_data {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum CreateOption {
@@ -266,7 +266,7 @@ pub struct GrantAccessData {
     #[serde(rename = "durationInSeconds")]
     pub duration_in_seconds: i32,
 }
-mod grant_access_data {
+pub mod grant_access_data {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Access {

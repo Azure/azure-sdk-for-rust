@@ -50,7 +50,7 @@ pub struct CheckNameAvailabilityResult {
     #[serde(skip_serializing)]
     pub message: Option<String>,
 }
-mod check_name_availability_result {
+pub mod check_name_availability_result {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Reason {
@@ -160,7 +160,7 @@ pub struct OperationResults {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub properties: Option<operation_results::Properties>,
 }
-mod operation_results {
+pub mod operation_results {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Properties {
@@ -306,7 +306,7 @@ pub struct CheckNameAvailabilityRequest {
     #[serde(rename = "type", skip_serializing_if = "Option::is_none")]
     pub type_: Option<check_name_availability_request::Type>,
 }
-mod check_name_availability_request {
+pub mod check_name_availability_request {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {

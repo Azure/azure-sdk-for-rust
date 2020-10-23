@@ -873,7 +873,7 @@ pub struct Operation {
     #[serde(skip_serializing)]
     pub display: Option<operation::Display>,
 }
-mod operation {
+pub mod operation {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Display {
@@ -947,7 +947,7 @@ pub struct StreamingJobProperties {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub cluster: Option<ClusterInfo>,
 }
-mod streaming_job_properties {
+pub mod streaming_job_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum JobType {
@@ -970,7 +970,7 @@ pub struct StreamingJobSku {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<streaming_job_sku::Name>,
 }
-mod streaming_job_sku {
+pub mod streaming_job_sku {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Name {
@@ -1047,7 +1047,7 @@ pub struct SubscriptionQuota {
     #[serde(skip_serializing)]
     pub properties: Option<subscription_quota::Properties>,
 }
-mod subscription_quota {
+pub mod subscription_quota {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Properties {
@@ -1111,7 +1111,7 @@ pub struct ClusterSku {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub capacity: Option<i32>,
 }
-mod cluster_sku {
+pub mod cluster_sku {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Name {
@@ -1215,7 +1215,7 @@ pub struct Error {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub error: Option<error::Error>,
 }
-mod error {
+pub mod error {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Error {

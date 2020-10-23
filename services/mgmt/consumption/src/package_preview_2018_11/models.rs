@@ -127,7 +127,7 @@ pub struct BillingAccountProperties {
     #[serde(rename = "enrollmentAccounts", skip_serializing)]
     pub enrollment_accounts: Vec<EnrollmentAccount>,
 }
-mod billing_account_properties {
+pub mod billing_account_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum AccountType {
@@ -252,7 +252,7 @@ pub struct EventProperties {
     #[serde(rename = "invoiceNumber", skip_serializing)]
     pub invoice_number: Option<String>,
 }
-mod event_properties {
+pub mod event_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum EventType {
@@ -288,7 +288,7 @@ pub struct LotProperties {
     #[serde(rename = "poNumber", skip_serializing)]
     pub po_number: Option<String>,
 }
-mod lot_properties {
+pub mod lot_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Source {
@@ -360,7 +360,7 @@ pub struct Operation {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
 }
-mod operation {
+pub mod operation {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Display {

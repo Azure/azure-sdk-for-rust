@@ -15,7 +15,7 @@ pub struct InstanceViewStatus {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub time: Option<String>,
 }
-mod instance_view_status {
+pub mod instance_view_status {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Level {
@@ -173,7 +173,7 @@ pub struct OsDiskImage {
     #[serde(rename = "operatingSystem")]
     pub operating_system: os_disk_image::OperatingSystem,
 }
-mod os_disk_image {
+pub mod os_disk_image {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum OperatingSystem {
@@ -217,7 +217,7 @@ pub struct Usage {
     pub limit: i64,
     pub name: UsageName,
 }
-mod usage {
+pub mod usage {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Unit {
@@ -268,7 +268,7 @@ pub struct HardwareProfile {
     #[serde(rename = "vmSize", skip_serializing_if = "Option::is_none")]
     pub vm_size: Option<hardware_profile::VmSize>,
 }
-mod hardware_profile {
+pub mod hardware_profile {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum VmSize {
@@ -446,7 +446,7 @@ pub struct OsDisk {
     #[serde(rename = "diskSizeGB", skip_serializing_if = "Option::is_none")]
     pub disk_size_gb: Option<i32>,
 }
-mod os_disk {
+pub mod os_disk {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum OsType {
@@ -488,7 +488,7 @@ pub struct AdditionalUnattendContent {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub content: Option<String>,
 }
-mod additional_unattend_content {
+pub mod additional_unattend_content {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum PassName {
@@ -512,7 +512,7 @@ pub struct WinRmListener {
     #[serde(rename = "certificateUrl", skip_serializing_if = "Option::is_none")]
     pub certificate_url: Option<String>,
 }
-mod win_rm_listener {
+pub mod win_rm_listener {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Protocol {
@@ -721,7 +721,7 @@ pub struct UpgradePolicy {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub mode: Option<upgrade_policy::Mode>,
 }
-mod upgrade_policy {
+pub mod upgrade_policy {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Mode {
@@ -760,7 +760,7 @@ pub struct VirtualMachineScaleSetOsDisk {
     #[serde(rename = "vhdContainers", skip_serializing_if = "Vec::is_empty")]
     pub vhd_containers: Vec<String>,
 }
-mod virtual_machine_scale_set_os_disk {
+pub mod virtual_machine_scale_set_os_disk {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum OsType {
@@ -941,7 +941,7 @@ pub struct VirtualMachineScaleSetSkuCapacity {
     #[serde(rename = "scaleType", skip_serializing)]
     pub scale_type: Option<virtual_machine_scale_set_sku_capacity::ScaleType>,
 }
-mod virtual_machine_scale_set_sku_capacity {
+pub mod virtual_machine_scale_set_sku_capacity {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ScaleType {
@@ -1103,7 +1103,7 @@ pub struct ContainerServiceOrchestratorProfile {
     #[serde(rename = "orchestratorType", skip_serializing_if = "Option::is_none")]
     pub orchestrator_type: Option<container_service_orchestrator_profile::OrchestratorType>,
 }
-mod container_service_orchestrator_profile {
+pub mod container_service_orchestrator_profile {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum OrchestratorType {
@@ -1122,7 +1122,7 @@ pub struct ContainerServiceMasterProfile {
     #[serde(skip_serializing)]
     pub fqdn: Option<String>,
 }
-mod container_service_master_profile {
+pub mod container_service_master_profile {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Count {}
@@ -1139,7 +1139,7 @@ pub struct ContainerServiceAgentPoolProfile {
     #[serde(skip_serializing)]
     pub fqdn: Option<String>,
 }
-mod container_service_agent_pool_profile {
+pub mod container_service_agent_pool_profile {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum VmSize {

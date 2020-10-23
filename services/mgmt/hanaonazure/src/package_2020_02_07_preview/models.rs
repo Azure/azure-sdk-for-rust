@@ -72,7 +72,7 @@ pub struct SapMonitorProperties {
     #[serde(rename = "monitorSubnet", skip_serializing_if = "Option::is_none")]
     pub monitor_subnet: Option<String>,
 }
-mod sap_monitor_properties {
+pub mod sap_monitor_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
@@ -110,7 +110,7 @@ pub struct ProviderInstanceProperties {
     #[serde(rename = "provisioningState", skip_serializing)]
     pub provisioning_state: Option<provider_instance_properties::ProvisioningState>,
 }
-mod provider_instance_properties {
+pub mod provider_instance_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {

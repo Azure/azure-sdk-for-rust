@@ -27,7 +27,7 @@ pub struct Sku {
     #[serde(skip_serializing)]
     pub tier: Option<sku::Tier>,
 }
-mod sku {
+pub mod sku {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Tier {

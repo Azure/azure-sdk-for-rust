@@ -14,7 +14,7 @@ pub struct RawCertificateData {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub certificate: Option<String>,
 }
-mod raw_certificate_data {
+pub mod raw_certificate_data {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum AuthType {
@@ -208,7 +208,7 @@ pub struct Resource {
 pub struct Sku {
     pub name: sku::Name,
 }
-mod sku {
+pub mod sku {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Name {
@@ -255,7 +255,7 @@ pub struct UpgradeDetails {
     #[serde(rename = "previousResourceId", skip_serializing)]
     pub previous_resource_id: Option<String>,
 }
-mod upgrade_details {
+pub mod upgrade_details {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
@@ -328,7 +328,7 @@ pub struct VaultProperties {
     #[serde(rename = "privateEndpointStateForSiteRecovery", skip_serializing)]
     pub private_endpoint_state_for_site_recovery: Option<vault_properties::PrivateEndpointStateForSiteRecovery>,
 }
-mod vault_properties {
+pub mod vault_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum PrivateEndpointStateForBackup {
@@ -350,7 +350,7 @@ pub struct IdentityData {
     #[serde(rename = "type")]
     pub type_: identity_data::Type,
 }
-mod identity_data {
+pub mod identity_data {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
@@ -374,7 +374,7 @@ pub struct PrivateEndpointConnection {
     #[serde(rename = "privateLinkServiceConnectionState", skip_serializing)]
     pub private_link_service_connection_state: Option<PrivateLinkServiceConnectionState>,
 }
-mod private_endpoint_connection {
+pub mod private_endpoint_connection {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
@@ -398,7 +398,7 @@ pub struct PrivateLinkServiceConnectionState {
     #[serde(rename = "actionsRequired", skip_serializing)]
     pub actions_required: Option<String>,
 }
-mod private_link_service_connection_state {
+pub mod private_link_service_connection_state {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
@@ -450,7 +450,7 @@ pub struct VaultUsage {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<NameInfo>,
 }
-mod vault_usage {
+pub mod vault_usage {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Unit {

@@ -13,7 +13,7 @@ pub struct DomainProperties {
     #[serde(rename = "inputSchemaMapping", skip_serializing_if = "Option::is_none")]
     pub input_schema_mapping: Option<InputSchemaMapping>,
 }
-mod domain_properties {
+pub mod domain_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
@@ -79,7 +79,7 @@ pub struct InputSchemaMapping {
     #[serde(rename = "inputSchemaMappingType", skip_serializing_if = "Option::is_none")]
     pub input_schema_mapping_type: Option<input_schema_mapping::InputSchemaMappingType>,
 }
-mod input_schema_mapping {
+pub mod input_schema_mapping {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum InputSchemaMappingType {
@@ -130,7 +130,7 @@ pub struct DomainTopicProperties {
     #[serde(rename = "provisioningState", skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<domain_topic_properties::ProvisioningState>,
 }
-mod domain_topic_properties {
+pub mod domain_topic_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
@@ -177,7 +177,7 @@ pub struct EventSubscriptionProperties {
     #[serde(rename = "deadLetterDestination", skip_serializing_if = "Option::is_none")]
     pub dead_letter_destination: Option<DeadLetterDestination>,
 }
-mod event_subscription_properties {
+pub mod event_subscription_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
@@ -328,7 +328,7 @@ pub struct AdvancedFilter {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub key: Option<String>,
 }
-mod advanced_filter {
+pub mod advanced_filter {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum OperatorType {
@@ -358,7 +358,7 @@ pub struct DeadLetterDestination {
     #[serde(rename = "endpointType")]
     pub endpoint_type: dead_letter_destination::EndpointType,
 }
-mod dead_letter_destination {
+pub mod dead_letter_destination {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum EndpointType {
@@ -420,7 +420,7 @@ pub struct EventSubscriptionDestination {
     #[serde(rename = "endpointType")]
     pub endpoint_type: event_subscription_destination::EndpointType,
 }
-mod event_subscription_destination {
+pub mod event_subscription_destination {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum EndpointType {
@@ -455,7 +455,7 @@ pub struct EventSubscriptionUpdateParameters {
     #[serde(rename = "deadLetterDestination", skip_serializing_if = "Option::is_none")]
     pub dead_letter_destination: Option<DeadLetterDestination>,
 }
-mod event_subscription_update_parameters {
+pub mod event_subscription_update_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum EventDeliverySchema {
@@ -514,7 +514,7 @@ pub struct TopicProperties {
     #[serde(rename = "inputSchemaMapping", skip_serializing_if = "Option::is_none")]
     pub input_schema_mapping: Option<InputSchemaMapping>,
 }
-mod topic_properties {
+pub mod topic_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
@@ -606,7 +606,7 @@ pub struct TopicTypeProperties {
     #[serde(rename = "supportedLocations", skip_serializing_if = "Vec::is_empty")]
     pub supported_locations: Vec<String>,
 }
-mod topic_type_properties {
+pub mod topic_type_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ResourceRegionType {

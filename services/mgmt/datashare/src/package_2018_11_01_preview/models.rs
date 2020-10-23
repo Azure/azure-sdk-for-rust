@@ -27,7 +27,7 @@ pub struct AccountProperties {
     #[serde(rename = "userName", skip_serializing)]
     pub user_name: Option<String>,
 }
-mod account_properties {
+pub mod account_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
@@ -116,7 +116,7 @@ pub struct AdlsGen2FileDataSetMappingProperties {
     #[serde(rename = "subscriptionId")]
     pub subscription_id: String,
 }
-mod adls_gen2_file_data_set_mapping_properties {
+pub mod adls_gen2_file_data_set_mapping_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum DataSetMappingStatus {
@@ -181,7 +181,7 @@ pub struct AdlsGen2FileSystemDataSetMappingProperties {
     #[serde(rename = "subscriptionId")]
     pub subscription_id: String,
 }
-mod adls_gen2_file_system_data_set_mapping_properties {
+pub mod adls_gen2_file_system_data_set_mapping_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum DataSetMappingStatus {
@@ -241,7 +241,7 @@ pub struct AdlsGen2FolderDataSetMappingProperties {
     #[serde(rename = "subscriptionId")]
     pub subscription_id: String,
 }
-mod adls_gen2_folder_data_set_mapping_properties {
+pub mod adls_gen2_folder_data_set_mapping_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum DataSetMappingStatus {
@@ -301,7 +301,7 @@ pub struct BlobContainerMappingProperties {
     #[serde(rename = "subscriptionId")]
     pub subscription_id: String,
 }
-mod blob_container_mapping_properties {
+pub mod blob_container_mapping_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum DataSetMappingStatus {
@@ -372,7 +372,7 @@ pub struct BlobFolderMappingProperties {
     #[serde(rename = "subscriptionId")]
     pub subscription_id: String,
 }
-mod blob_folder_mapping_properties {
+pub mod blob_folder_mapping_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum DataSetMappingStatus {
@@ -423,7 +423,7 @@ pub struct BlobMappingProperties {
     #[serde(rename = "subscriptionId")]
     pub subscription_id: String,
 }
-mod blob_mapping_properties {
+pub mod blob_mapping_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum DataSetMappingStatus {
@@ -502,7 +502,7 @@ pub struct ConsumerInvitationProperties {
     #[serde(rename = "userName", skip_serializing)]
     pub user_name: Option<String>,
 }
-mod consumer_invitation_properties {
+pub mod consumer_invitation_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum InvitationStatus {
@@ -538,7 +538,7 @@ pub struct ConsumerSourceDataSetProperties {
     #[serde(rename = "dataSetType", skip_serializing)]
     pub data_set_type: Option<consumer_source_data_set_properties::DataSetType>,
 }
-mod consumer_source_data_set_properties {
+pub mod consumer_source_data_set_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum DataSetType {
@@ -564,7 +564,7 @@ pub struct DataSet {
     pub proxy_dto: ProxyDto,
     pub kind: data_set::Kind,
 }
-mod data_set {
+pub mod data_set {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Kind {
@@ -596,7 +596,7 @@ pub struct DataSetMapping {
     pub proxy_dto: ProxyDto,
     pub kind: data_set_mapping::Kind,
 }
-mod data_set_mapping {
+pub mod data_set_mapping {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Kind {
@@ -662,7 +662,7 @@ pub struct Identity {
     #[serde(rename = "type", skip_serializing_if = "Option::is_none")]
     pub type_: Option<identity::Type>,
 }
-mod identity {
+pub mod identity {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
@@ -703,7 +703,7 @@ pub struct InvitationProperties {
     #[serde(rename = "userName", skip_serializing)]
     pub user_name: Option<String>,
 }
-mod invitation_properties {
+pub mod invitation_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum InvitationStatus {
@@ -738,7 +738,7 @@ pub struct KustoClusterDataSetMappingProperties {
     #[serde(rename = "provisioningState", skip_serializing)]
     pub provisioning_state: Option<kusto_cluster_data_set_mapping_properties::ProvisioningState>,
 }
-mod kusto_cluster_data_set_mapping_properties {
+pub mod kusto_cluster_data_set_mapping_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum DataSetMappingStatus {
@@ -765,7 +765,7 @@ pub struct KustoClusterDataSetProperties {
     #[serde(rename = "provisioningState", skip_serializing)]
     pub provisioning_state: Option<kusto_cluster_data_set_properties::ProvisioningState>,
 }
-mod kusto_cluster_data_set_properties {
+pub mod kusto_cluster_data_set_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
@@ -801,7 +801,7 @@ pub struct KustoDatabaseDataSetMappingProperties {
     #[serde(rename = "provisioningState", skip_serializing)]
     pub provisioning_state: Option<kusto_database_data_set_mapping_properties::ProvisioningState>,
 }
-mod kusto_database_data_set_mapping_properties {
+pub mod kusto_database_data_set_mapping_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum DataSetMappingStatus {
@@ -828,7 +828,7 @@ pub struct KustoDatabaseDataSetProperties {
     #[serde(rename = "provisioningState", skip_serializing)]
     pub provisioning_state: Option<kusto_database_data_set_properties::ProvisioningState>,
 }
-mod kusto_database_data_set_properties {
+pub mod kusto_database_data_set_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
@@ -923,7 +923,7 @@ pub struct OperationResponse {
     pub start_time: Option<String>,
     pub status: operation_response::Status,
 }
-mod operation_response {
+pub mod operation_response {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
@@ -969,7 +969,7 @@ pub struct ProviderShareSubscriptionProperties {
     #[serde(rename = "shareSubscriptionStatus", skip_serializing)]
     pub share_subscription_status: Option<provider_share_subscription_properties::ShareSubscriptionStatus>,
 }
-mod provider_share_subscription_properties {
+pub mod provider_share_subscription_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ShareSubscriptionStatus {
@@ -995,7 +995,7 @@ pub struct ScheduledSourceShareSynchronizationSettingProperties {
     #[serde(rename = "synchronizationTime", skip_serializing_if = "Option::is_none")]
     pub synchronization_time: Option<String>,
 }
-mod scheduled_source_share_synchronization_setting_properties {
+pub mod scheduled_source_share_synchronization_setting_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum RecurrenceInterval {
@@ -1029,7 +1029,7 @@ pub struct ScheduledSynchronizationSettingProperties {
     #[serde(rename = "userName", skip_serializing)]
     pub user_name: Option<String>,
 }
-mod scheduled_synchronization_setting_properties {
+pub mod scheduled_synchronization_setting_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
@@ -1068,7 +1068,7 @@ pub struct ScheduledTriggerProperties {
     #[serde(rename = "userName", skip_serializing)]
     pub user_name: Option<String>,
 }
-mod scheduled_trigger_properties {
+pub mod scheduled_trigger_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
@@ -1125,7 +1125,7 @@ pub struct ShareProperties {
     #[serde(rename = "userName", skip_serializing)]
     pub user_name: Option<String>,
 }
-mod share_properties {
+pub mod share_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
@@ -1182,7 +1182,7 @@ pub struct ShareSubscriptionProperties {
     #[serde(rename = "userName", skip_serializing)]
     pub user_name: Option<String>,
 }
-mod share_subscription_properties {
+pub mod share_subscription_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
@@ -1222,7 +1222,7 @@ pub struct ShareSubscriptionSynchronization {
     #[serde(rename = "synchronizationMode", skip_serializing)]
     pub synchronization_mode: Option<share_subscription_synchronization::SynchronizationMode>,
 }
-mod share_subscription_synchronization {
+pub mod share_subscription_synchronization {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum SynchronizationMode {
@@ -1259,7 +1259,7 @@ pub struct ShareSynchronization {
     #[serde(rename = "synchronizationMode", skip_serializing)]
     pub synchronization_mode: Option<share_synchronization::SynchronizationMode>,
 }
-mod share_synchronization {
+pub mod share_synchronization {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum SynchronizationMode {
@@ -1277,7 +1277,7 @@ pub struct ShareSynchronizationList {
 pub struct SourceShareSynchronizationSetting {
     pub kind: source_share_synchronization_setting::Kind,
 }
-mod source_share_synchronization_setting {
+pub mod source_share_synchronization_setting {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Kind {
@@ -1320,7 +1320,7 @@ pub struct SqlDbTableDataSetMappingProperties {
     #[serde(rename = "tableName")]
     pub table_name: String,
 }
-mod sql_db_table_data_set_mapping_properties {
+pub mod sql_db_table_data_set_mapping_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum DataSetMappingStatus {
@@ -1379,7 +1379,7 @@ pub struct SqlDwTableDataSetMappingProperties {
     #[serde(rename = "tableName")]
     pub table_name: String,
 }
-mod sql_dw_table_data_set_mapping_properties {
+pub mod sql_dw_table_data_set_mapping_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum DataSetMappingStatus {
@@ -1441,7 +1441,7 @@ pub struct SynchronizationDetails {
     #[serde(rename = "vCore", skip_serializing)]
     pub v_core: Option<i64>,
 }
-mod synchronization_details {
+pub mod synchronization_details {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum DataSetType {
@@ -1473,7 +1473,7 @@ pub struct SynchronizationSetting {
     pub proxy_dto: ProxyDto,
     pub kind: synchronization_setting::Kind,
 }
-mod synchronization_setting {
+pub mod synchronization_setting {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Kind {
@@ -1491,7 +1491,7 @@ pub struct Synchronize {
     #[serde(rename = "synchronizationMode", skip_serializing_if = "Option::is_none")]
     pub synchronization_mode: Option<synchronize::SynchronizationMode>,
 }
-mod synchronize {
+pub mod synchronize {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum SynchronizationMode {
@@ -1505,7 +1505,7 @@ pub struct Trigger {
     pub proxy_dto: ProxyDto,
     pub kind: trigger::Kind,
 }
-mod trigger {
+pub mod trigger {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Kind {

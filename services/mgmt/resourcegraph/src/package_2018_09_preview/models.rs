@@ -37,7 +37,7 @@ pub struct FacetRequestOptions {
     #[serde(rename = "$top", skip_serializing_if = "Option::is_none")]
     pub top: Option<i32>,
 }
-mod facet_request_options {
+pub mod facet_request_options {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum SortOrder {
@@ -60,7 +60,7 @@ pub struct QueryResponse {
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub facets: Vec<Facet>,
 }
-mod query_response {
+pub mod query_response {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ResultTruncated {
@@ -192,7 +192,7 @@ pub struct Operation {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub origin: Option<String>,
 }
-mod operation {
+pub mod operation {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Display {
@@ -245,7 +245,7 @@ pub struct GraphQueryProperties {
     #[serde(rename = "resultKind", skip_serializing)]
     pub result_kind: Option<graph_query_properties::ResultKind>,
 }
-mod graph_query_properties {
+pub mod graph_query_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ResultKind {

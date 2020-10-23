@@ -9,7 +9,7 @@ pub struct Operation {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
 }
-mod operation {
+pub mod operation {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Display {
@@ -74,7 +74,7 @@ pub struct WorkspaceProperties {
     #[serde(rename = "sharedPrivateLinkResources", skip_serializing_if = "Vec::is_empty")]
     pub shared_private_link_resources: Vec<SharedPrivateLinkResource>,
 }
-mod workspace_properties {
+pub mod workspace_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
@@ -141,7 +141,7 @@ pub struct Usage {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<UsageName>,
 }
-mod usage {
+pub mod usage {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Unit {
@@ -199,7 +199,7 @@ pub struct QuotaBaseProperties {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub unit: Option<quota_base_properties::Unit>,
 }
-mod quota_base_properties {
+pub mod quota_base_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Unit {
@@ -231,7 +231,7 @@ pub struct UpdateWorkspaceQuotas {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub status: Option<update_workspace_quotas::Status>,
 }
-mod update_workspace_quotas {
+pub mod update_workspace_quotas {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Unit {
@@ -270,7 +270,7 @@ pub struct ResourceQuota {
     #[serde(skip_serializing)]
     pub unit: Option<resource_quota::Unit>,
 }
-mod resource_quota {
+pub mod resource_quota {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Unit {
@@ -295,7 +295,7 @@ pub struct Identity {
     #[serde(rename = "userAssignedIdentities", skip_serializing_if = "Option::is_none")]
     pub user_assigned_identities: Option<UserAssignedIdentities>,
 }
-mod identity {
+pub mod identity {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
@@ -406,7 +406,7 @@ pub struct Dataset {
     #[serde(rename = "datasetType", skip_serializing)]
     pub dataset_type: Option<String>,
 }
-mod dataset {
+pub mod dataset {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Latest {
@@ -447,6 +447,44 @@ mod dataset {
         #[serde(skip_serializing)]
         pub tags: Option<serde_json::Value>,
     }
+    pub mod latest {
+        use super::*;
+        #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+        pub struct DataPath {
+            #[serde(rename = "datastoreName", skip_serializing)]
+            pub datastore_name: Option<String>,
+            #[serde(rename = "relativePath", skip_serializing)]
+            pub relative_path: Option<String>,
+            #[serde(rename = "azureFilePath", skip_serializing)]
+            pub azure_file_path: Option<String>,
+            #[serde(skip_serializing)]
+            pub paths: Vec<String>,
+            #[serde(rename = "sqlDataPath", skip_serializing_if = "Option::is_none")]
+            pub sql_data_path: Option<data_path::SqlDataPath>,
+            #[serde(rename = "httpUrl", skip_serializing)]
+            pub http_url: Option<String>,
+            #[serde(rename = "additionalProperties", skip_serializing_if = "Option::is_none")]
+            pub additional_properties: Option<serde_json::Value>,
+            #[serde(rename = "partitionFormat", skip_serializing)]
+            pub partition_format: Option<String>,
+            #[serde(rename = "partitionFormatIgnoreError", skip_serializing)]
+            pub partition_format_ignore_error: Option<bool>,
+        }
+        pub mod data_path {
+            use super::*;
+            #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+            pub struct SqlDataPath {
+                #[serde(rename = "sqlTableName", skip_serializing)]
+                pub sql_table_name: Option<String>,
+                #[serde(rename = "sqlQuery", skip_serializing)]
+                pub sql_query: Option<String>,
+                #[serde(rename = "sqlStoredProcedureName", skip_serializing)]
+                pub sql_stored_procedure_name: Option<String>,
+                #[serde(rename = "queryTimeout", skip_serializing)]
+                pub query_timeout: Option<i64>,
+            }
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DatasetState {
@@ -457,7 +495,7 @@ pub struct DatasetState {
     #[serde(skip_serializing)]
     pub etag: Option<String>,
 }
-mod dataset_state {
+pub mod dataset_state {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct DeprecatedBy {
@@ -546,7 +584,7 @@ pub struct Datastore {
     #[serde(rename = "linkedInfo", skip_serializing_if = "Option::is_none")]
     pub linked_info: Option<LinkedInfo>,
 }
-mod datastore {
+pub mod datastore {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum DataStoreType {
@@ -570,7 +608,7 @@ pub struct AzureResourceDatastore {
     #[serde(rename = "serviceDataAccessAuthIdentity", skip_serializing_if = "Option::is_none")]
     pub service_data_access_auth_identity: Option<azure_resource_datastore::ServiceDataAccessAuthIdentity>,
 }
-mod azure_resource_datastore {
+pub mod azure_resource_datastore {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ServiceDataAccessAuthIdentity {
@@ -687,7 +725,7 @@ pub struct Compute {
     #[serde(rename = "isAttachedCompute", skip_serializing)]
     pub is_attached_compute: Option<bool>,
 }
-mod compute {
+pub mod compute {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
@@ -774,7 +812,7 @@ pub struct SslConfiguration {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub cname: Option<String>,
 }
-mod ssl_configuration {
+pub mod ssl_configuration {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
@@ -865,7 +903,7 @@ pub struct AmlComputeNodeInformation {
     #[serde(rename = "runId", skip_serializing)]
     pub run_id: Option<String>,
 }
-mod aml_compute_node_information {
+pub mod aml_compute_node_information {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum NodeState {
@@ -1000,7 +1038,7 @@ pub struct Restriction {
     #[serde(rename = "reasonCode", skip_serializing_if = "Option::is_none")]
     pub reason_code: Option<restriction::ReasonCode>,
 }
-mod restriction {
+pub mod restriction {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ReasonCode {
@@ -1113,7 +1151,7 @@ pub struct EncryptionProperty {
     #[serde(rename = "keyVaultProperties")]
     pub key_vault_properties: KeyVaultProperties,
 }
-mod encryption_property {
+pub mod encryption_property {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
@@ -1179,7 +1217,7 @@ pub struct ServiceResponseBase {
     #[serde(rename = "deploymentType", skip_serializing_if = "Option::is_none")]
     pub deployment_type: Option<service_response_base::DeploymentType>,
 }
-mod service_response_base {
+pub mod service_response_base {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum State {
@@ -1581,7 +1619,7 @@ pub struct CreateServiceRequest {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
 }
-mod create_service_request {
+pub mod create_service_request {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ComputeType {
@@ -1623,7 +1661,7 @@ pub struct DatasetCreateRequest {
     #[serde(rename = "timeSeries", skip_serializing_if = "Option::is_none")]
     pub time_series: Option<dataset_create_request::TimeSeries>,
 }
-mod dataset_create_request {
+pub mod dataset_create_request {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum DatasetType {
@@ -1648,6 +1686,53 @@ mod dataset_create_request {
         pub source_type: Option<parameters::SourceType>,
         #[serde(skip_serializing_if = "Option::is_none")]
         pub separator: Option<String>,
+    }
+    pub mod parameters {
+        use super::*;
+        #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+        pub enum Header {
+            #[serde(rename = "all_files_have_same_headers")]
+            AllFilesHaveSameHeaders,
+            #[serde(rename = "only_first_file_has_headers")]
+            OnlyFirstFileHasHeaders,
+            #[serde(rename = "no_headers")]
+            NoHeaders,
+            #[serde(rename = "combine_all_files_headers")]
+            CombineAllFilesHeaders,
+        }
+        #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+        pub struct Path {
+            #[serde(rename = "httpUrl", skip_serializing_if = "Option::is_none")]
+            pub http_url: Option<String>,
+            #[serde(rename = "dataPath", skip_serializing_if = "Option::is_none")]
+            pub data_path: Option<path::DataPath>,
+        }
+        pub mod path {
+            use super::*;
+            #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+            pub struct DataPath {
+                #[serde(rename = "datastoreName", skip_serializing_if = "Option::is_none")]
+                pub datastore_name: Option<String>,
+                #[serde(rename = "relativePath", skip_serializing_if = "Option::is_none")]
+                pub relative_path: Option<String>,
+            }
+        }
+        #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+        pub struct Query {
+            #[serde(rename = "datastoreName", skip_serializing_if = "Option::is_none")]
+            pub datastore_name: Option<String>,
+            #[serde(skip_serializing_if = "Option::is_none")]
+            pub query: Option<String>,
+        }
+        #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+        pub enum SourceType {
+            #[serde(rename = "delimited_files")]
+            DelimitedFiles,
+            #[serde(rename = "json_lines_files")]
+            JsonLinesFiles,
+            #[serde(rename = "parquet_files")]
+            ParquetFiles,
+        }
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Registration {
@@ -1731,7 +1816,7 @@ pub struct DatastoreCreateRequest {
     #[serde(rename = "workspaceSystemAssignedIdentity", skip_serializing_if = "Option::is_none")]
     pub workspace_system_assigned_identity: Option<bool>,
 }
-mod datastore_create_request {
+pub mod datastore_create_request {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum DataStoreType {

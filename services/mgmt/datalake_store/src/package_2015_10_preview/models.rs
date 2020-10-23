@@ -40,7 +40,7 @@ pub struct EncryptionIdentity {
     #[serde(rename = "tenantId", skip_serializing)]
     pub tenant_id: Option<String>,
 }
-mod encryption_identity {
+pub mod encryption_identity {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
@@ -54,7 +54,7 @@ pub struct EncryptionConfig {
     #[serde(rename = "keyVaultMetaInfo", skip_serializing_if = "Option::is_none")]
     pub key_vault_meta_info: Option<KeyVaultMetaInfo>,
 }
-mod encryption_config {
+pub mod encryption_config {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
@@ -92,7 +92,7 @@ pub struct DataLakeStoreAccountProperties {
     #[serde(rename = "defaultGroup", skip_serializing_if = "Option::is_none")]
     pub default_group: Option<String>,
 }
-mod data_lake_store_account_properties {
+pub mod data_lake_store_account_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
@@ -186,7 +186,7 @@ pub struct AzureAsyncOperationResult {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub error: Option<Error>,
 }
-mod azure_async_operation_result {
+pub mod azure_async_operation_result {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
