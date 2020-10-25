@@ -1,11 +1,11 @@
 use crate::blob::blob::{copy_status_from_headers, CopyStatus};
 use crate::core::{copy_id_from_headers, CopyId};
 use azure_core::errors::AzureError;
-use azure_core::{
+use azure_core::headers::{
     client_request_id_from_headers_optional, date_from_headers, etag_from_headers,
     last_modified_from_headers, request_id_from_headers, server_from_headers, version_from_headers,
-    RequestId,
 };
+use azure_core::RequestId;
 use chrono::{DateTime, Utc};
 use http::HeaderMap;
 use std::convert::TryFrom;
