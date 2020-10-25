@@ -2,9 +2,8 @@ use crate::from_headers::*;
 use crate::ResourceQuota;
 use crate::{Document, DocumentAttributes};
 use azure_core::errors::AzureError;
-use azure_core::{
-    continuation_token_from_headers_optional, session_token_from_headers, SessionToken,
-};
+use azure_core::headers::{continuation_token_from_headers_optional, session_token_from_headers};
+use azure_core::SessionToken;
 use chrono::{DateTime, Utc};
 use hyper::header::HeaderMap;
 use serde::de::DeserializeOwned;
@@ -21,7 +20,6 @@ pub struct ListDocumentsResponseAttributes {
 pub struct ListDocumentsResponse<T> {
     pub rid: String,
     pub documents: Vec<Document<T>>,
-
     pub content_location: String,
     pub last_state_change: DateTime<Utc>,
     pub resource_quota: Vec<ResourceQuota>,

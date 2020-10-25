@@ -1,9 +1,9 @@
-use azure_identity::*;
+use azure_identity::client_credentials_flow;
 use oauth2::{ClientId, ClientSecret};
+use url::Url;
+
 use std::env;
 use std::error::Error;
-use std::sync::Arc;
-use url::Url;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
@@ -16,11 +16,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let subscription_id =
         env::var("SUBSCRIPTION_ID").expect("Missing SUBSCRIPTION_ID environment variable.");
 
-    // This Future will give you the final token to
-    // use in authorization.
-    let client = Arc::new(reqwest::Client::new());
-    let token = authorize_client_credentials_flow(
-        client.clone(),
+    let client = reqwest::Client::new();
+    // This will give you the final token to use in authorization.
+    let token = client_credentials_flow::perform(
+        client,
         &client_id,
         &client_secret,
         "https://management.azure.com/",

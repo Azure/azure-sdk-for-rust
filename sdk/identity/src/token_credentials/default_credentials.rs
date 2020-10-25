@@ -1,9 +1,6 @@
-use crate::token_credentials::AzureCliCredential;
-use crate::{
-    token_credentials::{EnvironmentCredential, ManagedIdentityCredential, TokenCredential},
-    TokenResponse,
-};
+use super::{AzureCliCredential, EnvironmentCredential, ManagedIdentityCredential};
 use azure_core::errors::AzureError;
+use azure_core::{TokenCredential, TokenResponse};
 use log::debug;
 
 /// Provides a mechanism of selectively disabling credentials used for a `DefaultCredential` instance
@@ -14,34 +11,39 @@ pub struct DefaultCredentialBuilder {
 }
 
 impl DefaultCredentialBuilder {
+    /// Create a new `DefaultCredentialBuilder`
     pub fn new() -> Self {
-        DefaultCredentialBuilder {
+        Self {
             include_cli_credential: true,
             include_managed_identity_credential: true,
             include_environment_credential: true,
         }
     }
 
+    /// Exclude using credentials from the environment
     pub fn exclude_environment_credential(&mut self) -> &mut Self {
         self.include_environment_credential = false;
         self
     }
+
+    /// Exclude using credentials from the cli
     pub fn exclude_cli_credential(&mut self) -> &mut Self {
         self.include_cli_credential = false;
         self
     }
+
+    /// Exclude using managed identity credentials
     pub fn exclude_managed_identity_credential(&mut self) -> &mut Self {
         self.include_managed_identity_credential = false;
         self
     }
-    fn source_count(&self) -> usize {
-        self.include_cli_credential as usize
-            + self.include_cli_credential as usize
-            + self.include_managed_identity_credential as usize
-    }
+
     pub fn build(&self) -> DefaultCredential {
+        let source_count = self.include_cli_credential as usize
+            + self.include_cli_credential as usize
+            + self.include_managed_identity_credential as usize;
         let mut sources =
-            Vec::<Box<dyn TokenCredential + Send + Sync>>::with_capacity(self.source_count());
+            Vec::<Box<dyn TokenCredential + Send + Sync>>::with_capacity(source_count);
         if self.include_environment_credential {
             sources.push(Box::new(EnvironmentCredential {}));
         }
@@ -55,8 +57,9 @@ impl DefaultCredentialBuilder {
     }
 }
 
-/// Provides a default `TokenCredential` authentication flow for applications that will be deployed to Azure.  The following credential
-/// types if enabled will be tried, in order:
+/// Provides a default `TokenCredential` authentication flow for applications that will be deployed to Azure.  
+///
+/// The following credential types if enabled will be tried, in order:
 /// - EnvironmentCredential
 /// - ManagedIdentityCredential
 /// - AzureCliCredential
@@ -85,6 +88,7 @@ impl Default for DefaultCredential {
 
 #[async_trait::async_trait]
 impl TokenCredential for DefaultCredential {
+    /// Try to fetch a token using each of the credential sources until one succeeds
     async fn get_token(&self, resource: &str) -> Result<TokenResponse, AzureError> {
         for source in &self.sources {
             let token_res = source.get_token(resource).await;

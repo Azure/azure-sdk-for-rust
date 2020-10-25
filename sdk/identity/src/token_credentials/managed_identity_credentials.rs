@@ -1,25 +1,19 @@
-use crate::{token_credentials::TokenCredential, TokenResponse};
-
 use azure_core::errors::AzureError;
+use azure_core::{TokenCredential, TokenResponse};
 use chrono::{DateTime, Utc};
 use oauth2::AccessToken;
-use std::str;
+use serde::Deserialize;
 use url::Url;
 
-#[derive(Debug, Clone, Deserialize)]
-struct MsiTokenResponse {
-    pub access_token: AccessToken,
-    pub expires_on: DateTime<Utc>,
-    pub token_type: String,
-    pub resource: String,
-}
+use std::str;
 
 const MSI_ENDPOINT_ENV_KEY: &str = "IDENTITY_ENDPOINT";
 const MSI_SECRET_ENV_KEY: &str = "IDENTITY_HEADER";
 const MSI_API_VERSION: &str = "2019-08-01";
 
-/// Attempts authentication using a managed identity that has been assigned to the deployment environment. This authentication type works in Azure VMs,
-/// App Service and Azure Functions applications, as well as the Azure Cloud Shell
+/// Attempts authentication using a managed identity that has been assigned to the deployment environment.
+///
+/// This authentication type works in Azure VMs, App Service and Azure Functions applications, as well as the Azure Cloud Shell
 ///
 /// Built up from docs at [https://docs.microsoft.com/en-us/azure/app-service/overview-managed-identity#using-the-rest-protocol](https://docs.microsoft.com/en-us/azure/app-service/overview-managed-identity#using-the-rest-protocol)
 pub struct ManagedIdentityCredential;
@@ -62,4 +56,12 @@ impl TokenCredential for ManagedIdentityCredential {
             token_response.expires_on,
         ))
     }
+}
+
+#[derive(Debug, Clone, Deserialize)]
+struct MsiTokenResponse {
+    pub access_token: AccessToken,
+    pub expires_on: DateTime<Utc>,
+    pub token_type: String,
+    pub resource: String,
 }

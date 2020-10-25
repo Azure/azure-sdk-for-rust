@@ -2,8 +2,8 @@ use crate::container::incomplete_vector_from_container_response;
 use crate::container::responses::ListContainersResponse;
 use crate::core::prelude::*;
 use azure_core::errors::{check_status_extract_headers_and_body, AzureError};
+use azure_core::headers::request_id_from_headers;
 use azure_core::prelude::*;
-use azure_core::request_id_from_headers;
 use hyper::{Method, StatusCode};
 
 #[derive(Debug, Clone)]

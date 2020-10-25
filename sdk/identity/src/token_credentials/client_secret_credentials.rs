@@ -1,16 +1,15 @@
-use crate::token_credentials::TokenCredential;
-
 use azure_core::errors::AzureError;
+use azure_core::{TokenCredential, TokenResponse};
 use chrono::Utc;
 use oauth2::{
-    basic::BasicClient, reqwest::async_http_client, AccessToken, AuthType, AuthUrl, Scope,
-    TokenResponse, TokenUrl,
+    basic::BasicClient, reqwest::async_http_client, AccessToken, AuthType, AuthUrl, Scope, TokenUrl,
 };
 use std::{str, time::Duration};
 use url::Url;
 
-/// Enables authentication to Azure Active Directory using a client secret that was generated for an App Registration. More information on how
-/// to configure a client secret can be found here:
+/// Enables authentication to Azure Active Directory using a client secret that was generated for an App Registration.
+///
+/// More information on how to configure a client secret can be found here:
 /// https://docs.microsoft.com/en-us/azure/active-directory/develop/quickstart-configure-app-access-web-apis#add-credentials-to-your-web-application
 pub struct ClientSecretCredential {
     tenant_id: String,
@@ -34,7 +33,7 @@ impl ClientSecretCredential {
 
 #[async_trait::async_trait]
 impl TokenCredential for ClientSecretCredential {
-    async fn get_token(&self, resource: &str) -> Result<crate::TokenResponse, AzureError> {
+    async fn get_token(&self, resource: &str) -> Result<TokenResponse, AzureError> {
         let token_url = TokenUrl::from_url(
             Url::parse(&format!(
                 "https://login.microsoftonline.com/{}/oauth2/v2.0/token",
@@ -75,7 +74,8 @@ impl TokenCredential for ClientSecretCredential {
             .request_async(async_http_client)
             .await
             .map(|r| {
-                crate::TokenResponse::new(
+                use oauth2::TokenResponse as _;
+                TokenResponse::new(
                     AccessToken::new(r.access_token().secret().to_owned()),
                     Utc::now()
                         + chrono::Duration::from_std(

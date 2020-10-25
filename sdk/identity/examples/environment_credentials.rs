@@ -1,11 +1,12 @@
-use azure_identity::*;
+use azure_core::TokenCredential;
+use azure_identity::token_credentials::*;
 use std::error::Error;
 use url::Url;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     let sub_id = std::env::var("AZURE_SUBSCRIPTION_ID")?;
-    let creds = EnvironmentCredential {};
+    let creds = EnvironmentCredential;
     let res = creds
         .get_token("https://management.azure.com/")
         .await
