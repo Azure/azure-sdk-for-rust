@@ -749,7 +749,7 @@ pub mod virtual_machine_extension_images {
         publisher_name: &str,
         type_: &str,
         filter: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
         orderby: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<Vec<VirtualMachineExtensionImage>, list_versions::Error> {
@@ -1115,7 +1115,7 @@ pub mod virtual_machine_images {
         offer: &str,
         skus: &str,
         expand: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
         orderby: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<Vec<VirtualMachineImageResource>, list::Error> {

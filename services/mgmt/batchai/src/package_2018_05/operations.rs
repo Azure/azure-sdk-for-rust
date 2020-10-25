@@ -100,7 +100,7 @@ pub mod workspaces {
     use snafu::{ResultExt, Snafu};
     pub async fn list(
         operation_config: &crate::OperationConfig,
-        maxresults: Option<i64>,
+        maxresults: Option<i32>,
         subscription_id: &str,
     ) -> std::result::Result<WorkspaceListResult, list::Error> {
         let client = &operation_config.client;
@@ -164,7 +164,7 @@ pub mod workspaces {
     pub async fn list_by_resource_group(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
-        maxresults: Option<i64>,
+        maxresults: Option<i32>,
         subscription_id: &str,
     ) -> std::result::Result<WorkspaceListResult, list_by_resource_group::Error> {
         let client = &operation_config.client;
@@ -493,7 +493,7 @@ pub mod experiments {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         workspace_name: &str,
-        maxresults: Option<i64>,
+        maxresults: Option<i32>,
         subscription_id: &str,
     ) -> std::result::Result<ExperimentListResult, list_by_workspace::Error> {
         let client = &operation_config.client;
@@ -761,7 +761,7 @@ pub mod jobs {
         resource_group_name: &str,
         workspace_name: &str,
         experiment_name: &str,
-        maxresults: Option<i64>,
+        maxresults: Option<i32>,
         subscription_id: &str,
     ) -> std::result::Result<JobListResult, list_by_experiment::Error> {
         let client = &operation_config.client;
@@ -1031,8 +1031,8 @@ pub mod jobs {
         job_name: &str,
         outputdirectoryid: &str,
         directory: Option<&str>,
-        linkexpiryinminutes: Option<i64>,
-        maxresults: Option<i64>,
+        linkexpiryinminutes: Option<i32>,
+        maxresults: Option<i32>,
         subscription_id: &str,
     ) -> std::result::Result<FileListResult, list_output_files::Error> {
         let client = &operation_config.client;
@@ -1437,7 +1437,7 @@ pub mod file_servers {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         workspace_name: &str,
-        maxresults: Option<i64>,
+        maxresults: Option<i32>,
         subscription_id: &str,
     ) -> std::result::Result<FileServerListResult, list_by_workspace::Error> {
         let client = &operation_config.client;
@@ -1837,7 +1837,7 @@ pub mod clusters {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         workspace_name: &str,
-        maxresults: Option<i64>,
+        maxresults: Option<i32>,
         subscription_id: &str,
     ) -> std::result::Result<ClusterListResult, list_by_workspace::Error> {
         let client = &operation_config.client;

@@ -55,7 +55,7 @@ pub mod labs {
         subscription_id: &str,
         expand: Option<&str>,
         filter: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
         orderby: Option<&str>,
     ) -> std::result::Result<ResponseWithContinuationLab, list_by_subscription::Error> {
         let client = &operation_config.client;
@@ -132,7 +132,7 @@ pub mod labs {
         resource_group_name: &str,
         expand: Option<&str>,
         filter: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
         orderby: Option<&str>,
     ) -> std::result::Result<ResponseWithContinuationLab, list_by_resource_group::Error> {
         let client = &operation_config.client;
@@ -862,7 +862,7 @@ pub mod global_schedules {
         subscription_id: &str,
         expand: Option<&str>,
         filter: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
         orderby: Option<&str>,
     ) -> std::result::Result<ResponseWithContinuationSchedule, list_by_subscription::Error> {
         let client = &operation_config.client;
@@ -939,7 +939,7 @@ pub mod global_schedules {
         resource_group_name: &str,
         expand: Option<&str>,
         filter: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
         orderby: Option<&str>,
     ) -> std::result::Result<ResponseWithContinuationSchedule, list_by_resource_group::Error> {
         let client = &operation_config.client;
@@ -1414,7 +1414,7 @@ pub mod artifact_sources {
         lab_name: &str,
         expand: Option<&str>,
         filter: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
         orderby: Option<&str>,
     ) -> std::result::Result<ResponseWithContinuationArtifactSource, list::Error> {
         let client = &operation_config.client;
@@ -1766,7 +1766,7 @@ pub mod arm_templates {
         artifact_source_name: &str,
         expand: Option<&str>,
         filter: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
         orderby: Option<&str>,
     ) -> std::result::Result<ResponseWithContinuationArmTemplate, list::Error> {
         let client = &operation_config.client;
@@ -1917,7 +1917,7 @@ pub mod artifacts {
         artifact_source_name: &str,
         expand: Option<&str>,
         filter: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
         orderby: Option<&str>,
     ) -> std::result::Result<ResponseWithContinuationArtifact, list::Error> {
         let client = &operation_config.client;
@@ -2273,7 +2273,7 @@ pub mod custom_images {
         lab_name: &str,
         expand: Option<&str>,
         filter: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
         orderby: Option<&str>,
     ) -> std::result::Result<ResponseWithContinuationCustomImage, list::Error> {
         let client = &operation_config.client;
@@ -2560,7 +2560,7 @@ pub mod formulas {
         lab_name: &str,
         expand: Option<&str>,
         filter: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
         orderby: Option<&str>,
     ) -> std::result::Result<ResponseWithContinuationFormula, list::Error> {
         let client = &operation_config.client;
@@ -2846,7 +2846,7 @@ pub mod gallery_images {
         lab_name: &str,
         expand: Option<&str>,
         filter: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
         orderby: Option<&str>,
     ) -> std::result::Result<ResponseWithContinuationGalleryImage, list::Error> {
         let client = &operation_config.client;
@@ -2929,7 +2929,7 @@ pub mod notification_channels {
         lab_name: &str,
         expand: Option<&str>,
         filter: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
         orderby: Option<&str>,
     ) -> std::result::Result<ResponseWithContinuationNotificationChannel, list::Error> {
         let client = &operation_config.client;
@@ -3411,7 +3411,7 @@ pub mod policies {
         policy_set_name: &str,
         expand: Option<&str>,
         filter: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
         orderby: Option<&str>,
     ) -> std::result::Result<ResponseWithContinuationPolicy, list::Error> {
         let client = &operation_config.client;
@@ -3765,7 +3765,7 @@ pub mod schedules {
         lab_name: &str,
         expand: Option<&str>,
         filter: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
         orderby: Option<&str>,
     ) -> std::result::Result<ResponseWithContinuationSchedule, list::Error> {
         let client = &operation_config.client;
@@ -4241,7 +4241,7 @@ pub mod service_runners {
         resource_group_name: &str,
         lab_name: &str,
         filter: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
         orderby: Option<&str>,
     ) -> std::result::Result<ResponseWithContinuationServiceRunner, list::Error> {
         let client = &operation_config.client;
@@ -4521,7 +4521,7 @@ pub mod users {
         lab_name: &str,
         expand: Option<&str>,
         filter: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
         orderby: Option<&str>,
     ) -> std::result::Result<ResponseWithContinuationUser, list::Error> {
         let client = &operation_config.client;
@@ -4872,7 +4872,7 @@ pub mod disks {
         user_name: &str,
         expand: Option<&str>,
         filter: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
         orderby: Option<&str>,
     ) -> std::result::Result<ResponseWithContinuationDisk, list::Error> {
         let client = &operation_config.client;
@@ -5296,7 +5296,7 @@ pub mod environments {
         user_name: &str,
         expand: Option<&str>,
         filter: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
         orderby: Option<&str>,
     ) -> std::result::Result<ResponseWithContinuationDtlEnvironment, list::Error> {
         let client = &operation_config.client;
@@ -5587,7 +5587,7 @@ pub mod secrets {
         user_name: &str,
         expand: Option<&str>,
         filter: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
         orderby: Option<&str>,
     ) -> std::result::Result<ResponseWithContinuationSecret, list::Error> {
         let client = &operation_config.client;
@@ -5876,7 +5876,7 @@ pub mod virtual_machines {
         lab_name: &str,
         expand: Option<&str>,
         filter: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
         orderby: Option<&str>,
     ) -> std::result::Result<ResponseWithContinuationLabVirtualMachine, list::Error> {
         let client = &operation_config.client;
@@ -6681,7 +6681,7 @@ pub mod virtual_machine_schedules {
         virtual_machine_name: &str,
         expand: Option<&str>,
         filter: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
         orderby: Option<&str>,
     ) -> std::result::Result<ResponseWithContinuationSchedule, list::Error> {
         let client = &operation_config.client;
@@ -7100,7 +7100,7 @@ pub mod virtual_networks {
         lab_name: &str,
         expand: Option<&str>,
         filter: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
         orderby: Option<&str>,
     ) -> std::result::Result<ResponseWithContinuationVirtualNetwork, list::Error> {
         let client = &operation_config.client;

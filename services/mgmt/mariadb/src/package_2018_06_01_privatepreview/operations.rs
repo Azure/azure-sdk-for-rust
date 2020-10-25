@@ -1451,7 +1451,7 @@ pub mod query_texts {
         subscription_id: &str,
         resource_group_name: &str,
         server_name: &str,
-        query_ids: map_type,
+        query_ids: &Vec<&str>,
     ) -> std::result::Result<QueryTextsResultList, list_by_server::Error> {
         let client = &operation_config.client;
         let uri_str = &format!(
@@ -1463,7 +1463,9 @@ pub mod query_texts {
             req_builder = req_builder.bearer_auth(token);
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        req_builder = req_builder.query(&[("queryIds", query_ids)]);
+        for value in query_ids {
+            req_builder = req_builder.query(&[("queryIds", value)]);
+        }
         let req = req_builder.build().context(list_by_server::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_by_server::ExecuteRequestError)?;
         match rsp.status() {

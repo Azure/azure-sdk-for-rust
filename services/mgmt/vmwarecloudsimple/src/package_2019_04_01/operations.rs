@@ -118,7 +118,7 @@ pub mod dedicated_cloud_nodes {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         filter: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
         skip_token: Option<&str>,
     ) -> std::result::Result<DedicatedCloudNodeListResponse, list_by_subscription::Error> {
         let client = &operation_config.client;
@@ -179,7 +179,7 @@ pub mod dedicated_cloud_nodes {
         subscription_id: &str,
         resource_group_name: &str,
         filter: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
         skip_token: Option<&str>,
     ) -> std::result::Result<DedicatedCloudNodeListResponse, list_by_resource_group::Error> {
         let client = &operation_config.client;
@@ -442,7 +442,7 @@ pub mod dedicated_cloud_services {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         filter: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
         skip_token: Option<&str>,
     ) -> std::result::Result<DedicatedCloudServiceListResponse, list_by_subscription::Error> {
         let client = &operation_config.client;
@@ -503,7 +503,7 @@ pub mod dedicated_cloud_services {
         subscription_id: &str,
         resource_group_name: &str,
         filter: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
         skip_token: Option<&str>,
     ) -> std::result::Result<DedicatedCloudServiceListResponse, list_by_resource_group::Error> {
         let client = &operation_config.client;
@@ -1407,7 +1407,7 @@ pub mod virtual_machines {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         filter: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
         skip_token: Option<&str>,
     ) -> std::result::Result<VirtualMachineListResponse, list_by_subscription::Error> {
         let client = &operation_config.client;
@@ -1468,7 +1468,7 @@ pub mod virtual_machines {
         subscription_id: &str,
         resource_group_name: &str,
         filter: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
         skip_token: Option<&str>,
     ) -> std::result::Result<VirtualMachineListResponse, list_by_resource_group::Error> {
         let client = &operation_config.client;
