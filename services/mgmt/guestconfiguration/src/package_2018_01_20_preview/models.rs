@@ -25,7 +25,7 @@ pub struct GuestConfigurationNavigation {
     #[serde(rename = "configurationParameter", skip_serializing_if = "Option::is_none")]
     pub configuration_parameter: Option<ConfigurationParameterList>,
 }
-mod guest_configuration_navigation {
+pub mod guest_configuration_navigation {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Kind {
@@ -62,7 +62,7 @@ pub struct GuestConfigurationAssignmentProperties {
     #[serde(skip_serializing)]
     pub location: Option<String>,
 }
-mod guest_configuration_assignment_properties {
+pub mod guest_configuration_assignment_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
@@ -105,7 +105,7 @@ pub struct GuestConfigurationAssignmentReport {
     #[serde(rename = "configurationVersion", skip_serializing_if = "Option::is_none")]
     pub configuration_version: Option<String>,
 }
-mod guest_configuration_assignment_report {
+pub mod guest_configuration_assignment_report {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
@@ -135,7 +135,7 @@ pub struct ErrorResponse {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub error: Option<error_response::Error>,
 }
-mod error_response {
+pub mod error_response {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Error {
@@ -159,7 +159,7 @@ pub struct Operation {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub properties: Option<operation::Properties>,
 }
-mod operation {
+pub mod operation {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Display {

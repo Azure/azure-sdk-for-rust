@@ -13,7 +13,7 @@ pub mod reservation {
         operation_config: &crate::OperationConfig,
         reservation_order_id: &str,
         reservation_id: &str,
-        body: &Vec<String>,
+        body: &Vec<&str>,
     ) -> std::result::Result<Properties, available_scopes::Error> {
         let client = &operation_config.client;
         let uri_str = &format!(

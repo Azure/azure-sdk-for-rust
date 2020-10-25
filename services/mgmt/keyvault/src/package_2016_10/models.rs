@@ -7,7 +7,7 @@ pub struct Sku {
     pub family: sku::Family,
     pub name: sku::Name,
 }
-mod sku {
+pub mod sku {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Family {
@@ -64,7 +64,7 @@ pub struct VaultProperties {
     #[serde(rename = "enablePurgeProtection", skip_serializing_if = "Option::is_none")]
     pub enable_purge_protection: Option<bool>,
 }
-mod vault_properties {
+pub mod vault_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum CreateMode {
@@ -95,7 +95,7 @@ pub struct VaultPatchProperties {
     #[serde(rename = "enablePurgeProtection", skip_serializing_if = "Option::is_none")]
     pub enable_purge_protection: Option<bool>,
 }
-mod vault_patch_properties {
+pub mod vault_patch_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum CreateMode {
@@ -205,7 +205,7 @@ pub struct VaultCheckNameAvailabilityParameters {
     #[serde(rename = "type")]
     pub type_: vault_check_name_availability_parameters::Type,
 }
-mod vault_check_name_availability_parameters {
+pub mod vault_check_name_availability_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
@@ -222,7 +222,7 @@ pub struct CheckNameAvailabilityResult {
     #[serde(skip_serializing)]
     pub message: Option<String>,
 }
-mod check_name_availability_result {
+pub mod check_name_availability_result {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Reason {
@@ -248,7 +248,7 @@ pub struct Operation {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub properties: Option<OperationProperties>,
 }
-mod operation {
+pub mod operation {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Display {

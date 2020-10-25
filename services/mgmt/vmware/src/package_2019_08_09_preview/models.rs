@@ -9,7 +9,7 @@ pub struct Trial {
     #[serde(rename = "availableHosts", skip_serializing)]
     pub available_hosts: Option<i64>,
 }
-mod trial {
+pub mod trial {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
@@ -25,7 +25,7 @@ pub struct Quota {
     #[serde(rename = "quotaEnabled", skip_serializing_if = "Option::is_none")]
     pub quota_enabled: Option<quota::QuotaEnabled>,
 }
-mod quota {
+pub mod quota {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum QuotaEnabled {
@@ -77,7 +77,7 @@ pub struct Operation {
     #[serde(skip_serializing)]
     pub display: Option<operation::Display>,
 }
-mod operation {
+pub mod operation {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Display {
@@ -143,7 +143,7 @@ pub struct IdentitySource {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub password: Option<String>,
 }
-mod identity_source {
+pub mod identity_source {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Ssl {
@@ -193,7 +193,7 @@ pub struct PrivateCloudProperties {
     #[serde(rename = "nsxtCertificateThumbprint", skip_serializing)]
     pub nsxt_certificate_thumbprint: Option<String>,
 }
-mod private_cloud_properties {
+pub mod private_cloud_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
@@ -233,7 +233,7 @@ pub struct ClusterProperties {
     #[serde(rename = "provisioningState", skip_serializing)]
     pub provisioning_state: Option<cluster_properties::ProvisioningState>,
 }
-mod cluster_properties {
+pub mod cluster_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {

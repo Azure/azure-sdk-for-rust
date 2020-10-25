@@ -229,7 +229,7 @@ pub struct ApplicationScopedVolumeCreationParametersServiceFabricVolumeDisk {
     #[serde(rename = "sizeDisk")]
     pub size_disk: application_scoped_volume_creation_parameters_service_fabric_volume_disk::SizeDisk,
 }
-mod application_scoped_volume_creation_parameters_service_fabric_volume_disk {
+pub mod application_scoped_volume_creation_parameters_service_fabric_volume_disk {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum SizeDisk {
@@ -371,7 +371,7 @@ pub struct HttpRouteMatchHeader {
     #[serde(rename = "type", skip_serializing_if = "Option::is_none")]
     pub type_: Option<http_route_match_header::Type>,
 }
-mod http_route_match_header {
+pub mod http_route_match_header {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
@@ -387,7 +387,7 @@ pub struct HttpRouteMatchPath {
     #[serde(rename = "type")]
     pub type_: http_route_match_path::Type,
 }
-mod http_route_match_path {
+pub mod http_route_match_path {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {

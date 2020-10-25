@@ -12,7 +12,7 @@ pub struct ImportImageParameters {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub mode: Option<import_image_parameters::Mode>,
 }
-mod import_image_parameters {
+pub mod import_image_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Mode {
@@ -43,7 +43,7 @@ pub struct RegistryNameCheckRequest {
     #[serde(rename = "type")]
     pub type_: registry_name_check_request::Type,
 }
-mod registry_name_check_request {
+pub mod registry_name_check_request {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
@@ -128,7 +128,7 @@ pub struct Sku {
     #[serde(skip_serializing)]
     pub tier: Option<sku::Tier>,
 }
-mod sku {
+pub mod sku {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Name {
@@ -162,7 +162,7 @@ pub struct RegistryProperties {
     #[serde(rename = "networkRuleSet", skip_serializing_if = "Option::is_none")]
     pub network_rule_set: Option<NetworkRuleSet>,
 }
-mod registry_properties {
+pub mod registry_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
@@ -196,7 +196,7 @@ pub struct NetworkRuleSet {
     #[serde(rename = "ipRules", skip_serializing_if = "Vec::is_empty")]
     pub ip_rules: Vec<IpRule>,
 }
-mod network_rule_set {
+pub mod network_rule_set {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum DefaultAction {
@@ -210,7 +210,7 @@ pub struct VirtualNetworkRule {
     pub action: Option<virtual_network_rule::Action>,
     pub id: String,
 }
-mod virtual_network_rule {
+pub mod virtual_network_rule {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Action {
@@ -223,7 +223,7 @@ pub struct IpRule {
     pub action: Option<ip_rule::Action>,
     pub value: String,
 }
-mod ip_rule {
+pub mod ip_rule {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Action {
@@ -269,7 +269,7 @@ pub struct RegistryPassword {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
 }
-mod registry_password {
+pub mod registry_password {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Name {
@@ -283,7 +283,7 @@ mod registry_password {
 pub struct RegenerateCredentialParameters {
     pub name: regenerate_credential_parameters::Name,
 }
-mod regenerate_credential_parameters {
+pub mod regenerate_credential_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Name {
@@ -309,7 +309,7 @@ pub struct RegistryUsage {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub unit: Option<registry_usage::Unit>,
 }
-mod registry_usage {
+pub mod registry_usage {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Unit {
@@ -329,7 +329,7 @@ pub struct QuarantinePolicy {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub status: Option<quarantine_policy::Status>,
 }
-mod quarantine_policy {
+pub mod quarantine_policy {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
@@ -346,7 +346,7 @@ pub struct TrustPolicy {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub status: Option<trust_policy::Status>,
 }
-mod trust_policy {
+pub mod trust_policy {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
@@ -374,7 +374,7 @@ pub struct ReplicationProperties {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub status: Option<Status>,
 }
-mod replication_properties {
+pub mod replication_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
@@ -415,7 +415,7 @@ pub struct WebhookProperties {
     #[serde(rename = "provisioningState", skip_serializing)]
     pub provisioning_state: Option<webhook_properties::ProvisioningState>,
 }
-mod webhook_properties {
+pub mod webhook_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
@@ -454,7 +454,7 @@ pub struct WebhookPropertiesCreateParameters {
     pub scope: Option<String>,
     pub actions: Vec<String>,
 }
-mod webhook_properties_create_parameters {
+pub mod webhook_properties_create_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
@@ -484,7 +484,7 @@ pub struct WebhookPropertiesUpdateParameters {
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub actions: Vec<String>,
 }
-mod webhook_properties_update_parameters {
+pub mod webhook_properties_update_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
@@ -685,7 +685,7 @@ pub struct RunProperties {
     #[serde(rename = "timerTrigger", skip_serializing_if = "Option::is_none")]
     pub timer_trigger: Option<TimerTriggerDescriptor>,
 }
-mod run_properties {
+pub mod run_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
@@ -767,7 +767,7 @@ pub struct PlatformProperties {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub variant: Option<platform_properties::Variant>,
 }
-mod platform_properties {
+pub mod platform_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Os {
@@ -831,7 +831,7 @@ pub struct RunFilter {
     #[serde(rename = "taskName", skip_serializing_if = "Option::is_none")]
     pub task_name: Option<String>,
 }
-mod run_filter {
+pub mod run_filter {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum RunType {
@@ -889,7 +889,7 @@ pub struct IdentityProperties {
     #[serde(rename = "userAssignedIdentities", skip_serializing_if = "Option::is_none")]
     pub user_assigned_identities: Option<serde_json::Value>,
 }
-mod identity_properties {
+pub mod identity_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
@@ -919,7 +919,7 @@ pub struct TaskProperties {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub credentials: Option<Credentials>,
 }
-mod task_properties {
+pub mod task_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
@@ -954,7 +954,7 @@ pub struct TaskStepProperties {
     #[serde(rename = "contextAccessToken", skip_serializing_if = "Option::is_none")]
     pub context_access_token: Option<String>,
 }
-mod task_step_properties {
+pub mod task_step_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
@@ -992,7 +992,7 @@ pub struct BaseImageDependency {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub digest: Option<String>,
 }
-mod base_image_dependency {
+pub mod base_image_dependency {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
@@ -1007,7 +1007,7 @@ pub struct TimerTrigger {
     pub status: Option<timer_trigger::Status>,
     pub name: String,
 }
-mod timer_trigger {
+pub mod timer_trigger {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
@@ -1025,7 +1025,7 @@ pub struct SourceTrigger {
     pub status: Option<source_trigger::Status>,
     pub name: String,
 }
-mod source_trigger {
+pub mod source_trigger {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
@@ -1041,7 +1041,7 @@ pub struct BaseImageTrigger {
     pub status: Option<base_image_trigger::Status>,
     pub name: String,
 }
-mod base_image_trigger {
+pub mod base_image_trigger {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum BaseImageTriggerType {
@@ -1059,7 +1059,7 @@ pub struct SourceRegistryCredentials {
     #[serde(rename = "loginMode", skip_serializing_if = "Option::is_none")]
     pub login_mode: Option<source_registry_credentials::LoginMode>,
 }
-mod source_registry_credentials {
+pub mod source_registry_credentials {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum LoginMode {
@@ -1087,7 +1087,7 @@ pub struct SourceProperties {
     #[serde(rename = "sourceControlAuthProperties", skip_serializing_if = "Option::is_none")]
     pub source_control_auth_properties: Option<AuthInfo>,
 }
-mod source_properties {
+pub mod source_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum SourceControlType {
@@ -1102,7 +1102,7 @@ pub struct SecretObject {
     #[serde(rename = "type", skip_serializing_if = "Option::is_none")]
     pub type_: Option<secret_object::Type>,
 }
-mod secret_object {
+pub mod secret_object {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
@@ -1122,7 +1122,7 @@ pub struct AuthInfo {
     #[serde(rename = "expiresIn", skip_serializing_if = "Option::is_none")]
     pub expires_in: Option<i32>,
 }
-mod auth_info {
+pub mod auth_info {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum TokenType {
@@ -1157,7 +1157,7 @@ pub struct TaskPropertiesUpdateParameters {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub credentials: Option<Credentials>,
 }
-mod task_properties_update_parameters {
+pub mod task_properties_update_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
@@ -1174,7 +1174,7 @@ pub struct PlatformUpdateParameters {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub variant: Option<platform_update_parameters::Variant>,
 }
-mod platform_update_parameters {
+pub mod platform_update_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Os {
@@ -1209,7 +1209,7 @@ pub struct TaskStepUpdateParameters {
     #[serde(rename = "contextAccessToken", skip_serializing_if = "Option::is_none")]
     pub context_access_token: Option<String>,
 }
-mod task_step_update_parameters {
+pub mod task_step_update_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
@@ -1235,7 +1235,7 @@ pub struct TimerTriggerUpdateParameters {
     pub status: Option<timer_trigger_update_parameters::Status>,
     pub name: String,
 }
-mod timer_trigger_update_parameters {
+pub mod timer_trigger_update_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
@@ -1253,7 +1253,7 @@ pub struct SourceTriggerUpdateParameters {
     pub status: Option<source_trigger_update_parameters::Status>,
     pub name: String,
 }
-mod source_trigger_update_parameters {
+pub mod source_trigger_update_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
@@ -1269,7 +1269,7 @@ pub struct BaseImageTriggerUpdateParameters {
     pub status: Option<base_image_trigger_update_parameters::Status>,
     pub name: String,
 }
-mod base_image_trigger_update_parameters {
+pub mod base_image_trigger_update_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum BaseImageTriggerType {
@@ -1293,7 +1293,7 @@ pub struct SourceUpdateParameters {
     #[serde(rename = "sourceControlAuthProperties", skip_serializing_if = "Option::is_none")]
     pub source_control_auth_properties: Option<AuthInfoUpdateParameters>,
 }
-mod source_update_parameters {
+pub mod source_update_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum SourceControlType {
@@ -1314,7 +1314,7 @@ pub struct AuthInfoUpdateParameters {
     #[serde(rename = "expiresIn", skip_serializing_if = "Option::is_none")]
     pub expires_in: Option<i32>,
 }
-mod auth_info_update_parameters {
+pub mod auth_info_update_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum TokenType {

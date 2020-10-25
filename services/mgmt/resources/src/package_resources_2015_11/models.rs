@@ -87,7 +87,7 @@ pub struct DeploymentProperties {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub mode: Option<deployment_properties::Mode>,
 }
-mod deployment_properties {
+pub mod deployment_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Mode {
@@ -186,7 +186,7 @@ pub struct DeploymentPropertiesExtended {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub mode: Option<deployment_properties_extended::Mode>,
 }
-mod deployment_properties_extended {
+pub mod deployment_properties_extended {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Mode {

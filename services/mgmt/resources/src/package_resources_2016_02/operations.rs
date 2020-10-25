@@ -373,7 +373,7 @@ pub mod deployments {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         filter: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
         subscription_id: &str,
     ) -> std::result::Result<DeploymentListResult, list::Error> {
         let client = &operation_config.client;
@@ -596,7 +596,7 @@ pub mod providers {
     }
     pub async fn list(
         operation_config: &crate::OperationConfig,
-        top: Option<i64>,
+        top: Option<i32>,
         expand: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<ProviderListResult, list::Error> {
@@ -708,7 +708,7 @@ pub mod resource_groups {
         resource_group_name: &str,
         filter: Option<&str>,
         expand: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
         subscription_id: &str,
     ) -> std::result::Result<ResourceListResult, list_resources::Error> {
         let client = &operation_config.client;
@@ -1071,7 +1071,7 @@ pub mod resource_groups {
     pub async fn list(
         operation_config: &crate::OperationConfig,
         filter: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
         subscription_id: &str,
     ) -> std::result::Result<ResourceGroupListResult, list::Error> {
         let client = &operation_config.client;
@@ -1181,7 +1181,7 @@ pub mod resources {
         operation_config: &crate::OperationConfig,
         filter: Option<&str>,
         expand: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
         subscription_id: &str,
     ) -> std::result::Result<ResourceListResult, list::Error> {
         let client = &operation_config.client;
@@ -1871,7 +1871,7 @@ pub mod deployment_operations {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         deployment_name: &str,
-        top: Option<i64>,
+        top: Option<i32>,
         subscription_id: &str,
     ) -> std::result::Result<DeploymentOperationsListResult, list::Error> {
         let client = &operation_config.client;

@@ -39,7 +39,7 @@ pub struct RecommendationProperties {
     #[serde(rename = "suppressionIds", skip_serializing_if = "Vec::is_empty")]
     pub suppression_ids: Vec<String>,
 }
-mod recommendation_properties {
+pub mod recommendation_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Category {

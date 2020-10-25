@@ -56,7 +56,7 @@ pub struct ClusterSku {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub capacity: Option<i32>,
 }
-mod cluster_sku {
+pub mod cluster_sku {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Name {
@@ -136,7 +136,7 @@ pub struct Error {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub error: Option<error::Error>,
 }
-mod error {
+pub mod error {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Error {

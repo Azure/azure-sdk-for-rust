@@ -161,7 +161,7 @@ pub struct ResourceSku {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub capacity: Option<i32>,
 }
-mod resource_sku {
+pub mod resource_sku {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Tier {
@@ -188,7 +188,7 @@ pub struct SignalRProperties {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
 }
-mod signal_r_properties {
+pub mod signal_r_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
@@ -219,7 +219,7 @@ pub struct SignalRFeature {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
-mod signal_r_feature {
+pub mod signal_r_feature {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Flag {
@@ -248,7 +248,7 @@ pub struct RegenerateKeyParameters {
     #[serde(rename = "keyType", skip_serializing_if = "Option::is_none")]
     pub key_type: Option<regenerate_key_parameters::KeyType>,
 }
-mod regenerate_key_parameters {
+pub mod regenerate_key_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum KeyType {

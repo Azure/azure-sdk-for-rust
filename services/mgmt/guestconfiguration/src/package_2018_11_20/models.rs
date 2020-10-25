@@ -31,7 +31,7 @@ pub struct GuestConfigurationNavigation {
     #[serde(rename = "configurationSetting", skip_serializing_if = "Option::is_none")]
     pub configuration_setting: Option<ConfigurationSetting>,
 }
-mod guest_configuration_navigation {
+pub mod guest_configuration_navigation {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Kind {
@@ -61,7 +61,7 @@ pub struct ConfigurationSetting {
     #[serde(rename = "configurationModeFrequencyMins", skip_serializing_if = "Option::is_none")]
     pub configuration_mode_frequency_mins: Option<f64>,
 }
-mod configuration_setting {
+pub mod configuration_setting {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ConfigurationMode {
@@ -102,7 +102,7 @@ pub struct GuestConfigurationAssignmentProperties {
     #[serde(rename = "provisioningState", skip_serializing)]
     pub provisioning_state: Option<guest_configuration_assignment_properties::ProvisioningState>,
 }
-mod guest_configuration_assignment_properties {
+pub mod guest_configuration_assignment_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ComplianceStatus {
@@ -149,7 +149,7 @@ pub struct GuestConfigurationAssignmentReportProperties {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub details: Option<AssignmentReportDetails>,
 }
-mod guest_configuration_assignment_report_properties {
+pub mod guest_configuration_assignment_report_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ComplianceStatus {
@@ -194,7 +194,7 @@ pub struct AssignmentReportDetails {
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub resources: Vec<AssignmentReportResource>,
 }
-mod assignment_report_details {
+pub mod assignment_report_details {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ComplianceStatus {
@@ -217,7 +217,7 @@ pub struct AssignmentReportResource {
     #[serde(skip_serializing)]
     pub properties: Option<serde_json::Value>,
 }
-mod assignment_report_resource {
+pub mod assignment_report_resource {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ComplianceStatus {
@@ -238,7 +238,7 @@ pub struct ErrorResponse {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub error: Option<error_response::Error>,
 }
-mod error_response {
+pub mod error_response {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Error {
@@ -262,7 +262,7 @@ pub struct Operation {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub properties: Option<operation::Properties>,
 }
-mod operation {
+pub mod operation {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Display {

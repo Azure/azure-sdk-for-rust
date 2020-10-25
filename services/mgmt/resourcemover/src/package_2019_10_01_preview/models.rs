@@ -337,7 +337,7 @@ pub struct VirtualMachineResourceSettings {
     #[serde(rename = "targetAvailabilitySetId", skip_serializing_if = "Option::is_none")]
     pub target_availability_set_id: Option<String>,
 }
-mod virtual_machine_resource_settings {
+pub mod virtual_machine_resource_settings {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum TargetAvailabilityZone {

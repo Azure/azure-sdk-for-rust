@@ -61,7 +61,7 @@ pub struct ConfigDataProperties {
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub digests: Vec<DigestConfig>,
 }
-mod config_data_properties {
+pub mod config_data_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum LowCpuThreshold {
@@ -90,7 +90,7 @@ pub struct DigestConfig {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub state: Option<digest_config::State>,
 }
-mod digest_config {
+pub mod digest_config {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum State {
@@ -151,7 +151,7 @@ pub struct RecommendationProperties {
     #[serde(rename = "resourceMetadata", skip_serializing_if = "Option::is_none")]
     pub resource_metadata: Option<ResourceMetadata>,
 }
-mod recommendation_properties {
+pub mod recommendation_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Category {

@@ -49,7 +49,7 @@ pub struct DeploymentProperties {
     #[serde(rename = "debugSetting", skip_serializing_if = "Option::is_none")]
     pub debug_setting: Option<DebugSetting>,
 }
-mod deployment_properties {
+pub mod deployment_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Mode {
@@ -172,7 +172,7 @@ pub struct DeploymentPropertiesExtended {
     #[serde(rename = "debugSetting", skip_serializing_if = "Option::is_none")]
     pub debug_setting: Option<DebugSetting>,
 }
-mod deployment_properties_extended {
+pub mod deployment_properties_extended {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Mode {
@@ -274,7 +274,7 @@ pub struct Identity {
     #[serde(rename = "type", skip_serializing_if = "Option::is_none")]
     pub type_: Option<identity::Type>,
 }
-mod identity {
+pub mod identity {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {

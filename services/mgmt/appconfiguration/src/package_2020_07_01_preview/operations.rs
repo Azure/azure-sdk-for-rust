@@ -460,7 +460,7 @@ pub mod configuration_stores {
     ) -> std::result::Result<ApiKeyListResult, list_keys::Error> {
         let client = &operation_config.client;
         let uri_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AppConfiguration/configurationStores/{}/ListKeys",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AppConfiguration/configurationStores/{}/listKeys",
             &operation_config.base_path, subscription_id, resource_group_name, config_store_name
         );
         let mut req_builder = client.post(uri_str);
@@ -532,7 +532,7 @@ pub mod configuration_stores {
     ) -> std::result::Result<ApiKey, regenerate_key::Error> {
         let client = &operation_config.client;
         let uri_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AppConfiguration/configurationStores/{}/RegenerateKey",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AppConfiguration/configurationStores/{}/regenerateKey",
             &operation_config.base_path, subscription_id, resource_group_name, config_store_name
         );
         let mut req_builder = client.post(uri_str);

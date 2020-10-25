@@ -933,7 +933,7 @@ pub mod application_package {
         resource_group_name: &str,
         account_name: &str,
         application_name: &str,
-        maxresults: Option<i64>,
+        maxresults: Option<i32>,
         subscription_id: &str,
     ) -> std::result::Result<ListApplicationPackagesResult, list::Error> {
         let client = &operation_config.client;
@@ -1294,7 +1294,7 @@ pub mod application {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         account_name: &str,
-        maxresults: Option<i64>,
+        maxresults: Option<i32>,
         subscription_id: &str,
     ) -> std::result::Result<ListApplicationsResult, list::Error> {
         let client = &operation_config.client;
@@ -1578,7 +1578,7 @@ pub mod certificate {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         account_name: &str,
-        maxresults: Option<i64>,
+        maxresults: Option<i32>,
         select: Option<&str>,
         filter: Option<&str>,
         subscription_id: &str,
@@ -2029,7 +2029,7 @@ pub mod pool {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         account_name: &str,
-        maxresults: Option<i64>,
+        maxresults: Option<i32>,
         select: Option<&str>,
         filter: Option<&str>,
         subscription_id: &str,

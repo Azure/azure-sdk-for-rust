@@ -24,7 +24,7 @@ pub struct WorkspaceProperties {
     #[serde(rename = "provisioningState", skip_serializing)]
     pub provisioning_state: Option<workspace_properties::ProvisioningState>,
 }
-mod workspace_properties {
+pub mod workspace_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
@@ -82,7 +82,7 @@ pub struct ProjectProperties {
     #[serde(rename = "provisioningState", skip_serializing)]
     pub provisioning_state: Option<project_properties::ProvisioningState>,
 }
-mod project_properties {
+pub mod project_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
@@ -151,7 +151,7 @@ pub struct AccountProperties {
     #[serde(rename = "provisioningState", skip_serializing)]
     pub provisioning_state: Option<account_properties::ProvisioningState>,
 }
-mod account_properties {
+pub mod account_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
@@ -201,7 +201,7 @@ pub struct Operation {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
 }
-mod operation {
+pub mod operation {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Display {

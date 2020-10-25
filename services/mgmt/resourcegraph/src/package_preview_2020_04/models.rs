@@ -25,7 +25,7 @@ pub struct QueryRequestOptions {
     #[serde(rename = "resultFormat", skip_serializing_if = "Option::is_none")]
     pub result_format: Option<query_request_options::ResultFormat>,
 }
-mod query_request_options {
+pub mod query_request_options {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ResultFormat {
@@ -52,7 +52,7 @@ pub struct FacetRequestOptions {
     #[serde(rename = "$top", skip_serializing_if = "Option::is_none")]
     pub top: Option<i32>,
 }
-mod facet_request_options {
+pub mod facet_request_options {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum SortOrder {
@@ -75,7 +75,7 @@ pub struct QueryResponse {
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub facets: Vec<Facet>,
 }
-mod query_response {
+pub mod query_response {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ResultTruncated {
@@ -163,7 +163,7 @@ pub struct ResourceChangeData {
     #[serde(rename = "propertyChanges", skip_serializing_if = "Vec::is_empty")]
     pub property_changes: Vec<ResourcePropertyChange>,
 }
-mod resource_change_data {
+pub mod resource_change_data {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ChangeType {
@@ -185,7 +185,7 @@ pub struct ResourcePropertyChange {
     #[serde(rename = "propertyChangeType")]
     pub property_change_type: resource_property_change::PropertyChangeType,
 }
-mod resource_property_change {
+pub mod resource_property_change {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ChangeCategory {
@@ -247,7 +247,7 @@ pub struct Operation {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub origin: Option<String>,
 }
-mod operation {
+pub mod operation {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Display {

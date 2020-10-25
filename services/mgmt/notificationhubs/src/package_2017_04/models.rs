@@ -16,7 +16,7 @@ pub struct Operation {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
 }
-mod operation {
+pub mod operation {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Display {
@@ -89,7 +89,7 @@ pub struct NamespaceProperties {
     #[serde(rename = "namespaceType", skip_serializing_if = "Option::is_none")]
     pub namespace_type: Option<namespace_properties::NamespaceType>,
 }
-mod namespace_properties {
+pub mod namespace_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum NamespaceType {
@@ -394,7 +394,7 @@ pub struct Sku {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub capacity: Option<i64>,
 }
-mod sku {
+pub mod sku {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Name {

@@ -40,7 +40,7 @@ pub struct Destination {
     #[serde(rename = "metaData", skip_serializing_if = "Option::is_none")]
     pub meta_data: Option<DestinationMetaData>,
 }
-mod destination {
+pub mod destination {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
@@ -138,7 +138,7 @@ pub struct LinkedServiceProperties {
     #[serde(rename = "provisioningState", skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<linked_service_properties::ProvisioningState>,
 }
-mod linked_service_properties {
+pub mod linked_service_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
@@ -168,7 +168,7 @@ pub struct LinkedStorageAccountsProperties {
     #[serde(rename = "storageAccountIds", skip_serializing_if = "Vec::is_empty")]
     pub storage_account_ids: Vec<String>,
 }
-mod linked_storage_accounts_properties {
+pub mod linked_storage_accounts_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum DataSourceType {
@@ -232,7 +232,7 @@ pub struct Operation {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
 }
-mod operation {
+pub mod operation {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Display {
@@ -305,7 +305,7 @@ pub struct WorkspaceSku {
     #[serde(rename = "lastSkuUpdate", skip_serializing)]
     pub last_sku_update: Option<String>,
 }
-mod workspace_sku {
+pub mod workspace_sku {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Name {
@@ -328,7 +328,7 @@ pub struct WorkspaceCapping {
     #[serde(rename = "dataIngestionStatus", skip_serializing)]
     pub data_ingestion_status: Option<workspace_capping::DataIngestionStatus>,
 }
-mod workspace_capping {
+pub mod workspace_capping {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum DataIngestionStatus {
@@ -359,7 +359,7 @@ pub struct WorkspaceProperties {
     #[serde(rename = "privateLinkScopedResources", skip_serializing)]
     pub private_link_scoped_resources: Vec<PrivateLinkScopedResource>,
 }
-mod workspace_properties {
+pub mod workspace_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
@@ -418,7 +418,7 @@ pub struct ClusterProperties {
     #[serde(rename = "keyVaultProperties", skip_serializing_if = "Option::is_none")]
     pub key_vault_properties: Option<KeyVaultProperties>,
 }
-mod cluster_properties {
+pub mod cluster_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
@@ -484,7 +484,7 @@ pub struct ClusterSku {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<cluster_sku::Name>,
 }
-mod cluster_sku {
+pub mod cluster_sku {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Name {
@@ -500,7 +500,7 @@ pub struct Identity {
     #[serde(rename = "type")]
     pub type_: identity::Type,
 }
-mod identity {
+pub mod identity {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
@@ -519,7 +519,7 @@ pub struct StorageInsightStatus {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 }
-mod storage_insight_status {
+pub mod storage_insight_status {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum State {
@@ -608,7 +608,7 @@ pub struct AvailableServiceTier {
     #[serde(rename = "lastSkuUpdate", skip_serializing)]
     pub last_sku_update: Option<String>,
 }
-mod available_service_tier {
+pub mod available_service_tier {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ServiceTier {
@@ -636,7 +636,7 @@ pub struct SearchSort {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub order: Option<search_sort::Order>,
 }
-mod search_sort {
+pub mod search_sort {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Order {
@@ -736,7 +736,7 @@ pub struct WorkspacePurgeResponse {
 pub struct WorkspacePurgeStatusResponse {
     pub status: workspace_purge_status_response::Status,
 }
-mod workspace_purge_status_response {
+pub mod workspace_purge_status_response {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {

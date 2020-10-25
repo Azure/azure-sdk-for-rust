@@ -7,7 +7,7 @@ pub struct CanonicalSupportPlanProperties {
     #[serde(rename = "provisioningState", skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<canonical_support_plan_properties::ProvisioningState>,
 }
-mod canonical_support_plan_properties {
+pub mod canonical_support_plan_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {

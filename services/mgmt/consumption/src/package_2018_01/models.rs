@@ -242,7 +242,7 @@ pub struct BudgetProperties {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub notifications: Option<serde_json::Value>,
 }
-mod budget_properties {
+pub mod budget_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Category {
@@ -291,7 +291,7 @@ pub struct Notification {
     #[serde(rename = "contactGroups", skip_serializing_if = "Vec::is_empty")]
     pub contact_groups: Vec<String>,
 }
-mod notification {
+pub mod notification {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Operator {
@@ -319,7 +319,7 @@ pub struct Operation {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
 }
-mod operation {
+pub mod operation {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Display {

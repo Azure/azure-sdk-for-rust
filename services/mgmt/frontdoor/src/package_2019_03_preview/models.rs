@@ -26,7 +26,7 @@ pub struct FrontDoorUpdateParameters {
     #[serde(rename = "enabledState", skip_serializing_if = "Option::is_none")]
     pub enabled_state: Option<front_door_update_parameters::EnabledState>,
 }
-mod front_door_update_parameters {
+pub mod front_door_update_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum EnabledState {
@@ -101,7 +101,7 @@ pub struct RoutingRuleUpdateParameters {
     #[serde(rename = "enabledState", skip_serializing_if = "Option::is_none")]
     pub enabled_state: Option<routing_rule_update_parameters::EnabledState>,
 }
-mod routing_rule_update_parameters {
+pub mod routing_rule_update_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ForwardingProtocol {
@@ -132,7 +132,7 @@ pub struct Backend {
     #[serde(rename = "backendHostHeader", skip_serializing_if = "Option::is_none")]
     pub backend_host_header: Option<String>,
 }
-mod backend {
+pub mod backend {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum EnabledState {
@@ -208,7 +208,7 @@ pub struct HealthProbeSettingsUpdateParameters {
     #[serde(rename = "intervalInSeconds", skip_serializing_if = "Option::is_none")]
     pub interval_in_seconds: Option<i64>,
 }
-mod health_probe_settings_update_parameters {
+pub mod health_probe_settings_update_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Protocol {
@@ -257,7 +257,7 @@ pub struct CacheConfiguration {
     #[serde(rename = "dynamicCompression", skip_serializing_if = "Option::is_none")]
     pub dynamic_compression: Option<cache_configuration::DynamicCompression>,
 }
-mod cache_configuration {
+pub mod cache_configuration {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum QueryParameterStripDirective {
@@ -279,7 +279,7 @@ pub struct KeyVaultCertificateSourceParameters {
     #[serde(rename = "secretVersion", skip_serializing_if = "Option::is_none")]
     pub secret_version: Option<String>,
 }
-mod key_vault_certificate_source_parameters {
+pub mod key_vault_certificate_source_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Vault {
@@ -292,7 +292,7 @@ pub struct FrontDoorCertificateSourceParameters {
     #[serde(rename = "certificateType", skip_serializing_if = "Option::is_none")]
     pub certificate_type: Option<front_door_certificate_source_parameters::CertificateType>,
 }
-mod front_door_certificate_source_parameters {
+pub mod front_door_certificate_source_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum CertificateType {
@@ -310,7 +310,7 @@ pub struct CustomHttpsConfiguration {
     #[serde(rename = "frontDoorCertificateSourceParameters", skip_serializing_if = "Option::is_none")]
     pub front_door_certificate_source_parameters: Option<FrontDoorCertificateSourceParameters>,
 }
-mod custom_https_configuration {
+pub mod custom_https_configuration {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum CertificateSource {
@@ -346,7 +346,7 @@ pub struct FrontendEndpointProperties {
     #[serde(rename = "customHttpsConfiguration", skip_serializing_if = "Option::is_none")]
     pub custom_https_configuration: Option<CustomHttpsConfiguration>,
 }
-mod frontend_endpoint_properties {
+pub mod frontend_endpoint_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum CustomHttpsProvisioningState {
@@ -381,7 +381,7 @@ pub struct FrontendEndpointUpdateParameters {
     #[serde(rename = "webApplicationFirewallPolicyLink", skip_serializing_if = "Option::is_none")]
     pub web_application_firewall_policy_link: Option<frontend_endpoint_update_parameters::WebApplicationFirewallPolicyLink>,
 }
-mod frontend_endpoint_update_parameters {
+pub mod frontend_endpoint_update_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum SessionAffinityEnabledState {
@@ -446,7 +446,7 @@ pub struct CheckNameAvailabilityOutput {
     #[serde(skip_serializing)]
     pub message: Option<String>,
 }
-mod check_name_availability_output {
+pub mod check_name_availability_output {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum NameAvailability {
@@ -490,7 +490,7 @@ pub struct AzureAsyncOperationResult {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub error: Option<Error>,
 }
-mod azure_async_operation_result {
+pub mod azure_async_operation_result {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
@@ -546,7 +546,7 @@ pub struct WebApplicationFirewallPolicyProperties {
     #[serde(rename = "resourceState", skip_serializing)]
     pub resource_state: Option<web_application_firewall_policy_properties::ResourceState>,
 }
-mod web_application_firewall_policy_properties {
+pub mod web_application_firewall_policy_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ResourceState {
@@ -578,7 +578,7 @@ pub struct PolicySettings {
     #[serde(rename = "customBlockResponseBody", skip_serializing_if = "Option::is_none")]
     pub custom_block_response_body: Option<String>,
 }
-mod policy_settings {
+pub mod policy_settings {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum EnabledState {
@@ -613,7 +613,7 @@ pub struct CustomRule {
     pub match_conditions: Vec<MatchCondition>,
     pub action: ActionType,
 }
-mod custom_rule {
+pub mod custom_rule {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum EnabledState {
@@ -649,7 +649,7 @@ pub struct MatchCondition {
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub transforms: Vec<TransformType>,
 }
-mod match_condition {
+pub mod match_condition {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum MatchVariable {
@@ -709,7 +709,7 @@ pub struct ManagedRuleOverride {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub action: Option<ActionType>,
 }
-mod managed_rule_override {
+pub mod managed_rule_override {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum EnabledState {

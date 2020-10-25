@@ -46,7 +46,7 @@ pub struct OperationalizationClusterProperties {
     #[serde(rename = "globalServiceConfiguration", skip_serializing_if = "Option::is_none")]
     pub global_service_configuration: Option<GlobalServiceConfiguration>,
 }
-mod operationalization_cluster_properties {
+pub mod operationalization_cluster_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
@@ -97,7 +97,7 @@ pub struct AcsClusterProperties {
     #[serde(rename = "agentVmSize", skip_serializing_if = "Option::is_none")]
     pub agent_vm_size: Option<acs_cluster_properties::AgentVmSize>,
 }
-mod acs_cluster_properties {
+pub mod acs_cluster_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum OrchestratorType {
@@ -216,7 +216,7 @@ pub struct SystemService {
     #[serde(skip_serializing)]
     pub version: Option<String>,
 }
-mod system_service {
+pub mod system_service {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum SystemServiceType {
@@ -258,7 +258,7 @@ pub struct SslConfiguration {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub cname: Option<String>,
 }
-mod ssl_configuration {
+pub mod ssl_configuration {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
@@ -286,7 +286,7 @@ pub struct AutoScaleConfiguration {
     #[serde(rename = "refreshPeriodInSeconds", skip_serializing_if = "Option::is_none")]
     pub refresh_period_in_seconds: Option<i64>,
 }
-mod auto_scale_configuration {
+pub mod auto_scale_configuration {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
@@ -350,7 +350,7 @@ pub struct CheckSystemServicesUpdatesAvailableResponse {
     #[serde(rename = "updatesAvailable", skip_serializing)]
     pub updates_available: Option<check_system_services_updates_available_response::UpdatesAvailable>,
 }
-mod check_system_services_updates_available_response {
+pub mod check_system_services_updates_available_response {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum UpdatesAvailable {
@@ -367,7 +367,7 @@ pub struct UpdateSystemServicesResponse {
     #[serde(rename = "updateCompletedOn", skip_serializing)]
     pub update_completed_on: Option<String>,
 }
-mod update_system_services_response {
+pub mod update_system_services_response {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum UpdateStatus {
@@ -418,7 +418,7 @@ pub struct ResourceOperation {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub origin: Option<String>,
 }
-mod resource_operation {
+pub mod resource_operation {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Display {

@@ -21,7 +21,7 @@ pub struct DomainProperties {
     #[serde(rename = "inboundIpRules", skip_serializing_if = "Vec::is_empty")]
     pub inbound_ip_rules: Vec<InboundIpRule>,
 }
-mod domain_properties {
+pub mod domain_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
@@ -50,7 +50,7 @@ pub struct ResourceSku {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<resource_sku::Name>,
 }
-mod resource_sku {
+pub mod resource_sku {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Name {
@@ -69,7 +69,7 @@ pub struct IdentityInfo {
     #[serde(rename = "userAssignedIdentities", skip_serializing_if = "Option::is_none")]
     pub user_assigned_identities: Option<serde_json::Value>,
 }
-mod identity_info {
+pub mod identity_info {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
@@ -94,7 +94,7 @@ pub struct InboundIpRule {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub action: Option<inbound_ip_rule::Action>,
 }
-mod inbound_ip_rule {
+pub mod inbound_ip_rule {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Action {
@@ -128,7 +128,7 @@ pub struct PrivateEndpointConnectionProperties {
     #[serde(rename = "provisioningState", skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<private_endpoint_connection_properties::ProvisioningState>,
 }
-mod private_endpoint_connection_properties {
+pub mod private_endpoint_connection_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
@@ -154,7 +154,7 @@ pub struct ConnectionState {
     #[serde(rename = "actionsRequired", skip_serializing_if = "Option::is_none")]
     pub actions_required: Option<String>,
 }
-mod connection_state {
+pub mod connection_state {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
@@ -203,7 +203,7 @@ pub struct InputSchemaMapping {
     #[serde(rename = "inputSchemaMappingType")]
     pub input_schema_mapping_type: input_schema_mapping::InputSchemaMappingType,
 }
-mod input_schema_mapping {
+pub mod input_schema_mapping {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum InputSchemaMappingType {
@@ -247,7 +247,7 @@ pub struct DomainUpdateParameterProperties {
     #[serde(rename = "inboundIpRules", skip_serializing_if = "Vec::is_empty")]
     pub inbound_ip_rules: Vec<InboundIpRule>,
 }
-mod domain_update_parameter_properties {
+pub mod domain_update_parameter_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum PublicNetworkAccess {
@@ -279,7 +279,7 @@ pub struct DomainTopicProperties {
     #[serde(rename = "provisioningState", skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<domain_topic_properties::ProvisioningState>,
 }
-mod domain_topic_properties {
+pub mod domain_topic_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
@@ -322,7 +322,7 @@ pub struct EventChannelProperties {
     #[serde(rename = "partnerTopicFriendlyDescription", skip_serializing_if = "Option::is_none")]
     pub partner_topic_friendly_description: Option<String>,
 }
-mod event_channel_properties {
+pub mod event_channel_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
@@ -451,7 +451,7 @@ pub struct AdvancedFilter {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub key: Option<String>,
 }
-mod advanced_filter {
+pub mod advanced_filter {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum OperatorType {
@@ -508,7 +508,7 @@ pub struct EventSubscriptionProperties {
     #[serde(rename = "deadLetterWithResourceIdentity", skip_serializing_if = "Option::is_none")]
     pub dead_letter_with_resource_identity: Option<DeadLetterWithResourceIdentity>,
 }
-mod event_subscription_properties {
+pub mod event_subscription_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
@@ -569,7 +569,7 @@ pub struct EventSubscriptionIdentity {
     #[serde(rename = "userAssignedIdentity", skip_serializing_if = "Option::is_none")]
     pub user_assigned_identity: Option<String>,
 }
-mod event_subscription_identity {
+pub mod event_subscription_identity {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
@@ -618,7 +618,7 @@ pub struct DeadLetterDestination {
     #[serde(rename = "endpointType")]
     pub endpoint_type: dead_letter_destination::EndpointType,
 }
-mod dead_letter_destination {
+pub mod dead_letter_destination {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum EndpointType {
@@ -708,7 +708,7 @@ pub struct EventSubscriptionDestination {
     #[serde(rename = "endpointType")]
     pub endpoint_type: event_subscription_destination::EndpointType,
 }
-mod event_subscription_destination {
+pub mod event_subscription_destination {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum EndpointType {
@@ -749,7 +749,7 @@ pub struct EventSubscriptionUpdateParameters {
     #[serde(rename = "deadLetterWithResourceIdentity", skip_serializing_if = "Option::is_none")]
     pub dead_letter_with_resource_identity: Option<DeadLetterWithResourceIdentity>,
 }
-mod event_subscription_update_parameters {
+pub mod event_subscription_update_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum EventDeliverySchema {
@@ -807,7 +807,7 @@ pub struct PartnerNamespaceProperties {
     #[serde(skip_serializing)]
     pub endpoint: Option<String>,
 }
-mod partner_namespace_properties {
+pub mod partner_namespace_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
@@ -879,7 +879,7 @@ pub struct PartnerRegistrationProperties {
     #[serde(rename = "authorizedAzureSubscriptionIds", skip_serializing_if = "Vec::is_empty")]
     pub authorized_azure_subscription_ids: Vec<String>,
 }
-mod partner_registration_properties {
+pub mod partner_registration_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
@@ -971,7 +971,7 @@ pub struct PartnerTopicProperties {
     #[serde(rename = "partnerTopicFriendlyDescription", skip_serializing_if = "Option::is_none")]
     pub partner_topic_friendly_description: Option<String>,
 }
-mod partner_topic_properties {
+pub mod partner_topic_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
@@ -1023,7 +1023,7 @@ pub struct PartnerTopicTypeProperties {
     #[serde(rename = "authorizationState", skip_serializing_if = "Option::is_none")]
     pub authorization_state: Option<partner_topic_type_properties::AuthorizationState>,
 }
-mod partner_topic_type_properties {
+pub mod partner_topic_type_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum AuthorizationState {
@@ -1091,7 +1091,7 @@ pub struct SystemTopicProperties {
     #[serde(rename = "metricResourceId", skip_serializing)]
     pub metric_resource_id: Option<String>,
 }
-mod system_topic_properties {
+pub mod system_topic_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
@@ -1141,7 +1141,7 @@ pub struct TopicProperties {
     #[serde(rename = "inboundIpRules", skip_serializing_if = "Vec::is_empty")]
     pub inbound_ip_rules: Vec<InboundIpRule>,
 }
-mod topic_properties {
+pub mod topic_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
@@ -1194,7 +1194,7 @@ pub struct TopicUpdateParameterProperties {
     #[serde(rename = "inboundIpRules", skip_serializing_if = "Vec::is_empty")]
     pub inbound_ip_rules: Vec<InboundIpRule>,
 }
-mod topic_update_parameter_properties {
+pub mod topic_update_parameter_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum PublicNetworkAccess {
@@ -1257,7 +1257,7 @@ pub struct TopicTypeProperties {
     #[serde(rename = "sourceResourceFormat", skip_serializing_if = "Option::is_none")]
     pub source_resource_format: Option<String>,
 }
-mod topic_type_properties {
+pub mod topic_type_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ResourceRegionType {

@@ -83,7 +83,7 @@ pub struct TemplateSpecArtifact {
     pub path: String,
     pub kind: template_spec_artifact::Kind,
 }
-mod template_spec_artifact {
+pub mod template_spec_artifact {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Kind {
@@ -117,7 +117,7 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedAt", skip_serializing_if = "Option::is_none")]
     pub last_modified_at: Option<String>,
 }
-mod system_data {
+pub mod system_data {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum CreatedByType {

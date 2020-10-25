@@ -754,7 +754,7 @@ pub mod lab_accounts {
         subscription_id: &str,
         expand: Option<&str>,
         filter: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
         orderby: Option<&str>,
     ) -> std::result::Result<ResponseWithContinuationLabAccount, list_by_subscription::Error> {
         let client = &operation_config.client;
@@ -838,7 +838,7 @@ pub mod lab_accounts {
         resource_group_name: &str,
         expand: Option<&str>,
         filter: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
         orderby: Option<&str>,
     ) -> std::result::Result<ResponseWithContinuationLabAccount, list_by_resource_group::Error> {
         let client = &operation_config.client;
@@ -1428,7 +1428,7 @@ pub mod gallery_images {
         lab_account_name: &str,
         expand: Option<&str>,
         filter: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
         orderby: Option<&str>,
     ) -> std::result::Result<ResponseWithContinuationGalleryImage, list::Error> {
         let client = &operation_config.client;
@@ -1814,7 +1814,7 @@ pub mod labs {
         lab_account_name: &str,
         expand: Option<&str>,
         filter: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
         orderby: Option<&str>,
     ) -> std::result::Result<ResponseWithContinuationLab, list::Error> {
         let client = &operation_config.client;
@@ -2332,7 +2332,7 @@ pub mod environment_settings {
         lab_name: &str,
         expand: Option<&str>,
         filter: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
         orderby: Option<&str>,
     ) -> std::result::Result<ResponseWithContinuationEnvironmentSetting, list::Error> {
         let client = &operation_config.client;
@@ -3002,7 +3002,7 @@ pub mod environments {
         environment_setting_name: &str,
         expand: Option<&str>,
         filter: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
         orderby: Option<&str>,
     ) -> std::result::Result<ResponseWithContinuationEnvironment, list::Error> {
         let client = &operation_config.client;
@@ -3658,7 +3658,7 @@ pub mod users {
         lab_name: &str,
         expand: Option<&str>,
         filter: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
         orderby: Option<&str>,
     ) -> std::result::Result<ResponseWithContinuationUser, list::Error> {
         let client = &operation_config.client;

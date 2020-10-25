@@ -16,7 +16,7 @@ pub struct Operation {
     #[serde(skip_serializing)]
     pub display: Option<operation::Display>,
 }
-mod operation {
+pub mod operation {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Display {
@@ -68,7 +68,7 @@ pub struct Sku {
     pub name: sku::Name,
     pub capacity: i32,
 }
-mod sku {
+pub mod sku {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Name {
@@ -113,7 +113,7 @@ pub struct EnvironmentCreateOrUpdateParameters {
     pub kind: environment_create_or_update_parameters::Kind,
     pub sku: Sku,
 }
-mod environment_create_or_update_parameters {
+pub mod environment_create_or_update_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Kind {
@@ -166,7 +166,7 @@ pub struct EnvironmentResource {
     pub sku: Sku,
     pub kind: environment_resource::Kind,
 }
-mod environment_resource {
+pub mod environment_resource {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Kind {
@@ -195,7 +195,7 @@ pub struct StandardEnvironmentCreationProperties {
     #[serde(rename = "partitionKeyProperties", skip_serializing_if = "Vec::is_empty")]
     pub partition_key_properties: Vec<TimeSeriesIdProperty>,
 }
-mod standard_environment_creation_properties {
+pub mod standard_environment_creation_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum StorageLimitExceededBehavior {
@@ -252,7 +252,7 @@ pub struct StandardEnvironmentMutableProperties {
     #[serde(rename = "storageLimitExceededBehavior", skip_serializing_if = "Option::is_none")]
     pub storage_limit_exceeded_behavior: Option<standard_environment_mutable_properties::StorageLimitExceededBehavior>,
 }
-mod standard_environment_mutable_properties {
+pub mod standard_environment_mutable_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum StorageLimitExceededBehavior {
@@ -274,7 +274,7 @@ pub struct TimeSeriesIdProperty {
     #[serde(rename = "type", skip_serializing_if = "Option::is_none")]
     pub type_: Option<time_series_id_property::Type>,
 }
-mod time_series_id_property {
+pub mod time_series_id_property {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
@@ -295,7 +295,7 @@ pub struct IngressEnvironmentStatus {
     #[serde(rename = "stateDetails", skip_serializing)]
     pub state_details: Option<EnvironmentStateDetails>,
 }
-mod ingress_environment_status {
+pub mod ingress_environment_status {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum State {
@@ -325,7 +325,7 @@ pub struct WarmStoragePropertiesUsage {
     #[serde(rename = "stateDetails", skip_serializing)]
     pub state_details: Option<WarmStoragePropertiesUsageStateDetails>,
 }
-mod warm_storage_properties_usage {
+pub mod warm_storage_properties_usage {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum State {
@@ -349,7 +349,7 @@ pub struct EventSourceCreateOrUpdateParameters {
     #[serde(rename = "localTimestamp", skip_serializing_if = "Option::is_none")]
     pub local_timestamp: Option<LocalTimestamp>,
 }
-mod event_source_create_or_update_parameters {
+pub mod event_source_create_or_update_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Kind {
@@ -401,7 +401,7 @@ pub struct EventSourceResource {
     pub tracked_resource: TrackedResource,
     pub kind: event_source_resource::Kind,
 }
-mod event_source_resource {
+pub mod event_source_resource {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Kind {
@@ -492,7 +492,7 @@ pub struct LocalTimestamp {
     #[serde(rename = "timeZoneOffset", skip_serializing_if = "Option::is_none")]
     pub time_zone_offset: Option<local_timestamp::TimeZoneOffset>,
 }
-mod local_timestamp {
+pub mod local_timestamp {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Format {
@@ -555,7 +555,7 @@ pub struct ReferenceDataSetCreationProperties {
     #[serde(rename = "dataStringComparisonBehavior", skip_serializing_if = "Option::is_none")]
     pub data_string_comparison_behavior: Option<reference_data_set_creation_properties::DataStringComparisonBehavior>,
 }
-mod reference_data_set_creation_properties {
+pub mod reference_data_set_creation_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum DataStringComparisonBehavior {
@@ -577,7 +577,7 @@ pub struct ReferenceDataSetKeyProperty {
     #[serde(rename = "type", skip_serializing_if = "Option::is_none")]
     pub type_: Option<reference_data_set_key_property::Type>,
 }
-mod reference_data_set_key_property {
+pub mod reference_data_set_key_property {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {

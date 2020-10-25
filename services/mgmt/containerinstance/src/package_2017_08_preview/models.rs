@@ -22,7 +22,7 @@ pub struct ContainerProperties {
     #[serde(rename = "volumeMounts", skip_serializing_if = "Vec::is_empty")]
     pub volume_mounts: Vec<VolumeMount>,
 }
-mod container_properties {
+pub mod container_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct InstanceView {
@@ -128,7 +128,7 @@ pub struct IpAddress {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub ip: Option<String>,
 }
-mod ip_address {
+pub mod ip_address {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
@@ -141,7 +141,7 @@ pub struct Port {
     pub protocol: Option<port::Protocol>,
     pub port: i32,
 }
-mod port {
+pub mod port {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Protocol {

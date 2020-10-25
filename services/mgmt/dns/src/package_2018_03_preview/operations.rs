@@ -326,7 +326,7 @@ pub mod record_sets {
         resource_group_name: &str,
         zone_name: &str,
         record_type: &str,
-        top: Option<i64>,
+        top: Option<i32>,
         recordsetnamesuffix: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<RecordSetListResult, list_by_type::Error> {
@@ -402,7 +402,7 @@ pub mod record_sets {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         zone_name: &str,
-        top: Option<i64>,
+        top: Option<i32>,
         recordsetnamesuffix: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<RecordSetListResult, list_by_dns_zone::Error> {
@@ -478,7 +478,7 @@ pub mod record_sets {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         zone_name: &str,
-        top: Option<i64>,
+        top: Option<i32>,
         recordsetnamesuffix: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<RecordSetListResult, list_all_by_dns_zone::Error> {
@@ -865,7 +865,7 @@ pub mod zones {
     pub async fn list_by_resource_group(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
-        top: Option<i64>,
+        top: Option<i32>,
         subscription_id: &str,
     ) -> std::result::Result<ZoneListResult, list_by_resource_group::Error> {
         let client = &operation_config.client;
@@ -935,7 +935,7 @@ pub mod zones {
     }
     pub async fn list(
         operation_config: &crate::OperationConfig,
-        top: Option<i64>,
+        top: Option<i32>,
         subscription_id: &str,
     ) -> std::result::Result<ZoneListResult, list::Error> {
         let client = &operation_config.client;

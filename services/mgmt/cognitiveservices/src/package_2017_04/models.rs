@@ -10,7 +10,7 @@ pub struct Sku {
     #[serde(skip_serializing)]
     pub tier: Option<sku::Tier>,
 }
-mod sku {
+pub mod sku {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Tier {
@@ -76,7 +76,7 @@ pub struct CognitiveServicesAccountProperties {
     #[serde(rename = "apiProperties", skip_serializing_if = "Option::is_none")]
     pub api_properties: Option<CognitiveServicesAccountApiProperties>,
 }
-mod cognitive_services_account_properties {
+pub mod cognitive_services_account_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
@@ -125,7 +125,7 @@ pub struct RegenerateKeyParameters {
     #[serde(rename = "keyName")]
     pub key_name: regenerate_key_parameters::KeyName,
 }
-mod regenerate_key_parameters {
+pub mod regenerate_key_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum KeyName {
@@ -167,7 +167,7 @@ pub struct Usage {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub status: Option<usage::Status>,
 }
-mod usage {
+pub mod usage {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
@@ -296,7 +296,7 @@ pub struct ResourceSkuRestrictions {
     #[serde(rename = "reasonCode", skip_serializing)]
     pub reason_code: Option<resource_sku_restrictions::ReasonCode>,
 }
-mod resource_sku_restrictions {
+pub mod resource_sku_restrictions {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
@@ -346,7 +346,7 @@ pub struct NetworkRuleSet {
     #[serde(rename = "virtualNetworkRules", skip_serializing_if = "Vec::is_empty")]
     pub virtual_network_rules: Vec<VirtualNetworkRule>,
 }
-mod network_rule_set {
+pub mod network_rule_set {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum DefaultAction {
@@ -377,7 +377,7 @@ pub struct Identity {
     #[serde(rename = "userAssignedIdentities", skip_serializing_if = "Option::is_none")]
     pub user_assigned_identities: Option<serde_json::Value>,
 }
-mod identity {
+pub mod identity {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
@@ -400,7 +400,7 @@ pub struct Encryption {
     #[serde(rename = "keySource", skip_serializing_if = "Option::is_none")]
     pub key_source: Option<encryption::KeySource>,
 }
-mod encryption {
+pub mod encryption {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum KeySource {

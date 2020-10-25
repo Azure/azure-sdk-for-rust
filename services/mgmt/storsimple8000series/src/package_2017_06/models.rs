@@ -54,7 +54,7 @@ pub struct AlertFilter {
     #[serde(rename = "appearedOnTime", skip_serializing_if = "Option::is_none")]
     pub appeared_on_time: Option<String>,
 }
-mod alert_filter {
+pub mod alert_filter {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
@@ -90,7 +90,7 @@ pub struct AlertNotificationProperties {
     #[serde(rename = "additionalRecipientEmailList", skip_serializing_if = "Vec::is_empty")]
     pub additional_recipient_email_list: Vec<String>,
 }
-mod alert_notification_properties {
+pub mod alert_notification_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum EmailNotification {
@@ -129,7 +129,7 @@ pub struct AlertProperties {
     #[serde(rename = "detailedInformation", skip_serializing_if = "Option::is_none")]
     pub detailed_information: Option<serde_json::Value>,
 }
-mod alert_properties {
+pub mod alert_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Scope {
@@ -163,7 +163,7 @@ pub struct AlertSource {
     #[serde(rename = "alertSourceType", skip_serializing_if = "Option::is_none")]
     pub alert_source_type: Option<alert_source::AlertSourceType>,
 }
-mod alert_source {
+pub mod alert_source {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum AlertSourceType {
@@ -179,7 +179,7 @@ pub struct AsymmetricEncryptedSecret {
     #[serde(rename = "encryptionAlgorithm")]
     pub encryption_algorithm: asymmetric_encrypted_secret::EncryptionAlgorithm,
 }
-mod asymmetric_encrypted_secret {
+pub mod asymmetric_encrypted_secret {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum EncryptionAlgorithm {
@@ -243,7 +243,7 @@ pub struct BackupElement {
     #[serde(rename = "volumeType", skip_serializing_if = "Option::is_none")]
     pub volume_type: Option<backup_element::VolumeType>,
 }
-mod backup_element {
+pub mod backup_element {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum VolumeType {
@@ -294,7 +294,7 @@ pub struct BackupPolicyProperties {
     #[serde(rename = "ssmHostName", skip_serializing)]
     pub ssm_host_name: Option<String>,
 }
-mod backup_policy_properties {
+pub mod backup_policy_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ScheduledBackupStatus {
@@ -324,7 +324,7 @@ pub struct BackupProperties {
     pub ssm_host_name: Option<String>,
     pub elements: Vec<BackupElement>,
 }
-mod backup_properties {
+pub mod backup_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum BackupType {
@@ -364,7 +364,7 @@ pub struct BackupScheduleProperties {
     #[serde(rename = "lastSuccessfulRun", skip_serializing)]
     pub last_successful_run: Option<String>,
 }
-mod backup_schedule_properties {
+pub mod backup_schedule_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum BackupType {
@@ -412,7 +412,7 @@ pub struct BaseModel {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub kind: Option<base_model::Kind>,
 }
-mod base_model {
+pub mod base_model {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Kind {
@@ -540,7 +540,7 @@ pub struct ControllerPowerStateChangeRequestProperties {
     #[serde(rename = "controller1State")]
     pub controller1_state: controller_power_state_change_request_properties::Controller1State,
 }
-mod controller_power_state_change_request_properties {
+pub mod controller_power_state_change_request_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Action {
@@ -666,7 +666,7 @@ pub struct DeviceProperties {
     #[serde(rename = "rolloverDetails", skip_serializing_if = "Option::is_none")]
     pub rollover_details: Option<DeviceRolloverDetails>,
 }
-mod device_properties {
+pub mod device_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum DeviceConfigurationStatus {
@@ -715,7 +715,7 @@ pub struct DeviceRolloverDetails {
     #[serde(rename = "inEligibilityReason", skip_serializing_if = "Option::is_none")]
     pub in_eligibility_reason: Option<device_rollover_details::InEligibilityReason>,
 }
-mod device_rollover_details {
+pub mod device_rollover_details {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum AuthorizationEligibility {
@@ -765,7 +765,7 @@ pub struct EncryptionSettingsProperties {
     #[serde(rename = "keyRolloverStatus")]
     pub key_rollover_status: encryption_settings_properties::KeyRolloverStatus,
 }
-mod encryption_settings_properties {
+pub mod encryption_settings_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum EncryptionStatus {
@@ -829,7 +829,7 @@ pub struct FailoverTarget {
     #[serde(rename = "eligibilityResult", skip_serializing_if = "Option::is_none")]
     pub eligibility_result: Option<TargetEligibilityResult>,
 }
-mod failover_target {
+pub mod failover_target {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum DeviceStatus {
@@ -856,7 +856,7 @@ pub struct Feature {
     pub name: String,
     pub status: feature::Status,
 }
-mod feature {
+pub mod feature {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
@@ -884,7 +884,7 @@ pub struct HardwareComponent {
     #[serde(rename = "statusDisplayName")]
     pub status_display_name: String,
 }
-mod hardware_component {
+pub mod hardware_component {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
@@ -931,7 +931,7 @@ pub struct Job {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub properties: Option<JobProperties>,
 }
-mod job {
+pub mod job {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
@@ -993,7 +993,7 @@ pub struct JobProperties {
     #[serde(rename = "backupPointInTime", skip_serializing_if = "Option::is_none")]
     pub backup_point_in_time: Option<String>,
 }
-mod job_properties {
+pub mod job_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum JobType {
@@ -1025,7 +1025,7 @@ pub struct JobStage {
     #[serde(rename = "errorCode", skip_serializing_if = "Option::is_none")]
     pub error_code: Option<String>,
 }
-mod job_stage {
+pub mod job_stage {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum StageStatus {
@@ -1082,7 +1082,7 @@ pub struct ManagerIntrinsicSettings {
     #[serde(rename = "type")]
     pub type_: manager_intrinsic_settings::Type,
 }
-mod manager_intrinsic_settings {
+pub mod manager_intrinsic_settings {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
@@ -1112,7 +1112,7 @@ pub struct ManagerProperties {
 pub struct ManagerSku {
     pub name: manager_sku::Name,
 }
-mod manager_sku {
+pub mod manager_sku {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Name {
@@ -1160,7 +1160,7 @@ pub struct MetricDefinition {
     #[serde(rename = "type", skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
-mod metric_definition {
+pub mod metric_definition {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Unit {
@@ -1247,7 +1247,7 @@ pub struct Metrics {
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub values: Vec<MetricData>,
 }
-mod metrics {
+pub mod metrics {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum PrimaryAggregation {
@@ -1290,7 +1290,7 @@ pub struct NetworkAdapters {
     #[serde(rename = "nicIpv6Settings", skip_serializing_if = "Option::is_none")]
     pub nic_ipv6_settings: Option<NicIPv6>,
 }
-mod network_adapters {
+pub mod network_adapters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum InterfaceId {
@@ -1395,7 +1395,7 @@ pub struct RemoteManagementSettings {
     #[serde(rename = "remoteManagementCertificate", skip_serializing_if = "Option::is_none")]
     pub remote_management_certificate: Option<String>,
 }
-mod remote_management_settings {
+pub mod remote_management_settings {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum RemoteManagementMode {
@@ -1410,7 +1410,7 @@ pub struct RemoteManagementSettingsPatch {
     #[serde(rename = "remoteManagementMode")]
     pub remote_management_mode: remote_management_settings_patch::RemoteManagementMode,
 }
-mod remote_management_settings_patch {
+pub mod remote_management_settings_patch {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum RemoteManagementMode {
@@ -1441,7 +1441,7 @@ pub struct ScheduleRecurrence {
     #[serde(rename = "weeklyDaysList", skip_serializing_if = "Vec::is_empty")]
     pub weekly_days_list: Vec<String>,
 }
-mod schedule_recurrence {
+pub mod schedule_recurrence {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum RecurrenceType {
@@ -1512,7 +1512,7 @@ pub struct StorageAccountCredentialProperties {
     #[serde(rename = "volumesCount", skip_serializing)]
     pub volumes_count: Option<i32>,
 }
-mod storage_account_credential_properties {
+pub mod storage_account_credential_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum SslStatus {
@@ -1528,7 +1528,7 @@ pub struct SymmetricEncryptedSecret {
     #[serde(rename = "encryptionAlgorithm")]
     pub encryption_algorithm: symmetric_encrypted_secret::EncryptionAlgorithm,
 }
-mod symmetric_encrypted_secret {
+pub mod symmetric_encrypted_secret {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum EncryptionAlgorithm {
@@ -1548,7 +1548,7 @@ pub struct TargetEligibilityErrorMessage {
     #[serde(rename = "resultCode", skip_serializing_if = "Option::is_none")]
     pub result_code: Option<target_eligibility_error_message::ResultCode>,
 }
-mod target_eligibility_error_message {
+pub mod target_eligibility_error_message {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ResultCode {
@@ -1568,7 +1568,7 @@ pub struct TargetEligibilityResult {
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub messages: Vec<TargetEligibilityErrorMessage>,
 }
-mod target_eligibility_result {
+pub mod target_eligibility_result {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum EligibilityStatus {
@@ -1664,7 +1664,7 @@ pub struct VolumeContainerProperties {
     #[serde(rename = "totalCloudStorageUsageInBytes", skip_serializing)]
     pub total_cloud_storage_usage_in_bytes: Option<i64>,
 }
-mod volume_container_properties {
+pub mod volume_container_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum EncryptionStatus {
@@ -1694,7 +1694,7 @@ pub struct VolumeFailoverMetadata {
     #[serde(rename = "backupPolicyId", skip_serializing_if = "Option::is_none")]
     pub backup_policy_id: Option<String>,
 }
-mod volume_failover_metadata {
+pub mod volume_failover_metadata {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum VolumeType {
@@ -1728,7 +1728,7 @@ pub struct VolumeProperties {
     #[serde(rename = "backupPolicyIds", skip_serializing)]
     pub backup_policy_ids: Vec<String>,
 }
-mod volume_properties {
+pub mod volume_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum VolumeType {
@@ -1766,7 +1766,7 @@ pub struct WebproxySettings {
     pub authentication: webproxy_settings::Authentication,
     pub username: String,
 }
-mod webproxy_settings {
+pub mod webproxy_settings {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Authentication {

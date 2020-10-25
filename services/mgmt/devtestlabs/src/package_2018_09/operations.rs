@@ -60,7 +60,7 @@ pub mod labs {
         subscription_id: &str,
         expand: Option<&str>,
         filter: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
         orderby: Option<&str>,
     ) -> std::result::Result<LabList, list_by_subscription::Error> {
         let client = &operation_config.client;
@@ -143,7 +143,7 @@ pub mod labs {
         resource_group_name: &str,
         expand: Option<&str>,
         filter: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
         orderby: Option<&str>,
     ) -> std::result::Result<LabList, list_by_resource_group::Error> {
         let client = &operation_config.client;
@@ -1022,7 +1022,7 @@ pub mod global_schedules {
         subscription_id: &str,
         expand: Option<&str>,
         filter: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
         orderby: Option<&str>,
     ) -> std::result::Result<ScheduleList, list_by_subscription::Error> {
         let client = &operation_config.client;
@@ -1105,7 +1105,7 @@ pub mod global_schedules {
         resource_group_name: &str,
         expand: Option<&str>,
         filter: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
         orderby: Option<&str>,
     ) -> std::result::Result<ScheduleList, list_by_resource_group::Error> {
         let client = &operation_config.client;
@@ -1628,7 +1628,7 @@ pub mod artifact_sources {
         lab_name: &str,
         expand: Option<&str>,
         filter: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
         orderby: Option<&str>,
     ) -> std::result::Result<ArtifactSourceList, list::Error> {
         let client = &operation_config.client;
@@ -2014,7 +2014,7 @@ pub mod arm_templates {
         artifact_source_name: &str,
         expand: Option<&str>,
         filter: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
         orderby: Option<&str>,
     ) -> std::result::Result<ArmTemplateList, list::Error> {
         let client = &operation_config.client;
@@ -2178,7 +2178,7 @@ pub mod artifacts {
         artifact_source_name: &str,
         expand: Option<&str>,
         filter: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
         orderby: Option<&str>,
     ) -> std::result::Result<ArtifactList, list::Error> {
         let client = &operation_config.client;
@@ -2569,7 +2569,7 @@ pub mod custom_images {
         lab_name: &str,
         expand: Option<&str>,
         filter: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
         orderby: Option<&str>,
     ) -> std::result::Result<CustomImageList, list::Error> {
         let client = &operation_config.client;
@@ -2956,7 +2956,7 @@ pub mod formulas {
         lab_name: &str,
         expand: Option<&str>,
         filter: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
         orderby: Option<&str>,
     ) -> std::result::Result<FormulaList, list::Error> {
         let client = &operation_config.client;
@@ -3341,7 +3341,7 @@ pub mod gallery_images {
         lab_name: &str,
         expand: Option<&str>,
         filter: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
         orderby: Option<&str>,
     ) -> std::result::Result<GalleryImageList, list::Error> {
         let client = &operation_config.client;
@@ -3430,7 +3430,7 @@ pub mod notification_channels {
         lab_name: &str,
         expand: Option<&str>,
         filter: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
         orderby: Option<&str>,
     ) -> std::result::Result<NotificationChannelList, list::Error> {
         let client = &operation_config.client;
@@ -3960,7 +3960,7 @@ pub mod policies {
         policy_set_name: &str,
         expand: Option<&str>,
         filter: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
         orderby: Option<&str>,
     ) -> std::result::Result<PolicyList, list::Error> {
         let client = &operation_config.client;
@@ -4349,7 +4349,7 @@ pub mod schedules {
         lab_name: &str,
         expand: Option<&str>,
         filter: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
         orderby: Option<&str>,
     ) -> std::result::Result<ScheduleList, list::Error> {
         let client = &operation_config.client;
@@ -5100,7 +5100,7 @@ pub mod users {
         lab_name: &str,
         expand: Option<&str>,
         filter: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
         orderby: Option<&str>,
     ) -> std::result::Result<UserList, list::Error> {
         let client = &operation_config.client;
@@ -5488,7 +5488,7 @@ pub mod disks {
         user_name: &str,
         expand: Option<&str>,
         filter: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
         orderby: Option<&str>,
     ) -> std::result::Result<DiskList, list::Error> {
         let client = &operation_config.client;
@@ -6028,7 +6028,7 @@ pub mod environments {
         user_name: &str,
         expand: Option<&str>,
         filter: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
         orderby: Option<&str>,
     ) -> std::result::Result<DtlEnvironmentList, list::Error> {
         let client = &operation_config.client;
@@ -6420,7 +6420,7 @@ pub mod secrets {
         user_name: &str,
         expand: Option<&str>,
         filter: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
         orderby: Option<&str>,
     ) -> std::result::Result<SecretList, list::Error> {
         let client = &operation_config.client;
@@ -6810,7 +6810,7 @@ pub mod service_fabrics {
         user_name: &str,
         expand: Option<&str>,
         filter: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
         orderby: Option<&str>,
     ) -> std::result::Result<ServiceFabricList, list::Error> {
         let client = &operation_config.client;
@@ -7415,7 +7415,7 @@ pub mod service_fabric_schedules {
         service_fabric_name: &str,
         expand: Option<&str>,
         filter: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
         orderby: Option<&str>,
     ) -> std::result::Result<ScheduleList, list::Error> {
         let client = &operation_config.client;
@@ -7881,7 +7881,7 @@ pub mod virtual_machines {
         lab_name: &str,
         expand: Option<&str>,
         filter: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
         orderby: Option<&str>,
     ) -> std::result::Result<LabVirtualMachineList, list::Error> {
         let client = &operation_config.client;
@@ -9197,7 +9197,7 @@ pub mod virtual_machine_schedules {
         virtual_machine_name: &str,
         expand: Option<&str>,
         filter: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
         orderby: Option<&str>,
     ) -> std::result::Result<ScheduleList, list::Error> {
         let client = &operation_config.client;
@@ -9658,7 +9658,7 @@ pub mod virtual_networks {
         lab_name: &str,
         expand: Option<&str>,
         filter: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
         orderby: Option<&str>,
     ) -> std::result::Result<VirtualNetworkList, list::Error> {
         let client = &operation_config.client;

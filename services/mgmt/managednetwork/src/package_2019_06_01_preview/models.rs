@@ -78,7 +78,7 @@ pub struct ManagedNetworkGroup {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub kind: Option<managed_network_group::Kind>,
 }
-mod managed_network_group {
+pub mod managed_network_group {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Kind {
@@ -125,7 +125,7 @@ pub struct ManagedNetworkPeeringPolicyProperties {
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub mesh: Vec<ResourceId>,
 }
-mod managed_network_peering_policy_properties {
+pub mod managed_network_peering_policy_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
@@ -170,7 +170,7 @@ pub struct Operation {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
 }
-mod operation {
+pub mod operation {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Display {
@@ -224,7 +224,7 @@ pub struct ResourceProperties {
     #[serde(skip_serializing)]
     pub etag: Option<String>,
 }
-mod resource_properties {
+pub mod resource_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {

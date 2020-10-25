@@ -103,7 +103,7 @@ pub async fn get_apps(
     operation_config: &crate::OperationConfig,
     host_name: &str,
     filter: Option<&str>,
-    top: Option<i64>,
+    top: Option<i32>,
     select: Option<&str>,
 ) -> std::result::Result<ApplicationCollection, get_apps::Error> {
     let client = &operation_config.client;
@@ -168,7 +168,7 @@ pub async fn get_mam_user_devices(
     host_name: &str,
     user_name: &str,
     filter: Option<&str>,
-    top: Option<i64>,
+    top: Option<i32>,
     select: Option<&str>,
 ) -> std::result::Result<DeviceCollection, get_mam_user_devices::Error> {
     let client = &operation_config.client;
@@ -348,7 +348,7 @@ pub async fn get_operation_results(
     operation_config: &crate::OperationConfig,
     host_name: &str,
     filter: Option<&str>,
-    top: Option<i64>,
+    top: Option<i32>,
     select: Option<&str>,
 ) -> std::result::Result<OperationResultCollection, get_operation_results::Error> {
     let client = &operation_config.client;
@@ -465,7 +465,7 @@ pub async fn get_mam_flagged_users(
     operation_config: &crate::OperationConfig,
     host_name: &str,
     filter: Option<&str>,
-    top: Option<i64>,
+    top: Option<i32>,
     select: Option<&str>,
 ) -> std::result::Result<FlaggedUserCollection, get_mam_flagged_users::Error> {
     let client = &operation_config.client;
@@ -591,7 +591,7 @@ pub async fn get_mam_user_flagged_enrolled_apps(
     host_name: &str,
     user_name: &str,
     filter: Option<&str>,
-    top: Option<i64>,
+    top: Option<i32>,
     select: Option<&str>,
 ) -> std::result::Result<FlaggedEnrolledAppCollection, get_mam_user_flagged_enrolled_apps::Error> {
     let client = &operation_config.client;
@@ -663,7 +663,7 @@ pub mod ios {
         operation_config: &crate::OperationConfig,
         host_name: &str,
         filter: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
         select: Option<&str>,
     ) -> std::result::Result<IosmamPolicyCollection, get_mam_policies::Error> {
         let client = &operation_config.client;
@@ -955,7 +955,7 @@ pub mod ios {
         host_name: &str,
         policy_name: &str,
         filter: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
         select: Option<&str>,
     ) -> std::result::Result<ApplicationCollection, get_app_for_mam_policy::Error> {
         let client = &operation_config.client;
@@ -1310,7 +1310,7 @@ pub mod android {
         operation_config: &crate::OperationConfig,
         host_name: &str,
         filter: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
         select: Option<&str>,
     ) -> std::result::Result<AndroidMamPolicyCollection, get_mam_policies::Error> {
         let client = &operation_config.client;
@@ -1603,7 +1603,7 @@ pub mod android {
         host_name: &str,
         policy_name: &str,
         filter: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
         select: Option<&str>,
     ) -> std::result::Result<ApplicationCollection, get_app_for_mam_policy::Error> {
         let client = &operation_config.client;

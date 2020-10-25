@@ -14,7 +14,7 @@ pub struct Operation {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
 }
-mod operation {
+pub mod operation {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Display {
@@ -67,7 +67,7 @@ pub struct SearchSort {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub order: Option<search_sort::Order>,
 }
-mod search_sort {
+pub mod search_sort {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Order {
@@ -172,7 +172,7 @@ pub struct StorageInsightStatus {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 }
-mod storage_insight_status {
+pub mod storage_insight_status {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum State {
@@ -257,7 +257,7 @@ pub struct WorkspacePurgeResponse {
 pub struct WorkspacePurgeStatusResponse {
     pub status: workspace_purge_status_response::Status,
 }
-mod workspace_purge_status_response {
+pub mod workspace_purge_status_response {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
@@ -291,7 +291,7 @@ pub struct AvailableServiceTier {
     #[serde(rename = "LastSkuUpdate", skip_serializing)]
     pub last_sku_update: Option<String>,
 }
-mod available_service_tier {
+pub mod available_service_tier {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ServiceTier {

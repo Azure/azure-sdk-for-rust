@@ -47,7 +47,7 @@ pub struct SubscriptionState {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub properties: Option<SubscriptionStateProperties>,
 }
-mod subscription_state {
+pub mod subscription_state {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum State {

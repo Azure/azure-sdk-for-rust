@@ -781,7 +781,7 @@ pub mod suppressions {
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-        top: Option<i64>,
+        top: Option<i32>,
         skip_token: Option<&str>,
     ) -> std::result::Result<SuppressionContractListResult, list::Error> {
         let client = &operation_config.client;

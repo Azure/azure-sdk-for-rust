@@ -15,7 +15,7 @@ pub struct AvailableOperation {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub properties: Option<AvailableOperationDisplayPropertyServiceSpecification>,
 }
-mod available_operation {
+pub mod available_operation {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Origin {
@@ -54,7 +54,7 @@ pub struct AvailableOperationDisplayPropertyServiceSpecificationMetricsItem {
     pub name: String,
     pub unit: String,
 }
-mod available_operation_display_property_service_specification_metrics_item {
+pub mod available_operation_display_property_service_specification_metrics_item {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum AggregationType {
@@ -97,7 +97,7 @@ pub struct CustomizationHostName {
     #[serde(rename = "type", skip_serializing_if = "Option::is_none")]
     pub type_: Option<customization_host_name::Type>,
 }
-mod customization_host_name {
+pub mod customization_host_name {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
@@ -122,7 +122,7 @@ pub struct CustomizationIpAddress {
     #[serde(rename = "type", skip_serializing_if = "Option::is_none")]
     pub type_: Option<customization_ip_address::Type>,
 }
-mod customization_ip_address {
+pub mod customization_ip_address {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
@@ -156,7 +156,7 @@ pub struct CustomizationIdentity {
     #[serde(rename = "userData", skip_serializing_if = "Option::is_none")]
     pub user_data: Option<customization_identity::UserData>,
 }
-mod customization_identity {
+pub mod customization_identity {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
@@ -213,7 +213,7 @@ pub struct CustomizationPolicyProperties {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
 }
-mod customization_policy_properties {
+pub mod customization_policy_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
@@ -284,7 +284,7 @@ pub struct DedicatedCloudNodeProperties {
     #[serde(rename = "vmwareClusterName", skip_serializing)]
     pub vmware_cluster_name: Option<String>,
 }
-mod dedicated_cloud_node_properties {
+pub mod dedicated_cloud_node_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
@@ -326,7 +326,7 @@ pub struct DedicatedCloudServiceProperties {
     #[serde(rename = "serviceURL", skip_serializing)]
     pub service_url: Option<String>,
 }
-mod dedicated_cloud_service_properties {
+pub mod dedicated_cloud_service_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum IsAccountOnboarded {
@@ -370,7 +370,7 @@ pub struct GuestOsnicCustomization {
     #[serde(rename = "secondaryWinsServer", skip_serializing_if = "Option::is_none")]
     pub secondary_wins_server: Option<Ipv4Address>,
 }
-mod guest_osnic_customization {
+pub mod guest_osnic_customization {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Allocation {
@@ -422,7 +422,7 @@ pub struct PrivateCloud {
     #[serde(rename = "type", skip_serializing_if = "Option::is_none")]
     pub type_: Option<private_cloud::Type>,
 }
-mod private_cloud {
+pub mod private_cloud {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
@@ -568,7 +568,7 @@ pub struct Usage {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub unit: Option<usage::Unit>,
 }
-mod usage {
+pub mod usage {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Unit {
@@ -607,7 +607,7 @@ pub struct VirtualDisk {
     #[serde(rename = "virtualDiskName", skip_serializing)]
     pub virtual_disk_name: Option<String>,
 }
-mod virtual_disk {
+pub mod virtual_disk {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum IndependenceMode {
@@ -698,7 +698,7 @@ pub struct VirtualMachineProperties {
     #[serde(skip_serializing)]
     pub vmwaretools: Option<String>,
 }
-mod virtual_machine_properties {
+pub mod virtual_machine_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum GuestOsType {
@@ -730,7 +730,7 @@ pub struct VirtualMachineStopMode {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub mode: Option<virtual_machine_stop_mode::Mode>,
 }
-mod virtual_machine_stop_mode {
+pub mod virtual_machine_stop_mode {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Mode {
@@ -839,7 +839,7 @@ pub struct VirtualNic {
     #[serde(rename = "virtualNicName", skip_serializing)]
     pub virtual_nic_name: Option<String>,
 }
-mod virtual_nic {
+pub mod virtual_nic {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum NicType {

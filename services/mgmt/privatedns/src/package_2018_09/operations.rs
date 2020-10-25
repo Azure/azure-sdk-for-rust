@@ -325,7 +325,7 @@ pub mod private_zones {
     }
     pub async fn list(
         operation_config: &crate::OperationConfig,
-        top: Option<i64>,
+        top: Option<i32>,
         subscription_id: &str,
     ) -> std::result::Result<PrivateZoneListResult, list::Error> {
         let client = &operation_config.client;
@@ -396,7 +396,7 @@ pub mod private_zones {
     pub async fn list_by_resource_group(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
-        top: Option<i64>,
+        top: Option<i32>,
         subscription_id: &str,
     ) -> std::result::Result<PrivateZoneListResult, list_by_resource_group::Error> {
         let client = &operation_config.client;
@@ -792,7 +792,7 @@ pub mod virtual_network_links {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         private_zone_name: &str,
-        top: Option<i64>,
+        top: Option<i32>,
         subscription_id: &str,
     ) -> std::result::Result<VirtualNetworkLinkListResult, list::Error> {
         let client = &operation_config.client;
@@ -1182,7 +1182,7 @@ pub mod record_sets {
         resource_group_name: &str,
         private_zone_name: &str,
         record_type: &str,
-        top: Option<i64>,
+        top: Option<i32>,
         recordsetnamesuffix: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<RecordSetListResult, list_by_type::Error> {
@@ -1258,7 +1258,7 @@ pub mod record_sets {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         private_zone_name: &str,
-        top: Option<i64>,
+        top: Option<i32>,
         recordsetnamesuffix: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<RecordSetListResult, list::Error> {

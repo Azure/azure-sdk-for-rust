@@ -1792,7 +1792,7 @@ pub mod virtual_machine_extension_images {
         publisher_name: &str,
         type_: &str,
         filter: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
         orderby: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<Vec<VirtualMachineExtensionImage>, list_versions::Error> {
@@ -2193,7 +2193,7 @@ pub mod virtual_machine_images {
         offer: &str,
         skus: &str,
         expand: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
         orderby: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<Vec<VirtualMachineImageResource>, list::Error> {
@@ -3478,7 +3478,7 @@ pub mod virtual_machines {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         vm_name: &str,
-        sas_uri_expiration_time_in_minutes: Option<i64>,
+        sas_uri_expiration_time_in_minutes: Option<i32>,
         subscription_id: &str,
     ) -> std::result::Result<RetrieveBootDiagnosticsDataResult, retrieve_boot_diagnostics_data::Error> {
         let client = &operation_config.client;
@@ -6890,7 +6890,7 @@ pub mod virtual_machine_scale_set_v_ms {
         resource_group_name: &str,
         vm_scale_set_name: &str,
         instance_id: &str,
-        sas_uri_expiration_time_in_minutes: Option<i64>,
+        sas_uri_expiration_time_in_minutes: Option<i32>,
         subscription_id: &str,
     ) -> std::result::Result<RetrieveBootDiagnosticsDataResult, retrieve_boot_diagnostics_data::Error> {
         let client = &operation_config.client;

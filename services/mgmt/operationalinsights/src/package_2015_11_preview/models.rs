@@ -41,7 +41,7 @@ pub struct Operation {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
 }
-mod operation {
+pub mod operation {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Display {
@@ -169,7 +169,7 @@ pub struct WorkspaceListManagementGroupsResult {
 pub struct Sku {
     pub name: sku::Name,
 }
-mod sku {
+pub mod sku {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Name {
@@ -198,7 +198,7 @@ pub struct WorkspaceProperties {
     #[serde(rename = "retentionInDays", skip_serializing_if = "Option::is_none")]
     pub retention_in_days: Option<i32>,
 }
-mod workspace_properties {
+pub mod workspace_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {

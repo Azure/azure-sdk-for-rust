@@ -65,7 +65,7 @@ pub struct ControllerProperties {
     #[serde(rename = "targetContainerHostCredentialsBase64")]
     pub target_container_host_credentials_base64: String,
 }
-mod controller_properties {
+pub mod controller_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
@@ -84,7 +84,7 @@ pub struct Sku {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tier: Option<sku::Tier>,
 }
-mod sku {
+pub mod sku {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Name {

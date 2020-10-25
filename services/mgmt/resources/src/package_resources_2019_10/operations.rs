@@ -576,7 +576,7 @@ pub mod deployments {
         operation_config: &crate::OperationConfig,
         scope: &str,
         filter: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
     ) -> std::result::Result<DeploymentListResult, list_at_scope::Error> {
         let client = &operation_config.client;
         let uri_str = &format!(
@@ -1228,7 +1228,7 @@ pub mod deployments {
     pub async fn list_at_tenant_scope(
         operation_config: &crate::OperationConfig,
         filter: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
     ) -> std::result::Result<DeploymentListResult, list_at_tenant_scope::Error> {
         let client = &operation_config.client;
         let uri_str = &format!("{}/providers/Microsoft.Resources/deployments/", &operation_config.base_path,);
@@ -1931,7 +1931,7 @@ pub mod deployments {
         operation_config: &crate::OperationConfig,
         group_id: &str,
         filter: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
     ) -> std::result::Result<DeploymentListResult, list_at_management_group_scope::Error> {
         let client = &operation_config.client;
         let uri_str = &format!(
@@ -2636,7 +2636,7 @@ pub mod deployments {
     pub async fn list_at_subscription_scope(
         operation_config: &crate::OperationConfig,
         filter: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
         subscription_id: &str,
     ) -> std::result::Result<DeploymentListResult, list_at_subscription_scope::Error> {
         let client = &operation_config.client;
@@ -3289,7 +3289,7 @@ pub mod deployments {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         filter: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
         subscription_id: &str,
     ) -> std::result::Result<DeploymentListResult, list_by_resource_group::Error> {
         let client = &operation_config.client;
@@ -3570,7 +3570,7 @@ pub mod providers {
     }
     pub async fn list(
         operation_config: &crate::OperationConfig,
-        top: Option<i64>,
+        top: Option<i32>,
         expand: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<ProviderListResult, list::Error> {
@@ -3641,7 +3641,7 @@ pub mod providers {
     }
     pub async fn list_at_tenant_scope(
         operation_config: &crate::OperationConfig,
-        top: Option<i64>,
+        top: Option<i32>,
         expand: Option<&str>,
     ) -> std::result::Result<ProviderListResult, list_at_tenant_scope::Error> {
         let client = &operation_config.client;
@@ -3858,7 +3858,7 @@ pub mod resources {
         resource_group_name: &str,
         filter: Option<&str>,
         expand: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
         subscription_id: &str,
     ) -> std::result::Result<ResourceListResult, list_by_resource_group::Error> {
         let client = &operation_config.client;
@@ -4079,7 +4079,7 @@ pub mod resources {
         operation_config: &crate::OperationConfig,
         filter: Option<&str>,
         expand: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
         subscription_id: &str,
     ) -> std::result::Result<ResourceListResult, list::Error> {
         let client = &operation_config.client;
@@ -5333,7 +5333,7 @@ pub mod resource_groups {
     pub async fn list(
         operation_config: &crate::OperationConfig,
         filter: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
         subscription_id: &str,
     ) -> std::result::Result<ResourceGroupListResult, list::Error> {
         let client = &operation_config.client;
@@ -6105,7 +6105,7 @@ pub mod deployment_operations {
         operation_config: &crate::OperationConfig,
         scope: &str,
         deployment_name: &str,
-        top: Option<i64>,
+        top: Option<i32>,
     ) -> std::result::Result<DeploymentOperationsListResult, list_at_scope::Error> {
         let client = &operation_config.client;
         let uri_str = &format!(
@@ -6244,7 +6244,7 @@ pub mod deployment_operations {
     pub async fn list_at_tenant_scope(
         operation_config: &crate::OperationConfig,
         deployment_name: &str,
-        top: Option<i64>,
+        top: Option<i32>,
     ) -> std::result::Result<DeploymentOperationsListResult, list_at_tenant_scope::Error> {
         let client = &operation_config.client;
         let uri_str = &format!(
@@ -6389,7 +6389,7 @@ pub mod deployment_operations {
         operation_config: &crate::OperationConfig,
         group_id: &str,
         deployment_name: &str,
-        top: Option<i64>,
+        top: Option<i32>,
     ) -> std::result::Result<DeploymentOperationsListResult, list_at_management_group_scope::Error> {
         let client = &operation_config.client;
         let uri_str = &format!(
@@ -6533,7 +6533,7 @@ pub mod deployment_operations {
     pub async fn list_at_subscription_scope(
         operation_config: &crate::OperationConfig,
         deployment_name: &str,
-        top: Option<i64>,
+        top: Option<i32>,
         subscription_id: &str,
     ) -> std::result::Result<DeploymentOperationsListResult, list_at_subscription_scope::Error> {
         let client = &operation_config.client;
@@ -6675,7 +6675,7 @@ pub mod deployment_operations {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         deployment_name: &str,
-        top: Option<i64>,
+        top: Option<i32>,
         subscription_id: &str,
     ) -> std::result::Result<DeploymentOperationsListResult, list::Error> {
         let client = &operation_config.client;

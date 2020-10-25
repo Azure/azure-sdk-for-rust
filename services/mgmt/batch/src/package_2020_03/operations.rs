@@ -933,7 +933,7 @@ pub mod application_package {
         resource_group_name: &str,
         account_name: &str,
         application_name: &str,
-        maxresults: Option<i64>,
+        maxresults: Option<i32>,
         subscription_id: &str,
     ) -> std::result::Result<ListApplicationPackagesResult, list::Error> {
         let client = &operation_config.client;
@@ -1294,7 +1294,7 @@ pub mod application {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         account_name: &str,
-        maxresults: Option<i64>,
+        maxresults: Option<i32>,
         subscription_id: &str,
     ) -> std::result::Result<ListApplicationsResult, list::Error> {
         let client = &operation_config.client;
@@ -1578,7 +1578,7 @@ pub mod certificate {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         account_name: &str,
-        maxresults: Option<i64>,
+        maxresults: Option<i32>,
         select: Option<&str>,
         filter: Option<&str>,
         subscription_id: &str,
@@ -2030,7 +2030,7 @@ pub mod private_link_resource {
         subscription_id: &str,
         resource_group_name: &str,
         account_name: &str,
-        maxresults: Option<i64>,
+        maxresults: Option<i32>,
     ) -> std::result::Result<ListPrivateLinkResourcesResult, list_by_batch_account::Error> {
         let client = &operation_config.client;
         let uri_str = &format!(
@@ -2177,7 +2177,7 @@ pub mod private_endpoint_connection {
         subscription_id: &str,
         resource_group_name: &str,
         account_name: &str,
-        maxresults: Option<i64>,
+        maxresults: Option<i32>,
     ) -> std::result::Result<ListPrivateEndpointConnectionsResult, list_by_batch_account::Error> {
         let client = &operation_config.client;
         let uri_str = &format!(
@@ -2398,7 +2398,7 @@ pub mod pool {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         account_name: &str,
-        maxresults: Option<i64>,
+        maxresults: Option<i32>,
         select: Option<&str>,
         filter: Option<&str>,
         subscription_id: &str,

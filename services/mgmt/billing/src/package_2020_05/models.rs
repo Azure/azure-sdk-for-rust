@@ -117,7 +117,7 @@ pub struct BillingAccountProperties {
     #[serde(rename = "hasReadAccess", skip_serializing)]
     pub has_read_access: Option<bool>,
 }
-mod billing_account_properties {
+pub mod billing_account_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum AgreementType {
@@ -199,7 +199,7 @@ pub struct BillingPropertyProperties {
     #[serde(rename = "skuDescription", skip_serializing)]
     pub sku_description: Option<String>,
 }
-mod billing_property_properties {
+pub mod billing_property_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum BillingProfileStatus {
@@ -379,7 +379,7 @@ pub struct BillingProfileProperties {
     #[serde(rename = "targetClouds", skip_serializing)]
     pub target_clouds: Vec<TargetCloud>,
 }
-mod billing_profile_properties {
+pub mod billing_profile_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum BillingRelationshipType {
@@ -483,7 +483,7 @@ pub struct InvoiceSectionProperties {
     #[serde(rename = "targetCloud", skip_serializing_if = "Option::is_none")]
     pub target_cloud: Option<TargetCloud>,
 }
-mod invoice_section_properties {
+pub mod invoice_section_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum State {
@@ -521,7 +521,7 @@ pub struct InvoiceSectionWithCreateSubPermission {
     #[serde(rename = "enabledAzurePlans", skip_serializing_if = "Vec::is_empty")]
     pub enabled_azure_plans: Vec<AzurePlan>,
 }
-mod invoice_section_with_create_sub_permission {
+pub mod invoice_section_with_create_sub_permission {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum BillingProfileStatus {
@@ -655,7 +655,7 @@ pub struct InvoiceProperties {
     #[serde(rename = "subscriptionId", skip_serializing)]
     pub subscription_id: Option<String>,
 }
-mod invoice_properties {
+pub mod invoice_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
@@ -689,7 +689,7 @@ pub struct PaymentProperties {
     #[serde(rename = "paymentMethodType", skip_serializing)]
     pub payment_method_type: Option<String>,
 }
-mod payment_properties {
+pub mod payment_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum PaymentMethodFamily {
@@ -717,7 +717,7 @@ pub struct Document {
     #[serde(skip_serializing)]
     pub source: Option<document::Source>,
 }
-mod document {
+pub mod document {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Kind {
@@ -795,7 +795,7 @@ pub struct ProductProperties {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub reseller: Option<Reseller>,
 }
-mod product_properties {
+pub mod product_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum AutoRenew {
@@ -895,7 +895,7 @@ pub struct BillingSubscriptionProperties {
     #[serde(rename = "skuDescription", skip_serializing)]
     pub sku_description: Option<String>,
 }
-mod billing_subscription_properties {
+pub mod billing_subscription_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum SubscriptionBillingStatus {
@@ -1015,7 +1015,7 @@ pub struct TransactionProperties {
     #[serde(rename = "unitType", skip_serializing)]
     pub unit_type: Option<String>,
 }
-mod transaction_properties {
+pub mod transaction_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Kind {
@@ -1047,7 +1047,7 @@ pub struct PolicyProperties {
     #[serde(rename = "viewCharges", skip_serializing_if = "Option::is_none")]
     pub view_charges: Option<policy_properties::ViewCharges>,
 }
-mod policy_properties {
+pub mod policy_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum MarketplacePurchases {
@@ -1078,7 +1078,7 @@ pub struct CustomerPolicyProperties {
     #[serde(rename = "viewCharges", skip_serializing_if = "Option::is_none")]
     pub view_charges: Option<customer_policy_properties::ViewCharges>,
 }
-mod customer_policy_properties {
+pub mod customer_policy_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ViewCharges {
@@ -1112,7 +1112,7 @@ pub struct Operation {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
 }
-mod operation {
+pub mod operation {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Display {
@@ -1236,7 +1236,7 @@ pub struct AgreementProperties {
     #[serde(skip_serializing)]
     pub status: Option<String>,
 }
-mod agreement_properties {
+pub mod agreement_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Category {

@@ -2943,7 +2943,7 @@ pub mod runs {
         resource_group_name: &str,
         registry_name: &str,
         filter: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
     ) -> std::result::Result<RunListResult, list::Error> {
         let client = &operation_config.client;
         let uri_str = &format!(

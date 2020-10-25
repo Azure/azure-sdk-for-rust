@@ -88,7 +88,7 @@ pub mod legacy_peerings {
         operation_config: &crate::OperationConfig,
         peering_location: &str,
         kind: &str,
-        asn: Option<i64>,
+        asn: Option<i32>,
         subscription_id: &str,
     ) -> std::result::Result<PeeringListResult, list::Error> {
         let client = &operation_config.client;
