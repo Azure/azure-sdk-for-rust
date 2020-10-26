@@ -5,7 +5,10 @@ version = "0.1.0"
 edition = "2018"
 
 [dependencies]
+<<<<<<< HEAD
 azure_core = { path = "../../../sdk/core", version = "0.1.0" }
+=======
+>>>>>>> origin/master
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 reqwest = { version = "0.10", features = ["json"] }
@@ -13,7 +16,10 @@ bytes = "0.5"
 snafu = "0.6"
 
 [dev-dependencies]
+<<<<<<< HEAD
 azure_identity = { path = "../../../sdk/identity", version = "0.1.0" }
+=======
+>>>>>>> origin/master
 tokio = { version = "0.2", features = ["macros"] }
 
 [features]

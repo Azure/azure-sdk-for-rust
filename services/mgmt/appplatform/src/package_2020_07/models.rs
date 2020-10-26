@@ -40,7 +40,11 @@ pub struct ClusterResourceProperties {
     #[serde(rename = "serviceId", skip_serializing)]
     pub service_id: Option<String>,
 }
+<<<<<<< HEAD
 pub mod cluster_resource_properties {
+=======
+mod cluster_resource_properties {
+>>>>>>> origin/master
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
@@ -64,7 +68,11 @@ pub struct ManagedIdentityProperties {
     #[serde(rename = "tenantId", skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
 }
+<<<<<<< HEAD
 pub mod managed_identity_properties {
+=======
+mod managed_identity_properties {
+>>>>>>> origin/master
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
@@ -100,7 +108,11 @@ pub struct ConfigServerProperties {
     #[serde(rename = "configServer", skip_serializing_if = "Option::is_none")]
     pub config_server: Option<ConfigServerSettings>,
 }
+<<<<<<< HEAD
 pub mod config_server_properties {
+=======
+mod config_server_properties {
+>>>>>>> origin/master
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
@@ -129,7 +141,11 @@ pub struct MonitoringSettingProperties {
     #[serde(rename = "appInsightsInstrumentationKey", skip_serializing_if = "Option::is_none")]
     pub app_insights_instrumentation_key: Option<String>,
 }
+<<<<<<< HEAD
 pub mod monitoring_setting_properties {
+=======
+mod monitoring_setting_properties {
+>>>>>>> origin/master
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
@@ -154,7 +170,11 @@ pub struct NetworkProfile {
     #[serde(rename = "outboundIPs", skip_serializing)]
     pub outbound_i_ps: Option<network_profile::OutboundIPs>,
 }
+<<<<<<< HEAD
 pub mod network_profile {
+=======
+mod network_profile {
+>>>>>>> origin/master
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct OutboundIPs {
@@ -237,7 +257,11 @@ pub struct RegenerateTestKeyRequestPayload {
     #[serde(rename = "keyType")]
     pub key_type: regenerate_test_key_request_payload::KeyType,
 }
+<<<<<<< HEAD
 pub mod regenerate_test_key_request_payload {
+=======
+mod regenerate_test_key_request_payload {
+>>>>>>> origin/master
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum KeyType {
@@ -282,7 +306,11 @@ pub struct AppResourceProperties {
     #[serde(rename = "persistentDisk", skip_serializing_if = "Option::is_none")]
     pub persistent_disk: Option<PersistentDisk>,
 }
+<<<<<<< HEAD
 pub mod app_resource_properties {
+=======
+mod app_resource_properties {
+>>>>>>> origin/master
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
@@ -469,7 +497,11 @@ pub struct DeploymentResourceProperties {
     #[serde(skip_serializing)]
     pub instances: Vec<DeploymentInstance>,
 }
+<<<<<<< HEAD
 pub mod deployment_resource_properties {
+=======
+mod deployment_resource_properties {
+>>>>>>> origin/master
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
@@ -500,7 +532,11 @@ pub struct UserSourceInfo {
     #[serde(rename = "artifactSelector", skip_serializing_if = "Option::is_none")]
     pub artifact_selector: Option<String>,
 }
+<<<<<<< HEAD
 pub mod user_source_info {
+=======
+mod user_source_info {
+>>>>>>> origin/master
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
@@ -524,7 +560,11 @@ pub struct DeploymentSettings {
     #[serde(rename = "runtimeVersion", skip_serializing_if = "Option::is_none")]
     pub runtime_version: Option<deployment_settings::RuntimeVersion>,
 }
+<<<<<<< HEAD
 pub mod deployment_settings {
+=======
+mod deployment_settings {
+>>>>>>> origin/master
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum RuntimeVersion {
@@ -683,7 +723,11 @@ pub struct SkuCapacity {
     #[serde(rename = "scaleType", skip_serializing_if = "Option::is_none")]
     pub scale_type: Option<sku_capacity::ScaleType>,
 }
+<<<<<<< HEAD
 pub mod sku_capacity {
+=======
+mod sku_capacity {
+>>>>>>> origin/master
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ScaleType {
@@ -712,7 +756,11 @@ pub struct ResourceSkuRestrictions {
     #[serde(rename = "reasonCode", skip_serializing_if = "Option::is_none")]
     pub reason_code: Option<resource_sku_restrictions::ReasonCode>,
 }
+<<<<<<< HEAD
 pub mod resource_sku_restrictions {
+=======
+mod resource_sku_restrictions {
+>>>>>>> origin/master
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
@@ -776,7 +824,11 @@ pub struct SupportedRuntimeVersion {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
 }
+<<<<<<< HEAD
 pub mod supported_runtime_version {
+=======
+mod supported_runtime_version {
+>>>>>>> origin/master
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Value {

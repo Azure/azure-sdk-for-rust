@@ -21,12 +21,17 @@ pub mod services {
             &operation_config.base_path, subscription_id, resource_group_name, service_name
         );
         let mut req_builder = client.get(uri_str);
+<<<<<<< HEAD
         if let Some(token_credential) = &operation_config.token_credential {
             let token_response = token_credential
                 .get_token(&operation_config.token_credential_resource)
                 .await
                 .context(get::GetTokenError)?;
             req_builder = req_builder.bearer_auth(token_response.token.secret());
+=======
+        if let Some(token) = &operation_config.bearer_access_token {
+            req_builder = req_builder.bearer_auth(token);
+>>>>>>> origin/master
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get::BuildRequestError)?;
@@ -72,9 +77,12 @@ pub mod services {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+<<<<<<< HEAD
             GetTokenError {
                 source: azure_core::errors::AzureError,
             },
+=======
+>>>>>>> origin/master
         }
     }
     pub async fn create_or_update(
@@ -90,12 +98,17 @@ pub mod services {
             &operation_config.base_path, subscription_id, resource_group_name, service_name
         );
         let mut req_builder = client.put(uri_str);
+<<<<<<< HEAD
         if let Some(token_credential) = &operation_config.token_credential {
             let token_response = token_credential
                 .get_token(&operation_config.token_credential_resource)
                 .await
                 .context(create_or_update::GetTokenError)?;
             req_builder = req_builder.bearer_auth(token_response.token.secret());
+=======
+        if let Some(token) = &operation_config.bearer_access_token {
+            req_builder = req_builder.bearer_auth(token);
+>>>>>>> origin/master
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(resource);
@@ -158,9 +171,12 @@ pub mod services {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+<<<<<<< HEAD
             GetTokenError {
                 source: azure_core::errors::AzureError,
             },
+=======
+>>>>>>> origin/master
         }
     }
     pub async fn update(
@@ -176,12 +192,17 @@ pub mod services {
             &operation_config.base_path, subscription_id, resource_group_name, service_name
         );
         let mut req_builder = client.patch(uri_str);
+<<<<<<< HEAD
         if let Some(token_credential) = &operation_config.token_credential {
             let token_response = token_credential
                 .get_token(&operation_config.token_credential_resource)
                 .await
                 .context(update::GetTokenError)?;
             req_builder = req_builder.bearer_auth(token_response.token.secret());
+=======
+        if let Some(token) = &operation_config.bearer_access_token {
+            req_builder = req_builder.bearer_auth(token);
+>>>>>>> origin/master
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(resource);
@@ -238,9 +259,12 @@ pub mod services {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+<<<<<<< HEAD
             GetTokenError {
                 source: azure_core::errors::AzureError,
             },
+=======
+>>>>>>> origin/master
         }
     }
     pub async fn delete(
@@ -255,12 +279,17 @@ pub mod services {
             &operation_config.base_path, subscription_id, resource_group_name, service_name
         );
         let mut req_builder = client.delete(uri_str);
+<<<<<<< HEAD
         if let Some(token_credential) = &operation_config.token_credential {
             let token_response = token_credential
                 .get_token(&operation_config.token_credential_resource)
                 .await
                 .context(delete::GetTokenError)?;
             req_builder = req_builder.bearer_auth(token_response.token.secret());
+=======
+        if let Some(token) = &operation_config.bearer_access_token {
+            req_builder = req_builder.bearer_auth(token);
+>>>>>>> origin/master
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(delete::BuildRequestError)?;
@@ -308,9 +337,12 @@ pub mod services {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+<<<<<<< HEAD
             GetTokenError {
                 source: azure_core::errors::AzureError,
             },
+=======
+>>>>>>> origin/master
         }
     }
     pub async fn list_test_keys(
@@ -325,12 +357,17 @@ pub mod services {
             &operation_config.base_path, subscription_id, resource_group_name, service_name
         );
         let mut req_builder = client.post(uri_str);
+<<<<<<< HEAD
         if let Some(token_credential) = &operation_config.token_credential {
             let token_response = token_credential
                 .get_token(&operation_config.token_credential_resource)
                 .await
                 .context(list_test_keys::GetTokenError)?;
             req_builder = req_builder.bearer_auth(token_response.token.secret());
+=======
+        if let Some(token) = &operation_config.bearer_access_token {
+            req_builder = req_builder.bearer_auth(token);
+>>>>>>> origin/master
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_test_keys::BuildRequestError)?;
@@ -376,9 +413,12 @@ pub mod services {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+<<<<<<< HEAD
             GetTokenError {
                 source: azure_core::errors::AzureError,
             },
+=======
+>>>>>>> origin/master
         }
     }
     pub async fn regenerate_test_key(
@@ -394,12 +434,17 @@ pub mod services {
             &operation_config.base_path, subscription_id, resource_group_name, service_name
         );
         let mut req_builder = client.post(uri_str);
+<<<<<<< HEAD
         if let Some(token_credential) = &operation_config.token_credential {
             let token_response = token_credential
                 .get_token(&operation_config.token_credential_resource)
                 .await
                 .context(regenerate_test_key::GetTokenError)?;
             req_builder = req_builder.bearer_auth(token_response.token.secret());
+=======
+        if let Some(token) = &operation_config.bearer_access_token {
+            req_builder = req_builder.bearer_auth(token);
+>>>>>>> origin/master
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(regenerate_test_key_request);
@@ -446,9 +491,12 @@ pub mod services {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+<<<<<<< HEAD
             GetTokenError {
                 source: azure_core::errors::AzureError,
             },
+=======
+>>>>>>> origin/master
         }
     }
     pub async fn disable_test_endpoint(
@@ -463,12 +511,17 @@ pub mod services {
             &operation_config.base_path, subscription_id, resource_group_name, service_name
         );
         let mut req_builder = client.post(uri_str);
+<<<<<<< HEAD
         if let Some(token_credential) = &operation_config.token_credential {
             let token_response = token_credential
                 .get_token(&operation_config.token_credential_resource)
                 .await
                 .context(disable_test_endpoint::GetTokenError)?;
             req_builder = req_builder.bearer_auth(token_response.token.secret());
+=======
+        if let Some(token) = &operation_config.bearer_access_token {
+            req_builder = req_builder.bearer_auth(token);
+>>>>>>> origin/master
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(disable_test_endpoint::BuildRequestError)?;
@@ -510,9 +563,12 @@ pub mod services {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+<<<<<<< HEAD
             GetTokenError {
                 source: azure_core::errors::AzureError,
             },
+=======
+>>>>>>> origin/master
         }
     }
     pub async fn enable_test_endpoint(
@@ -527,12 +583,17 @@ pub mod services {
             &operation_config.base_path, subscription_id, resource_group_name, service_name
         );
         let mut req_builder = client.post(uri_str);
+<<<<<<< HEAD
         if let Some(token_credential) = &operation_config.token_credential {
             let token_response = token_credential
                 .get_token(&operation_config.token_credential_resource)
                 .await
                 .context(enable_test_endpoint::GetTokenError)?;
             req_builder = req_builder.bearer_auth(token_response.token.secret());
+=======
+        if let Some(token) = &operation_config.bearer_access_token {
+            req_builder = req_builder.bearer_auth(token);
+>>>>>>> origin/master
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(enable_test_endpoint::BuildRequestError)?;
@@ -578,9 +639,12 @@ pub mod services {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+<<<<<<< HEAD
             GetTokenError {
                 source: azure_core::errors::AzureError,
             },
+=======
+>>>>>>> origin/master
         }
     }
     pub async fn check_name_availability(
@@ -595,12 +659,17 @@ pub mod services {
             &operation_config.base_path, subscription_id, location
         );
         let mut req_builder = client.post(uri_str);
+<<<<<<< HEAD
         if let Some(token_credential) = &operation_config.token_credential {
             let token_response = token_credential
                 .get_token(&operation_config.token_credential_resource)
                 .await
                 .context(check_name_availability::GetTokenError)?;
             req_builder = req_builder.bearer_auth(token_response.token.secret());
+=======
+        if let Some(token) = &operation_config.bearer_access_token {
+            req_builder = req_builder.bearer_auth(token);
+>>>>>>> origin/master
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(availability_parameters);
@@ -648,9 +717,12 @@ pub mod services {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+<<<<<<< HEAD
             GetTokenError {
                 source: azure_core::errors::AzureError,
             },
+=======
+>>>>>>> origin/master
         }
     }
     pub async fn list_by_subscription(
@@ -663,12 +735,17 @@ pub mod services {
             &operation_config.base_path, subscription_id
         );
         let mut req_builder = client.get(uri_str);
+<<<<<<< HEAD
         if let Some(token_credential) = &operation_config.token_credential {
             let token_response = token_credential
                 .get_token(&operation_config.token_credential_resource)
                 .await
                 .context(list_by_subscription::GetTokenError)?;
             req_builder = req_builder.bearer_auth(token_response.token.secret());
+=======
+        if let Some(token) = &operation_config.bearer_access_token {
+            req_builder = req_builder.bearer_auth(token);
+>>>>>>> origin/master
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_by_subscription::BuildRequestError)?;
@@ -715,9 +792,12 @@ pub mod services {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+<<<<<<< HEAD
             GetTokenError {
                 source: azure_core::errors::AzureError,
             },
+=======
+>>>>>>> origin/master
         }
     }
     pub async fn list(
@@ -731,12 +811,17 @@ pub mod services {
             &operation_config.base_path, subscription_id, resource_group_name
         );
         let mut req_builder = client.get(uri_str);
+<<<<<<< HEAD
         if let Some(token_credential) = &operation_config.token_credential {
             let token_response = token_credential
                 .get_token(&operation_config.token_credential_resource)
                 .await
                 .context(list::GetTokenError)?;
             req_builder = req_builder.bearer_auth(token_response.token.secret());
+=======
+        if let Some(token) = &operation_config.bearer_access_token {
+            req_builder = req_builder.bearer_auth(token);
+>>>>>>> origin/master
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list::BuildRequestError)?;
@@ -782,9 +867,12 @@ pub mod services {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+<<<<<<< HEAD
             GetTokenError {
                 source: azure_core::errors::AzureError,
             },
+=======
+>>>>>>> origin/master
         }
     }
 }
@@ -804,12 +892,17 @@ pub mod config_servers {
             &operation_config.base_path, subscription_id, resource_group_name, service_name
         );
         let mut req_builder = client.get(uri_str);
+<<<<<<< HEAD
         if let Some(token_credential) = &operation_config.token_credential {
             let token_response = token_credential
                 .get_token(&operation_config.token_credential_resource)
                 .await
                 .context(get::GetTokenError)?;
             req_builder = req_builder.bearer_auth(token_response.token.secret());
+=======
+        if let Some(token) = &operation_config.bearer_access_token {
+            req_builder = req_builder.bearer_auth(token);
+>>>>>>> origin/master
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get::BuildRequestError)?;
@@ -855,9 +948,12 @@ pub mod config_servers {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+<<<<<<< HEAD
             GetTokenError {
                 source: azure_core::errors::AzureError,
             },
+=======
+>>>>>>> origin/master
         }
     }
     pub async fn update_put(
@@ -873,12 +969,17 @@ pub mod config_servers {
             &operation_config.base_path, subscription_id, resource_group_name, service_name
         );
         let mut req_builder = client.put(uri_str);
+<<<<<<< HEAD
         if let Some(token_credential) = &operation_config.token_credential {
             let token_response = token_credential
                 .get_token(&operation_config.token_credential_resource)
                 .await
                 .context(update_put::GetTokenError)?;
             req_builder = req_builder.bearer_auth(token_response.token.secret());
+=======
+        if let Some(token) = &operation_config.bearer_access_token {
+            req_builder = req_builder.bearer_auth(token);
+>>>>>>> origin/master
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(config_server_resource);
@@ -935,9 +1036,12 @@ pub mod config_servers {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+<<<<<<< HEAD
             GetTokenError {
                 source: azure_core::errors::AzureError,
             },
+=======
+>>>>>>> origin/master
         }
     }
     pub async fn update_patch(
@@ -953,12 +1057,17 @@ pub mod config_servers {
             &operation_config.base_path, subscription_id, resource_group_name, service_name
         );
         let mut req_builder = client.patch(uri_str);
+<<<<<<< HEAD
         if let Some(token_credential) = &operation_config.token_credential {
             let token_response = token_credential
                 .get_token(&operation_config.token_credential_resource)
                 .await
                 .context(update_patch::GetTokenError)?;
             req_builder = req_builder.bearer_auth(token_response.token.secret());
+=======
+        if let Some(token) = &operation_config.bearer_access_token {
+            req_builder = req_builder.bearer_auth(token);
+>>>>>>> origin/master
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(config_server_resource);
@@ -1015,9 +1124,12 @@ pub mod config_servers {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+<<<<<<< HEAD
             GetTokenError {
                 source: azure_core::errors::AzureError,
             },
+=======
+>>>>>>> origin/master
         }
     }
 }
@@ -1037,12 +1149,17 @@ pub mod monitoring_settings {
             &operation_config.base_path, subscription_id, resource_group_name, service_name
         );
         let mut req_builder = client.get(uri_str);
+<<<<<<< HEAD
         if let Some(token_credential) = &operation_config.token_credential {
             let token_response = token_credential
                 .get_token(&operation_config.token_credential_resource)
                 .await
                 .context(get::GetTokenError)?;
             req_builder = req_builder.bearer_auth(token_response.token.secret());
+=======
+        if let Some(token) = &operation_config.bearer_access_token {
+            req_builder = req_builder.bearer_auth(token);
+>>>>>>> origin/master
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get::BuildRequestError)?;
@@ -1088,9 +1205,12 @@ pub mod monitoring_settings {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+<<<<<<< HEAD
             GetTokenError {
                 source: azure_core::errors::AzureError,
             },
+=======
+>>>>>>> origin/master
         }
     }
     pub async fn update_put(
@@ -1106,12 +1226,17 @@ pub mod monitoring_settings {
             &operation_config.base_path, subscription_id, resource_group_name, service_name
         );
         let mut req_builder = client.put(uri_str);
+<<<<<<< HEAD
         if let Some(token_credential) = &operation_config.token_credential {
             let token_response = token_credential
                 .get_token(&operation_config.token_credential_resource)
                 .await
                 .context(update_put::GetTokenError)?;
             req_builder = req_builder.bearer_auth(token_response.token.secret());
+=======
+        if let Some(token) = &operation_config.bearer_access_token {
+            req_builder = req_builder.bearer_auth(token);
+>>>>>>> origin/master
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(monitoring_setting_resource);
@@ -1168,9 +1293,12 @@ pub mod monitoring_settings {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+<<<<<<< HEAD
             GetTokenError {
                 source: azure_core::errors::AzureError,
             },
+=======
+>>>>>>> origin/master
         }
     }
     pub async fn update_patch(
@@ -1186,12 +1314,17 @@ pub mod monitoring_settings {
             &operation_config.base_path, subscription_id, resource_group_name, service_name
         );
         let mut req_builder = client.patch(uri_str);
+<<<<<<< HEAD
         if let Some(token_credential) = &operation_config.token_credential {
             let token_response = token_credential
                 .get_token(&operation_config.token_credential_resource)
                 .await
                 .context(update_patch::GetTokenError)?;
             req_builder = req_builder.bearer_auth(token_response.token.secret());
+=======
+        if let Some(token) = &operation_config.bearer_access_token {
+            req_builder = req_builder.bearer_auth(token);
+>>>>>>> origin/master
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(monitoring_setting_resource);
@@ -1250,9 +1383,12 @@ pub mod monitoring_settings {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+<<<<<<< HEAD
             GetTokenError {
                 source: azure_core::errors::AzureError,
             },
+=======
+>>>>>>> origin/master
         }
     }
 }
@@ -1274,12 +1410,17 @@ pub mod apps {
             &operation_config.base_path, subscription_id, resource_group_name, service_name, app_name
         );
         let mut req_builder = client.get(uri_str);
+<<<<<<< HEAD
         if let Some(token_credential) = &operation_config.token_credential {
             let token_response = token_credential
                 .get_token(&operation_config.token_credential_resource)
                 .await
                 .context(get::GetTokenError)?;
             req_builder = req_builder.bearer_auth(token_response.token.secret());
+=======
+        if let Some(token) = &operation_config.bearer_access_token {
+            req_builder = req_builder.bearer_auth(token);
+>>>>>>> origin/master
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(sync_status) = sync_status {
@@ -1328,9 +1469,12 @@ pub mod apps {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+<<<<<<< HEAD
             GetTokenError {
                 source: azure_core::errors::AzureError,
             },
+=======
+>>>>>>> origin/master
         }
     }
     pub async fn create_or_update(
@@ -1347,12 +1491,17 @@ pub mod apps {
             &operation_config.base_path, subscription_id, resource_group_name, service_name, app_name
         );
         let mut req_builder = client.put(uri_str);
+<<<<<<< HEAD
         if let Some(token_credential) = &operation_config.token_credential {
             let token_response = token_credential
                 .get_token(&operation_config.token_credential_resource)
                 .await
                 .context(create_or_update::GetTokenError)?;
             req_builder = req_builder.bearer_auth(token_response.token.secret());
+=======
+        if let Some(token) = &operation_config.bearer_access_token {
+            req_builder = req_builder.bearer_auth(token);
+>>>>>>> origin/master
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(app_resource);
@@ -1415,9 +1564,12 @@ pub mod apps {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+<<<<<<< HEAD
             GetTokenError {
                 source: azure_core::errors::AzureError,
             },
+=======
+>>>>>>> origin/master
         }
     }
     pub async fn update(
@@ -1434,12 +1586,17 @@ pub mod apps {
             &operation_config.base_path, subscription_id, resource_group_name, service_name, app_name
         );
         let mut req_builder = client.patch(uri_str);
+<<<<<<< HEAD
         if let Some(token_credential) = &operation_config.token_credential {
             let token_response = token_credential
                 .get_token(&operation_config.token_credential_resource)
                 .await
                 .context(update::GetTokenError)?;
             req_builder = req_builder.bearer_auth(token_response.token.secret());
+=======
+        if let Some(token) = &operation_config.bearer_access_token {
+            req_builder = req_builder.bearer_auth(token);
+>>>>>>> origin/master
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(app_resource);
@@ -1496,9 +1653,12 @@ pub mod apps {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+<<<<<<< HEAD
             GetTokenError {
                 source: azure_core::errors::AzureError,
             },
+=======
+>>>>>>> origin/master
         }
     }
     pub async fn delete(
@@ -1514,12 +1674,17 @@ pub mod apps {
             &operation_config.base_path, subscription_id, resource_group_name, service_name, app_name
         );
         let mut req_builder = client.delete(uri_str);
+<<<<<<< HEAD
         if let Some(token_credential) = &operation_config.token_credential {
             let token_response = token_credential
                 .get_token(&operation_config.token_credential_resource)
                 .await
                 .context(delete::GetTokenError)?;
             req_builder = req_builder.bearer_auth(token_response.token.secret());
+=======
+        if let Some(token) = &operation_config.bearer_access_token {
+            req_builder = req_builder.bearer_auth(token);
+>>>>>>> origin/master
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(delete::BuildRequestError)?;
@@ -1569,9 +1734,12 @@ pub mod apps {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+<<<<<<< HEAD
             GetTokenError {
                 source: azure_core::errors::AzureError,
             },
+=======
+>>>>>>> origin/master
         }
     }
     pub async fn list(
@@ -1586,12 +1754,17 @@ pub mod apps {
             &operation_config.base_path, subscription_id, resource_group_name, service_name
         );
         let mut req_builder = client.get(uri_str);
+<<<<<<< HEAD
         if let Some(token_credential) = &operation_config.token_credential {
             let token_response = token_credential
                 .get_token(&operation_config.token_credential_resource)
                 .await
                 .context(list::GetTokenError)?;
             req_builder = req_builder.bearer_auth(token_response.token.secret());
+=======
+        if let Some(token) = &operation_config.bearer_access_token {
+            req_builder = req_builder.bearer_auth(token);
+>>>>>>> origin/master
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list::BuildRequestError)?;
@@ -1637,9 +1810,12 @@ pub mod apps {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+<<<<<<< HEAD
             GetTokenError {
                 source: azure_core::errors::AzureError,
             },
+=======
+>>>>>>> origin/master
         }
     }
     pub async fn get_resource_upload_url(
@@ -1655,12 +1831,17 @@ pub mod apps {
             &operation_config.base_path, subscription_id, resource_group_name, service_name, app_name
         );
         let mut req_builder = client.post(uri_str);
+<<<<<<< HEAD
         if let Some(token_credential) = &operation_config.token_credential {
             let token_response = token_credential
                 .get_token(&operation_config.token_credential_resource)
                 .await
                 .context(get_resource_upload_url::GetTokenError)?;
             req_builder = req_builder.bearer_auth(token_response.token.secret());
+=======
+        if let Some(token) = &operation_config.bearer_access_token {
+            req_builder = req_builder.bearer_auth(token);
+>>>>>>> origin/master
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get_resource_upload_url::BuildRequestError)?;
@@ -1707,9 +1888,12 @@ pub mod apps {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+<<<<<<< HEAD
             GetTokenError {
                 source: azure_core::errors::AzureError,
             },
+=======
+>>>>>>> origin/master
         }
     }
     pub async fn validate_domain(
@@ -1726,12 +1910,17 @@ pub mod apps {
             &operation_config.base_path, subscription_id, resource_group_name, service_name, app_name
         );
         let mut req_builder = client.post(uri_str);
+<<<<<<< HEAD
         if let Some(token_credential) = &operation_config.token_credential {
             let token_response = token_credential
                 .get_token(&operation_config.token_credential_resource)
                 .await
                 .context(validate_domain::GetTokenError)?;
             req_builder = req_builder.bearer_auth(token_response.token.secret());
+=======
+        if let Some(token) = &operation_config.bearer_access_token {
+            req_builder = req_builder.bearer_auth(token);
+>>>>>>> origin/master
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(validate_payload);
@@ -1779,9 +1968,12 @@ pub mod apps {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+<<<<<<< HEAD
             GetTokenError {
                 source: azure_core::errors::AzureError,
             },
+=======
+>>>>>>> origin/master
         }
     }
 }
@@ -1803,12 +1995,17 @@ pub mod bindings {
             &operation_config.base_path, subscription_id, resource_group_name, service_name, app_name, binding_name
         );
         let mut req_builder = client.get(uri_str);
+<<<<<<< HEAD
         if let Some(token_credential) = &operation_config.token_credential {
             let token_response = token_credential
                 .get_token(&operation_config.token_credential_resource)
                 .await
                 .context(get::GetTokenError)?;
             req_builder = req_builder.bearer_auth(token_response.token.secret());
+=======
+        if let Some(token) = &operation_config.bearer_access_token {
+            req_builder = req_builder.bearer_auth(token);
+>>>>>>> origin/master
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get::BuildRequestError)?;
@@ -1854,9 +2051,12 @@ pub mod bindings {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+<<<<<<< HEAD
             GetTokenError {
                 source: azure_core::errors::AzureError,
             },
+=======
+>>>>>>> origin/master
         }
     }
     pub async fn create_or_update(
@@ -1874,12 +2074,17 @@ pub mod bindings {
             &operation_config.base_path, subscription_id, resource_group_name, service_name, app_name, binding_name
         );
         let mut req_builder = client.put(uri_str);
+<<<<<<< HEAD
         if let Some(token_credential) = &operation_config.token_credential {
             let token_response = token_credential
                 .get_token(&operation_config.token_credential_resource)
                 .await
                 .context(create_or_update::GetTokenError)?;
             req_builder = req_builder.bearer_auth(token_response.token.secret());
+=======
+        if let Some(token) = &operation_config.bearer_access_token {
+            req_builder = req_builder.bearer_auth(token);
+>>>>>>> origin/master
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(binding_resource);
@@ -1942,9 +2147,12 @@ pub mod bindings {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+<<<<<<< HEAD
             GetTokenError {
                 source: azure_core::errors::AzureError,
             },
+=======
+>>>>>>> origin/master
         }
     }
     pub async fn update(
@@ -1962,12 +2170,17 @@ pub mod bindings {
             &operation_config.base_path, subscription_id, resource_group_name, service_name, app_name, binding_name
         );
         let mut req_builder = client.patch(uri_str);
+<<<<<<< HEAD
         if let Some(token_credential) = &operation_config.token_credential {
             let token_response = token_credential
                 .get_token(&operation_config.token_credential_resource)
                 .await
                 .context(update::GetTokenError)?;
             req_builder = req_builder.bearer_auth(token_response.token.secret());
+=======
+        if let Some(token) = &operation_config.bearer_access_token {
+            req_builder = req_builder.bearer_auth(token);
+>>>>>>> origin/master
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(binding_resource);
@@ -2024,9 +2237,12 @@ pub mod bindings {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+<<<<<<< HEAD
             GetTokenError {
                 source: azure_core::errors::AzureError,
             },
+=======
+>>>>>>> origin/master
         }
     }
     pub async fn delete(
@@ -2043,12 +2259,17 @@ pub mod bindings {
             &operation_config.base_path, subscription_id, resource_group_name, service_name, app_name, binding_name
         );
         let mut req_builder = client.delete(uri_str);
+<<<<<<< HEAD
         if let Some(token_credential) = &operation_config.token_credential {
             let token_response = token_credential
                 .get_token(&operation_config.token_credential_resource)
                 .await
                 .context(delete::GetTokenError)?;
             req_builder = req_builder.bearer_auth(token_response.token.secret());
+=======
+        if let Some(token) = &operation_config.bearer_access_token {
+            req_builder = req_builder.bearer_auth(token);
+>>>>>>> origin/master
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(delete::BuildRequestError)?;
@@ -2098,9 +2319,12 @@ pub mod bindings {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+<<<<<<< HEAD
             GetTokenError {
                 source: azure_core::errors::AzureError,
             },
+=======
+>>>>>>> origin/master
         }
     }
     pub async fn list(
@@ -2116,12 +2340,17 @@ pub mod bindings {
             &operation_config.base_path, subscription_id, resource_group_name, service_name, app_name
         );
         let mut req_builder = client.get(uri_str);
+<<<<<<< HEAD
         if let Some(token_credential) = &operation_config.token_credential {
             let token_response = token_credential
                 .get_token(&operation_config.token_credential_resource)
                 .await
                 .context(list::GetTokenError)?;
             req_builder = req_builder.bearer_auth(token_response.token.secret());
+=======
+        if let Some(token) = &operation_config.bearer_access_token {
+            req_builder = req_builder.bearer_auth(token);
+>>>>>>> origin/master
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list::BuildRequestError)?;
@@ -2167,9 +2396,12 @@ pub mod bindings {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+<<<<<<< HEAD
             GetTokenError {
                 source: azure_core::errors::AzureError,
             },
+=======
+>>>>>>> origin/master
         }
     }
 }
@@ -2190,12 +2422,17 @@ pub mod certificates {
             &operation_config.base_path, subscription_id, resource_group_name, service_name, certificate_name
         );
         let mut req_builder = client.get(uri_str);
+<<<<<<< HEAD
         if let Some(token_credential) = &operation_config.token_credential {
             let token_response = token_credential
                 .get_token(&operation_config.token_credential_resource)
                 .await
                 .context(get::GetTokenError)?;
             req_builder = req_builder.bearer_auth(token_response.token.secret());
+=======
+        if let Some(token) = &operation_config.bearer_access_token {
+            req_builder = req_builder.bearer_auth(token);
+>>>>>>> origin/master
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get::BuildRequestError)?;
@@ -2241,9 +2478,12 @@ pub mod certificates {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+<<<<<<< HEAD
             GetTokenError {
                 source: azure_core::errors::AzureError,
             },
+=======
+>>>>>>> origin/master
         }
     }
     pub async fn create_or_update(
@@ -2260,12 +2500,17 @@ pub mod certificates {
             &operation_config.base_path, subscription_id, resource_group_name, service_name, certificate_name
         );
         let mut req_builder = client.put(uri_str);
+<<<<<<< HEAD
         if let Some(token_credential) = &operation_config.token_credential {
             let token_response = token_credential
                 .get_token(&operation_config.token_credential_resource)
                 .await
                 .context(create_or_update::GetTokenError)?;
             req_builder = req_builder.bearer_auth(token_response.token.secret());
+=======
+        if let Some(token) = &operation_config.bearer_access_token {
+            req_builder = req_builder.bearer_auth(token);
+>>>>>>> origin/master
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(certificate_resource);
@@ -2328,9 +2573,12 @@ pub mod certificates {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+<<<<<<< HEAD
             GetTokenError {
                 source: azure_core::errors::AzureError,
             },
+=======
+>>>>>>> origin/master
         }
     }
     pub async fn delete(
@@ -2346,12 +2594,17 @@ pub mod certificates {
             &operation_config.base_path, subscription_id, resource_group_name, service_name, certificate_name
         );
         let mut req_builder = client.delete(uri_str);
+<<<<<<< HEAD
         if let Some(token_credential) = &operation_config.token_credential {
             let token_response = token_credential
                 .get_token(&operation_config.token_credential_resource)
                 .await
                 .context(delete::GetTokenError)?;
             req_builder = req_builder.bearer_auth(token_response.token.secret());
+=======
+        if let Some(token) = &operation_config.bearer_access_token {
+            req_builder = req_builder.bearer_auth(token);
+>>>>>>> origin/master
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(delete::BuildRequestError)?;
@@ -2401,9 +2654,12 @@ pub mod certificates {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+<<<<<<< HEAD
             GetTokenError {
                 source: azure_core::errors::AzureError,
             },
+=======
+>>>>>>> origin/master
         }
     }
     pub async fn list(
@@ -2418,12 +2674,17 @@ pub mod certificates {
             &operation_config.base_path, subscription_id, resource_group_name, service_name
         );
         let mut req_builder = client.get(uri_str);
+<<<<<<< HEAD
         if let Some(token_credential) = &operation_config.token_credential {
             let token_response = token_credential
                 .get_token(&operation_config.token_credential_resource)
                 .await
                 .context(list::GetTokenError)?;
             req_builder = req_builder.bearer_auth(token_response.token.secret());
+=======
+        if let Some(token) = &operation_config.bearer_access_token {
+            req_builder = req_builder.bearer_auth(token);
+>>>>>>> origin/master
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list::BuildRequestError)?;
@@ -2469,9 +2730,12 @@ pub mod certificates {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+<<<<<<< HEAD
             GetTokenError {
                 source: azure_core::errors::AzureError,
             },
+=======
+>>>>>>> origin/master
         }
     }
 }
@@ -2493,12 +2757,17 @@ pub mod custom_domains {
             &operation_config.base_path, subscription_id, resource_group_name, service_name, app_name, domain_name
         );
         let mut req_builder = client.get(uri_str);
+<<<<<<< HEAD
         if let Some(token_credential) = &operation_config.token_credential {
             let token_response = token_credential
                 .get_token(&operation_config.token_credential_resource)
                 .await
                 .context(get::GetTokenError)?;
             req_builder = req_builder.bearer_auth(token_response.token.secret());
+=======
+        if let Some(token) = &operation_config.bearer_access_token {
+            req_builder = req_builder.bearer_auth(token);
+>>>>>>> origin/master
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get::BuildRequestError)?;
@@ -2544,9 +2813,12 @@ pub mod custom_domains {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+<<<<<<< HEAD
             GetTokenError {
                 source: azure_core::errors::AzureError,
             },
+=======
+>>>>>>> origin/master
         }
     }
     pub async fn create_or_update(
@@ -2564,12 +2836,17 @@ pub mod custom_domains {
             &operation_config.base_path, subscription_id, resource_group_name, service_name, app_name, domain_name
         );
         let mut req_builder = client.put(uri_str);
+<<<<<<< HEAD
         if let Some(token_credential) = &operation_config.token_credential {
             let token_response = token_credential
                 .get_token(&operation_config.token_credential_resource)
                 .await
                 .context(create_or_update::GetTokenError)?;
             req_builder = req_builder.bearer_auth(token_response.token.secret());
+=======
+        if let Some(token) = &operation_config.bearer_access_token {
+            req_builder = req_builder.bearer_auth(token);
+>>>>>>> origin/master
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(domain_resource);
@@ -2632,9 +2909,12 @@ pub mod custom_domains {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+<<<<<<< HEAD
             GetTokenError {
                 source: azure_core::errors::AzureError,
             },
+=======
+>>>>>>> origin/master
         }
     }
     pub async fn update(
@@ -2652,12 +2932,17 @@ pub mod custom_domains {
             &operation_config.base_path, subscription_id, resource_group_name, service_name, app_name, domain_name
         );
         let mut req_builder = client.patch(uri_str);
+<<<<<<< HEAD
         if let Some(token_credential) = &operation_config.token_credential {
             let token_response = token_credential
                 .get_token(&operation_config.token_credential_resource)
                 .await
                 .context(update::GetTokenError)?;
             req_builder = req_builder.bearer_auth(token_response.token.secret());
+=======
+        if let Some(token) = &operation_config.bearer_access_token {
+            req_builder = req_builder.bearer_auth(token);
+>>>>>>> origin/master
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(domain_resource);
@@ -2714,9 +2999,12 @@ pub mod custom_domains {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+<<<<<<< HEAD
             GetTokenError {
                 source: azure_core::errors::AzureError,
             },
+=======
+>>>>>>> origin/master
         }
     }
     pub async fn delete(
@@ -2733,12 +3021,17 @@ pub mod custom_domains {
             &operation_config.base_path, subscription_id, resource_group_name, service_name, app_name, domain_name
         );
         let mut req_builder = client.delete(uri_str);
+<<<<<<< HEAD
         if let Some(token_credential) = &operation_config.token_credential {
             let token_response = token_credential
                 .get_token(&operation_config.token_credential_resource)
                 .await
                 .context(delete::GetTokenError)?;
             req_builder = req_builder.bearer_auth(token_response.token.secret());
+=======
+        if let Some(token) = &operation_config.bearer_access_token {
+            req_builder = req_builder.bearer_auth(token);
+>>>>>>> origin/master
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(delete::BuildRequestError)?;
@@ -2788,9 +3081,12 @@ pub mod custom_domains {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+<<<<<<< HEAD
             GetTokenError {
                 source: azure_core::errors::AzureError,
             },
+=======
+>>>>>>> origin/master
         }
     }
     pub async fn list(
@@ -2806,12 +3102,17 @@ pub mod custom_domains {
             &operation_config.base_path, subscription_id, resource_group_name, service_name, app_name
         );
         let mut req_builder = client.get(uri_str);
+<<<<<<< HEAD
         if let Some(token_credential) = &operation_config.token_credential {
             let token_response = token_credential
                 .get_token(&operation_config.token_credential_resource)
                 .await
                 .context(list::GetTokenError)?;
             req_builder = req_builder.bearer_auth(token_response.token.secret());
+=======
+        if let Some(token) = &operation_config.bearer_access_token {
+            req_builder = req_builder.bearer_auth(token);
+>>>>>>> origin/master
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list::BuildRequestError)?;
@@ -2857,9 +3158,12 @@ pub mod custom_domains {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+<<<<<<< HEAD
             GetTokenError {
                 source: azure_core::errors::AzureError,
             },
+=======
+>>>>>>> origin/master
         }
     }
 }
@@ -2881,12 +3185,17 @@ pub mod deployments {
             &operation_config.base_path, subscription_id, resource_group_name, service_name, app_name, deployment_name
         );
         let mut req_builder = client.get(uri_str);
+<<<<<<< HEAD
         if let Some(token_credential) = &operation_config.token_credential {
             let token_response = token_credential
                 .get_token(&operation_config.token_credential_resource)
                 .await
                 .context(get::GetTokenError)?;
             req_builder = req_builder.bearer_auth(token_response.token.secret());
+=======
+        if let Some(token) = &operation_config.bearer_access_token {
+            req_builder = req_builder.bearer_auth(token);
+>>>>>>> origin/master
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get::BuildRequestError)?;
@@ -2932,9 +3241,12 @@ pub mod deployments {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+<<<<<<< HEAD
             GetTokenError {
                 source: azure_core::errors::AzureError,
             },
+=======
+>>>>>>> origin/master
         }
     }
     pub async fn create_or_update(
@@ -2952,12 +3264,17 @@ pub mod deployments {
             &operation_config.base_path, subscription_id, resource_group_name, service_name, app_name, deployment_name
         );
         let mut req_builder = client.put(uri_str);
+<<<<<<< HEAD
         if let Some(token_credential) = &operation_config.token_credential {
             let token_response = token_credential
                 .get_token(&operation_config.token_credential_resource)
                 .await
                 .context(create_or_update::GetTokenError)?;
             req_builder = req_builder.bearer_auth(token_response.token.secret());
+=======
+        if let Some(token) = &operation_config.bearer_access_token {
+            req_builder = req_builder.bearer_auth(token);
+>>>>>>> origin/master
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(deployment_resource);
@@ -3020,9 +3337,12 @@ pub mod deployments {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+<<<<<<< HEAD
             GetTokenError {
                 source: azure_core::errors::AzureError,
             },
+=======
+>>>>>>> origin/master
         }
     }
     pub async fn update(
@@ -3040,12 +3360,17 @@ pub mod deployments {
             &operation_config.base_path, subscription_id, resource_group_name, service_name, app_name, deployment_name
         );
         let mut req_builder = client.patch(uri_str);
+<<<<<<< HEAD
         if let Some(token_credential) = &operation_config.token_credential {
             let token_response = token_credential
                 .get_token(&operation_config.token_credential_resource)
                 .await
                 .context(update::GetTokenError)?;
             req_builder = req_builder.bearer_auth(token_response.token.secret());
+=======
+        if let Some(token) = &operation_config.bearer_access_token {
+            req_builder = req_builder.bearer_auth(token);
+>>>>>>> origin/master
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(deployment_resource);
@@ -3102,9 +3427,12 @@ pub mod deployments {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+<<<<<<< HEAD
             GetTokenError {
                 source: azure_core::errors::AzureError,
             },
+=======
+>>>>>>> origin/master
         }
     }
     pub async fn delete(
@@ -3121,12 +3449,17 @@ pub mod deployments {
             &operation_config.base_path, subscription_id, resource_group_name, service_name, app_name, deployment_name
         );
         let mut req_builder = client.delete(uri_str);
+<<<<<<< HEAD
         if let Some(token_credential) = &operation_config.token_credential {
             let token_response = token_credential
                 .get_token(&operation_config.token_credential_resource)
                 .await
                 .context(delete::GetTokenError)?;
             req_builder = req_builder.bearer_auth(token_response.token.secret());
+=======
+        if let Some(token) = &operation_config.bearer_access_token {
+            req_builder = req_builder.bearer_auth(token);
+>>>>>>> origin/master
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(delete::BuildRequestError)?;
@@ -3176,9 +3509,12 @@ pub mod deployments {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+<<<<<<< HEAD
             GetTokenError {
                 source: azure_core::errors::AzureError,
             },
+=======
+>>>>>>> origin/master
         }
     }
     pub async fn list(
@@ -3195,12 +3531,17 @@ pub mod deployments {
             &operation_config.base_path, subscription_id, resource_group_name, service_name, app_name
         );
         let mut req_builder = client.get(uri_str);
+<<<<<<< HEAD
         if let Some(token_credential) = &operation_config.token_credential {
             let token_response = token_credential
                 .get_token(&operation_config.token_credential_resource)
                 .await
                 .context(list::GetTokenError)?;
             req_builder = req_builder.bearer_auth(token_response.token.secret());
+=======
+        if let Some(token) = &operation_config.bearer_access_token {
+            req_builder = req_builder.bearer_auth(token);
+>>>>>>> origin/master
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         for value in version {
@@ -3249,9 +3590,12 @@ pub mod deployments {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+<<<<<<< HEAD
             GetTokenError {
                 source: azure_core::errors::AzureError,
             },
+=======
+>>>>>>> origin/master
         }
     }
     pub async fn list_for_cluster(
@@ -3267,12 +3611,17 @@ pub mod deployments {
             &operation_config.base_path, subscription_id, resource_group_name, service_name
         );
         let mut req_builder = client.get(uri_str);
+<<<<<<< HEAD
         if let Some(token_credential) = &operation_config.token_credential {
             let token_response = token_credential
                 .get_token(&operation_config.token_credential_resource)
                 .await
                 .context(list_for_cluster::GetTokenError)?;
             req_builder = req_builder.bearer_auth(token_response.token.secret());
+=======
+        if let Some(token) = &operation_config.bearer_access_token {
+            req_builder = req_builder.bearer_auth(token);
+>>>>>>> origin/master
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         for value in version {
@@ -3322,9 +3671,12 @@ pub mod deployments {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+<<<<<<< HEAD
             GetTokenError {
                 source: azure_core::errors::AzureError,
             },
+=======
+>>>>>>> origin/master
         }
     }
     pub async fn start(
@@ -3341,12 +3693,17 @@ pub mod deployments {
             &operation_config.base_path, subscription_id, resource_group_name, service_name, app_name, deployment_name
         );
         let mut req_builder = client.post(uri_str);
+<<<<<<< HEAD
         if let Some(token_credential) = &operation_config.token_credential {
             let token_response = token_credential
                 .get_token(&operation_config.token_credential_resource)
                 .await
                 .context(start::GetTokenError)?;
             req_builder = req_builder.bearer_auth(token_response.token.secret());
+=======
+        if let Some(token) = &operation_config.bearer_access_token {
+            req_builder = req_builder.bearer_auth(token);
+>>>>>>> origin/master
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(start::BuildRequestError)?;
@@ -3394,9 +3751,12 @@ pub mod deployments {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+<<<<<<< HEAD
             GetTokenError {
                 source: azure_core::errors::AzureError,
             },
+=======
+>>>>>>> origin/master
         }
     }
     pub async fn stop(
@@ -3413,12 +3773,17 @@ pub mod deployments {
             &operation_config.base_path, subscription_id, resource_group_name, service_name, app_name, deployment_name
         );
         let mut req_builder = client.post(uri_str);
+<<<<<<< HEAD
         if let Some(token_credential) = &operation_config.token_credential {
             let token_response = token_credential
                 .get_token(&operation_config.token_credential_resource)
                 .await
                 .context(stop::GetTokenError)?;
             req_builder = req_builder.bearer_auth(token_response.token.secret());
+=======
+        if let Some(token) = &operation_config.bearer_access_token {
+            req_builder = req_builder.bearer_auth(token);
+>>>>>>> origin/master
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(stop::BuildRequestError)?;
@@ -3466,9 +3831,12 @@ pub mod deployments {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+<<<<<<< HEAD
             GetTokenError {
                 source: azure_core::errors::AzureError,
             },
+=======
+>>>>>>> origin/master
         }
     }
     pub async fn restart(
@@ -3485,12 +3853,17 @@ pub mod deployments {
             &operation_config.base_path, subscription_id, resource_group_name, service_name, app_name, deployment_name
         );
         let mut req_builder = client.post(uri_str);
+<<<<<<< HEAD
         if let Some(token_credential) = &operation_config.token_credential {
             let token_response = token_credential
                 .get_token(&operation_config.token_credential_resource)
                 .await
                 .context(restart::GetTokenError)?;
             req_builder = req_builder.bearer_auth(token_response.token.secret());
+=======
+        if let Some(token) = &operation_config.bearer_access_token {
+            req_builder = req_builder.bearer_auth(token);
+>>>>>>> origin/master
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(restart::BuildRequestError)?;
@@ -3538,9 +3911,12 @@ pub mod deployments {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+<<<<<<< HEAD
             GetTokenError {
                 source: azure_core::errors::AzureError,
             },
+=======
+>>>>>>> origin/master
         }
     }
     pub async fn get_log_file_url(
@@ -3557,12 +3933,17 @@ pub mod deployments {
             &operation_config.base_path, subscription_id, resource_group_name, service_name, app_name, deployment_name
         );
         let mut req_builder = client.post(uri_str);
+<<<<<<< HEAD
         if let Some(token_credential) = &operation_config.token_credential {
             let token_response = token_credential
                 .get_token(&operation_config.token_credential_resource)
                 .await
                 .context(get_log_file_url::GetTokenError)?;
             req_builder = req_builder.bearer_auth(token_response.token.secret());
+=======
+        if let Some(token) = &operation_config.bearer_access_token {
+            req_builder = req_builder.bearer_auth(token);
+>>>>>>> origin/master
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get_log_file_url::BuildRequestError)?;
@@ -3614,9 +3995,12 @@ pub mod deployments {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+<<<<<<< HEAD
             GetTokenError {
                 source: azure_core::errors::AzureError,
             },
+=======
+>>>>>>> origin/master
         }
     }
 }
@@ -3628,12 +4012,17 @@ pub mod operations {
         let client = &operation_config.client;
         let uri_str = &format!("{}/providers/Microsoft.AppPlatform/operations", &operation_config.base_path,);
         let mut req_builder = client.get(uri_str);
+<<<<<<< HEAD
         if let Some(token_credential) = &operation_config.token_credential {
             let token_response = token_credential
                 .get_token(&operation_config.token_credential_resource)
                 .await
                 .context(list::GetTokenError)?;
             req_builder = req_builder.bearer_auth(token_response.token.secret());
+=======
+        if let Some(token) = &operation_config.bearer_access_token {
+            req_builder = req_builder.bearer_auth(token);
+>>>>>>> origin/master
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list::BuildRequestError)?;
@@ -3679,9 +4068,12 @@ pub mod operations {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+<<<<<<< HEAD
             GetTokenError {
                 source: azure_core::errors::AzureError,
             },
+=======
+>>>>>>> origin/master
         }
     }
 }
@@ -3695,12 +4087,17 @@ pub mod runtime_versions {
         let client = &operation_config.client;
         let uri_str = &format!("{}/providers/Microsoft.AppPlatform/runtimeVersions", &operation_config.base_path,);
         let mut req_builder = client.get(uri_str);
+<<<<<<< HEAD
         if let Some(token_credential) = &operation_config.token_credential {
             let token_response = token_credential
                 .get_token(&operation_config.token_credential_resource)
                 .await
                 .context(list_runtime_versions::GetTokenError)?;
             req_builder = req_builder.bearer_auth(token_response.token.secret());
+=======
+        if let Some(token) = &operation_config.bearer_access_token {
+            req_builder = req_builder.bearer_auth(token);
+>>>>>>> origin/master
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_runtime_versions::BuildRequestError)?;
@@ -3747,9 +4144,12 @@ pub mod runtime_versions {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+<<<<<<< HEAD
             GetTokenError {
                 source: azure_core::errors::AzureError,
             },
+=======
+>>>>>>> origin/master
         }
     }
 }
@@ -3767,12 +4167,17 @@ pub mod skus {
             &operation_config.base_path, subscription_id
         );
         let mut req_builder = client.get(uri_str);
+<<<<<<< HEAD
         if let Some(token_credential) = &operation_config.token_credential {
             let token_response = token_credential
                 .get_token(&operation_config.token_credential_resource)
                 .await
                 .context(list::GetTokenError)?;
             req_builder = req_builder.bearer_auth(token_response.token.secret());
+=======
+        if let Some(token) = &operation_config.bearer_access_token {
+            req_builder = req_builder.bearer_auth(token);
+>>>>>>> origin/master
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list::BuildRequestError)?;
@@ -3818,9 +4223,12 @@ pub mod skus {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+<<<<<<< HEAD
             GetTokenError {
                 source: azure_core::errors::AzureError,
             },
+=======
+>>>>>>> origin/master
         }
     }
 }

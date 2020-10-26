@@ -34,7 +34,11 @@ pub struct ConfigurationStoreProperties {
     #[serde(rename = "publicNetworkAccess", skip_serializing_if = "Option::is_none")]
     pub public_network_access: Option<configuration_store_properties::PublicNetworkAccess>,
 }
+<<<<<<< HEAD
 pub mod configuration_store_properties {
+=======
+mod configuration_store_properties {
+>>>>>>> origin/master
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
@@ -96,7 +100,11 @@ pub struct CheckNameAvailabilityParameters {
     #[serde(rename = "type")]
     pub type_: check_name_availability_parameters::Type,
 }
+<<<<<<< HEAD
 pub mod check_name_availability_parameters {
+=======
+mod check_name_availability_parameters {
+>>>>>>> origin/master
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
@@ -266,7 +274,11 @@ pub struct ResourceIdentity {
     #[serde(rename = "tenantId", skip_serializing)]
     pub tenant_id: Option<String>,
 }
+<<<<<<< HEAD
 pub mod resource_identity {
+=======
+mod resource_identity {
+>>>>>>> origin/master
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
@@ -339,7 +351,11 @@ pub struct PrivateEndpointConnectionProperties {
     #[serde(rename = "privateLinkServiceConnectionState")]
     pub private_link_service_connection_state: PrivateLinkServiceConnectionState,
 }
+<<<<<<< HEAD
 pub mod private_endpoint_connection_properties {
+=======
+mod private_endpoint_connection_properties {
+>>>>>>> origin/master
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
@@ -365,7 +381,11 @@ pub struct PrivateLinkServiceConnectionState {
     #[serde(rename = "actionsRequired", skip_serializing)]
     pub actions_required: Option<private_link_service_connection_state::ActionsRequired>,
 }
+<<<<<<< HEAD
 pub mod private_link_service_connection_state {
+=======
+mod private_link_service_connection_state {
+>>>>>>> origin/master
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
