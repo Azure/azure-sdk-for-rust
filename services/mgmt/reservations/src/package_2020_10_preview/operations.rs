@@ -356,7 +356,7 @@ pub mod quota_request_status {
         provider_id: &str,
         location: &str,
         filter: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
         skiptoken: Option<&str>,
     ) -> std::result::Result<QuotaRequestDetailsList, list::Error> {
         let client = &operation_config.client;

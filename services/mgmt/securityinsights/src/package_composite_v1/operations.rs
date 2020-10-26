@@ -1218,7 +1218,7 @@ pub mod incidents {
         workspace_name: &str,
         filter: Option<&str>,
         orderby: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
         skip_token: Option<&str>,
     ) -> std::result::Result<IncidentList, list::Error> {
         let client = &operation_config.client;
@@ -1489,7 +1489,7 @@ pub mod incident_comments {
         incident_id: &str,
         filter: Option<&str>,
         orderby: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
         skip_token: Option<&str>,
     ) -> std::result::Result<IncidentCommentList, list_by_incident::Error> {
         let client = &operation_config.client;

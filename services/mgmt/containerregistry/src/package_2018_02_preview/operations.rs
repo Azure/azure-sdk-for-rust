@@ -1419,7 +1419,7 @@ pub mod builds {
         resource_group_name: &str,
         registry_name: &str,
         filter: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
         skip_token: Option<&str>,
     ) -> std::result::Result<BuildListResult, list::Error> {
         let client = &operation_config.client;

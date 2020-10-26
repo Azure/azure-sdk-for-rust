@@ -439,9 +439,9 @@ pub mod hyper_v_machines {
         resource_group_name: &str,
         site_name: &str,
         filter: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
         continuation_token: Option<&str>,
-        total_record_count: Option<i64>,
+        total_record_count: Option<i32>,
     ) -> std::result::Result<HyperVMachineCollection, get_all_machines_in_site::Error> {
         let client = &operation_config.client;
         let uri_str = &format!(
@@ -1129,9 +1129,9 @@ pub mod machines {
         resource_group_name: &str,
         site_name: &str,
         filter: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
         continuation_token: Option<&str>,
-        total_record_count: Option<i64>,
+        total_record_count: Option<i32>,
     ) -> std::result::Result<VMwareMachineCollection, get_all_machines_in_site::Error> {
         let client = &operation_config.client;
         let uri_str = &format!(

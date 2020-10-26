@@ -158,7 +158,7 @@ pub mod vaults {
     pub async fn list_by_resource_group(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
-        top: Option<i64>,
+        top: Option<i32>,
         subscription_id: &str,
     ) -> std::result::Result<VaultListResult, list_by_resource_group::Error> {
         let client = &operation_config.client;
@@ -206,7 +206,7 @@ pub mod vaults {
     pub async fn list(
         operation_config: &crate::OperationConfig,
         filter: &str,
-        top: Option<i64>,
+        top: Option<i32>,
         subscription_id: &str,
     ) -> std::result::Result<ResourceListResult, list::Error> {
         let client = &operation_config.client;

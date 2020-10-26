@@ -378,7 +378,7 @@ pub mod clusters {
         operation_config: &crate::OperationConfig,
         filter: Option<&str>,
         select: Option<&str>,
-        maxresults: Option<i64>,
+        maxresults: Option<i32>,
         subscription_id: &str,
     ) -> std::result::Result<ClusterListResult, list::Error> {
         let client = &operation_config.client;
@@ -450,7 +450,7 @@ pub mod clusters {
         resource_group_name: &str,
         filter: Option<&str>,
         select: Option<&str>,
-        maxresults: Option<i64>,
+        maxresults: Option<i32>,
         subscription_id: &str,
     ) -> std::result::Result<ClusterListResult, list_by_resource_group::Error> {
         let client = &operation_config.client;
@@ -851,7 +851,7 @@ pub mod jobs {
         operation_config: &crate::OperationConfig,
         filter: Option<&str>,
         select: Option<&str>,
-        maxresults: Option<i64>,
+        maxresults: Option<i32>,
         subscription_id: &str,
     ) -> std::result::Result<JobListResult, list::Error> {
         let client = &operation_config.client;
@@ -923,7 +923,7 @@ pub mod jobs {
         resource_group_name: &str,
         filter: Option<&str>,
         select: Option<&str>,
-        maxresults: Option<i64>,
+        maxresults: Option<i32>,
         subscription_id: &str,
     ) -> std::result::Result<JobListResult, list_by_resource_group::Error> {
         let client = &operation_config.client;
@@ -995,8 +995,8 @@ pub mod jobs {
         resource_group_name: &str,
         job_name: &str,
         outputdirectoryid: &str,
-        linkexpiryinminutes: Option<i64>,
-        maxresults: Option<i64>,
+        linkexpiryinminutes: Option<i32>,
+        maxresults: Option<i32>,
         subscription_id: &str,
     ) -> std::result::Result<FileListResult, list_output_files::Error> {
         let client = &operation_config.client;
@@ -1265,7 +1265,7 @@ pub mod file_servers {
         operation_config: &crate::OperationConfig,
         filter: Option<&str>,
         select: Option<&str>,
-        maxresults: Option<i64>,
+        maxresults: Option<i32>,
         subscription_id: &str,
     ) -> std::result::Result<FileServerListResult, list::Error> {
         let client = &operation_config.client;
@@ -1337,7 +1337,7 @@ pub mod file_servers {
         resource_group_name: &str,
         filter: Option<&str>,
         select: Option<&str>,
-        maxresults: Option<i64>,
+        maxresults: Option<i32>,
         subscription_id: &str,
     ) -> std::result::Result<FileServerListResult, list_by_resource_group::Error> {
         let client = &operation_config.client;

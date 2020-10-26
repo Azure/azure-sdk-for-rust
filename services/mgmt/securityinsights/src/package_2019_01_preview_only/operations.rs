@@ -750,7 +750,7 @@ pub mod cases {
         workspace_name: &str,
         filter: Option<&str>,
         orderby: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
         skip_token: Option<&str>,
     ) -> std::result::Result<CaseList, list::Error> {
         let client = &operation_config.client;
@@ -1122,7 +1122,7 @@ pub mod comments {
         case_id: &str,
         filter: Option<&str>,
         orderby: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
         skip_token: Option<&str>,
     ) -> std::result::Result<CaseCommentList, list_by_case::Error> {
         let client = &operation_config.client;
@@ -1573,7 +1573,7 @@ pub mod case_relations {
         case_id: &str,
         filter: Option<&str>,
         orderby: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
         skip_token: Option<&str>,
     ) -> std::result::Result<CaseRelationList, list::Error> {
         let client = &operation_config.client;
@@ -1888,7 +1888,7 @@ pub mod bookmark_relations {
         bookmark_id: &str,
         filter: Option<&str>,
         orderby: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
         skip_token: Option<&str>,
     ) -> std::result::Result<RelationList, list::Error> {
         let client = &operation_config.client;
@@ -2805,7 +2805,7 @@ pub mod entities_relations {
         entity_id: &str,
         filter: Option<&str>,
         orderby: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
         skip_token: Option<&str>,
     ) -> std::result::Result<RelationList, list::Error> {
         let client = &operation_config.client;
@@ -3647,7 +3647,7 @@ pub mod incidents {
         workspace_name: &str,
         filter: Option<&str>,
         orderby: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
         skip_token: Option<&str>,
     ) -> std::result::Result<IncidentList, list::Error> {
         let client = &operation_config.client;
@@ -4155,7 +4155,7 @@ pub mod incident_comments {
         incident_id: &str,
         filter: Option<&str>,
         orderby: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
         skip_token: Option<&str>,
     ) -> std::result::Result<IncidentCommentList, list_by_incident::Error> {
         let client = &operation_config.client;
@@ -4368,7 +4368,7 @@ pub mod incident_relations {
         incident_id: &str,
         filter: Option<&str>,
         orderby: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
         skip_token: Option<&str>,
     ) -> std::result::Result<RelationList, list::Error> {
         let client = &operation_config.client;
@@ -5071,7 +5071,7 @@ pub mod threat_intelligence_indicators {
         operational_insights_resource_provider: &str,
         workspace_name: &str,
         filter: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
         skip_token: Option<&str>,
         orderby: Option<&str>,
     ) -> std::result::Result<ThreatIntelligenceResourceList, list::Error> {

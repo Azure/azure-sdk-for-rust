@@ -2780,7 +2780,7 @@ pub mod invoices {
     pub async fn download_multiple_billing_profile_invoices(
         operation_config: &crate::OperationConfig,
         billing_account_name: &str,
-        download_urls: &Vec<String>,
+        download_urls: &Vec<&str>,
     ) -> std::result::Result<download_multiple_billing_profile_invoices::Response, download_multiple_billing_profile_invoices::Error> {
         let client = &operation_config.client;
         let uri_str = &format!(
@@ -3074,7 +3074,7 @@ pub mod invoices {
     pub async fn download_multiple_billing_subscription_invoices(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-        download_urls: &Vec<String>,
+        download_urls: &Vec<&str>,
     ) -> std::result::Result<
         download_multiple_billing_subscription_invoices::Response,
         download_multiple_billing_subscription_invoices::Error,
