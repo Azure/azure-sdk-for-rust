@@ -122,11 +122,7 @@ pub struct ErrorResponse {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub error: Option<error_response::Error>,
 }
-<<<<<<< HEAD
 pub mod error_response {
-=======
-mod error_response {
->>>>>>> origin/master
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Error {
