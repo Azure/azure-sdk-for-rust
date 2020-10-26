@@ -13,7 +13,7 @@ pub struct ClusterProperties {
     #[serde(rename = "keyVaultProperties", skip_serializing_if = "Option::is_none")]
     pub key_vault_properties: Option<KeyVaultProperties>,
 }
-mod cluster_properties {
+pub mod cluster_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
@@ -87,7 +87,7 @@ pub struct Sku {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<sku::Name>,
 }
-mod sku {
+pub mod sku {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Name {
@@ -103,7 +103,7 @@ pub struct Identity {
     #[serde(rename = "type")]
     pub type_: identity::Type,
 }
-mod identity {
+pub mod identity {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
@@ -189,7 +189,7 @@ pub struct Destination {
     #[serde(rename = "metaData", skip_serializing_if = "Option::is_none")]
     pub meta_data: Option<DestinationMetaData>,
 }
-mod destination {
+pub mod destination {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
@@ -209,7 +209,7 @@ pub struct LinkedStorageAccountsProperties {
     #[serde(rename = "storageAccountIds", skip_serializing_if = "Vec::is_empty")]
     pub storage_account_ids: Vec<String>,
 }
-mod linked_storage_accounts_properties {
+pub mod linked_storage_accounts_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum DataSourceType {

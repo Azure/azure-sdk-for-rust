@@ -26,7 +26,7 @@ pub struct ContainerProperties {
     #[serde(rename = "readinessProbe", skip_serializing_if = "Option::is_none")]
     pub readiness_probe: Option<ContainerProbe>,
 }
-mod container_properties {
+pub mod container_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct InstanceView {
@@ -96,7 +96,7 @@ pub struct GpuResource {
     pub count: i32,
     pub sku: gpu_resource::Sku,
 }
-mod gpu_resource {
+pub mod gpu_resource {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Sku {
@@ -161,7 +161,7 @@ pub struct ContainerHttpGet {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub scheme: Option<container_http_get::Scheme>,
 }
-mod container_http_get {
+pub mod container_http_get {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Scheme {
@@ -206,7 +206,7 @@ pub struct ContainerGroupIdentity {
     #[serde(rename = "userAssignedIdentities", skip_serializing_if = "Option::is_none")]
     pub user_assigned_identities: Option<serde_json::Value>,
 }
-mod container_group_identity {
+pub mod container_group_identity {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
@@ -240,7 +240,7 @@ pub struct LogAnalytics {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub metadata: Option<serde_json::Value>,
 }
-mod log_analytics {
+pub mod log_analytics {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum LogType {
@@ -264,7 +264,7 @@ pub struct IpAddress {
     #[serde(skip_serializing)]
     pub fqdn: Option<String>,
 }
-mod ip_address {
+pub mod ip_address {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
@@ -278,7 +278,7 @@ pub struct Port {
     pub protocol: Option<port::Protocol>,
     pub port: i32,
 }
-mod port {
+pub mod port {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Protocol {
@@ -294,7 +294,7 @@ pub struct ContainerPort {
     pub protocol: Option<container_port::Protocol>,
     pub port: i32,
 }
-mod container_port {
+pub mod container_port {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Protocol {
@@ -328,7 +328,7 @@ pub struct Operation {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub origin: Option<operation::Origin>,
 }
-mod operation {
+pub mod operation {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Display {
@@ -363,7 +363,7 @@ pub struct Usage {
     #[serde(skip_serializing)]
     pub name: Option<usage::Name>,
 }
-mod usage {
+pub mod usage {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Name {
@@ -392,7 +392,7 @@ pub struct ContainerExecRequest {
     #[serde(rename = "terminalSize", skip_serializing_if = "Option::is_none")]
     pub terminal_size: Option<container_exec_request::TerminalSize>,
 }
-mod container_exec_request {
+pub mod container_exec_request {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct TerminalSize {
@@ -468,7 +468,7 @@ pub struct Capabilities {
     #[serde(skip_serializing)]
     pub capabilities: Option<capabilities::Capabilities>,
 }
-mod capabilities {
+pub mod capabilities {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Capabilities {

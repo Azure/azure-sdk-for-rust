@@ -16,7 +16,7 @@ pub struct ConsoleProperties {
     pub provisioning_state: console_properties::ProvisioningState,
     pub uri: String,
 }
-mod console_properties {
+pub mod console_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum OsType {
@@ -45,7 +45,7 @@ pub struct ConsoleCreateProperties {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub uri: Option<String>,
 }
-mod console_create_properties {
+pub mod console_create_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum OsType {
@@ -103,7 +103,7 @@ pub struct UserProperties {
     #[serde(rename = "preferredShellType")]
     pub preferred_shell_type: user_properties::PreferredShellType,
 }
-mod user_properties {
+pub mod user_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum PreferredOsType {
@@ -136,7 +136,7 @@ pub struct TerminalSettings {
     #[serde(rename = "fontStyle", skip_serializing_if = "Option::is_none")]
     pub font_style: Option<terminal_settings::FontStyle>,
 }
-mod terminal_settings {
+pub mod terminal_settings {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum FontSize {

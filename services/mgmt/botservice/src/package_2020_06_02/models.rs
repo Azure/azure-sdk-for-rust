@@ -27,7 +27,7 @@ pub struct Sku {
     #[serde(skip_serializing)]
     pub tier: Option<sku::Tier>,
 }
-mod sku {
+pub mod sku {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Tier {
@@ -413,7 +413,7 @@ pub struct SiteInfo {
     pub site_name: String,
     pub key: site_info::Key,
 }
-mod site_info {
+pub mod site_info {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Key {

@@ -37,7 +37,7 @@ pub struct ServerProperties {
     #[serde(rename = "replicaCapacity", skip_serializing_if = "Option::is_none")]
     pub replica_capacity: Option<i32>,
 }
-mod server_properties {
+pub mod server_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum UserVisibleState {
@@ -57,7 +57,7 @@ pub struct StorageProfile {
     #[serde(rename = "storageAutogrow", skip_serializing_if = "Option::is_none")]
     pub storage_autogrow: Option<storage_profile::StorageAutogrow>,
 }
-mod storage_profile {
+pub mod storage_profile {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum GeoRedundantBackup {
@@ -81,7 +81,7 @@ pub struct ServerPropertiesForCreate {
     #[serde(rename = "createMode")]
     pub create_mode: server_properties_for_create::CreateMode,
 }
-mod server_properties_for_create {
+pub mod server_properties_for_create {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum CreateMode {
@@ -135,7 +135,7 @@ pub struct Sku {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub family: Option<String>,
 }
-mod sku {
+pub mod sku {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Tier {
@@ -153,7 +153,7 @@ pub struct ResourceIdentity {
     #[serde(rename = "tenantId", skip_serializing)]
     pub tenant_id: Option<String>,
 }
-mod resource_identity {
+pub mod resource_identity {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
@@ -189,7 +189,7 @@ pub struct ServerUpdateParameters {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
-mod server_update_parameters {
+pub mod server_update_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Properties {
@@ -237,7 +237,7 @@ pub struct VirtualNetworkRuleProperties {
     #[serde(skip_serializing)]
     pub state: Option<virtual_network_rule_properties::State>,
 }
-mod virtual_network_rule_properties {
+pub mod virtual_network_rule_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum State {
@@ -330,7 +330,7 @@ pub struct Operation {
     #[serde(skip_serializing)]
     pub properties: Option<serde_json::Value>,
 }
-mod operation {
+pub mod operation {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Origin {
@@ -435,7 +435,7 @@ pub struct SecurityAlertPolicyProperties {
     #[serde(rename = "retentionDays", skip_serializing_if = "Option::is_none")]
     pub retention_days: Option<i32>,
 }
-mod security_alert_policy_properties {
+pub mod security_alert_policy_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum State {

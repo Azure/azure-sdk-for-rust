@@ -13,8 +13,12 @@ pub mod operations {
         let client = &operation_config.client;
         let uri_str = &format!("{}/providers/Microsoft.SecurityInsights/operations", &operation_config.base_path,);
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list::BuildRequestError)?;
@@ -43,6 +47,7 @@ pub mod operations {
             ExecuteRequestError { source: reqwest::Error },
             ResponseBytesError { source: reqwest::Error },
             DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            GetTokenError { source: azure_core::errors::AzureError },
         }
     }
 }
@@ -63,8 +68,12 @@ pub mod alert_rules {
             &operation_config.base_path, subscription_id, resource_group_name, operational_insights_resource_provider, workspace_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list::BuildRequestError)?;
@@ -110,6 +119,9 @@ pub mod alert_rules {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn get(
@@ -131,8 +143,12 @@ pub mod alert_rules {
             rule_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(get::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get::BuildRequestError)?;
@@ -178,6 +194,9 @@ pub mod alert_rules {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn create_or_update(
@@ -200,8 +219,12 @@ pub mod alert_rules {
             rule_id
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(create_or_update::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(alert_rule);
@@ -258,6 +281,9 @@ pub mod alert_rules {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn delete(
@@ -279,8 +305,12 @@ pub mod alert_rules {
             rule_id
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(delete::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(delete::BuildRequestError)?;
@@ -328,6 +358,9 @@ pub mod alert_rules {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn get_action(
@@ -342,8 +375,12 @@ pub mod alert_rules {
         let client = &operation_config.client;
         let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/alertRules/{}/actions/{}" , & operation_config . base_path , subscription_id , resource_group_name , operational_insights_resource_provider , workspace_name , rule_id , action_id) ;
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(get_action::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get_action::BuildRequestError)?;
@@ -389,6 +426,9 @@ pub mod alert_rules {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn create_or_update_action(
@@ -404,8 +444,12 @@ pub mod alert_rules {
         let client = &operation_config.client;
         let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/alertRules/{}/actions/{}" , & operation_config . base_path , subscription_id , resource_group_name , operational_insights_resource_provider , workspace_name , rule_id , action_id) ;
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(create_or_update_action::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(action);
@@ -464,6 +508,9 @@ pub mod alert_rules {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn delete_action(
@@ -478,8 +525,12 @@ pub mod alert_rules {
         let client = &operation_config.client;
         let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/alertRules/{}/actions/{}" , & operation_config . base_path , subscription_id , resource_group_name , operational_insights_resource_provider , workspace_name , rule_id , action_id) ;
         let mut req_builder = client.delete(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(delete_action::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(delete_action::BuildRequestError)?;
@@ -527,6 +578,9 @@ pub mod alert_rules {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
 }
@@ -553,8 +607,12 @@ pub mod actions {
             rule_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list_by_alert_rule::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_by_alert_rule::BuildRequestError)?;
@@ -600,6 +658,9 @@ pub mod actions {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
 }
@@ -620,8 +681,12 @@ pub mod alert_rule_templates {
             &operation_config.base_path, subscription_id, resource_group_name, operational_insights_resource_provider, workspace_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list::BuildRequestError)?;
@@ -667,6 +732,9 @@ pub mod alert_rule_templates {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn get(
@@ -688,8 +756,12 @@ pub mod alert_rule_templates {
             alert_rule_template_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(get::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get::BuildRequestError)?;
@@ -735,6 +807,9 @@ pub mod alert_rule_templates {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
 }
@@ -759,8 +834,12 @@ pub mod cases {
             &operation_config.base_path, subscription_id, resource_group_name, operational_insights_resource_provider, workspace_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(filter) = filter {
@@ -818,6 +897,9 @@ pub mod cases {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn get(
@@ -839,8 +921,12 @@ pub mod cases {
             case_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(get::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get::BuildRequestError)?;
@@ -886,6 +972,9 @@ pub mod cases {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn create_or_update(
@@ -908,8 +997,12 @@ pub mod cases {
             case_id
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(create_or_update::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(case);
@@ -966,6 +1059,9 @@ pub mod cases {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn delete(
@@ -987,8 +1083,12 @@ pub mod cases {
             case_id
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(delete::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(delete::BuildRequestError)?;
@@ -1036,6 +1136,9 @@ pub mod cases {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn get_comment(
@@ -1059,8 +1162,12 @@ pub mod cases {
             case_comment_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(get_comment::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get_comment::BuildRequestError)?;
@@ -1106,6 +1213,9 @@ pub mod cases {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
 }
@@ -1136,8 +1246,12 @@ pub mod comments {
             case_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list_by_case::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(filter) = filter {
@@ -1195,6 +1309,9 @@ pub mod comments {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
 }
@@ -1224,8 +1341,12 @@ pub mod case_comments {
             case_comment_id
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(create_comment::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(case_comment);
@@ -1272,6 +1393,9 @@ pub mod case_comments {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
 }
@@ -1292,8 +1416,12 @@ pub mod bookmarks {
             &operation_config.base_path, subscription_id, resource_group_name, operational_insights_resource_provider, workspace_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list::BuildRequestError)?;
@@ -1339,6 +1467,9 @@ pub mod bookmarks {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn get(
@@ -1360,8 +1491,12 @@ pub mod bookmarks {
             bookmark_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(get::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get::BuildRequestError)?;
@@ -1407,6 +1542,9 @@ pub mod bookmarks {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn create_or_update(
@@ -1429,8 +1567,12 @@ pub mod bookmarks {
             bookmark_id
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(create_or_update::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(bookmark);
@@ -1487,6 +1629,9 @@ pub mod bookmarks {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn delete(
@@ -1508,8 +1653,12 @@ pub mod bookmarks {
             bookmark_id
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(delete::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(delete::BuildRequestError)?;
@@ -1557,6 +1706,9 @@ pub mod bookmarks {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
 }
@@ -1587,8 +1739,12 @@ pub mod case_relations {
             case_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(filter) = filter {
@@ -1646,6 +1802,9 @@ pub mod case_relations {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn get_relation(
@@ -1669,8 +1828,12 @@ pub mod case_relations {
             relation_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(get_relation::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get_relation::BuildRequestError)?;
@@ -1716,6 +1879,9 @@ pub mod case_relations {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn create_or_update_relation(
@@ -1740,8 +1906,12 @@ pub mod case_relations {
             relation_name
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(create_or_update_relation::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(relation_input_model);
@@ -1800,6 +1970,9 @@ pub mod case_relations {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn delete_relation(
@@ -1823,8 +1996,12 @@ pub mod case_relations {
             relation_name
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(delete_relation::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(delete_relation::BuildRequestError)?;
@@ -1872,6 +2049,9 @@ pub mod case_relations {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
 }
@@ -1902,8 +2082,12 @@ pub mod bookmark_relations {
             bookmark_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(filter) = filter {
@@ -1961,6 +2145,9 @@ pub mod bookmark_relations {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn get_relation(
@@ -1975,8 +2162,12 @@ pub mod bookmark_relations {
         let client = &operation_config.client;
         let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/bookmarks/{}/relations/{}" , & operation_config . base_path , subscription_id , resource_group_name , operational_insights_resource_provider , workspace_name , bookmark_id , relation_name) ;
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(get_relation::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get_relation::BuildRequestError)?;
@@ -2022,6 +2213,9 @@ pub mod bookmark_relations {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn create_or_update_relation(
@@ -2037,8 +2231,12 @@ pub mod bookmark_relations {
         let client = &operation_config.client;
         let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/bookmarks/{}/relations/{}" , & operation_config . base_path , subscription_id , resource_group_name , operational_insights_resource_provider , workspace_name , bookmark_id , relation_name) ;
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(create_or_update_relation::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(relation);
@@ -2095,6 +2293,9 @@ pub mod bookmark_relations {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn delete_relation(
@@ -2109,8 +2310,12 @@ pub mod bookmark_relations {
         let client = &operation_config.client;
         let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/bookmarks/{}/relations/{}" , & operation_config . base_path , subscription_id , resource_group_name , operational_insights_resource_provider , workspace_name , bookmark_id , relation_name) ;
         let mut req_builder = client.delete(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(delete_relation::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(delete_relation::BuildRequestError)?;
@@ -2158,6 +2363,9 @@ pub mod bookmark_relations {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
 }
@@ -2185,8 +2393,12 @@ pub mod bookmark {
             bookmark_id
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(expand::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(parameters);
@@ -2233,6 +2445,9 @@ pub mod bookmark {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
 }
@@ -2253,8 +2468,12 @@ pub mod data_connectors {
             &operation_config.base_path, subscription_id, resource_group_name, operational_insights_resource_provider, workspace_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list::BuildRequestError)?;
@@ -2300,6 +2519,9 @@ pub mod data_connectors {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn get(
@@ -2321,8 +2543,12 @@ pub mod data_connectors {
             data_connector_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(get::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get::BuildRequestError)?;
@@ -2368,6 +2594,9 @@ pub mod data_connectors {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn create_or_update(
@@ -2390,8 +2619,12 @@ pub mod data_connectors {
             data_connector_id
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(create_or_update::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(data_connector);
@@ -2448,6 +2681,9 @@ pub mod data_connectors {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn delete(
@@ -2469,8 +2705,12 @@ pub mod data_connectors {
             data_connector_id
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(delete::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(delete::BuildRequestError)?;
@@ -2518,6 +2758,9 @@ pub mod data_connectors {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
 }
@@ -2536,8 +2779,12 @@ pub mod data_connectors_check_requirements {
         let client = &operation_config.client;
         let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/dataConnectorsCheckRequirements" , & operation_config . base_path , subscription_id , resource_group_name , operational_insights_resource_provider , workspace_name) ;
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(post::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(data_connectors_check_requirements);
@@ -2584,6 +2831,9 @@ pub mod data_connectors_check_requirements {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
 }
@@ -2604,8 +2854,12 @@ pub mod entities {
             &operation_config.base_path, subscription_id, resource_group_name, operational_insights_resource_provider, workspace_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list::BuildRequestError)?;
@@ -2651,6 +2905,9 @@ pub mod entities {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn get(
@@ -2672,8 +2929,12 @@ pub mod entities {
             entity_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(get::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get::BuildRequestError)?;
@@ -2719,6 +2980,9 @@ pub mod entities {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn expand(
@@ -2741,8 +3005,12 @@ pub mod entities {
             entity_id
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(expand::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(parameters);
@@ -2789,6 +3057,9 @@ pub mod entities {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
 }
@@ -2819,8 +3090,12 @@ pub mod entities_relations {
             entity_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(filter) = filter {
@@ -2878,6 +3153,9 @@ pub mod entities_relations {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
 }
@@ -2897,8 +3175,12 @@ pub mod entity_relations {
         let client = &operation_config.client;
         let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/entities/{}/relations/{}" , & operation_config . base_path , subscription_id , resource_group_name , operational_insights_resource_provider , workspace_name , entity_id , relation_name) ;
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(get_relation::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get_relation::BuildRequestError)?;
@@ -2944,6 +3226,9 @@ pub mod entity_relations {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
 }
@@ -2964,8 +3249,12 @@ pub mod office_consents {
             &operation_config.base_path, subscription_id, resource_group_name, operational_insights_resource_provider, workspace_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list::BuildRequestError)?;
@@ -3011,6 +3300,9 @@ pub mod office_consents {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn get(
@@ -3032,8 +3324,12 @@ pub mod office_consents {
             consent_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(get::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get::BuildRequestError)?;
@@ -3079,6 +3375,9 @@ pub mod office_consents {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn delete(
@@ -3100,8 +3399,12 @@ pub mod office_consents {
             consent_id
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(delete::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(delete::BuildRequestError)?;
@@ -3149,6 +3452,9 @@ pub mod office_consents {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
 }
@@ -3169,8 +3475,12 @@ pub mod product_settings {
             &operation_config.base_path, subscription_id, resource_group_name, operational_insights_resource_provider, workspace_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(get_all::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get_all::BuildRequestError)?;
@@ -3216,6 +3526,9 @@ pub mod product_settings {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn get(
@@ -3237,8 +3550,12 @@ pub mod product_settings {
             settings_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(get::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get::BuildRequestError)?;
@@ -3284,6 +3601,9 @@ pub mod product_settings {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn update(
@@ -3306,8 +3626,12 @@ pub mod product_settings {
             settings_name
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(update::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(settings);
@@ -3354,6 +3678,9 @@ pub mod product_settings {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn delete(
@@ -3375,8 +3702,12 @@ pub mod product_settings {
             settings_name
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(delete::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(delete::BuildRequestError)?;
@@ -3424,6 +3755,9 @@ pub mod product_settings {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
 }
@@ -3450,8 +3784,12 @@ pub mod cases_aggregations {
             aggregations_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(get::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get::BuildRequestError)?;
@@ -3497,6 +3835,9 @@ pub mod cases_aggregations {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
 }
@@ -3517,8 +3858,12 @@ pub mod entity_queries {
             &operation_config.base_path, subscription_id, resource_group_name, operational_insights_resource_provider, workspace_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list::BuildRequestError)?;
@@ -3564,6 +3909,9 @@ pub mod entity_queries {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn get(
@@ -3585,8 +3933,12 @@ pub mod entity_queries {
             entity_query_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(get::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get::BuildRequestError)?;
@@ -3632,6 +3984,9 @@ pub mod entity_queries {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
 }
@@ -3656,8 +4011,12 @@ pub mod incidents {
             &operation_config.base_path, subscription_id, resource_group_name, operational_insights_resource_provider, workspace_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(filter) = filter {
@@ -3715,6 +4074,9 @@ pub mod incidents {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn get(
@@ -3736,8 +4098,12 @@ pub mod incidents {
             incident_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(get::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get::BuildRequestError)?;
@@ -3783,6 +4149,9 @@ pub mod incidents {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn create_or_update(
@@ -3805,8 +4174,12 @@ pub mod incidents {
             incident_id
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(create_or_update::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(incident);
@@ -3863,6 +4236,9 @@ pub mod incidents {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn delete(
@@ -3884,8 +4260,12 @@ pub mod incidents {
             incident_id
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(delete::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(delete::BuildRequestError)?;
@@ -3933,6 +4313,9 @@ pub mod incidents {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn list_of_alerts(
@@ -3954,8 +4337,12 @@ pub mod incidents {
             incident_id
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list_of_alerts::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_of_alerts::BuildRequestError)?;
@@ -4001,6 +4388,9 @@ pub mod incidents {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn list_of_bookmarks(
@@ -4022,8 +4412,12 @@ pub mod incidents {
             incident_id
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list_of_bookmarks::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_of_bookmarks::BuildRequestError)?;
@@ -4070,6 +4464,9 @@ pub mod incidents {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn list_of_entities(
@@ -4091,8 +4488,12 @@ pub mod incidents {
             incident_id
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list_of_entities::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_of_entities::BuildRequestError)?;
@@ -4139,6 +4540,9 @@ pub mod incidents {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
 }
@@ -4169,8 +4573,12 @@ pub mod incident_comments {
             incident_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list_by_incident::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(filter) = filter {
@@ -4228,6 +4636,9 @@ pub mod incident_comments {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn get_comment(
@@ -4242,8 +4653,12 @@ pub mod incident_comments {
         let client = &operation_config.client;
         let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/incidents/{}/comments/{}" , & operation_config . base_path , subscription_id , resource_group_name , operational_insights_resource_provider , workspace_name , incident_id , incident_comment_id) ;
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(get_comment::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get_comment::BuildRequestError)?;
@@ -4289,6 +4704,9 @@ pub mod incident_comments {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn create_comment(
@@ -4304,8 +4722,12 @@ pub mod incident_comments {
         let client = &operation_config.client;
         let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/incidents/{}/comments/{}" , & operation_config . base_path , subscription_id , resource_group_name , operational_insights_resource_provider , workspace_name , incident_id , incident_comment_id) ;
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(create_comment::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(incident_comment);
@@ -4352,6 +4774,9 @@ pub mod incident_comments {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
 }
@@ -4382,8 +4807,12 @@ pub mod incident_relations {
             incident_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(filter) = filter {
@@ -4441,6 +4870,9 @@ pub mod incident_relations {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn get_relation(
@@ -4455,8 +4887,12 @@ pub mod incident_relations {
         let client = &operation_config.client;
         let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/incidents/{}/relations/{}" , & operation_config . base_path , subscription_id , resource_group_name , operational_insights_resource_provider , workspace_name , incident_id , relation_name) ;
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(get_relation::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get_relation::BuildRequestError)?;
@@ -4502,6 +4938,9 @@ pub mod incident_relations {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn create_or_update_relation(
@@ -4517,8 +4956,12 @@ pub mod incident_relations {
         let client = &operation_config.client;
         let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/incidents/{}/relations/{}" , & operation_config . base_path , subscription_id , resource_group_name , operational_insights_resource_provider , workspace_name , incident_id , relation_name) ;
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(create_or_update_relation::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(relation);
@@ -4575,6 +5018,9 @@ pub mod incident_relations {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn delete_relation(
@@ -4589,8 +5035,12 @@ pub mod incident_relations {
         let client = &operation_config.client;
         let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/incidents/{}/relations/{}" , & operation_config . base_path , subscription_id , resource_group_name , operational_insights_resource_provider , workspace_name , incident_id , relation_name) ;
         let mut req_builder = client.delete(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(delete_relation::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(delete_relation::BuildRequestError)?;
@@ -4638,6 +5088,9 @@ pub mod incident_relations {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
 }
@@ -4658,8 +5111,12 @@ pub mod watchlists {
             &operation_config.base_path, subscription_id, resource_group_name, operational_insights_resource_provider, workspace_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list::BuildRequestError)?;
@@ -4705,6 +5162,9 @@ pub mod watchlists {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn list_by_subscription(
@@ -4719,8 +5179,12 @@ pub mod watchlists {
             &operation_config.base_path, subscription_id, operational_insights_resource_provider, workspace_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list_by_subscription::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_by_subscription::BuildRequestError)?;
@@ -4766,6 +5230,9 @@ pub mod watchlists {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn get(
@@ -4787,8 +5254,12 @@ pub mod watchlists {
             watchlist_alias
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(get::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get::BuildRequestError)?;
@@ -4834,6 +5305,9 @@ pub mod watchlists {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn create(
@@ -4856,8 +5330,12 @@ pub mod watchlists {
             watchlist_alias
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(create::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(watchlist);
@@ -4914,6 +5392,9 @@ pub mod watchlists {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn delete(
@@ -4935,8 +5416,12 @@ pub mod watchlists {
             watchlist_alias
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(delete::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(delete::BuildRequestError)?;
@@ -4984,6 +5469,9 @@ pub mod watchlists {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
 }
@@ -4998,8 +5486,12 @@ pub async fn create_threat_intelligence(
     let client = &operation_config.client;
     let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/threatIntelligence/main/createIndicator" , & operation_config . base_path , subscription_id , resource_group_name , operational_insights_resource_provider , workspace_name) ;
     let mut req_builder = client.post(uri_str);
-    if let Some(token) = &operation_config.bearer_access_token {
-        req_builder = req_builder.bearer_auth(token);
+    if let Some(token_credential) = &operation_config.token_credential {
+        let token_response = token_credential
+            .get_token(&operation_config.token_credential_resource)
+            .await
+            .context(create_threat_intelligence::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
     }
     req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
     req_builder = req_builder.json(threat_intelligence_indicator_object_to_upsert);
@@ -5058,6 +5550,9 @@ pub mod create_threat_intelligence {
             source: serde_json::Error,
             body: bytes::Bytes,
         },
+        GetTokenError {
+            source: azure_core::errors::AzureError,
+        },
     }
 }
 pub mod threat_intelligence_indicators {
@@ -5078,8 +5573,12 @@ pub mod threat_intelligence_indicators {
         let client = &operation_config.client;
         let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/threatIntelligence/main/indicators" , & operation_config . base_path , subscription_id , resource_group_name , operational_insights_resource_provider , workspace_name) ;
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(filter) = filter {
@@ -5137,6 +5636,9 @@ pub mod threat_intelligence_indicators {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
 }
@@ -5155,8 +5657,12 @@ pub mod threat_intelligence_indicator {
         let client = &operation_config.client;
         let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/threatIntelligence/main/indicators/{}" , & operation_config . base_path , subscription_id , resource_group_name , operational_insights_resource_provider , workspace_name , name) ;
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(get::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get::BuildRequestError)?;
@@ -5202,6 +5708,9 @@ pub mod threat_intelligence_indicator {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn delete(
@@ -5215,8 +5724,12 @@ pub mod threat_intelligence_indicator {
         let client = &operation_config.client;
         let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/threatIntelligence/main/indicators/{}" , & operation_config . base_path , subscription_id , resource_group_name , operational_insights_resource_provider , workspace_name , name) ;
         let mut req_builder = client.delete(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(delete::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(delete::BuildRequestError)?;
@@ -5264,6 +5777,9 @@ pub mod threat_intelligence_indicator {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn append_tags(
@@ -5278,8 +5794,12 @@ pub mod threat_intelligence_indicator {
         let client = &operation_config.client;
         let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/threatIntelligence/main/indicators/{}/appendTags" , & operation_config . base_path , subscription_id , resource_group_name , operational_insights_resource_provider , workspace_name , name) ;
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(append_tags::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(threat_intelligence_append_tags_request_body);
@@ -5322,6 +5842,9 @@ pub mod threat_intelligence_indicator {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn replace_tags(
@@ -5336,8 +5859,12 @@ pub mod threat_intelligence_indicator {
         let client = &operation_config.client;
         let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/threatIntelligence/main/indicators/{}/replaceTags" , & operation_config . base_path , subscription_id , resource_group_name , operational_insights_resource_provider , workspace_name , name) ;
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(replace_tags::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(threat_intelligence_replace_tags_model);
@@ -5385,6 +5912,9 @@ pub mod threat_intelligence_indicator {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
 }
@@ -5404,8 +5934,12 @@ pub mod threat_intelligence_indicator_upsert {
         let client = &operation_config.client;
         let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/threatIntelligence/main/indicators/{}" , & operation_config . base_path , subscription_id , resource_group_name , operational_insights_resource_provider , workspace_name , name) ;
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(create::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(threat_intelligence_indicator_object_to_upsert);
@@ -5462,6 +5996,9 @@ pub mod threat_intelligence_indicator_upsert {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
 }
@@ -5480,8 +6017,12 @@ pub mod threat_intelligence_indicators_list {
         let client = &operation_config.client;
         let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/threatIntelligence/main/queryIndicators" , & operation_config . base_path , subscription_id , resource_group_name , operational_insights_resource_provider , workspace_name) ;
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(query::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(threat_intelligence_arm_stix_query);
@@ -5528,6 +6069,9 @@ pub mod threat_intelligence_indicators_list {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
 }
@@ -5546,8 +6090,12 @@ pub mod threat_intelligence_indicator_metrics {
         let client = &operation_config.client;
         let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/threatIntelligence/main/metrics" , & operation_config . base_path , subscription_id , resource_group_name , operational_insights_resource_provider , workspace_name) ;
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(get::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(cti_entity_kind) = cti_entity_kind {
@@ -5596,6 +6144,9 @@ pub mod threat_intelligence_indicator_metrics {
             DeserializeError {
                 source: serde_json::Error,
                 body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
             },
         }
     }

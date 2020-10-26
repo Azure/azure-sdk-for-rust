@@ -146,7 +146,7 @@ pub struct ZoneDeleteResult {
     #[serde(rename = "requestId", skip_serializing_if = "Option::is_none")]
     pub request_id: Option<String>,
 }
-mod zone_delete_result {
+pub mod zone_delete_result {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {

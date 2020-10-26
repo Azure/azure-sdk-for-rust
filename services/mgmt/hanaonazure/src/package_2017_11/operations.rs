@@ -13,8 +13,12 @@ pub mod operations {
         let client = &operation_config.client;
         let uri_str = &format!("{}/providers/Microsoft.HanaOnAzure/operations", &operation_config.base_path,);
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list::BuildRequestError)?;
@@ -60,6 +64,9 @@ pub mod operations {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
 }
@@ -77,8 +84,12 @@ pub mod hana_instances {
             &operation_config.base_path, subscription_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list::BuildRequestError)?;
@@ -124,6 +135,9 @@ pub mod hana_instances {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn list_by_resource_group(
@@ -137,8 +151,12 @@ pub mod hana_instances {
             &operation_config.base_path, subscription_id, resource_group_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list_by_resource_group::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_by_resource_group::BuildRequestError)?;
@@ -185,6 +203,9 @@ pub mod hana_instances {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn get(
@@ -199,8 +220,12 @@ pub mod hana_instances {
             &operation_config.base_path, subscription_id, resource_group_name, hana_instance_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(get::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get::BuildRequestError)?;
@@ -246,6 +271,9 @@ pub mod hana_instances {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn create(
@@ -261,8 +289,12 @@ pub mod hana_instances {
             &operation_config.base_path, subscription_id, resource_group_name, hana_instance_name
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(create::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(hana_instance_parameter);
@@ -319,6 +351,9 @@ pub mod hana_instances {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn update(
@@ -334,8 +369,12 @@ pub mod hana_instances {
             &operation_config.base_path, subscription_id, resource_group_name, hana_instance_name
         );
         let mut req_builder = client.patch(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(update::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(tags_parameter);
@@ -382,6 +421,9 @@ pub mod hana_instances {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn delete(
@@ -396,8 +438,12 @@ pub mod hana_instances {
             &operation_config.base_path, subscription_id, resource_group_name, hana_instance_name
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(delete::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(delete::BuildRequestError)?;
@@ -447,6 +493,9 @@ pub mod hana_instances {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn restart(
@@ -461,8 +510,12 @@ pub mod hana_instances {
             &operation_config.base_path, subscription_id, resource_group_name, hana_instance_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(restart::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(restart::BuildRequestError)?;
@@ -510,6 +563,9 @@ pub mod hana_instances {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn start(
@@ -524,8 +580,12 @@ pub mod hana_instances {
             &operation_config.base_path, subscription_id, resource_group_name, hana_instance_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(start::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(start::BuildRequestError)?;
@@ -573,6 +633,9 @@ pub mod hana_instances {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn shutdown(
@@ -587,8 +650,12 @@ pub mod hana_instances {
             &operation_config.base_path, subscription_id, resource_group_name, hana_instance_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(shutdown::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(shutdown::BuildRequestError)?;
@@ -636,6 +703,9 @@ pub mod hana_instances {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
 }
@@ -653,8 +723,12 @@ pub mod sap_monitors {
             &operation_config.base_path, subscription_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list::BuildRequestError)?;
@@ -700,6 +774,9 @@ pub mod sap_monitors {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn get(
@@ -714,8 +791,12 @@ pub mod sap_monitors {
             &operation_config.base_path, subscription_id, resource_group_name, sap_monitor_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(get::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get::BuildRequestError)?;
@@ -761,6 +842,9 @@ pub mod sap_monitors {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn create(
@@ -776,8 +860,12 @@ pub mod sap_monitors {
             &operation_config.base_path, subscription_id, resource_group_name, sap_monitor_name
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(create::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(sap_monitor_parameter);
@@ -834,6 +922,9 @@ pub mod sap_monitors {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn update(
@@ -849,8 +940,12 @@ pub mod sap_monitors {
             &operation_config.base_path, subscription_id, resource_group_name, sap_monitor_name
         );
         let mut req_builder = client.patch(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(update::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(tags_parameter);
@@ -897,6 +992,9 @@ pub mod sap_monitors {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn delete(
@@ -911,8 +1009,12 @@ pub mod sap_monitors {
             &operation_config.base_path, subscription_id, resource_group_name, sap_monitor_name
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(delete::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(delete::BuildRequestError)?;
@@ -961,6 +1063,9 @@ pub mod sap_monitors {
             DeserializeError {
                 source: serde_json::Error,
                 body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
             },
         }
     }

@@ -135,7 +135,7 @@ pub struct AzureVmResourceFeatureSupportResponse {
     #[serde(rename = "supportStatus", skip_serializing_if = "Option::is_none")]
     pub support_status: Option<azure_vm_resource_feature_support_response::SupportStatus>,
 }
-mod azure_vm_resource_feature_support_response {
+pub mod azure_vm_resource_feature_support_response {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum SupportStatus {
@@ -204,7 +204,7 @@ pub struct AzureWorkloadSqlAutoProtectionIntent {
     #[serde(rename = "workloadItemType", skip_serializing_if = "Option::is_none")]
     pub workload_item_type: Option<azure_workload_sql_auto_protection_intent::WorkloadItemType>,
 }
-mod azure_workload_sql_auto_protection_intent {
+pub mod azure_workload_sql_auto_protection_intent {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum WorkloadItemType {
@@ -238,7 +238,7 @@ pub struct BackupManagementUsage {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<NameInfo>,
 }
-mod backup_management_usage {
+pub mod backup_management_usage {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Unit {
@@ -264,7 +264,7 @@ pub struct BackupStatusRequest {
     #[serde(rename = "poLogicalName", skip_serializing_if = "Option::is_none")]
     pub po_logical_name: Option<String>,
 }
-mod backup_status_request {
+pub mod backup_status_request {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ResourceType {
@@ -312,7 +312,7 @@ pub struct BackupStatusResponse {
     #[serde(rename = "registrationStatus", skip_serializing_if = "Option::is_none")]
     pub registration_status: Option<String>,
 }
-mod backup_status_response {
+pub mod backup_status_response {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProtectionStatus {
@@ -333,7 +333,7 @@ pub struct BmsBackupSummariesQueryObject {
     #[serde(rename = "type", skip_serializing_if = "Option::is_none")]
     pub type_: Option<bms_backup_summaries_query_object::Type>,
 }
-mod bms_backup_summaries_query_object {
+pub mod bms_backup_summaries_query_object {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
@@ -423,7 +423,7 @@ pub struct Job {
     #[serde(rename = "jobType")]
     pub job_type: String,
 }
-mod job {
+pub mod job {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum BackupManagementType {
@@ -474,7 +474,7 @@ pub struct MabJob {
     #[serde(rename = "extendedInfo", skip_serializing_if = "Option::is_none")]
     pub extended_info: Option<MabJobExtendedInfo>,
 }
-mod mab_job {
+pub mod mab_job {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum MabServerType {
@@ -565,7 +565,7 @@ pub struct PreValidateEnableBackupRequest {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub properties: Option<String>,
 }
-mod pre_validate_enable_backup_request {
+pub mod pre_validate_enable_backup_request {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ResourceType {
@@ -607,7 +607,7 @@ pub struct PreValidateEnableBackupResponse {
     #[serde(rename = "protectedItemName", skip_serializing_if = "Option::is_none")]
     pub protected_item_name: Option<String>,
 }
-mod pre_validate_enable_backup_response {
+pub mod pre_validate_enable_backup_response {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
@@ -631,7 +631,7 @@ pub struct ProtectionIntent {
     #[serde(rename = "protectionState", skip_serializing_if = "Option::is_none")]
     pub protection_state: Option<protection_intent::ProtectionState>,
 }
-mod protection_intent {
+pub mod protection_intent {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum BackupManagementType {
@@ -668,7 +668,7 @@ pub struct ProtectionIntentQueryObject {
     #[serde(rename = "itemName", skip_serializing_if = "Option::is_none")]
     pub item_name: Option<String>,
 }
-mod protection_intent_query_object {
+pub mod protection_intent_query_object {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum BackupManagementType {

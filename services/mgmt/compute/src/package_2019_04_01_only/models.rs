@@ -13,7 +13,7 @@ pub struct ResourceSkuCapacity {
     #[serde(rename = "scaleType", skip_serializing)]
     pub scale_type: Option<resource_sku_capacity::ScaleType>,
 }
-mod resource_sku_capacity {
+pub mod resource_sku_capacity {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ScaleType {
@@ -56,7 +56,7 @@ pub struct ResourceSkuRestrictions {
     #[serde(rename = "reasonCode", skip_serializing)]
     pub reason_code: Option<resource_sku_restrictions::ReasonCode>,
 }
-mod resource_sku_restrictions {
+pub mod resource_sku_restrictions {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {

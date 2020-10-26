@@ -80,7 +80,7 @@ pub struct EntityTypeDefinition {
     #[serde(rename = "typeName", skip_serializing_if = "Option::is_none")]
     pub type_name: Option<String>,
 }
-mod entity_type_definition {
+pub mod entity_type_definition {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum EntityType {
@@ -216,7 +216,7 @@ pub struct Connector {
     #[serde(rename = "isInternal", skip_serializing_if = "Option::is_none")]
     pub is_internal: Option<bool>,
 }
-mod connector {
+pub mod connector {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum State {
@@ -235,7 +235,7 @@ pub struct ConnectorMappingErrorManagement {
     #[serde(rename = "errorLimit", skip_serializing_if = "Option::is_none")]
     pub error_limit: Option<i64>,
 }
-mod connector_mapping_error_management {
+pub mod connector_mapping_error_management {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ErrorManagementType {
@@ -259,7 +259,7 @@ pub struct ConnectorMappingFormat {
     #[serde(rename = "arraySeparator", skip_serializing_if = "Option::is_none")]
     pub array_separator: Option<String>,
 }
-mod connector_mapping_format {
+pub mod connector_mapping_format {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum FormatType {
@@ -272,7 +272,7 @@ pub struct ConnectorMappingAvailability {
     pub frequency: Option<connector_mapping_availability::Frequency>,
     pub interval: i64,
 }
-mod connector_mapping_availability {
+pub mod connector_mapping_availability {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Frequency {
@@ -301,7 +301,7 @@ pub struct ConnectorMappingCompleteOperation {
     #[serde(rename = "destinationFolder", skip_serializing_if = "Option::is_none")]
     pub destination_folder: Option<String>,
 }
-mod connector_mapping_complete_operation {
+pub mod connector_mapping_complete_operation {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum CompletionOperationType {
@@ -359,7 +359,7 @@ pub struct ConnectorMapping {
     #[serde(rename = "tenantId", skip_serializing)]
     pub tenant_id: Option<String>,
 }
-mod connector_mapping {
+pub mod connector_mapping {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum EntityType {
@@ -427,7 +427,7 @@ pub struct KpiDefinition {
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub extracts: Vec<KpiExtract>,
 }
-mod kpi_definition {
+pub mod kpi_definition {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum EntityType {
@@ -565,7 +565,7 @@ pub struct LinkDefinition {
     #[serde(rename = "operationType", skip_serializing_if = "Option::is_none")]
     pub operation_type: Option<link_definition::OperationType>,
 }
-mod link_definition {
+pub mod link_definition {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum OperationType {
@@ -612,7 +612,7 @@ pub struct RelationshipDefinition {
     #[serde(rename = "tenantId", skip_serializing)]
     pub tenant_id: Option<String>,
 }
-mod relationship_definition {
+pub mod relationship_definition {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Cardinality {
@@ -630,7 +630,7 @@ pub struct RelationshipLinkFieldMapping {
     #[serde(rename = "relationshipFieldName")]
     pub relationship_field_name: String,
 }
-mod relationship_link_field_mapping {
+pub mod relationship_link_field_mapping {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum LinkType {
@@ -674,7 +674,7 @@ pub struct TypePropertiesMapping {
     #[serde(rename = "linkType", skip_serializing_if = "Option::is_none")]
     pub link_type: Option<type_properties_mapping::LinkType>,
 }
-mod type_properties_mapping {
+pub mod type_properties_mapping {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum LinkType {
@@ -734,7 +734,7 @@ pub struct DataSource {
     #[serde(rename = "dataSourceReferenceId", skip_serializing)]
     pub data_source_reference_id: Option<String>,
 }
-mod data_source {
+pub mod data_source {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum DataSourceType {
@@ -974,7 +974,7 @@ pub struct RoleAssignment {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub segments: Option<ResourceSetDescription>,
 }
-mod role_assignment {
+pub mod role_assignment {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Role {
@@ -1114,7 +1114,7 @@ pub struct Operation {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
 }
-mod operation {
+pub mod operation {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Display {

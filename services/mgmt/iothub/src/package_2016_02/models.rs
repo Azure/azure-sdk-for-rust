@@ -12,7 +12,7 @@ pub struct SharedAccessSignatureAuthorizationRule {
     pub secondary_key: Option<String>,
     pub rights: shared_access_signature_authorization_rule::Rights,
 }
-mod shared_access_signature_authorization_rule {
+pub mod shared_access_signature_authorization_rule {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Rights {
@@ -71,7 +71,7 @@ pub struct IotHubProperties {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub features: Option<iot_hub_properties::Features>,
 }
-mod iot_hub_properties {
+pub mod iot_hub_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Features {
@@ -86,7 +86,7 @@ pub struct IotHubSkuInfo {
     pub tier: Option<iot_hub_sku_info::Tier>,
     pub capacity: i64,
 }
-mod iot_hub_sku_info {
+pub mod iot_hub_sku_info {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Name {
@@ -154,7 +154,7 @@ pub struct IpFilterRule {
     #[serde(rename = "ipMask")]
     pub ip_mask: String,
 }
-mod ip_filter_rule {
+pub mod ip_filter_rule {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Action {
@@ -254,7 +254,7 @@ pub struct IotHubCapacity {
     #[serde(rename = "scaleType", skip_serializing)]
     pub scale_type: Option<iot_hub_capacity::ScaleType>,
 }
-mod iot_hub_capacity {
+pub mod iot_hub_capacity {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ScaleType {
@@ -305,7 +305,7 @@ pub struct JobResponse {
     #[serde(rename = "parentJobId", skip_serializing)]
     pub parent_job_id: Option<String>,
 }
-mod job_response {
+pub mod job_response {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
@@ -376,7 +376,7 @@ pub struct IotHubNameAvailabilityInfo {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
-mod iot_hub_name_availability_info {
+pub mod iot_hub_name_availability_info {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Reason {

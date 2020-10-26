@@ -47,7 +47,7 @@ pub struct JobCollectionProperties {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub quota: Option<JobCollectionQuota>,
 }
-mod job_collection_properties {
+pub mod job_collection_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum State {
@@ -62,7 +62,7 @@ pub struct Sku {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<sku::Name>,
 }
-mod sku {
+pub mod sku {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Name {
@@ -134,7 +134,7 @@ pub struct JobHistoryDefinitionProperties {
     #[serde(rename = "repeatCount", skip_serializing)]
     pub repeat_count: Option<i64>,
 }
-mod job_history_definition_properties {
+pub mod job_history_definition_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ActionName {
@@ -159,7 +159,7 @@ pub struct JobAction {
     #[serde(rename = "errorAction", skip_serializing_if = "Option::is_none")]
     pub error_action: Option<JobErrorAction>,
 }
-mod job_action {
+pub mod job_action {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
@@ -185,7 +185,7 @@ pub struct JobErrorAction {
     #[serde(rename = "retryPolicy", skip_serializing_if = "Option::is_none")]
     pub retry_policy: Option<RetryPolicy>,
 }
-mod job_error_action {
+pub mod job_error_action {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
@@ -251,7 +251,7 @@ pub struct HttpAuthentication {
     #[serde(rename = "type", skip_serializing_if = "Option::is_none")]
     pub type_: Option<http_authentication::Type>,
 }
-mod http_authentication {
+pub mod http_authentication {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
@@ -301,7 +301,7 @@ pub struct ServiceBusMessage {
     #[serde(rename = "transportType", skip_serializing_if = "Option::is_none")]
     pub transport_type: Option<service_bus_message::TransportType>,
 }
-mod service_bus_message {
+pub mod service_bus_message {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum TransportType {
@@ -320,7 +320,7 @@ pub struct ServiceBusAuthentication {
     #[serde(rename = "type", skip_serializing_if = "Option::is_none")]
     pub type_: Option<service_bus_authentication::Type>,
 }
-mod service_bus_authentication {
+pub mod service_bus_authentication {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
@@ -366,7 +366,7 @@ pub struct RetryPolicy {
     #[serde(rename = "retryCount", skip_serializing_if = "Option::is_none")]
     pub retry_count: Option<i64>,
 }
-mod retry_policy {
+pub mod retry_policy {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum RetryType {
@@ -381,7 +381,7 @@ pub struct JobMaxRecurrence {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub interval: Option<i64>,
 }
-mod job_max_recurrence {
+pub mod job_max_recurrence {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Frequency {
@@ -405,7 +405,7 @@ pub struct JobRecurrence {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub schedule: Option<JobRecurrenceSchedule>,
 }
-mod job_recurrence {
+pub mod job_recurrence {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Frequency {
@@ -444,7 +444,7 @@ pub struct JobRecurrenceScheduleMonthlyOccurrence {
     #[serde(rename = "Occurrence", skip_serializing_if = "Option::is_none")]
     pub occurrence: Option<i64>,
 }
-mod job_recurrence_schedule_monthly_occurrence {
+pub mod job_recurrence_schedule_monthly_occurrence {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Day {

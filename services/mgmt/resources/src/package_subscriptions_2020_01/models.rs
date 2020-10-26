@@ -28,7 +28,7 @@ pub struct LocationMetadata {
     #[serde(rename = "pairedRegion", skip_serializing_if = "Vec::is_empty")]
     pub paired_region: Vec<PairedRegion>,
 }
-mod location_metadata {
+pub mod location_metadata {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum RegionType {
@@ -82,7 +82,7 @@ pub struct Subscription {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
-mod subscription {
+pub mod subscription {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum State {
@@ -102,7 +102,7 @@ pub struct SubscriptionPolicies {
     #[serde(rename = "spendingLimit", skip_serializing)]
     pub spending_limit: Option<subscription_policies::SpendingLimit>,
 }
-mod subscription_policies {
+pub mod subscription_policies {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum SpendingLimit {
@@ -146,7 +146,7 @@ pub struct TenantIdDescription {
     #[serde(rename = "tenantBrandingLogoUrl", skip_serializing)]
     pub tenant_branding_logo_url: Option<String>,
 }
-mod tenant_id_description {
+pub mod tenant_id_description {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum TenantCategory {
@@ -177,7 +177,7 @@ pub struct CheckResourceNameResult {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub status: Option<check_resource_name_result::Status>,
 }
-mod check_resource_name_result {
+pub mod check_resource_name_result {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
@@ -204,7 +204,7 @@ pub struct Operation {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
 }
-mod operation {
+pub mod operation {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Display {

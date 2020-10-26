@@ -43,7 +43,7 @@ pub struct RecommendationProperties {
     #[serde(rename = "shortDescription", skip_serializing_if = "Option::is_none")]
     pub short_description: Option<ShortDescription>,
 }
-mod recommendation_properties {
+pub mod recommendation_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Category {

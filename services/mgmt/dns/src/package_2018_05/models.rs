@@ -149,7 +149,7 @@ pub struct ZoneProperties {
     #[serde(rename = "resolutionVirtualNetworks", skip_serializing_if = "Vec::is_empty")]
     pub resolution_virtual_networks: Vec<SubResource>,
 }
-mod zone_properties {
+pub mod zone_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ZoneType {

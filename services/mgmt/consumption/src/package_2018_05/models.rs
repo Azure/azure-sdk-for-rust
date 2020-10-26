@@ -21,7 +21,7 @@ pub struct Operation {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
 }
-mod operation {
+pub mod operation {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Display {
@@ -199,7 +199,7 @@ pub struct ForecastProperties {
     #[serde(rename = "confidenceLevels", skip_serializing)]
     pub confidence_levels: Vec<serde_json::Value>,
 }
-mod forecast_properties {
+pub mod forecast_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Grain {

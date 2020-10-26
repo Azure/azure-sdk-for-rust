@@ -42,7 +42,7 @@ pub struct AzureSku {
     pub name: azure_sku::Name,
     pub tier: azure_sku::Tier,
 }
-mod azure_sku {
+pub mod azure_sku {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Name {
@@ -65,7 +65,7 @@ pub struct WorkspaceCollectionAccessKey {
     #[serde(rename = "keyName", skip_serializing_if = "Option::is_none")]
     pub key_name: Option<workspace_collection_access_key::KeyName>,
 }
-mod workspace_collection_access_key {
+pub mod workspace_collection_access_key {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum KeyName {
@@ -135,7 +135,7 @@ pub struct CheckNameResponse {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
-mod check_name_response {
+pub mod check_name_response {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Reason {

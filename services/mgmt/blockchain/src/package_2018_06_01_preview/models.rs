@@ -42,7 +42,7 @@ pub struct BlockchainMemberProperties {
     #[serde(rename = "firewallRules", skip_serializing_if = "Vec::is_empty")]
     pub firewall_rules: Vec<FirewallRule>,
 }
-mod blockchain_member_properties {
+pub mod blockchain_member_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Protocol {
@@ -164,7 +164,7 @@ pub struct NameAvailability {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub reason: Option<name_availability::Reason>,
 }
-mod name_availability {
+pub mod name_availability {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Reason {
@@ -185,7 +185,7 @@ pub struct Consortium {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub protocol: Option<consortium::Protocol>,
 }
-mod consortium {
+pub mod consortium {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Protocol {
@@ -271,7 +271,7 @@ pub struct TransactionNodeProperties {
     #[serde(rename = "firewallRules", skip_serializing_if = "Vec::is_empty")]
     pub firewall_rules: Vec<FirewallRule>,
 }
-mod transaction_node_properties {
+pub mod transaction_node_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {

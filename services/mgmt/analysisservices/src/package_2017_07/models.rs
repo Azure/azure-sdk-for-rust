@@ -46,7 +46,7 @@ pub struct AnalysisServicesServerProperties {
     #[serde(rename = "serverFullName", skip_serializing)]
     pub server_full_name: Option<String>,
 }
-mod analysis_services_server_properties {
+pub mod analysis_services_server_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum State {
@@ -85,7 +85,7 @@ pub struct ResourceSku {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tier: Option<resource_sku::Tier>,
 }
-mod resource_sku {
+pub mod resource_sku {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Tier {
@@ -122,7 +122,7 @@ pub struct GatewayListStatusLive {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub status: Option<gateway_list_status_live::Status>,
 }
-mod gateway_list_status_live {
+pub mod gateway_list_status_live {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {

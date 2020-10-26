@@ -32,7 +32,7 @@ pub struct DisallowedConfiguration {
     #[serde(rename = "vmDiskType", skip_serializing_if = "Option::is_none")]
     pub vm_disk_type: Option<disallowed_configuration::VmDiskType>,
 }
-mod disallowed_configuration {
+pub mod disallowed_configuration {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum VmDiskType {
@@ -65,7 +65,7 @@ pub struct InstanceViewStatus {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub time: Option<String>,
 }
-mod instance_view_status {
+pub mod instance_view_status {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Level {
@@ -136,7 +136,7 @@ pub struct ProximityPlacementGroupProperties {
     #[serde(rename = "colocationStatus", skip_serializing_if = "Option::is_none")]
     pub colocation_status: Option<InstanceViewStatus>,
 }
-mod proximity_placement_group_properties {
+pub mod proximity_placement_group_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProximityPlacementGroupType {
@@ -457,7 +457,7 @@ pub struct VirtualMachineSoftwarePatchProperties {
     #[serde(rename = "assessmentState", skip_serializing)]
     pub assessment_state: Option<virtual_machine_software_patch_properties::AssessmentState>,
 }
-mod virtual_machine_software_patch_properties {
+pub mod virtual_machine_software_patch_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum RebootBehavior {
@@ -494,7 +494,7 @@ pub struct VirtualMachineAssessPatchesResult {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub error: Option<ApiError>,
 }
-mod virtual_machine_assess_patches_result {
+pub mod virtual_machine_assess_patches_result {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
@@ -515,7 +515,7 @@ pub struct OsDiskImage {
     #[serde(rename = "operatingSystem")]
     pub operating_system: os_disk_image::OperatingSystem,
 }
-mod os_disk_image {
+pub mod os_disk_image {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum OperatingSystem {
@@ -570,7 +570,7 @@ pub struct Usage {
     pub limit: i64,
     pub name: UsageName,
 }
-mod usage {
+pub mod usage {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Unit {
@@ -626,7 +626,7 @@ pub struct HardwareProfile {
     #[serde(rename = "vmSize", skip_serializing_if = "Option::is_none")]
     pub vm_size: Option<hardware_profile::VmSize>,
 }
-mod hardware_profile {
+pub mod hardware_profile {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum VmSize {
@@ -1085,7 +1085,7 @@ pub struct OsDisk {
     #[serde(rename = "managedDisk", skip_serializing_if = "Option::is_none")]
     pub managed_disk: Option<ManagedDiskParameters>,
 }
-mod os_disk {
+pub mod os_disk {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum OsType {
@@ -1149,7 +1149,7 @@ pub struct AdditionalUnattendContent {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub content: Option<String>,
 }
-mod additional_unattend_content {
+pub mod additional_unattend_content {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum PassName {
@@ -1173,7 +1173,7 @@ pub struct WinRmListener {
     #[serde(rename = "certificateUrl", skip_serializing_if = "Option::is_none")]
     pub certificate_url: Option<String>,
 }
-mod win_rm_listener {
+pub mod win_rm_listener {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Protocol {
@@ -1356,7 +1356,7 @@ pub struct VirtualMachineIdentity {
     #[serde(rename = "userAssignedIdentities", skip_serializing_if = "Option::is_none")]
     pub user_assigned_identities: Option<serde_json::Value>,
 }
-mod virtual_machine_identity {
+pub mod virtual_machine_identity {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
@@ -1384,7 +1384,7 @@ pub struct MaintenanceRedeployStatus {
     #[serde(rename = "lastOperationMessage", skip_serializing_if = "Option::is_none")]
     pub last_operation_message: Option<String>,
 }
-mod maintenance_redeploy_status {
+pub mod maintenance_redeploy_status {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum LastOperationResultCode {
@@ -1429,7 +1429,7 @@ pub struct VirtualMachineInstanceView {
     #[serde(rename = "patchStatus", skip_serializing_if = "Option::is_none")]
     pub patch_status: Option<VirtualMachinePatchStatus>,
 }
-mod virtual_machine_instance_view {
+pub mod virtual_machine_instance_view {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum HyperVGeneration {
@@ -1539,7 +1539,7 @@ pub struct UpgradePolicy {
     #[serde(rename = "automaticOSUpgradePolicy", skip_serializing_if = "Option::is_none")]
     pub automatic_os_upgrade_policy: Option<AutomaticOsUpgradePolicy>,
 }
-mod upgrade_policy {
+pub mod upgrade_policy {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Mode {
@@ -1573,7 +1573,7 @@ pub struct ImageOsDisk {
     #[serde(rename = "osState")]
     pub os_state: image_os_disk::OsState,
 }
-mod image_os_disk {
+pub mod image_os_disk {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum OsType {
@@ -1609,7 +1609,7 @@ pub struct ImageDisk {
     #[serde(rename = "diskEncryptionSet", skip_serializing_if = "Option::is_none")]
     pub disk_encryption_set: Option<DiskEncryptionSetParameters>,
 }
-mod image_disk {
+pub mod image_disk {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Caching {
@@ -1669,7 +1669,7 @@ pub struct VirtualMachineScaleSetIdentity {
     #[serde(rename = "userAssignedIdentities", skip_serializing_if = "Option::is_none")]
     pub user_assigned_identities: Option<serde_json::Value>,
 }
-mod virtual_machine_scale_set_identity {
+pub mod virtual_machine_scale_set_identity {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
@@ -1738,7 +1738,7 @@ pub struct VirtualMachineScaleSetOsDisk {
     #[serde(rename = "managedDisk", skip_serializing_if = "Option::is_none")]
     pub managed_disk: Option<VirtualMachineScaleSetManagedDiskParameters>,
 }
-mod virtual_machine_scale_set_os_disk {
+pub mod virtual_machine_scale_set_os_disk {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum OsType {
@@ -1823,7 +1823,7 @@ pub struct VirtualMachineScaleSetIpConfigurationProperties {
     #[serde(rename = "loadBalancerInboundNatPools", skip_serializing_if = "Vec::is_empty")]
     pub load_balancer_inbound_nat_pools: Vec<SubResource>,
 }
-mod virtual_machine_scale_set_ip_configuration_properties {
+pub mod virtual_machine_scale_set_ip_configuration_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum PrivateIpAddressVersion {
@@ -1850,7 +1850,7 @@ pub struct VirtualMachineScaleSetUpdateIpConfigurationProperties {
     #[serde(rename = "loadBalancerInboundNatPools", skip_serializing_if = "Vec::is_empty")]
     pub load_balancer_inbound_nat_pools: Vec<SubResource>,
 }
-mod virtual_machine_scale_set_update_ip_configuration_properties {
+pub mod virtual_machine_scale_set_update_ip_configuration_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum PrivateIpAddressVersion {
@@ -1965,7 +1965,7 @@ pub struct VirtualMachineScaleSetPublicIpAddressConfigurationProperties {
     #[serde(rename = "publicIPAddressVersion", skip_serializing_if = "Option::is_none")]
     pub public_ip_address_version: Option<virtual_machine_scale_set_public_ip_address_configuration_properties::PublicIpAddressVersion>,
 }
-mod virtual_machine_scale_set_public_ip_address_configuration_properties {
+pub mod virtual_machine_scale_set_public_ip_address_configuration_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum PublicIpAddressVersion {
@@ -2226,7 +2226,7 @@ pub struct OrchestrationServiceSummary {
     #[serde(rename = "serviceState", skip_serializing)]
     pub service_state: Option<orchestration_service_summary::ServiceState>,
 }
-mod orchestration_service_summary {
+pub mod orchestration_service_summary {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ServiceName {
@@ -2273,7 +2273,7 @@ pub struct VirtualMachineScaleSetSkuCapacity {
     #[serde(rename = "scaleType", skip_serializing)]
     pub scale_type: Option<virtual_machine_scale_set_sku_capacity::ScaleType>,
 }
-mod virtual_machine_scale_set_sku_capacity {
+pub mod virtual_machine_scale_set_sku_capacity {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ScaleType {
@@ -2314,7 +2314,7 @@ pub struct UpgradeOperationHistoryStatus {
     #[serde(rename = "endTime", skip_serializing)]
     pub end_time: Option<String>,
 }
-mod upgrade_operation_history_status {
+pub mod upgrade_operation_history_status {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Code {
@@ -2339,7 +2339,7 @@ pub struct UpgradeOperationHistoricalStatusInfoProperties {
     #[serde(rename = "rollbackInfo", skip_serializing_if = "Option::is_none")]
     pub rollback_info: Option<RollbackStatusInfo>,
 }
-mod upgrade_operation_historical_status_info_properties {
+pub mod upgrade_operation_historical_status_info_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum StartedBy {
@@ -2506,7 +2506,7 @@ pub struct RollingUpgradeRunningStatus {
     #[serde(rename = "lastActionTime", skip_serializing)]
     pub last_action_time: Option<String>,
 }
-mod rolling_upgrade_running_status {
+pub mod rolling_upgrade_running_status {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Code {
@@ -2607,7 +2607,7 @@ pub struct RequestRateByIntervalInput {
     #[serde(rename = "intervalLength")]
     pub interval_length: request_rate_by_interval_input::IntervalLength,
 }
-mod request_rate_by_interval_input {
+pub mod request_rate_by_interval_input {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum IntervalLength {
@@ -2658,7 +2658,7 @@ pub struct OrchestrationServiceStateInput {
     pub service_name: orchestration_service_state_input::ServiceName,
     pub action: orchestration_service_state_input::Action,
 }
-mod orchestration_service_state_input {
+pub mod orchestration_service_state_input {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ServiceName {
@@ -2675,7 +2675,7 @@ pub struct PatchSettings {
     #[serde(rename = "patchMode", skip_serializing_if = "Option::is_none")]
     pub patch_mode: Option<patch_settings::PatchMode>,
 }
-mod patch_settings {
+pub mod patch_settings {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum PatchMode {
@@ -2711,7 +2711,7 @@ pub struct AvailablePatchSummary {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub error: Option<ApiError>,
 }
-mod available_patch_summary {
+pub mod available_patch_summary {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
@@ -2750,7 +2750,7 @@ pub struct LastPatchInstallationSummary {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub error: Option<ApiError>,
 }
-mod last_patch_installation_summary {
+pub mod last_patch_installation_summary {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
@@ -2802,7 +2802,7 @@ pub struct RunCommandDocumentBase {
     pub label: String,
     pub description: String,
 }
-mod run_command_document_base {
+pub mod run_command_document_base {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum OsType {
@@ -2848,7 +2848,7 @@ pub struct VirtualMachineRunCommandInstanceView {
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub statuses: Vec<InstanceViewStatus>,
 }
-mod virtual_machine_run_command_instance_view {
+pub mod virtual_machine_run_command_instance_view {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ExecutionState {

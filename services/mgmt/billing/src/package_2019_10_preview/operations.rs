@@ -16,8 +16,12 @@ pub mod billing_accounts {
         let client = &operation_config.client;
         let uri_str = &format!("{}/providers/Microsoft.Billing/billingAccounts", &operation_config.base_path,);
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(expand) = expand {
@@ -66,6 +70,9 @@ pub mod billing_accounts {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn get(
@@ -79,8 +86,12 @@ pub mod billing_accounts {
             &operation_config.base_path, billing_account_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(get::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(expand) = expand {
@@ -129,6 +140,9 @@ pub mod billing_accounts {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn update(
@@ -142,8 +156,12 @@ pub mod billing_accounts {
             &operation_config.base_path, billing_account_name
         );
         let mut req_builder = client.patch(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(update::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(parameters);
@@ -196,6 +214,9 @@ pub mod billing_accounts {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn list_invoice_sections_by_create_subscription_permission(
@@ -209,8 +230,12 @@ pub mod billing_accounts {
             &operation_config.base_path, billing_account_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list_invoice_sections_by_create_subscription_permission::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder
@@ -269,6 +294,9 @@ pub mod billing_accounts {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
 }
@@ -286,8 +314,12 @@ pub mod payment_methods {
             &operation_config.base_path, billing_account_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list_by_billing_account::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_by_billing_account::BuildRequestError)?;
@@ -334,6 +366,9 @@ pub mod payment_methods {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn list_by_billing_profile(
@@ -347,8 +382,12 @@ pub mod payment_methods {
             &operation_config.base_path, billing_account_name, billing_profile_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list_by_billing_profile::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_by_billing_profile::BuildRequestError)?;
@@ -395,6 +434,9 @@ pub mod payment_methods {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
 }
@@ -409,8 +451,12 @@ pub mod address {
         let client = &operation_config.client;
         let uri_str = &format!("{}/providers/Microsoft.Billing/validateAddress", &operation_config.base_path,);
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(validate::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(address);
@@ -457,6 +503,9 @@ pub mod address {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
 }
@@ -475,8 +524,12 @@ pub mod available_balances {
             &operation_config.base_path, billing_account_name, billing_profile_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(get_by_billing_profile::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get_by_billing_profile::BuildRequestError)?;
@@ -523,6 +576,9 @@ pub mod available_balances {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
 }
@@ -541,8 +597,12 @@ pub mod instructions {
             &operation_config.base_path, billing_account_name, billing_profile_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list_by_billing_profile::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_by_billing_profile::BuildRequestError)?;
@@ -589,6 +649,9 @@ pub mod instructions {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn get(
@@ -603,8 +666,12 @@ pub mod instructions {
             &operation_config.base_path, billing_account_name, billing_profile_name, instruction_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(get::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get::BuildRequestError)?;
@@ -650,6 +717,9 @@ pub mod instructions {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn put(
@@ -665,8 +735,12 @@ pub mod instructions {
             &operation_config.base_path, billing_account_name, billing_profile_name, instruction_name
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(put::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(parameters);
@@ -713,6 +787,9 @@ pub mod instructions {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
 }
@@ -731,8 +808,12 @@ pub mod billing_profiles {
             &operation_config.base_path, billing_account_name, billing_profile_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(get_eligibility_to_detach_payment_method::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder
@@ -791,6 +872,9 @@ pub mod billing_profiles {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn list_by_billing_account(
@@ -804,8 +888,12 @@ pub mod billing_profiles {
             &operation_config.base_path, billing_account_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list_by_billing_account::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(expand) = expand {
@@ -855,6 +943,9 @@ pub mod billing_profiles {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn get(
@@ -869,8 +960,12 @@ pub mod billing_profiles {
             &operation_config.base_path, billing_account_name, billing_profile_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(get::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(expand) = expand {
@@ -919,6 +1014,9 @@ pub mod billing_profiles {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn create(
@@ -933,8 +1031,12 @@ pub mod billing_profiles {
             &operation_config.base_path, billing_account_name, billing_profile_name
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(create::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(parameters);
@@ -987,6 +1089,9 @@ pub mod billing_profiles {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn update(
@@ -1001,8 +1106,12 @@ pub mod billing_profiles {
             &operation_config.base_path, billing_account_name, billing_profile_name
         );
         let mut req_builder = client.patch(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(update::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(parameters);
@@ -1055,6 +1164,9 @@ pub mod billing_profiles {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
 }
@@ -1075,8 +1187,12 @@ pub mod customers {
             &operation_config.base_path, billing_account_name, billing_profile_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list_by_billing_profile::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(filter) = filter {
@@ -1129,6 +1245,9 @@ pub mod customers {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn list_by_billing_account(
@@ -1143,8 +1262,12 @@ pub mod customers {
             &operation_config.base_path, billing_account_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list_by_billing_account::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(filter) = filter {
@@ -1197,6 +1320,9 @@ pub mod customers {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn get(
@@ -1211,8 +1337,12 @@ pub mod customers {
             &operation_config.base_path, billing_account_name, customer_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(get::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(expand) = expand {
@@ -1261,6 +1391,9 @@ pub mod customers {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
 }
@@ -1279,8 +1412,12 @@ pub mod invoice_sections {
             &operation_config.base_path, billing_account_name, billing_profile_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list_by_billing_profile::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_by_billing_profile::BuildRequestError)?;
@@ -1327,6 +1464,9 @@ pub mod invoice_sections {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn get(
@@ -1341,8 +1481,12 @@ pub mod invoice_sections {
             &operation_config.base_path, billing_account_name, billing_profile_name, invoice_section_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(get::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get::BuildRequestError)?;
@@ -1388,6 +1532,9 @@ pub mod invoice_sections {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn create(
@@ -1403,8 +1550,12 @@ pub mod invoice_sections {
             &operation_config.base_path, billing_account_name, billing_profile_name, invoice_section_name
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(create::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(parameters);
@@ -1457,6 +1608,9 @@ pub mod invoice_sections {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn update(
@@ -1472,8 +1626,12 @@ pub mod invoice_sections {
             &operation_config.base_path, billing_account_name, billing_profile_name, invoice_section_name
         );
         let mut req_builder = client.patch(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(update::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(parameters);
@@ -1526,6 +1684,9 @@ pub mod invoice_sections {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn elevate_to_billing_profile(
@@ -1540,8 +1701,12 @@ pub mod invoice_sections {
             &operation_config.base_path, billing_account_name, billing_profile_name, invoice_section_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(elevate_to_billing_profile::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         let req = req_builder.build().context(elevate_to_billing_profile::BuildRequestError)?;
         let rsp = client.execute(req).await.context(elevate_to_billing_profile::ExecuteRequestError)?;
@@ -1583,6 +1748,9 @@ pub mod invoice_sections {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
 }
@@ -1601,8 +1769,12 @@ pub mod billing_permissions {
             &operation_config.base_path, billing_account_name, customer_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list_by_customer::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_by_customer::BuildRequestError)?;
@@ -1649,6 +1821,9 @@ pub mod billing_permissions {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn list_by_billing_account(
@@ -1661,8 +1836,12 @@ pub mod billing_permissions {
             &operation_config.base_path, billing_account_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list_by_billing_account::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_by_billing_account::BuildRequestError)?;
@@ -1709,6 +1888,9 @@ pub mod billing_permissions {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn list_by_invoice_sections(
@@ -1723,8 +1905,12 @@ pub mod billing_permissions {
             &operation_config.base_path, billing_account_name, billing_profile_name, invoice_section_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list_by_invoice_sections::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_by_invoice_sections::BuildRequestError)?;
@@ -1772,6 +1958,9 @@ pub mod billing_permissions {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn list_by_billing_profile(
@@ -1785,8 +1974,12 @@ pub mod billing_permissions {
             &operation_config.base_path, billing_account_name, billing_profile_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list_by_billing_profile::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_by_billing_profile::BuildRequestError)?;
@@ -1833,6 +2026,9 @@ pub mod billing_permissions {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn list_by_department(
@@ -1846,8 +2042,12 @@ pub mod billing_permissions {
             &operation_config.base_path, billing_account_name, department_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list_by_department::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_by_department::BuildRequestError)?;
@@ -1894,6 +2094,9 @@ pub mod billing_permissions {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn list_by_enrollment_account(
@@ -1907,8 +2110,12 @@ pub mod billing_permissions {
             &operation_config.base_path, billing_account_name, enrollment_account_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list_by_enrollment_account::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_by_enrollment_account::BuildRequestError)?;
@@ -1956,6 +2163,9 @@ pub mod billing_permissions {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
 }
@@ -1974,8 +2184,12 @@ pub mod billing_subscriptions {
             &operation_config.base_path, billing_account_name, customer_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list_by_customer::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_by_customer::BuildRequestError)?;
@@ -2022,6 +2236,9 @@ pub mod billing_subscriptions {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn get_by_customer(
@@ -2036,8 +2253,12 @@ pub mod billing_subscriptions {
             &operation_config.base_path, billing_account_name, customer_name, billing_subscription_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(get_by_customer::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get_by_customer::BuildRequestError)?;
@@ -2083,6 +2304,9 @@ pub mod billing_subscriptions {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn list_by_billing_account(
@@ -2095,8 +2319,12 @@ pub mod billing_subscriptions {
             &operation_config.base_path, billing_account_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list_by_billing_account::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_by_billing_account::BuildRequestError)?;
@@ -2143,6 +2371,9 @@ pub mod billing_subscriptions {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn list_by_billing_profile(
@@ -2156,8 +2387,12 @@ pub mod billing_subscriptions {
             &operation_config.base_path, billing_account_name, billing_profile_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list_by_billing_profile::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_by_billing_profile::BuildRequestError)?;
@@ -2204,6 +2439,9 @@ pub mod billing_subscriptions {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn list_by_invoice_section(
@@ -2218,8 +2456,12 @@ pub mod billing_subscriptions {
             &operation_config.base_path, billing_account_name, billing_profile_name, invoice_section_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list_by_invoice_section::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_by_invoice_section::BuildRequestError)?;
@@ -2266,6 +2508,9 @@ pub mod billing_subscriptions {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn get(
@@ -2281,8 +2526,12 @@ pub mod billing_subscriptions {
             &operation_config.base_path, billing_account_name, billing_profile_name, invoice_section_name, billing_subscription_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(get::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get::BuildRequestError)?;
@@ -2328,6 +2577,9 @@ pub mod billing_subscriptions {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn transfer(
@@ -2344,8 +2596,12 @@ pub mod billing_subscriptions {
             &operation_config.base_path, billing_account_name, billing_profile_name, invoice_section_name, billing_subscription_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(transfer::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.json(parameters);
         let req = req_builder.build().context(transfer::BuildRequestError)?;
@@ -2398,6 +2654,9 @@ pub mod billing_subscriptions {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn validate_transfer(
@@ -2411,8 +2670,12 @@ pub mod billing_subscriptions {
         let client = &operation_config.client;
         let uri_str = & format ! ("{}/providers/Microsoft.Billing/billingAccounts/{}/billingProfiles/{}/invoiceSections/{}/billingSubscriptions/{}/validateTransferEligibility" , & operation_config . base_path , billing_account_name , billing_profile_name , invoice_section_name , billing_subscription_name) ;
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(validate_transfer::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.json(parameters);
         let req = req_builder.build().context(validate_transfer::BuildRequestError)?;
@@ -2459,6 +2722,9 @@ pub mod billing_subscriptions {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
 }
@@ -2478,8 +2744,12 @@ pub mod products {
             &operation_config.base_path, billing_account_name, customer_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list_by_customer::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(filter) = filter {
@@ -2528,6 +2798,9 @@ pub mod products {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn get_by_customer(
@@ -2542,8 +2815,12 @@ pub mod products {
             &operation_config.base_path, billing_account_name, customer_name, product_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(get_by_customer::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get_by_customer::BuildRequestError)?;
@@ -2589,6 +2866,9 @@ pub mod products {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn list_by_billing_account(
@@ -2602,8 +2882,12 @@ pub mod products {
             &operation_config.base_path, billing_account_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list_by_billing_account::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(filter) = filter {
@@ -2653,6 +2937,9 @@ pub mod products {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn list_by_invoice_section(
@@ -2668,8 +2955,12 @@ pub mod products {
             &operation_config.base_path, billing_account_name, billing_profile_name, invoice_section_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list_by_invoice_section::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(filter) = filter {
@@ -2719,6 +3010,9 @@ pub mod products {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn get(
@@ -2734,8 +3028,12 @@ pub mod products {
             &operation_config.base_path, billing_account_name, billing_profile_name, invoice_section_name, product_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(get::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get::BuildRequestError)?;
@@ -2781,6 +3079,9 @@ pub mod products {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn transfer(
@@ -2797,8 +3098,12 @@ pub mod products {
             &operation_config.base_path, billing_account_name, billing_profile_name, invoice_section_name, product_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(transfer::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(parameters);
@@ -2851,6 +3156,9 @@ pub mod products {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn validate_transfer(
@@ -2864,8 +3172,12 @@ pub mod products {
         let client = &operation_config.client;
         let uri_str = & format ! ("{}/providers/Microsoft.Billing/billingAccounts/{}/billingProfiles/{}/invoiceSections/{}/products/{}/validateTransferEligibility" , & operation_config . base_path , billing_account_name , billing_profile_name , invoice_section_name , product_name) ;
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(validate_transfer::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.json(parameters);
         let req = req_builder.build().context(validate_transfer::BuildRequestError)?;
@@ -2912,6 +3224,9 @@ pub mod products {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn update_auto_renew_by_invoice_section(
@@ -2928,8 +3243,12 @@ pub mod products {
             &operation_config.base_path, billing_account_name, billing_profile_name, invoice_section_name, product_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(update_auto_renew_by_invoice_section::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(body);
@@ -2989,6 +3308,9 @@ pub mod products {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
 }
@@ -3010,8 +3332,12 @@ pub mod transactions {
             &operation_config.base_path, billing_account_name, customer_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list_by_customer::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.query(&[("periodStartDate", period_start_date)]);
@@ -3063,6 +3389,9 @@ pub mod transactions {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn list_by_billing_account(
@@ -3078,8 +3407,12 @@ pub mod transactions {
             &operation_config.base_path, billing_account_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list_by_billing_account::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.query(&[("periodStartDate", period_start_date)]);
@@ -3131,6 +3464,9 @@ pub mod transactions {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn list_by_billing_profile(
@@ -3147,8 +3483,12 @@ pub mod transactions {
             &operation_config.base_path, billing_account_name, billing_profile_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list_by_billing_profile::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.query(&[("periodStartDate", period_start_date)]);
@@ -3200,6 +3540,9 @@ pub mod transactions {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn list_by_invoice_section(
@@ -3217,8 +3560,12 @@ pub mod transactions {
             &operation_config.base_path, billing_account_name, billing_profile_name, invoice_section_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list_by_invoice_section::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.query(&[("periodStartDate", period_start_date)]);
@@ -3270,6 +3617,9 @@ pub mod transactions {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn list_by_invoice(
@@ -3284,8 +3634,12 @@ pub mod transactions {
             &operation_config.base_path, billing_account_name, billing_profile_name, invoice_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list_by_invoice::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_by_invoice::BuildRequestError)?;
@@ -3331,6 +3685,9 @@ pub mod transactions {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn get(
@@ -3347,8 +3704,12 @@ pub mod transactions {
             &operation_config.base_path, billing_account_name, billing_profile_name, transaction_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(get::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.query(&[("periodStartDate", period_start_date)]);
@@ -3396,6 +3757,9 @@ pub mod transactions {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
 }
@@ -3415,8 +3779,12 @@ pub mod departments {
             &operation_config.base_path, billing_account_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list_by_billing_account_name::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(expand) = expand {
@@ -3473,6 +3841,9 @@ pub mod departments {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn get(
@@ -3488,8 +3859,12 @@ pub mod departments {
             &operation_config.base_path, billing_account_name, department_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(get::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(expand) = expand {
@@ -3541,6 +3916,9 @@ pub mod departments {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
 }
@@ -3560,8 +3938,12 @@ pub mod enrollment_accounts {
             &operation_config.base_path, billing_account_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list_by_billing_account_name::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(expand) = expand {
@@ -3618,6 +4000,9 @@ pub mod enrollment_accounts {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn get_by_enrollment_account_id(
@@ -3633,8 +4018,12 @@ pub mod enrollment_accounts {
             &operation_config.base_path, billing_account_name, enrollment_account_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(get_by_enrollment_account_id::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(expand) = expand {
@@ -3691,6 +4080,9 @@ pub mod enrollment_accounts {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
 }
@@ -3710,8 +4102,12 @@ pub mod invoices {
             &operation_config.base_path, billing_account_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list_by_billing_account::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.query(&[("periodStartDate", period_start_date)]);
@@ -3760,6 +4156,9 @@ pub mod invoices {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn download_multiple_ea_invoices(
@@ -3773,8 +4172,12 @@ pub mod invoices {
             &operation_config.base_path, billing_account_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(download_multiple_ea_invoices::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(download_urls);
@@ -3832,6 +4235,9 @@ pub mod invoices {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn get_billing_account_invoice(
@@ -3845,8 +4251,12 @@ pub mod invoices {
             &operation_config.base_path, billing_account_name, invoice_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(get_billing_account_invoice::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get_billing_account_invoice::BuildRequestError)?;
@@ -3896,6 +4306,9 @@ pub mod invoices {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn download_multiple_billing_subscription_invoices(
@@ -3912,8 +4325,12 @@ pub mod invoices {
             &operation_config.base_path, subscription_id
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(download_multiple_billing_subscription_invoices::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(download_urls);
@@ -3979,6 +4396,9 @@ pub mod invoices {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn list_by_billing_profile(
@@ -3994,8 +4414,12 @@ pub mod invoices {
             &operation_config.base_path, billing_account_name, billing_profile_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list_by_billing_profile::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.query(&[("periodStartDate", period_start_date)]);
@@ -4044,6 +4468,9 @@ pub mod invoices {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn download_multiple_billing_profile_invoices(
@@ -4058,8 +4485,12 @@ pub mod invoices {
             &operation_config.base_path, billing_account_name, billing_profile_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(download_multiple_billing_profile_invoices::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(download_urls);
@@ -4125,6 +4556,9 @@ pub mod invoices {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn get(
@@ -4139,8 +4573,12 @@ pub mod invoices {
             &operation_config.base_path, billing_account_name, billing_profile_name, invoice_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(get::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get::BuildRequestError)?;
@@ -4186,6 +4624,9 @@ pub mod invoices {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn list_by_billing_subscription(
@@ -4201,8 +4642,12 @@ pub mod invoices {
             &operation_config.base_path, billing_account_name, billing_subscription_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list_by_billing_subscription::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.query(&[("periodStartDate", period_start_date)]);
@@ -4255,6 +4700,9 @@ pub mod invoices {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn get_by_id(
@@ -4269,8 +4717,12 @@ pub mod invoices {
             &operation_config.base_path, billing_account_name, billing_subscription_name, invoice_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(get_by_id::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get_by_id::BuildRequestError)?;
@@ -4316,6 +4768,9 @@ pub mod invoices {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
 }
@@ -4335,8 +4790,12 @@ pub mod price_sheet {
             &operation_config.base_path, billing_account_name, billing_profile_name, invoice_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(download::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(download::BuildRequestError)?;
@@ -4388,6 +4847,9 @@ pub mod price_sheet {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn download_by_billing_profile(
@@ -4401,8 +4863,12 @@ pub mod price_sheet {
             &operation_config.base_path, billing_account_name, billing_profile_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(download_by_billing_profile::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(download_by_billing_profile::BuildRequestError)?;
@@ -4459,6 +4925,9 @@ pub mod price_sheet {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
 }
@@ -4477,8 +4946,12 @@ pub mod policies {
             &operation_config.base_path, billing_account_name, billing_profile_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(get_by_billing_profile::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get_by_billing_profile::BuildRequestError)?;
@@ -4524,6 +4997,9 @@ pub mod policies {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn update(
@@ -4538,8 +5014,12 @@ pub mod policies {
             &operation_config.base_path, billing_account_name, billing_profile_name
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(update::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(parameters);
@@ -4586,6 +5066,9 @@ pub mod policies {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn get_by_customer(
@@ -4599,8 +5082,12 @@ pub mod policies {
             &operation_config.base_path, billing_account_name, customer_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(get_by_customer::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get_by_customer::BuildRequestError)?;
@@ -4646,6 +5133,9 @@ pub mod policies {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn update_customer(
@@ -4660,8 +5150,12 @@ pub mod policies {
             &operation_config.base_path, billing_account_name, customer_name
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(update_customer::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(parameters);
@@ -4708,6 +5202,9 @@ pub mod policies {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
 }
@@ -4722,8 +5219,12 @@ pub mod billing_property {
             &operation_config.base_path, subscription_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(get::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get::BuildRequestError)?;
@@ -4769,6 +5270,9 @@ pub mod billing_property {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
 }
@@ -4789,8 +5293,12 @@ pub mod transfers {
             &operation_config.base_path, billing_account_name, billing_profile_name, invoice_section_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(initiate::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.json(parameters);
         let req = req_builder.build().context(initiate::BuildRequestError)?;
@@ -4836,6 +5344,9 @@ pub mod transfers {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn get(
@@ -4851,8 +5362,12 @@ pub mod transfers {
             &operation_config.base_path, billing_account_name, billing_profile_name, invoice_section_name, transfer_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(get::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         let req = req_builder.build().context(get::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
@@ -4897,6 +5412,9 @@ pub mod transfers {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn cancel(
@@ -4912,8 +5430,12 @@ pub mod transfers {
             &operation_config.base_path, billing_account_name, billing_profile_name, invoice_section_name, transfer_name
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(cancel::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         let req = req_builder.build().context(cancel::BuildRequestError)?;
         let rsp = client.execute(req).await.context(cancel::ExecuteRequestError)?;
@@ -4958,6 +5480,9 @@ pub mod transfers {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn list(
@@ -4972,8 +5497,12 @@ pub mod transfers {
             &operation_config.base_path, billing_account_name, billing_profile_name, invoice_section_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         let req = req_builder.build().context(list::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
@@ -5017,6 +5546,9 @@ pub mod transfers {
             DeserializeError {
                 source: serde_json::Error,
                 body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
             },
         }
     }
@@ -5038,8 +5570,12 @@ pub mod partner_transfers {
             &operation_config.base_path, billing_account_name, billing_profile_name, customer_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(initiate::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.json(parameters);
         let req = req_builder.build().context(initiate::BuildRequestError)?;
@@ -5085,6 +5621,9 @@ pub mod partner_transfers {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn get(
@@ -5100,8 +5639,12 @@ pub mod partner_transfers {
             &operation_config.base_path, billing_account_name, billing_profile_name, customer_name, transfer_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(get::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         let req = req_builder.build().context(get::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
@@ -5146,6 +5689,9 @@ pub mod partner_transfers {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn cancel(
@@ -5161,8 +5707,12 @@ pub mod partner_transfers {
             &operation_config.base_path, billing_account_name, billing_profile_name, customer_name, transfer_name
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(cancel::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         let req = req_builder.build().context(cancel::BuildRequestError)?;
         let rsp = client.execute(req).await.context(cancel::ExecuteRequestError)?;
@@ -5207,6 +5757,9 @@ pub mod partner_transfers {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn list(
@@ -5221,8 +5774,12 @@ pub mod partner_transfers {
             &operation_config.base_path, billing_account_name, billing_profile_name, customer_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         let req = req_builder.build().context(list::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
@@ -5267,6 +5824,9 @@ pub mod partner_transfers {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
 }
@@ -5285,8 +5845,12 @@ pub mod recipient_transfers {
             &operation_config.base_path, transfer_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(accept::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.json(parameters);
         let req = req_builder.build().context(accept::BuildRequestError)?;
@@ -5332,6 +5896,9 @@ pub mod recipient_transfers {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn validate(
@@ -5345,8 +5912,12 @@ pub mod recipient_transfers {
             &operation_config.base_path, transfer_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(validate::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.json(parameters);
         let req = req_builder.build().context(validate::BuildRequestError)?;
@@ -5392,6 +5963,9 @@ pub mod recipient_transfers {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn decline(
@@ -5404,8 +5978,12 @@ pub mod recipient_transfers {
             &operation_config.base_path, transfer_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(decline::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         let req = req_builder.build().context(decline::BuildRequestError)?;
         let rsp = client.execute(req).await.context(decline::ExecuteRequestError)?;
@@ -5450,6 +6028,9 @@ pub mod recipient_transfers {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn get(
@@ -5462,8 +6043,12 @@ pub mod recipient_transfers {
             &operation_config.base_path, transfer_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(get::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         let req = req_builder.build().context(get::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
@@ -5508,14 +6093,21 @@ pub mod recipient_transfers {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<RecipientTransferDetailsListResult, list::Error> {
         let client = &operation_config.client;
         let uri_str = &format!("{}/providers/Microsoft.Billing/transfers", &operation_config.base_path,);
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         let req = req_builder.build().context(list::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
@@ -5561,6 +6153,9 @@ pub mod recipient_transfers {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
 }
@@ -5572,8 +6167,12 @@ pub mod operations {
         let client = &operation_config.client;
         let uri_str = &format!("{}/providers/Microsoft.Billing/operations", &operation_config.base_path,);
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list::BuildRequestError)?;
@@ -5619,6 +6218,9 @@ pub mod operations {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
 }
@@ -5637,8 +6239,12 @@ pub mod billing_role_definitions {
             &operation_config.base_path, billing_account_name, billing_role_definition_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(get_by_billing_account::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get_by_billing_account::BuildRequestError)?;
@@ -5685,6 +6291,9 @@ pub mod billing_role_definitions {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn get_by_invoice_section(
@@ -5700,8 +6309,12 @@ pub mod billing_role_definitions {
             &operation_config.base_path, billing_account_name, billing_profile_name, invoice_section_name, billing_role_definition_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(get_by_invoice_section::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get_by_invoice_section::BuildRequestError)?;
@@ -5748,6 +6361,9 @@ pub mod billing_role_definitions {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn get_by_billing_profile(
@@ -5762,8 +6378,12 @@ pub mod billing_role_definitions {
             &operation_config.base_path, billing_account_name, billing_profile_name, billing_role_definition_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(get_by_billing_profile::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get_by_billing_profile::BuildRequestError)?;
@@ -5810,6 +6430,9 @@ pub mod billing_role_definitions {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn get_by_department(
@@ -5824,8 +6447,12 @@ pub mod billing_role_definitions {
             &operation_config.base_path, billing_account_name, department_name, billing_role_definition_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(get_by_department::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get_by_department::BuildRequestError)?;
@@ -5872,6 +6499,9 @@ pub mod billing_role_definitions {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn get_by_enrollment_account(
@@ -5886,8 +6516,12 @@ pub mod billing_role_definitions {
             &operation_config.base_path, billing_account_name, enrollment_account_name, billing_role_definition_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(get_by_enrollment_account::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get_by_enrollment_account::BuildRequestError)?;
@@ -5935,6 +6569,9 @@ pub mod billing_role_definitions {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn list_by_billing_account(
@@ -5947,8 +6584,12 @@ pub mod billing_role_definitions {
             &operation_config.base_path, billing_account_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list_by_billing_account::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_by_billing_account::BuildRequestError)?;
@@ -5995,6 +6636,9 @@ pub mod billing_role_definitions {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn list_by_invoice_section(
@@ -6009,8 +6653,12 @@ pub mod billing_role_definitions {
             &operation_config.base_path, billing_account_name, billing_profile_name, invoice_section_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list_by_invoice_section::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_by_invoice_section::BuildRequestError)?;
@@ -6057,6 +6705,9 @@ pub mod billing_role_definitions {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn list_by_billing_profile(
@@ -6070,8 +6721,12 @@ pub mod billing_role_definitions {
             &operation_config.base_path, billing_account_name, billing_profile_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list_by_billing_profile::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_by_billing_profile::BuildRequestError)?;
@@ -6118,6 +6773,9 @@ pub mod billing_role_definitions {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn list_by_department(
@@ -6131,8 +6789,12 @@ pub mod billing_role_definitions {
             &operation_config.base_path, billing_account_name, department_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list_by_department::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_by_department::BuildRequestError)?;
@@ -6179,6 +6841,9 @@ pub mod billing_role_definitions {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn list_by_enrollment_account(
@@ -6192,8 +6857,12 @@ pub mod billing_role_definitions {
             &operation_config.base_path, billing_account_name, enrollment_account_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list_by_enrollment_account::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_by_enrollment_account::BuildRequestError)?;
@@ -6241,6 +6910,9 @@ pub mod billing_role_definitions {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
 }
@@ -6259,8 +6931,12 @@ pub mod billing_role_assignments {
             &operation_config.base_path, billing_account_name, billing_role_assignment_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(get_by_billing_account::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get_by_billing_account::BuildRequestError)?;
@@ -6307,6 +6983,9 @@ pub mod billing_role_assignments {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn delete_by_billing_account(
@@ -6320,8 +6999,12 @@ pub mod billing_role_assignments {
             &operation_config.base_path, billing_account_name, billing_role_assignment_name
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(delete_by_billing_account::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(delete_by_billing_account::BuildRequestError)?;
@@ -6369,6 +7052,9 @@ pub mod billing_role_assignments {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn get_by_invoice_section(
@@ -6384,8 +7070,12 @@ pub mod billing_role_assignments {
             &operation_config.base_path, billing_account_name, billing_profile_name, invoice_section_name, billing_role_assignment_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(get_by_invoice_section::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get_by_invoice_section::BuildRequestError)?;
@@ -6432,6 +7122,9 @@ pub mod billing_role_assignments {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn delete_by_invoice_section(
@@ -6447,8 +7140,12 @@ pub mod billing_role_assignments {
             &operation_config.base_path, billing_account_name, billing_profile_name, invoice_section_name, billing_role_assignment_name
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(delete_by_invoice_section::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(delete_by_invoice_section::BuildRequestError)?;
@@ -6496,6 +7193,9 @@ pub mod billing_role_assignments {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn get_by_billing_profile(
@@ -6510,8 +7210,12 @@ pub mod billing_role_assignments {
             &operation_config.base_path, billing_account_name, billing_profile_name, billing_role_assignment_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(get_by_billing_profile::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get_by_billing_profile::BuildRequestError)?;
@@ -6558,6 +7262,9 @@ pub mod billing_role_assignments {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn delete_by_billing_profile(
@@ -6572,8 +7279,12 @@ pub mod billing_role_assignments {
             &operation_config.base_path, billing_account_name, billing_profile_name, billing_role_assignment_name
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(delete_by_billing_profile::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(delete_by_billing_profile::BuildRequestError)?;
@@ -6621,6 +7332,9 @@ pub mod billing_role_assignments {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn get_by_department(
@@ -6635,8 +7349,12 @@ pub mod billing_role_assignments {
             &operation_config.base_path, billing_account_name, department_name, billing_role_assignment_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(get_by_department::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get_by_department::BuildRequestError)?;
@@ -6683,6 +7401,9 @@ pub mod billing_role_assignments {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn delete_by_department(
@@ -6697,8 +7418,12 @@ pub mod billing_role_assignments {
             &operation_config.base_path, billing_account_name, department_name, billing_role_assignment_name
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(delete_by_department::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(delete_by_department::BuildRequestError)?;
@@ -6745,6 +7470,9 @@ pub mod billing_role_assignments {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn get_by_enrollment_account(
@@ -6759,8 +7487,12 @@ pub mod billing_role_assignments {
             &operation_config.base_path, billing_account_name, enrollment_account_name, billing_role_assignment_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(get_by_enrollment_account::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get_by_enrollment_account::BuildRequestError)?;
@@ -6808,6 +7540,9 @@ pub mod billing_role_assignments {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn delete_by_enrollment_account(
@@ -6822,8 +7557,12 @@ pub mod billing_role_assignments {
             &operation_config.base_path, billing_account_name, enrollment_account_name, billing_role_assignment_name
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(delete_by_enrollment_account::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(delete_by_enrollment_account::BuildRequestError)?;
@@ -6874,6 +7613,9 @@ pub mod billing_role_assignments {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn list_by_billing_account(
@@ -6886,8 +7628,12 @@ pub mod billing_role_assignments {
             &operation_config.base_path, billing_account_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list_by_billing_account::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_by_billing_account::BuildRequestError)?;
@@ -6934,6 +7680,9 @@ pub mod billing_role_assignments {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn add_by_billing_account(
@@ -6947,8 +7696,12 @@ pub mod billing_role_assignments {
             &operation_config.base_path, billing_account_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(add_by_billing_account::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(parameters);
@@ -6996,6 +7749,9 @@ pub mod billing_role_assignments {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn list_by_invoice_section(
@@ -7010,8 +7766,12 @@ pub mod billing_role_assignments {
             &operation_config.base_path, billing_account_name, billing_profile_name, invoice_section_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list_by_invoice_section::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_by_invoice_section::BuildRequestError)?;
@@ -7058,6 +7818,9 @@ pub mod billing_role_assignments {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn add_by_invoice_section(
@@ -7073,8 +7836,12 @@ pub mod billing_role_assignments {
             &operation_config.base_path, billing_account_name, billing_profile_name, invoice_section_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(add_by_invoice_section::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(parameters);
@@ -7122,6 +7889,9 @@ pub mod billing_role_assignments {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn list_by_billing_profile(
@@ -7135,8 +7905,12 @@ pub mod billing_role_assignments {
             &operation_config.base_path, billing_account_name, billing_profile_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list_by_billing_profile::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_by_billing_profile::BuildRequestError)?;
@@ -7183,6 +7957,9 @@ pub mod billing_role_assignments {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn add_by_billing_profile(
@@ -7197,8 +7974,12 @@ pub mod billing_role_assignments {
             &operation_config.base_path, billing_account_name, billing_profile_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(add_by_billing_profile::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(parameters);
@@ -7246,6 +8027,9 @@ pub mod billing_role_assignments {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn list_by_department(
@@ -7259,8 +8043,12 @@ pub mod billing_role_assignments {
             &operation_config.base_path, billing_account_name, department_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list_by_department::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_by_department::BuildRequestError)?;
@@ -7307,6 +8095,9 @@ pub mod billing_role_assignments {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn list_by_enrollment_account(
@@ -7320,8 +8111,12 @@ pub mod billing_role_assignments {
             &operation_config.base_path, billing_account_name, enrollment_account_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list_by_enrollment_account::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list_by_enrollment_account::BuildRequestError)?;
@@ -7369,6 +8164,9 @@ pub mod billing_role_assignments {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
 }
@@ -7388,8 +8186,12 @@ pub mod role_assignments {
             &operation_config.base_path, billing_account_name, billing_role_assignment_name
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(put::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(parameters);
@@ -7435,6 +8237,9 @@ pub mod role_assignments {
             DeserializeError {
                 source: serde_json::Error,
                 body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
             },
         }
     }
@@ -7456,8 +8261,12 @@ pub mod enrollment_department_role_assignments {
             &operation_config.base_path, billing_account_name, department_name, billing_role_assignment_name
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(put::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(parameters);
@@ -7503,6 +8312,9 @@ pub mod enrollment_department_role_assignments {
             DeserializeError {
                 source: serde_json::Error,
                 body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
             },
         }
     }
@@ -7524,8 +8336,12 @@ pub mod enrollment_account_role_assignments {
             &operation_config.base_path, billing_account_name, enrollment_account_name, billing_role_assignment_name
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(put::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(parameters);
@@ -7572,6 +8388,9 @@ pub mod enrollment_account_role_assignments {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
 }
@@ -7590,8 +8409,12 @@ pub mod agreements {
             &operation_config.base_path, billing_account_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list_by_billing_account::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(expand) = expand {
@@ -7641,6 +8464,9 @@ pub mod agreements {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn get(
@@ -7655,8 +8481,12 @@ pub mod agreements {
             &operation_config.base_path, billing_account_name, agreement_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(get::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(expand) = expand {
@@ -7704,6 +8534,9 @@ pub mod agreements {
             DeserializeError {
                 source: serde_json::Error,
                 body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
             },
         }
     }

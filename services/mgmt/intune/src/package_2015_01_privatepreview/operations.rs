@@ -9,8 +9,12 @@ pub async fn get_locations(operation_config: &crate::OperationConfig) -> std::re
     let client = &operation_config.client;
     let uri_str = &format!("{}/providers/Microsoft.Intune/locations", &operation_config.base_path,);
     let mut req_builder = client.get(uri_str);
-    if let Some(token) = &operation_config.bearer_access_token {
-        req_builder = req_builder.bearer_auth(token);
+    if let Some(token_credential) = &operation_config.token_credential {
+        let token_response = token_credential
+            .get_token(&operation_config.token_credential_resource)
+            .await
+            .context(get_locations::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
     }
     req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
     let req = req_builder.build().context(get_locations::BuildRequestError)?;
@@ -44,6 +48,7 @@ pub mod get_locations {
         ExecuteRequestError { source: reqwest::Error },
         ResponseBytesError { source: reqwest::Error },
         DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        GetTokenError { source: azure_core::errors::AzureError },
     }
 }
 pub async fn get_location_by_host_name(
@@ -52,8 +57,12 @@ pub async fn get_location_by_host_name(
     let client = &operation_config.client;
     let uri_str = &format!("{}/providers/Microsoft.Intune/locations/hostName", &operation_config.base_path,);
     let mut req_builder = client.get(uri_str);
-    if let Some(token) = &operation_config.bearer_access_token {
-        req_builder = req_builder.bearer_auth(token);
+    if let Some(token_credential) = &operation_config.token_credential {
+        let token_response = token_credential
+            .get_token(&operation_config.token_credential_resource)
+            .await
+            .context(get_location_by_host_name::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
     }
     req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
     let req = req_builder.build().context(get_location_by_host_name::BuildRequestError)?;
@@ -87,6 +96,7 @@ pub mod get_location_by_host_name {
         ExecuteRequestError { source: reqwest::Error },
         ResponseBytesError { source: reqwest::Error },
         DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        GetTokenError { source: azure_core::errors::AzureError },
     }
 }
 pub async fn get_apps(
@@ -102,8 +112,12 @@ pub async fn get_apps(
         &operation_config.base_path, host_name
     );
     let mut req_builder = client.get(uri_str);
-    if let Some(token) = &operation_config.bearer_access_token {
-        req_builder = req_builder.bearer_auth(token);
+    if let Some(token_credential) = &operation_config.token_credential {
+        let token_response = token_credential
+            .get_token(&operation_config.token_credential_resource)
+            .await
+            .context(get_apps::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
     }
     req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
     if let Some(filter) = filter {
@@ -146,6 +160,7 @@ pub mod get_apps {
         ExecuteRequestError { source: reqwest::Error },
         ResponseBytesError { source: reqwest::Error },
         DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        GetTokenError { source: azure_core::errors::AzureError },
     }
 }
 pub async fn get_mam_user_devices(
@@ -162,8 +177,12 @@ pub async fn get_mam_user_devices(
         &operation_config.base_path, host_name, user_name
     );
     let mut req_builder = client.get(uri_str);
-    if let Some(token) = &operation_config.bearer_access_token {
-        req_builder = req_builder.bearer_auth(token);
+    if let Some(token_credential) = &operation_config.token_credential {
+        let token_response = token_credential
+            .get_token(&operation_config.token_credential_resource)
+            .await
+            .context(get_mam_user_devices::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
     }
     req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
     if let Some(filter) = filter {
@@ -206,6 +225,7 @@ pub mod get_mam_user_devices {
         ExecuteRequestError { source: reqwest::Error },
         ResponseBytesError { source: reqwest::Error },
         DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        GetTokenError { source: azure_core::errors::AzureError },
     }
 }
 pub async fn get_mam_user_device_by_device_name(
@@ -221,8 +241,12 @@ pub async fn get_mam_user_device_by_device_name(
         &operation_config.base_path, host_name, user_name, device_name
     );
     let mut req_builder = client.get(uri_str);
-    if let Some(token) = &operation_config.bearer_access_token {
-        req_builder = req_builder.bearer_auth(token);
+    if let Some(token_credential) = &operation_config.token_credential {
+        let token_response = token_credential
+            .get_token(&operation_config.token_credential_resource)
+            .await
+            .context(get_mam_user_device_by_device_name::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
     }
     req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
     if let Some(select) = select {
@@ -262,6 +286,7 @@ pub mod get_mam_user_device_by_device_name {
         ExecuteRequestError { source: reqwest::Error },
         ResponseBytesError { source: reqwest::Error },
         DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        GetTokenError { source: azure_core::errors::AzureError },
     }
 }
 pub async fn wipe_mam_user_device(
@@ -276,8 +301,12 @@ pub async fn wipe_mam_user_device(
         &operation_config.base_path, host_name, user_name, device_name
     );
     let mut req_builder = client.post(uri_str);
-    if let Some(token) = &operation_config.bearer_access_token {
-        req_builder = req_builder.bearer_auth(token);
+    if let Some(token_credential) = &operation_config.token_credential {
+        let token_response = token_credential
+            .get_token(&operation_config.token_credential_resource)
+            .await
+            .context(wipe_mam_user_device::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
     }
     req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
     let req = req_builder.build().context(wipe_mam_user_device::BuildRequestError)?;
@@ -312,6 +341,7 @@ pub mod wipe_mam_user_device {
         ExecuteRequestError { source: reqwest::Error },
         ResponseBytesError { source: reqwest::Error },
         DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        GetTokenError { source: azure_core::errors::AzureError },
     }
 }
 pub async fn get_operation_results(
@@ -327,8 +357,12 @@ pub async fn get_operation_results(
         &operation_config.base_path, host_name
     );
     let mut req_builder = client.get(uri_str);
-    if let Some(token) = &operation_config.bearer_access_token {
-        req_builder = req_builder.bearer_auth(token);
+    if let Some(token_credential) = &operation_config.token_credential {
+        let token_response = token_credential
+            .get_token(&operation_config.token_credential_resource)
+            .await
+            .context(get_operation_results::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
     }
     req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
     if let Some(filter) = filter {
@@ -372,6 +406,7 @@ pub mod get_operation_results {
         ExecuteRequestError { source: reqwest::Error },
         ResponseBytesError { source: reqwest::Error },
         DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        GetTokenError { source: azure_core::errors::AzureError },
     }
 }
 pub async fn get_mam_statuses(
@@ -384,8 +419,12 @@ pub async fn get_mam_statuses(
         &operation_config.base_path, host_name
     );
     let mut req_builder = client.get(uri_str);
-    if let Some(token) = &operation_config.bearer_access_token {
-        req_builder = req_builder.bearer_auth(token);
+    if let Some(token_credential) = &operation_config.token_credential {
+        let token_response = token_credential
+            .get_token(&operation_config.token_credential_resource)
+            .await
+            .context(get_mam_statuses::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
     }
     req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
     let req = req_builder.build().context(get_mam_statuses::BuildRequestError)?;
@@ -419,6 +458,7 @@ pub mod get_mam_statuses {
         ExecuteRequestError { source: reqwest::Error },
         ResponseBytesError { source: reqwest::Error },
         DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        GetTokenError { source: azure_core::errors::AzureError },
     }
 }
 pub async fn get_mam_flagged_users(
@@ -434,8 +474,12 @@ pub async fn get_mam_flagged_users(
         &operation_config.base_path, host_name
     );
     let mut req_builder = client.get(uri_str);
-    if let Some(token) = &operation_config.bearer_access_token {
-        req_builder = req_builder.bearer_auth(token);
+    if let Some(token_credential) = &operation_config.token_credential {
+        let token_response = token_credential
+            .get_token(&operation_config.token_credential_resource)
+            .await
+            .context(get_mam_flagged_users::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
     }
     req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
     if let Some(filter) = filter {
@@ -479,6 +523,7 @@ pub mod get_mam_flagged_users {
         ExecuteRequestError { source: reqwest::Error },
         ResponseBytesError { source: reqwest::Error },
         DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        GetTokenError { source: azure_core::errors::AzureError },
     }
 }
 pub async fn get_mam_flagged_user_by_name(
@@ -493,8 +538,12 @@ pub async fn get_mam_flagged_user_by_name(
         &operation_config.base_path, host_name, user_name
     );
     let mut req_builder = client.get(uri_str);
-    if let Some(token) = &operation_config.bearer_access_token {
-        req_builder = req_builder.bearer_auth(token);
+    if let Some(token_credential) = &operation_config.token_credential {
+        let token_response = token_credential
+            .get_token(&operation_config.token_credential_resource)
+            .await
+            .context(get_mam_flagged_user_by_name::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
     }
     req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
     if let Some(select) = select {
@@ -534,6 +583,7 @@ pub mod get_mam_flagged_user_by_name {
         ExecuteRequestError { source: reqwest::Error },
         ResponseBytesError { source: reqwest::Error },
         DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        GetTokenError { source: azure_core::errors::AzureError },
     }
 }
 pub async fn get_mam_user_flagged_enrolled_apps(
@@ -550,8 +600,12 @@ pub async fn get_mam_user_flagged_enrolled_apps(
         &operation_config.base_path, host_name, user_name
     );
     let mut req_builder = client.get(uri_str);
-    if let Some(token) = &operation_config.bearer_access_token {
-        req_builder = req_builder.bearer_auth(token);
+    if let Some(token_credential) = &operation_config.token_credential {
+        let token_response = token_credential
+            .get_token(&operation_config.token_credential_resource)
+            .await
+            .context(get_mam_user_flagged_enrolled_apps::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
     }
     req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
     if let Some(filter) = filter {
@@ -598,6 +652,7 @@ pub mod get_mam_user_flagged_enrolled_apps {
         ExecuteRequestError { source: reqwest::Error },
         ResponseBytesError { source: reqwest::Error },
         DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        GetTokenError { source: azure_core::errors::AzureError },
     }
 }
 pub mod ios {
@@ -617,8 +672,12 @@ pub mod ios {
             &operation_config.base_path, host_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(get_mam_policies::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(filter) = filter {
@@ -662,6 +721,7 @@ pub mod ios {
             ExecuteRequestError { source: reqwest::Error },
             ResponseBytesError { source: reqwest::Error },
             DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            GetTokenError { source: azure_core::errors::AzureError },
         }
     }
     pub async fn get_mam_policy_by_name(
@@ -676,8 +736,12 @@ pub mod ios {
             &operation_config.base_path, host_name, policy_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(get_mam_policy_by_name::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(select) = select {
@@ -714,6 +778,7 @@ pub mod ios {
             ExecuteRequestError { source: reqwest::Error },
             ResponseBytesError { source: reqwest::Error },
             DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            GetTokenError { source: azure_core::errors::AzureError },
         }
     }
     pub async fn create_or_update_mam_policy(
@@ -728,8 +793,12 @@ pub mod ios {
             &operation_config.base_path, host_name, policy_name
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(create_or_update_mam_policy::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(parameters);
@@ -768,6 +837,7 @@ pub mod ios {
             ExecuteRequestError { source: reqwest::Error },
             ResponseBytesError { source: reqwest::Error },
             DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            GetTokenError { source: azure_core::errors::AzureError },
         }
     }
     pub async fn patch_mam_policy(
@@ -782,8 +852,12 @@ pub mod ios {
             &operation_config.base_path, host_name, policy_name
         );
         let mut req_builder = client.patch(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(patch_mam_policy::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(parameters);
@@ -818,6 +892,7 @@ pub mod ios {
             ExecuteRequestError { source: reqwest::Error },
             ResponseBytesError { source: reqwest::Error },
             DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            GetTokenError { source: azure_core::errors::AzureError },
         }
     }
     pub async fn delete_mam_policy(
@@ -831,8 +906,12 @@ pub mod ios {
             &operation_config.base_path, host_name, policy_name
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(delete_mam_policy::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(delete_mam_policy::BuildRequestError)?;
@@ -868,6 +947,7 @@ pub mod ios {
             ExecuteRequestError { source: reqwest::Error },
             ResponseBytesError { source: reqwest::Error },
             DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            GetTokenError { source: azure_core::errors::AzureError },
         }
     }
     pub async fn get_app_for_mam_policy(
@@ -884,8 +964,12 @@ pub mod ios {
             &operation_config.base_path, host_name, policy_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(get_app_for_mam_policy::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(filter) = filter {
@@ -929,6 +1013,7 @@ pub mod ios {
             ExecuteRequestError { source: reqwest::Error },
             ResponseBytesError { source: reqwest::Error },
             DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            GetTokenError { source: azure_core::errors::AzureError },
         }
     }
     pub async fn add_app_for_mam_policy(
@@ -944,8 +1029,12 @@ pub mod ios {
             &operation_config.base_path, host_name, policy_name, app_name
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(add_app_for_mam_policy::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(parameters);
@@ -982,6 +1071,7 @@ pub mod ios {
             ExecuteRequestError { source: reqwest::Error },
             ResponseBytesError { source: reqwest::Error },
             DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            GetTokenError { source: azure_core::errors::AzureError },
         }
     }
     pub async fn delete_app_for_mam_policy(
@@ -996,8 +1086,12 @@ pub mod ios {
             &operation_config.base_path, host_name, policy_name, app_name
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(delete_app_for_mam_policy::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(delete_app_for_mam_policy::BuildRequestError)?;
@@ -1033,6 +1127,7 @@ pub mod ios {
             ExecuteRequestError { source: reqwest::Error },
             ResponseBytesError { source: reqwest::Error },
             DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            GetTokenError { source: azure_core::errors::AzureError },
         }
     }
     pub async fn get_groups_for_mam_policy(
@@ -1046,8 +1141,12 @@ pub mod ios {
             &operation_config.base_path, host_name, policy_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(get_groups_for_mam_policy::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get_groups_for_mam_policy::BuildRequestError)?;
@@ -1082,6 +1181,7 @@ pub mod ios {
             ExecuteRequestError { source: reqwest::Error },
             ResponseBytesError { source: reqwest::Error },
             DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            GetTokenError { source: azure_core::errors::AzureError },
         }
     }
     pub async fn add_group_for_mam_policy(
@@ -1097,8 +1197,12 @@ pub mod ios {
             &operation_config.base_path, host_name, policy_name, group_id
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(add_group_for_mam_policy::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(parameters);
@@ -1135,6 +1239,7 @@ pub mod ios {
             ExecuteRequestError { source: reqwest::Error },
             ResponseBytesError { source: reqwest::Error },
             DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            GetTokenError { source: azure_core::errors::AzureError },
         }
     }
     pub async fn delete_group_for_mam_policy(
@@ -1149,8 +1254,12 @@ pub mod ios {
             &operation_config.base_path, host_name, policy_name, group_id
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(delete_group_for_mam_policy::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(delete_group_for_mam_policy::BuildRequestError)?;
@@ -1189,6 +1298,7 @@ pub mod ios {
             ExecuteRequestError { source: reqwest::Error },
             ResponseBytesError { source: reqwest::Error },
             DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            GetTokenError { source: azure_core::errors::AzureError },
         }
     }
 }
@@ -1209,8 +1319,12 @@ pub mod android {
             &operation_config.base_path, host_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(get_mam_policies::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(filter) = filter {
@@ -1254,6 +1368,7 @@ pub mod android {
             ExecuteRequestError { source: reqwest::Error },
             ResponseBytesError { source: reqwest::Error },
             DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            GetTokenError { source: azure_core::errors::AzureError },
         }
     }
     pub async fn get_mam_policy_by_name(
@@ -1268,8 +1383,12 @@ pub mod android {
             &operation_config.base_path, host_name, policy_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(get_mam_policy_by_name::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(select) = select {
@@ -1307,6 +1426,7 @@ pub mod android {
             ExecuteRequestError { source: reqwest::Error },
             ResponseBytesError { source: reqwest::Error },
             DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            GetTokenError { source: azure_core::errors::AzureError },
         }
     }
     pub async fn create_or_update_mam_policy(
@@ -1321,8 +1441,12 @@ pub mod android {
             &operation_config.base_path, host_name, policy_name
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(create_or_update_mam_policy::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(parameters);
@@ -1361,6 +1485,7 @@ pub mod android {
             ExecuteRequestError { source: reqwest::Error },
             ResponseBytesError { source: reqwest::Error },
             DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            GetTokenError { source: azure_core::errors::AzureError },
         }
     }
     pub async fn patch_mam_policy(
@@ -1375,8 +1500,12 @@ pub mod android {
             &operation_config.base_path, host_name, policy_name
         );
         let mut req_builder = client.patch(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(patch_mam_policy::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(parameters);
@@ -1411,6 +1540,7 @@ pub mod android {
             ExecuteRequestError { source: reqwest::Error },
             ResponseBytesError { source: reqwest::Error },
             DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            GetTokenError { source: azure_core::errors::AzureError },
         }
     }
     pub async fn delete_mam_policy(
@@ -1424,8 +1554,12 @@ pub mod android {
             &operation_config.base_path, host_name, policy_name
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(delete_mam_policy::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(delete_mam_policy::BuildRequestError)?;
@@ -1461,6 +1595,7 @@ pub mod android {
             ExecuteRequestError { source: reqwest::Error },
             ResponseBytesError { source: reqwest::Error },
             DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            GetTokenError { source: azure_core::errors::AzureError },
         }
     }
     pub async fn get_app_for_mam_policy(
@@ -1477,8 +1612,12 @@ pub mod android {
             &operation_config.base_path, host_name, policy_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(get_app_for_mam_policy::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(filter) = filter {
@@ -1522,6 +1661,7 @@ pub mod android {
             ExecuteRequestError { source: reqwest::Error },
             ResponseBytesError { source: reqwest::Error },
             DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            GetTokenError { source: azure_core::errors::AzureError },
         }
     }
     pub async fn add_app_for_mam_policy(
@@ -1537,8 +1677,12 @@ pub mod android {
             &operation_config.base_path, host_name, policy_name, app_name
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(add_app_for_mam_policy::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(parameters);
@@ -1575,6 +1719,7 @@ pub mod android {
             ExecuteRequestError { source: reqwest::Error },
             ResponseBytesError { source: reqwest::Error },
             DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            GetTokenError { source: azure_core::errors::AzureError },
         }
     }
     pub async fn delete_app_for_mam_policy(
@@ -1589,8 +1734,12 @@ pub mod android {
             &operation_config.base_path, host_name, policy_name, app_name
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(delete_app_for_mam_policy::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(delete_app_for_mam_policy::BuildRequestError)?;
@@ -1626,6 +1775,7 @@ pub mod android {
             ExecuteRequestError { source: reqwest::Error },
             ResponseBytesError { source: reqwest::Error },
             DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            GetTokenError { source: azure_core::errors::AzureError },
         }
     }
     pub async fn get_groups_for_mam_policy(
@@ -1639,8 +1789,12 @@ pub mod android {
             &operation_config.base_path, host_name, policy_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(get_groups_for_mam_policy::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(get_groups_for_mam_policy::BuildRequestError)?;
@@ -1675,6 +1829,7 @@ pub mod android {
             ExecuteRequestError { source: reqwest::Error },
             ResponseBytesError { source: reqwest::Error },
             DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            GetTokenError { source: azure_core::errors::AzureError },
         }
     }
     pub async fn add_group_for_mam_policy(
@@ -1690,8 +1845,12 @@ pub mod android {
             &operation_config.base_path, host_name, policy_name, group_id
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(add_group_for_mam_policy::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(parameters);
@@ -1728,6 +1887,7 @@ pub mod android {
             ExecuteRequestError { source: reqwest::Error },
             ResponseBytesError { source: reqwest::Error },
             DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            GetTokenError { source: azure_core::errors::AzureError },
         }
     }
     pub async fn delete_group_for_mam_policy(
@@ -1742,8 +1902,12 @@ pub mod android {
             &operation_config.base_path, host_name, policy_name, group_id
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(delete_group_for_mam_policy::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(delete_group_for_mam_policy::BuildRequestError)?;
@@ -1782,6 +1946,7 @@ pub mod android {
             ExecuteRequestError { source: reqwest::Error },
             ResponseBytesError { source: reqwest::Error },
             DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            GetTokenError { source: azure_core::errors::AzureError },
         }
     }
 }

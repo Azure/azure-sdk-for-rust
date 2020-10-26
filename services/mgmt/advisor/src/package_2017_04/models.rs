@@ -56,7 +56,7 @@ pub struct ConfigData {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub properties: Option<config_data::Properties>,
 }
-mod config_data {
+pub mod config_data {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Properties {
@@ -112,7 +112,7 @@ pub struct RecommendationProperties {
     #[serde(rename = "extendedProperties", skip_serializing_if = "Option::is_none")]
     pub extended_properties: Option<serde_json::Value>,
 }
-mod recommendation_properties {
+pub mod recommendation_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Category {

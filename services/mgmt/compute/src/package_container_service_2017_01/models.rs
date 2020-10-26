@@ -29,7 +29,7 @@ pub struct ContainerServiceOrchestratorProfile {
     #[serde(rename = "orchestratorType")]
     pub orchestrator_type: container_service_orchestrator_profile::OrchestratorType,
 }
-mod container_service_orchestrator_profile {
+pub mod container_service_orchestrator_profile {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum OrchestratorType {
@@ -49,7 +49,7 @@ pub struct ContainerServiceMasterProfile {
     #[serde(skip_serializing)]
     pub fqdn: Option<String>,
 }
-mod container_service_master_profile {
+pub mod container_service_master_profile {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Count {}
@@ -65,7 +65,7 @@ pub struct ContainerServiceAgentPoolProfile {
     #[serde(skip_serializing)]
     pub fqdn: Option<String>,
 }
-mod container_service_agent_pool_profile {
+pub mod container_service_agent_pool_profile {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum VmSize {

@@ -101,7 +101,7 @@ pub struct ArtifactSourceProperties {
     #[serde(rename = "provisioningState", skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
 }
-mod artifact_source_properties {
+pub mod artifact_source_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum SourceType {
@@ -178,7 +178,7 @@ pub struct CostPerDayProperties {
     #[serde(rename = "costType", skip_serializing_if = "Option::is_none")]
     pub cost_type: Option<cost_per_day_properties::CostType>,
 }
-mod cost_per_day_properties {
+pub mod cost_per_day_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum CostType {
@@ -226,7 +226,7 @@ pub struct CustomImageProperties {
     #[serde(rename = "provisioningState", skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
 }
-mod custom_image_properties {
+pub mod custom_image_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum OsType {
@@ -415,7 +415,7 @@ pub struct LabProperties {
     #[serde(rename = "provisioningState", skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
 }
-mod lab_properties {
+pub mod lab_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum LabStorageType {
@@ -491,7 +491,7 @@ pub struct LinuxOsInfo {
     #[serde(rename = "linuxOsState", skip_serializing_if = "Option::is_none")]
     pub linux_os_state: Option<linux_os_info::LinuxOsState>,
 }
-mod linux_os_info {
+pub mod linux_os_info {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum LinuxOsState {
@@ -541,7 +541,7 @@ pub struct PolicyProperties {
     #[serde(rename = "provisioningState", skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
 }
-mod policy_properties {
+pub mod policy_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
@@ -699,7 +699,7 @@ pub struct ScheduleProperties {
     #[serde(rename = "provisioningState", skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
 }
-mod schedule_properties {
+pub mod schedule_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
@@ -722,7 +722,7 @@ pub struct Subnet {
     #[serde(rename = "allowPublicIp", skip_serializing_if = "Option::is_none")]
     pub allow_public_ip: Option<subnet::AllowPublicIp>,
 }
-mod subnet {
+pub mod subnet {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum AllowPublicIp {
@@ -742,7 +742,7 @@ pub struct SubnetOverride {
     #[serde(rename = "usePublicIpAddressPermission", skip_serializing_if = "Option::is_none")]
     pub use_public_ip_address_permission: Option<subnet_override::UsePublicIpAddressPermission>,
 }
-mod subnet_override {
+pub mod subnet_override {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum UseInVmCreationPermission {
@@ -766,7 +766,7 @@ pub struct SubscriptionNotification {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub properties: Option<SubscriptionNotificationProperties>,
 }
-mod subscription_notification {
+pub mod subscription_notification {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum State {
@@ -832,7 +832,7 @@ pub struct WindowsOsInfo {
     #[serde(rename = "windowsOsState", skip_serializing_if = "Option::is_none")]
     pub windows_os_state: Option<windows_os_info::WindowsOsState>,
 }
-mod windows_os_info {
+pub mod windows_os_info {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum WindowsOsState {

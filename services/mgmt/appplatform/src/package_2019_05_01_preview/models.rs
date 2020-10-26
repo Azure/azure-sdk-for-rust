@@ -44,7 +44,7 @@ pub struct ClusterResourceProperties {
     #[serde(rename = "serviceId", skip_serializing)]
     pub service_id: Option<String>,
 }
-mod cluster_resource_properties {
+pub mod cluster_resource_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
@@ -68,7 +68,7 @@ pub struct ManagedIdentityProperties {
     #[serde(rename = "tenantId", skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
 }
-mod managed_identity_properties {
+pub mod managed_identity_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
@@ -97,7 +97,7 @@ pub struct ConfigServerProperties {
     #[serde(rename = "configServer", skip_serializing_if = "Option::is_none")]
     pub config_server: Option<ConfigServerSettings>,
 }
-mod config_server_properties {
+pub mod config_server_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum State {
@@ -119,7 +119,7 @@ pub struct TraceProperties {
     #[serde(rename = "appInsightInstrumentationKey", skip_serializing_if = "Option::is_none")]
     pub app_insight_instrumentation_key: Option<String>,
 }
-mod trace_properties {
+pub mod trace_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum State {
@@ -144,7 +144,7 @@ pub struct NetworkProfile {
     #[serde(rename = "outboundIPs", skip_serializing)]
     pub outbound_i_ps: Option<network_profile::OutboundIPs>,
 }
-mod network_profile {
+pub mod network_profile {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct OutboundIPs {
@@ -227,7 +227,7 @@ pub struct RegenerateTestKeyRequestPayload {
     #[serde(rename = "keyType")]
     pub key_type: regenerate_test_key_request_payload::KeyType,
 }
-mod regenerate_test_key_request_payload {
+pub mod regenerate_test_key_request_payload {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum KeyType {
@@ -272,7 +272,7 @@ pub struct AppResourceProperties {
     #[serde(rename = "persistentDisk", skip_serializing_if = "Option::is_none")]
     pub persistent_disk: Option<PersistentDisk>,
 }
-mod app_resource_properties {
+pub mod app_resource_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
@@ -457,7 +457,7 @@ pub struct DeploymentResourceProperties {
     #[serde(skip_serializing)]
     pub instances: Vec<DeploymentInstance>,
 }
-mod deployment_resource_properties {
+pub mod deployment_resource_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
@@ -488,7 +488,7 @@ pub struct UserSourceInfo {
     #[serde(rename = "artifactSelector", skip_serializing_if = "Option::is_none")]
     pub artifact_selector: Option<String>,
 }
-mod user_source_info {
+pub mod user_source_info {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
@@ -514,7 +514,7 @@ pub struct DeploymentSettings {
     #[serde(rename = "runtimeVersion", skip_serializing_if = "Option::is_none")]
     pub runtime_version: Option<deployment_settings::RuntimeVersion>,
 }
-mod deployment_settings {
+pub mod deployment_settings {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum RuntimeVersion {
@@ -673,7 +673,7 @@ pub struct SkuCapacity {
     #[serde(rename = "scaleType", skip_serializing_if = "Option::is_none")]
     pub scale_type: Option<sku_capacity::ScaleType>,
 }
-mod sku_capacity {
+pub mod sku_capacity {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ScaleType {
@@ -702,7 +702,7 @@ pub struct ResourceSkuRestrictions {
     #[serde(rename = "reasonCode", skip_serializing_if = "Option::is_none")]
     pub reason_code: Option<resource_sku_restrictions::ReasonCode>,
 }
-mod resource_sku_restrictions {
+pub mod resource_sku_restrictions {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
@@ -766,7 +766,7 @@ pub struct SupportedRuntimeVersion {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
 }
-mod supported_runtime_version {
+pub mod supported_runtime_version {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Value {

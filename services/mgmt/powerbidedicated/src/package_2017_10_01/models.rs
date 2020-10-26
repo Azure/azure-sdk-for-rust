@@ -16,7 +16,7 @@ pub struct Operation {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
 }
-mod operation {
+pub mod operation {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Display {
@@ -70,7 +70,7 @@ pub struct DedicatedCapacityProperties {
     #[serde(rename = "provisioningState", skip_serializing)]
     pub provisioning_state: Option<dedicated_capacity_properties::ProvisioningState>,
 }
-mod dedicated_capacity_properties {
+pub mod dedicated_capacity_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum State {
@@ -109,7 +109,7 @@ pub struct ResourceSku {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tier: Option<resource_sku::Tier>,
 }
-mod resource_sku {
+pub mod resource_sku {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Tier {

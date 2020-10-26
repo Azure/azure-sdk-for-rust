@@ -89,7 +89,7 @@ pub struct MapsKeySpecification {
     #[serde(rename = "keyType")]
     pub key_type: maps_key_specification::KeyType,
 }
-mod maps_key_specification {
+pub mod maps_key_specification {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum KeyType {
@@ -133,7 +133,7 @@ pub struct ErrorResponse {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub error: Option<error_response::Error>,
 }
-mod error_response {
+pub mod error_response {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Error {
@@ -188,7 +188,7 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedAt", skip_serializing_if = "Option::is_none")]
     pub last_modified_at: Option<String>,
 }
-mod system_data {
+pub mod system_data {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum CreatedByType {

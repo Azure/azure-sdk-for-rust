@@ -40,7 +40,7 @@ pub struct CustomerSecret {
     pub key_value: String,
     pub algorithm: customer_secret::Algorithm,
 }
-mod customer_secret {
+pub mod customer_secret {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Algorithm {
@@ -94,7 +94,7 @@ pub struct DataServiceProperties {
     #[serde(rename = "supportedDataSourceTypes", skip_serializing_if = "Vec::is_empty")]
     pub supported_data_source_types: Vec<String>,
 }
-mod data_service_properties {
+pub mod data_service_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum State {
@@ -133,7 +133,7 @@ pub struct DataStoreProperties {
     #[serde(rename = "customerSecrets", skip_serializing_if = "Vec::is_empty")]
     pub customer_secrets: Vec<CustomerSecret>,
 }
-mod data_store_properties {
+pub mod data_store_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum State {
@@ -165,7 +165,7 @@ pub struct DataStoreTypeProperties {
     #[serde(rename = "supportedDataServicesAsSource", skip_serializing_if = "Vec::is_empty")]
     pub supported_data_services_as_source: Vec<String>,
 }
-mod data_store_type_properties {
+pub mod data_store_type_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum State {
@@ -213,7 +213,7 @@ pub struct Job {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub error: Option<Error>,
 }
-mod job {
+pub mod job {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
@@ -240,7 +240,7 @@ pub struct JobDefinitionFilter {
     #[serde(rename = "lastModified", skip_serializing_if = "Option::is_none")]
     pub last_modified: Option<String>,
 }
-mod job_definition_filter {
+pub mod job_definition_filter {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum State {
@@ -276,7 +276,7 @@ pub struct JobDefinitionProperties {
     #[serde(rename = "customerSecrets", skip_serializing_if = "Vec::is_empty")]
     pub customer_secrets: Vec<CustomerSecret>,
 }
-mod job_definition_properties {
+pub mod job_definition_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum State {
@@ -364,7 +364,7 @@ pub struct JobFilter {
     #[serde(rename = "startTime", skip_serializing_if = "Option::is_none")]
     pub start_time: Option<String>,
 }
-mod job_filter {
+pub mod job_filter {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
@@ -403,7 +403,7 @@ pub struct JobProperties {
     #[serde(rename = "dataSinkName", skip_serializing_if = "Option::is_none")]
     pub data_sink_name: Option<String>,
 }
-mod job_properties {
+pub mod job_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum IsCancellable {
@@ -422,7 +422,7 @@ pub struct JobStages {
     #[serde(rename = "errorDetails", skip_serializing_if = "Vec::is_empty")]
     pub error_details: Vec<ErrorDetails>,
 }
-mod job_stages {
+pub mod job_stages {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum StageStatus {
@@ -487,7 +487,7 @@ pub struct RunParameters {
     #[serde(rename = "customerSecrets", skip_serializing_if = "Vec::is_empty")]
     pub customer_secrets: Vec<CustomerSecret>,
 }
-mod run_parameters {
+pub mod run_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum UserConfirmation {

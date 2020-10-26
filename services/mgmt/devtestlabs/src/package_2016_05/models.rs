@@ -196,7 +196,7 @@ pub struct ArtifactSourceProperties {
     #[serde(rename = "uniqueIdentifier", skip_serializing_if = "Option::is_none")]
     pub unique_identifier: Option<String>,
 }
-mod artifact_source_properties {
+pub mod artifact_source_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum SourceType {
@@ -232,7 +232,7 @@ pub struct ArtifactSourcePropertiesFragment {
     #[serde(rename = "uniqueIdentifier", skip_serializing_if = "Option::is_none")]
     pub unique_identifier: Option<String>,
 }
-mod artifact_source_properties_fragment {
+pub mod artifact_source_properties_fragment {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum SourceType {
@@ -259,7 +259,7 @@ pub struct AttachNewDataDiskOptions {
     #[serde(rename = "diskType", skip_serializing_if = "Option::is_none")]
     pub disk_type: Option<attach_new_data_disk_options::DiskType>,
 }
-mod attach_new_data_disk_options {
+pub mod attach_new_data_disk_options {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum DiskType {
@@ -375,7 +375,7 @@ pub struct CostThresholdProperties {
     #[serde(rename = "notificationSent", skip_serializing_if = "Option::is_none")]
     pub notification_sent: Option<String>,
 }
-mod cost_threshold_properties {
+pub mod cost_threshold_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum DisplayOnChart {
@@ -422,7 +422,7 @@ pub struct CustomImagePropertiesCustom {
     #[serde(rename = "osType")]
     pub os_type: custom_image_properties_custom::OsType,
 }
-mod custom_image_properties_custom {
+pub mod custom_image_properties_custom {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum OsType {
@@ -449,7 +449,7 @@ pub struct DataDiskProperties {
     #[serde(rename = "hostCaching", skip_serializing_if = "Option::is_none")]
     pub host_caching: Option<data_disk_properties::HostCaching>,
 }
-mod data_disk_properties {
+pub mod data_disk_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum HostCaching {
@@ -507,7 +507,7 @@ pub struct DiskProperties {
     #[serde(rename = "uniqueIdentifier", skip_serializing_if = "Option::is_none")]
     pub unique_identifier: Option<String>,
 }
-mod disk_properties {
+pub mod disk_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum DiskType {
@@ -567,7 +567,7 @@ pub struct Event {
     #[serde(rename = "eventName", skip_serializing_if = "Option::is_none")]
     pub event_name: Option<event::EventName>,
 }
-mod event {
+pub mod event {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum EventName {
@@ -580,7 +580,7 @@ pub struct EventFragment {
     #[serde(rename = "eventName", skip_serializing_if = "Option::is_none")]
     pub event_name: Option<event_fragment::EventName>,
 }
-mod event_fragment {
+pub mod event_fragment {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum EventName {
@@ -697,7 +697,7 @@ pub struct GenerateArmTemplateRequest {
     #[serde(rename = "fileUploadOptions", skip_serializing_if = "Option::is_none")]
     pub file_upload_options: Option<generate_arm_template_request::FileUploadOptions>,
 }
-mod generate_arm_template_request {
+pub mod generate_arm_template_request {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum FileUploadOptions {
@@ -745,7 +745,7 @@ pub struct InboundNatRule {
     #[serde(rename = "backendPort", skip_serializing_if = "Option::is_none")]
     pub backend_port: Option<i32>,
 }
-mod inbound_nat_rule {
+pub mod inbound_nat_rule {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum TransportProtocol {
@@ -762,7 +762,7 @@ pub struct InboundNatRuleFragment {
     #[serde(rename = "backendPort", skip_serializing_if = "Option::is_none")]
     pub backend_port: Option<i32>,
 }
-mod inbound_nat_rule_fragment {
+pub mod inbound_nat_rule_fragment {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum TransportProtocol {
@@ -792,7 +792,7 @@ pub struct LabCostDetailsProperties {
     #[serde(rename = "costType", skip_serializing_if = "Option::is_none")]
     pub cost_type: Option<lab_cost_details_properties::CostType>,
 }
-mod lab_cost_details_properties {
+pub mod lab_cost_details_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum CostType {
@@ -859,7 +859,7 @@ pub struct LabProperties {
     #[serde(rename = "uniqueIdentifier", skip_serializing_if = "Option::is_none")]
     pub unique_identifier: Option<String>,
 }
-mod lab_properties {
+pub mod lab_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum LabStorageType {
@@ -883,7 +883,7 @@ pub struct LabPropertiesFragment {
     #[serde(rename = "uniqueIdentifier", skip_serializing_if = "Option::is_none")]
     pub unique_identifier: Option<String>,
 }
-mod lab_properties_fragment {
+pub mod lab_properties_fragment {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum LabStorageType {
@@ -1004,7 +1004,7 @@ pub struct LabVirtualMachineCreationParameterProperties {
     #[serde(rename = "uniqueIdentifier", skip_serializing_if = "Option::is_none")]
     pub unique_identifier: Option<String>,
 }
-mod lab_virtual_machine_creation_parameter_properties {
+pub mod lab_virtual_machine_creation_parameter_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum VirtualMachineCreationSource {
@@ -1084,7 +1084,7 @@ pub struct LabVirtualMachineProperties {
     #[serde(rename = "uniqueIdentifier", skip_serializing_if = "Option::is_none")]
     pub unique_identifier: Option<String>,
 }
-mod lab_virtual_machine_properties {
+pub mod lab_virtual_machine_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum VirtualMachineCreationSource {
@@ -1155,7 +1155,7 @@ pub struct LabVirtualMachinePropertiesFragment {
     #[serde(rename = "uniqueIdentifier", skip_serializing_if = "Option::is_none")]
     pub unique_identifier: Option<String>,
 }
-mod lab_virtual_machine_properties_fragment {
+pub mod lab_virtual_machine_properties_fragment {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum VirtualMachineCreationSource {
@@ -1168,7 +1168,7 @@ pub struct LinuxOsInfo {
     #[serde(rename = "linuxOsState", skip_serializing_if = "Option::is_none")]
     pub linux_os_state: Option<linux_os_info::LinuxOsState>,
 }
-mod linux_os_info {
+pub mod linux_os_info {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum LinuxOsState {
@@ -1269,7 +1269,7 @@ pub struct NotificationSettings {
     #[serde(rename = "webhookUrl", skip_serializing_if = "Option::is_none")]
     pub webhook_url: Option<String>,
 }
-mod notification_settings {
+pub mod notification_settings {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
@@ -1286,7 +1286,7 @@ pub struct NotificationSettingsFragment {
     #[serde(rename = "webhookUrl", skip_serializing_if = "Option::is_none")]
     pub webhook_url: Option<String>,
 }
-mod notification_settings_fragment {
+pub mod notification_settings_fragment {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
@@ -1301,7 +1301,7 @@ pub struct NotifyParameters {
     #[serde(rename = "jsonPayload", skip_serializing_if = "Option::is_none")]
     pub json_payload: Option<String>,
 }
-mod notify_parameters {
+pub mod notify_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum EventName {
@@ -1343,7 +1343,7 @@ pub struct OperationResult {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub error: Option<OperationError>,
 }
-mod operation_result {
+pub mod operation_result {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum StatusCode {
@@ -1445,7 +1445,7 @@ pub struct PolicyProperties {
     #[serde(rename = "uniqueIdentifier", skip_serializing_if = "Option::is_none")]
     pub unique_identifier: Option<String>,
 }
-mod policy_properties {
+pub mod policy_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
@@ -1488,7 +1488,7 @@ pub struct PolicyPropertiesFragment {
     #[serde(rename = "uniqueIdentifier", skip_serializing_if = "Option::is_none")]
     pub unique_identifier: Option<String>,
 }
-mod policy_properties_fragment {
+pub mod policy_properties_fragment {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
@@ -1533,7 +1533,7 @@ pub struct Port {
     #[serde(rename = "backendPort", skip_serializing_if = "Option::is_none")]
     pub backend_port: Option<i32>,
 }
-mod port {
+pub mod port {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum TransportProtocol {
@@ -1548,7 +1548,7 @@ pub struct PortFragment {
     #[serde(rename = "backendPort", skip_serializing_if = "Option::is_none")]
     pub backend_port: Option<i32>,
 }
-mod port_fragment {
+pub mod port_fragment {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum TransportProtocol {
@@ -1747,7 +1747,7 @@ pub struct ScheduleProperties {
     #[serde(rename = "uniqueIdentifier", skip_serializing_if = "Option::is_none")]
     pub unique_identifier: Option<String>,
 }
-mod schedule_properties {
+pub mod schedule_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
@@ -1778,7 +1778,7 @@ pub struct SchedulePropertiesFragment {
     #[serde(rename = "uniqueIdentifier", skip_serializing_if = "Option::is_none")]
     pub unique_identifier: Option<String>,
 }
-mod schedule_properties_fragment {
+pub mod schedule_properties_fragment {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
@@ -1852,7 +1852,7 @@ pub struct Subnet {
     #[serde(rename = "allowPublicIp", skip_serializing_if = "Option::is_none")]
     pub allow_public_ip: Option<subnet::AllowPublicIp>,
 }
-mod subnet {
+pub mod subnet {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum AllowPublicIp {
@@ -1870,7 +1870,7 @@ pub struct SubnetFragment {
     #[serde(rename = "allowPublicIp", skip_serializing_if = "Option::is_none")]
     pub allow_public_ip: Option<subnet_fragment::AllowPublicIp>,
 }
-mod subnet_fragment {
+pub mod subnet_fragment {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum AllowPublicIp {
@@ -1894,7 +1894,7 @@ pub struct SubnetOverride {
     #[serde(rename = "virtualNetworkPoolName", skip_serializing_if = "Option::is_none")]
     pub virtual_network_pool_name: Option<String>,
 }
-mod subnet_override {
+pub mod subnet_override {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum UseInVmCreationPermission {
@@ -1924,7 +1924,7 @@ pub struct SubnetOverrideFragment {
     #[serde(rename = "virtualNetworkPoolName", skip_serializing_if = "Option::is_none")]
     pub virtual_network_pool_name: Option<String>,
 }
-mod subnet_override_fragment {
+pub mod subnet_override_fragment {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum UseInVmCreationPermission {
@@ -1964,7 +1964,7 @@ pub struct TargetCostProperties {
     #[serde(rename = "cycleType", skip_serializing_if = "Option::is_none")]
     pub cycle_type: Option<target_cost_properties::CycleType>,
 }
-mod target_cost_properties {
+pub mod target_cost_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
@@ -2124,7 +2124,7 @@ pub struct WindowsOsInfo {
     #[serde(rename = "windowsOsState", skip_serializing_if = "Option::is_none")]
     pub windows_os_state: Option<windows_os_info::WindowsOsState>,
 }
-mod windows_os_info {
+pub mod windows_os_info {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum WindowsOsState {

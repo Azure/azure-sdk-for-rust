@@ -51,7 +51,7 @@ pub struct DiskSku {
     #[serde(skip_serializing)]
     pub tier: Option<String>,
 }
-mod disk_sku {
+pub mod disk_sku {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Name {
@@ -72,7 +72,7 @@ pub struct SnapshotSku {
     #[serde(skip_serializing)]
     pub tier: Option<String>,
 }
-mod snapshot_sku {
+pub mod snapshot_sku {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Name {
@@ -121,7 +121,7 @@ pub struct DiskProperties {
     #[serde(rename = "shareInfo", skip_serializing)]
     pub share_info: Vec<ShareInfoElement>,
 }
-mod disk_properties {
+pub mod disk_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum OsType {
@@ -169,7 +169,7 @@ pub struct SnapshotProperties {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub encryption: Option<Encryption>,
 }
-mod snapshot_properties {
+pub mod snapshot_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum OsType {
@@ -237,7 +237,7 @@ pub struct Encryption {
     #[serde(rename = "type", skip_serializing_if = "Option::is_none")]
     pub type_: Option<encryption::Type>,
 }
-mod encryption {
+pub mod encryption {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
@@ -266,7 +266,7 @@ pub struct DiskUpdateProperties {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub encryption: Option<Encryption>,
 }
-mod disk_update_properties {
+pub mod disk_update_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum OsType {
@@ -285,7 +285,7 @@ pub struct SnapshotUpdateProperties {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub encryption: Option<Encryption>,
 }
-mod snapshot_update_properties {
+pub mod snapshot_update_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum OsType {
@@ -317,7 +317,7 @@ pub struct CreationData {
     #[serde(rename = "uploadSizeBytes", skip_serializing_if = "Option::is_none")]
     pub upload_size_bytes: Option<i64>,
 }
-mod creation_data {
+pub mod creation_data {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum CreateOption {
@@ -342,7 +342,7 @@ pub struct GrantAccessData {
     #[serde(rename = "durationInSeconds")]
     pub duration_in_seconds: i32,
 }
-mod grant_access_data {
+pub mod grant_access_data {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Access {
@@ -391,7 +391,7 @@ pub struct EncryptionSetIdentity {
     #[serde(rename = "tenantId", skip_serializing)]
     pub tenant_id: Option<String>,
 }
-mod encryption_set_identity {
+pub mod encryption_set_identity {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {

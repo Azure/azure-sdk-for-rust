@@ -8,7 +8,7 @@ pub struct RegistryNameCheckRequest {
     #[serde(rename = "type")]
     pub type_: registry_name_check_request::Type,
 }
-mod registry_name_check_request {
+pub mod registry_name_check_request {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {

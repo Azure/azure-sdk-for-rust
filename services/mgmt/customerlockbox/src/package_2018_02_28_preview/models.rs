@@ -22,7 +22,7 @@ pub struct Operation {
     #[serde(skip_serializing)]
     pub origin: Option<String>,
 }
-mod operation {
+pub mod operation {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Display {
@@ -102,7 +102,7 @@ pub struct Approval {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub reason: Option<String>,
 }
-mod approval {
+pub mod approval {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Decision {
@@ -133,7 +133,7 @@ pub struct ErrorAdditionalInfo {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub info: Option<error_additional_info::Info>,
 }
-mod error_additional_info {
+pub mod error_additional_info {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Info {

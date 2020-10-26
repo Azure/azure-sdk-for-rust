@@ -54,7 +54,7 @@ pub struct StorageProfile {
     #[serde(rename = "storageAutogrow", skip_serializing_if = "Option::is_none")]
     pub storage_autogrow: Option<storage_profile::StorageAutogrow>,
 }
-mod storage_profile {
+pub mod storage_profile {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum StorageAutogrow {
@@ -67,7 +67,7 @@ pub struct Sku {
     pub name: String,
     pub tier: sku::Tier,
 }
-mod sku {
+pub mod sku {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Tier {
@@ -125,7 +125,7 @@ pub struct ServerProperties {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
-mod server_properties {
+pub mod server_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum State {
@@ -206,7 +206,7 @@ pub struct ServerKeyProperties {
     #[serde(rename = "creationDate", skip_serializing)]
     pub creation_date: Option<String>,
 }
-mod server_key_properties {
+pub mod server_key_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ServerKeyType {
@@ -291,7 +291,7 @@ pub struct ConfigurationProperties {
     #[serde(rename = "isDynamicConfig", skip_serializing)]
     pub is_dynamic_config: Option<configuration_properties::IsDynamicConfig>,
 }
-mod configuration_properties {
+pub mod configuration_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum IsReadOnly {
@@ -423,7 +423,7 @@ pub struct Operation {
     #[serde(skip_serializing)]
     pub properties: Option<serde_json::Value>,
 }
-mod operation {
+pub mod operation {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Origin {
@@ -468,7 +468,7 @@ pub struct Identity {
     #[serde(rename = "type", skip_serializing_if = "Option::is_none")]
     pub type_: Option<identity::Type>,
 }
-mod identity {
+pub mod identity {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {

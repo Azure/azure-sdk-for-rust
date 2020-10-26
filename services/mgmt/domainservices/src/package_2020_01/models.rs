@@ -56,7 +56,7 @@ pub struct DomainServiceProperties {
     #[serde(rename = "provisioningState", skip_serializing)]
     pub provisioning_state: Option<String>,
 }
-mod domain_service_properties {
+pub mod domain_service_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum FilteredSync {
@@ -104,7 +104,7 @@ pub struct LdapsSettings {
     #[serde(rename = "externalAccess", skip_serializing_if = "Option::is_none")]
     pub external_access: Option<ldaps_settings::ExternalAccess>,
 }
-mod ldaps_settings {
+pub mod ldaps_settings {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Ldaps {
@@ -152,7 +152,7 @@ pub struct NotificationSettings {
     #[serde(rename = "additionalRecipients", skip_serializing_if = "Vec::is_empty")]
     pub additional_recipients: Vec<String>,
 }
-mod notification_settings {
+pub mod notification_settings {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum NotifyGlobalAdmins {
@@ -174,7 +174,7 @@ pub struct DomainSecuritySettings {
     #[serde(rename = "syncNtlmPasswords", skip_serializing_if = "Option::is_none")]
     pub sync_ntlm_passwords: Option<domain_security_settings::SyncNtlmPasswords>,
 }
-mod domain_security_settings {
+pub mod domain_security_settings {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum NtlmV1 {

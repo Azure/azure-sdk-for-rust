@@ -14,7 +14,7 @@ pub struct DeploymentScript {
     #[serde(rename = "systemData", skip_serializing)]
     pub system_data: Option<SystemData>,
 }
-mod deployment_script {
+pub mod deployment_script {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Kind {
@@ -94,7 +94,7 @@ pub struct DeploymentScriptPropertiesBase {
     #[serde(skip_serializing)]
     pub outputs: Option<serde_json::Value>,
 }
-mod deployment_script_properties_base {
+pub mod deployment_script_properties_base {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum CleanupPreference {
@@ -148,7 +148,7 @@ pub struct ManagedServiceIdentity {
     #[serde(rename = "userAssignedIdentities", skip_serializing_if = "Option::is_none")]
     pub user_assigned_identities: Option<serde_json::Value>,
 }
-mod managed_service_identity {
+pub mod managed_service_identity {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
@@ -223,7 +223,7 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedAt", skip_serializing_if = "Option::is_none")]
     pub last_modified_at: Option<String>,
 }
-mod system_data {
+pub mod system_data {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum CreatedByType {

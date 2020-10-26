@@ -101,7 +101,7 @@ pub struct DataLakeAnalyticsAccountProperties {
     #[serde(skip_serializing)]
     pub endpoint: Option<String>,
 }
-mod data_lake_analytics_account_properties {
+pub mod data_lake_analytics_account_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
@@ -189,7 +189,7 @@ pub struct AzureAsyncOperationResult {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub error: Option<Error>,
 }
-mod azure_async_operation_result {
+pub mod azure_async_operation_result {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {

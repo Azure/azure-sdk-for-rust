@@ -39,7 +39,7 @@ pub struct AzureBareMetalInstanceProperties {
     #[serde(rename = "provisioningState", skip_serializing)]
     pub provisioning_state: Option<azure_bare_metal_instance_properties::ProvisioningState>,
 }
-mod azure_bare_metal_instance_properties {
+pub mod azure_bare_metal_instance_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum PowerState {
@@ -74,7 +74,7 @@ pub struct HardwareProfile {
     #[serde(rename = "azureBareMetalInstanceSize", skip_serializing)]
     pub azure_bare_metal_instance_size: Option<hardware_profile::AzureBareMetalInstanceSize>,
 }
-mod hardware_profile {
+pub mod hardware_profile {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum HardwareType {

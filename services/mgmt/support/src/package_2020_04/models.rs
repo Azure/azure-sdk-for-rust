@@ -14,7 +14,7 @@ pub struct Operation {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
 }
-mod operation {
+pub mod operation {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Display {
@@ -78,7 +78,7 @@ pub struct CheckNameAvailabilityInput {
     #[serde(rename = "type")]
     pub type_: check_name_availability_input::Type,
 }
-mod check_name_availability_input {
+pub mod check_name_availability_input {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
@@ -146,7 +146,7 @@ pub struct CommunicationDetailsProperties {
     #[serde(rename = "createdDate", skip_serializing)]
     pub created_date: Option<String>,
 }
-mod communication_details_properties {
+pub mod communication_details_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum CommunicationType {
@@ -203,7 +203,7 @@ pub struct SupportTicketDetailsProperties {
     #[serde(rename = "quotaTicketDetails", skip_serializing_if = "Option::is_none")]
     pub quota_ticket_details: Option<QuotaTicketDetails>,
 }
-mod support_ticket_details_properties {
+pub mod support_ticket_details_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Severity {
@@ -276,7 +276,7 @@ pub struct ContactProfile {
     #[serde(rename = "preferredSupportLanguage")]
     pub preferred_support_language: String,
 }
-mod contact_profile {
+pub mod contact_profile {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum PreferredContactMethod {
@@ -307,7 +307,7 @@ pub struct UpdateContactProfile {
     #[serde(rename = "preferredSupportLanguage", skip_serializing_if = "Option::is_none")]
     pub preferred_support_language: Option<String>,
 }
-mod update_contact_profile {
+pub mod update_contact_profile {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum PreferredContactMethod {
@@ -347,7 +347,7 @@ pub struct UpdateSupportTicket {
     #[serde(rename = "contactDetails", skip_serializing_if = "Option::is_none")]
     pub contact_details: Option<UpdateContactProfile>,
 }
-mod update_support_ticket {
+pub mod update_support_ticket {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Severity {

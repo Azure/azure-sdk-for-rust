@@ -90,7 +90,7 @@ pub struct CheckResourceNameResult {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub status: Option<check_resource_name_result::Status>,
 }
-mod check_resource_name_result {
+pub mod check_resource_name_result {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {

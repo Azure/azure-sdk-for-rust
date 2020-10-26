@@ -17,7 +17,7 @@ pub struct CheckNameAvailabilityResult {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
-mod check_name_availability_result {
+pub mod check_name_availability_result {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Reason {
@@ -30,7 +30,7 @@ pub struct StorageAccountPropertiesCreateParameters {
     #[serde(rename = "accountType")]
     pub account_type: storage_account_properties_create_parameters::AccountType,
 }
-mod storage_account_properties_create_parameters {
+pub mod storage_account_properties_create_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum AccountType {
@@ -96,7 +96,7 @@ pub struct StorageAccountProperties {
     #[serde(rename = "secondaryEndpoints", skip_serializing_if = "Option::is_none")]
     pub secondary_endpoints: Option<Endpoints>,
 }
-mod storage_account_properties {
+pub mod storage_account_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
@@ -155,7 +155,7 @@ pub struct StorageAccountPropertiesUpdateParameters {
     #[serde(rename = "customDomain", skip_serializing_if = "Option::is_none")]
     pub custom_domain: Option<CustomDomain>,
 }
-mod storage_account_properties_update_parameters {
+pub mod storage_account_properties_update_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum AccountType {
@@ -198,7 +198,7 @@ pub struct Usage {
     pub limit: i32,
     pub name: UsageName,
 }
-mod usage {
+pub mod usage {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Unit {

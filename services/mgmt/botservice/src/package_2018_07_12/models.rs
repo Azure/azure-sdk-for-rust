@@ -27,7 +27,7 @@ pub struct Sku {
     #[serde(skip_serializing)]
     pub tier: Option<sku::Tier>,
 }
-mod sku {
+pub mod sku {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Tier {
@@ -512,7 +512,7 @@ pub struct EnterpriseChannelProperties {
     pub state: Option<enterprise_channel_properties::State>,
     pub nodes: Vec<EnterpriseChannelNode>,
 }
-mod enterprise_channel_properties {
+pub mod enterprise_channel_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum State {
@@ -540,7 +540,7 @@ pub struct EnterpriseChannelNode {
     #[serde(rename = "azureLocation")]
     pub azure_location: String,
 }
-mod enterprise_channel_node {
+pub mod enterprise_channel_node {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum State {

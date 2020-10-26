@@ -256,7 +256,7 @@ pub struct DataConnectorDataTypeCommon {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub state: Option<data_connector_data_type_common::State>,
 }
-mod data_connector_data_type_common {
+pub mod data_connector_data_type_common {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum State {
@@ -388,7 +388,7 @@ pub struct IncidentLabel {
     #[serde(rename = "labelType", skip_serializing)]
     pub label_type: Option<incident_label::LabelType>,
 }
-mod incident_label {
+pub mod incident_label {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum LabelType {
@@ -447,7 +447,7 @@ pub struct IncidentProperties {
     pub status: incident_properties::Status,
     pub title: String,
 }
-mod incident_properties {
+pub mod incident_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Classification {
@@ -626,7 +626,7 @@ pub struct Operation {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
-mod operation {
+pub mod operation {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Display {
@@ -817,7 +817,7 @@ pub struct UebaSettingsProperties {
     #[serde(rename = "statusInMcas", skip_serializing)]
     pub status_in_mcas: Option<ueba_settings_properties::StatusInMcas>,
 }
-mod ueba_settings_properties {
+pub mod ueba_settings_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum AtpLicenseStatus {
@@ -848,7 +848,7 @@ pub struct IncidentInfo {
     #[serde(rename = "relationName")]
     pub relation_name: String,
 }
-mod incident_info {
+pub mod incident_info {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Severity {

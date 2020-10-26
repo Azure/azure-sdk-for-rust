@@ -59,7 +59,7 @@ pub struct ServerPrivateEndpointConnectionProperties {
     #[serde(rename = "provisioningState", skip_serializing)]
     pub provisioning_state: Option<server_private_endpoint_connection_properties::ProvisioningState>,
 }
-mod server_private_endpoint_connection_properties {
+pub mod server_private_endpoint_connection_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
@@ -82,7 +82,7 @@ pub struct ServerPrivateLinkServiceConnectionStateProperty {
     #[serde(rename = "actionsRequired", skip_serializing)]
     pub actions_required: Option<server_private_link_service_connection_state_property::ActionsRequired>,
 }
-mod server_private_link_service_connection_state_property {
+pub mod server_private_link_service_connection_state_property {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
@@ -129,7 +129,7 @@ pub struct ServerProperties {
     #[serde(rename = "privateEndpointConnections", skip_serializing)]
     pub private_endpoint_connections: Vec<ServerPrivateEndpointConnection>,
 }
-mod server_properties {
+pub mod server_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum UserVisibleState {
@@ -150,7 +150,7 @@ pub struct StorageProfile {
     #[serde(rename = "storageAutogrow", skip_serializing_if = "Option::is_none")]
     pub storage_autogrow: Option<storage_profile::StorageAutogrow>,
 }
-mod storage_profile {
+pub mod storage_profile {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum GeoRedundantBackup {
@@ -180,7 +180,7 @@ pub struct ServerPropertiesForCreate {
     #[serde(rename = "createMode")]
     pub create_mode: server_properties_for_create::CreateMode,
 }
-mod server_properties_for_create {
+pub mod server_properties_for_create {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum CreateMode {
@@ -234,7 +234,7 @@ pub struct Sku {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub family: Option<String>,
 }
-mod sku {
+pub mod sku {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Tier {
@@ -252,7 +252,7 @@ pub struct ResourceIdentity {
     #[serde(rename = "tenantId", skip_serializing)]
     pub tenant_id: Option<String>,
 }
-mod resource_identity {
+pub mod resource_identity {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
@@ -292,7 +292,7 @@ pub struct ServerUpdateParameters {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
-mod server_update_parameters {
+pub mod server_update_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Properties {
@@ -344,7 +344,7 @@ pub struct VirtualNetworkRuleProperties {
     #[serde(skip_serializing)]
     pub state: Option<virtual_network_rule_properties::State>,
 }
-mod virtual_network_rule_properties {
+pub mod virtual_network_rule_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum State {
@@ -437,7 +437,7 @@ pub struct Operation {
     #[serde(skip_serializing)]
     pub properties: Option<serde_json::Value>,
 }
-mod operation {
+pub mod operation {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Origin {
@@ -540,7 +540,7 @@ pub struct ServerAdministratorProperties {
     #[serde(rename = "tenantId")]
     pub tenant_id: String,
 }
-mod server_administrator_properties {
+pub mod server_administrator_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum AdministratorType {
@@ -575,7 +575,7 @@ pub struct SecurityAlertPolicyProperties {
     #[serde(rename = "retentionDays", skip_serializing_if = "Option::is_none")]
     pub retention_days: Option<i32>,
 }
-mod security_alert_policy_properties {
+pub mod security_alert_policy_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum State {
@@ -662,7 +662,7 @@ pub struct ServerKeyProperties {
     #[serde(rename = "creationDate", skip_serializing)]
     pub creation_date: Option<String>,
 }
-mod server_key_properties {
+pub mod server_key_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ServerKeyType {

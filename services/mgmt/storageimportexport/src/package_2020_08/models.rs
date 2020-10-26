@@ -7,7 +7,7 @@ pub struct ErrorResponse {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub error: Option<error_response::Error>,
 }
-mod error_response {
+pub mod error_response {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Error {
@@ -80,7 +80,7 @@ pub struct EncryptionKeyDetails {
     #[serde(rename = "kekVaultResourceID", skip_serializing_if = "Option::is_none")]
     pub kek_vault_resource_id: Option<String>,
 }
-mod encryption_key_details {
+pub mod encryption_key_details {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum KekType {
@@ -97,7 +97,7 @@ pub struct IdentityDetails {
     #[serde(rename = "tenantId", skip_serializing)]
     pub tenant_id: Option<String>,
 }
-mod identity_details {
+pub mod identity_details {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
@@ -113,7 +113,7 @@ pub struct UpdateJobParameters {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub properties: Option<update_job_parameters::Properties>,
 }
-mod update_job_parameters {
+pub mod update_job_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Properties {
@@ -164,7 +164,7 @@ pub struct Operation {
     pub name: String,
     pub display: operation::Display,
 }
-mod operation {
+pub mod operation {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Display {
@@ -189,7 +189,7 @@ pub struct Location {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub properties: Option<location::Properties>,
 }
-mod location {
+pub mod location {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Properties {
@@ -298,7 +298,7 @@ pub struct DriveStatus {
     #[serde(rename = "bytesSucceeded", skip_serializing_if = "Option::is_none")]
     pub bytes_succeeded: Option<i64>,
 }
-mod drive_status {
+pub mod drive_status {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum State {
@@ -318,7 +318,7 @@ pub struct Export {
     #[serde(rename = "blobListBlobPath", skip_serializing_if = "Option::is_none")]
     pub blob_list_blob_path: Option<String>,
 }
-mod export {
+pub mod export {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct BlobList {

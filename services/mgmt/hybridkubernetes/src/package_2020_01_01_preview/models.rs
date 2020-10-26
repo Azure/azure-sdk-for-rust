@@ -16,7 +16,7 @@ pub struct Operation {
     #[serde(skip_serializing)]
     pub display: Option<operation::Display>,
 }
-mod operation {
+pub mod operation {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Display {
@@ -53,7 +53,7 @@ pub struct ConnectedClusterIdentity {
     #[serde(rename = "type")]
     pub type_: connected_cluster_identity::Type,
 }
-mod connected_cluster_identity {
+pub mod connected_cluster_identity {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
@@ -103,7 +103,7 @@ pub struct AuthenticationDetails {
     pub authentication_method: authentication_details::AuthenticationMethod,
     pub value: authentication_details::Value,
 }
-mod authentication_details {
+pub mod authentication_details {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum AuthenticationMethod {
@@ -142,7 +142,7 @@ pub struct ErrorResponse {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub error: Option<error_response::Error>,
 }
-mod error_response {
+pub mod error_response {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Error {

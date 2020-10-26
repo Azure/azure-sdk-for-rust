@@ -81,7 +81,7 @@ pub struct Operation {
     #[serde(skip_serializing)]
     pub properties: Option<serde_json::Value>,
 }
-mod operation {
+pub mod operation {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Origin {
@@ -119,7 +119,7 @@ pub struct SqlVirtualMachineGroupProperties {
     #[serde(rename = "wsfcDomainProfile", skip_serializing_if = "Option::is_none")]
     pub wsfc_domain_profile: Option<WsfcDomainProfile>,
 }
-mod sql_virtual_machine_group_properties {
+pub mod sql_virtual_machine_group_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum SqlImageSku {
@@ -203,7 +203,7 @@ pub struct ResourceIdentity {
     #[serde(rename = "tenantId", skip_serializing)]
     pub tenant_id: Option<String>,
 }
-mod resource_identity {
+pub mod resource_identity {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
@@ -239,7 +239,7 @@ pub struct SqlVirtualMachineProperties {
     #[serde(rename = "storageConfigurationSettings", skip_serializing_if = "Option::is_none")]
     pub storage_configuration_settings: Option<StorageConfigurationSettings>,
 }
-mod sql_virtual_machine_properties {
+pub mod sql_virtual_machine_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum SqlServerLicenseType {
@@ -285,7 +285,7 @@ pub struct AutoPatchingSettings {
     #[serde(rename = "maintenanceWindowDuration", skip_serializing_if = "Option::is_none")]
     pub maintenance_window_duration: Option<i32>,
 }
-mod auto_patching_settings {
+pub mod auto_patching_settings {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum DayOfWeek {
@@ -325,7 +325,7 @@ pub struct AutoBackupSettings {
     #[serde(rename = "logBackupFrequency", skip_serializing_if = "Option::is_none")]
     pub log_backup_frequency: Option<i32>,
 }
-mod auto_backup_settings {
+pub mod auto_backup_settings {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum BackupScheduleType {
@@ -375,7 +375,7 @@ pub struct StorageConfigurationSettings {
     #[serde(rename = "storageWorkloadType", skip_serializing_if = "Option::is_none")]
     pub storage_workload_type: Option<storage_configuration_settings::StorageWorkloadType>,
 }
-mod storage_configuration_settings {
+pub mod storage_configuration_settings {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum DiskConfigurationType {
@@ -407,7 +407,7 @@ pub struct SqlConnectivityUpdateSettings {
     #[serde(rename = "sqlAuthUpdatePassword", skip_serializing_if = "Option::is_none")]
     pub sql_auth_update_password: Option<String>,
 }
-mod sql_connectivity_update_settings {
+pub mod sql_connectivity_update_settings {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ConnectivityType {
@@ -424,7 +424,7 @@ pub struct SqlWorkloadTypeUpdateSettings {
     #[serde(rename = "sqlWorkloadType", skip_serializing_if = "Option::is_none")]
     pub sql_workload_type: Option<sql_workload_type_update_settings::SqlWorkloadType>,
 }
-mod sql_workload_type_update_settings {
+pub mod sql_workload_type_update_settings {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum SqlWorkloadType {
@@ -445,7 +445,7 @@ pub struct SqlStorageUpdateSettings {
     #[serde(rename = "diskConfigurationType", skip_serializing_if = "Option::is_none")]
     pub disk_configuration_type: Option<sql_storage_update_settings::DiskConfigurationType>,
 }
-mod sql_storage_update_settings {
+pub mod sql_storage_update_settings {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum DiskConfigurationType {

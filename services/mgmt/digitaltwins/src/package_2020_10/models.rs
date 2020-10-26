@@ -13,7 +13,7 @@ pub struct DigitalTwinsProperties {
     #[serde(rename = "hostName", skip_serializing)]
     pub host_name: Option<String>,
 }
-mod digital_twins_properties {
+pub mod digital_twins_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
@@ -109,7 +109,7 @@ pub struct CheckNameRequest {
     #[serde(rename = "type")]
     pub type_: check_name_request::Type,
 }
-mod check_name_request {
+pub mod check_name_request {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
@@ -126,7 +126,7 @@ pub struct CheckNameResult {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub reason: Option<check_name_result::Reason>,
 }
-mod check_name_result {
+pub mod check_name_result {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Reason {
@@ -160,7 +160,7 @@ pub struct DigitalTwinsEndpointResourceProperties {
     #[serde(rename = "deadLetterSecret", skip_serializing_if = "Option::is_none")]
     pub dead_letter_secret: Option<String>,
 }
-mod digital_twins_endpoint_resource_properties {
+pub mod digital_twins_endpoint_resource_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum EndpointType {
