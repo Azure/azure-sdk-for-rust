@@ -17,6 +17,7 @@ pub trait Client: std::fmt::Debug + Send + Sync {
     fn blob_uri(&self) -> &str;
     fn table_uri(&self) -> &str;
     fn queue_uri(&self) -> &str;
+    fn filesystem_uri(&self) -> &str;
 
     /// Uri scheme + authority e.g. http://myaccount.table.core.windows.net/
     #[inline]
@@ -57,6 +58,9 @@ where
     fn queue_uri(&self) -> &str {
         self.as_ref().queue_uri()
     }
+    fn filesystem_uri(&self) -> &str {
+        self.as_ref().filesystem_uri()
+    }
 
     fn perform_request(
         &self,
@@ -93,6 +97,9 @@ where
     }
     fn queue_uri(&self) -> &str {
         self.as_ref().queue_uri()
+    }
+    fn filesystem_uri(&self) -> &str {
+        self.as_ref().filesystem_uri()
     }
 
     fn perform_request(
@@ -141,6 +148,7 @@ pub fn with_azure_sas(account: &str, sas_token: &str) -> KeyClient {
         format!("https://{}.blob.core.windows.net", account),
         format!("https://{}.table.core.windows.net", account),
         format!("https://{}.queue.core.windows.net", account),
+        format!("https://{}.dfs.core.windows.net", account),
     )
 }
 
@@ -155,6 +163,7 @@ pub fn with_access_key(account: &str, key: &str) -> KeyClient {
         format!("https://{}.blob.core.windows.net", account),
         format!("https://{}.table.core.windows.net", account),
         format!("https://{}.queue.core.windows.net", account),
+        format!("https://{}.dfs.core.windows.net", account),
     )
 }
 
@@ -175,8 +184,9 @@ pub fn from_connection_string(connection_string: &str) -> Result<KeyClient, Azur
                     Some(get_sas_token_parms(sas_token)),
                     client,
                     format!("https://{}.blob.core.windows.net", account),
-                    format!("https://{}.table.core.windows.net", account), 
+                    format!("https://{}.table.core.windows.net", account),
                     format!("https://{}.queue.core.windows.net", account),
+                    format!("https://{}.dfs.core.windows.net", account),
                 ))
             }
             ConnectionString {
@@ -189,8 +199,9 @@ pub fn from_connection_string(connection_string: &str) -> Result<KeyClient, Azur
                 Some(get_sas_token_parms(sas_token)),
                 client,
                 format!("https://{}.blob.core.windows.net", account),
-                format!("https://{}.table.core.windows.net", account), 
+                format!("https://{}.table.core.windows.net", account),
                 format!("https://{}.queue.core.windows.net", account),
+                format!("https://{}.dfs.core.windows.net", account),
             )),
             ConnectionString {
                 account_name: Some(account),
@@ -202,8 +213,9 @@ pub fn from_connection_string(connection_string: &str) -> Result<KeyClient, Azur
                 None,
                 client,
                 format!("https://{}.blob.core.windows.net", account),
-                format!("https://{}.table.core.windows.net", account), 
+                format!("https://{}.table.core.windows.net", account),
                 format!("https://{}.queue.core.windows.net", account),
+                format!("https://{}.dfs.core.windows.net", account),
             )),
             _ => {
                 Err(AzureError::GenericErrorWithText(
@@ -233,6 +245,8 @@ pub fn with_emulator(blob_storage_url: &Url, table_storage_url: &Url) -> KeyClie
     debug!("table_uri == {}", table_uri);
     let queue_uri = format!("{}devstoreaccount1", table_storage_url.as_str());
     debug!("queue_uri == {}", queue_uri);
+    let filesystem_uri = format!("{}devstoreaccount1", blob_storage_url.as_str());
+    debug!("filesystem_uri = {}", filesystem_uri);
 
     KeyClient::new(
         "devstoreaccount1".to_owned(),
@@ -243,5 +257,6 @@ pub fn with_emulator(blob_storage_url: &Url, table_storage_url: &Url) -> KeyClie
         blob_uri,
         table_uri,
         queue_uri,
+        filesystem_uri,
     )
 }

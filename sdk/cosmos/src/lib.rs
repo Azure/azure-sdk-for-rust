@@ -242,24 +242,6 @@ pub trait PartitionRangeIdOption<'a> {
     }
 }
 
-pub trait ContinuationSupport<'a> {
-    type O;
-    fn with_continuation(self, continuation: &'a str) -> Self::O;
-}
-
-pub trait ContinuationOption<'a> {
-    fn continuation(&self) -> Option<&'a str>;
-
-    #[must_use]
-    fn add_header(&self, builder: Builder) -> Builder {
-        if let Some(continuation) = self.continuation() {
-            builder.header(HEADER_CONTINUATION, continuation)
-        } else {
-            builder
-        }
-    }
-}
-
 pub trait IndexingDirectiveSupport {
     type O;
     fn with_indexing_directive(self, indexing_directive: IndexingDirective) -> Self::O;

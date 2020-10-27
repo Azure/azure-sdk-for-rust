@@ -4,7 +4,6 @@ pub(crate) const HEADER_DOCUMENTDB_IS_UPSERT: &str = "x-ms-documentdb-is-upsert"
 pub(crate) const HEADER_INDEXING_DIRECTIVE: &str = "x-ms-indexing-directive"; // [IndexingDirective]
 pub(crate) const HEADER_MAX_ITEM_COUNT: &str = "x-ms-max-item-count"; // [u64]
 pub(crate) const HEADER_ITEM_COUNT: &str = "x-ms-item-count"; // [u64]
-pub(crate) const HEADER_CONTINUATION: &str = "x-ms-continuation"; // [ContinuationToken]
 pub(crate) const HEADER_CONSISTENCY_LEVEL: &str = "x-ms-consistency-level"; // [ConsistencyLevel]
 pub(crate) const HEADER_SESSION_TOKEN: &str = "x-ms-session-token"; // [ContinuationToken]
 pub(crate) const HEADER_ALLOW_MULTIPLE_WRITES: &str = "x-ms-cosmos-allow-tentative-writes"; // [bool]
