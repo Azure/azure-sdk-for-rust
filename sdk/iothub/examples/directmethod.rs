@@ -32,9 +32,11 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let direct_method =
         service_client.create_module_method(device_id, module_id, method_name, 30, 30);
+
     let response = direct_method
         .execute(serde_json::from_str(&payload)?)
         .await?;
+
     println!(
         "Received a response from the direct method with status code {} and payload {:?}",
         response.status, response.payload
