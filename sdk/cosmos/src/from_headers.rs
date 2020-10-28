@@ -277,16 +277,6 @@ pub(crate) fn content_location_from_headers(headers: &HeaderMap) -> Result<&str,
         .to_str()?)
 }
 
-pub(crate) fn content_type_from_headers(headers: &HeaderMap) -> Result<&str, AzureError> {
-    Ok(headers
-        .get(http::header::CONTENT_TYPE)
-        .ok_or_else(|| {
-            let header = http::header::CONTENT_TYPE;
-            AzureError::HeaderNotFound(header.as_str().to_owned())
-        })?
-        .to_str()?)
-}
-
 pub(crate) fn gateway_version_from_headers(headers: &HeaderMap) -> Result<&str, AzureError> {
     Ok(headers
         .get(HEADER_GATEWAY_VERSION)

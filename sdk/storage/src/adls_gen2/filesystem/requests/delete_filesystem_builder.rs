@@ -84,7 +84,8 @@ where
     }
 }
 
-impl<'a, C, FilesystemSet> ClientRequestIdOption<'a> for DeleteFilesystemBuilder<'a, C, FilesystemSet>
+impl<'a, C, FilesystemSet> ClientRequestIdOption<'a>
+    for DeleteFilesystemBuilder<'a, C, FilesystemSet>
 where
     FilesystemSet: ToAssign,
     C: Client,
@@ -154,7 +155,8 @@ where
     }
 }
 
-impl<'a, C, FilesystemSet> ClientRequestIdSupport<'a> for DeleteFilesystemBuilder<'a, C, FilesystemSet>
+impl<'a, C, FilesystemSet> ClientRequestIdSupport<'a>
+    for DeleteFilesystemBuilder<'a, C, FilesystemSet>
 where
     FilesystemSet: ToAssign,
     C: Client,
@@ -198,7 +200,7 @@ where
 
         let future_response = self.client().perform_request(
             &uri,
-            &Method::PUT,
+            &Method::HEAD,
             &|mut request| {
                 request = IfSinceConditionOption::add_header(&self, request);
                 request = ClientRequestIdOption::add_header(&self, request);
@@ -208,7 +210,7 @@ where
         )?;
 
         let (headers, _body) =
-            check_status_extract_headers_and_body(future_response, StatusCode::CREATED).await?;
+            check_status_extract_headers_and_body(future_response, StatusCode::ACCEPTED).await?;
         DeleteFilesystemResponse::from_headers(&headers)
     }
 }

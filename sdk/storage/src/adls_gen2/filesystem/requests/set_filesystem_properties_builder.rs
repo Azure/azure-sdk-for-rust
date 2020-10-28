@@ -45,7 +45,8 @@ where
     }
 }
 
-impl<'a, C, FilesystemSet> ClientRequired<'a, C> for SetFilesystemPropertiesBuilder<'a, C, FilesystemSet>
+impl<'a, C, FilesystemSet> ClientRequired<'a, C>
+    for SetFilesystemPropertiesBuilder<'a, C, FilesystemSet>
 where
     FilesystemSet: ToAssign,
     C: Client,
@@ -77,7 +78,8 @@ where
     }
 }
 
-impl<'a, C, FilesystemSet> PropertiesOption<'a> for SetFilesystemPropertiesBuilder<'a, C, FilesystemSet>
+impl<'a, C, FilesystemSet> PropertiesOption<'a>
+    for SetFilesystemPropertiesBuilder<'a, C, FilesystemSet>
 where
     FilesystemSet: ToAssign,
     C: Client,
@@ -88,7 +90,8 @@ where
     }
 }
 
-impl<'a, C, FilesystemSet> IfSinceConditionOption for SetFilesystemPropertiesBuilder<'a, C, FilesystemSet>
+impl<'a, C, FilesystemSet> IfSinceConditionOption
+    for SetFilesystemPropertiesBuilder<'a, C, FilesystemSet>
 where
     FilesystemSet: ToAssign,
     C: Client,
@@ -99,7 +102,8 @@ where
     }
 }
 
-impl<'a, C, FilesystemSet> ClientRequestIdOption<'a> for SetFilesystemPropertiesBuilder<'a, C, FilesystemSet>
+impl<'a, C, FilesystemSet> ClientRequestIdOption<'a>
+    for SetFilesystemPropertiesBuilder<'a, C, FilesystemSet>
 where
     FilesystemSet: ToAssign,
     C: Client,
@@ -151,7 +155,8 @@ where
     }
 }
 
-impl<'a, C, FilesystemSet> PropertiesSupport<'a> for SetFilesystemPropertiesBuilder<'a, C, FilesystemSet>
+impl<'a, C, FilesystemSet> PropertiesSupport<'a>
+    for SetFilesystemPropertiesBuilder<'a, C, FilesystemSet>
 where
     FilesystemSet: ToAssign,
     C: Client,
@@ -172,7 +177,8 @@ where
     }
 }
 
-impl<'a, C, FilesystemSet> IfSinceConditionSupport for SetFilesystemPropertiesBuilder<'a, C, FilesystemSet>
+impl<'a, C, FilesystemSet> IfSinceConditionSupport
+    for SetFilesystemPropertiesBuilder<'a, C, FilesystemSet>
 where
     FilesystemSet: ToAssign,
     C: Client,
@@ -193,7 +199,8 @@ where
     }
 }
 
-impl<'a, C, FilesystemSet> ClientRequestIdSupport<'a> for SetFilesystemPropertiesBuilder<'a, C, FilesystemSet>
+impl<'a, C, FilesystemSet> ClientRequestIdSupport<'a>
+    for SetFilesystemPropertiesBuilder<'a, C, FilesystemSet>
 where
     FilesystemSet: ToAssign,
     C: Client,
@@ -249,7 +256,7 @@ where
         )?;
 
         let (headers, _body) =
-            check_status_extract_headers_and_body(future_response, StatusCode::CREATED).await?;
+            check_status_extract_headers_and_body(future_response, StatusCode::OK).await?;
         SetFilesystemPropertiesResponse::from_headers(&headers)
     }
 }

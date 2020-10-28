@@ -35,7 +35,8 @@ where
     }
 }
 
-impl<'a, C, FilesystemSet> ClientRequired<'a, C> for GetFilesystemPropertiesBuilder<'a, C, FilesystemSet>
+impl<'a, C, FilesystemSet> ClientRequired<'a, C>
+    for GetFilesystemPropertiesBuilder<'a, C, FilesystemSet>
 where
     FilesystemSet: ToAssign,
     C: Client,
@@ -67,7 +68,8 @@ where
     }
 }
 
-impl<'a, C, FilesystemSet> ClientRequestIdOption<'a> for GetFilesystemPropertiesBuilder<'a, C, FilesystemSet>
+impl<'a, C, FilesystemSet> ClientRequestIdOption<'a>
+    for GetFilesystemPropertiesBuilder<'a, C, FilesystemSet>
 where
     FilesystemSet: ToAssign,
     C: Client,
@@ -115,7 +117,8 @@ where
     }
 }
 
-impl<'a, C, FilesystemSet> ClientRequestIdSupport<'a> for GetFilesystemPropertiesBuilder<'a, C, FilesystemSet>
+impl<'a, C, FilesystemSet> ClientRequestIdSupport<'a>
+    for GetFilesystemPropertiesBuilder<'a, C, FilesystemSet>
 where
     FilesystemSet: ToAssign,
     C: Client,
@@ -158,7 +161,7 @@ where
 
         let future_response = self.client().perform_request(
             &uri,
-            &Method::PUT,
+            &Method::GET,
             &|mut request| {
                 request = ClientRequestIdOption::add_header(&self, request);
                 request
@@ -167,7 +170,7 @@ where
         )?;
 
         let (headers, _body) =
-            check_status_extract_headers_and_body(future_response, StatusCode::CREATED).await?;
+            check_status_extract_headers_and_body(future_response, StatusCode::OK).await?;
         GetFilesystemPropertiesResponse::from_headers(&headers)
     }
 }

@@ -155,7 +155,7 @@ pub fn last_modified_from_headers(headers: &HeaderMap) -> Result<DateTime<Utc>, 
 pub fn continuation_token_from_headers_optional(
     headers: &HeaderMap,
 ) -> Result<Option<String>, AzureError> {
-    if let Some(hc) = headers.get(HEADER_CONTINUATION) {
+    if let Some(hc) = headers.get(CONTINUATION) {
         Ok(Some(hc.to_str()?.to_owned()))
     } else {
         Ok(None)
@@ -291,6 +291,16 @@ pub fn request_server_encrypted_from_headers(headers: &HeaderMap) -> Result<bool
 
     trace!("request_server_encrypted == {:?}", request_server_encrypted);
     Ok(request_server_encrypted)
+}
+
+pub fn content_type_from_headers(headers: &HeaderMap) -> Result<&str, AzureError> {
+    Ok(headers
+        .get(http::header::CONTENT_TYPE)
+        .ok_or_else(|| {
+            let header = http::header::CONTENT_TYPE;
+            AzureError::HeaderNotFound(header.as_str().to_owned())
+        })?
+        .to_str()?)
 }
 
 pub async fn perform_http_request(

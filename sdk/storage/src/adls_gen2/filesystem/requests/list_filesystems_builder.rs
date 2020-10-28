@@ -1,6 +1,6 @@
 use crate::core::prelude::*;
 use crate::filesystem::responses::ListFilesystemsResponse;
-use azure_core::errors::{check_status_extract_headers_and_body, AzureError};
+use azure_core::errors::{check_status_extract_headers_and_body_as_string, AzureError};
 use azure_core::prelude::*;
 use futures::stream::{unfold, Stream};
 use hyper::{Method, StatusCode};
@@ -210,7 +210,7 @@ where
 
         let future_response = self.client().perform_request(
             &uri,
-            &Method::PUT,
+            &Method::PATCH,
             &|mut request| {
                 request = ClientRequestIdOption::add_header(&self, request);
                 request
@@ -218,9 +218,10 @@ where
             Some(&[]),
         )?;
 
-        let (headers, _body) =
-            check_status_extract_headers_and_body(future_response, StatusCode::CREATED).await?;
-        ListFilesystemsResponse::from_headers(&headers)
+        let (headers, body) =
+            check_status_extract_headers_and_body_as_string(future_response, StatusCode::OK)
+                .await?;
+        ListFilesystemsResponse::from_response(&headers, &body)
     }
 }
 
@@ -254,7 +255,7 @@ where
                     Err(err) => return Some((Err(err), None)),
                 };
 
-                let continuation = match &response.continuation {
+                let continuation = match response.incomplete_vector.token() {
                     Some(ct) => Some(States::Continuation(ct.to_owned())),
                     None => None,
                 };

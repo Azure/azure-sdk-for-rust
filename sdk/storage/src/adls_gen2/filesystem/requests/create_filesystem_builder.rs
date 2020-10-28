@@ -82,7 +82,8 @@ where
     }
 }
 
-impl<'a, C, FilesystemSet> ClientRequestIdOption<'a> for CreateFilesystemBuilder<'a, C, FilesystemSet>
+impl<'a, C, FilesystemSet> ClientRequestIdOption<'a>
+    for CreateFilesystemBuilder<'a, C, FilesystemSet>
 where
     FilesystemSet: ToAssign,
     C: Client,
@@ -152,7 +153,8 @@ where
     }
 }
 
-impl<'a, C, FilesystemSet> ClientRequestIdSupport<'a> for CreateFilesystemBuilder<'a, C, FilesystemSet>
+impl<'a, C, FilesystemSet> ClientRequestIdSupport<'a>
+    for CreateFilesystemBuilder<'a, C, FilesystemSet>
 where
     FilesystemSet: ToAssign,
     C: Client,
@@ -196,7 +198,7 @@ where
 
         let future_response = self.client().perform_request(
             &uri,
-            &Method::PUT,
+            &Method::DELETE,
             &|mut request| {
                 request = ClientRequestIdOption::add_header(&self, request);
                 request = PropertiesOption::add_header(&self, request);

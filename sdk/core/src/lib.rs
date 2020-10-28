@@ -944,7 +944,7 @@ pub trait ContinuationOption<'a> {
     #[must_use]
     fn add_header(&self, builder: Builder) -> Builder {
         if let Some(continuation) = self.continuation() {
-            builder.header(HEADER_CONTINUATION, continuation)
+            builder.header(CONTINUATION, continuation)
         } else {
             builder
         }
