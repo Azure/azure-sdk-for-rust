@@ -1,3 +1,4 @@
+use azure_core::errors::AzureError;
 use base64::{decode, encode_config};
 use hmac::{Hmac, Mac, NewMac};
 use sha2::Sha256;
@@ -25,7 +26,7 @@ impl ServiceClient {
     ///
     /// # Example
     /// ```
-    /// use azure_iothub_service::ServiceClient;
+    /// use iothub::service::ServiceClient;
     ///
     /// let iothub_name = "cool-iot-hub";
     /// let sas_token = "<a generated sas token>";
@@ -46,9 +47,10 @@ impl ServiceClient {
     /// Generate a new SAS token to use for authentication with IoT Hub
     fn generate_sas_token(
         iothub_name: &str,
+        key_name: &str,
         private_key: &str,
         expires_in_seconds: i64,
-    ) -> Result<String, Box<dyn std::error::Error>> {
+    ) -> Result<String, AzureError> {
         type HmacSHA256 = Hmac<Sha256>;
         let expiry_date = chrono::Utc::now() + chrono::Duration::seconds(expires_in_seconds);
         let expiry_date_seconds = expiry_date.timestamp();
@@ -57,8 +59,26 @@ impl ServiceClient {
             iothub_name, &expiry_date_seconds
         );
 
-        let key = decode(private_key)?;
-        let mut hmac = HmacSHA256::new_varkey(key.as_ref())?;
+        let key = match decode(private_key) {
+            Ok(val) => val,
+            Err(err) => {
+                return Err(AzureError::GenericErrorWithText(format!(
+                    "Failed to decode the given private key: {}",
+                    err.to_string()
+                )));
+            }
+        };
+
+        let mut hmac = match HmacSHA256::new_varkey(key.as_ref()) {
+            Ok(val) => val,
+            Err(err) => {
+                return Err(AzureError::GenericErrorWithText(format!(
+                    "Failed to use the given private key for the hashing algorithm: {}",
+                    err.to_string()
+                )));
+            }
+        };
+
         hmac.update(data.as_bytes());
         let result = hmac.finalize();
         let sas_token: &str = &encode_config(&result.into_bytes(), base64::STANDARD);
@@ -66,7 +86,7 @@ impl ServiceClient {
         let encoded: String = url::form_urlencoded::Serializer::new(String::new())
             .append_pair("sr", &format!("{}.azure-devices.net", iothub_name))
             .append_pair("sig", sas_token)
-            .append_pair("skn", "iothubowner")
+            .append_pair("skn", key_name)
             .append_pair("se", &expiry_date_seconds.to_string())
             .finish();
 
@@ -77,27 +97,31 @@ impl ServiceClient {
     ///
     /// The private key should preferably be of a user / group that has the rights to make service requests.
     /// ```
-    /// use azure_iothub_service::IoTHubService;
+    /// use iothub::service::ServiceClient;
     ///
-    /// let iothub_name = "cool-iot-hub";
+    /// let iothub_name = "iot-hub";
+    /// let key_name = "iothubowner";
     /// let private_key = "YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
     ///
-    /// let result = IoTHubService::from_private_key(iothub_name, private_key, 3600);
+    /// let result = ServiceClient::from_private_key(iothub_name, key_name, private_key, 3600);
     /// assert!(result.is_ok(), true);
     /// ```
-    pub fn from_private_key<S, T>(
+    pub fn from_private_key<S, T, U>(
         iothub_name: S,
-        private_key: T,
+        key_name: T,
+        private_key: U,
         expires_in_seconds: i64,
     ) -> Result<Self, Box<dyn std::error::Error>>
     where
         S: Into<String>,
         T: AsRef<str>,
+        U: AsRef<str>,
     {
         let iothub_name_str = iothub_name.into();
 
         let sas_token = Self::generate_sas_token(
             iothub_name_str.as_str(),
+            key_name.as_ref(),
             private_key.as_ref(),
             expires_in_seconds,
         )?;
@@ -112,30 +136,30 @@ impl ServiceClient {
     ///
     /// The connection string should preferably be from a user / group that has the rights to make service requests.
     /// ```
-    /// use azure_iothub_service::IoTHubService;
+    /// use iothub::service::ServiceClient;
     ///
     /// let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
     ///
-    /// let result = IoTHubService::from_connection_string(connection_string, 3600);
+    /// let result = ServiceClient::from_connection_string(connection_string, 3600);
     /// assert!(result.is_ok(), true);
     /// ```
     pub fn from_connection_string<S>(
         connection_string: S,
         expires_in_seconds: i64,
-    ) -> Result<Self, Box<dyn std::error::Error>>
+    ) -> Result<Self, AzureError>
     where
         S: AsRef<str>,
     {
         let parts: Vec<&str> = connection_string.as_ref().split(';').collect();
 
         let mut iothub_name: Option<&str> = None;
+        let mut key_name: Option<&str> = None;
         let mut primary_key: Option<&str> = None;
 
         if parts.len() != 3 {
-            return Err(Box::new(std::io::Error::new(
-                std::io::ErrorKind::InvalidInput,
-                "Given connection string is invalid",
-            )));
+            return Err(AzureError::GenericErrorWithText(
+                "Given connection string is invalid".to_string(),
+            ));
         }
 
         for val in parts.iter() {
@@ -149,36 +173,52 @@ impl ServiceClient {
                     Some(size) => size,
                     None => continue,
                 };
-                iothub_name = Some(&val[start..end])
+                iothub_name = Some(&val[start..end]);
+            }
+
+            if val.contains("SharedAccessKeyName=") {
+                key_name = Some(&val[start..val.len()]);
             }
 
             if val.contains("SharedAccessKey=") {
-                primary_key = Some(&val[start..val.len()])
+                primary_key = Some(&val[start..val.len()]);
             }
         }
 
         let matched_iothub_name = match iothub_name {
             Some(val) => val,
             None => {
-                return Err(Box::new(std::io::Error::new(
-                    std::io::ErrorKind::InvalidInput,
-                    "Failed to get the hostname from the given connection string!",
-                )));
+                return Err(AzureError::GenericErrorWithText(
+                    "Failed to get the hostname from the given connection string".to_string(),
+                ));
+            }
+        };
+
+        let matched_key_name = match key_name {
+            Some(val) => val,
+            None => {
+                return Err(AzureError::GenericErrorWithText(
+                    "Failed to get the shared access key name from the given connection string"
+                        .to_string(),
+                ));
             }
         };
 
         let matched_primary_key = match primary_key {
             Some(val) => val,
             None => {
-                return Err(Box::new(std::io::Error::new(
-                    std::io::ErrorKind::InvalidInput,
-                    "Failed to get the primary key from the given connection string!",
-                )));
+                return Err(AzureError::GenericErrorWithText(
+                    "Failed to get the primary key from the given connection string".to_string(),
+                ));
             }
         };
 
-        let sas_token =
-            Self::generate_sas_token(matched_iothub_name, matched_primary_key, expires_in_seconds)?;
+        let sas_token = Self::generate_sas_token(
+            matched_iothub_name,
+            matched_key_name,
+            matched_primary_key,
+            expires_in_seconds,
+        )?;
 
         Ok(Self {
             iothub_name: matched_iothub_name.to_string(),
@@ -189,10 +229,10 @@ impl ServiceClient {
     /// Create a new device method
     ///
     /// ```
-    /// use azure_iothub_service::IoTHubService;
+    /// use iothub::service::ServiceClient;
     ///
     /// # let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
-    /// let iothub = IoTHubService::from_connection_string(connection_string, 3600).expect("Failed to create the IoTHubService!");
+    /// let iothub = ServiceClient::from_connection_string(connection_string, 3600).expect("Failed to create the service client!");
     /// let device_method = iothub.create_device_method("some-device", "hello-world", 30, 30);
     /// ```
     pub fn create_device_method<S, T>(
@@ -219,10 +259,10 @@ impl ServiceClient {
     /// Create a new module method
     ///
     /// ```
-    /// use azure_iothub_service::IoTHubService;
+    /// use iothub::service::ServiceClient;
     ///
     /// # let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
-    /// let iothub = IoTHubService::from_connection_string(connection_string, 3600).expect("Failed to create the IoTHubService!");
+    /// let iothub = ServiceClient::from_connection_string(connection_string, 3600).expect("Failed to create the ServiceClient!");
     /// let device_method = iothub.create_module_method("some-device", "some-module", "hello-world", 30, 30);
     /// ```
     pub fn create_module_method<S, T, U>(

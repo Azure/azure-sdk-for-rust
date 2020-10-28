@@ -1,11 +1,6 @@
-//! The DirectMethod module is used for invoking device and module
-//! methods. However, the DirectMethod should only be constructed
-//! from the iothub module.
-
 use azure_core::errors::{extract_status_headers_and_body, AzureError, UnexpectedHTTPResult};
 use hyper::{Body, Client, Method, Request, StatusCode};
 use hyper_tls::HttpsConnector;
-use serde::de::DeserializeOwned;
 use serde::Deserialize;
 use serde_json::json;
 
@@ -14,9 +9,9 @@ use crate::service::{ServiceClient, API_VERSION};
 /// The DirectMethodResponse struct contains the response
 /// from the IoT Hub when a direct method was invoked.
 #[derive(Deserialize)]
-pub struct DirectMethodResponse<T> {
+pub struct DirectMethodResponse {
     pub status: u64,
-    pub payload: T,
+    pub payload: Option<String>,
 }
 
 /// The DirectMethod struct contains all neccessary properties
@@ -60,9 +55,9 @@ impl<'a> DirectMethod<'a> {
     /// # Examples
     /// ```
     /// # use serde_json::json;
-    /// use azure_iothub_service::IoTHubService;
+    /// use iothub::service::ServiceClient;
     ///
-    /// let service = IoTHubService::from_sas_token("some-iot-hub", "sas_token");
+    /// let service = ServiceClient::from_sas_token("some-iot-hub", "sas_token");
     /// let great_method = service.create_device_method(
     ///    "SomeDeviceId",
     ///    "GreatMethod",
@@ -70,12 +65,12 @@ impl<'a> DirectMethod<'a> {
     ///    60
     /// );
     ///
-    /// great_method.invoke::<serde_json::Value>(json!({"hello": "world"}));
+    /// great_method.execute(json!({"hello": "world"}));
     /// ```
-    pub async fn invoke<T: DeserializeOwned>(
+    pub async fn execute(
         &self,
         payload: serde_json::Value,
-    ) -> Result<DirectMethodResponse<T>, Box<dyn std::error::Error>> {
+    ) -> Result<DirectMethodResponse, AzureError> {
         match &self.module_id {
             Some(module_id_value) => {
                 let uri = format!(
@@ -95,11 +90,11 @@ impl<'a> DirectMethod<'a> {
     }
 
     /// Helper method for invoking the method
-    async fn invoke_method<T: DeserializeOwned>(
+    async fn invoke_method(
         &self,
         uri: &str,
         payload: serde_json::Value,
-    ) -> Result<DirectMethodResponse<T>, AzureError> {
+    ) -> Result<DirectMethodResponse, AzureError> {
         let json_payload = json!({
             "connectTimeoutInSeconds": self.connect_time_out,
             "methodName": self.method_name,
@@ -125,9 +120,7 @@ impl<'a> DirectMethod<'a> {
             )));
         }
 
-        Ok(serde_json::from_slice::<DirectMethodResponse<T>>(
-            &whole_body,
-        )?)
+        Ok(serde_json::from_slice::<DirectMethodResponse>(&whole_body)?)
     }
 }
 
