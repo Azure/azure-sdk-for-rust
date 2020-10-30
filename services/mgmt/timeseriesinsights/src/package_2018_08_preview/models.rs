@@ -354,9 +354,9 @@ pub mod event_source_create_or_update_parameters {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Kind {
         #[serde(rename = "Microsoft.EventHub")]
-        Microsoft_EventHub,
+        MicrosoftEventHub,
         #[serde(rename = "Microsoft.IoTHub")]
-        Microsoft_IoTHub,
+        MicrosoftIoTHub,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -406,9 +406,9 @@ pub mod event_source_resource {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Kind {
         #[serde(rename = "Microsoft.EventHub")]
-        Microsoft_EventHub,
+        MicrosoftEventHub,
         #[serde(rename = "Microsoft.IoTHub")]
-        Microsoft_IoTHub,
+        MicrosoftIoTHub,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

@@ -17,13 +17,13 @@ pub mod cognitive_services_account_create_parameters {
     pub enum Kind {
         Academic,
         #[serde(rename = "Bing.Autosuggest")]
-        Bing_Autosuggest,
+        BingAutosuggest,
         #[serde(rename = "Bing.Search")]
-        Bing_Search,
+        BingSearch,
         #[serde(rename = "Bing.Speech")]
-        Bing_Speech,
+        BingSpeech,
         #[serde(rename = "Bing.SpellCheck")]
-        Bing_SpellCheck,
+        BingSpellCheck,
         ComputerVision,
         ContentModerator,
         Emotion,

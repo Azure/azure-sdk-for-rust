@@ -130,9 +130,9 @@ pub mod encryption_properties {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum KeySource {
         #[serde(rename = "Microsoft.Batch")]
-        Microsoft_Batch,
+        MicrosoftBatch,
         #[serde(rename = "Microsoft.KeyVault")]
-        Microsoft_KeyVault,
+        MicrosoftKeyVault,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -966,7 +966,7 @@ pub mod check_name_availability_parameters {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         #[serde(rename = "Microsoft.Batch/batchAccounts")]
-        Microsoft_BatchBatchAccounts,
+        MicrosoftBatchBatchAccounts,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

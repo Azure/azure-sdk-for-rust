@@ -5855,7 +5855,7 @@ pub mod virtual_machine_scale_set_vm_extensions {
         vm_extension_name: &str,
         expand: Option<&str>,
         subscription_id: &str,
-    ) -> std::result::Result<VirtualMachineExtension, get::Error> {
+    ) -> std::result::Result<VirtualMachineScaleSetVmExtension, get::Error> {
         let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/virtualMachineScaleSets/{}/virtualMachines/{}/extensions/{}",
@@ -5878,7 +5878,7 @@ pub mod virtual_machine_scale_set_vm_extensions {
         match rsp.status() {
             StatusCode::OK => {
                 let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
-                let rsp_value: VirtualMachineExtension = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                let rsp_value: VirtualMachineScaleSetVmExtension = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
                 Ok(rsp_value)
             }
             status_code => {
@@ -5927,7 +5927,7 @@ pub mod virtual_machine_scale_set_vm_extensions {
         vm_scale_set_name: &str,
         instance_id: &str,
         vm_extension_name: &str,
-        extension_parameters: &VirtualMachineExtension,
+        extension_parameters: &VirtualMachineScaleSetVmExtension,
         subscription_id: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let client = &operation_config.client;
@@ -5950,13 +5950,13 @@ pub mod virtual_machine_scale_set_vm_extensions {
         match rsp.status() {
             StatusCode::OK => {
                 let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
-                let rsp_value: VirtualMachineExtension =
+                let rsp_value: VirtualMachineScaleSetVmExtension =
                     serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             StatusCode::CREATED => {
                 let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
-                let rsp_value: VirtualMachineExtension =
+                let rsp_value: VirtualMachineScaleSetVmExtension =
                     serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
@@ -5977,8 +5977,8 @@ pub mod virtual_machine_scale_set_vm_extensions {
         use snafu::Snafu;
         #[derive(Debug)]
         pub enum Response {
-            Ok200(VirtualMachineExtension),
-            Created201(VirtualMachineExtension),
+            Ok200(VirtualMachineScaleSetVmExtension),
+            Created201(VirtualMachineScaleSetVmExtension),
         }
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
@@ -6011,9 +6011,9 @@ pub mod virtual_machine_scale_set_vm_extensions {
         vm_scale_set_name: &str,
         instance_id: &str,
         vm_extension_name: &str,
-        extension_parameters: &VirtualMachineExtensionUpdate,
+        extension_parameters: &VirtualMachineScaleSetVmExtensionUpdate,
         subscription_id: &str,
-    ) -> std::result::Result<VirtualMachineExtension, update::Error> {
+    ) -> std::result::Result<VirtualMachineScaleSetVmExtension, update::Error> {
         let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/virtualMachineScaleSets/{}/virtualMachines/{}/extensions/{}",
@@ -6034,7 +6034,8 @@ pub mod virtual_machine_scale_set_vm_extensions {
         match rsp.status() {
             StatusCode::OK => {
                 let body: bytes::Bytes = rsp.bytes().await.context(update::ResponseBytesError)?;
-                let rsp_value: VirtualMachineExtension = serde_json::from_slice(&body).context(update::DeserializeError { body })?;
+                let rsp_value: VirtualMachineScaleSetVmExtension =
+                    serde_json::from_slice(&body).context(update::DeserializeError { body })?;
                 Ok(rsp_value)
             }
             status_code => {
@@ -6158,7 +6159,7 @@ pub mod virtual_machine_scale_set_vm_extensions {
         instance_id: &str,
         expand: Option<&str>,
         subscription_id: &str,
-    ) -> std::result::Result<VirtualMachineExtensionsListResult, list::Error> {
+    ) -> std::result::Result<VirtualMachineScaleSetVmExtensionsListResult, list::Error> {
         let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/virtualMachineScaleSets/{}/virtualMachines/{}/extensions",
@@ -6181,7 +6182,7 @@ pub mod virtual_machine_scale_set_vm_extensions {
         match rsp.status() {
             StatusCode::OK => {
                 let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
-                let rsp_value: VirtualMachineExtensionsListResult =
+                let rsp_value: VirtualMachineScaleSetVmExtensionsListResult =
                     serde_json::from_slice(&body).context(list::DeserializeError { body })?;
                 Ok(rsp_value)
             }

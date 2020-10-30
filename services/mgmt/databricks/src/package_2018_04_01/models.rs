@@ -166,7 +166,7 @@ pub mod encryption {
     pub enum KeySource {
         Default,
         #[serde(rename = "Microsoft.Keyvault")]
-        Microsoft_Keyvault,
+        MicrosoftKeyvault,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

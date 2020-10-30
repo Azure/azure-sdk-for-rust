@@ -63,10 +63,6 @@ pub use package_pure_policy_2017_06::{models, operations, API_VERSION};
 mod package_templatespecs_2019_06_preview;
 #[cfg(feature = "package-templatespecs-2019-06-preview")]
 pub use package_templatespecs_2019_06_preview::{models, operations, API_VERSION};
-#[cfg(feature = "package-templatespecs-2020-10-preview")]
-mod package_templatespecs_2020_10_preview;
-#[cfg(feature = "package-templatespecs-2020-10-preview")]
-pub use package_templatespecs_2020_10_preview::{models, operations, API_VERSION};
 #[cfg(feature = "package-policy-2016-12")]
 mod package_policy_2016_12;
 #[cfg(feature = "package-policy-2016-12")]

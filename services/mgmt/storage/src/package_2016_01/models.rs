@@ -13,7 +13,7 @@ pub mod storage_account_check_name_availability_parameters {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         #[serde(rename = "Microsoft.Storage/storageAccounts")]
-        Microsoft_StorageStorageAccounts,
+        MicrosoftStorageStorageAccounts,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -90,7 +90,7 @@ pub mod encryption {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum KeySource {
         #[serde(rename = "Microsoft.Storage")]
-        Microsoft_Storage,
+        MicrosoftStorage,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

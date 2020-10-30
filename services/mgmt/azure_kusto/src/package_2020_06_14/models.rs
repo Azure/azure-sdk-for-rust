@@ -433,9 +433,9 @@ pub enum EventGridDataFormat {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum BlobStorageEventType {
     #[serde(rename = "Microsoft.Storage.BlobCreated")]
-    Microsoft_Storage_BlobCreated,
+    MicrosoftStorageBlobCreated,
     #[serde(rename = "Microsoft.Storage.BlobRenamed")]
-    Microsoft_Storage_BlobRenamed,
+    MicrosoftStorageBlobRenamed,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum Compression {
@@ -786,7 +786,7 @@ pub mod cluster_check_name_request {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         #[serde(rename = "Microsoft.Kusto/clusters")]
-        Microsoft_KustoClusters,
+        MicrosoftKustoClusters,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -800,9 +800,9 @@ pub mod check_name_request {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         #[serde(rename = "Microsoft.Kusto/clusters/databases")]
-        Microsoft_KustoClustersDatabases,
+        MicrosoftKustoClustersDatabases,
         #[serde(rename = "Microsoft.Kusto/clusters/attachedDatabaseConfigurations")]
-        Microsoft_KustoClustersAttachedDatabaseConfigurations,
+        MicrosoftKustoClustersAttachedDatabaseConfigurations,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -816,7 +816,7 @@ pub mod cluster_principal_assignment_check_name_request {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         #[serde(rename = "Microsoft.Kusto/clusters/principalAssignments")]
-        Microsoft_KustoClustersPrincipalAssignments,
+        MicrosoftKustoClustersPrincipalAssignments,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -830,7 +830,7 @@ pub mod data_connection_check_name_request {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         #[serde(rename = "Microsoft.Kusto/clusters/databases/dataConnections")]
-        Microsoft_KustoClustersDatabasesDataConnections,
+        MicrosoftKustoClustersDatabasesDataConnections,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -844,7 +844,7 @@ pub mod database_principal_assignment_check_name_request {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         #[serde(rename = "Microsoft.Kusto/clusters/databases/principalAssignments")]
-        Microsoft_KustoClustersDatabasesPrincipalAssignments,
+        MicrosoftKustoClustersDatabasesPrincipalAssignments,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

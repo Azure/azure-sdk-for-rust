@@ -427,7 +427,7 @@ pub mod private_cloud {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         #[serde(rename = "Microsoft.VMwareCloudSimple/privateClouds")]
-        Microsoft_VMwareCloudSimplePrivateClouds,
+        MicrosoftVMwareCloudSimplePrivateClouds,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

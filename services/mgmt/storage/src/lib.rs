@@ -59,6 +59,10 @@ pub use package_2015_06::{models, operations, API_VERSION};
 mod package_2015_05_preview;
 #[cfg(feature = "package-2015-05-preview")]
 pub use package_2015_05_preview::{models, operations, API_VERSION};
+#[cfg(feature = "profile-hybrid-2020-09-01")]
+mod profile_hybrid_2020_09_01;
+#[cfg(feature = "profile-hybrid-2020-09-01")]
+pub use profile_hybrid_2020_09_01::{models, operations, API_VERSION};
 pub struct OperationConfig {
     pub api_version: String,
     pub client: reqwest::Client,

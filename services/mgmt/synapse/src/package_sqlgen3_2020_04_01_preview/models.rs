@@ -176,6 +176,8 @@ pub struct SqlDatabaseProperties {
     pub max_size_bytes: Option<i64>,
     #[serde(rename = "databaseGuid", skip_serializing)]
     pub database_guid: Option<String>,
+    #[serde(skip_serializing)]
+    pub status: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SqlDatabase {

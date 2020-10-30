@@ -877,9 +877,9 @@ pub mod check_name_availability_output {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ResourceType {
     #[serde(rename = "Microsoft.Network/frontDoors")]
-    Microsoft_NetworkFrontDoors,
+    MicrosoftNetworkFrontDoors,
     #[serde(rename = "Microsoft.Network/frontDoors/frontendEndpoints")]
-    Microsoft_NetworkFrontDoorsFrontendEndpoints,
+    MicrosoftNetworkFrontDoorsFrontendEndpoints,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WebApplicationFirewallPolicy {

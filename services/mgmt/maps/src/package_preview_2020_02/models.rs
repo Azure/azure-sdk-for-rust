@@ -131,23 +131,20 @@ pub struct CreatorProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorResponse {
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub error: Option<error_response::Error>,
+    pub error: Option<ErrorDetail>,
 }
-pub mod error_response {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub struct Error {
-        #[serde(skip_serializing)]
-        pub code: Option<String>,
-        #[serde(skip_serializing)]
-        pub message: Option<String>,
-        #[serde(skip_serializing)]
-        pub target: Option<String>,
-        #[serde(skip_serializing)]
-        pub details: Vec<ErrorResponse>,
-        #[serde(rename = "additionalInfo", skip_serializing)]
-        pub additional_info: Vec<ErrorAdditionalInfo>,
-    }
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ErrorDetail {
+    #[serde(skip_serializing)]
+    pub code: Option<String>,
+    #[serde(skip_serializing)]
+    pub message: Option<String>,
+    #[serde(skip_serializing)]
+    pub target: Option<String>,
+    #[serde(skip_serializing)]
+    pub details: Vec<ErrorDetail>,
+    #[serde(rename = "additionalInfo", skip_serializing)]
+    pub additional_info: Vec<ErrorAdditionalInfo>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorAdditionalInfo {

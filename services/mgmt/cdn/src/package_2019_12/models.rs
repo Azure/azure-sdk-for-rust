@@ -266,7 +266,7 @@ pub mod remote_address_match_condition_parameters {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Odata_type {
         #[serde(rename = "#Microsoft.Azure.Cdn.Models.DeliveryRuleRemoteAddressConditionParameters")]
-        Microsoft_Azure_Cdn_Models_DeliveryRuleRemoteAddressConditionParameters,
+        MicrosoftAzureCdnModelsDeliveryRuleRemoteAddressConditionParameters,
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Operator {
@@ -291,7 +291,7 @@ pub mod request_method_match_condition_parameters {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Odata_type {
         #[serde(rename = "#Microsoft.Azure.Cdn.Models.DeliveryRuleRequestMethodConditionParameters")]
-        Microsoft_Azure_Cdn_Models_DeliveryRuleRequestMethodConditionParameters,
+        MicrosoftAzureCdnModelsDeliveryRuleRequestMethodConditionParameters,
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Operator {
@@ -315,7 +315,7 @@ pub mod query_string_match_condition_parameters {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Odata_type {
         #[serde(rename = "#Microsoft.Azure.Cdn.Models.DeliveryRuleQueryStringConditionParameters")]
-        Microsoft_Azure_Cdn_Models_DeliveryRuleQueryStringConditionParameters,
+        MicrosoftAzureCdnModelsDeliveryRuleQueryStringConditionParameters,
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Operator {
@@ -349,7 +349,7 @@ pub mod post_args_match_condition_parameters {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Odata_type {
         #[serde(rename = "#Microsoft.Azure.Cdn.Models.DeliveryRulePostArgsConditionParameters")]
-        Microsoft_Azure_Cdn_Models_DeliveryRulePostArgsConditionParameters,
+        MicrosoftAzureCdnModelsDeliveryRulePostArgsConditionParameters,
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Operator {
@@ -381,7 +381,7 @@ pub mod request_uri_match_condition_parameters {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Odata_type {
         #[serde(rename = "#Microsoft.Azure.Cdn.Models.DeliveryRuleRequestUriConditionParameters")]
-        Microsoft_Azure_Cdn_Models_DeliveryRuleRequestUriConditionParameters,
+        MicrosoftAzureCdnModelsDeliveryRuleRequestUriConditionParameters,
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Operator {
@@ -415,7 +415,7 @@ pub mod request_header_match_condition_parameters {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Odata_type {
         #[serde(rename = "#Microsoft.Azure.Cdn.Models.DeliveryRuleRequestHeaderConditionParameters")]
-        Microsoft_Azure_Cdn_Models_DeliveryRuleRequestHeaderConditionParameters,
+        MicrosoftAzureCdnModelsDeliveryRuleRequestHeaderConditionParameters,
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Operator {
@@ -447,7 +447,7 @@ pub mod request_body_match_condition_parameters {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Odata_type {
         #[serde(rename = "#Microsoft.Azure.Cdn.Models.DeliveryRuleRequestBodyConditionParameters")]
-        Microsoft_Azure_Cdn_Models_DeliveryRuleRequestBodyConditionParameters,
+        MicrosoftAzureCdnModelsDeliveryRuleRequestBodyConditionParameters,
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Operator {
@@ -477,7 +477,7 @@ pub mod request_scheme_match_condition_parameters {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Odata_type {
         #[serde(rename = "#Microsoft.Azure.Cdn.Models.DeliveryRuleRequestSchemeConditionParameters")]
-        Microsoft_Azure_Cdn_Models_DeliveryRuleRequestSchemeConditionParameters,
+        MicrosoftAzureCdnModelsDeliveryRuleRequestSchemeConditionParameters,
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Operator {
@@ -501,7 +501,7 @@ pub mod url_path_match_condition_parameters {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Odata_type {
         #[serde(rename = "#Microsoft.Azure.Cdn.Models.DeliveryRuleUrlPathMatchConditionParameters")]
-        Microsoft_Azure_Cdn_Models_DeliveryRuleUrlPathMatchConditionParameters,
+        MicrosoftAzureCdnModelsDeliveryRuleUrlPathMatchConditionParameters,
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Operator {
@@ -534,7 +534,7 @@ pub mod url_file_extension_match_condition_parameters {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Odata_type {
         #[serde(rename = "#Microsoft.Azure.Cdn.Models.DeliveryRuleUrlFileExtensionMatchConditionParameters")]
-        Microsoft_Azure_Cdn_Models_DeliveryRuleUrlFileExtensionMatchConditionParameters,
+        MicrosoftAzureCdnModelsDeliveryRuleUrlFileExtensionMatchConditionParameters,
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Operator {
@@ -566,7 +566,7 @@ pub mod url_file_name_match_condition_parameters {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Odata_type {
         #[serde(rename = "#Microsoft.Azure.Cdn.Models.DeliveryRuleUrlFilenameConditionParameters")]
-        Microsoft_Azure_Cdn_Models_DeliveryRuleUrlFilenameConditionParameters,
+        MicrosoftAzureCdnModelsDeliveryRuleUrlFilenameConditionParameters,
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Operator {
@@ -596,7 +596,7 @@ pub mod http_version_match_condition_parameters {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Odata_type {
         #[serde(rename = "#Microsoft.Azure.Cdn.Models.DeliveryRuleHttpVersionConditionParameters")]
-        Microsoft_Azure_Cdn_Models_DeliveryRuleHttpVersionConditionParameters,
+        MicrosoftAzureCdnModelsDeliveryRuleHttpVersionConditionParameters,
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Operator {
@@ -622,7 +622,7 @@ pub mod cookies_match_condition_parameters {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Odata_type {
         #[serde(rename = "#Microsoft.Azure.Cdn.Models.DeliveryRuleCookiesConditionParameters")]
-        Microsoft_Azure_Cdn_Models_DeliveryRuleCookiesConditionParameters,
+        MicrosoftAzureCdnModelsDeliveryRuleCookiesConditionParameters,
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Operator {
@@ -654,7 +654,7 @@ pub mod is_device_match_condition_parameters {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Odata_type {
         #[serde(rename = "#Microsoft.Azure.Cdn.Models.DeliveryRuleIsDeviceConditionParameters")]
-        Microsoft_Azure_Cdn_Models_DeliveryRuleIsDeviceConditionParameters,
+        MicrosoftAzureCdnModelsDeliveryRuleIsDeviceConditionParameters,
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Operator {
@@ -706,7 +706,7 @@ pub mod url_redirect_action_parameters {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Odata_type {
         #[serde(rename = "#Microsoft.Azure.Cdn.Models.DeliveryRuleUrlRedirectActionParameters")]
-        Microsoft_Azure_Cdn_Models_DeliveryRuleUrlRedirectActionParameters,
+        MicrosoftAzureCdnModelsDeliveryRuleUrlRedirectActionParameters,
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum RedirectType {
@@ -743,7 +743,7 @@ pub mod url_rewrite_action_parameters {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Odata_type {
         #[serde(rename = "#Microsoft.Azure.Cdn.Models.DeliveryRuleUrlRewriteActionParameters")]
-        Microsoft_Azure_Cdn_Models_DeliveryRuleUrlRewriteActionParameters,
+        MicrosoftAzureCdnModelsDeliveryRuleUrlRewriteActionParameters,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -764,7 +764,7 @@ pub mod origin_group_override_action_parameters {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Odata_type {
         #[serde(rename = "#Microsoft.Azure.Cdn.Models.DeliveryRuleOriginGroupOverrideActionParameters")]
-        Microsoft_Azure_Cdn_Models_DeliveryRuleOriginGroupOverrideActionParameters,
+        MicrosoftAzureCdnModelsDeliveryRuleOriginGroupOverrideActionParameters,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -795,7 +795,7 @@ pub mod header_action_parameters {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Odata_type {
         #[serde(rename = "#Microsoft.Azure.Cdn.Models.DeliveryRuleHeaderActionParameters")]
-        Microsoft_Azure_Cdn_Models_DeliveryRuleHeaderActionParameters,
+        MicrosoftAzureCdnModelsDeliveryRuleHeaderActionParameters,
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum HeaderAction {
@@ -826,7 +826,7 @@ pub mod cache_expiration_action_parameters {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Odata_type {
         #[serde(rename = "#Microsoft.Azure.Cdn.Models.DeliveryRuleCacheExpirationActionParameters")]
-        Microsoft_Azure_Cdn_Models_DeliveryRuleCacheExpirationActionParameters,
+        MicrosoftAzureCdnModelsDeliveryRuleCacheExpirationActionParameters,
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum CacheBehavior {
@@ -859,7 +859,7 @@ pub mod cache_key_query_string_action_parameters {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Odata_type {
         #[serde(rename = "#Microsoft.Azure.Cdn.Models.DeliveryRuleCacheKeyQueryStringBehaviorActionParameters")]
-        Microsoft_Azure_Cdn_Models_DeliveryRuleCacheKeyQueryStringBehaviorActionParameters,
+        MicrosoftAzureCdnModelsDeliveryRuleCacheKeyQueryStringBehaviorActionParameters,
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum QueryStringBehavior {
@@ -1217,7 +1217,7 @@ pub mod cdn_certificate_source_parameters {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Odata_type {
         #[serde(rename = "#Microsoft.Azure.Cdn.Models.CdnCertificateSourceParameters")]
-        Microsoft_Azure_Cdn_Models_CdnCertificateSourceParameters,
+        MicrosoftAzureCdnModelsCdnCertificateSourceParameters,
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum CertificateType {
@@ -1256,7 +1256,7 @@ pub mod key_vault_certificate_source_parameters {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Odata_type {
         #[serde(rename = "#Microsoft.Azure.Cdn.Models.KeyVaultCertificateSourceParameters")]
-        Microsoft_Azure_Cdn_Models_KeyVaultCertificateSourceParameters,
+        MicrosoftAzureCdnModelsKeyVaultCertificateSourceParameters,
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum UpdateRule {
@@ -1338,7 +1338,7 @@ pub struct ResourceUsage {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ResourceType {
     #[serde(rename = "Microsoft.Cdn/Profiles/Endpoints")]
-    Microsoft_CdnProfilesEndpoints,
+    MicrosoftCdnProfilesEndpoints,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Operation {

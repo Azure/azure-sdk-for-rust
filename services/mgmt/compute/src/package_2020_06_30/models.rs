@@ -423,6 +423,17 @@ pub struct VirtualMachineExtension {
     pub properties: Option<VirtualMachineExtensionProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VirtualMachineScaleSetVmExtension {
+    #[serde(flatten)]
+    pub sub_resource_read_only: SubResourceReadOnly,
+    #[serde(skip_serializing)]
+    pub name: Option<String>,
+    #[serde(rename = "type", skip_serializing)]
+    pub type_: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub properties: Option<VirtualMachineExtensionProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VirtualMachineExtensionUpdate {
     #[serde(flatten)]
     pub update_resource: UpdateResource,
@@ -430,9 +441,25 @@ pub struct VirtualMachineExtensionUpdate {
     pub properties: Option<VirtualMachineExtensionUpdateProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VirtualMachineScaleSetVmExtensionUpdate {
+    #[serde(flatten)]
+    pub sub_resource_read_only: SubResourceReadOnly,
+    #[serde(skip_serializing)]
+    pub name: Option<String>,
+    #[serde(rename = "type", skip_serializing)]
+    pub type_: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub properties: Option<VirtualMachineExtensionUpdateProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VirtualMachineExtensionsListResult {
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<VirtualMachineExtension>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VirtualMachineScaleSetVmExtensionsListResult {
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<VirtualMachineScaleSetVmExtension>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VirtualMachineSoftwarePatchProperties {

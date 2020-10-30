@@ -1009,7 +1009,7 @@ pub mod check_name_availability_parameters {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         #[serde(rename = "Microsoft.Migrate/projects")]
-        Microsoft_MigrateProjects,
+        MicrosoftMigrateProjects,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

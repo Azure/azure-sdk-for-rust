@@ -198,7 +198,7 @@ pub struct ParentGroupInfo {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ManagementGroupChildType {
     #[serde(rename = "Microsoft.Management/managementGroups")]
-    Microsoft_ManagementManagementGroups,
+    MicrosoftManagementManagementGroups,
     #[serde(rename = "/subscriptions")]
     Subscriptions,
 }
@@ -459,6 +459,6 @@ pub mod check_name_availability_request {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         #[serde(rename = "Microsoft.Management/managementGroups")]
-        Microsoft_ManagementManagementGroups,
+        MicrosoftManagementManagementGroups,
     }
 }

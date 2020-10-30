@@ -13,7 +13,7 @@ pub mod reservation {
         operation_config: &crate::OperationConfig,
         reservation_order_id: &str,
         reservation_id: &str,
-        body: &Vec<&str>,
+        body: &AvailableScopeRequest,
     ) -> std::result::Result<Properties, available_scopes::Error> {
         let client = &operation_config.client;
         let uri_str = &format!(
@@ -393,6 +393,104 @@ pub mod reservation {
         }
     }
     pub mod list_revisions {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse { status_code: StatusCode, value: models::Error },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            GetTokenError { source: azure_core::errors::AzureError },
+        }
+    }
+    pub async fn archive(
+        operation_config: &crate::OperationConfig,
+        reservation_order_id: &str,
+        reservation_id: &str,
+    ) -> std::result::Result<(), archive::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!(
+            "{}/providers/Microsoft.Capacity/reservationOrders/{}/reservations/{}/archive",
+            &operation_config.base_path, reservation_order_id, reservation_id
+        );
+        let mut req_builder = client.post(uri_str);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(archive::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        }
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let req = req_builder.build().context(archive::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(archive::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => Ok(()),
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(archive::ResponseBytesError)?;
+                let rsp_value: Error = serde_json::from_slice(&body).context(archive::DeserializeError { body })?;
+                archive::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod archive {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse { status_code: StatusCode, value: models::Error },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            GetTokenError { source: azure_core::errors::AzureError },
+        }
+    }
+    pub async fn unarchive(
+        operation_config: &crate::OperationConfig,
+        reservation_order_id: &str,
+        reservation_id: &str,
+    ) -> std::result::Result<(), unarchive::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!(
+            "{}/providers/Microsoft.Capacity/reservationOrders/{}/reservations/{}/unarchive",
+            &operation_config.base_path, reservation_order_id, reservation_id
+        );
+        let mut req_builder = client.post(uri_str);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(unarchive::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        }
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let req = req_builder.build().context(unarchive::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(unarchive::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => Ok(()),
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(unarchive::ResponseBytesError)?;
+                let rsp_value: Error = serde_json::from_slice(&body).context(unarchive::DeserializeError { body })?;
+                unarchive::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod unarchive {
         use crate::{models, models::*};
         use reqwest::StatusCode;
         use snafu::Snafu;

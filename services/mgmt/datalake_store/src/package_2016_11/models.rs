@@ -630,6 +630,6 @@ pub mod check_name_availability_parameters {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         #[serde(rename = "Microsoft.DataLakeStore/accounts")]
-        Microsoft_DataLakeStoreAccounts,
+        MicrosoftDataLakeStoreAccounts,
     }
 }

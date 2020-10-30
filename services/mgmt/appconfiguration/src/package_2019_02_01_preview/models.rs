@@ -57,7 +57,7 @@ pub mod check_name_availability_parameters {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         #[serde(rename = "Microsoft.AppConfiguration/configurationStores")]
-        Microsoft_AppConfigurationConfigurationStores,
+        MicrosoftAppConfigurationConfigurationStores,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

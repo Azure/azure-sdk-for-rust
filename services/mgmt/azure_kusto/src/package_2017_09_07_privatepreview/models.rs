@@ -306,7 +306,7 @@ pub mod cluster_check_name_request {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         #[serde(rename = "Microsoft.Kusto/clusters")]
-        Microsoft_KustoClusters,
+        MicrosoftKustoClusters,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -320,7 +320,7 @@ pub mod database_check_name_request {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         #[serde(rename = "Microsoft.Kusto/clusters/databases")]
-        Microsoft_KustoClustersDatabases,
+        MicrosoftKustoClustersDatabases,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

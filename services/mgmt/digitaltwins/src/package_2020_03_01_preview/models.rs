@@ -118,7 +118,7 @@ pub mod check_name_request {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         #[serde(rename = "Microsoft.DigitalTwins/digitalTwinsInstances")]
-        Microsoft_DigitalTwinsDigitalTwinsInstances,
+        MicrosoftDigitalTwinsDigitalTwinsInstances,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

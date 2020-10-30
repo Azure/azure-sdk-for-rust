@@ -1230,11 +1230,11 @@ pub mod metric_alert_criteria {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Odata_type {
         #[serde(rename = "Microsoft.Azure.Monitor.SingleResourceMultipleMetricCriteria")]
-        Microsoft_Azure_Monitor_SingleResourceMultipleMetricCriteria,
+        MicrosoftAzureMonitorSingleResourceMultipleMetricCriteria,
         #[serde(rename = "Microsoft.Azure.Monitor.MultipleResourceMultipleMetricCriteria")]
-        Microsoft_Azure_Monitor_MultipleResourceMultipleMetricCriteria,
+        MicrosoftAzureMonitorMultipleResourceMultipleMetricCriteria,
         #[serde(rename = "Microsoft.Azure.Monitor.WebtestLocationAvailabilityCriteria")]
-        Microsoft_Azure_Monitor_WebtestLocationAvailabilityCriteria,
+        MicrosoftAzureMonitorWebtestLocationAvailabilityCriteria,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

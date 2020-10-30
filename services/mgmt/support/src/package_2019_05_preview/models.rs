@@ -81,9 +81,9 @@ pub mod check_name_availability_input {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         #[serde(rename = "Microsoft.Support/supportTickets")]
-        Microsoft_SupportSupportTickets,
+        MicrosoftSupportSupportTickets,
         #[serde(rename = "Microsoft.Support/communications")]
-        Microsoft_SupportCommunications,
+        MicrosoftSupportCommunications,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
