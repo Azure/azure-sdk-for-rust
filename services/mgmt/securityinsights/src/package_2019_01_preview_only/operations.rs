@@ -4718,7 +4718,7 @@ pub mod incident_comments {
         incident_id: &str,
         incident_comment_id: &str,
         incident_comment: &IncidentComment,
-    ) -> std::result::Result<IncidentComment, create_comment::Error> {
+    ) -> std::result::Result<create_comment::Response, create_comment::Error> {
         let client = &operation_config.client;
         let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/incidents/{}/comments/{}" , & operation_config . base_path , subscription_id , resource_group_name , operational_insights_resource_provider , workspace_name , incident_id , incident_comment_id) ;
         let mut req_builder = client.put(uri_str);
@@ -4734,10 +4734,15 @@ pub mod incident_comments {
         let req = req_builder.build().context(create_comment::BuildRequestError)?;
         let rsp = client.execute(req).await.context(create_comment::ExecuteRequestError)?;
         match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_comment::ResponseBytesError)?;
+                let rsp_value: IncidentComment = serde_json::from_slice(&body).context(create_comment::DeserializeError { body })?;
+                Ok(create_comment::Response::Ok200(rsp_value))
+            }
             StatusCode::CREATED => {
                 let body: bytes::Bytes = rsp.bytes().await.context(create_comment::ResponseBytesError)?;
                 let rsp_value: IncidentComment = serde_json::from_slice(&body).context(create_comment::DeserializeError { body })?;
-                Ok(rsp_value)
+                Ok(create_comment::Response::Created201(rsp_value))
             }
             status_code => {
                 let body: bytes::Bytes = rsp.bytes().await.context(create_comment::ResponseBytesError)?;
@@ -4754,6 +4759,81 @@ pub mod incident_comments {
         use crate::{models, models::*};
         use reqwest::StatusCode;
         use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(IncidentComment),
+            Created201(IncidentComment),
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
+        }
+    }
+    pub async fn delete_comment(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        operational_insights_resource_provider: &str,
+        workspace_name: &str,
+        incident_id: &str,
+        incident_comment_id: &str,
+    ) -> std::result::Result<delete_comment::Response, delete_comment::Error> {
+        let client = &operation_config.client;
+        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/incidents/{}/comments/{}" , & operation_config . base_path , subscription_id , resource_group_name , operational_insights_resource_provider , workspace_name , incident_id , incident_comment_id) ;
+        let mut req_builder = client.delete(uri_str);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(delete_comment::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        }
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let req = req_builder.build().context(delete_comment::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(delete_comment::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => Ok(delete_comment::Response::Ok200),
+            StatusCode::NO_CONTENT => Ok(delete_comment::Response::NoContent204),
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(delete_comment::ResponseBytesError)?;
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(delete_comment::DeserializeError { body })?;
+                delete_comment::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod delete_comment {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200,
+            NoContent204,
+        }
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {

@@ -1065,7 +1065,7 @@ pub struct IncidentBookmarkList {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IncidentComment {
     #[serde(flatten)]
-    pub resource: Resource,
+    pub resource_with_etag: ResourceWithEtag,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub properties: Option<IncidentCommentProperties>,
 }
@@ -1079,6 +1079,8 @@ pub struct IncidentCommentList {
 pub struct IncidentCommentProperties {
     #[serde(rename = "createdTimeUtc", skip_serializing)]
     pub created_time_utc: Option<String>,
+    #[serde(rename = "lastModifiedTimeUtc", skip_serializing)]
+    pub last_modified_time_utc: Option<String>,
     pub message: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub author: Option<ClientInfo>,

@@ -98,6 +98,21 @@ pub struct Dimension {
     pub to_be_exported_for_shoebox: Option<bool>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct NameAvailabilityParameters {
+    #[serde(rename = "type")]
+    pub type_: String,
+    pub name: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct NameAvailability {
+    #[serde(rename = "nameAvailable", skip_serializing_if = "Option::is_none")]
+    pub name_available: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub reason: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LinkNotificationHubParameters {
     #[serde(rename = "resourceId")]
     pub resource_id: String,

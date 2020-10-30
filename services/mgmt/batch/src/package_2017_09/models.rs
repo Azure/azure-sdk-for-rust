@@ -760,7 +760,7 @@ pub mod check_name_availability_parameters {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         #[serde(rename = "Microsoft.Batch/batchAccounts")]
-        Microsoft_BatchBatchAccounts,
+        MicrosoftBatchBatchAccounts,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

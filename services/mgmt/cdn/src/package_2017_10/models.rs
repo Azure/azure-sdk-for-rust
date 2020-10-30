@@ -166,7 +166,7 @@ pub mod url_path_condition_parameters {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Odata_type {
         #[serde(rename = "Microsoft.Azure.Cdn.Models.DeliveryRuleUrlPathConditionParameters")]
-        Microsoft_Azure_Cdn_Models_DeliveryRuleUrlPathConditionParameters,
+        MicrosoftAzureCdnModelsDeliveryRuleUrlPathConditionParameters,
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum MatchType {
@@ -191,7 +191,7 @@ pub mod url_file_extension_condition_parameters {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Odata_type {
         #[serde(rename = "Microsoft.Azure.Cdn.Models.DeliveryRuleUrlFileExtensionConditionParameters")]
-        Microsoft_Azure_Cdn_Models_DeliveryRuleUrlFileExtensionConditionParameters,
+        MicrosoftAzureCdnModelsDeliveryRuleUrlFileExtensionConditionParameters,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -227,7 +227,7 @@ pub mod cache_expiration_action_parameters {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Odata_type {
         #[serde(rename = "Microsoft.Azure.Cdn.Models.DeliveryRuleCacheExpirationActionParameters")]
-        Microsoft_Azure_Cdn_Models_DeliveryRuleCacheExpirationActionParameters,
+        MicrosoftAzureCdnModelsDeliveryRuleCacheExpirationActionParameters,
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum CacheBehavior {
@@ -433,7 +433,7 @@ pub mod cdn_certificate_source_parameters {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Odata_type {
         #[serde(rename = "#Microsoft.Azure.Cdn.Models.CdnCertificateSourceParameters")]
-        Microsoft_Azure_Cdn_Models_CdnCertificateSourceParameters,
+        MicrosoftAzureCdnModelsCdnCertificateSourceParameters,
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum CertificateType {
@@ -472,7 +472,7 @@ pub mod key_vault_certificate_source_parameters {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Odata_type {
         #[serde(rename = "#Microsoft.Azure.Cdn.Models.KeyVaultCertificateSourceParameters")]
-        Microsoft_Azure_Cdn_Models_KeyVaultCertificateSourceParameters,
+        MicrosoftAzureCdnModelsKeyVaultCertificateSourceParameters,
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum UpdateRule {
@@ -554,7 +554,7 @@ pub struct ResourceUsage {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ResourceType {
     #[serde(rename = "Microsoft.Cdn/Profiles/Endpoints")]
-    Microsoft_CdnProfilesEndpoints,
+    MicrosoftCdnProfilesEndpoints,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Operation {

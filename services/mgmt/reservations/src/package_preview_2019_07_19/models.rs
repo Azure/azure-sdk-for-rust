@@ -863,3 +863,13 @@ pub struct Price {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub amount: Option<f64>,
 }
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AvailableScopeRequest {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub properties: Option<AvailableScopeRequestProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AvailableScopeRequestProperties {
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub scopes: Vec<String>,
+}

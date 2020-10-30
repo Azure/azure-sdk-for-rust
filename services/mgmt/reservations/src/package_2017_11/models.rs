@@ -243,7 +243,7 @@ pub mod reservation_response {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Kind {
         #[serde(rename = "Microsoft.Compute")]
-        Microsoft_Compute,
+        MicrosoftCompute,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

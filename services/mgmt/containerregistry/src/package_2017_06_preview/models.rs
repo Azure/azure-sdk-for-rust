@@ -13,7 +13,7 @@ pub mod registry_name_check_request {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         #[serde(rename = "Microsoft.ContainerRegistry/registries")]
-        Microsoft_ContainerRegistryRegistries,
+        MicrosoftContainerRegistryRegistries,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

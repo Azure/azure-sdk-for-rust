@@ -214,7 +214,7 @@ pub mod vault_check_name_availability_parameters {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         #[serde(rename = "Microsoft.KeyVault/vaults")]
-        Microsoft_KeyVaultVaults,
+        MicrosoftKeyVaultVaults,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

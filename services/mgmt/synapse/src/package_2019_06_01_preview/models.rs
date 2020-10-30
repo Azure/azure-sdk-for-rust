@@ -33,12 +33,16 @@ pub struct BigDataPoolResourceProperties {
     pub auto_pause: Option<AutoPauseProperties>,
     #[serde(rename = "isComputeIsolationEnabled", skip_serializing_if = "Option::is_none")]
     pub is_compute_isolation_enabled: Option<bool>,
+    #[serde(rename = "sessionLevelPackagesEnabled", skip_serializing_if = "Option::is_none")]
+    pub session_level_packages_enabled: Option<bool>,
     #[serde(rename = "sparkEventsFolder", skip_serializing_if = "Option::is_none")]
     pub spark_events_folder: Option<String>,
     #[serde(rename = "nodeCount", skip_serializing_if = "Option::is_none")]
     pub node_count: Option<i32>,
     #[serde(rename = "libraryRequirements", skip_serializing_if = "Option::is_none")]
     pub library_requirements: Option<LibraryRequirements>,
+    #[serde(rename = "customLibraries", skip_serializing_if = "Vec::is_empty")]
+    pub custom_libraries: Vec<LibraryInfo>,
     #[serde(rename = "sparkConfigProperties", skip_serializing_if = "Option::is_none")]
     pub spark_config_properties: Option<LibraryRequirements>,
     #[serde(rename = "sparkVersion", skip_serializing_if = "Option::is_none")]
@@ -85,6 +89,19 @@ pub struct AutoPauseProperties {
     pub delay_in_minutes: Option<i32>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub enabled: Option<bool>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct LibraryInfo {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub path: Option<String>,
+    #[serde(rename = "containerName", skip_serializing_if = "Option::is_none")]
+    pub container_name: Option<String>,
+    #[serde(rename = "uploadedTimestamp", skip_serializing_if = "Option::is_none")]
+    pub uploaded_timestamp: Option<String>,
+    #[serde(rename = "type", skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LibraryRequirements {
@@ -135,6 +152,27 @@ pub struct DataLakeStorageAccountDetails {
     pub filesystem: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct EncryptionDetails {
+    #[serde(rename = "doubleEncryptionEnabled", skip_serializing)]
+    pub double_encryption_enabled: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub cmk: Option<CustomerManagedKeyDetails>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CustomerManagedKeyDetails {
+    #[serde(skip_serializing)]
+    pub status: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub key: Option<WorkspaceKeyDetails>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct WorkspaceKeyDetails {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(rename = "keyVaultUrl", skip_serializing_if = "Option::is_none")]
+    pub key_vault_url: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManagedIdentity {
     #[serde(rename = "principalId", skip_serializing)]
     pub principal_id: Option<String>,
@@ -164,6 +202,11 @@ pub struct ManagedVirtualNetworkSettings {
     pub linked_access_check_on_target_resource: Option<bool>,
     #[serde(rename = "allowedAadTenantIdsForLinking", skip_serializing_if = "Vec::is_empty")]
     pub allowed_aad_tenant_ids_for_linking: Vec<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BabylonConfiguration {
+    #[serde(rename = "babylonResourceId", skip_serializing_if = "Option::is_none")]
+    pub babylon_resource_id: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WorkspaceAadAdminInfo {
@@ -201,10 +244,16 @@ pub struct WorkspaceProperties {
     pub managed_virtual_network: Option<String>,
     #[serde(rename = "privateEndpointConnections", skip_serializing_if = "Vec::is_empty")]
     pub private_endpoint_connections: Vec<PrivateEndpointConnection>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub encryption: Option<EncryptionDetails>,
+    #[serde(rename = "workspaceUID", skip_serializing)]
+    pub workspace_uid: Option<String>,
     #[serde(rename = "extraProperties", skip_serializing)]
     pub extra_properties: Option<serde_json::Value>,
     #[serde(rename = "managedVirtualNetworkSettings", skip_serializing_if = "Option::is_none")]
     pub managed_virtual_network_settings: Option<ManagedVirtualNetworkSettings>,
+    #[serde(rename = "babylonConfiguration", skip_serializing_if = "Option::is_none")]
+    pub babylon_configuration: Option<BabylonConfiguration>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WorkspacePatchInfo {
@@ -212,27 +261,17 @@ pub struct WorkspacePatchInfo {
     pub tags: Option<serde_json::Value>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub identity: Option<ManagedIdentity>,
-    #[serde(rename = "managedVirtualNetworkSettings", skip_serializing_if = "Option::is_none")]
-    pub managed_virtual_network_settings: Option<workspace_patch_info::ManagedVirtualNetworkSettings>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub properties: Option<WorkspacePatchProperties>,
-}
-pub mod workspace_patch_info {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub struct ManagedVirtualNetworkSettings {
-        #[serde(rename = "preventDataExfiltration", skip_serializing_if = "Option::is_none")]
-        pub prevent_data_exfiltration: Option<bool>,
-        #[serde(rename = "linkedAccessCheckOnTargetResource", skip_serializing_if = "Option::is_none")]
-        pub linked_access_check_on_target_resource: Option<bool>,
-        #[serde(rename = "allowedAadTenantIdsForLinking", skip_serializing_if = "Vec::is_empty")]
-        pub allowed_aad_tenant_ids_for_linking: Vec<String>,
-    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WorkspacePatchProperties {
     #[serde(rename = "sqlAdministratorLoginPassword", skip_serializing_if = "Option::is_none")]
     pub sql_administrator_login_password: Option<String>,
+    #[serde(rename = "managedVirtualNetworkSettings", skip_serializing_if = "Option::is_none")]
+    pub managed_virtual_network_settings: Option<ManagedVirtualNetworkSettings>,
+    #[serde(rename = "babylonConfiguration", skip_serializing_if = "Option::is_none")]
+    pub babylon_configuration: Option<BabylonConfiguration>,
     #[serde(rename = "provisioningState", skip_serializing)]
     pub provisioning_state: Option<String>,
 }
@@ -276,6 +315,38 @@ pub mod managed_identity_sql_control_settings_model {
             }
         }
     }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RestorableDroppedSqlPoolProperties {
+    #[serde(rename = "databaseName", skip_serializing)]
+    pub database_name: Option<String>,
+    #[serde(skip_serializing)]
+    pub edition: Option<String>,
+    #[serde(rename = "maxSizeBytes", skip_serializing)]
+    pub max_size_bytes: Option<String>,
+    #[serde(rename = "serviceLevelObjective", skip_serializing)]
+    pub service_level_objective: Option<String>,
+    #[serde(rename = "elasticPoolName", skip_serializing)]
+    pub elastic_pool_name: Option<String>,
+    #[serde(rename = "creationDate", skip_serializing)]
+    pub creation_date: Option<String>,
+    #[serde(rename = "deletionDate", skip_serializing)]
+    pub deletion_date: Option<String>,
+    #[serde(rename = "earliestRestoreDate", skip_serializing)]
+    pub earliest_restore_date: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RestorableDroppedSqlPool {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
+    #[serde(skip_serializing)]
+    pub location: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub properties: Option<RestorableDroppedSqlPoolProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RestorableDroppedSqlPoolListResult {
+    pub value: Vec<RestorableDroppedSqlPool>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CheckNameAvailabilityRequest {
@@ -517,6 +588,8 @@ pub mod metadata_sync_config {
     pub struct Properties {
         #[serde(skip_serializing_if = "Option::is_none")]
         pub enabled: Option<bool>,
+        #[serde(rename = "syncIntervalInMinutes", skip_serializing)]
+        pub sync_interval_in_minutes: Option<i32>,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -1405,39 +1478,6 @@ pub struct PrivateEndpointConnection {
     pub properties: Option<PrivateEndpointConnectionProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PrivateEndpointConnectionProperties {
-    #[serde(rename = "privateEndpoint", skip_serializing_if = "Option::is_none")]
-    pub private_endpoint: Option<PrivateEndpoint>,
-    #[serde(rename = "privateLinkServiceConnectionState", skip_serializing_if = "Option::is_none")]
-    pub private_link_service_connection_state: Option<PrivateLinkServiceConnectionState>,
-    #[serde(rename = "provisioningState", skip_serializing)]
-    pub provisioning_state: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PrivateEndpoint {
-    #[serde(skip_serializing)]
-    pub id: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PrivateLinkServiceConnectionState {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub status: Option<private_link_service_connection_state::Status>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub description: Option<String>,
-    #[serde(rename = "actionsRequired", skip_serializing)]
-    pub actions_required: Option<String>,
-}
-pub mod private_link_service_connection_state {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Status {
-        Approved,
-        Pending,
-        Rejected,
-        Disconnected,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SubResource {
     #[serde(flatten)]
     pub azure_entity_resource: AzureEntityResource,
@@ -1780,6 +1820,8 @@ pub struct SelfHostedIntegrationRuntimeStatusTypeProperties {
     pub create_time: Option<String>,
     #[serde(rename = "taskQueueId", skip_serializing)]
     pub task_queue_id: Option<String>,
+    #[serde(rename = "nodeCommunicationChannelEncryptionMode", skip_serializing)]
+    pub node_communication_channel_encryption_mode: Option<String>,
     #[serde(rename = "internalChannelEncryption", skip_serializing)]
     pub internal_channel_encryption: Option<self_hosted_integration_runtime_status_type_properties::InternalChannelEncryption>,
     #[serde(skip_serializing)]
@@ -2174,6 +2216,8 @@ pub struct PrivateLinkHubPatchInfo {
 pub struct PrivateLinkHubProperties {
     #[serde(rename = "provisioningState", skip_serializing)]
     pub provisioning_state: Option<private_link_hub_properties::ProvisioningState>,
+    #[serde(rename = "privateEndpointConnections", skip_serializing)]
+    pub private_endpoint_connections: Vec<PrivateEndpointConnectionForPrivateLinkHubBasic>,
 }
 pub mod private_link_hub_properties {
     use super::*;
@@ -2181,7 +2225,59 @@ pub mod private_link_hub_properties {
     pub enum ProvisioningState {
         Succeeded,
         Failed,
+        Deleting,
     }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PrivateEndpointConnectionForPrivateLinkHubBasic {
+    #[serde(skip_serializing)]
+    pub id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub properties: Option<PrivateEndpointConnectionProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PrivateEndpointConnectionProperties {
+    #[serde(rename = "provisioningState", skip_serializing)]
+    pub provisioning_state: Option<String>,
+    #[serde(rename = "privateEndpoint", skip_serializing_if = "Option::is_none")]
+    pub private_endpoint: Option<PrivateEndpoint>,
+    #[serde(rename = "privateLinkServiceConnectionState", skip_serializing_if = "Option::is_none")]
+    pub private_link_service_connection_state: Option<PrivateLinkServiceConnectionState>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PrivateLinkServiceConnectionState {
+    #[serde(skip_serializing)]
+    pub status: Option<String>,
+    #[serde(skip_serializing)]
+    pub description: Option<String>,
+    #[serde(rename = "actionsRequired", skip_serializing)]
+    pub actions_required: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PrivateEndpoint {
+    #[serde(skip_serializing)]
+    pub id: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct KeyInfoListResult {
+    #[serde(rename = "nextLink", skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<Key>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Key {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub properties: Option<KeyProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct KeyProperties {
+    #[serde(rename = "isActiveCMK", skip_serializing_if = "Option::is_none")]
+    pub is_active_cmk: Option<bool>,
+    #[serde(rename = "keyVaultUrl", skip_serializing_if = "Option::is_none")]
+    pub key_vault_url: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TrackedResource {
