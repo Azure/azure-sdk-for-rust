@@ -30,7 +30,7 @@
     {
       "name": "filesystem",
       "field_type": "&'a str",
-      "builder_type": "ContainerNameSet",
+      "builder_type": "FilesystemSet",
       "optional": false,
       "trait_get": "FilesystemRequired<'a>",
       "trait_set": "FilesystemSupport<'a>"
