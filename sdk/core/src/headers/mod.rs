@@ -51,4 +51,4 @@ pub const SESSION_TOKEN: &str = "x-ms-session-token";
 pub const REQUIRES_SYNC: &str = "x-ms-requires-sync";
 pub const VERSION: &str = "x-ms-version";
 pub const PROPERTIES: &str = "x-ms-properties"; //=> [String] }
-pub const NAMESPACE_ENABLED: &str = "x-ms-namespace_enabled"; //=> [String] }
+pub const NAMESPACE_ENABLED: &str = "x-ms-namespace-enabled"; //=> [String] }

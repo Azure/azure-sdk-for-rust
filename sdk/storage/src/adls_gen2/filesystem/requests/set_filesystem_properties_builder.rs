@@ -245,7 +245,7 @@ where
 
         let future_response = self.client().perform_request(
             &uri,
-            &Method::PUT,
+            &Method::PATCH,
             &|mut request| {
                 request = IfSinceConditionOption::add_header(&self, request);
                 request = ClientRequestIdOption::add_header(&self, request);

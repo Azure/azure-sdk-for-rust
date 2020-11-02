@@ -198,7 +198,7 @@ where
 
         let future_response = self.client().perform_request(
             &uri,
-            &Method::DELETE,
+            &Method::PUT,
             &|mut request| {
                 request = ClientRequestIdOption::add_header(&self, request);
                 request = PropertiesOption::add_header(&self, request);

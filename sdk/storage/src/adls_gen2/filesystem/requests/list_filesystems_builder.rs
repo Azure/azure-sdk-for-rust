@@ -210,7 +210,7 @@ where
 
         let future_response = self.client().perform_request(
             &uri,
-            &Method::PATCH,
+            &Method::GET,
             &|mut request| {
                 request = ClientRequestIdOption::add_header(&self, request);
                 request
