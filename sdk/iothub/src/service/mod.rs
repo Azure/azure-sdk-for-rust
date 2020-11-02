@@ -59,7 +59,7 @@ impl ServiceClient {
             iothub_name, &expiry_date_seconds
         );
 
-        let key = decode(private_key).map_err(|err|{
+        let key = decode(private_key).map_err(|err| {
             AzureError::GenericErrorWithText(format!(
                 "Failed to decode the given private key: {}",
                 err.to_string()
@@ -179,24 +179,27 @@ impl ServiceClient {
             }
         }
 
-        let iothub_name = iothub_name.ok_or_else(|| AzureError::GenericErrorWithText(
-            "Failed to get the hostname from the given connection string".to_string()
-        ))?;
+        let iothub_name = iothub_name.ok_or_else(|| {
+            AzureError::GenericErrorWithText(
+                "Failed to get the hostname from the given connection string".to_string(),
+            )
+        })?;
 
-        let key_name = key_name.ok_or_else(|| AzureError::GenericErrorWithText(
-            "Failed to get the shared access key name from the given connection string".to_string(),
-        ))?;
+        let key_name = key_name.ok_or_else(|| {
+            AzureError::GenericErrorWithText(
+                "Failed to get the shared access key name from the given connection string"
+                    .to_string(),
+            )
+        })?;
 
-        let primary_key = primary_key.ok_or_else(|| AzureError::GenericErrorWithText(
-            "Failed to get the primary key from the given connection string".to_string(),
-        ))?;
+        let primary_key = primary_key.ok_or_else(|| {
+            AzureError::GenericErrorWithText(
+                "Failed to get the primary key from the given connection string".to_string(),
+            )
+        })?;
 
-        let sas_token = Self::generate_sas_token(
-            iothub_name,
-            key_name,
-            primary_key,
-            expires_in_seconds,
-        )?;
+        let sas_token =
+            Self::generate_sas_token(iothub_name, key_name, primary_key, expires_in_seconds)?;
 
         Ok(Self {
             iothub_name: iothub_name.to_string(),
