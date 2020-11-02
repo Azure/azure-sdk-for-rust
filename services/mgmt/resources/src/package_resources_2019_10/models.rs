@@ -51,7 +51,7 @@ pub struct DeploymentProperties {
     #[serde(rename = "onErrorDeployment", skip_serializing_if = "Option::is_none")]
     pub on_error_deployment: Option<OnErrorDeployment>,
 }
-mod deployment_properties {
+pub mod deployment_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Mode {
@@ -107,7 +107,7 @@ pub struct DeploymentWhatIfSettings {
     #[serde(rename = "resultFormat", skip_serializing_if = "Option::is_none")]
     pub result_format: Option<deployment_what_if_settings::ResultFormat>,
 }
-mod deployment_what_if_settings {
+pub mod deployment_what_if_settings {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ResultFormat {
@@ -138,7 +138,7 @@ pub struct AliasPattern {
     #[serde(rename = "type", skip_serializing_if = "Option::is_none")]
     pub type_: Option<alias_pattern::Type>,
 }
-mod alias_pattern {
+pub mod alias_pattern {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
@@ -159,7 +159,7 @@ pub struct Alias {
     #[serde(rename = "defaultPattern", skip_serializing_if = "Option::is_none")]
     pub default_pattern: Option<AliasPattern>,
 }
-mod alias {
+pub mod alias {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
@@ -253,7 +253,7 @@ pub struct DeploymentPropertiesExtended {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorResponse>,
 }
-mod deployment_properties_extended {
+pub mod deployment_properties_extended {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Mode {
@@ -273,7 +273,7 @@ pub struct OnErrorDeployment {
     #[serde(rename = "deploymentName", skip_serializing_if = "Option::is_none")]
     pub deployment_name: Option<String>,
 }
-mod on_error_deployment {
+pub mod on_error_deployment {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
@@ -290,7 +290,7 @@ pub struct OnErrorDeploymentExtended {
     #[serde(rename = "deploymentName", skip_serializing_if = "Option::is_none")]
     pub deployment_name: Option<String>,
 }
-mod on_error_deployment_extended {
+pub mod on_error_deployment_extended {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
@@ -401,7 +401,7 @@ pub struct Identity {
     #[serde(rename = "userAssignedIdentities", skip_serializing_if = "Option::is_none")]
     pub user_assigned_identities: Option<serde_json::Value>,
 }
-mod identity {
+pub mod identity {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
@@ -543,7 +543,7 @@ pub struct DeploymentOperationProperties {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub response: Option<HttpMessage>,
 }
-mod deployment_operation_properties {
+pub mod deployment_operation_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningOperation {
@@ -620,7 +620,7 @@ pub struct Operation {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
 }
-mod operation {
+pub mod operation {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Display {
@@ -660,7 +660,7 @@ pub struct WhatIfPropertyChange {
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub children: Vec<WhatIfPropertyChange>,
 }
-mod what_if_property_change {
+pub mod what_if_property_change {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum PropertyChangeType {
@@ -683,7 +683,7 @@ pub struct WhatIfChange {
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub delta: Vec<WhatIfPropertyChange>,
 }
-mod what_if_change {
+pub mod what_if_change {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ChangeType {
@@ -721,7 +721,7 @@ pub struct TagsPatchResource {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub properties: Option<Tags>,
 }
-mod tags_patch_resource {
+pub mod tags_patch_resource {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Operation {

@@ -7,7 +7,7 @@ pub struct ErrorResponse {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub error: Option<error_response::Error>,
 }
-mod error_response {
+pub mod error_response {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Error {
@@ -39,8 +39,22 @@ pub struct PrivateStoreProperties {
     pub private_store_id: Option<String>,
     #[serde(rename = "eTag", skip_serializing_if = "Option::is_none")]
     pub e_tag: Option<String>,
+    #[serde(rename = "privateStoreName", skip_serializing_if = "Option::is_none")]
+    pub private_store_name: Option<String>,
+    #[serde(rename = "tenantTag", skip_serializing_if = "Option::is_none")]
+    pub tenant_tag: Option<String>,
+    #[serde(rename = "tenantIds", skip_serializing_if = "Vec::is_empty")]
+    pub tenant_ids: Vec<String>,
+    #[serde(rename = "customerTag", skip_serializing_if = "Option::is_none")]
+    pub customer_tag: Option<String>,
+    #[serde(rename = "hasCommercialAssociation", skip_serializing_if = "Option::is_none")]
+    pub has_commercial_association: Option<bool>,
+    #[serde(rename = "hasMultiTenantAssociation", skip_serializing_if = "Option::is_none")]
+    pub has_multi_tenant_association: Option<bool>,
+    #[serde(rename = "isGov", skip_serializing_if = "Option::is_none")]
+    pub is_gov: Option<bool>,
 }
-mod private_store_properties {
+pub mod private_store_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Availability {
@@ -76,12 +90,34 @@ pub struct OfferProperties {
     pub e_tag: Option<String>,
     #[serde(rename = "privateStoreId", skip_serializing)]
     pub private_store_id: Option<String>,
-    #[serde(rename = "createdBy", skip_serializing)]
-    pub created_by: Option<String>,
-    #[serde(rename = "createdDate", skip_serializing)]
-    pub created_date: Option<String>,
+    #[serde(rename = "createdAt", skip_serializing)]
+    pub created_at: Option<String>,
+    #[serde(rename = "modifiedAt", skip_serializing)]
+    pub modified_at: Option<String>,
     #[serde(rename = "specificPlanIdsLimitation", skip_serializing_if = "Vec::is_empty")]
     pub specific_plan_ids_limitation: Vec<String>,
+    #[serde(rename = "updateSuppressedDueIdempotence", skip_serializing_if = "Option::is_none")]
+    pub update_suppressed_due_idempotence: Option<String>,
+    #[serde(rename = "iconFileUris", skip_serializing_if = "Vec::is_empty")]
+    pub icon_file_uris: Vec<Icon>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Icon {
+    #[serde(rename = "iconKind", skip_serializing_if = "Option::is_none")]
+    pub icon_kind: Option<icon::IconKind>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub uri: Option<String>,
+}
+pub mod icon {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum IconKind {
+        Small,
+        Medium,
+        Large,
+        Wide,
+        Hero,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Plan {
@@ -99,7 +135,7 @@ pub struct Operation {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
 }
-mod operation {
+pub mod operation {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Display {

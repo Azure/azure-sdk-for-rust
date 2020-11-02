@@ -160,13 +160,13 @@ pub struct Encryption {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub keyvaulturi: Option<String>,
 }
-mod encryption {
+pub mod encryption {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum KeySource {
         Default,
         #[serde(rename = "Microsoft.Keyvault")]
-        Microsoft_Keyvault,
+        MicrosoftKeyvault,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -215,7 +215,7 @@ pub struct Operation {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
 }
-mod operation {
+pub mod operation {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Display {
@@ -274,7 +274,7 @@ pub struct VirtualNetworkPeeringPropertiesFormat {
     #[serde(rename = "provisioningState", skip_serializing)]
     pub provisioning_state: Option<PeeringProvisioningState>,
 }
-mod virtual_network_peering_properties_format {
+pub mod virtual_network_peering_properties_format {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct DatabricksVirtualNetwork {

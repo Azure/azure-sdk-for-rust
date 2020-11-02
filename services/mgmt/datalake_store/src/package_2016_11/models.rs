@@ -69,7 +69,7 @@ pub struct DataLakeStoreAccountProperties {
     #[serde(rename = "currentTier", skip_serializing)]
     pub current_tier: Option<data_lake_store_account_properties::CurrentTier>,
 }
-mod data_lake_store_account_properties {
+pub mod data_lake_store_account_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum EncryptionState {
@@ -144,7 +144,7 @@ pub struct DataLakeStoreAccountPropertiesBasic {
     #[serde(skip_serializing)]
     pub endpoint: Option<String>,
 }
-mod data_lake_store_account_properties_basic {
+pub mod data_lake_store_account_properties_basic {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
@@ -182,7 +182,7 @@ pub struct EncryptionIdentity {
     #[serde(rename = "tenantId", skip_serializing)]
     pub tenant_id: Option<String>,
 }
-mod encryption_identity {
+pub mod encryption_identity {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
@@ -196,7 +196,7 @@ pub struct EncryptionConfig {
     #[serde(rename = "keyVaultMetaInfo", skip_serializing_if = "Option::is_none")]
     pub key_vault_meta_info: Option<KeyVaultMetaInfo>,
 }
-mod encryption_config {
+pub mod encryption_config {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
@@ -281,7 +281,7 @@ pub struct Operation {
     #[serde(skip_serializing)]
     pub origin: Option<operation::Origin>,
 }
-mod operation {
+pub mod operation {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Origin {
@@ -324,7 +324,7 @@ pub struct CapabilityInformation {
     #[serde(rename = "migrationState", skip_serializing)]
     pub migration_state: Option<bool>,
 }
-mod capability_information {
+pub mod capability_information {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum State {
@@ -355,7 +355,7 @@ pub struct Usage {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<UsageName>,
 }
-mod usage {
+pub mod usage {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Unit {
@@ -414,7 +414,7 @@ pub struct CreateDataLakeStoreAccountProperties {
     #[serde(rename = "newTier", skip_serializing_if = "Option::is_none")]
     pub new_tier: Option<create_data_lake_store_account_properties::NewTier>,
 }
-mod create_data_lake_store_account_properties {
+pub mod create_data_lake_store_account_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum EncryptionState {
@@ -481,7 +481,7 @@ pub struct UpdateDataLakeStoreAccountProperties {
     #[serde(rename = "newTier", skip_serializing_if = "Option::is_none")]
     pub new_tier: Option<update_data_lake_store_account_properties::NewTier>,
 }
-mod update_data_lake_store_account_properties {
+pub mod update_data_lake_store_account_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum FirewallState {
@@ -625,11 +625,11 @@ pub struct CheckNameAvailabilityParameters {
     #[serde(rename = "type")]
     pub type_: check_name_availability_parameters::Type,
 }
-mod check_name_availability_parameters {
+pub mod check_name_availability_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         #[serde(rename = "Microsoft.DataLakeStore/accounts")]
-        Microsoft_DataLakeStoreAccounts,
+        MicrosoftDataLakeStoreAccounts,
     }
 }

@@ -97,7 +97,7 @@ pub struct VolumeProperties {
     #[serde(rename = "azureFileParameters", skip_serializing_if = "Option::is_none")]
     pub azure_file_parameters: Option<VolumeProviderParametersAzureFile>,
 }
-mod volume_properties {
+pub mod volume_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Provider {
@@ -155,7 +155,7 @@ pub struct ApplicationProperties {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub diagnostics: Option<DiagnosticsDescription>,
 }
-mod application_properties {
+pub mod application_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
@@ -363,7 +363,7 @@ pub struct ServiceReplicaProperties {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub diagnostics: Option<DiagnosticsRef>,
 }
-mod service_replica_properties {
+pub mod service_replica_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum OsType {
@@ -380,7 +380,7 @@ pub struct IngressConfig {
     #[serde(rename = "publicIPAddress", skip_serializing)]
     pub public_ip_address: Option<String>,
 }
-mod ingress_config {
+pub mod ingress_config {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum QosLevel {

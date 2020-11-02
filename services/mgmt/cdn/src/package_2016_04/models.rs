@@ -18,7 +18,7 @@ pub struct ProfileProperties {
     #[serde(rename = "provisioningState", skip_serializing)]
     pub provisioning_state: Option<ProvisioningState>,
 }
-mod profile_properties {
+pub mod profile_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ResourceState {
@@ -81,7 +81,7 @@ pub struct EndpointProperties {
     #[serde(rename = "provisioningState", skip_serializing)]
     pub provisioning_state: Option<ProvisioningState>,
 }
-mod endpoint_properties {
+pub mod endpoint_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ResourceState {
@@ -193,7 +193,7 @@ pub struct OriginProperties {
     #[serde(rename = "provisioningState", skip_serializing)]
     pub provisioning_state: Option<ProvisioningState>,
 }
-mod origin_properties {
+pub mod origin_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ResourceState {
@@ -237,7 +237,7 @@ pub struct CustomDomainProperties {
     #[serde(rename = "provisioningState", skip_serializing)]
     pub provisioning_state: Option<ProvisioningState>,
 }
-mod custom_domain_properties {
+pub mod custom_domain_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ResourceState {
@@ -293,7 +293,7 @@ pub struct CheckNameAvailabilityOutput {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ResourceType {
     #[serde(rename = "Microsoft.Cdn/Profiles/Endpoints")]
-    Microsoft_CdnProfilesEndpoints,
+    MicrosoftCdnProfilesEndpoints,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Operation {
@@ -302,7 +302,7 @@ pub struct Operation {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
 }
-mod operation {
+pub mod operation {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Display {
@@ -353,7 +353,7 @@ pub struct Sku {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<sku::Name>,
 }
-mod sku {
+pub mod sku {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Name {

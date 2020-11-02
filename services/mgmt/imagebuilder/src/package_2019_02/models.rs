@@ -126,7 +126,7 @@ pub struct ProvisioningError {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
-mod provisioning_error {
+pub mod provisioning_error {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningErrorCode {
@@ -158,7 +158,7 @@ pub struct ImageTemplateLastRunStatus {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
-mod image_template_last_run_status {
+pub mod image_template_last_run_status {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum RunState {
@@ -254,7 +254,7 @@ pub struct Operation {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
-mod operation {
+pub mod operation {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Display {

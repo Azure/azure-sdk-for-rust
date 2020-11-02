@@ -17,7 +17,7 @@ pub struct ProfileProperties {
     #[serde(rename = "provisioningState", skip_serializing)]
     pub provisioning_state: Option<String>,
 }
-mod profile_properties {
+pub mod profile_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ResourceState {
@@ -68,7 +68,7 @@ pub struct EndpointProperties {
     #[serde(rename = "provisioningState", skip_serializing)]
     pub provisioning_state: Option<String>,
 }
-mod endpoint_properties {
+pub mod endpoint_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ResourceState {
@@ -119,7 +119,7 @@ pub struct EndpointPropertiesUpdateParameters {
     #[serde(rename = "deliveryPolicy", skip_serializing_if = "Option::is_none")]
     pub delivery_policy: Option<endpoint_properties_update_parameters::DeliveryPolicy>,
 }
-mod endpoint_properties_update_parameters {
+pub mod endpoint_properties_update_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct DeliveryPolicy {
@@ -141,7 +141,7 @@ pub struct DeliveryRule {
 pub struct DeliveryRuleCondition {
     pub name: delivery_rule_condition::Name,
 }
-mod delivery_rule_condition {
+pub mod delivery_rule_condition {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Name {
@@ -257,12 +257,12 @@ pub struct RemoteAddressMatchConditionParameters {
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub transforms: Vec<Transform>,
 }
-mod remote_address_match_condition_parameters {
+pub mod remote_address_match_condition_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Odata_type {
         #[serde(rename = "#Microsoft.Azure.Cdn.Models.DeliveryRuleRemoteAddressConditionParameters")]
-        Microsoft_Azure_Cdn_Models_DeliveryRuleRemoteAddressConditionParameters,
+        MicrosoftAzureCdnModelsDeliveryRuleRemoteAddressConditionParameters,
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Operator {
@@ -282,12 +282,12 @@ pub struct RequestMethodMatchConditionParameters {
     #[serde(rename = "matchValues", skip_serializing_if = "Vec::is_empty")]
     pub match_values: Vec<String>,
 }
-mod request_method_match_condition_parameters {
+pub mod request_method_match_condition_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Odata_type {
         #[serde(rename = "#Microsoft.Azure.Cdn.Models.DeliveryRuleRequestMethodConditionParameters")]
-        Microsoft_Azure_Cdn_Models_DeliveryRuleRequestMethodConditionParameters,
+        MicrosoftAzureCdnModelsDeliveryRuleRequestMethodConditionParameters,
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Operator {
@@ -306,12 +306,12 @@ pub struct QueryStringMatchConditionParameters {
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub transforms: Vec<Transform>,
 }
-mod query_string_match_condition_parameters {
+pub mod query_string_match_condition_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Odata_type {
         #[serde(rename = "#Microsoft.Azure.Cdn.Models.DeliveryRuleQueryStringConditionParameters")]
-        Microsoft_Azure_Cdn_Models_DeliveryRuleQueryStringConditionParameters,
+        MicrosoftAzureCdnModelsDeliveryRuleQueryStringConditionParameters,
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Operator {
@@ -340,12 +340,12 @@ pub struct PostArgsMatchConditionParameters {
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub transforms: Vec<Transform>,
 }
-mod post_args_match_condition_parameters {
+pub mod post_args_match_condition_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Odata_type {
         #[serde(rename = "#Microsoft.Azure.Cdn.Models.DeliveryRulePostArgsConditionParameters")]
-        Microsoft_Azure_Cdn_Models_DeliveryRulePostArgsConditionParameters,
+        MicrosoftAzureCdnModelsDeliveryRulePostArgsConditionParameters,
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Operator {
@@ -372,12 +372,12 @@ pub struct RequestUriMatchConditionParameters {
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub transforms: Vec<Transform>,
 }
-mod request_uri_match_condition_parameters {
+pub mod request_uri_match_condition_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Odata_type {
         #[serde(rename = "#Microsoft.Azure.Cdn.Models.DeliveryRuleRequestUriConditionParameters")]
-        Microsoft_Azure_Cdn_Models_DeliveryRuleRequestUriConditionParameters,
+        MicrosoftAzureCdnModelsDeliveryRuleRequestUriConditionParameters,
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Operator {
@@ -406,12 +406,12 @@ pub struct RequestHeaderMatchConditionParameters {
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub transforms: Vec<Transform>,
 }
-mod request_header_match_condition_parameters {
+pub mod request_header_match_condition_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Odata_type {
         #[serde(rename = "#Microsoft.Azure.Cdn.Models.DeliveryRuleRequestHeaderConditionParameters")]
-        Microsoft_Azure_Cdn_Models_DeliveryRuleRequestHeaderConditionParameters,
+        MicrosoftAzureCdnModelsDeliveryRuleRequestHeaderConditionParameters,
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Operator {
@@ -438,12 +438,12 @@ pub struct RequestBodyMatchConditionParameters {
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub transforms: Vec<Transform>,
 }
-mod request_body_match_condition_parameters {
+pub mod request_body_match_condition_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Odata_type {
         #[serde(rename = "#Microsoft.Azure.Cdn.Models.DeliveryRuleRequestBodyConditionParameters")]
-        Microsoft_Azure_Cdn_Models_DeliveryRuleRequestBodyConditionParameters,
+        MicrosoftAzureCdnModelsDeliveryRuleRequestBodyConditionParameters,
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Operator {
@@ -468,12 +468,12 @@ pub struct RequestSchemeMatchConditionParameters {
     #[serde(rename = "matchValues", skip_serializing_if = "Vec::is_empty")]
     pub match_values: Vec<String>,
 }
-mod request_scheme_match_condition_parameters {
+pub mod request_scheme_match_condition_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Odata_type {
         #[serde(rename = "#Microsoft.Azure.Cdn.Models.DeliveryRuleRequestSchemeConditionParameters")]
-        Microsoft_Azure_Cdn_Models_DeliveryRuleRequestSchemeConditionParameters,
+        MicrosoftAzureCdnModelsDeliveryRuleRequestSchemeConditionParameters,
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Operator {
@@ -492,12 +492,12 @@ pub struct UrlPathMatchConditionParameters {
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub transforms: Vec<Transform>,
 }
-mod url_path_match_condition_parameters {
+pub mod url_path_match_condition_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Odata_type {
         #[serde(rename = "#Microsoft.Azure.Cdn.Models.DeliveryRuleUrlPathMatchConditionParameters")]
-        Microsoft_Azure_Cdn_Models_DeliveryRuleUrlPathMatchConditionParameters,
+        MicrosoftAzureCdnModelsDeliveryRuleUrlPathMatchConditionParameters,
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Operator {
@@ -525,12 +525,12 @@ pub struct UrlFileExtensionMatchConditionParameters {
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub transforms: Vec<Transform>,
 }
-mod url_file_extension_match_condition_parameters {
+pub mod url_file_extension_match_condition_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Odata_type {
         #[serde(rename = "#Microsoft.Azure.Cdn.Models.DeliveryRuleUrlFileExtensionMatchConditionParameters")]
-        Microsoft_Azure_Cdn_Models_DeliveryRuleUrlFileExtensionMatchConditionParameters,
+        MicrosoftAzureCdnModelsDeliveryRuleUrlFileExtensionMatchConditionParameters,
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Operator {
@@ -557,12 +557,12 @@ pub struct UrlFileNameMatchConditionParameters {
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub transforms: Vec<Transform>,
 }
-mod url_file_name_match_condition_parameters {
+pub mod url_file_name_match_condition_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Odata_type {
         #[serde(rename = "#Microsoft.Azure.Cdn.Models.DeliveryRuleUrlFilenameConditionParameters")]
-        Microsoft_Azure_Cdn_Models_DeliveryRuleUrlFilenameConditionParameters,
+        MicrosoftAzureCdnModelsDeliveryRuleUrlFilenameConditionParameters,
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Operator {
@@ -587,12 +587,12 @@ pub struct HttpVersionMatchConditionParameters {
     #[serde(rename = "matchValues", skip_serializing_if = "Vec::is_empty")]
     pub match_values: Vec<String>,
 }
-mod http_version_match_condition_parameters {
+pub mod http_version_match_condition_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Odata_type {
         #[serde(rename = "#Microsoft.Azure.Cdn.Models.DeliveryRuleHttpVersionConditionParameters")]
-        Microsoft_Azure_Cdn_Models_DeliveryRuleHttpVersionConditionParameters,
+        MicrosoftAzureCdnModelsDeliveryRuleHttpVersionConditionParameters,
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Operator {
@@ -613,12 +613,12 @@ pub struct CookiesMatchConditionParameters {
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub transforms: Vec<Transform>,
 }
-mod cookies_match_condition_parameters {
+pub mod cookies_match_condition_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Odata_type {
         #[serde(rename = "#Microsoft.Azure.Cdn.Models.DeliveryRuleCookiesConditionParameters")]
-        Microsoft_Azure_Cdn_Models_DeliveryRuleCookiesConditionParameters,
+        MicrosoftAzureCdnModelsDeliveryRuleCookiesConditionParameters,
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Operator {
@@ -645,12 +645,12 @@ pub struct IsDeviceMatchConditionParameters {
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub transforms: Vec<Transform>,
 }
-mod is_device_match_condition_parameters {
+pub mod is_device_match_condition_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Odata_type {
         #[serde(rename = "#Microsoft.Azure.Cdn.Models.DeliveryRuleIsDeviceConditionParameters")]
-        Microsoft_Azure_Cdn_Models_DeliveryRuleIsDeviceConditionParameters,
+        MicrosoftAzureCdnModelsDeliveryRuleIsDeviceConditionParameters,
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Operator {
@@ -661,7 +661,7 @@ mod is_device_match_condition_parameters {
 pub struct DeliveryRuleAction {
     pub name: delivery_rule_action::Name,
 }
-mod delivery_rule_action {
+pub mod delivery_rule_action {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Name {
@@ -696,12 +696,12 @@ pub struct UrlRedirectActionParameters {
     #[serde(rename = "customFragment", skip_serializing_if = "Option::is_none")]
     pub custom_fragment: Option<String>,
 }
-mod url_redirect_action_parameters {
+pub mod url_redirect_action_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Odata_type {
         #[serde(rename = "#Microsoft.Azure.Cdn.Models.DeliveryRuleUrlRedirectActionParameters")]
-        Microsoft_Azure_Cdn_Models_DeliveryRuleUrlRedirectActionParameters,
+        MicrosoftAzureCdnModelsDeliveryRuleUrlRedirectActionParameters,
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum RedirectType {
@@ -733,12 +733,12 @@ pub struct UrlRewriteActionParameters {
     #[serde(rename = "preserveUnmatchedPath", skip_serializing_if = "Option::is_none")]
     pub preserve_unmatched_path: Option<bool>,
 }
-mod url_rewrite_action_parameters {
+pub mod url_rewrite_action_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Odata_type {
         #[serde(rename = "#Microsoft.Azure.Cdn.Models.DeliveryRuleUrlRewriteActionParameters")]
-        Microsoft_Azure_Cdn_Models_DeliveryRuleUrlRewriteActionParameters,
+        MicrosoftAzureCdnModelsDeliveryRuleUrlRewriteActionParameters,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -764,12 +764,12 @@ pub struct HeaderActionParameters {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
 }
-mod header_action_parameters {
+pub mod header_action_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Odata_type {
         #[serde(rename = "#Microsoft.Azure.Cdn.Models.DeliveryRuleHeaderActionParameters")]
-        Microsoft_Azure_Cdn_Models_DeliveryRuleHeaderActionParameters,
+        MicrosoftAzureCdnModelsDeliveryRuleHeaderActionParameters,
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum HeaderAction {
@@ -795,12 +795,12 @@ pub struct CacheExpirationActionParameters {
     #[serde(rename = "cacheDuration", skip_serializing_if = "Option::is_none")]
     pub cache_duration: Option<String>,
 }
-mod cache_expiration_action_parameters {
+pub mod cache_expiration_action_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Odata_type {
         #[serde(rename = "#Microsoft.Azure.Cdn.Models.DeliveryRuleCacheExpirationActionParameters")]
-        Microsoft_Azure_Cdn_Models_DeliveryRuleCacheExpirationActionParameters,
+        MicrosoftAzureCdnModelsDeliveryRuleCacheExpirationActionParameters,
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum CacheBehavior {
@@ -828,12 +828,12 @@ pub struct CacheKeyQueryStringActionParameters {
     #[serde(rename = "queryParameters", skip_serializing_if = "Option::is_none")]
     pub query_parameters: Option<String>,
 }
-mod cache_key_query_string_action_parameters {
+pub mod cache_key_query_string_action_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Odata_type {
         #[serde(rename = "#Microsoft.Azure.Cdn.Models.DeliveryRuleCacheKeyQueryStringBehaviorActionParameters")]
-        Microsoft_Azure_Cdn_Models_DeliveryRuleCacheKeyQueryStringBehaviorActionParameters,
+        MicrosoftAzureCdnModelsDeliveryRuleCacheKeyQueryStringBehaviorActionParameters,
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum QueryStringBehavior {
@@ -871,7 +871,7 @@ pub struct GeoFilter {
     #[serde(rename = "countryCodes")]
     pub country_codes: Vec<String>,
 }
-mod geo_filter {
+pub mod geo_filter {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Action {
@@ -909,7 +909,7 @@ pub struct OriginProperties {
     #[serde(rename = "provisioningState", skip_serializing)]
     pub provisioning_state: Option<String>,
 }
-mod origin_properties {
+pub mod origin_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ResourceState {
@@ -963,7 +963,7 @@ pub struct CustomDomainProperties {
     #[serde(rename = "provisioningState", skip_serializing)]
     pub provisioning_state: Option<String>,
 }
-mod custom_domain_properties {
+pub mod custom_domain_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ResourceState {
@@ -1012,7 +1012,7 @@ pub struct CustomDomainHttpsParameters {
     #[serde(rename = "minimumTlsVersion", skip_serializing_if = "Option::is_none")]
     pub minimum_tls_version: Option<custom_domain_https_parameters::MinimumTlsVersion>,
 }
-mod custom_domain_https_parameters {
+pub mod custom_domain_https_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum CertificateSource {
@@ -1048,12 +1048,12 @@ pub struct CdnCertificateSourceParameters {
     #[serde(rename = "certificateType")]
     pub certificate_type: cdn_certificate_source_parameters::CertificateType,
 }
-mod cdn_certificate_source_parameters {
+pub mod cdn_certificate_source_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Odata_type {
         #[serde(rename = "#Microsoft.Azure.Cdn.Models.CdnCertificateSourceParameters")]
-        Microsoft_Azure_Cdn_Models_CdnCertificateSourceParameters,
+        MicrosoftAzureCdnModelsCdnCertificateSourceParameters,
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum CertificateType {
@@ -1087,12 +1087,12 @@ pub struct KeyVaultCertificateSourceParameters {
     #[serde(rename = "deleteRule")]
     pub delete_rule: key_vault_certificate_source_parameters::DeleteRule,
 }
-mod key_vault_certificate_source_parameters {
+pub mod key_vault_certificate_source_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Odata_type {
         #[serde(rename = "#Microsoft.Azure.Cdn.Models.KeyVaultCertificateSourceParameters")]
-        Microsoft_Azure_Cdn_Models_KeyVaultCertificateSourceParameters,
+        MicrosoftAzureCdnModelsKeyVaultCertificateSourceParameters,
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum UpdateRule {
@@ -1174,7 +1174,7 @@ pub struct ResourceUsage {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ResourceType {
     #[serde(rename = "Microsoft.Cdn/Profiles/Endpoints")]
-    Microsoft_CdnProfilesEndpoints,
+    MicrosoftCdnProfilesEndpoints,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Operation {
@@ -1183,7 +1183,7 @@ pub struct Operation {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
 }
-mod operation {
+pub mod operation {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Display {
@@ -1271,7 +1271,7 @@ pub struct Sku {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<sku::Name>,
 }
-mod sku {
+pub mod sku {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Name {

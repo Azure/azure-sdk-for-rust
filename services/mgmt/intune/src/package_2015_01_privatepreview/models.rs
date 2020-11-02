@@ -77,7 +77,7 @@ pub struct ApplicationProperties {
     #[serde(rename = "appId", skip_serializing_if = "Option::is_none")]
     pub app_id: Option<String>,
 }
-mod application_properties {
+pub mod application_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Platform {
@@ -163,7 +163,7 @@ pub struct MamPolicyProperties {
     #[serde(rename = "lastModifiedTime", skip_serializing)]
     pub last_modified_time: Option<String>,
 }
-mod mam_policy_properties {
+pub mod mam_policy_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum AppSharingFromLevel {
@@ -253,7 +253,7 @@ pub struct IOsmamPolicyProperties {
     #[serde(rename = "touchId", skip_serializing_if = "Option::is_none")]
     pub touch_id: Option<i_osmam_policy_properties::TouchId>,
 }
-mod i_osmam_policy_properties {
+pub mod i_osmam_policy_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum FileEncryptionLevel {
@@ -283,7 +283,7 @@ pub struct AndroidMamPolicyProperties {
     #[serde(rename = "fileEncryption", skip_serializing_if = "Option::is_none")]
     pub file_encryption: Option<android_mam_policy_properties::FileEncryption>,
 }
-mod android_mam_policy_properties {
+pub mod android_mam_policy_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ScreenCapture {

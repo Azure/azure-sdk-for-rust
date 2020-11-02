@@ -9,7 +9,7 @@ pub struct Operation {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
 }
-mod operation {
+pub mod operation {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Display {
@@ -74,7 +74,7 @@ pub struct WorkspaceProperties {
     #[serde(rename = "sharedPrivateLinkResources", skip_serializing_if = "Vec::is_empty")]
     pub shared_private_link_resources: Vec<SharedPrivateLinkResource>,
 }
-mod workspace_properties {
+pub mod workspace_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
@@ -143,7 +143,7 @@ pub struct Usage {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<UsageName>,
 }
-mod usage {
+pub mod usage {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Unit {
@@ -188,7 +188,7 @@ pub struct EstimatedVmPrices {
     pub unit_of_measure: estimated_vm_prices::UnitOfMeasure,
     pub values: Vec<EstimatedVmPrice>,
 }
-mod estimated_vm_prices {
+pub mod estimated_vm_prices {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum BillingCurrency {
@@ -209,7 +209,7 @@ pub struct EstimatedVmPrice {
     #[serde(rename = "vmTier")]
     pub vm_tier: estimated_vm_price::VmTier,
 }
-mod estimated_vm_price {
+pub mod estimated_vm_price {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum OsType {
@@ -246,7 +246,7 @@ pub struct QuotaBaseProperties {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub unit: Option<quota_base_properties::Unit>,
 }
-mod quota_base_properties {
+pub mod quota_base_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Unit {
@@ -280,7 +280,7 @@ pub struct UpdateWorkspaceQuotas {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub status: Option<update_workspace_quotas::Status>,
 }
-mod update_workspace_quotas {
+pub mod update_workspace_quotas {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Unit {
@@ -321,7 +321,7 @@ pub struct ResourceQuota {
     #[serde(skip_serializing)]
     pub unit: Option<resource_quota::Unit>,
 }
-mod resource_quota {
+pub mod resource_quota {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Unit {
@@ -346,7 +346,7 @@ pub struct Identity {
     #[serde(rename = "userAssignedIdentities", skip_serializing_if = "Option::is_none")]
     pub user_assigned_identities: Option<UserAssignedIdentities>,
 }
-mod identity {
+pub mod identity {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
@@ -451,7 +451,7 @@ pub struct Compute {
     #[serde(rename = "isAttachedCompute", skip_serializing)]
     pub is_attached_compute: Option<bool>,
 }
-mod compute {
+pub mod compute {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
@@ -545,7 +545,7 @@ pub struct SslConfiguration {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub cname: Option<String>,
 }
-mod ssl_configuration {
+pub mod ssl_configuration {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
@@ -640,7 +640,7 @@ pub struct AmlComputeNodeInformation {
     #[serde(rename = "runId", skip_serializing)]
     pub run_id: Option<String>,
 }
-mod aml_compute_node_information {
+pub mod aml_compute_node_information {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum NodeState {
@@ -776,7 +776,7 @@ pub struct Restriction {
     #[serde(rename = "reasonCode", skip_serializing_if = "Option::is_none")]
     pub reason_code: Option<restriction::ReasonCode>,
 }
-mod restriction {
+pub mod restriction {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ReasonCode {
@@ -889,7 +889,7 @@ pub struct EncryptionProperty {
     #[serde(rename = "keyVaultProperties")]
     pub key_vault_properties: KeyVaultProperties,
 }
-mod encryption_property {
+pub mod encryption_property {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
@@ -943,7 +943,7 @@ pub struct LinkedServiceProps {
     #[serde(rename = "modifiedTime", skip_serializing_if = "Option::is_none")]
     pub modified_time: Option<String>,
 }
-mod linked_service_props {
+pub mod linked_service_props {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum LinkType {
@@ -979,7 +979,7 @@ pub struct ServiceResponseBase {
     #[serde(rename = "deploymentType", skip_serializing_if = "Option::is_none")]
     pub deployment_type: Option<service_response_base::DeploymentType>,
 }
-mod service_response_base {
+pub mod service_response_base {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum State {
@@ -1381,7 +1381,7 @@ pub struct CreateServiceRequest {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
 }
-mod create_service_request {
+pub mod create_service_request {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ComputeType {
@@ -1423,7 +1423,7 @@ pub struct ComputeInstanceSshSettings {
     #[serde(rename = "adminPublicKey", skip_serializing_if = "Option::is_none")]
     pub admin_public_key: Option<String>,
 }
-mod compute_instance_ssh_settings {
+pub mod compute_instance_ssh_settings {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum SshPublicAccess {
@@ -1458,7 +1458,7 @@ pub struct ComputeInstanceLastOperation {
     #[serde(rename = "operationStatus", skip_serializing_if = "Option::is_none")]
     pub operation_status: Option<compute_instance_last_operation::OperationStatus>,
 }
-mod compute_instance_last_operation {
+pub mod compute_instance_last_operation {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum OperationName {

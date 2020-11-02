@@ -3,25 +3,25 @@
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MonitorStateChangeList {
+pub struct HealthMonitorStateChangeList {
     #[serde(skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<MonitorStateChange>,
+    pub value: Vec<HealthMonitorStateChange>,
     #[serde(rename = "nextLink", skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MonitorList {
+pub struct HealthMonitorList {
     #[serde(skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<Monitor>,
+    pub value: Vec<HealthMonitor>,
     #[serde(rename = "nextLink", skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Monitor {
+pub struct HealthMonitor {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub properties: Option<MonitorProperties>,
+    pub properties: Option<HealthMonitorProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
@@ -33,7 +33,7 @@ pub struct Resource {
     pub type_: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MonitorProperties {
+pub struct HealthMonitorProperties {
     #[serde(rename = "monitorName", skip_serializing_if = "Option::is_none")]
     pub monitor_name: Option<String>,
     #[serde(rename = "monitorType", skip_serializing_if = "Option::is_none")]
@@ -58,14 +58,14 @@ pub struct MonitorProperties {
     pub monitor_configuration: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MonitorStateChange {
+pub struct HealthMonitorStateChange {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub properties: Option<MonitorStateChangeProperties>,
+    pub properties: Option<HealthMonitorStateChangeProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MonitorStateChangeProperties {
+pub struct HealthMonitorStateChangeProperties {
     #[serde(rename = "monitorName", skip_serializing_if = "Option::is_none")]
     pub monitor_name: Option<String>,
     #[serde(rename = "monitorType", skip_serializing_if = "Option::is_none")]
@@ -91,6 +91,8 @@ pub enum HealthState {
     Critical,
     Warning,
     Unknown,
+    Disabled,
+    None,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationList {
@@ -105,7 +107,7 @@ pub struct Operation {
     pub display: operation::Display,
     pub origin: String,
 }
-mod operation {
+pub mod operation {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Display {
@@ -116,11 +118,11 @@ mod operation {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DefaultError {
+pub struct ErrorResponse {
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub error: Option<default_error::Error>,
+    pub error: Option<error_response::Error>,
 }
-mod default_error {
+pub mod error_response {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Error {

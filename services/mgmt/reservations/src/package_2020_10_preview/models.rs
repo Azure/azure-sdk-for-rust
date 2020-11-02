@@ -439,7 +439,7 @@ pub struct CalculateExchangeOperationResultResponse {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub error: Option<OperationResultError>,
 }
-mod calculate_exchange_operation_result_response {
+pub mod calculate_exchange_operation_result_response {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
@@ -462,7 +462,7 @@ pub struct ExchangeOperationResultResponse {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub error: Option<OperationResultError>,
 }
-mod exchange_operation_result_response {
+pub mod exchange_operation_result_response {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
@@ -700,7 +700,7 @@ pub struct RenewPropertiesResponse {
     #[serde(rename = "billingCurrencyTotal", skip_serializing_if = "Option::is_none")]
     pub billing_currency_total: Option<renew_properties_response::BillingCurrencyTotal>,
 }
-mod renew_properties_response {
+pub mod renew_properties_response {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct PricingCurrencyTotal {
@@ -739,7 +739,7 @@ pub struct CalculatePriceResponseProperties {
     #[serde(rename = "paymentSchedule", skip_serializing_if = "Vec::is_empty")]
     pub payment_schedule: Vec<PaymentDetail>,
 }
-mod calculate_price_response_properties {
+pub mod calculate_price_response_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct BillingCurrencyTotal {
@@ -838,7 +838,7 @@ pub struct PurchaseRequestProperties {
     #[serde(rename = "reservedResourceProperties", skip_serializing_if = "Option::is_none")]
     pub reserved_resource_properties: Option<purchase_request_properties::ReservedResourceProperties>,
 }
-mod purchase_request_properties {
+pub mod purchase_request_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct ReservedResourceProperties {
@@ -861,7 +861,7 @@ pub struct PatchProperties {
     #[serde(rename = "renewProperties", skip_serializing_if = "Option::is_none")]
     pub renew_properties: Option<patch_properties::RenewProperties>,
 }
-mod patch_properties {
+pub mod patch_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct RenewProperties {

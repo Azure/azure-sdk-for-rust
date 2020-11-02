@@ -12,6 +12,8 @@ extern crate quick_error;
 
 #[cfg(feature = "account")]
 pub mod account;
+#[cfg(feature = "adls_gen2")]
+pub mod adls_gen2;
 #[cfg(feature = "blob")]
 pub mod blob;
 pub mod core;
@@ -23,6 +25,8 @@ pub mod table;
 pub use crate::core::*;
 #[cfg(feature = "account")]
 pub use account::*;
+#[cfg(feature = "adls_gen2")]
+pub use adls_gen2::*;
 #[cfg(feature = "blob")]
 pub use blob::*;
 #[cfg(feature = "queue")]

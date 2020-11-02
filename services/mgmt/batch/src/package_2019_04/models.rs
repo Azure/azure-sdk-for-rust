@@ -73,7 +73,7 @@ pub struct BatchAccountProperties {
     #[serde(rename = "activeJobAndJobScheduleQuota", skip_serializing)]
     pub active_job_and_job_schedule_quota: Option<i32>,
 }
-mod batch_account_properties {
+pub mod batch_account_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
@@ -111,7 +111,7 @@ pub struct BatchAccountRegenerateKeyParameters {
     #[serde(rename = "keyName")]
     pub key_name: batch_account_regenerate_key_parameters::KeyName,
 }
-mod batch_account_regenerate_key_parameters {
+pub mod batch_account_regenerate_key_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum KeyName {
@@ -168,7 +168,7 @@ pub struct ApplicationPackageProperties {
     #[serde(rename = "lastActivationTime", skip_serializing)]
     pub last_activation_time: Option<String>,
 }
-mod application_package_properties {
+pub mod application_package_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum State {
@@ -233,7 +233,7 @@ pub struct CertificateBaseProperties {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub format: Option<certificate_base_properties::Format>,
 }
-mod certificate_base_properties {
+pub mod certificate_base_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Format {
@@ -258,7 +258,7 @@ pub struct CertificateProperties {
     #[serde(rename = "deleteCertificateError", skip_serializing_if = "Option::is_none")]
     pub delete_certificate_error: Option<DeleteCertificateError>,
 }
-mod certificate_properties {
+pub mod certificate_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
@@ -369,7 +369,7 @@ pub struct PoolProperties {
     #[serde(rename = "resizeOperationStatus", skip_serializing_if = "Option::is_none")]
     pub resize_operation_status: Option<ResizeOperationStatus>,
 }
-mod pool_properties {
+pub mod pool_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
@@ -436,7 +436,7 @@ pub struct CertificateReference {
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub visibility: Vec<String>,
 }
-mod certificate_reference {
+pub mod certificate_reference {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum StoreLocation {
@@ -504,7 +504,7 @@ pub struct ContainerConfiguration {
     #[serde(rename = "containerRegistries", skip_serializing_if = "Vec::is_empty")]
     pub container_registries: Vec<ContainerRegistry>,
 }
-mod container_configuration {
+pub mod container_configuration {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
@@ -544,7 +544,7 @@ pub struct TaskSchedulingPolicy {
     #[serde(rename = "nodeFillType")]
     pub node_fill_type: task_scheduling_policy::NodeFillType,
 }
-mod task_scheduling_policy {
+pub mod task_scheduling_policy {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum NodeFillType {
@@ -566,7 +566,7 @@ pub struct WindowsUserConfiguration {
     #[serde(rename = "loginMode", skip_serializing_if = "Option::is_none")]
     pub login_mode: Option<windows_user_configuration::LoginMode>,
 }
-mod windows_user_configuration {
+pub mod windows_user_configuration {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum LoginMode {
@@ -646,7 +646,7 @@ pub struct AutoUserSpecification {
     #[serde(rename = "elevationLevel", skip_serializing_if = "Option::is_none")]
     pub elevation_level: Option<ElevationLevel>,
 }
-mod auto_user_specification {
+pub mod auto_user_specification {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Scope {
@@ -724,7 +724,7 @@ pub struct InboundNatPool {
     #[serde(rename = "networkSecurityGroupRules", skip_serializing_if = "Vec::is_empty")]
     pub network_security_group_rules: Vec<NetworkSecurityGroupRule>,
 }
-mod inbound_nat_pool {
+pub mod inbound_nat_pool {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Protocol {
@@ -741,7 +741,7 @@ pub struct NetworkSecurityGroupRule {
     #[serde(rename = "sourceAddressPrefix")]
     pub source_address_prefix: String,
 }
-mod network_security_group_rule {
+pub mod network_security_group_rule {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Access {
@@ -783,7 +783,7 @@ pub struct Operation {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
-mod operation {
+pub mod operation {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Display {
@@ -810,12 +810,12 @@ pub struct CheckNameAvailabilityParameters {
     #[serde(rename = "type")]
     pub type_: check_name_availability_parameters::Type,
 }
-mod check_name_availability_parameters {
+pub mod check_name_availability_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         #[serde(rename = "Microsoft.Batch/batchAccounts")]
-        Microsoft_BatchBatchAccounts,
+        MicrosoftBatchBatchAccounts,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -827,7 +827,7 @@ pub struct CheckNameAvailabilityResult {
     #[serde(skip_serializing)]
     pub message: Option<String>,
 }
-mod check_name_availability_result {
+pub mod check_name_availability_result {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Reason {

@@ -17,7 +17,7 @@ pub struct AppProperties {
 pub struct AppSkuInfo {
     pub name: app_sku_info::Name,
 }
-mod app_sku_info {
+pub mod app_sku_info {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Name {

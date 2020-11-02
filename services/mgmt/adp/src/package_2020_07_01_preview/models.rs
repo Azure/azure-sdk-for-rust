@@ -30,7 +30,7 @@ pub struct AccountProperties {
     #[serde(rename = "provisioningState", skip_serializing)]
     pub provisioning_state: Option<account_properties::ProvisioningState>,
 }
-mod account_properties {
+pub mod account_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
@@ -72,7 +72,7 @@ pub struct DataPoolBaseProperties {
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub locations: Vec<DataPoolLocation>,
 }
-mod data_pool_base_properties {
+pub mod data_pool_base_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
@@ -209,7 +209,7 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedAt", skip_serializing_if = "Option::is_none")]
     pub last_modified_at: Option<String>,
 }
-mod system_data {
+pub mod system_data {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum CreatedByType {

@@ -168,7 +168,7 @@ pub struct Aggregations {
 pub struct AggregationsKind {
     pub kind: aggregations_kind::Kind,
 }
-mod aggregations_kind {
+pub mod aggregations_kind {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Kind {
@@ -186,7 +186,7 @@ pub struct AlertRule {
 pub struct AlertRuleKind {
     pub kind: alert_rule_kind::Kind,
 }
-mod alert_rule_kind {
+pub mod alert_rule_kind {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Kind {
@@ -224,7 +224,7 @@ pub struct AlertRuleTemplatePropertiesBase {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub status: Option<alert_rule_template_properties_base::Status>,
 }
-mod alert_rule_template_properties_base {
+pub mod alert_rule_template_properties_base {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
@@ -378,7 +378,7 @@ pub struct RelationNode {
     #[serde(rename = "relationAdditionalProperties", skip_serializing_if = "Option::is_none")]
     pub relation_additional_properties: Option<serde_json::Value>,
 }
-mod relation_node {
+pub mod relation_node {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum RelationNodeKind {
@@ -437,7 +437,7 @@ pub struct BookmarkExpandResponse {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub value: Option<bookmark_expand_response::Value>,
 }
-mod bookmark_expand_response {
+pub mod bookmark_expand_response {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Value {
@@ -513,7 +513,7 @@ pub struct CaseProperties {
     #[serde(rename = "totalComments", skip_serializing)]
     pub total_comments: Option<i64>,
 }
-mod case_properties {
+pub mod case_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum CloseReason {
@@ -645,7 +645,7 @@ pub struct DataConnectorDataTypeCommon {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub state: Option<data_connector_data_type_common::State>,
 }
-mod data_connector_data_type_common {
+pub mod data_connector_data_type_common {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum State {
@@ -657,7 +657,7 @@ mod data_connector_data_type_common {
 pub struct DataConnectorKind {
     pub kind: data_connector_kind::Kind,
 }
-mod data_connector_kind {
+pub mod data_connector_kind {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Kind {
@@ -747,7 +747,7 @@ pub struct EntityExpandResponse {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub value: Option<entity_expand_response::Value>,
 }
-mod entity_expand_response {
+pub mod entity_expand_response {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Value {
@@ -887,7 +887,7 @@ pub struct FileHashEntityProperties {
     #[serde(rename = "hashValue", skip_serializing)]
     pub hash_value: Option<String>,
 }
-mod file_hash_entity_properties {
+pub mod file_hash_entity_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Algorithm {
@@ -932,7 +932,7 @@ pub struct FusionAlertRuleTemplate {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub properties: Option<fusion_alert_rule_template::Properties>,
 }
-mod fusion_alert_rule_template {
+pub mod fusion_alert_rule_template {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Properties {
@@ -990,7 +990,7 @@ pub struct HostEntityProperties {
     #[serde(rename = "osVersion", skip_serializing)]
     pub os_version: Option<String>,
 }
-mod host_entity_properties {
+pub mod host_entity_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum OsFamily {
@@ -1065,7 +1065,7 @@ pub struct IncidentBookmarkList {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IncidentComment {
     #[serde(flatten)]
-    pub resource: Resource,
+    pub resource_with_etag: ResourceWithEtag,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub properties: Option<IncidentCommentProperties>,
 }
@@ -1079,6 +1079,8 @@ pub struct IncidentCommentList {
 pub struct IncidentCommentProperties {
     #[serde(rename = "createdTimeUtc", skip_serializing)]
     pub created_time_utc: Option<String>,
+    #[serde(rename = "lastModifiedTimeUtc", skip_serializing)]
+    pub last_modified_time_utc: Option<String>,
     pub message: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub author: Option<ClientInfo>,
@@ -1103,7 +1105,7 @@ pub struct IncidentLabel {
     #[serde(rename = "labelType", skip_serializing)]
     pub label_type: Option<incident_label::LabelType>,
 }
-mod incident_label {
+pub mod incident_label {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum LabelType {
@@ -1162,7 +1164,7 @@ pub struct IncidentProperties {
     pub status: incident_properties::Status,
     pub title: String,
 }
-mod incident_properties {
+pub mod incident_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Classification {
@@ -1309,7 +1311,7 @@ pub struct MicrosoftSecurityIncidentCreationAlertRuleCommonProperties {
     #[serde(rename = "severitiesFilter", skip_serializing_if = "Vec::is_empty")]
     pub severities_filter: Vec<AlertSeverity>,
 }
-mod microsoft_security_incident_creation_alert_rule_common_properties {
+pub mod microsoft_security_incident_creation_alert_rule_common_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProductFilter {
@@ -1426,7 +1428,7 @@ pub struct Operation {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
-mod operation {
+pub mod operation {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Display {
@@ -1476,7 +1478,7 @@ pub struct ProcessEntityProperties {
     #[serde(rename = "processId", skip_serializing)]
     pub process_id: Option<String>,
 }
-mod process_entity_properties {
+pub mod process_entity_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ElevationToken {
@@ -1501,7 +1503,7 @@ pub struct RegistryKeyEntityProperties {
     #[serde(skip_serializing)]
     pub key: Option<String>,
 }
-mod registry_key_entity_properties {
+pub mod registry_key_entity_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Hive {
@@ -1547,7 +1549,7 @@ pub struct RegistryValueEntityProperties {
     #[serde(rename = "valueType", skip_serializing)]
     pub value_type: Option<registry_value_entity_properties::ValueType>,
 }
-mod registry_value_entity_properties {
+pub mod registry_value_entity_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ValueType {
@@ -1668,7 +1670,7 @@ pub struct ScheduledAlertRuleTemplate {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub properties: Option<scheduled_alert_rule_template::Properties>,
 }
-mod scheduled_alert_rule_template {
+pub mod scheduled_alert_rule_template {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Properties {
@@ -1699,7 +1701,7 @@ pub struct GroupingConfiguration {
     #[serde(rename = "groupByEntities", skip_serializing_if = "Vec::is_empty")]
     pub group_by_entities: Vec<String>,
 }
-mod grouping_configuration {
+pub mod grouping_configuration {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum EntitiesMatchingMethod {
@@ -1770,7 +1772,7 @@ pub struct SecurityAlertProperties {
     #[serde(rename = "resourceIdentifiers", skip_serializing)]
     pub resource_identifiers: Vec<serde_json::Value>,
 }
-mod security_alert_properties {
+pub mod security_alert_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ConfidenceLevel {
@@ -1844,7 +1846,7 @@ pub struct Settings {
 pub struct SettingsKind {
     pub kind: settings_kind::Kind,
 }
-mod settings_kind {
+pub mod settings_kind {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Kind {
@@ -2045,7 +2047,7 @@ pub struct IncidentInfo {
     #[serde(rename = "relationName")]
     pub relation_name: String,
 }
-mod incident_info {
+pub mod incident_info {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Severity {
@@ -2100,7 +2102,7 @@ pub struct WatchlistProperties {
     #[serde(rename = "watchlistItems", skip_serializing_if = "Vec::is_empty")]
     pub watchlist_items: Vec<WatchlistItem>,
 }
-mod watchlist_properties {
+pub mod watchlist_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Source {

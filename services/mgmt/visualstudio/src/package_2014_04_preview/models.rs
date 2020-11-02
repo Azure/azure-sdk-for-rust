@@ -32,7 +32,7 @@ pub struct AccountResourceRequest {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
-mod account_resource_request {
+pub mod account_resource_request {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum OperationType {

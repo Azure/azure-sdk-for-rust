@@ -61,7 +61,7 @@ pub struct SubscriptionState {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub properties: Option<SubscriptionStateProperties>,
 }
-mod subscription_state {
+pub mod subscription_state {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum State {
@@ -102,7 +102,7 @@ pub struct TriggerChangeDetectionParameters {
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub paths: Vec<String>,
 }
-mod trigger_change_detection_parameters {
+pub mod trigger_change_detection_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ChangeDetectionMode {
@@ -335,12 +335,12 @@ pub struct CheckNameAvailabilityParameters {
     #[serde(rename = "type")]
     pub type_: check_name_availability_parameters::Type,
 }
-mod check_name_availability_parameters {
+pub mod check_name_availability_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         #[serde(rename = "Microsoft.StorageSync/storageSyncServices")]
-        Microsoft_StorageSyncStorageSyncServices,
+        MicrosoftStorageSyncStorageSyncServices,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -352,7 +352,7 @@ pub struct CheckNameAvailabilityResult {
     #[serde(skip_serializing)]
     pub message: Option<String>,
 }
-mod check_name_availability_result {
+pub mod check_name_availability_result {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Reason {

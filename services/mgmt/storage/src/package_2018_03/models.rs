@@ -18,7 +18,7 @@ pub struct Operation {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub properties: Option<OperationProperties>,
 }
-mod operation {
+pub mod operation {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Display {
@@ -76,12 +76,12 @@ pub struct StorageAccountCheckNameAvailabilityParameters {
     #[serde(rename = "type")]
     pub type_: storage_account_check_name_availability_parameters::Type,
 }
-mod storage_account_check_name_availability_parameters {
+pub mod storage_account_check_name_availability_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         #[serde(rename = "Microsoft.Storage/storageAccounts")]
-        Microsoft_StorageStorageAccounts,
+        MicrosoftStorageStorageAccounts,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -100,7 +100,7 @@ pub struct Restriction {
     #[serde(rename = "reasonCode", skip_serializing_if = "Option::is_none")]
     pub reason_code: Option<restriction::ReasonCode>,
 }
-mod restriction {
+pub mod restriction {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ReasonCode {
@@ -122,7 +122,7 @@ pub struct CheckNameAvailabilityResult {
     #[serde(skip_serializing)]
     pub message: Option<String>,
 }
-mod check_name_availability_result {
+pub mod check_name_availability_result {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Reason {
@@ -146,7 +146,7 @@ pub struct Sku {
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub restrictions: Vec<Restriction>,
 }
-mod sku {
+pub mod sku {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Name {
@@ -215,14 +215,14 @@ pub struct Encryption {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub keyvaultproperties: Option<KeyVaultProperties>,
 }
-mod encryption {
+pub mod encryption {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum KeySource {
         #[serde(rename = "Microsoft.Storage")]
-        Microsoft_Storage,
+        MicrosoftStorage,
         #[serde(rename = "Microsoft.Keyvault")]
-        Microsoft_Keyvault,
+        MicrosoftKeyvault,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -233,7 +233,7 @@ pub struct VirtualNetworkRule {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub state: Option<virtual_network_rule::State>,
 }
-mod virtual_network_rule {
+pub mod virtual_network_rule {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Action {
@@ -259,7 +259,7 @@ pub struct IpRule {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub action: Option<ip_rule::Action>,
 }
-mod ip_rule {
+pub mod ip_rule {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Action {
@@ -277,7 +277,7 @@ pub struct NetworkRuleSet {
     #[serde(rename = "defaultAction")]
     pub default_action: network_rule_set::DefaultAction,
 }
-mod network_rule_set {
+pub mod network_rule_set {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Bypass {
@@ -307,7 +307,7 @@ pub struct StorageAccountPropertiesCreateParameters {
     #[serde(rename = "isHnsEnabled", skip_serializing_if = "Option::is_none")]
     pub is_hns_enabled: Option<bool>,
 }
-mod storage_account_properties_create_parameters {
+pub mod storage_account_properties_create_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum AccessTier {
@@ -324,7 +324,7 @@ pub struct Identity {
     #[serde(rename = "type")]
     pub type_: identity::Type,
 }
-mod identity {
+pub mod identity {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
@@ -343,7 +343,7 @@ pub struct StorageAccountCreateParameters {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub properties: Option<StorageAccountPropertiesCreateParameters>,
 }
-mod storage_account_create_parameters {
+pub mod storage_account_create_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Kind {
@@ -400,7 +400,7 @@ pub struct StorageAccountProperties {
     #[serde(rename = "isHnsEnabled", skip_serializing_if = "Option::is_none")]
     pub is_hns_enabled: Option<bool>,
 }
-mod storage_account_properties {
+pub mod storage_account_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
@@ -442,7 +442,7 @@ pub struct StorageAccount {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub properties: Option<StorageAccountProperties>,
 }
-mod storage_account {
+pub mod storage_account {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Kind {
@@ -460,7 +460,7 @@ pub struct StorageAccountKey {
     #[serde(skip_serializing)]
     pub permissions: Option<storage_account_key::Permissions>,
 }
-mod storage_account_key {
+pub mod storage_account_key {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Permissions {
@@ -496,7 +496,7 @@ pub struct StorageAccountPropertiesUpdateParameters {
     #[serde(rename = "networkAcls", skip_serializing_if = "Option::is_none")]
     pub network_acls: Option<NetworkRuleSet>,
 }
-mod storage_account_properties_update_parameters {
+pub mod storage_account_properties_update_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum AccessTier {
@@ -517,7 +517,7 @@ pub struct StorageAccountUpdateParameters {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub kind: Option<storage_account_update_parameters::Kind>,
 }
-mod storage_account_update_parameters {
+pub mod storage_account_update_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Kind {
@@ -544,7 +544,7 @@ pub struct Usage {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<UsageName>,
 }
-mod usage {
+pub mod usage {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Unit {
@@ -580,7 +580,7 @@ pub struct AccountSasParameters {
     #[serde(rename = "keyToSign", skip_serializing_if = "Option::is_none")]
     pub key_to_sign: Option<String>,
 }
-mod account_sas_parameters {
+pub mod account_sas_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum SignedServices {
@@ -673,7 +673,7 @@ pub struct ServiceSasParameters {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub rsct: Option<String>,
 }
-mod service_sas_parameters {
+pub mod service_sas_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum SignedResource {
@@ -765,7 +765,7 @@ pub struct ContainerProperties {
     #[serde(rename = "hasImmutabilityPolicy", skip_serializing)]
     pub has_immutability_policy: Option<bool>,
 }
-mod container_properties {
+pub mod container_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum PublicAccess {
@@ -806,7 +806,7 @@ pub struct ImmutabilityPolicyProperty {
     #[serde(skip_serializing)]
     pub state: Option<immutability_policy_property::State>,
 }
-mod immutability_policy_property {
+pub mod immutability_policy_property {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum State {
@@ -844,7 +844,7 @@ pub struct UpdateHistoryProperty {
     #[serde(skip_serializing)]
     pub upn: Option<String>,
 }
-mod update_history_property {
+pub mod update_history_property {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Update {
@@ -906,7 +906,7 @@ pub struct LeaseContainerRequest {
     #[serde(rename = "proposedLeaseId", skip_serializing_if = "Option::is_none")]
     pub proposed_lease_id: Option<String>,
 }
-mod lease_container_request {
+pub mod lease_container_request {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Action {

@@ -9,7 +9,7 @@ pub struct Operation {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
 }
-mod operation {
+pub mod operation {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Display {
@@ -74,7 +74,7 @@ pub struct WorkspaceProperties {
     #[serde(rename = "sharedPrivateLinkResources", skip_serializing_if = "Vec::is_empty")]
     pub shared_private_link_resources: Vec<SharedPrivateLinkResource>,
 }
-mod workspace_properties {
+pub mod workspace_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
@@ -141,7 +141,7 @@ pub struct Usage {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<UsageName>,
 }
-mod usage {
+pub mod usage {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Unit {
@@ -199,7 +199,7 @@ pub struct QuotaBaseProperties {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub unit: Option<quota_base_properties::Unit>,
 }
-mod quota_base_properties {
+pub mod quota_base_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Unit {
@@ -231,7 +231,7 @@ pub struct UpdateWorkspaceQuotas {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub status: Option<update_workspace_quotas::Status>,
 }
-mod update_workspace_quotas {
+pub mod update_workspace_quotas {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Unit {
@@ -270,7 +270,7 @@ pub struct ResourceQuota {
     #[serde(skip_serializing)]
     pub unit: Option<resource_quota::Unit>,
 }
-mod resource_quota {
+pub mod resource_quota {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Unit {
@@ -295,7 +295,7 @@ pub struct Identity {
     #[serde(rename = "userAssignedIdentities", skip_serializing_if = "Option::is_none")]
     pub user_assigned_identities: Option<UserAssignedIdentities>,
 }
-mod identity {
+pub mod identity {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
@@ -400,7 +400,7 @@ pub struct Compute {
     #[serde(rename = "isAttachedCompute", skip_serializing)]
     pub is_attached_compute: Option<bool>,
 }
-mod compute {
+pub mod compute {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
@@ -487,7 +487,7 @@ pub struct SslConfiguration {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub cname: Option<String>,
 }
-mod ssl_configuration {
+pub mod ssl_configuration {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
@@ -578,7 +578,7 @@ pub struct AmlComputeNodeInformation {
     #[serde(rename = "runId", skip_serializing)]
     pub run_id: Option<String>,
 }
-mod aml_compute_node_information {
+pub mod aml_compute_node_information {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum NodeState {
@@ -713,7 +713,7 @@ pub struct Restriction {
     #[serde(rename = "reasonCode", skip_serializing_if = "Option::is_none")]
     pub reason_code: Option<restriction::ReasonCode>,
 }
-mod restriction {
+pub mod restriction {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ReasonCode {
@@ -826,7 +826,7 @@ pub struct EncryptionProperty {
     #[serde(rename = "keyVaultProperties")]
     pub key_vault_properties: KeyVaultProperties,
 }
-mod encryption_property {
+pub mod encryption_property {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {

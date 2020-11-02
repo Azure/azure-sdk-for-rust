@@ -7,7 +7,7 @@ pub struct ErrorResponse {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub error: Option<error_response::Error>,
 }
-mod error_response {
+pub mod error_response {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Error {
@@ -75,7 +75,7 @@ pub struct MetricSpecification {
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub dimensions: Vec<Dimension>,
 }
-mod metric_specification {
+pub mod metric_specification {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum AggregationType {
@@ -96,6 +96,21 @@ pub struct Dimension {
     pub internal_name: Option<String>,
     #[serde(rename = "toBeExportedForShoebox", skip_serializing_if = "Option::is_none")]
     pub to_be_exported_for_shoebox: Option<bool>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct NameAvailabilityParameters {
+    #[serde(rename = "type")]
+    pub type_: String,
+    pub name: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct NameAvailability {
+    #[serde(rename = "nameAvailable", skip_serializing_if = "Option::is_none")]
+    pub name_available: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub reason: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LinkNotificationHubParameters {
@@ -124,7 +139,7 @@ pub struct OperationStatus {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorResponse>,
 }
-mod operation_status {
+pub mod operation_status {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
@@ -188,7 +203,7 @@ pub struct CommunicationServiceProperties {
     #[serde(rename = "immutableResourceId", skip_serializing)]
     pub immutable_resource_id: Option<String>,
 }
-mod communication_service_properties {
+pub mod communication_service_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
@@ -219,7 +234,7 @@ pub struct RegenerateKeyParameters {
     #[serde(rename = "keyType", skip_serializing_if = "Option::is_none")]
     pub key_type: Option<regenerate_key_parameters::KeyType>,
 }
-mod regenerate_key_parameters {
+pub mod regenerate_key_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum KeyType {

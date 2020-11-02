@@ -11,7 +11,7 @@ pub struct ApplyUpdateProperties {
     #[serde(rename = "lastUpdateTime", skip_serializing_if = "Option::is_none")]
     pub last_update_time: Option<String>,
 }
-mod apply_update_properties {
+pub mod apply_update_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
@@ -68,7 +68,7 @@ pub struct MaintenanceConfigurationProperties {
     #[serde(rename = "maintenanceScope", skip_serializing_if = "Option::is_none")]
     pub maintenance_scope: Option<maintenance_configuration_properties::MaintenanceScope>,
 }
-mod maintenance_configuration_properties {
+pub mod maintenance_configuration_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum MaintenanceScope {
@@ -153,7 +153,7 @@ pub struct Update {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub properties: Option<UpdateProperties>,
 }
-mod update {
+pub mod update {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum MaintenanceScope {

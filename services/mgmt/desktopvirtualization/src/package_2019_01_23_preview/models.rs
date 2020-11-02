@@ -21,7 +21,7 @@ pub struct ResourceProviderOperation {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub display: Option<resource_provider_operation::Display>,
 }
-mod resource_provider_operation {
+pub mod resource_provider_operation {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Display {
@@ -93,7 +93,7 @@ pub struct ApplicationGroupProperties {
     #[serde(rename = "applicationGroupType")]
     pub application_group_type: application_group_properties::ApplicationGroupType,
 }
-mod application_group_properties {
+pub mod application_group_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ApplicationGroupType {
@@ -161,7 +161,7 @@ pub struct HostPoolProperties {
     #[serde(rename = "preferredAppGroupType")]
     pub preferred_app_group_type: host_pool_properties::PreferredAppGroupType,
 }
-mod host_pool_properties {
+pub mod host_pool_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum HostPoolType {
@@ -220,7 +220,7 @@ pub struct HostPoolPatchProperties {
     #[serde(rename = "preferredAppGroupType", skip_serializing_if = "Option::is_none")]
     pub preferred_app_group_type: Option<host_pool_patch_properties::PreferredAppGroupType>,
 }
-mod host_pool_patch_properties {
+pub mod host_pool_patch_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum PersonalDesktopAssignmentType {
@@ -297,7 +297,7 @@ pub struct ApplicationProperties {
     #[serde(rename = "iconContent", skip_serializing)]
     pub icon_content: Option<String>,
 }
-mod application_properties {
+pub mod application_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum CommandLineSetting {
@@ -339,7 +339,7 @@ pub struct ApplicationPatchProperties {
     #[serde(rename = "iconIndex", skip_serializing_if = "Option::is_none")]
     pub icon_index: Option<i64>,
 }
-mod application_patch_properties {
+pub mod application_patch_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum CommandLineSetting {
@@ -454,7 +454,7 @@ pub struct SessionHostProperties {
     #[serde(rename = "updateErrorMessage", skip_serializing_if = "Option::is_none")]
     pub update_error_message: Option<String>,
 }
-mod session_host_properties {
+pub mod session_host_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
@@ -515,7 +515,7 @@ pub struct UserSessionProperties {
     #[serde(rename = "createTime", skip_serializing_if = "Option::is_none")]
     pub create_time: Option<String>,
 }
-mod user_session_properties {
+pub mod user_session_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ApplicationType {

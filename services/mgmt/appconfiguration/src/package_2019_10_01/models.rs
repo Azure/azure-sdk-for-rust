@@ -28,7 +28,7 @@ pub struct ConfigurationStoreProperties {
     #[serde(skip_serializing)]
     pub endpoint: Option<String>,
 }
-mod configuration_store_properties {
+pub mod configuration_store_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
@@ -59,12 +59,12 @@ pub struct CheckNameAvailabilityParameters {
     #[serde(rename = "type")]
     pub type_: check_name_availability_parameters::Type,
 }
-mod check_name_availability_parameters {
+pub mod check_name_availability_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         #[serde(rename = "Microsoft.AppConfiguration/configurationStores")]
-        Microsoft_AppConfigurationConfigurationStores,
+        MicrosoftAppConfigurationConfigurationStores,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -164,7 +164,7 @@ pub struct ResourceIdentity {
     #[serde(rename = "tenantId", skip_serializing)]
     pub tenant_id: Option<String>,
 }
-mod resource_identity {
+pub mod resource_identity {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {

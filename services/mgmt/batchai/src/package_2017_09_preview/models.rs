@@ -31,7 +31,7 @@ pub struct DataDisks {
     #[serde(rename = "storageAccountType")]
     pub storage_account_type: data_disks::StorageAccountType,
 }
-mod data_disks {
+pub mod data_disks {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum CachingType {
@@ -75,7 +75,7 @@ pub struct MountSettings {
     #[serde(rename = "fileServerType", skip_serializing_if = "Option::is_none")]
     pub file_server_type: Option<mount_settings::FileServerType>,
 }
-mod mount_settings {
+pub mod mount_settings {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum FileServerType {
@@ -119,7 +119,7 @@ pub struct FileServerProperties {
     #[serde(rename = "provisioningState", skip_serializing)]
     pub provisioning_state: Option<file_server_properties::ProvisioningState>,
 }
-mod file_server_properties {
+pub mod file_server_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
@@ -159,7 +159,7 @@ pub struct ClusterBaseProperties {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub subnet: Option<ResourceId>,
 }
-mod cluster_base_properties {
+pub mod cluster_base_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum VmPriority {
@@ -309,7 +309,7 @@ pub struct ClusterProperties {
     #[serde(rename = "nodeStateCounts", skip_serializing_if = "Option::is_none")]
     pub node_state_counts: Option<NodeStateCounts>,
 }
-mod cluster_properties {
+pub mod cluster_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum VmPriority {
@@ -387,7 +387,7 @@ pub struct JobBaseProperties {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub constraints: Option<job_base_properties::Constraints>,
 }
-mod job_base_properties {
+pub mod job_base_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Constraints {
@@ -452,7 +452,7 @@ pub struct JobProperties {
     #[serde(rename = "executionInfo", skip_serializing_if = "Option::is_none")]
     pub execution_info: Option<job_properties::ExecutionInfo>,
 }
-mod job_properties {
+pub mod job_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Constraints {
@@ -636,7 +636,7 @@ pub struct OutputDirectory {
     #[serde(rename = "createNew", skip_serializing_if = "Option::is_none")]
     pub create_new: Option<bool>,
 }
-mod output_directory {
+pub mod output_directory {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
@@ -823,7 +823,7 @@ pub struct Operation {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
-mod operation {
+pub mod operation {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Display {

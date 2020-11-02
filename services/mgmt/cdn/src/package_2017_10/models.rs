@@ -17,7 +17,7 @@ pub struct ProfileProperties {
     #[serde(rename = "provisioningState", skip_serializing)]
     pub provisioning_state: Option<String>,
 }
-mod profile_properties {
+pub mod profile_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ResourceState {
@@ -68,7 +68,7 @@ pub struct EndpointProperties {
     #[serde(rename = "provisioningState", skip_serializing)]
     pub provisioning_state: Option<String>,
 }
-mod endpoint_properties {
+pub mod endpoint_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ResourceState {
@@ -119,7 +119,7 @@ pub struct EndpointPropertiesUpdateParameters {
     #[serde(rename = "deliveryPolicy", skip_serializing_if = "Option::is_none")]
     pub delivery_policy: Option<endpoint_properties_update_parameters::DeliveryPolicy>,
 }
-mod endpoint_properties_update_parameters {
+pub mod endpoint_properties_update_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct DeliveryPolicy {
@@ -139,7 +139,7 @@ pub struct DeliveryRule {
 pub struct DeliveryRuleCondition {
     pub name: delivery_rule_condition::Name,
 }
-mod delivery_rule_condition {
+pub mod delivery_rule_condition {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Name {
@@ -161,12 +161,12 @@ pub struct UrlPathConditionParameters {
     #[serde(rename = "matchType")]
     pub match_type: url_path_condition_parameters::MatchType,
 }
-mod url_path_condition_parameters {
+pub mod url_path_condition_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Odata_type {
         #[serde(rename = "Microsoft.Azure.Cdn.Models.DeliveryRuleUrlPathConditionParameters")]
-        Microsoft_Azure_Cdn_Models_DeliveryRuleUrlPathConditionParameters,
+        MicrosoftAzureCdnModelsDeliveryRuleUrlPathConditionParameters,
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum MatchType {
@@ -186,19 +186,19 @@ pub struct UrlFileExtensionConditionParameters {
     pub odata_type: url_file_extension_condition_parameters::Odata_type,
     pub extensions: Vec<String>,
 }
-mod url_file_extension_condition_parameters {
+pub mod url_file_extension_condition_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Odata_type {
         #[serde(rename = "Microsoft.Azure.Cdn.Models.DeliveryRuleUrlFileExtensionConditionParameters")]
-        Microsoft_Azure_Cdn_Models_DeliveryRuleUrlFileExtensionConditionParameters,
+        MicrosoftAzureCdnModelsDeliveryRuleUrlFileExtensionConditionParameters,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeliveryRuleAction {
     pub name: delivery_rule_action::Name,
 }
-mod delivery_rule_action {
+pub mod delivery_rule_action {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Name {
@@ -222,12 +222,12 @@ pub struct CacheExpirationActionParameters {
     #[serde(rename = "cacheDuration", skip_serializing_if = "Option::is_none")]
     pub cache_duration: Option<String>,
 }
-mod cache_expiration_action_parameters {
+pub mod cache_expiration_action_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Odata_type {
         #[serde(rename = "Microsoft.Azure.Cdn.Models.DeliveryRuleCacheExpirationActionParameters")]
-        Microsoft_Azure_Cdn_Models_DeliveryRuleCacheExpirationActionParameters,
+        MicrosoftAzureCdnModelsDeliveryRuleCacheExpirationActionParameters,
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum CacheBehavior {
@@ -263,7 +263,7 @@ pub struct GeoFilter {
     #[serde(rename = "countryCodes")]
     pub country_codes: Vec<String>,
 }
-mod geo_filter {
+pub mod geo_filter {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Action {
@@ -301,7 +301,7 @@ pub struct OriginProperties {
     #[serde(rename = "provisioningState", skip_serializing)]
     pub provisioning_state: Option<String>,
 }
-mod origin_properties {
+pub mod origin_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ResourceState {
@@ -353,7 +353,7 @@ pub struct CustomDomainProperties {
     #[serde(rename = "provisioningState", skip_serializing)]
     pub provisioning_state: Option<String>,
 }
-mod custom_domain_properties {
+pub mod custom_domain_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ResourceState {
@@ -400,7 +400,7 @@ pub struct CustomDomainHttpsParameters {
     #[serde(rename = "protocolType")]
     pub protocol_type: custom_domain_https_parameters::ProtocolType,
 }
-mod custom_domain_https_parameters {
+pub mod custom_domain_https_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum CertificateSource {
@@ -428,12 +428,12 @@ pub struct CdnCertificateSourceParameters {
     #[serde(rename = "certificateType")]
     pub certificate_type: cdn_certificate_source_parameters::CertificateType,
 }
-mod cdn_certificate_source_parameters {
+pub mod cdn_certificate_source_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Odata_type {
         #[serde(rename = "#Microsoft.Azure.Cdn.Models.CdnCertificateSourceParameters")]
-        Microsoft_Azure_Cdn_Models_CdnCertificateSourceParameters,
+        MicrosoftAzureCdnModelsCdnCertificateSourceParameters,
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum CertificateType {
@@ -467,12 +467,12 @@ pub struct KeyVaultCertificateSourceParameters {
     #[serde(rename = "deleteRule")]
     pub delete_rule: key_vault_certificate_source_parameters::DeleteRule,
 }
-mod key_vault_certificate_source_parameters {
+pub mod key_vault_certificate_source_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Odata_type {
         #[serde(rename = "#Microsoft.Azure.Cdn.Models.KeyVaultCertificateSourceParameters")]
-        Microsoft_Azure_Cdn_Models_KeyVaultCertificateSourceParameters,
+        MicrosoftAzureCdnModelsKeyVaultCertificateSourceParameters,
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum UpdateRule {
@@ -554,7 +554,7 @@ pub struct ResourceUsage {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ResourceType {
     #[serde(rename = "Microsoft.Cdn/Profiles/Endpoints")]
-    Microsoft_CdnProfilesEndpoints,
+    MicrosoftCdnProfilesEndpoints,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Operation {
@@ -563,7 +563,7 @@ pub struct Operation {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
 }
-mod operation {
+pub mod operation {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Display {
@@ -651,7 +651,7 @@ pub struct Sku {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<sku::Name>,
 }
-mod sku {
+pub mod sku {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Name {

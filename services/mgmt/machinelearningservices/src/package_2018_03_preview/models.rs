@@ -9,7 +9,7 @@ pub struct Operation {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
 }
-mod operation {
+pub mod operation {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Display {
@@ -60,7 +60,7 @@ pub struct WorkspaceProperties {
     #[serde(rename = "provisioningState", skip_serializing)]
     pub provisioning_state: Option<workspace_properties::ProvisioningState>,
 }
-mod workspace_properties {
+pub mod workspace_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
@@ -103,7 +103,7 @@ pub struct Identity {
     #[serde(rename = "type", skip_serializing_if = "Option::is_none")]
     pub type_: Option<identity::Type>,
 }
-mod identity {
+pub mod identity {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
@@ -185,7 +185,7 @@ pub struct Compute {
     #[serde(rename = "provisioningErrors", skip_serializing)]
     pub provisioning_errors: Vec<MachineLearningServiceError>,
 }
-mod compute {
+pub mod compute {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
@@ -258,7 +258,7 @@ pub struct SslConfiguration {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub cname: Option<String>,
 }
-mod ssl_configuration {
+pub mod ssl_configuration {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {

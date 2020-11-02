@@ -13,8 +13,12 @@ pub mod operations {
         let client = &operation_config.client;
         let uri_str = &format!("{}/providers/Microsoft.WorkloadMonitor/operations", &operation_config.base_path,);
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         let req = req_builder.build().context(list::BuildRequestError)?;
@@ -27,7 +31,7 @@ pub mod operations {
             }
             status_code => {
                 let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
-                let rsp_value: DefaultError = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
                 list::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -45,7 +49,7 @@ pub mod operations {
         pub enum Error {
             DefaultResponse {
                 status_code: StatusCode,
-                value: models::DefaultError,
+                value: models::ErrorResponse,
             },
             BuildRequestError {
                 source: reqwest::Error,
@@ -60,10 +64,13 @@ pub mod operations {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
 }
-pub mod monitors {
+pub mod health_monitors {
     use crate::models::*;
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
@@ -71,20 +78,24 @@ pub mod monitors {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
-        resource_namespace: &str,
-        resource_type: &str,
+        provider_name: &str,
+        resource_collection_name: &str,
         resource_name: &str,
         filter: Option<&str>,
         expand: Option<&str>,
-    ) -> std::result::Result<MonitorList, list::Error> {
+    ) -> std::result::Result<HealthMonitorList, list::Error> {
         let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.WorkloadMonitor/monitors",
-            &operation_config.base_path, subscription_id, resource_group_name, resource_namespace, resource_type, resource_name
+            &operation_config.base_path, subscription_id, resource_group_name, provider_name, resource_collection_name, resource_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(filter) = filter {
@@ -98,12 +109,12 @@ pub mod monitors {
         match rsp.status() {
             StatusCode::OK => {
                 let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
-                let rsp_value: MonitorList = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                let rsp_value: HealthMonitorList = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
                 Ok(rsp_value)
             }
             status_code => {
                 let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
-                let rsp_value: DefaultError = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
                 list::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -121,7 +132,7 @@ pub mod monitors {
         pub enum Error {
             DefaultResponse {
                 status_code: StatusCode,
-                value: models::DefaultError,
+                value: models::ErrorResponse,
             },
             BuildRequestError {
                 source: reqwest::Error,
@@ -136,26 +147,39 @@ pub mod monitors {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
-        resource_namespace: &str,
-        resource_type: &str,
+        provider_name: &str,
+        resource_collection_name: &str,
         resource_name: &str,
         monitor_id: &str,
         expand: Option<&str>,
-    ) -> std::result::Result<Monitor, get::Error> {
+    ) -> std::result::Result<HealthMonitor, get::Error> {
         let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.WorkloadMonitor/monitors/{}",
-            &operation_config.base_path, subscription_id, resource_group_name, resource_namespace, resource_type, resource_name, monitor_id
+            &operation_config.base_path,
+            subscription_id,
+            resource_group_name,
+            provider_name,
+            resource_collection_name,
+            resource_name,
+            monitor_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(get::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(expand) = expand {
@@ -166,12 +190,12 @@ pub mod monitors {
         match rsp.status() {
             StatusCode::OK => {
                 let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
-                let rsp_value: Monitor = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                let rsp_value: HealthMonitor = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
                 Ok(rsp_value)
             }
             status_code => {
                 let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
-                let rsp_value: DefaultError = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
                 get::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -189,7 +213,7 @@ pub mod monitors {
         pub enum Error {
             DefaultResponse {
                 status_code: StatusCode,
-                value: models::DefaultError,
+                value: models::ErrorResponse,
             },
             BuildRequestError {
                 source: reqwest::Error,
@@ -204,29 +228,42 @@ pub mod monitors {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn list_state_changes(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
-        resource_namespace: &str,
-        resource_type: &str,
+        provider_name: &str,
+        resource_collection_name: &str,
         resource_name: &str,
         monitor_id: &str,
         filter: Option<&str>,
         expand: Option<&str>,
         start_timestamp_utc: Option<&str>,
         end_timestamp_utc: Option<&str>,
-    ) -> std::result::Result<MonitorStateChangeList, list_state_changes::Error> {
+    ) -> std::result::Result<HealthMonitorStateChangeList, list_state_changes::Error> {
         let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.WorkloadMonitor/monitors/{}/history",
-            &operation_config.base_path, subscription_id, resource_group_name, resource_namespace, resource_type, resource_name, monitor_id
+            &operation_config.base_path,
+            subscription_id,
+            resource_group_name,
+            provider_name,
+            resource_collection_name,
+            resource_name,
+            monitor_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list_state_changes::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(filter) = filter {
@@ -246,13 +283,13 @@ pub mod monitors {
         match rsp.status() {
             StatusCode::OK => {
                 let body: bytes::Bytes = rsp.bytes().await.context(list_state_changes::ResponseBytesError)?;
-                let rsp_value: MonitorStateChangeList =
+                let rsp_value: HealthMonitorStateChangeList =
                     serde_json::from_slice(&body).context(list_state_changes::DeserializeError { body })?;
                 Ok(rsp_value)
             }
             status_code => {
                 let body: bytes::Bytes = rsp.bytes().await.context(list_state_changes::ResponseBytesError)?;
-                let rsp_value: DefaultError = serde_json::from_slice(&body).context(list_state_changes::DeserializeError { body })?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(list_state_changes::DeserializeError { body })?;
                 list_state_changes::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -270,7 +307,7 @@ pub mod monitors {
         pub enum Error {
             DefaultResponse {
                 status_code: StatusCode,
-                value: models::DefaultError,
+                value: models::ErrorResponse,
             },
             BuildRequestError {
                 source: reqwest::Error,
@@ -285,34 +322,41 @@ pub mod monitors {
                 source: serde_json::Error,
                 body: bytes::Bytes,
             },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn get_state_change(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
-        resource_namespace: &str,
-        resource_type: &str,
+        provider_name: &str,
+        resource_collection_name: &str,
         resource_name: &str,
         monitor_id: &str,
         timestamp_unix: &str,
         expand: Option<&str>,
-    ) -> std::result::Result<MonitorStateChange, get_state_change::Error> {
+    ) -> std::result::Result<HealthMonitorStateChange, get_state_change::Error> {
         let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.WorkloadMonitor/monitors/{}/history/{}",
             &operation_config.base_path,
             subscription_id,
             resource_group_name,
-            resource_namespace,
-            resource_type,
+            provider_name,
+            resource_collection_name,
             resource_name,
             monitor_id,
             timestamp_unix
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token) = &operation_config.bearer_access_token {
-            req_builder = req_builder.bearer_auth(token);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(get_state_change::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(expand) = expand {
@@ -323,12 +367,13 @@ pub mod monitors {
         match rsp.status() {
             StatusCode::OK => {
                 let body: bytes::Bytes = rsp.bytes().await.context(get_state_change::ResponseBytesError)?;
-                let rsp_value: MonitorStateChange = serde_json::from_slice(&body).context(get_state_change::DeserializeError { body })?;
+                let rsp_value: HealthMonitorStateChange =
+                    serde_json::from_slice(&body).context(get_state_change::DeserializeError { body })?;
                 Ok(rsp_value)
             }
             status_code => {
                 let body: bytes::Bytes = rsp.bytes().await.context(get_state_change::ResponseBytesError)?;
-                let rsp_value: DefaultError = serde_json::from_slice(&body).context(get_state_change::DeserializeError { body })?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(get_state_change::DeserializeError { body })?;
                 get_state_change::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -346,7 +391,7 @@ pub mod monitors {
         pub enum Error {
             DefaultResponse {
                 status_code: StatusCode,
-                value: models::DefaultError,
+                value: models::ErrorResponse,
             },
             BuildRequestError {
                 source: reqwest::Error,
@@ -360,6 +405,9 @@ pub mod monitors {
             DeserializeError {
                 source: serde_json::Error,
                 body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
             },
         }
     }

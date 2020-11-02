@@ -69,7 +69,7 @@ pub struct PolicySetDefinitionProperties {
     #[serde(rename = "policyDefinitions")]
     pub policy_definitions: Vec<PolicyDefinitionReference>,
 }
-mod policy_set_definition_properties {
+pub mod policy_set_definition_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum PolicyType {
@@ -120,7 +120,7 @@ pub struct PolicyDefinitionProperties {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub parameters: Option<serde_json::Value>,
 }
-mod policy_definition_properties {
+pub mod policy_definition_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum PolicyType {

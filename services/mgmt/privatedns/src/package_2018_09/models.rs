@@ -19,7 +19,7 @@ pub struct PrivateZoneProperties {
     #[serde(rename = "provisioningState", skip_serializing)]
     pub provisioning_state: Option<private_zone_properties::ProvisioningState>,
 }
-mod private_zone_properties {
+pub mod private_zone_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
@@ -58,7 +58,7 @@ pub struct VirtualNetworkLinkProperties {
     #[serde(rename = "provisioningState", skip_serializing)]
     pub provisioning_state: Option<virtual_network_link_properties::ProvisioningState>,
 }
-mod virtual_network_link_properties {
+pub mod virtual_network_link_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum VirtualNetworkLinkState {

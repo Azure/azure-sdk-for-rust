@@ -21,7 +21,7 @@ pub struct AzureFileshareProtectedItem {
     #[serde(rename = "extendedInfo", skip_serializing_if = "Option::is_none")]
     pub extended_info: Option<AzureFileshareProtectedItemExtendedInfo>,
 }
-mod azure_fileshare_protected_item {
+pub mod azure_fileshare_protected_item {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProtectionState {
@@ -77,7 +77,7 @@ pub struct AzureFileShareRestoreRequest {
     #[serde(rename = "targetDetails", skip_serializing_if = "Option::is_none")]
     pub target_details: Option<TargetAfsRestoreInfo>,
 }
-mod azure_file_share_restore_request {
+pub mod azure_file_share_restore_request {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum RecoveryType {
@@ -115,7 +115,7 @@ pub struct AzureVmWorkloadProtectionPolicy {
     #[serde(rename = "makePolicyConsistent", skip_serializing_if = "Option::is_none")]
     pub make_policy_consistent: Option<bool>,
 }
-mod azure_vm_workload_protection_policy {
+pub mod azure_vm_workload_protection_policy {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum WorkLoadType {
@@ -155,7 +155,7 @@ pub struct AzureFileShareProtectionPolicy {
     #[serde(rename = "timeZone", skip_serializing_if = "Option::is_none")]
     pub time_zone: Option<String>,
 }
-mod azure_file_share_protection_policy {
+pub mod azure_file_share_protection_policy {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum WorkLoadType {
@@ -297,7 +297,7 @@ pub struct AzureIaaSvmProtectedItem {
     #[serde(rename = "extendedProperties", skip_serializing_if = "Option::is_none")]
     pub extended_properties: Option<ExtendedProperties>,
 }
-mod azure_iaa_svm_protected_item {
+pub mod azure_iaa_svm_protected_item {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProtectionState {
@@ -352,7 +352,7 @@ pub struct AzureSqlProtectedItem {
     #[serde(rename = "extendedInfo", skip_serializing_if = "Option::is_none")]
     pub extended_info: Option<AzureSqlProtectedItemExtendedInfo>,
 }
-mod azure_sql_protected_item {
+pub mod azure_sql_protected_item {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProtectionState {
@@ -454,7 +454,7 @@ pub struct AzureVmWorkloadProtectedItem {
     #[serde(rename = "kpisHealths", skip_serializing_if = "Option::is_none")]
     pub kpis_healths: Option<serde_json::Value>,
 }
-mod azure_vm_workload_protected_item {
+pub mod azure_vm_workload_protected_item {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProtectionState {
@@ -575,7 +575,7 @@ pub struct AzureWorkloadRecoveryPoint {
     #[serde(rename = "type", skip_serializing)]
     pub type_: Option<azure_workload_recovery_point::Type>,
 }
-mod azure_workload_recovery_point {
+pub mod azure_workload_recovery_point {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
@@ -600,7 +600,7 @@ pub struct AzureWorkloadRestoreRequest {
     #[serde(rename = "recoveryMode", skip_serializing_if = "Option::is_none")]
     pub recovery_mode: Option<azure_workload_restore_request::RecoveryMode>,
 }
-mod azure_workload_restore_request {
+pub mod azure_workload_restore_request {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum RecoveryType {
@@ -691,7 +691,7 @@ pub struct BackupResourceVaultConfig {
     #[serde(rename = "softDeleteFeatureState", skip_serializing_if = "Option::is_none")]
     pub soft_delete_feature_state: Option<backup_resource_vault_config::SoftDeleteFeatureState>,
 }
-mod backup_resource_vault_config {
+pub mod backup_resource_vault_config {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum StorageModelType {
@@ -751,7 +751,7 @@ pub struct BmsrpQueryObject {
     #[serde(rename = "extendedInfo", skip_serializing_if = "Option::is_none")]
     pub extended_info: Option<bool>,
 }
-mod bmsrp_query_object {
+pub mod bmsrp_query_object {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum RestorePointQueryType {
@@ -859,7 +859,7 @@ pub struct DpmProtectedItem {
     #[serde(rename = "extendedInfo", skip_serializing_if = "Option::is_none")]
     pub extended_info: Option<DpmProtectedItemExtendedInfo>,
 }
-mod dpm_protected_item {
+pub mod dpm_protected_item {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProtectionState {
@@ -978,7 +978,7 @@ pub struct GenericProtectedItem {
     #[serde(rename = "fabricName", skip_serializing_if = "Option::is_none")]
     pub fabric_name: Option<String>,
 }
-mod generic_protected_item {
+pub mod generic_protected_item {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProtectionState {
@@ -1075,7 +1075,7 @@ pub struct IaasVmRestoreRequest {
     #[serde(rename = "restoreDiskLunList", skip_serializing_if = "Vec::is_empty")]
     pub restore_disk_lun_list: Vec<i32>,
 }
-mod iaas_vm_restore_request {
+pub mod iaas_vm_restore_request {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum RecoveryType {
@@ -1105,7 +1105,7 @@ pub struct Job {
     #[serde(rename = "jobType")]
     pub job_type: String,
 }
-mod job {
+pub mod job {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum BackupManagementType {
@@ -1138,7 +1138,7 @@ pub struct JobQueryObject {
     #[serde(rename = "endTime", skip_serializing_if = "Option::is_none")]
     pub end_time: Option<String>,
 }
-mod job_query_object {
+pub mod job_query_object {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
@@ -1290,7 +1290,7 @@ pub struct MabJob {
     #[serde(rename = "extendedInfo", skip_serializing_if = "Option::is_none")]
     pub extended_info: Option<MabJobExtendedInfo>,
 }
-mod mab_job {
+pub mod mab_job {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum MabServerType {
@@ -1385,7 +1385,7 @@ pub struct MonthlyRetentionSchedule {
     #[serde(rename = "retentionDuration", skip_serializing_if = "Option::is_none")]
     pub retention_duration: Option<RetentionDuration>,
 }
-mod monthly_retention_schedule {
+pub mod monthly_retention_schedule {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum RetentionScheduleFormatType {
@@ -1413,7 +1413,7 @@ pub struct KpiResourceHealthDetails {
     #[serde(rename = "resourceHealthDetails", skip_serializing_if = "Vec::is_empty")]
     pub resource_health_details: Vec<ResourceHealthDetails>,
 }
-mod kpi_resource_health_details {
+pub mod kpi_resource_health_details {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ResourceHealthStatus {
@@ -1439,7 +1439,7 @@ pub struct OperationWorkerResponse {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub headers: Option<serde_json::Value>,
 }
-mod operation_worker_response {
+pub mod operation_worker_response {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum StatusCode {
@@ -1531,7 +1531,7 @@ pub struct ProtectedItem {
     #[serde(rename = "isRehydrate", skip_serializing_if = "Option::is_none")]
     pub is_rehydrate: Option<bool>,
 }
-mod protected_item {
+pub mod protected_item {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum BackupManagementType {
@@ -1600,7 +1600,7 @@ pub struct ProtectedItemQueryObject {
     #[serde(rename = "backupSetName", skip_serializing_if = "Option::is_none")]
     pub backup_set_name: Option<String>,
 }
-mod protected_item_query_object {
+pub mod protected_item_query_object {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum HealthState {
@@ -1679,7 +1679,7 @@ pub struct ProtectionPolicyQueryObject {
     #[serde(rename = "workloadType", skip_serializing_if = "Option::is_none")]
     pub workload_type: Option<protection_policy_query_object::WorkloadType>,
 }
-mod protection_policy_query_object {
+pub mod protection_policy_query_object {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum BackupManagementType {
@@ -1772,7 +1772,7 @@ pub struct RecoveryPointTierInformation {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub status: Option<recovery_point_tier_information::Status>,
 }
-mod recovery_point_tier_information {
+pub mod recovery_point_tier_information {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
@@ -1838,7 +1838,7 @@ pub struct RetentionDuration {
     #[serde(rename = "durationType", skip_serializing_if = "Option::is_none")]
     pub duration_type: Option<retention_duration::DurationType>,
 }
-mod retention_duration {
+pub mod retention_duration {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum DurationType {
@@ -1888,7 +1888,7 @@ pub struct SimpleSchedulePolicy {
     #[serde(rename = "scheduleWeeklyFrequency", skip_serializing_if = "Option::is_none")]
     pub schedule_weekly_frequency: Option<i32>,
 }
-mod simple_schedule_policy {
+pub mod simple_schedule_policy {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ScheduleRunFrequency {
@@ -1906,7 +1906,7 @@ pub struct SubProtectionPolicy {
     #[serde(rename = "retentionPolicy", skip_serializing_if = "Option::is_none")]
     pub retention_policy: Option<RetentionPolicy>,
 }
-mod sub_protection_policy {
+pub mod sub_protection_policy {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum PolicyType {
@@ -1926,7 +1926,7 @@ pub struct SqlDataDirectory {
     #[serde(rename = "logicalName", skip_serializing_if = "Option::is_none")]
     pub logical_name: Option<String>,
 }
-mod sql_data_directory {
+pub mod sql_data_directory {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
@@ -1946,7 +1946,7 @@ pub struct SqlDataDirectoryMapping {
     #[serde(rename = "targetPath", skip_serializing_if = "Option::is_none")]
     pub target_path: Option<String>,
 }
-mod sql_data_directory_mapping {
+pub mod sql_data_directory_mapping {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum MappingType {
@@ -1973,7 +1973,7 @@ pub struct TargetRestoreInfo {
     #[serde(rename = "targetDirectoryForFileRestore", skip_serializing_if = "Option::is_none")]
     pub target_directory_for_file_restore: Option<String>,
 }
-mod target_restore_info {
+pub mod target_restore_info {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum OverwriteOption {
@@ -2040,7 +2040,7 @@ pub struct YearlyRetentionSchedule {
     #[serde(rename = "retentionDuration", skip_serializing_if = "Option::is_none")]
     pub retention_duration: Option<RetentionDuration>,
 }
-mod yearly_retention_schedule {
+pub mod yearly_retention_schedule {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum RetentionScheduleFormatType {
@@ -2080,7 +2080,7 @@ pub struct AzureVmResourceFeatureSupportResponse {
     #[serde(rename = "supportStatus", skip_serializing_if = "Option::is_none")]
     pub support_status: Option<azure_vm_resource_feature_support_response::SupportStatus>,
 }
-mod azure_vm_resource_feature_support_response {
+pub mod azure_vm_resource_feature_support_response {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum SupportStatus {
@@ -2105,7 +2105,7 @@ pub struct AzureWorkloadSqlAutoProtectionIntent {
     #[serde(rename = "workloadItemType", skip_serializing_if = "Option::is_none")]
     pub workload_item_type: Option<azure_workload_sql_auto_protection_intent::WorkloadItemType>,
 }
-mod azure_workload_sql_auto_protection_intent {
+pub mod azure_workload_sql_auto_protection_intent {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum WorkloadItemType {
@@ -2139,7 +2139,7 @@ pub struct BackupManagementUsage {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<NameInfo>,
 }
-mod backup_management_usage {
+pub mod backup_management_usage {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Unit {
@@ -2165,7 +2165,7 @@ pub struct BackupStatusRequest {
     #[serde(rename = "poLogicalName", skip_serializing_if = "Option::is_none")]
     pub po_logical_name: Option<String>,
 }
-mod backup_status_request {
+pub mod backup_status_request {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ResourceType {
@@ -2213,7 +2213,7 @@ pub struct BackupStatusResponse {
     #[serde(rename = "registrationStatus", skip_serializing_if = "Option::is_none")]
     pub registration_status: Option<String>,
 }
-mod backup_status_response {
+pub mod backup_status_response {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProtectionStatus {
@@ -2234,7 +2234,7 @@ pub struct BmsBackupSummariesQueryObject {
     #[serde(rename = "type", skip_serializing_if = "Option::is_none")]
     pub type_: Option<bms_backup_summaries_query_object::Type>,
 }
-mod bms_backup_summaries_query_object {
+pub mod bms_backup_summaries_query_object {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
@@ -2266,7 +2266,7 @@ pub struct PreValidateEnableBackupRequest {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub properties: Option<String>,
 }
-mod pre_validate_enable_backup_request {
+pub mod pre_validate_enable_backup_request {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ResourceType {
@@ -2308,7 +2308,7 @@ pub struct PreValidateEnableBackupResponse {
     #[serde(rename = "protectedItemName", skip_serializing_if = "Option::is_none")]
     pub protected_item_name: Option<String>,
 }
-mod pre_validate_enable_backup_response {
+pub mod pre_validate_enable_backup_response {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
@@ -2332,7 +2332,7 @@ pub struct ProtectionIntent {
     #[serde(rename = "protectionState", skip_serializing_if = "Option::is_none")]
     pub protection_state: Option<protection_intent::ProtectionState>,
 }
-mod protection_intent {
+pub mod protection_intent {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum BackupManagementType {
@@ -2369,7 +2369,7 @@ pub struct ProtectionIntentQueryObject {
     #[serde(rename = "itemName", skip_serializing_if = "Option::is_none")]
     pub item_name: Option<String>,
 }
-mod protection_intent_query_object {
+pub mod protection_intent_query_object {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum BackupManagementType {
@@ -2437,7 +2437,7 @@ pub struct AzureFileShareProtectableItem {
     #[serde(rename = "azureFileShareType", skip_serializing_if = "Option::is_none")]
     pub azure_file_share_type: Option<azure_file_share_protectable_item::AzureFileShareType>,
 }
-mod azure_file_share_protectable_item {
+pub mod azure_file_share_protectable_item {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum AzureFileShareType {
@@ -2623,7 +2623,7 @@ pub struct AzureWorkloadBackupRequest {
     #[serde(rename = "recoveryPointExpiryTimeInUTC", skip_serializing_if = "Option::is_none")]
     pub recovery_point_expiry_time_in_utc: Option<String>,
 }
-mod azure_workload_backup_request {
+pub mod azure_workload_backup_request {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum BackupType {
@@ -2649,7 +2649,7 @@ pub struct AzureWorkloadContainer {
     #[serde(rename = "operationType", skip_serializing_if = "Option::is_none")]
     pub operation_type: Option<azure_workload_container::OperationType>,
 }
-mod azure_workload_container {
+pub mod azure_workload_container {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum WorkloadType {
@@ -2720,7 +2720,7 @@ pub struct BackupEngineBase {
     #[serde(rename = "extendedInfo", skip_serializing_if = "Option::is_none")]
     pub extended_info: Option<BackupEngineExtendedInfo>,
 }
-mod backup_engine_base {
+pub mod backup_engine_base {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum BackupManagementType {
@@ -2798,7 +2798,7 @@ pub struct BackupResourceConfig {
     #[serde(rename = "storageTypeState", skip_serializing_if = "Option::is_none")]
     pub storage_type_state: Option<backup_resource_config::StorageTypeState>,
 }
-mod backup_resource_config {
+pub mod backup_resource_config {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum StorageModelType {
@@ -2840,7 +2840,7 @@ pub struct BmsBackupEnginesQueryObject {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub expand: Option<String>,
 }
-mod bms_backup_engines_query_object {
+pub mod bms_backup_engines_query_object {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum BackupManagementType {
@@ -2873,7 +2873,7 @@ pub struct BmsContainerQueryObject {
     #[serde(rename = "friendlyName", skip_serializing_if = "Option::is_none")]
     pub friendly_name: Option<String>,
 }
-mod bms_container_query_object {
+pub mod bms_container_query_object {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum BackupManagementType {
@@ -2922,7 +2922,7 @@ pub struct BmsContainersInquiryQueryObject {
     #[serde(rename = "workloadType", skip_serializing_if = "Option::is_none")]
     pub workload_type: Option<bms_containers_inquiry_query_object::WorkloadType>,
 }
-mod bms_containers_inquiry_query_object {
+pub mod bms_containers_inquiry_query_object {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum BackupManagementType {
@@ -2977,7 +2977,7 @@ pub struct BmspoQueryObject {
     #[serde(rename = "friendlyName", skip_serializing_if = "Option::is_none")]
     pub friendly_name: Option<String>,
 }
-mod bmspo_query_object {
+pub mod bmspo_query_object {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum BackupManagementType {
@@ -3024,7 +3024,7 @@ pub struct BmsRefreshContainersQueryObject {
     #[serde(rename = "backupManagementType", skip_serializing_if = "Option::is_none")]
     pub backup_management_type: Option<bms_refresh_containers_query_object::BackupManagementType>,
 }
-mod bms_refresh_containers_query_object {
+pub mod bms_refresh_containers_query_object {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum BackupManagementType {
@@ -3053,7 +3053,7 @@ pub struct BmsWorkloadItemQueryObject {
     #[serde(rename = "protectionStatus", skip_serializing_if = "Option::is_none")]
     pub protection_status: Option<bms_workload_item_query_object::ProtectionStatus>,
 }
-mod bms_workload_item_query_object {
+pub mod bms_workload_item_query_object {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum BackupManagementType {
@@ -3306,7 +3306,7 @@ pub struct MabContainerExtendedInfo {
     #[serde(rename = "lastBackupStatus", skip_serializing_if = "Option::is_none")]
     pub last_backup_status: Option<String>,
 }
-mod mab_container_extended_info {
+pub mod mab_container_extended_info {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum BackupItemType {
@@ -3361,7 +3361,7 @@ pub struct OperationStatus {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub properties: Option<OperationStatusExtendedInfo>,
 }
-mod operation_status {
+pub mod operation_status {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
@@ -3416,7 +3416,7 @@ pub struct PreBackupValidation {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
-mod pre_backup_validation {
+pub mod pre_backup_validation {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
@@ -3438,7 +3438,7 @@ pub struct ProtectableContainer {
     #[serde(rename = "containerId", skip_serializing_if = "Option::is_none")]
     pub container_id: Option<String>,
 }
-mod protectable_container {
+pub mod protectable_container {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum BackupManagementType {
@@ -3507,7 +3507,7 @@ pub struct ProtectionContainer {
     #[serde(rename = "containerType", skip_serializing_if = "Option::is_none")]
     pub container_type: Option<protection_container::ContainerType>,
 }
-mod protection_container {
+pub mod protection_container {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum BackupManagementType {
@@ -3594,7 +3594,7 @@ pub struct WorkloadItem {
     #[serde(rename = "protectionState", skip_serializing_if = "Option::is_none")]
     pub protection_state: Option<workload_item::ProtectionState>,
 }
-mod workload_item {
+pub mod workload_item {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProtectionState {
@@ -3632,7 +3632,7 @@ pub struct WorkloadProtectableItem {
     #[serde(rename = "protectionState", skip_serializing_if = "Option::is_none")]
     pub protection_state: Option<workload_protectable_item::ProtectionState>,
 }
-mod workload_protectable_item {
+pub mod workload_protectable_item {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProtectionState {

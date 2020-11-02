@@ -59,7 +59,7 @@ pub struct MonitorProperties {
     #[serde(rename = "signalType", skip_serializing)]
     pub signal_type: Option<String>,
 }
-mod monitor_properties {
+pub mod monitor_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum MonitorType {
@@ -95,7 +95,7 @@ pub struct MonitorCriteria {
     #[serde(rename = "comparisonOperator", skip_serializing)]
     pub comparison_operator: Option<monitor_criteria::ComparisonOperator>,
 }
-mod monitor_criteria {
+pub mod monitor_criteria {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum HealthState {
@@ -168,7 +168,7 @@ pub struct ComponentProperties {
     #[serde(skip_serializing)]
     pub children: Vec<Component>,
 }
-mod component_properties {
+pub mod component_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum WorkloadType {
@@ -253,7 +253,7 @@ pub struct MonitorInstanceProperties {
     #[serde(skip_serializing)]
     pub children: Vec<MonitorInstance>,
 }
-mod monitor_instance_properties {
+pub mod monitor_instance_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum WorkloadType {
@@ -305,7 +305,7 @@ pub struct HealthStateChange {
     #[serde(rename = "healthStateChangeTime", skip_serializing)]
     pub health_state_change_time: Option<String>,
 }
-mod health_state_change {
+pub mod health_state_change {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum HealthState {

@@ -25,7 +25,7 @@ pub struct AccountIdentity {
     #[serde(rename = "type", skip_serializing_if = "Option::is_none")]
     pub type_: Option<account_identity::Type>,
 }
-mod account_identity {
+pub mod account_identity {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
@@ -65,7 +65,7 @@ pub struct ConfigurationProfileAssignmentProperties {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub compliance: Option<ConfigurationProfileAssignmentCompliance>,
 }
-mod configuration_profile_assignment_properties {
+pub mod configuration_profile_assignment_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ConfigurationProfile {
@@ -86,7 +86,7 @@ pub struct ConfigurationProfileAssignmentCompliance {
     #[serde(rename = "updateStatus", skip_serializing)]
     pub update_status: Option<configuration_profile_assignment_compliance::UpdateStatus>,
 }
-mod configuration_profile_assignment_compliance {
+pub mod configuration_profile_assignment_compliance {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum UpdateStatus {
@@ -142,7 +142,7 @@ pub struct ConfigurationProfilePreferenceAntiMalware {
     #[serde(rename = "scanTimeInMinutes", skip_serializing_if = "Option::is_none")]
     pub scan_time_in_minutes: Option<String>,
 }
-mod configuration_profile_preference_anti_malware {
+pub mod configuration_profile_preference_anti_malware {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum EnableRealTimeProtection {
@@ -176,7 +176,7 @@ pub struct Operation {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub properties: Option<operation::Properties>,
 }
-mod operation {
+pub mod operation {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Display {
@@ -208,23 +208,20 @@ pub struct UpdateResource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorResponse {
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub error: Option<error_response::Error>,
+    pub error: Option<ErrorDetail>,
 }
-mod error_response {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub struct Error {
-        #[serde(skip_serializing)]
-        pub code: Option<String>,
-        #[serde(skip_serializing)]
-        pub message: Option<String>,
-        #[serde(skip_serializing)]
-        pub target: Option<String>,
-        #[serde(skip_serializing)]
-        pub details: Vec<ErrorResponse>,
-        #[serde(rename = "additionalInfo", skip_serializing)]
-        pub additional_info: Vec<ErrorAdditionalInfo>,
-    }
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ErrorDetail {
+    #[serde(skip_serializing)]
+    pub code: Option<String>,
+    #[serde(skip_serializing)]
+    pub message: Option<String>,
+    #[serde(skip_serializing)]
+    pub target: Option<String>,
+    #[serde(skip_serializing)]
+    pub details: Vec<ErrorDetail>,
+    #[serde(rename = "additionalInfo", skip_serializing)]
+    pub additional_info: Vec<ErrorAdditionalInfo>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorAdditionalInfo {

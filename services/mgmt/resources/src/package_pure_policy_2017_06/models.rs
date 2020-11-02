@@ -69,7 +69,7 @@ pub struct PolicySetDefinitionProperties {
     #[serde(rename = "policyDefinitions")]
     pub policy_definitions: Vec<PolicyDefinitionReference>,
 }
-mod policy_set_definition_properties {
+pub mod policy_set_definition_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum PolicyType {

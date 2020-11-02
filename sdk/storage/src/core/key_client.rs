@@ -15,6 +15,7 @@ pub struct KeyClient {
     blob_uri: String,
     table_uri: String,
     queue_uri: String,
+    filesystem_uri: String,
 }
 
 pub(crate) fn get_sas_token_parms(sas_token: &str) -> Vec<(String, String)> {
@@ -39,6 +40,7 @@ impl KeyClient {
         blob_uri: String,
         table_uri: String,
         queue_uri: String,
+        filesystem_uri: String,
     ) -> Self {
         Self {
             account,
@@ -48,6 +50,7 @@ impl KeyClient {
             blob_uri,
             table_uri,
             queue_uri,
+            filesystem_uri,
         }
     }
 
@@ -73,6 +76,11 @@ impl Client for KeyClient {
     #[inline]
     fn queue_uri(&self) -> &str {
         &self.queue_uri
+    }
+
+    #[inline]
+    fn filesystem_uri(&self) -> &str {
+        &self.filesystem_uri
     }
 
     fn perform_request(

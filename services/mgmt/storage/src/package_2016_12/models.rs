@@ -8,12 +8,12 @@ pub struct StorageAccountCheckNameAvailabilityParameters {
     #[serde(rename = "type")]
     pub type_: storage_account_check_name_availability_parameters::Type,
 }
-mod storage_account_check_name_availability_parameters {
+pub mod storage_account_check_name_availability_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         #[serde(rename = "Microsoft.Storage/storageAccounts")]
-        Microsoft_StorageStorageAccounts,
+        MicrosoftStorageStorageAccounts,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -25,7 +25,7 @@ pub struct CheckNameAvailabilityResult {
     #[serde(skip_serializing)]
     pub message: Option<String>,
 }
-mod check_name_availability_result {
+pub mod check_name_availability_result {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Reason {
@@ -39,7 +39,7 @@ pub struct Sku {
     #[serde(skip_serializing)]
     pub tier: Option<sku::Tier>,
 }
-mod sku {
+pub mod sku {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Name {
@@ -91,12 +91,12 @@ pub struct Encryption {
     #[serde(rename = "keySource")]
     pub key_source: encryption::KeySource,
 }
-mod encryption {
+pub mod encryption {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum KeySource {
         #[serde(rename = "Microsoft.Storage")]
-        Microsoft_Storage,
+        MicrosoftStorage,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -110,7 +110,7 @@ pub struct StorageAccountPropertiesCreateParameters {
     #[serde(rename = "supportsHttpsTrafficOnly", skip_serializing_if = "Option::is_none")]
     pub supports_https_traffic_only: Option<bool>,
 }
-mod storage_account_properties_create_parameters {
+pub mod storage_account_properties_create_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum AccessTier {
@@ -128,7 +128,7 @@ pub struct StorageAccountCreateParameters {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub properties: Option<StorageAccountPropertiesCreateParameters>,
 }
-mod storage_account_create_parameters {
+pub mod storage_account_create_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Kind {
@@ -176,7 +176,7 @@ pub struct StorageAccountProperties {
     #[serde(rename = "supportsHttpsTrafficOnly", skip_serializing_if = "Option::is_none")]
     pub supports_https_traffic_only: Option<bool>,
 }
-mod storage_account_properties {
+pub mod storage_account_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
@@ -216,7 +216,7 @@ pub struct StorageAccount {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub properties: Option<StorageAccountProperties>,
 }
-mod storage_account {
+pub mod storage_account {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Kind {
@@ -233,7 +233,7 @@ pub struct StorageAccountKey {
     #[serde(skip_serializing)]
     pub permissions: Option<storage_account_key::Permissions>,
 }
-mod storage_account_key {
+pub mod storage_account_key {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Permissions {
@@ -267,7 +267,7 @@ pub struct StorageAccountPropertiesUpdateParameters {
     #[serde(rename = "supportsHttpsTrafficOnly", skip_serializing_if = "Option::is_none")]
     pub supports_https_traffic_only: Option<bool>,
 }
-mod storage_account_properties_update_parameters {
+pub mod storage_account_properties_update_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum AccessTier {
@@ -302,7 +302,7 @@ pub struct Usage {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<UsageName>,
 }
-mod usage {
+pub mod usage {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Unit {
@@ -351,7 +351,7 @@ pub struct AccountSasParameters {
     #[serde(rename = "keyToSign", skip_serializing_if = "Option::is_none")]
     pub key_to_sign: Option<String>,
 }
-mod account_sas_parameters {
+pub mod account_sas_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum SignedServices {
@@ -444,7 +444,7 @@ pub struct ServiceSasParameters {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub rsct: Option<String>,
 }
-mod service_sas_parameters {
+pub mod service_sas_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum SignedResource {

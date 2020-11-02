@@ -29,7 +29,7 @@ pub struct UsageDetail {
     pub resource: Resource,
     pub kind: usage_detail::Kind,
 }
-mod usage_detail {
+pub mod usage_detail {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Kind {
@@ -385,7 +385,7 @@ pub struct BalanceProperties {
     #[serde(rename = "adjustmentDetails", skip_serializing)]
     pub adjustment_details: Vec<serde_json::Value>,
 }
-mod balance_properties {
+pub mod balance_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum BillingFrequency {
@@ -575,7 +575,7 @@ pub struct ReservationRecommendation {
     pub resource_attributes: ResourceAttributes,
     pub kind: reservation_recommendation::Kind,
 }
-mod reservation_recommendation {
+pub mod reservation_recommendation {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Kind {
@@ -831,7 +831,7 @@ pub struct BudgetProperties {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub notifications: Option<serde_json::Value>,
 }
-mod budget_properties {
+pub mod budget_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Category {
@@ -878,7 +878,7 @@ pub struct BudgetComparisonExpression {
     pub operator: budget_comparison_expression::Operator,
     pub values: Vec<String>,
 }
-mod budget_comparison_expression {
+pub mod budget_comparison_expression {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Operator {
@@ -906,7 +906,7 @@ pub struct Notification {
     #[serde(rename = "thresholdType", skip_serializing_if = "Option::is_none")]
     pub threshold_type: Option<notification::ThresholdType>,
 }
-mod notification {
+pub mod notification {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Operator {
@@ -981,7 +981,7 @@ pub struct ForecastProperties {
     #[serde(rename = "confidenceLevels", skip_serializing)]
     pub confidence_levels: Vec<serde_json::Value>,
 }
-mod forecast_properties {
+pub mod forecast_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Grain {
@@ -1036,7 +1036,7 @@ pub struct ChargeSummary {
     pub resource: Resource,
     pub kind: charge_summary::Kind,
 }
-mod charge_summary {
+pub mod charge_summary {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Kind {
@@ -1132,7 +1132,7 @@ pub struct Operation {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
 }
-mod operation {
+pub mod operation {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Display {
@@ -1186,7 +1186,7 @@ pub struct EventProperties {
     #[serde(rename = "invoiceNumber", skip_serializing)]
     pub invoice_number: Option<String>,
 }
-mod event_properties {
+pub mod event_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum EventType {
@@ -1228,7 +1228,7 @@ pub struct LotProperties {
     #[serde(rename = "poNumber", skip_serializing)]
     pub po_number: Option<String>,
 }
-mod lot_properties {
+pub mod lot_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Source {

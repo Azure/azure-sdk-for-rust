@@ -11,19 +11,19 @@ pub struct CognitiveServicesAccountCreateParameters {
     pub tags: Option<serde_json::Value>,
     pub properties: CognitiveServicesAccountPropertiesCreateParameters,
 }
-mod cognitive_services_account_create_parameters {
+pub mod cognitive_services_account_create_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Kind {
         Academic,
         #[serde(rename = "Bing.Autosuggest")]
-        Bing_Autosuggest,
+        BingAutosuggest,
         #[serde(rename = "Bing.Search")]
-        Bing_Search,
+        BingSearch,
         #[serde(rename = "Bing.Speech")]
-        Bing_Speech,
+        BingSpeech,
         #[serde(rename = "Bing.SpellCheck")]
-        Bing_SpellCheck,
+        BingSpellCheck,
         ComputerVision,
         ContentModerator,
         Emotion,
@@ -53,7 +53,7 @@ pub struct Sku {
     #[serde(skip_serializing)]
     pub tier: Option<sku::Tier>,
 }
-mod sku {
+pub mod sku {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Name {
@@ -111,7 +111,7 @@ pub struct CognitiveServicesAccountProperties {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub endpoint: Option<String>,
 }
-mod cognitive_services_account_properties {
+pub mod cognitive_services_account_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
@@ -134,7 +134,7 @@ pub struct RegenerateKeyParameters {
     #[serde(rename = "keyName", skip_serializing_if = "Option::is_none")]
     pub key_name: Option<regenerate_key_parameters::KeyName>,
 }
-mod regenerate_key_parameters {
+pub mod regenerate_key_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum KeyName {

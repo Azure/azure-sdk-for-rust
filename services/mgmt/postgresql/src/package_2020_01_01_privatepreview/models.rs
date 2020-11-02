@@ -18,7 +18,7 @@ pub struct ServerKeyProperties {
     #[serde(rename = "creationDate", skip_serializing)]
     pub creation_date: Option<String>,
 }
-mod server_key_properties {
+pub mod server_key_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ServerKeyType {

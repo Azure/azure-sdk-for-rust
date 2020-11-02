@@ -42,7 +42,7 @@ pub struct NetworkInterface {
     #[serde(rename = "vmSwitchType", skip_serializing_if = "Option::is_none")]
     pub vm_switch_type: Option<network_interface::VmSwitchType>,
 }
-mod network_interface {
+pub mod network_interface {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum VmSwitchType {
@@ -67,7 +67,7 @@ pub struct NetworkInterfaceIpConfiguration {
     #[serde(rename = "dnsServers", skip_serializing_if = "Vec::is_empty")]
     pub dns_servers: Vec<String>,
 }
-mod network_interface_ip_configuration {
+pub mod network_interface_ip_configuration {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum IpAllocationMethod {
@@ -173,7 +173,7 @@ pub struct NetworkFunctionUserConfiguration {
     #[serde(rename = "osProfile", skip_serializing_if = "Option::is_none")]
     pub os_profile: Option<network_function_user_configuration::OsProfile>,
 }
-mod network_function_user_configuration {
+pub mod network_function_user_configuration {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct OsProfile {
@@ -201,7 +201,7 @@ pub struct DevicePropertiesFormat {
     #[serde(rename = "networkFunctions", skip_serializing)]
     pub network_functions: Vec<SubResource>,
 }
-mod device_properties_format {
+pub mod device_properties_format {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
@@ -235,7 +235,7 @@ pub struct Operation {
     #[serde(skip_serializing)]
     pub display: Option<operation::Display>,
 }
-mod operation {
+pub mod operation {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Display {
@@ -294,7 +294,7 @@ pub struct VendorSkuPropertiesFormat {
     #[serde(rename = "networkFunctionTemplate", skip_serializing_if = "Option::is_none")]
     pub network_function_template: Option<NetworkFunctionTemplate>,
 }
-mod vendor_sku_properties_format {
+pub mod vendor_sku_properties_format {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum DeploymentMode {
@@ -343,7 +343,7 @@ pub struct NetworkFunctionRoleConfiguration {
     #[serde(rename = "customProfile", skip_serializing_if = "Option::is_none")]
     pub custom_profile: Option<CustomProfile>,
 }
-mod network_function_role_configuration {
+pub mod network_function_role_configuration {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum RoleType {
@@ -440,7 +440,7 @@ pub struct OsDisk {
     #[serde(rename = "diskSizeGB", skip_serializing_if = "Option::is_none")]
     pub disk_size_gb: Option<i32>,
 }
-mod os_disk {
+pub mod os_disk {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum OsType {
@@ -463,7 +463,7 @@ pub struct DataDisk {
     #[serde(rename = "diskSizeGB", skip_serializing_if = "Option::is_none")]
     pub disk_size_gb: Option<i32>,
 }
-mod data_disk {
+pub mod data_disk {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum CreateOption {
@@ -606,7 +606,7 @@ pub struct RoleInstanceProperties {
     #[serde(rename = "operationalState", skip_serializing_if = "Option::is_none")]
     pub operational_state: Option<role_instance_properties::OperationalState>,
 }
-mod role_instance_properties {
+pub mod role_instance_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum OperationalState {
@@ -620,23 +620,20 @@ mod role_instance_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorResponse {
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub error: Option<error_response::Error>,
+    pub error: Option<ErrorDetail>,
 }
-mod error_response {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub struct Error {
-        #[serde(skip_serializing)]
-        pub code: Option<String>,
-        #[serde(skip_serializing)]
-        pub message: Option<String>,
-        #[serde(skip_serializing)]
-        pub target: Option<String>,
-        #[serde(skip_serializing)]
-        pub details: Vec<ErrorResponse>,
-        #[serde(rename = "additionalInfo", skip_serializing)]
-        pub additional_info: Vec<ErrorAdditionalInfo>,
-    }
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ErrorDetail {
+    #[serde(skip_serializing)]
+    pub code: Option<String>,
+    #[serde(skip_serializing)]
+    pub message: Option<String>,
+    #[serde(skip_serializing)]
+    pub target: Option<String>,
+    #[serde(skip_serializing)]
+    pub details: Vec<ErrorDetail>,
+    #[serde(rename = "additionalInfo", skip_serializing)]
+    pub additional_info: Vec<ErrorAdditionalInfo>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorAdditionalInfo {

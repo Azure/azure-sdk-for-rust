@@ -46,7 +46,7 @@ pub struct ProjectProperties {
     #[serde(rename = "provisioningState", skip_serializing)]
     pub provisioning_state: Option<project_properties::ProvisioningState>,
 }
-mod project_properties {
+pub mod project_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProjectStatus {
@@ -90,7 +90,7 @@ pub struct GroupProperties {
     #[serde(rename = "updatedTimestamp", skip_serializing)]
     pub updated_timestamp: Option<String>,
 }
-mod group_properties {
+pub mod group_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum GroupStatus {
@@ -115,7 +115,7 @@ pub struct GroupBodyProperties {
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub machines: Vec<String>,
 }
-mod group_body_properties {
+pub mod group_body_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum OperationType {
@@ -195,7 +195,7 @@ pub struct AssessmentProperties {
     #[serde(rename = "numberOfMachines", skip_serializing)]
     pub number_of_machines: Option<i32>,
 }
-mod assessment_properties {
+pub mod assessment_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum AzureLocation {
@@ -522,7 +522,7 @@ pub struct MachineProperties {
     #[serde(rename = "networkAdapters", skip_serializing)]
     pub network_adapters: Option<serde_json::Value>,
 }
-mod machine_properties {
+pub mod machine_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum BootType {
@@ -564,7 +564,7 @@ pub struct AssessedDisk {
     #[serde(rename = "suitabilityDetail", skip_serializing)]
     pub suitability_detail: Option<assessed_disk::SuitabilityDetail>,
 }
-mod assessed_disk {
+pub mod assessed_disk {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum RecommendedDiskType {
@@ -705,7 +705,7 @@ pub struct AssessedNetworkAdapter {
     #[serde(rename = "suitabilityDetail", skip_serializing)]
     pub suitability_detail: Option<assessed_network_adapter::SuitabilityDetail>,
 }
-mod assessed_network_adapter {
+pub mod assessed_network_adapter {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Suitability {
@@ -802,7 +802,7 @@ pub struct AssessedMachineProperties {
     #[serde(rename = "updatedTimestamp", skip_serializing)]
     pub updated_timestamp: Option<String>,
 }
-mod assessed_machine_properties {
+pub mod assessed_machine_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum BootType {

@@ -27,7 +27,7 @@ pub struct TrackedResource {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
-mod tracked_resource {
+pub mod tracked_resource {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Location {
@@ -297,7 +297,7 @@ pub struct DeviceConfiguration {
     #[serde(rename = "identitySystem", skip_serializing)]
     pub identity_system: Option<device_configuration::IdentitySystem>,
 }
-mod device_configuration {
+pub mod device_configuration {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum IdentitySystem {
@@ -376,7 +376,7 @@ pub struct RegistrationParameter {
     pub properties: RegistrationParameterProperties,
     pub location: registration_parameter::Location,
 }
-mod registration_parameter {
+pub mod registration_parameter {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Location {

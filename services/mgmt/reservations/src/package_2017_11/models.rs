@@ -238,12 +238,12 @@ pub struct ReservationResponse {
     #[serde(rename = "type", skip_serializing)]
     pub type_: Option<String>,
 }
-mod reservation_response {
+pub mod reservation_response {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Kind {
         #[serde(rename = "Microsoft.Compute")]
-        Microsoft_Compute,
+        MicrosoftCompute,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

@@ -15,7 +15,7 @@ pub struct ClusterProperties {
     #[serde(rename = "trustedExternalTenants", skip_serializing_if = "Vec::is_empty")]
     pub trusted_external_tenants: Vec<TrustedExternalTenant>,
 }
-mod cluster_properties {
+pub mod cluster_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum State {
@@ -60,7 +60,7 @@ pub struct AzureCapacity {
     pub maximum: i64,
     pub default: i64,
 }
-mod azure_capacity {
+pub mod azure_capacity {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ScaleType {
@@ -79,7 +79,7 @@ pub struct AzureSku {
     pub capacity: Option<i64>,
     pub tier: azure_sku::Tier,
 }
-mod azure_sku {
+pub mod azure_sku {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Name {
@@ -130,7 +130,7 @@ pub struct DatabaseProperties {
     #[serde(skip_serializing)]
     pub statistics: Option<DatabaseStatistics>,
 }
-mod database_properties {
+pub mod database_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
@@ -246,7 +246,7 @@ pub struct DatabasePrincipal {
     #[serde(rename = "appId", skip_serializing_if = "Option::is_none")]
     pub app_id: Option<String>,
 }
-mod database_principal {
+pub mod database_principal {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Role {
@@ -287,7 +287,7 @@ pub struct DataConnection {
     pub location: Option<String>,
     pub kind: data_connection::Kind,
 }
-mod data_connection {
+pub mod data_connection {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Kind {
@@ -347,12 +347,12 @@ pub struct ClusterCheckNameRequest {
     #[serde(rename = "type")]
     pub type_: cluster_check_name_request::Type,
 }
-mod cluster_check_name_request {
+pub mod cluster_check_name_request {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         #[serde(rename = "Microsoft.Kusto/clusters")]
-        Microsoft_KustoClusters,
+        MicrosoftKustoClusters,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -361,12 +361,12 @@ pub struct DatabaseCheckNameRequest {
     #[serde(rename = "type")]
     pub type_: database_check_name_request::Type,
 }
-mod database_check_name_request {
+pub mod database_check_name_request {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         #[serde(rename = "Microsoft.Kusto/clusters/databases")]
-        Microsoft_KustoClustersDatabases,
+        MicrosoftKustoClustersDatabases,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -375,12 +375,12 @@ pub struct DataConnectionCheckNameRequest {
     #[serde(rename = "type")]
     pub type_: data_connection_check_name_request::Type,
 }
-mod data_connection_check_name_request {
+pub mod data_connection_check_name_request {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         #[serde(rename = "Microsoft.Kusto/clusters/databases/dataConnections")]
-        Microsoft_KustoClustersDatabasesDataConnections,
+        MicrosoftKustoClustersDatabasesDataConnections,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -394,7 +394,7 @@ pub struct CheckNameResult {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub reason: Option<check_name_result::Reason>,
 }
-mod check_name_result {
+pub mod check_name_result {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Reason {
@@ -441,7 +441,7 @@ pub struct Operation {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
-mod operation {
+pub mod operation {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Display {

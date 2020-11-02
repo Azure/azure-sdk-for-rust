@@ -9,7 +9,7 @@ pub struct Operation {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
 }
-mod operation {
+pub mod operation {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Display {
@@ -72,7 +72,7 @@ pub struct AnalysisServicesServerProperties {
     #[serde(rename = "serverFullName", skip_serializing)]
     pub server_full_name: Option<String>,
 }
-mod analysis_services_server_properties {
+pub mod analysis_services_server_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum State {
@@ -113,7 +113,7 @@ pub struct ResourceSku {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub capacity: Option<i64>,
 }
-mod resource_sku {
+pub mod resource_sku {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Tier {
@@ -135,7 +135,7 @@ pub struct AnalysisServicesServerMutableProperties {
     #[serde(rename = "querypoolConnectionMode", skip_serializing_if = "Option::is_none")]
     pub querypool_connection_mode: Option<analysis_services_server_mutable_properties::QuerypoolConnectionMode>,
 }
-mod analysis_services_server_mutable_properties {
+pub mod analysis_services_server_mutable_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum QuerypoolConnectionMode {
@@ -178,7 +178,7 @@ pub struct GatewayListStatusLive {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub status: Option<gateway_list_status_live::Status>,
 }
-mod gateway_list_status_live {
+pub mod gateway_list_status_live {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {

@@ -27,7 +27,7 @@ pub struct GalleryProperties {
     #[serde(rename = "sharingProfile", skip_serializing_if = "Option::is_none")]
     pub sharing_profile: Option<SharingProfile>,
 }
-mod gallery_properties {
+pub mod gallery_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
@@ -51,7 +51,7 @@ pub struct SharingProfile {
     #[serde(skip_serializing)]
     pub groups: Vec<SharingProfileGroup>,
 }
-mod sharing_profile {
+pub mod sharing_profile {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Permissions {
@@ -66,7 +66,7 @@ pub struct SharingProfileGroup {
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub ids: Vec<String>,
 }
-mod sharing_profile_group {
+pub mod sharing_profile_group {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
@@ -104,7 +104,7 @@ pub struct GalleryApplicationProperties {
     #[serde(rename = "supportedOSType")]
     pub supported_os_type: gallery_application_properties::SupportedOsType,
 }
-mod gallery_application_properties {
+pub mod gallery_application_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum SupportedOsType {
@@ -135,7 +135,7 @@ pub struct GalleryApplicationVersionProperties {
     #[serde(rename = "replicationStatus", skip_serializing_if = "Option::is_none")]
     pub replication_status: Option<ReplicationStatus>,
 }
-mod gallery_application_version_properties {
+pub mod gallery_application_version_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
@@ -152,17 +152,24 @@ pub struct GalleryApplicationVersionPublishingProfile {
     #[serde(flatten)]
     pub gallery_artifact_publishing_profile_base: GalleryArtifactPublishingProfileBase,
     pub source: UserArtifactSource,
-    #[serde(rename = "contentType", skip_serializing_if = "Option::is_none")]
-    pub content_type: Option<String>,
+    #[serde(rename = "manageActions", skip_serializing_if = "Option::is_none")]
+    pub manage_actions: Option<UserArtifactManage>,
     #[serde(rename = "enableHealthCheck", skip_serializing_if = "Option::is_none")]
     pub enable_health_check: Option<bool>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UserArtifactSource {
-    #[serde(rename = "fileName")]
-    pub file_name: String,
     #[serde(rename = "mediaLink")]
     pub media_link: String,
+    #[serde(rename = "defaultConfigurationLink", skip_serializing_if = "Option::is_none")]
+    pub default_configuration_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct UserArtifactManage {
+    pub install: String,
+    pub remove: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub update: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GalleryImage {
@@ -208,7 +215,7 @@ pub struct GalleryImageProperties {
     #[serde(rename = "provisioningState", skip_serializing)]
     pub provisioning_state: Option<gallery_image_properties::ProvisioningState>,
 }
-mod gallery_image_properties {
+pub mod gallery_image_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum OsType {
@@ -301,7 +308,7 @@ pub struct GalleryImageVersionProperties {
     #[serde(rename = "replicationStatus", skip_serializing_if = "Option::is_none")]
     pub replication_status: Option<ReplicationStatus>,
 }
-mod gallery_image_version_properties {
+pub mod gallery_image_version_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
@@ -328,7 +335,7 @@ pub struct GalleryArtifactPublishingProfileBase {
     #[serde(rename = "storageAccountType", skip_serializing_if = "Option::is_none")]
     pub storage_account_type: Option<gallery_artifact_publishing_profile_base::StorageAccountType>,
 }
-mod gallery_artifact_publishing_profile_base {
+pub mod gallery_artifact_publishing_profile_base {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum StorageAccountType {
@@ -350,7 +357,7 @@ pub struct TargetRegion {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub encryption: Option<EncryptionImages>,
 }
-mod target_region {
+pub mod target_region {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum StorageAccountType {
@@ -435,7 +442,7 @@ pub struct GalleryDiskImage {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub source: Option<GalleryArtifactVersionSource>,
 }
-mod gallery_disk_image {
+pub mod gallery_disk_image {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum HostCaching {
@@ -451,7 +458,7 @@ pub struct ReplicationStatus {
     #[serde(skip_serializing)]
     pub summary: Vec<RegionalReplicationStatus>,
 }
-mod replication_status {
+pub mod replication_status {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum AggregatedState {
@@ -472,7 +479,7 @@ pub struct RegionalReplicationStatus {
     #[serde(skip_serializing)]
     pub progress: Option<i32>,
 }
-mod regional_replication_status {
+pub mod regional_replication_status {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum State {
@@ -576,7 +583,7 @@ pub struct SharingUpdate {
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub groups: Vec<SharingProfileGroup>,
 }
-mod sharing_update {
+pub mod sharing_update {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum OperationType {
@@ -648,7 +655,7 @@ pub struct SharedGalleryImageProperties {
     #[serde(rename = "purchasePlan", skip_serializing_if = "Option::is_none")]
     pub purchase_plan: Option<ImagePurchasePlan>,
 }
-mod shared_gallery_image_properties {
+pub mod shared_gallery_image_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum OsType {

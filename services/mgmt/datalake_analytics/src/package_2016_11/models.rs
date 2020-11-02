@@ -75,7 +75,7 @@ pub struct DataLakeAnalyticsAccountProperties {
     #[serde(rename = "queryStoreRetention", skip_serializing)]
     pub query_store_retention: Option<i32>,
 }
-mod data_lake_analytics_account_properties {
+pub mod data_lake_analytics_account_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum FirewallState {
@@ -143,7 +143,7 @@ pub struct DataLakeAnalyticsAccountPropertiesBasic {
     #[serde(skip_serializing)]
     pub endpoint: Option<String>,
 }
-mod data_lake_analytics_account_properties_basic {
+pub mod data_lake_analytics_account_properties_basic {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
@@ -259,7 +259,7 @@ pub struct ComputePolicyProperties {
     #[serde(rename = "minPriorityPerJob", skip_serializing)]
     pub min_priority_per_job: Option<i32>,
 }
-mod compute_policy_properties {
+pub mod compute_policy_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ObjectType {
@@ -305,7 +305,7 @@ pub struct Operation {
     #[serde(skip_serializing)]
     pub origin: Option<operation::Origin>,
 }
-mod operation {
+pub mod operation {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Origin {
@@ -348,7 +348,7 @@ pub struct CapabilityInformation {
     #[serde(rename = "migrationState", skip_serializing)]
     pub migration_state: Option<bool>,
 }
-mod capability_information {
+pub mod capability_information {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum State {
@@ -404,7 +404,7 @@ pub struct CreateDataLakeAnalyticsAccountProperties {
     #[serde(rename = "queryStoreRetention", skip_serializing_if = "Option::is_none")]
     pub query_store_retention: Option<i32>,
 }
-mod create_data_lake_analytics_account_properties {
+pub mod create_data_lake_analytics_account_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum FirewallState {
@@ -471,7 +471,7 @@ pub struct UpdateDataLakeAnalyticsAccountProperties {
     #[serde(rename = "queryStoreRetention", skip_serializing_if = "Option::is_none")]
     pub query_store_retention: Option<i32>,
 }
-mod update_data_lake_analytics_account_properties {
+pub mod update_data_lake_analytics_account_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum FirewallState {
@@ -585,7 +585,7 @@ pub struct CreateOrUpdateComputePolicyProperties {
     #[serde(rename = "minPriorityPerJob", skip_serializing_if = "Option::is_none")]
     pub min_priority_per_job: Option<i32>,
 }
-mod create_or_update_compute_policy_properties {
+pub mod create_or_update_compute_policy_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ObjectType {
@@ -616,7 +616,7 @@ pub struct UpdateComputePolicyProperties {
     #[serde(rename = "minPriorityPerJob", skip_serializing_if = "Option::is_none")]
     pub min_priority_per_job: Option<i32>,
 }
-mod update_compute_policy_properties {
+pub mod update_compute_policy_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ObjectType {
@@ -665,11 +665,11 @@ pub struct CheckNameAvailabilityParameters {
     #[serde(rename = "type")]
     pub type_: check_name_availability_parameters::Type,
 }
-mod check_name_availability_parameters {
+pub mod check_name_availability_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         #[serde(rename = "Microsoft.DataLakeAnalytics/accounts")]
-        Microsoft_DataLakeAnalyticsAccounts,
+        MicrosoftDataLakeAnalyticsAccounts,
     }
 }

@@ -53,7 +53,7 @@ pub struct SharedAccessSignatureAuthorizationRule {
     pub secondary_key: Option<String>,
     pub rights: shared_access_signature_authorization_rule::Rights,
 }
-mod shared_access_signature_authorization_rule {
+pub mod shared_access_signature_authorization_rule {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Rights {
@@ -162,7 +162,7 @@ pub struct IotHubProperties {
     #[serde(skip_serializing)]
     pub locations: Vec<IotHubLocationDescription>,
 }
-mod iot_hub_properties {
+pub mod iot_hub_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum PublicNetworkAccess {
@@ -188,7 +188,7 @@ pub struct IotHubSkuInfo {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub capacity: Option<i64>,
 }
-mod iot_hub_sku_info {
+pub mod iot_hub_sku_info {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Name {
@@ -231,7 +231,7 @@ pub struct StorageEndpointProperties {
     #[serde(rename = "authenticationType", skip_serializing_if = "Option::is_none")]
     pub authentication_type: Option<storage_endpoint_properties::AuthenticationType>,
 }
-mod storage_endpoint_properties {
+pub mod storage_endpoint_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum AuthenticationType {
@@ -267,7 +267,7 @@ pub struct IpFilterRule {
     #[serde(rename = "ipMask")]
     pub ip_mask: String,
 }
-mod ip_filter_rule {
+pub mod ip_filter_rule {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Action {
@@ -329,7 +329,7 @@ pub struct PrivateLinkServiceConnectionState {
     #[serde(rename = "actionsRequired", skip_serializing_if = "Option::is_none")]
     pub actions_required: Option<String>,
 }
-mod private_link_service_connection_state {
+pub mod private_link_service_connection_state {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
@@ -388,7 +388,7 @@ pub struct RoutingServiceBusQueueEndpointProperties {
     #[serde(rename = "resourceGroup", skip_serializing_if = "Option::is_none")]
     pub resource_group: Option<String>,
 }
-mod routing_service_bus_queue_endpoint_properties {
+pub mod routing_service_bus_queue_endpoint_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum AuthenticationType {
@@ -416,7 +416,7 @@ pub struct RoutingServiceBusTopicEndpointProperties {
     #[serde(rename = "resourceGroup", skip_serializing_if = "Option::is_none")]
     pub resource_group: Option<String>,
 }
-mod routing_service_bus_topic_endpoint_properties {
+pub mod routing_service_bus_topic_endpoint_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum AuthenticationType {
@@ -444,7 +444,7 @@ pub struct RoutingEventHubProperties {
     #[serde(rename = "resourceGroup", skip_serializing_if = "Option::is_none")]
     pub resource_group: Option<String>,
 }
-mod routing_event_hub_properties {
+pub mod routing_event_hub_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum AuthenticationType {
@@ -480,7 +480,7 @@ pub struct RoutingStorageContainerProperties {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub encoding: Option<routing_storage_container_properties::Encoding>,
 }
-mod routing_storage_container_properties {
+pub mod routing_storage_container_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum AuthenticationType {
@@ -508,7 +508,7 @@ pub struct RouteProperties {
     #[serde(rename = "isEnabled")]
     pub is_enabled: bool,
 }
-mod route_properties {
+pub mod route_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Source {
@@ -532,7 +532,7 @@ pub struct FallbackRouteProperties {
     #[serde(rename = "isEnabled")]
     pub is_enabled: bool,
 }
-mod fallback_route_properties {
+pub mod fallback_route_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Source {
@@ -589,7 +589,7 @@ pub struct Operation {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
 }
-mod operation {
+pub mod operation {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Display {
@@ -643,7 +643,7 @@ pub struct EndpointHealthData {
     #[serde(rename = "lastSendAttemptTime", skip_serializing_if = "Option::is_none")]
     pub last_send_attempt_time: Option<String>,
 }
-mod endpoint_health_data {
+pub mod endpoint_health_data {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum HealthStatus {
@@ -698,7 +698,7 @@ pub struct IotHubCapacity {
     #[serde(rename = "scaleType", skip_serializing)]
     pub scale_type: Option<iot_hub_capacity::ScaleType>,
 }
-mod iot_hub_capacity {
+pub mod iot_hub_capacity {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ScaleType {
@@ -763,7 +763,7 @@ pub struct JobResponse {
     #[serde(rename = "parentJobId", skip_serializing)]
     pub parent_job_id: Option<String>,
 }
-mod job_response {
+pub mod job_response {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
@@ -833,7 +833,7 @@ pub struct IotHubNameAvailabilityInfo {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
-mod iot_hub_name_availability_info {
+pub mod iot_hub_name_availability_info {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Reason {
@@ -879,7 +879,7 @@ pub struct TestAllRoutesInput {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub twin: Option<RoutingTwin>,
 }
-mod test_all_routes_input {
+pub mod test_all_routes_input {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum RoutingSource {
@@ -898,7 +898,7 @@ pub struct RoutingTwin {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub properties: Option<routing_twin::Properties>,
 }
-mod routing_twin {
+pub mod routing_twin {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Properties {
@@ -942,7 +942,7 @@ pub struct TestRouteResult {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub details: Option<TestRouteResultDetails>,
 }
-mod test_route_result {
+pub mod test_route_result {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Result {
@@ -968,7 +968,7 @@ pub struct RouteCompilationError {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub location: Option<RouteErrorRange>,
 }
-mod route_compilation_error {
+pub mod route_compilation_error {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Severity {
@@ -1003,7 +1003,7 @@ pub struct ExportDevicesRequest {
     #[serde(rename = "authenticationType", skip_serializing_if = "Option::is_none")]
     pub authentication_type: Option<export_devices_request::AuthenticationType>,
 }
-mod export_devices_request {
+pub mod export_devices_request {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum AuthenticationType {
@@ -1026,7 +1026,7 @@ pub struct ImportDevicesRequest {
     #[serde(rename = "authenticationType", skip_serializing_if = "Option::is_none")]
     pub authentication_type: Option<import_devices_request::AuthenticationType>,
 }
-mod import_devices_request {
+pub mod import_devices_request {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum AuthenticationType {
@@ -1048,7 +1048,7 @@ pub struct IotHubLocationDescription {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub role: Option<iot_hub_location_description::Role>,
 }
-mod iot_hub_location_description {
+pub mod iot_hub_location_description {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Role {
