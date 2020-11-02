@@ -1,10 +1,31 @@
 pub mod blob;
 pub mod container;
+mod headers;
 pub mod prelude;
 
 use crate::core::Client;
 use azure_core::No;
+use http::request::Builder;
 use std::borrow::Borrow;
+
+create_enum!(RehydratePriority, (High, "High"), (Standard, "Standard"));
+
+pub trait RehydratePrioritySupport {
+    type O;
+    fn with_rehydrate_priority(self, rehydrate_priority: RehydratePriority) -> Self::O;
+}
+
+pub trait RehydratePriorityOption {
+    fn rehydrate_priority(&self) -> Option<RehydratePriority>;
+
+    #[must_use]
+    fn add_header(&self, mut builder: Builder) -> Builder {
+        if let Some(rehydrate_priority) = self.rehydrate_priority() {
+            builder = builder.header(headers::REHYDRATE_PRIORITY, rehydrate_priority.as_ref());
+        }
+        builder
+    }
+}
 
 pub trait Blob<C>
 where
@@ -41,6 +62,7 @@ where
     fn copy_blob_from_url<'a>(
         &'a self,
     ) -> blob::requests::CopyBlobFromUrlBuilder<'a, C, No, No, No>;
+    fn copy_blob<'a>(&'a self) -> blob::requests::CopyBlobBuilder<'a, C, No, No, No>;
     fn generate_signed_blob_url<'a>(
         &'a self,
     ) -> blob::requests::SignedUrlBuilder<'a, C, No, No, No>;
@@ -160,6 +182,10 @@ where
         &'a self,
     ) -> blob::requests::CopyBlobFromUrlBuilder<'a, C, No, No, No> {
         blob::requests::CopyBlobFromUrlBuilder::new(self)
+    }
+
+    fn copy_blob<'a>(&'a self) -> blob::requests::CopyBlobBuilder<'a, C, No, No, No> {
+        blob::requests::CopyBlobBuilder::new(self)
     }
 
     fn generate_signed_blob_url<'a>(

@@ -2,14 +2,14 @@
   "name": "PutPageBlobBuilder",
   "derive": "Debug, Clone",
   "uses": [
-    "crate::blob::generate_blob_uri",
-    "crate::blob::responses::PutBlobResponse",
+    "crate::blob::blob::generate_blob_uri",
+    "crate::blob::blob::responses::PutBlobResponse",
+    "crate::core::prelude::*",
     "azure_core::errors::{check_status_extract_headers_and_body, AzureError}",
     "azure_core::headers::BLOB_TYPE",
     "azure_core::lease::LeaseId",
     "azure_core::prelude::*",
     "azure_core::{No, ToAssign, Yes}",
-    "azure_sdk_storage_core::prelude::*",
     "hyper::{Method, StatusCode}",
     "std::collections::HashMap",
     "std::marker::PhantomData"
@@ -65,10 +65,10 @@
     },
     {
       "name": "access_tier",
-      "field_type": "&'a str",
+      "field_type": "AccessTier",
       "optional": true,
-      "trait_get": "AccessTierOption<'a>",
-      "trait_set": "AccessTierSupport<'a>"
+      "trait_get": "AccessTierOption",
+      "trait_set": "AccessTierSupport"
     },
     {
       "name": "timeout",

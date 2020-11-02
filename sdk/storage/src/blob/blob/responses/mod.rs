@@ -30,3 +30,5 @@ mod break_blob_lease_response;
 pub use self::break_blob_lease_response::BreakBlobLeaseResponse;
 mod copy_blob_from_url_response;
 pub use copy_blob_from_url_response::CopyBlobFromUrlResponse;
+mod copy_blob_response;
+pub use copy_blob_response::CopyBlobResponse;

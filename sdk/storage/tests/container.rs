@@ -1,10 +1,10 @@
 #![cfg(all(test, feature = "test_e2e"))]
-use crate::core::prelude::*;
 use azure_core::{
     ContainerNameSupport, LeaseBreakPeriodSupport, LeaseDurationSupport, LeaseIdSupport,
 };
 use azure_storage::blob::container::{PublicAccess, PublicAccessSupport};
 use azure_storage::blob::prelude::*;
+use azure_storage::core::prelude::*;
 
 #[tokio::test]
 async fn lease() {

@@ -1,4 +1,7 @@
-use crate::headers::{IF_SEQUENCE_NUMBER_EQ, IF_SEQUENCE_NUMBER_LE, IF_SEQUENCE_NUMBER_LT};
+use crate::headers::{
+    IF_SEQUENCE_NUMBER_EQ, IF_SEQUENCE_NUMBER_LE, IF_SEQUENCE_NUMBER_LT, SOURCE_IF_MATCH,
+    SOURCE_IF_MODIFIED_SINCE, SOURCE_IF_NONE_MATCH, SOURCE_IF_UNMODIFIED_SINCE,
+};
 use chrono::{DateTime, Utc};
 use http::request::Builder;
 use hyper::header::{IF_MATCH, IF_MODIFIED_SINCE, IF_NONE_MATCH, IF_UNMODIFIED_SINCE};
@@ -20,6 +23,17 @@ impl IfSinceCondition {
             }
         }
     }
+
+    pub(crate) fn add_source_header(&self, builder: Builder) -> Builder {
+        match self {
+            IfSinceCondition::Modified(date) => {
+                builder.header(SOURCE_IF_MODIFIED_SINCE, &date.to_rfc2822() as &str)
+            }
+            IfSinceCondition::Unmodified(date) => {
+                builder.header(SOURCE_IF_UNMODIFIED_SINCE, &date.to_rfc2822() as &str)
+            }
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -33,6 +47,12 @@ impl<'a> IfMatchCondition<'a> {
         match self {
             IfMatchCondition::Match(etag) => builder.header(IF_MATCH, *etag),
             IfMatchCondition::NotMatch(etag) => builder.header(IF_NONE_MATCH, *etag),
+        }
+    }
+    pub(crate) fn add_source_header(&self, builder: Builder) -> Builder {
+        match self {
+            IfMatchCondition::Match(etag) => builder.header(SOURCE_IF_MATCH, *etag),
+            IfMatchCondition::NotMatch(etag) => builder.header(SOURCE_IF_NONE_MATCH, *etag),
         }
     }
 }

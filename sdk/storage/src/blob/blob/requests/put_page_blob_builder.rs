@@ -26,7 +26,7 @@ where
     blob_name: Option<&'a str>,
     content_length: u64,
     sequence_number: u64,
-    access_tier: Option<&'a str>,
+    access_tier: Option<AccessTier>,
     timeout: Option<u64>,
     content_type: Option<&'a str>,
     content_encoding: Option<&'a str>,
@@ -137,7 +137,7 @@ where
     }
 }
 
-impl<'a, C, ContainerNameSet, BlobNameSet, PageBlobLengthSet> AccessTierOption<'a>
+impl<'a, C, ContainerNameSet, BlobNameSet, PageBlobLengthSet> AccessTierOption
     for PutPageBlobBuilder<'a, C, ContainerNameSet, BlobNameSet, PageBlobLengthSet>
 where
     ContainerNameSet: ToAssign,
@@ -146,7 +146,7 @@ where
     C: Client,
 {
     #[inline]
-    fn access_tier(&self) -> Option<&'a str> {
+    fn access_tier(&self) -> Option<AccessTier> {
         self.access_tier
     }
 }
@@ -414,7 +414,7 @@ where
     }
 }
 
-impl<'a, C, ContainerNameSet, BlobNameSet, PageBlobLengthSet> AccessTierSupport<'a>
+impl<'a, C, ContainerNameSet, BlobNameSet, PageBlobLengthSet> AccessTierSupport
     for PutPageBlobBuilder<'a, C, ContainerNameSet, BlobNameSet, PageBlobLengthSet>
 where
     ContainerNameSet: ToAssign,
@@ -425,7 +425,7 @@ where
     type O = PutPageBlobBuilder<'a, C, ContainerNameSet, BlobNameSet, PageBlobLengthSet>;
 
     #[inline]
-    fn with_access_tier(self, access_tier: &'a str) -> Self::O {
+    fn with_access_tier(self, access_tier: AccessTier) -> Self::O {
         PutPageBlobBuilder {
             client: self.client,
             p_container_name: PhantomData {},
@@ -764,6 +764,7 @@ where
     }
 }
 
+// methods callable only when every mandatory field has been filled
 impl<'a, C> PutPageBlobBuilder<'a, C, Yes, Yes, Yes>
 where
     C: Client,

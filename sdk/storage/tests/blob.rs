@@ -2,7 +2,6 @@
 #[macro_use]
 extern crate log;
 
-use crate::core::prelude::*;
 use azure_core::prelude::*;
 use azure_core::{Consistency, DeleteSnapshotsMethod};
 use azure_storage::blob::{
@@ -10,6 +9,7 @@ use azure_storage::blob::{
     container::{Container, PublicAccess, PublicAccessSupport},
     prelude::*,
 };
+use azure_storage::core::prelude::*;
 use chrono::{Duration, FixedOffset, Utc};
 use std::ops::Add;
 use std::ops::Deref;
@@ -338,6 +338,64 @@ async fn put_block_blob() {
         .unwrap();
 
     trace!("created {:?}", blob_name);
+}
+
+#[tokio::test]
+async fn copy_blob() {
+    let client = initialize();
+
+    let blob_name: &'static str = "copysrc";
+    let container_name: &'static str = "rust-upload-test";
+    let data = b"abcdef";
+
+    if client
+        .list_containers()
+        .finalize()
+        .await
+        .unwrap()
+        .incomplete_vector
+        .iter()
+        .find(|x| x.name == container_name)
+        .is_none()
+    {
+        client
+            .create_container()
+            .with_container_name(container_name)
+            .with_public_access(PublicAccess::Blob)
+            .finalize()
+            .await
+            .unwrap();
+    }
+
+    // calculate md5 too!
+    let digest = md5::compute(&data[..]);
+
+    client
+        .put_block_blob()
+        .with_container_name(&container_name)
+        .with_blob_name(&blob_name)
+        .with_content_type("text/plain")
+        .with_body(&data[..])
+        .with_content_md5(&digest[..])
+        .finalize()
+        .await
+        .unwrap();
+
+    trace!("created {:?}", blob_name);
+
+    client
+        .copy_blob()
+        .with_source_url(&format!(
+            "https://{}.blob.core.windows.net/{}/{}",
+            &std::env::var("STORAGE_ACCOUNT").unwrap(),
+            &container_name,
+            &blob_name
+        ))
+        .with_container_name(&container_name)
+        .with_blob_name("cloned_blob")
+        .finalize()
+        .await
+        .unwrap();
 }
 
 fn initialize() -> Box<dyn Client> {
