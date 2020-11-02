@@ -71,22 +71,22 @@ impl<'a> DirectMethod<'a> {
         &self,
         payload: serde_json::Value,
     ) -> Result<DirectMethodResponse, AzureError> {
-        match &self.module_id {
+        let uri = match &self.module_id {
             Some(module_id_value) => {
-                let uri = format!(
+                format!(
                     "https://{}.azure-devices.net/twins/{}/modules/{}/methods?api-version={}",
                     self.iothub_service.iothub_name, self.device_id, module_id_value, API_VERSION
-                );
-                Ok(self.invoke_method(&uri, payload).await?)
+                )
             }
             None => {
-                let uri = format!(
+                format!(
                     "https://{}.azure-devices.net/twins/{}/methods?api-version={}",
                     self.iothub_service.iothub_name, self.device_id, API_VERSION
-                );
-                Ok(self.invoke_method(&uri, payload).await?)
+                )
             }
-        }
+        };
+
+        Ok(self.invoke_method(&uri, payload).await?)
     }
 
     /// Helper method for invoking the method

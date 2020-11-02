@@ -59,25 +59,19 @@ impl ServiceClient {
             iothub_name, &expiry_date_seconds
         );
 
-        let key = match decode(private_key) {
-            Ok(val) => val,
-            Err(err) => {
-                return Err(AzureError::GenericErrorWithText(format!(
-                    "Failed to decode the given private key: {}",
-                    err.to_string()
-                )));
-            }
-        };
+        let key = decode(private_key).map_err(|err|{
+            AzureError::GenericErrorWithText(format!(
+                "Failed to decode the given private key: {}",
+                err.to_string()
+            ))
+        })?;
 
-        let mut hmac = match HmacSHA256::new_varkey(key.as_ref()) {
-            Ok(val) => val,
-            Err(err) => {
-                return Err(AzureError::GenericErrorWithText(format!(
-                    "Failed to use the given private key for the hashing algorithm: {}",
-                    err.to_string()
-                )));
-            }
-        };
+        let mut hmac = HmacSHA256::new_varkey(key.as_ref()).map_err(|err| {
+            AzureError::GenericErrorWithText(format!(
+                "Failed to use the given private key for the hashing algorithm: {}",
+                err.to_string()
+            ))
+        })?;
 
         hmac.update(data.as_bytes());
         let result = hmac.finalize();
@@ -185,43 +179,27 @@ impl ServiceClient {
             }
         }
 
-        let matched_iothub_name = match iothub_name {
-            Some(val) => val,
-            None => {
-                return Err(AzureError::GenericErrorWithText(
-                    "Failed to get the hostname from the given connection string".to_string(),
-                ));
-            }
-        };
+        let iothub_name = iothub_name.ok_or_else(|| AzureError::GenericErrorWithText(
+            "Failed to get the hostname from the given connection string".to_string()
+        ))?;
 
-        let matched_key_name = match key_name {
-            Some(val) => val,
-            None => {
-                return Err(AzureError::GenericErrorWithText(
-                    "Failed to get the shared access key name from the given connection string"
-                        .to_string(),
-                ));
-            }
-        };
+        let key_name = key_name.ok_or_else(|| AzureError::GenericErrorWithText(
+            "Failed to get the shared access key name from the given connection string".to_string(),
+        ))?;
 
-        let matched_primary_key = match primary_key {
-            Some(val) => val,
-            None => {
-                return Err(AzureError::GenericErrorWithText(
-                    "Failed to get the primary key from the given connection string".to_string(),
-                ));
-            }
-        };
+        let primary_key = primary_key.ok_or_else(|| AzureError::GenericErrorWithText(
+            "Failed to get the primary key from the given connection string".to_string(),
+        ))?;
 
         let sas_token = Self::generate_sas_token(
-            matched_iothub_name,
-            matched_key_name,
-            matched_primary_key,
+            iothub_name,
+            key_name,
+            primary_key,
             expires_in_seconds,
         )?;
 
         Ok(Self {
-            iothub_name: matched_iothub_name.to_string(),
+            iothub_name: iothub_name.to_string(),
             sas_token,
         })
     }
