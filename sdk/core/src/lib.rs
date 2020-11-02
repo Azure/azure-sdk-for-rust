@@ -933,6 +933,24 @@ pub trait LeaseBreakPeriodOption {
     }
 }
 
+pub trait ContinuationSupport<'a> {
+    type O;
+    fn with_continuation(self, continuation: &'a str) -> Self::O;
+}
+
+pub trait ContinuationOption<'a> {
+    fn continuation(&self) -> Option<&'a str>;
+
+    #[must_use]
+    fn add_header(&self, builder: Builder) -> Builder {
+        if let Some(continuation) = self.continuation() {
+            builder.header(CONTINUATION, continuation)
+        } else {
+            builder
+        }
+    }
+}
+
 pub trait ContainerNameSupport<'a> {
     type O;
     fn with_container_name(self, container_name: &'a str) -> Self::O;

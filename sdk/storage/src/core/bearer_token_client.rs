@@ -15,6 +15,7 @@ pub struct BearerTokenClient<'a> {
     blob_uri: String,
     table_uri: String,
     queue_uri: String,
+    filesystem_uri: String,
 }
 
 impl<'a> BearerTokenClient<'a> {
@@ -27,6 +28,7 @@ impl<'a> BearerTokenClient<'a> {
         let blob_uri = format!("https://{}.blob.core.windows.net", account);
         let table_uri = format!("https://{}.table.core.windows.net", account);
         let queue_uri = format!("https://{}.queue.core.windows.net", account);
+        let filesystem_uri = format!("https://{}.dfs.core.windows.net", account);
 
         Self {
             account,
@@ -35,6 +37,7 @@ impl<'a> BearerTokenClient<'a> {
             hc,
             blob_uri,
             table_uri,
+            filesystem_uri,
         }
     }
 
@@ -96,6 +99,11 @@ impl<'a> Client for BearerTokenClient<'a> {
     #[inline]
     fn queue_uri(&self) -> &str {
         &self.queue_uri
+    }
+
+    #[inline]
+    fn filesystem_uri(&self) -> &str {
+        &self.filesystem_uri
     }
 
     #[inline]
