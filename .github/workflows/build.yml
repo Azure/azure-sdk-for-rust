@@ -33,5 +33,5 @@ jobs:
       run: cargo test --all
 
     - name: display free disk space
-      run: df -h
+      run: df -h /
       if: ${{ always() }}
