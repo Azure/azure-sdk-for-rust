@@ -349,66 +349,18 @@ pub struct RestorableDroppedSqlPoolListResult {
     pub value: Vec<RestorableDroppedSqlPool>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CheckNameAvailabilityRequest {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(rename = "type", skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
+pub struct PrivateEndpointConnectionList {
+    #[serde(skip_serializing)]
+    pub value: Vec<PrivateEndpointConnection>,
+    #[serde(rename = "nextLink", skip_serializing)]
+    pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CheckNameAvailabilityResponse {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub available: Option<bool>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub reason: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct IpFirewallRuleInfo {
+pub struct PrivateEndpointConnection {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub properties: Option<IpFirewallRuleProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ReplaceAllIpFirewallRulesRequest {
-    #[serde(rename = "ipFirewallRules", skip_serializing_if = "Option::is_none")]
-    pub ip_firewall_rules: Option<serde_json::Value>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct IpFirewallRuleProperties {
-    #[serde(rename = "endIpAddress", skip_serializing_if = "Option::is_none")]
-    pub end_ip_address: Option<String>,
-    #[serde(rename = "provisioningState", skip_serializing)]
-    pub provisioning_state: Option<ip_firewall_rule_properties::ProvisioningState>,
-    #[serde(rename = "startIpAddress", skip_serializing_if = "Option::is_none")]
-    pub start_ip_address: Option<String>,
-}
-pub mod ip_firewall_rule_properties {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum ProvisioningState {
-        Provisioning,
-        Succeeded,
-        Deleting,
-        Failed,
-        DeleteError,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct IpFirewallRuleInfoListResult {
-    #[serde(rename = "nextLink", skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<IpFirewallRuleInfo>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ReplaceAllFirewallRulesOperationResponse {
-    #[serde(rename = "operationId", skip_serializing_if = "Option::is_none")]
-    pub operation_id: Option<String>,
+    pub properties: Option<PrivateEndpointConnectionProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AvailableRpOperation {
@@ -517,6 +469,133 @@ pub struct OperationMetaMetricDimensionSpecification {
     pub name: Option<String>,
     #[serde(rename = "toBeExportedForShoebox", skip_serializing_if = "Option::is_none")]
     pub to_be_exported_for_shoebox: Option<bool>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PrivateLinkHubInfoListResult {
+    #[serde(rename = "nextLink", skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<PrivateLinkHub>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PrivateLinkHub {
+    #[serde(flatten)]
+    pub tracked_resource: TrackedResource,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub properties: Option<PrivateLinkHubProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PrivateLinkHubPatchInfo {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PrivateLinkHubProperties {
+    #[serde(rename = "provisioningState", skip_serializing)]
+    pub provisioning_state: Option<private_link_hub_properties::ProvisioningState>,
+    #[serde(rename = "privateEndpointConnections", skip_serializing)]
+    pub private_endpoint_connections: Vec<PrivateEndpointConnectionForPrivateLinkHubBasic>,
+}
+pub mod private_link_hub_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum ProvisioningState {
+        Succeeded,
+        Failed,
+        Deleting,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PrivateEndpointConnectionForPrivateLinkHubBasic {
+    #[serde(skip_serializing)]
+    pub id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub properties: Option<PrivateEndpointConnectionProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PrivateEndpointConnectionProperties {
+    #[serde(rename = "provisioningState", skip_serializing)]
+    pub provisioning_state: Option<String>,
+    #[serde(rename = "privateEndpoint", skip_serializing_if = "Option::is_none")]
+    pub private_endpoint: Option<PrivateEndpoint>,
+    #[serde(rename = "privateLinkServiceConnectionState", skip_serializing_if = "Option::is_none")]
+    pub private_link_service_connection_state: Option<PrivateLinkServiceConnectionState>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PrivateLinkServiceConnectionState {
+    #[serde(skip_serializing)]
+    pub status: Option<String>,
+    #[serde(skip_serializing)]
+    pub description: Option<String>,
+    #[serde(rename = "actionsRequired", skip_serializing)]
+    pub actions_required: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PrivateEndpoint {
+    #[serde(skip_serializing)]
+    pub id: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CheckNameAvailabilityRequest {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(rename = "type", skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CheckNameAvailabilityResponse {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub available: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub reason: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct IpFirewallRuleInfo {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub properties: Option<IpFirewallRuleProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ReplaceAllIpFirewallRulesRequest {
+    #[serde(rename = "ipFirewallRules", skip_serializing_if = "Option::is_none")]
+    pub ip_firewall_rules: Option<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct IpFirewallRuleProperties {
+    #[serde(rename = "endIpAddress", skip_serializing_if = "Option::is_none")]
+    pub end_ip_address: Option<String>,
+    #[serde(rename = "provisioningState", skip_serializing)]
+    pub provisioning_state: Option<ip_firewall_rule_properties::ProvisioningState>,
+    #[serde(rename = "startIpAddress", skip_serializing_if = "Option::is_none")]
+    pub start_ip_address: Option<String>,
+}
+pub mod ip_firewall_rule_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum ProvisioningState {
+        Provisioning,
+        Succeeded,
+        Deleting,
+        Failed,
+        DeleteError,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct IpFirewallRuleInfoListResult {
+    #[serde(rename = "nextLink", skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<IpFirewallRuleInfo>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ReplaceAllFirewallRulesOperationResponse {
+    #[serde(rename = "operationId", skip_serializing_if = "Option::is_none")]
+    pub operation_id: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SqlPoolInfoListResult {
@@ -1464,20 +1543,6 @@ pub struct CloudErrorBody {
     pub details: Vec<CloudError>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PrivateEndpointConnectionList {
-    #[serde(skip_serializing)]
-    pub value: Vec<PrivateEndpointConnection>,
-    #[serde(rename = "nextLink", skip_serializing)]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PrivateEndpointConnection {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub properties: Option<PrivateEndpointConnectionProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SubResource {
     #[serde(flatten)]
     pub azure_entity_resource: AzureEntityResource,
@@ -2192,71 +2257,6 @@ pub struct PrivateLinkResourceProperties {
     pub required_members: Vec<String>,
     #[serde(rename = "requiredZoneNames", skip_serializing)]
     pub required_zone_names: Vec<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PrivateLinkHubInfoListResult {
-    #[serde(rename = "nextLink", skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<PrivateLinkHub>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PrivateLinkHub {
-    #[serde(flatten)]
-    pub tracked_resource: TrackedResource,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub properties: Option<PrivateLinkHubProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PrivateLinkHubPatchInfo {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PrivateLinkHubProperties {
-    #[serde(rename = "provisioningState", skip_serializing)]
-    pub provisioning_state: Option<private_link_hub_properties::ProvisioningState>,
-    #[serde(rename = "privateEndpointConnections", skip_serializing)]
-    pub private_endpoint_connections: Vec<PrivateEndpointConnectionForPrivateLinkHubBasic>,
-}
-pub mod private_link_hub_properties {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum ProvisioningState {
-        Succeeded,
-        Failed,
-        Deleting,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PrivateEndpointConnectionForPrivateLinkHubBasic {
-    #[serde(skip_serializing)]
-    pub id: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub properties: Option<PrivateEndpointConnectionProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PrivateEndpointConnectionProperties {
-    #[serde(rename = "provisioningState", skip_serializing)]
-    pub provisioning_state: Option<String>,
-    #[serde(rename = "privateEndpoint", skip_serializing_if = "Option::is_none")]
-    pub private_endpoint: Option<PrivateEndpoint>,
-    #[serde(rename = "privateLinkServiceConnectionState", skip_serializing_if = "Option::is_none")]
-    pub private_link_service_connection_state: Option<PrivateLinkServiceConnectionState>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PrivateLinkServiceConnectionState {
-    #[serde(skip_serializing)]
-    pub status: Option<String>,
-    #[serde(skip_serializing)]
-    pub description: Option<String>,
-    #[serde(rename = "actionsRequired", skip_serializing)]
-    pub actions_required: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PrivateEndpoint {
-    #[serde(skip_serializing)]
-    pub id: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct KeyInfoListResult {

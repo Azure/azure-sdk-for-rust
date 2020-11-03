@@ -1169,6 +1169,62 @@ pub struct ObjectReplicationPolicyFilter {
     pub min_creation_time: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ListBlobInventoryPolicy {
+    #[serde(skip_serializing)]
+    pub value: Vec<BlobInventoryPolicy>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BlobInventoryPolicy {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub properties: Option<BlobInventoryPolicyProperties>,
+    #[serde(rename = "systemData", skip_serializing)]
+    pub system_data: Option<SystemData>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BlobInventoryPolicyProperties {
+    #[serde(rename = "lastModifiedTime", skip_serializing)]
+    pub last_modified_time: Option<String>,
+    pub policy: BlobInventoryPolicySchema,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BlobInventoryPolicySchema {
+    pub enabled: bool,
+    pub destination: String,
+    #[serde(rename = "type")]
+    pub type_: blob_inventory_policy_schema::Type,
+    pub rules: Vec<BlobInventoryPolicyRule>,
+}
+pub mod blob_inventory_policy_schema {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Type {
+        Inventory,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BlobInventoryPolicyRule {
+    pub enabled: bool,
+    pub name: String,
+    pub definition: BlobInventoryPolicyDefinition,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BlobInventoryPolicyDefinition {
+    pub filters: BlobInventoryPolicyFilter,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BlobInventoryPolicyFilter {
+    #[serde(rename = "prefixMatch", skip_serializing_if = "Vec::is_empty")]
+    pub prefix_match: Vec<String>,
+    #[serde(rename = "blobTypes")]
+    pub blob_types: Vec<String>,
+    #[serde(rename = "includeBlobVersions", skip_serializing_if = "Option::is_none")]
+    pub include_blob_versions: Option<bool>,
+    #[serde(rename = "includeSnapshots", skip_serializing_if = "Option::is_none")]
+    pub include_snapshots: Option<bool>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorResponseBody {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
@@ -1797,6 +1853,38 @@ pub struct TrackedResource {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
     pub location: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SystemData {
+    #[serde(rename = "createdBy", skip_serializing_if = "Option::is_none")]
+    pub created_by: Option<String>,
+    #[serde(rename = "createdByType", skip_serializing_if = "Option::is_none")]
+    pub created_by_type: Option<system_data::CreatedByType>,
+    #[serde(rename = "createdAt", skip_serializing_if = "Option::is_none")]
+    pub created_at: Option<String>,
+    #[serde(rename = "lastModifiedBy", skip_serializing_if = "Option::is_none")]
+    pub last_modified_by: Option<String>,
+    #[serde(rename = "lastModifiedByType", skip_serializing_if = "Option::is_none")]
+    pub last_modified_by_type: Option<system_data::LastModifiedByType>,
+    #[serde(rename = "lastModifiedAt", skip_serializing_if = "Option::is_none")]
+    pub last_modified_at: Option<String>,
+}
+pub mod system_data {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum CreatedByType {
+        User,
+        Application,
+        ManagedIdentity,
+        Key,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum LastModifiedByType {
+        User,
+        Application,
+        ManagedIdentity,
+        Key,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureEntityResource {

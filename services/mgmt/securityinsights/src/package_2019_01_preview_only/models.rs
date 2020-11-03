@@ -741,6 +741,17 @@ pub struct EntityExpandParameters {
     pub start_time: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct EntityTimelineParameters {
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub kinds: Vec<EntityTimelineKind>,
+    #[serde(rename = "startTime")]
+    pub start_time: String,
+    #[serde(rename = "endTime")]
+    pub end_time: String,
+    #[serde(rename = "numberOfBucket", skip_serializing_if = "Option::is_none")]
+    pub number_of_bucket: Option<i32>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EntityExpandResponse {
     #[serde(rename = "metaData", skip_serializing_if = "Option::is_none")]
     pub meta_data: Option<ExpansionResultsMetadata>,
@@ -754,6 +765,13 @@ pub mod entity_expand_response {
         #[serde(skip_serializing_if = "Vec::is_empty")]
         pub entities: Vec<Entity>,
     }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct EntityTimelineResponse {
+    #[serde(rename = "metaData", skip_serializing_if = "Option::is_none")]
+    pub meta_data: Option<TimelineResultsMetadata>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<EntityTimelineItem>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum EntityInnerKind {
@@ -816,6 +834,12 @@ pub struct EntityQuery {
     pub properties: Option<EntityQueryProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum EntityTimelineKind {
+    Activity,
+    Bookmark,
+    SecurityAlert,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EntityQueryList {
     #[serde(rename = "nextLink", skip_serializing)]
     pub next_link: Option<String>,
@@ -850,6 +874,31 @@ pub struct ExpansionResultAggregation {
 pub struct ExpansionResultsMetadata {
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub aggregations: Vec<ExpansionResultAggregation>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct TimelineResultsMetadata {
+    #[serde(rename = "totalCount")]
+    pub total_count: i32,
+    pub aggregations: Vec<TimelineAggregation>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub errors: Vec<TimelineError>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct TimelineError {
+    pub kind: EntityTimelineKind,
+    #[serde(rename = "queryId", skip_serializing_if = "Option::is_none")]
+    pub query_id: Option<String>,
+    #[serde(rename = "errorMessage")]
+    pub error_message: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct TimelineAggregation {
+    pub count: i32,
+    pub kind: EntityTimelineKind,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct EntityTimelineItem {
+    pub kind: EntityTimelineKind,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FileEntity {
@@ -901,6 +950,62 @@ pub mod file_hash_entity_properties {
         #[serde(rename = "SHA256AC")]
         Sha256ac,
     }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ActivityTimelineItem {
+    #[serde(flatten)]
+    pub entity_timeline_item: EntityTimelineItem,
+    #[serde(rename = "queryId")]
+    pub query_id: String,
+    #[serde(rename = "bucketStartTimeUTC")]
+    pub bucket_start_time_utc: String,
+    #[serde(rename = "bucketEndTimeUTC")]
+    pub bucket_end_time_utc: String,
+    #[serde(rename = "firstActivityTimeUTC")]
+    pub first_activity_time_utc: String,
+    #[serde(rename = "lastActivityTimeUTC")]
+    pub last_activity_time_utc: String,
+    pub content: String,
+    pub title: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SecurityAlertTimelineItem {
+    #[serde(flatten)]
+    pub entity_timeline_item: EntityTimelineItem,
+    #[serde(rename = "azureResourceId")]
+    pub azure_resource_id: String,
+    #[serde(rename = "productName")]
+    pub product_name: String,
+    #[serde(rename = "displayName")]
+    pub display_name: String,
+    pub severity: AlertSeverity,
+    #[serde(rename = "endTimeUtc")]
+    pub end_time_utc: String,
+    #[serde(rename = "startTimeUtc")]
+    pub start_time_utc: String,
+    #[serde(rename = "timeGenerated")]
+    pub time_generated: String,
+    #[serde(rename = "alertType")]
+    pub alert_type: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BookmarkTimelineItem {
+    #[serde(flatten)]
+    pub entity_timeline_item: EntityTimelineItem,
+    #[serde(rename = "azureResourceId")]
+    pub azure_resource_id: String,
+    #[serde(rename = "displayName")]
+    pub display_name: String,
+    pub notes: String,
+    #[serde(rename = "endTimeUtc")]
+    pub end_time_utc: String,
+    #[serde(rename = "startTimeUtc")]
+    pub start_time_utc: String,
+    #[serde(rename = "eventTime", skip_serializing_if = "Option::is_none")]
+    pub event_time: Option<String>,
+    #[serde(rename = "createdBy")]
+    pub created_by: UserInfo,
+    pub labels: Vec<Label>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FusionAlertRule {
