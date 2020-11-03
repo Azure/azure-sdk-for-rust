@@ -7,7 +7,7 @@ pub struct ClusterProperties {
     #[serde(skip_serializing)]
     pub state: Option<cluster_properties::State>,
     #[serde(rename = "provisioningState", skip_serializing)]
-    pub provisioning_state: Option<cluster_properties::ProvisioningState>,
+    pub provisioning_state: Option<ProvisioningState>,
     #[serde(skip_serializing)]
     pub uri: Option<String>,
     #[serde(rename = "dataIngestionUri", skip_serializing)]
@@ -50,15 +50,6 @@ pub mod cluster_properties {
         Updating,
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum ProvisioningState {
-        Running,
-        Creating,
-        Deleting,
-        Succeeded,
-        Failed,
-        Moving,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum EngineType {
         V2,
         V3,
@@ -82,9 +73,9 @@ pub struct AzureResourceSku {
 pub struct AzureCapacity {
     #[serde(rename = "scaleType")]
     pub scale_type: azure_capacity::ScaleType,
-    pub minimum: i64,
-    pub maximum: i64,
-    pub default: i64,
+    pub minimum: i32,
+    pub maximum: i32,
+    pub default: i32,
 }
 pub mod azure_capacity {
     use super::*;
@@ -128,7 +119,7 @@ pub struct SkuLocationInfoItem {
 pub struct AzureSku {
     pub name: azure_sku::Name,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub capacity: Option<i64>,
+    pub capacity: Option<i32>,
     pub tier: azure_sku::Tier,
 }
 pub mod azure_sku {
@@ -189,11 +180,11 @@ pub mod azure_sku {
 pub type Zones = Vec<String>;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OptimizedAutoscale {
-    pub version: i64,
+    pub version: i32,
     #[serde(rename = "isEnabled")]
     pub is_enabled: bool,
-    pub minimum: i64,
-    pub maximum: i64,
+    pub minimum: i32,
+    pub maximum: i32,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VirtualNetworkConfiguration {
@@ -212,7 +203,7 @@ pub struct DatabaseStatistics {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AttachedDatabaseConfigurationProperties {
     #[serde(rename = "provisioningState", skip_serializing)]
-    pub provisioning_state: Option<attached_database_configuration_properties::ProvisioningState>,
+    pub provisioning_state: Option<ProvisioningState>,
     #[serde(rename = "databaseName")]
     pub database_name: String,
     #[serde(rename = "clusterResourceId")]
@@ -225,15 +216,6 @@ pub struct AttachedDatabaseConfigurationProperties {
 pub mod attached_database_configuration_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum ProvisioningState {
-        Running,
-        Creating,
-        Deleting,
-        Succeeded,
-        Failed,
-        Moving,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum DefaultPrincipalsModificationKind {
         Union,
         Replace,
@@ -243,7 +225,7 @@ pub mod attached_database_configuration_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ReadWriteDatabaseProperties {
     #[serde(rename = "provisioningState", skip_serializing)]
-    pub provisioning_state: Option<read_write_database_properties::ProvisioningState>,
+    pub provisioning_state: Option<ProvisioningState>,
     #[serde(rename = "softDeletePeriod", skip_serializing_if = "Option::is_none")]
     pub soft_delete_period: Option<String>,
     #[serde(rename = "hotCachePeriod", skip_serializing_if = "Option::is_none")]
@@ -253,22 +235,10 @@ pub struct ReadWriteDatabaseProperties {
     #[serde(rename = "isFollowed", skip_serializing)]
     pub is_followed: Option<bool>,
 }
-pub mod read_write_database_properties {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum ProvisioningState {
-        Running,
-        Creating,
-        Deleting,
-        Succeeded,
-        Failed,
-        Moving,
-    }
-}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ReadOnlyFollowingDatabaseProperties {
     #[serde(rename = "provisioningState", skip_serializing)]
-    pub provisioning_state: Option<read_only_following_database_properties::ProvisioningState>,
+    pub provisioning_state: Option<ProvisioningState>,
     #[serde(rename = "softDeletePeriod", skip_serializing)]
     pub soft_delete_period: Option<String>,
     #[serde(rename = "hotCachePeriod", skip_serializing_if = "Option::is_none")]
@@ -284,15 +254,6 @@ pub struct ReadOnlyFollowingDatabaseProperties {
 }
 pub mod read_only_following_database_properties {
     use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum ProvisioningState {
-        Running,
-        Creating,
-        Deleting,
-        Succeeded,
-        Failed,
-        Moving,
-    }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum PrincipalsModificationKind {
         Union,
@@ -317,19 +278,7 @@ pub struct EventHubConnectionProperties {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub compression: Option<Compression>,
     #[serde(rename = "provisioningState", skip_serializing)]
-    pub provisioning_state: Option<event_hub_connection_properties::ProvisioningState>,
-}
-pub mod event_hub_connection_properties {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum ProvisioningState {
-        Running,
-        Creating,
-        Deleting,
-        Succeeded,
-        Failed,
-        Moving,
-    }
+    pub provisioning_state: Option<ProvisioningState>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IotHubConnectionProperties {
@@ -348,19 +297,7 @@ pub struct IotHubConnectionProperties {
     #[serde(rename = "sharedAccessPolicyName")]
     pub shared_access_policy_name: String,
     #[serde(rename = "provisioningState", skip_serializing)]
-    pub provisioning_state: Option<iot_hub_connection_properties::ProvisioningState>,
-}
-pub mod iot_hub_connection_properties {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum ProvisioningState {
-        Running,
-        Creating,
-        Deleting,
-        Succeeded,
-        Failed,
-        Moving,
-    }
+    pub provisioning_state: Option<ProvisioningState>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum EventHubDataFormat {
@@ -498,19 +435,7 @@ pub struct EventGridConnectionProperties {
     #[serde(rename = "blobStorageEventType", skip_serializing_if = "Option::is_none")]
     pub blob_storage_event_type: Option<BlobStorageEventType>,
     #[serde(rename = "provisioningState", skip_serializing)]
-    pub provisioning_state: Option<event_grid_connection_properties::ProvisioningState>,
-}
-pub mod event_grid_connection_properties {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum ProvisioningState {
-        Running,
-        Creating,
-        Deleting,
-        Succeeded,
-        Failed,
-        Moving,
-    }
+    pub provisioning_state: Option<ProvisioningState>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Cluster {
@@ -630,7 +555,7 @@ pub struct DatabasePrincipalProperties {
     #[serde(rename = "principalName", skip_serializing)]
     pub principal_name: Option<String>,
     #[serde(rename = "provisioningState", skip_serializing)]
-    pub provisioning_state: Option<database_principal_properties::ProvisioningState>,
+    pub provisioning_state: Option<ProvisioningState>,
 }
 pub mod database_principal_properties {
     use super::*;
@@ -649,15 +574,6 @@ pub mod database_principal_properties {
         Group,
         User,
     }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum ProvisioningState {
-        Running,
-        Creating,
-        Deleting,
-        Succeeded,
-        Failed,
-        Moving,
-    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ClusterPrincipalProperties {
@@ -673,7 +589,7 @@ pub struct ClusterPrincipalProperties {
     #[serde(rename = "principalName", skip_serializing)]
     pub principal_name: Option<String>,
     #[serde(rename = "provisioningState", skip_serializing)]
-    pub provisioning_state: Option<cluster_principal_properties::ProvisioningState>,
+    pub provisioning_state: Option<ProvisioningState>,
 }
 pub mod cluster_principal_properties {
     use super::*;
@@ -687,15 +603,6 @@ pub mod cluster_principal_properties {
         App,
         Group,
         User,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum ProvisioningState {
-        Running,
-        Creating,
-        Deleting,
-        Succeeded,
-        Failed,
-        Moving,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -1013,6 +920,15 @@ pub struct LanguageExtension {
 pub struct LanguageExtensionsList {
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<LanguageExtension>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum ProvisioningState {
+    Running,
+    Creating,
+    Deleting,
+    Succeeded,
+    Failed,
+    Moving,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TrackedResource {

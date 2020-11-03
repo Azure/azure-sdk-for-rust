@@ -1516,3 +1516,69 @@ pub struct AssignedUser {
     #[serde(rename = "tenantId")]
     pub tenant_id: String,
 }
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct NotebookListCredentialsResult {
+    #[serde(rename = "primaryAccessKey", skip_serializing_if = "Option::is_none")]
+    pub primary_access_key: Option<String>,
+    #[serde(rename = "secondaryAccessKey", skip_serializing_if = "Option::is_none")]
+    pub secondary_access_key: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct NotebookResourceInfo {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub fqdn: Option<String>,
+    #[serde(rename = "resourceId", skip_serializing_if = "Option::is_none")]
+    pub resource_id: Option<String>,
+    #[serde(rename = "notebookPreparationError", skip_serializing_if = "Option::is_none")]
+    pub notebook_preparation_error: Option<NotebookPreparationError>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct NotebookPreparationError {
+    #[serde(rename = "errorMessage", skip_serializing_if = "Option::is_none")]
+    pub error_message: Option<String>,
+    #[serde(rename = "statusCode", skip_serializing_if = "Option::is_none")]
+    pub status_code: Option<i32>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ListNotebookKeysResult {
+    #[serde(rename = "primaryAccessKey", skip_serializing)]
+    pub primary_access_key: Option<String>,
+    #[serde(rename = "secondaryAccessKey", skip_serializing)]
+    pub secondary_access_key: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PaginatedWorkspaceConnectionsList {
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<WorkspaceConnection>,
+    #[serde(rename = "nextLink", skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct WorkspaceConnection {
+    #[serde(skip_serializing)]
+    pub id: Option<String>,
+    #[serde(skip_serializing)]
+    pub name: Option<String>,
+    #[serde(rename = "type", skip_serializing)]
+    pub type_: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub properties: Option<WorkspaceConnectionProps>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct WorkspaceConnectionDto {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub properties: Option<WorkspaceConnectionProps>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct WorkspaceConnectionProps {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub category: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub target: Option<String>,
+    #[serde(rename = "authType", skip_serializing_if = "Option::is_none")]
+    pub auth_type: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub value: Option<String>,
+}

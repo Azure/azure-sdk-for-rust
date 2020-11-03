@@ -75,9 +75,9 @@ pub struct AzureResourceSku {
 pub struct AzureCapacity {
     #[serde(rename = "scaleType")]
     pub scale_type: azure_capacity::ScaleType,
-    pub minimum: i64,
-    pub maximum: i64,
-    pub default: i64,
+    pub minimum: i32,
+    pub maximum: i32,
+    pub default: i32,
 }
 pub mod azure_capacity {
     use super::*;
@@ -121,7 +121,7 @@ pub struct SkuLocationInfoItem {
 pub struct AzureSku {
     pub name: azure_sku::Name,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub capacity: Option<i64>,
+    pub capacity: Option<i32>,
     pub tier: azure_sku::Tier,
 }
 pub mod azure_sku {
@@ -180,11 +180,11 @@ pub mod azure_sku {
 pub type Zones = Vec<String>;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OptimizedAutoscale {
-    pub version: i64,
+    pub version: i32,
     #[serde(rename = "isEnabled")]
     pub is_enabled: bool,
-    pub minimum: i64,
-    pub maximum: i64,
+    pub minimum: i32,
+    pub maximum: i32,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VirtualNetworkConfiguration {
