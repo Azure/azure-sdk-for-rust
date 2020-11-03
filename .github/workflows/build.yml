@@ -6,6 +6,7 @@ on:
 
 env:
   RUSTFLAGS: -Dwarnings
+  CARGO_INCREMENTAL: 0
 
 jobs:
   test:
@@ -29,4 +30,8 @@ jobs:
       if: matrix.rust == 'stable'
 
     - name: tests
-      run: cargo test --all 
+      run: cargo test --all
+
+    - name: display free disk space
+      run: df -h /
+      if: ${{ always() }}
