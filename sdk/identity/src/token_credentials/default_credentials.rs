@@ -45,7 +45,7 @@ impl DefaultCredentialBuilder {
         let mut sources =
             Vec::<Box<dyn TokenCredential + Send + Sync>>::with_capacity(source_count);
         if self.include_environment_credential {
-            sources.push(Box::new(EnvironmentCredential {}));
+            sources.push(Box::new(EnvironmentCredential::default()));
         }
         if self.include_managed_identity_credential {
             sources.push(Box::new(ManagedIdentityCredential {}))
@@ -78,7 +78,7 @@ impl Default for DefaultCredential {
     fn default() -> Self {
         DefaultCredential {
             sources: vec![
-                Box::new(EnvironmentCredential {}),
+                Box::new(EnvironmentCredential::default()),
                 Box::new(ManagedIdentityCredential {}),
                 Box::new(AzureCliCredential {}),
             ],

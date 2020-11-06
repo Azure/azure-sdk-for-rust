@@ -4,8 +4,54 @@ use chrono::Utc;
 use oauth2::{
     basic::BasicClient, reqwest::async_http_client, AccessToken, AuthType, AuthUrl, Scope, TokenUrl,
 };
-use std::{str, time::Duration};
+use std::{borrow::Cow, str, time::Duration};
 use url::Url;
+
+/// Provides options to configure how the Identity library makes authentication
+/// requests to Azure Active Directory.
+#[derive(Clone, Debug, PartialEq)]
+pub struct TokenCredentialOptions {
+    /// The authority host to use for authentication requests.  The default is
+    /// "https://login.microsoftonline.com".
+    pub authority_host: Option<Cow<'static, str>>,
+}
+
+const DEFAULT_TOKEN_CREDENTIAL_OPTIONS: TokenCredentialOptions = TokenCredentialOptions {
+    authority_host: Some(Cow::Borrowed(authority_hosts::AZURE_PUBLIC_CLOUD)),
+};
+
+impl Default for TokenCredentialOptions {
+    fn default() -> Self {
+        DEFAULT_TOKEN_CREDENTIAL_OPTIONS
+    }
+}
+
+impl TokenCredentialOptions {
+    pub fn authority_host(&self) -> &str {
+        match &self.authority_host {
+            Some(authority_host) => authority_host,
+            None => authority_hosts::AZURE_PUBLIC_CLOUD,
+        }
+    }
+}
+
+/// A list of known Azure authority hosts
+pub mod authority_hosts {
+    /// China-based Azure Authority Host
+    pub const AZURE_CHINA: &str = "https://login.chinacloudapi.cn";
+    /// Germany-based Azure Authority Host
+    pub const AZURE_GERMANY: &str = "https://login.microsoftonline.de";
+    /// US Government Azure Authority Host
+    pub const AZURE_GOVERNMENT: &str = "https://login.microsoftonline.us";
+    /// Public Cloud Azure Authority Host
+    pub const AZURE_PUBLIC_CLOUD: &str = "https://login.microsoftonline.com";
+}
+
+pub mod tenant_ids {
+    pub const TENANT_ID_COMMON: &str = "common";
+    /// Active Directory Federated Services
+    pub const TENANT_ID_ADFS: &str = "adfs";
+}
 
 /// Enables authentication to Azure Active Directory using a client secret that was generated for an App Registration.
 ///
@@ -15,6 +61,7 @@ pub struct ClientSecretCredential {
     tenant_id: String,
     client_id: oauth2::ClientId,
     client_secret: Option<oauth2::ClientSecret>,
+    options: Option<TokenCredentialOptions>,
 }
 
 impl ClientSecretCredential {
@@ -22,11 +69,20 @@ impl ClientSecretCredential {
         tenant_id: String,
         client_id: String,
         client_secret: String,
+        options: Option<TokenCredentialOptions>,
     ) -> ClientSecretCredential {
         ClientSecretCredential {
             tenant_id,
             client_id: oauth2::ClientId::new(client_id),
             client_secret: Some(oauth2::ClientSecret::new(client_secret)),
+            options,
+        }
+    }
+
+    fn options(&self) -> &TokenCredentialOptions {
+        match &self.options {
+            Some(options) => options,
+            None => &DEFAULT_TOKEN_CREDENTIAL_OPTIONS,
         }
     }
 }
@@ -34,10 +90,13 @@ impl ClientSecretCredential {
 #[async_trait::async_trait]
 impl TokenCredential for ClientSecretCredential {
     async fn get_token(&self, resource: &str) -> Result<TokenResponse, AzureError> {
+        let options = self.options();
+        let authority_host = options.authority_host();
+
         let token_url = TokenUrl::from_url(
             Url::parse(&format!(
-                "https://login.microsoftonline.com/{}/oauth2/v2.0/token",
-                self.tenant_id
+                "{}/{}/oauth2/v2.0/token",
+                authority_host, self.tenant_id
             ))
             .map_err(|_| {
                 AzureError::GenericErrorWithText(format!(
@@ -49,8 +108,8 @@ impl TokenCredential for ClientSecretCredential {
 
         let auth_url = AuthUrl::from_url(
             Url::parse(&format!(
-                "https://login.microsoftonline.com/{}/oauth2/v2.0/authorize",
-                self.tenant_id
+                "{}/{}/oauth2/v2.0/authorize",
+                authority_host, self.tenant_id
             ))
             .map_err(|_| {
                 AzureError::GenericErrorWithText(format!(
