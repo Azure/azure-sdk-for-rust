@@ -23,20 +23,20 @@ const AZURE_CLIENT_CERTIFICATE_PATH_ENV_KEY: &str = "AZURE_CLIENT_CERTIFICATE_PA
 /// these details.
 /// Please consult the documentation of that class for more details.
 pub struct EnvironmentCredential {
-    options: Option<TokenCredentialOptions>,
+    options: TokenCredentialOptions,
 }
 
 impl EnvironmentCredential {
     pub fn new(options: TokenCredentialOptions) -> Self {
-        Self {
-            options: Some(options),
-        }
+        Self { options }
     }
 }
 
 impl Default for EnvironmentCredential {
     fn default() -> Self {
-        Self { options: None }
+        Self {
+            options: TokenCredentialOptions::default(),
+        }
     }
 }
 

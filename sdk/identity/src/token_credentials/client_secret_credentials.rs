@@ -61,7 +61,7 @@ pub struct ClientSecretCredential {
     tenant_id: String,
     client_id: oauth2::ClientId,
     client_secret: Option<oauth2::ClientSecret>,
-    options: Option<TokenCredentialOptions>,
+    options: TokenCredentialOptions,
 }
 
 impl ClientSecretCredential {
@@ -69,7 +69,7 @@ impl ClientSecretCredential {
         tenant_id: String,
         client_id: String,
         client_secret: String,
-        options: Option<TokenCredentialOptions>,
+        options: TokenCredentialOptions,
     ) -> ClientSecretCredential {
         ClientSecretCredential {
             tenant_id,
@@ -80,10 +80,7 @@ impl ClientSecretCredential {
     }
 
     fn options(&self) -> &TokenCredentialOptions {
-        match &self.options {
-            Some(options) => options,
-            None => &DEFAULT_TOKEN_CREDENTIAL_OPTIONS,
-        }
+        &self.options
     }
 }
 
