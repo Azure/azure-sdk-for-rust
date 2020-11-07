@@ -332,6 +332,7 @@ pub mod domains {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(list_shared_access_keys::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_shared_access_keys::ExecuteRequestError)?;
         match rsp.status() {
@@ -821,6 +822,7 @@ pub mod event_subscriptions {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(get_full_url::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get_full_url::ExecuteRequestError)?;
         match rsp.status() {
@@ -1807,6 +1809,7 @@ pub mod topics {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(list_shared_access_keys::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_shared_access_keys::ExecuteRequestError)?;
         match rsp.status() {

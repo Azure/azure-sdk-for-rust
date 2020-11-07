@@ -449,6 +449,7 @@ pub mod batch_account {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(synchronize_auto_storage_keys::BuildRequestError)?;
         let rsp = client
             .execute(req)
@@ -587,6 +588,7 @@ pub mod batch_account {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(get_keys::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get_keys::ExecuteRequestError)?;
         match rsp.status() {
@@ -1972,6 +1974,7 @@ pub mod certificate {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(cancel_deletion::BuildRequestError)?;
         let rsp = client.execute(req).await.context(cancel_deletion::ExecuteRequestError)?;
         match rsp.status() {
@@ -2799,6 +2802,7 @@ pub mod pool {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(disable_auto_scale::BuildRequestError)?;
         let rsp = client.execute(req).await.context(disable_auto_scale::ExecuteRequestError)?;
         match rsp.status() {
@@ -2868,6 +2872,7 @@ pub mod pool {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(stop_resize::BuildRequestError)?;
         let rsp = client.execute(req).await.context(stop_resize::ExecuteRequestError)?;
         match rsp.status() {

@@ -907,6 +907,7 @@ pub mod assignments {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(who_is_blueprint::BuildRequestError)?;
         let rsp = client.execute(req).await.context(who_is_blueprint::ExecuteRequestError)?;
         match rsp.status() {

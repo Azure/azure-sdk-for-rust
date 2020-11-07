@@ -420,3 +420,96 @@ pub struct LogSpecification {
     #[serde(rename = "blobDuration", skip_serializing_if = "Option::is_none")]
     pub blob_duration: Option<String>,
 }
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Attributes {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub enabled: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub nbf: Option<i64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub exp: Option<i64>,
+    #[serde(skip_serializing)]
+    pub created: Option<i64>,
+    #[serde(skip_serializing)]
+    pub updated: Option<i64>,
+    #[serde(rename = "recoveryLevel", skip_serializing)]
+    pub recovery_level: Option<attributes::RecoveryLevel>,
+}
+pub mod attributes {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum RecoveryLevel {
+        Purgeable,
+        #[serde(rename = "Recoverable+Purgeable")]
+        RecoverablePurgeable,
+        Recoverable,
+        #[serde(rename = "Recoverable+ProtectedSubscription")]
+        RecoverableProtectedSubscription,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct KeyProperties {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub attributes: Option<KeyAttributes>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub kty: Option<key_properties::Kty>,
+    #[serde(rename = "keyOps", skip_serializing_if = "Vec::is_empty")]
+    pub key_ops: Vec<String>,
+    #[serde(rename = "keySize", skip_serializing_if = "Option::is_none")]
+    pub key_size: Option<i32>,
+    #[serde(rename = "curveName", skip_serializing_if = "Option::is_none")]
+    pub curve_name: Option<key_properties::CurveName>,
+    #[serde(rename = "keyUri", skip_serializing)]
+    pub key_uri: Option<String>,
+    #[serde(rename = "keyUriWithVersion", skip_serializing)]
+    pub key_uri_with_version: Option<String>,
+}
+pub mod key_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Kty {
+        #[serde(rename = "EC")]
+        Ec,
+        #[serde(rename = "EC-HSM")]
+        EcHsm,
+        #[serde(rename = "RSA")]
+        Rsa,
+        #[serde(rename = "RSA-HSM")]
+        RsaHsm,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum CurveName {
+        #[serde(rename = "P-256")]
+        P256,
+        #[serde(rename = "P-384")]
+        P384,
+        #[serde(rename = "P-521")]
+        P521,
+        #[serde(rename = "P-256K")]
+        P256k,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct KeyAttributes {
+    #[serde(flatten)]
+    pub attributes: Attributes,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct KeyCreateParameters {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
+    pub properties: KeyProperties,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Key {
+    #[serde(flatten)]
+    pub resource: Resource,
+    pub properties: KeyProperties,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct KeyListResult {
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<Key>,
+    #[serde(rename = "nextLink", skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}

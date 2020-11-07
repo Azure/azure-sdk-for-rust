@@ -347,6 +347,7 @@ pub mod servers {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(restart::BuildRequestError)?;
         let rsp = client.execute(req).await.context(restart::ExecuteRequestError)?;
         match rsp.status() {
@@ -2330,6 +2331,7 @@ pub async fn create_recommended_action_session(
     }
     req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
     req_builder = req_builder.query(&[("databaseName", database_name)]);
+    req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
     let req = req_builder.build().context(create_recommended_action_session::BuildRequestError)?;
     let rsp = client
         .execute(req)

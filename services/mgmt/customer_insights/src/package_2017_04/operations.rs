@@ -611,6 +611,7 @@ pub mod profiles {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(get_enriching_kpis::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get_enriching_kpis::ExecuteRequestError)?;
         match rsp.status() {
@@ -832,6 +833,7 @@ pub mod interactions {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(suggest_relationship_links::BuildRequestError)?;
         let rsp = client.execute(req).await.context(suggest_relationship_links::ExecuteRequestError)?;
         match rsp.status() {
@@ -1480,6 +1482,7 @@ pub mod authorization_policies {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(regenerate_primary_key::BuildRequestError)?;
         let rsp = client.execute(req).await.context(regenerate_primary_key::ExecuteRequestError)?;
         match rsp.status() {
@@ -1528,6 +1531,7 @@ pub mod authorization_policies {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(regenerate_secondary_key::BuildRequestError)?;
         let rsp = client.execute(req).await.context(regenerate_secondary_key::ExecuteRequestError)?;
         match rsp.status() {
@@ -2186,6 +2190,7 @@ pub mod kpi {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(reprocess::BuildRequestError)?;
         let rsp = client.execute(req).await.context(reprocess::ExecuteRequestError)?;
         match rsp.status() {
@@ -3356,6 +3361,7 @@ pub mod predictions {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(get_training_results::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get_training_results::ExecuteRequestError)?;
         match rsp.status() {
@@ -3407,6 +3413,7 @@ pub mod predictions {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(get_model_status::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get_model_status::ExecuteRequestError)?;
         match rsp.status() {

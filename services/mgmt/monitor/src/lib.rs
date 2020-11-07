@@ -55,10 +55,10 @@ pub use package_2017_09::{models, operations, API_VERSION};
 mod package_2017_08;
 #[cfg(feature = "package-2017-08")]
 pub use package_2017_08::{models, operations, API_VERSION};
-#[cfg(feature = "package-2019-11-preview-only")]
-mod package_2019_11_preview_only;
-#[cfg(feature = "package-2019-11-preview-only")]
-pub use package_2019_11_preview_only::{models, operations, API_VERSION};
+#[cfg(feature = "package-2019-11-01-preview-only")]
+mod package_2019_11_01_preview_only;
+#[cfg(feature = "package-2019-11-01-preview-only")]
+pub use package_2019_11_01_preview_only::{models, operations, API_VERSION};
 #[cfg(feature = "package-2019-06-01-only")]
 mod package_2019_06_01_only;
 #[cfg(feature = "package-2019-06-01-only")]

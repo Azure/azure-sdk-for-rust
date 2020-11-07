@@ -536,6 +536,7 @@ pub async fn keep_alive_with_location(
             .context(keep_alive_with_location::GetTokenError)?;
         req_builder = req_builder.bearer_auth(token_response.token.secret());
     }
+    req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
     let req = req_builder.build().context(keep_alive_with_location::BuildRequestError)?;
     let rsp = client.execute(req).await.context(keep_alive_with_location::ExecuteRequestError)?;
     match rsp.status() {
@@ -1076,6 +1077,7 @@ pub async fn keep_alive(operation_config: &crate::OperationConfig, console_name:
             .context(keep_alive::GetTokenError)?;
         req_builder = req_builder.bearer_auth(token_response.token.secret());
     }
+    req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
     let req = req_builder.build().context(keep_alive::BuildRequestError)?;
     let rsp = client.execute(req).await.context(keep_alive::ExecuteRequestError)?;
     match rsp.status() {

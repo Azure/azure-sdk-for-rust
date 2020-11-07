@@ -489,6 +489,7 @@ pub mod storage_accounts {
         if let Some(expand) = expand {
             req_builder = req_builder.query(&[("$expand", expand)]);
         }
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(list_keys::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_keys::ExecuteRequestError)?;
         match rsp.status() {
@@ -695,6 +696,7 @@ pub mod storage_accounts {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(failover::BuildRequestError)?;
         let rsp = client.execute(req).await.context(failover::ExecuteRequestError)?;
         match rsp.status() {
@@ -746,6 +748,7 @@ pub mod storage_accounts {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(revoke_user_delegation_keys::BuildRequestError)?;
         let rsp = client
             .execute(req)
@@ -1716,6 +1719,7 @@ pub mod blob_containers {
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.header("If-Match", if_match);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(lock_immutability_policy::BuildRequestError)?;
         let rsp = client.execute(req).await.context(lock_immutability_policy::ExecuteRequestError)?;
         match rsp.status() {
