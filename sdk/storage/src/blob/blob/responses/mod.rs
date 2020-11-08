@@ -22,6 +22,8 @@ mod list_blobs_response;
 pub use self::list_blobs_response::ListBlobsResponse;
 mod get_blob_response;
 pub use self::get_blob_response::GetBlobResponse;
+mod get_blob_properties_response;
+pub use self::get_blob_properties_response::GetBlobPropertiesResponse;
 mod put_blob_response;
 pub use self::put_blob_response::PutBlobResponse;
 mod update_page_response;
