@@ -2178,34 +2178,40 @@ pub struct Watchlist {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WatchlistProperties {
-    #[serde(rename = "createdTimeUtc", skip_serializing_if = "Option::is_none")]
-    pub created_time_utc: Option<String>,
-    #[serde(rename = "createdBy", skip_serializing_if = "Option::is_none")]
-    pub created_by: Option<UserInfo>,
+    #[serde(rename = "watchlistId", skip_serializing_if = "Option::is_none")]
+    pub watchlist_id: Option<String>,
     #[serde(rename = "displayName")]
     pub display_name: String,
-    #[serde(rename = "watchlistType", skip_serializing_if = "Option::is_none")]
-    pub watchlist_type: Option<String>,
-    pub source: watchlist_properties::Source,
     pub provider: String,
+    pub source: watchlist_properties::Source,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub description: Option<String>,
-    #[serde(rename = "tenantId", skip_serializing_if = "Option::is_none")]
-    pub tenant_id: Option<String>,
-    #[serde(rename = "workspaceId", skip_serializing_if = "Option::is_none")]
-    pub workspace_id: Option<String>,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
-    pub labels: Vec<Label>,
+    pub created: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub notes: Option<String>,
-    #[serde(rename = "lastUpdatedTimeUtc", skip_serializing_if = "Option::is_none")]
-    pub last_updated_time_utc: Option<String>,
+    pub updated: Option<String>,
+    #[serde(rename = "createdBy", skip_serializing_if = "Option::is_none")]
+    pub created_by: Option<UserInfo>,
     #[serde(rename = "updatedBy", skip_serializing_if = "Option::is_none")]
     pub updated_by: Option<UserInfo>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[serde(rename = "watchlistType", skip_serializing_if = "Option::is_none")]
+    pub watchlist_type: Option<String>,
+    #[serde(rename = "watchlistAlias", skip_serializing_if = "Option::is_none")]
+    pub watchlist_alias: Option<String>,
+    #[serde(rename = "isDeleted", skip_serializing_if = "Option::is_none")]
+    pub is_deleted: Option<bool>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub labels: Vec<Label>,
     #[serde(rename = "defaultDuration", skip_serializing_if = "Option::is_none")]
     pub default_duration: Option<String>,
-    #[serde(rename = "watchlistItems", skip_serializing_if = "Vec::is_empty")]
-    pub watchlist_items: Vec<WatchlistItem>,
+    #[serde(rename = "tenantId", skip_serializing_if = "Option::is_none")]
+    pub tenant_id: Option<String>,
+    #[serde(rename = "numberOfLinesToSkip", skip_serializing_if = "Option::is_none")]
+    pub number_of_lines_to_skip: Option<i32>,
+    #[serde(rename = "rawContent", skip_serializing_if = "Option::is_none")]
+    pub raw_content: Option<String>,
+    #[serde(rename = "contentType", skip_serializing_if = "Option::is_none")]
+    pub content_type: Option<String>,
 }
 pub mod watchlist_properties {
     use super::*;
@@ -2216,38 +2222,6 @@ pub mod watchlist_properties {
         #[serde(rename = "Remote storage")]
         RemoteStorage,
     }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct WatchlistItem {
-    #[serde(flatten)]
-    pub resource: Resource,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub properties: Option<WatchlistItemProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct WatchlistItemProperties {
-    #[serde(rename = "createdBy", skip_serializing_if = "Option::is_none")]
-    pub created_by: Option<UserInfo>,
-    #[serde(rename = "updatedBy", skip_serializing_if = "Option::is_none")]
-    pub updated_by: Option<UserInfo>,
-    #[serde(rename = "watchlistItemName", skip_serializing_if = "Option::is_none")]
-    pub watchlist_item_name: Option<String>,
-    #[serde(rename = "watchlistItemPair")]
-    pub watchlist_item_pair: serde_json::Value,
-    #[serde(rename = "entityMapping", skip_serializing_if = "Option::is_none")]
-    pub entity_mapping: Option<serde_json::Value>,
-    #[serde(rename = "tenantId", skip_serializing_if = "Option::is_none")]
-    pub tenant_id: Option<String>,
-    #[serde(rename = "createdTimeUtc", skip_serializing_if = "Option::is_none")]
-    pub created_time_utc: Option<String>,
-    #[serde(rename = "lastUpdatedTimeUtc", skip_serializing_if = "Option::is_none")]
-    pub last_updated_time_utc: Option<String>,
-    #[serde(rename = "timeToLiveUtc", skip_serializing_if = "Option::is_none")]
-    pub time_to_live_utc: Option<String>,
-    #[serde(rename = "watchlistItemType", skip_serializing_if = "Option::is_none")]
-    pub watchlist_item_type: Option<String>,
-    #[serde(rename = "watchlistId")]
-    pub watchlist_id: String,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ThreatIntelligenceResourceList {

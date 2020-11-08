@@ -348,6 +348,7 @@ pub mod products {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(list_details::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_details::ExecuteRequestError)?;
         match rsp.status() {
@@ -956,6 +957,7 @@ pub mod registrations {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(get_activation_key::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get_activation_key::ExecuteRequestError)?;
         match rsp.status() {

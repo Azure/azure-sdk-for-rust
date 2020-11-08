@@ -293,6 +293,7 @@ pub mod web_services {
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.query(&[("region", region)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(create_regional_properties::BuildRequestError)?;
         let rsp = client.execute(req).await.context(create_regional_properties::ExecuteRequestError)?;
         match rsp.status() {

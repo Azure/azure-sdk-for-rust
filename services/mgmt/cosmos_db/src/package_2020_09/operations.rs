@@ -381,6 +381,7 @@ pub mod database_accounts {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(list_keys::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_keys::ExecuteRequestError)?;
         match rsp.status() {
@@ -431,6 +432,7 @@ pub mod database_accounts {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(list_connection_strings::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_connection_strings::ExecuteRequestError)?;
         match rsp.status() {
@@ -675,6 +677,7 @@ pub mod database_accounts {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(list_read_only_keys::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_read_only_keys::ExecuteRequestError)?;
         match rsp.status() {
@@ -2236,6 +2239,7 @@ pub mod sql_resources {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(migrate_sql_database_to_autoscale::BuildRequestError)?;
         let rsp = client
             .execute(req)
@@ -2313,6 +2317,7 @@ pub mod sql_resources {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder
             .build()
             .context(migrate_sql_database_to_manual_throughput::BuildRequestError)?;
@@ -2730,6 +2735,7 @@ pub mod sql_resources {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(migrate_sql_container_to_autoscale::BuildRequestError)?;
         let rsp = client
             .execute(req)
@@ -2808,6 +2814,7 @@ pub mod sql_resources {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder
             .build()
             .context(migrate_sql_container_to_manual_throughput::BuildRequestError)?;
@@ -3914,6 +3921,7 @@ pub mod mongo_db_resources {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder
             .build()
             .context(migrate_mongo_db_database_to_autoscale::BuildRequestError)?;
@@ -4000,6 +4008,7 @@ pub mod mongo_db_resources {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder
             .build()
             .context(migrate_mongo_db_database_to_manual_throughput::BuildRequestError)?;
@@ -4425,6 +4434,7 @@ pub mod mongo_db_resources {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder
             .build()
             .context(migrate_mongo_db_collection_to_autoscale::BuildRequestError)?;
@@ -4514,6 +4524,7 @@ pub mod mongo_db_resources {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder
             .build()
             .context(migrate_mongo_db_collection_to_manual_throughput::BuildRequestError)?;
@@ -4923,6 +4934,7 @@ pub mod table_resources {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(migrate_table_to_autoscale::BuildRequestError)?;
         let rsp = client.execute(req).await.context(migrate_table_to_autoscale::ExecuteRequestError)?;
         match rsp.status() {
@@ -4997,6 +5009,7 @@ pub mod table_resources {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(migrate_table_to_manual_throughput::BuildRequestError)?;
         let rsp = client
             .execute(req)
@@ -5412,6 +5425,7 @@ pub mod cassandra_resources {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder
             .build()
             .context(migrate_cassandra_keyspace_to_autoscale::BuildRequestError)?;
@@ -5500,6 +5514,7 @@ pub mod cassandra_resources {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder
             .build()
             .context(migrate_cassandra_keyspace_to_manual_throughput::BuildRequestError)?;
@@ -5917,6 +5932,7 @@ pub mod cassandra_resources {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder
             .build()
             .context(migrate_cassandra_table_to_autoscale::BuildRequestError)?;
@@ -6004,6 +6020,7 @@ pub mod cassandra_resources {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder
             .build()
             .context(migrate_cassandra_table_to_manual_throughput::BuildRequestError)?;
@@ -6419,6 +6436,7 @@ pub mod gremlin_resources {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder
             .build()
             .context(migrate_gremlin_database_to_autoscale::BuildRequestError)?;
@@ -6505,6 +6523,7 @@ pub mod gremlin_resources {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder
             .build()
             .context(migrate_gremlin_database_to_manual_throughput::BuildRequestError)?;
@@ -6922,6 +6941,7 @@ pub mod gremlin_resources {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(migrate_gremlin_graph_to_autoscale::BuildRequestError)?;
         let rsp = client
             .execute(req)
@@ -7000,6 +7020,7 @@ pub mod gremlin_resources {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder
             .build()
             .context(migrate_gremlin_graph_to_manual_throughput::BuildRequestError)?;
@@ -7371,6 +7392,7 @@ pub mod notebook_workspaces {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(list_connection_info::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_connection_info::ExecuteRequestError)?;
         match rsp.status() {
@@ -7438,6 +7460,7 @@ pub mod notebook_workspaces {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(regenerate_auth_token::BuildRequestError)?;
         let rsp = client.execute(req).await.context(regenerate_auth_token::ExecuteRequestError)?;
         match rsp.status() {
@@ -7509,6 +7532,7 @@ pub mod notebook_workspaces {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(start::BuildRequestError)?;
         let rsp = client.execute(req).await.context(start::ExecuteRequestError)?;
         match rsp.status() {

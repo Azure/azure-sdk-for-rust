@@ -1377,6 +1377,7 @@ pub mod cloud_endpoints {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(restoreheartbeat::BuildRequestError)?;
         let rsp = client.execute(req).await.context(restoreheartbeat::ExecuteRequestError)?;
         match rsp.status() {
@@ -2565,6 +2566,7 @@ pub mod workflows {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(abort::BuildRequestError)?;
         let rsp = client.execute(req).await.context(abort::ExecuteRequestError)?;
         match rsp.status() {

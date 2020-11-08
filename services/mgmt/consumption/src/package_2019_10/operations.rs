@@ -1250,7 +1250,7 @@ pub mod reservation_recommendations {
         operation_config: &crate::OperationConfig,
         filter: Option<&str>,
         scope: &str,
-    ) -> std::result::Result<ReservationRecommendationsListResult, list::Error> {
+    ) -> std::result::Result<list::Response, list::Error> {
         let client = &operation_config.client;
         let uri_str = &format!(
             "{}/{}/providers/Microsoft.Consumption/reservationRecommendations",
@@ -1275,8 +1275,9 @@ pub mod reservation_recommendations {
                 let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
                 let rsp_value: ReservationRecommendationsListResult =
                     serde_json::from_slice(&body).context(list::DeserializeError { body })?;
-                Ok(rsp_value)
+                Ok(list::Response::Ok200(rsp_value))
             }
+            StatusCode::NO_CONTENT => Ok(list::Response::NoContent204),
             status_code => {
                 let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
                 let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
@@ -1292,6 +1293,11 @@ pub mod reservation_recommendations {
         use crate::{models, models::*};
         use reqwest::StatusCode;
         use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(ReservationRecommendationsListResult),
+            NoContent204,
+        }
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {

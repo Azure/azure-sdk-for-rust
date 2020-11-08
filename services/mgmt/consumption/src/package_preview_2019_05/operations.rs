@@ -121,6 +121,7 @@ pub mod usage_details {
         if let Some(filter) = filter {
             req_builder = req_builder.query(&[("$filter", filter)]);
         }
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(download::BuildRequestError)?;
         let rsp = client.execute(req).await.context(download::ExecuteRequestError)?;
         match rsp.status() {

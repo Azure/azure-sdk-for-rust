@@ -485,6 +485,10 @@ pub struct ReservationRecommendationDetailsModel {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub location: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub sku: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub properties: Option<ReservationRecommendationDetailsProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -514,6 +518,8 @@ pub struct ReservationRecommendationDetailsCalculatedSavingsProperties {
     pub reservation_cost: Option<f64>,
     #[serde(rename = "totalReservationCost", skip_serializing)]
     pub total_reservation_cost: Option<f64>,
+    #[serde(rename = "reservedUnitCount", skip_serializing_if = "Option::is_none")]
+    pub reserved_unit_count: Option<f64>,
     #[serde(skip_serializing)]
     pub savings: Option<f64>,
 }
@@ -712,7 +718,7 @@ pub struct ModernReservationTransactionProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ModernReservationTransaction {
     #[serde(flatten)]
-    pub resource: Resource,
+    pub reservation_transaction_resource: ReservationTransactionResource,
     pub properties: ModernReservationTransactionProperties,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -767,7 +773,7 @@ pub struct LegacyReservationTransactionProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ReservationTransaction {
     #[serde(flatten)]
-    pub resource: Resource,
+    pub reservation_transaction_resource: ReservationTransactionResource,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub properties: Option<LegacyReservationTransactionProperties>,
 }
@@ -1278,6 +1284,17 @@ pub struct Resource {
     pub type_: Option<String>,
     #[serde(skip_serializing)]
     pub tags: Option<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ReservationTransactionResource {
+    #[serde(skip_serializing)]
+    pub id: Option<String>,
+    #[serde(skip_serializing)]
+    pub name: Option<String>,
+    #[serde(rename = "type", skip_serializing)]
+    pub type_: Option<String>,
+    #[serde(skip_serializing)]
+    pub tags: Vec<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourceAttributes {

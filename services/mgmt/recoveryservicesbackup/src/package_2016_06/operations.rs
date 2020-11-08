@@ -30,6 +30,7 @@ pub mod item_level_recovery_connections {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(revoke::BuildRequestError)?;
         let rsp = client.execute(req).await.context(revoke::ExecuteRequestError)?;
         match rsp.status() {
@@ -737,6 +738,7 @@ pub mod protection_containers {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(refresh::BuildRequestError)?;
         let rsp = client.execute(req).await.context(refresh::ExecuteRequestError)?;
         match rsp.status() {
@@ -1512,6 +1514,7 @@ pub mod jobs {
         if let Some(filter) = filter {
             req_builder = req_builder.query(&[("$filter", filter)]);
         }
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(export::BuildRequestError)?;
         let rsp = client.execute(req).await.context(export::ExecuteRequestError)?;
         match rsp.status() {
@@ -1620,6 +1623,7 @@ pub mod job_cancellations {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(trigger::BuildRequestError)?;
         let rsp = client.execute(req).await.context(trigger::ExecuteRequestError)?;
         match rsp.status() {

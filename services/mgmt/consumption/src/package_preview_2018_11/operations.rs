@@ -313,6 +313,7 @@ pub mod invoice_pricesheet {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(download::BuildRequestError)?;
         let rsp = client.execute(req).await.context(download::ExecuteRequestError)?;
         match rsp.status() {
@@ -391,6 +392,7 @@ pub mod billing_profile_pricesheet {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(download::BuildRequestError)?;
         let rsp = client.execute(req).await.context(download::ExecuteRequestError)?;
         match rsp.status() {

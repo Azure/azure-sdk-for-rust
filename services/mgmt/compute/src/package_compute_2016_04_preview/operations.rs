@@ -1019,6 +1019,7 @@ pub mod virtual_machines {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(convert_to_managed_disks::BuildRequestError)?;
         let rsp = client.execute(req).await.context(convert_to_managed_disks::ExecuteRequestError)?;
         match rsp.status() {
@@ -1075,6 +1076,7 @@ pub mod virtual_machines {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(deallocate::BuildRequestError)?;
         let rsp = client.execute(req).await.context(deallocate::ExecuteRequestError)?;
         match rsp.status() {
@@ -1130,6 +1132,7 @@ pub mod virtual_machines {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(generalize::BuildRequestError)?;
         let rsp = client.execute(req).await.context(generalize::ExecuteRequestError)?;
         match rsp.status() {
@@ -1324,6 +1327,7 @@ pub mod virtual_machines {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(power_off::BuildRequestError)?;
         let rsp = client.execute(req).await.context(power_off::ExecuteRequestError)?;
         match rsp.status() {
@@ -1379,6 +1383,7 @@ pub mod virtual_machines {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(restart::BuildRequestError)?;
         let rsp = client.execute(req).await.context(restart::ExecuteRequestError)?;
         match rsp.status() {
@@ -1434,6 +1439,7 @@ pub mod virtual_machines {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(start::BuildRequestError)?;
         let rsp = client.execute(req).await.context(start::ExecuteRequestError)?;
         match rsp.status() {
@@ -1489,6 +1495,7 @@ pub mod virtual_machines {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(redeploy::BuildRequestError)?;
         let rsp = client.execute(req).await.context(redeploy::ExecuteRequestError)?;
         match rsp.status() {
@@ -2911,6 +2918,7 @@ pub mod virtual_machine_scale_sets {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(reimage::BuildRequestError)?;
         let rsp = client.execute(req).await.context(reimage::ExecuteRequestError)?;
         match rsp.status() {
@@ -2966,6 +2974,7 @@ pub mod virtual_machine_scale_sets {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(reimage_all::BuildRequestError)?;
         let rsp = client.execute(req).await.context(reimage_all::ExecuteRequestError)?;
         match rsp.status() {
@@ -3027,6 +3036,7 @@ pub mod virtual_machine_scale_set_v_ms {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(reimage::BuildRequestError)?;
         let rsp = client.execute(req).await.context(reimage::ExecuteRequestError)?;
         match rsp.status() {
@@ -3083,6 +3093,7 @@ pub mod virtual_machine_scale_set_v_ms {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(reimage_all::BuildRequestError)?;
         let rsp = client.execute(req).await.context(reimage_all::ExecuteRequestError)?;
         match rsp.status() {
@@ -3139,6 +3150,7 @@ pub mod virtual_machine_scale_set_v_ms {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(deallocate::BuildRequestError)?;
         let rsp = client.execute(req).await.context(deallocate::ExecuteRequestError)?;
         match rsp.status() {
@@ -3416,6 +3428,7 @@ pub mod virtual_machine_scale_set_v_ms {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(power_off::BuildRequestError)?;
         let rsp = client.execute(req).await.context(power_off::ExecuteRequestError)?;
         match rsp.status() {
@@ -3472,6 +3485,7 @@ pub mod virtual_machine_scale_set_v_ms {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(restart::BuildRequestError)?;
         let rsp = client.execute(req).await.context(restart::ExecuteRequestError)?;
         match rsp.status() {
@@ -3528,6 +3542,7 @@ pub mod virtual_machine_scale_set_v_ms {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(start::BuildRequestError)?;
         let rsp = client.execute(req).await.context(start::ExecuteRequestError)?;
         match rsp.status() {
@@ -3965,6 +3980,7 @@ pub mod disks {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(revoke_access::BuildRequestError)?;
         let rsp = client.execute(req).await.context(revoke_access::ExecuteRequestError)?;
         match rsp.status() {
@@ -4402,6 +4418,7 @@ pub mod snapshots {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(revoke_access::BuildRequestError)?;
         let rsp = client.execute(req).await.context(revoke_access::ExecuteRequestError)?;
         match rsp.status() {

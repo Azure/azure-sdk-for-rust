@@ -629,6 +629,7 @@ pub mod projects {
         if let Some(accept_language) = accept_language {
             req_builder = req_builder.header("Accept-Language", accept_language);
         }
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(get_keys::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get_keys::ExecuteRequestError)?;
         match rsp.status() {
@@ -1541,6 +1542,7 @@ pub mod assessments {
         if let Some(accept_language) = accept_language {
             req_builder = req_builder.header("Accept-Language", accept_language);
         }
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(get_report_download_url::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get_report_download_url::ExecuteRequestError)?;
         match rsp.status() {

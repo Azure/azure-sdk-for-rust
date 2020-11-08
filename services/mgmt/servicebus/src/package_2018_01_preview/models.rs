@@ -391,6 +391,15 @@ pub mod regenerate_access_key_parameters {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum UnavailableReason {
+    None,
+    InvalidName,
+    SubscriptionIsDisabled,
+    NameInUse,
+    NameInLockdown,
+    TooManyNamespaceInCurrentSubscription,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CheckNameAvailability {
     pub name: String,
 }
@@ -402,15 +411,6 @@ pub struct CheckNameAvailabilityResult {
     pub name_available: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub reason: Option<UnavailableReason>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum UnavailableReason {
-    None,
-    InvalidName,
-    SubscriptionIsDisabled,
-    NameInUse,
-    NameInLockdown,
-    TooManyNamespaceInCurrentSubscription,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ArmDisasterRecovery {
@@ -448,6 +448,19 @@ pub mod arm_disaster_recovery {
             PrimaryNotReplicating,
             Secondary,
         }
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct FailoverProperties {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub properties: Option<failover_properties::Properties>,
+}
+pub mod failover_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub struct Properties {
+        #[serde(rename = "IsSafeFailover", skip_serializing_if = "Option::is_none")]
+        pub is_safe_failover: Option<bool>,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

@@ -170,6 +170,8 @@ pub struct ResourceProviderOperation {
     pub name: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub display: Option<resource_provider_operation::Display>,
+    #[serde(rename = "isDataAction", skip_serializing)]
+    pub is_data_action: Option<bool>,
 }
 pub mod resource_provider_operation {
     use super::*;

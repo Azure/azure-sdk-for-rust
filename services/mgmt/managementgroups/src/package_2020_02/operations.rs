@@ -1094,6 +1094,7 @@ pub async fn start_tenant_backfill(
         req_builder = req_builder.bearer_auth(token_response.token.secret());
     }
     req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+    req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
     let req = req_builder.build().context(start_tenant_backfill::BuildRequestError)?;
     let rsp = client.execute(req).await.context(start_tenant_backfill::ExecuteRequestError)?;
     match rsp.status() {
@@ -1160,6 +1161,7 @@ pub async fn tenant_backfill_status(
         req_builder = req_builder.bearer_auth(token_response.token.secret());
     }
     req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+    req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
     let req = req_builder.build().context(tenant_backfill_status::BuildRequestError)?;
     let rsp = client.execute(req).await.context(tenant_backfill_status::ExecuteRequestError)?;
     match rsp.status() {
@@ -1263,6 +1265,7 @@ pub mod entities {
         if let Some(cache_control) = cache_control {
             req_builder = req_builder.header("Cache-Control", cache_control);
         }
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(list::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
         match rsp.status() {
