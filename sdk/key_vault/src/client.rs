@@ -75,7 +75,7 @@ impl<'a, T: TokenCredential> KeyVaultClient<'a, T> {
             // Token is valid, return it.
             return Ok(());
         }
-        let resource = format!("https://{}", &self.endpoint_suffix);
+        let resource = format!("https://{}/", &self.endpoint_suffix);
         let token = self
             .token_credential
             .get_token(&resource)
