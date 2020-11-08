@@ -4,8 +4,10 @@ use hmac::{Hmac, Mac, NewMac};
 use sha2::Sha256;
 
 pub mod directmethod;
+pub mod twin;
 
 use crate::service::directmethod::DirectMethod;
+use crate::service::twin::{get_device_twin, get_module_twin, DeviceTwin, ModuleTwin};
 
 pub const API_VERSION: &str = "2020-03-13";
 
@@ -267,6 +269,43 @@ impl ServiceClient {
             connect_time_out,
             response_time_out,
         )
+    }
+
+    /// Get the module twin of a given device and module
+    ///
+    /// ```
+    /// use iothub::service::ServiceClient;
+    ///
+    /// # let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
+    /// let iothub = ServiceClient::from_connection_string(connection_string, 3600).expect("Failed to create the ServiceClient!");
+    /// let twin = iothub.get_module_twin("some-device", "some-module");
+    /// ```
+    pub async fn get_module_twin<S, T>(
+        &self,
+        device_id: S,
+        module_id: T,
+    ) -> Result<ModuleTwin, AzureError>
+    where
+        S: Into<String>,
+        T: Into<String>,
+    {
+        get_module_twin(&self, device_id.into(), module_id.into()).await
+    }
+
+    /// Get the device twin of a given device
+    ///
+    /// ```
+    /// use iothub::service::ServiceClient;
+    ///
+    /// # let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
+    /// let iothub = ServiceClient::from_connection_string(connection_string, 3600).expect("Failed to create the ServiceClient!");
+    /// let twin = iothub.get_device_twin("some-device");
+    /// ```
+    pub async fn get_device_twin<S>(&self, device_id: S) -> Result<DeviceTwin, AzureError>
+    where
+        S: Into<String>,
+    {
+        get_device_twin(&self, device_id.into()).await
     }
 }
 
