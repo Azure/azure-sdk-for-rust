@@ -398,6 +398,60 @@ async fn copy_blob() {
         .unwrap();
 }
 
+#[tokio::test]
+async fn put_block_blob_and_get_properties() {
+    let client = initialize();
+
+    let blob_name: &'static str = "properties";
+    let container_name: &'static str = "rust-upload-test";
+    let data = b"abcdef";
+
+    if client
+        .list_containers()
+        .finalize()
+        .await
+        .unwrap()
+        .incomplete_vector
+        .iter()
+        .find(|x| x.name == container_name)
+        .is_none()
+    {
+        client
+            .create_container()
+            .with_container_name(container_name)
+            .with_public_access(PublicAccess::Blob)
+            .finalize()
+            .await
+            .unwrap();
+    }
+
+    // calculate md5 too!
+    let digest = md5::compute(&data[..]);
+
+    client
+        .put_block_blob()
+        .with_container_name(&container_name)
+        .with_blob_name(&blob_name)
+        .with_content_type("text/plain")
+        .with_body(&data[..])
+        .with_content_md5(&digest[..])
+        .finalize()
+        .await
+        .unwrap();
+
+    trace!("created {:?}", blob_name);
+
+    let blob_properties = client
+        .get_blob_properties()
+        .with_container_name(&container_name)
+        .with_blob_name(&blob_name)
+        .finalize()
+        .await
+        .unwrap();
+
+    assert_eq!(blob_properties.blob.content_length, 6);
+}
+
 fn initialize() -> Box<dyn Client> {
     let account =
         std::env::var("STORAGE_ACCOUNT").expect("Set env variable STORAGE_ACCOUNT first!");
