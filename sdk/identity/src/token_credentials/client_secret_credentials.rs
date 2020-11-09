@@ -52,8 +52,11 @@ pub mod authority_hosts {
 }
 
 pub mod tenant_ids {
+    /// The tenant ID for multi-tenant apps
+    ///
+    /// https://docs.microsoft.com/en-us/azure/active-directory/develop/howto-convert-app-to-be-multi-tenant
     pub const TENANT_ID_COMMON: &str = "common";
-    /// Active Directory Federated Services
+    /// The tenant ID for Active Directory Federated Services
     pub const TENANT_ID_ADFS: &str = "adfs";
 }
 
