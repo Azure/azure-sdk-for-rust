@@ -23,14 +23,13 @@ impl Default for TokenCredentialOptions {
 }
 
 impl TokenCredentialOptions {
-    pub fn new(authority_host: &str) -> Self {
-        Self {
-            authority_host: authority_host.to_owned(),
-        }
+    /// Create a new TokenCredentialsOptions. `default()` may also be used.
+    pub fn new(authority_host: String) -> Self {
+        Self { authority_host }
     }
 
-    pub fn set_authority_host(&mut self, authority_host: &str) {
-        self.authority_host = authority_host.to_owned()
+    pub fn set_authority_host(&mut self, authority_host: String) {
+        self.authority_host = authority_host
     }
 
     /// The authority host to use for authentication requests.  The default is
