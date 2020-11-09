@@ -37,6 +37,8 @@ pub struct DomainServiceProperties {
     pub tenant_id: Option<String>,
     #[serde(rename = "domainName", skip_serializing_if = "Option::is_none")]
     pub domain_name: Option<String>,
+    #[serde(rename = "deploymentId", skip_serializing)]
+    pub deployment_id: Option<String>,
     #[serde(rename = "vnetSiteId", skip_serializing)]
     pub vnet_site_id: Option<String>,
     #[serde(rename = "subnetId", skip_serializing_if = "Option::is_none")]
