@@ -555,6 +555,8 @@ pub struct IotHubDescription {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub properties: Option<IotHubProperties>,
     pub sku: IotHubSkuInfo,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub identity: Option<ArmIdentity>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
@@ -1059,6 +1061,24 @@ pub mod iot_hub_location_description {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ArmIdentity {
+    #[serde(rename = "principalId", skip_serializing)]
+    pub principal_id: Option<String>,
+    #[serde(rename = "tenantId", skip_serializing)]
+    pub tenant_id: Option<String>,
+    #[serde(rename = "identityType", skip_serializing_if = "Option::is_none")]
+    pub identity_type: Option<String>,
+    #[serde(rename = "userAssignedIdentities", skip_serializing_if = "Option::is_none")]
+    pub user_assigned_identities: Option<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ArmUserIdentity {
+    #[serde(rename = "principalId", skip_serializing)]
+    pub principal_id: Option<String>,
+    #[serde(rename = "clientId", skip_serializing)]
+    pub client_id: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EncryptionPropertiesDescription {
     #[serde(rename = "keySource", skip_serializing_if = "Option::is_none")]
     pub key_source: Option<String>,
@@ -1069,4 +1089,11 @@ pub struct EncryptionPropertiesDescription {
 pub struct KeyVaultKeyProperties {
     #[serde(rename = "keyIdentifier", skip_serializing_if = "Option::is_none")]
     pub key_identifier: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub identity: Option<KekIdentity>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct KekIdentity {
+    #[serde(rename = "userAssignedIdentity", skip_serializing_if = "Option::is_none")]
+    pub user_assigned_identity: Option<String>,
 }

@@ -699,6 +699,7 @@ pub mod managers {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(get_encryption_key::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get_encryption_key::ExecuteRequestError)?;
         match rsp.status() {
@@ -1931,6 +1932,7 @@ pub mod devices {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(deactivate::BuildRequestError)?;
         let rsp = client.execute(req).await.context(deactivate::ExecuteRequestError)?;
         match rsp.status() {
@@ -1988,6 +1990,7 @@ pub mod devices {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(download_updates::BuildRequestError)?;
         let rsp = client.execute(req).await.context(download_updates::ExecuteRequestError)?;
         match rsp.status() {
@@ -2163,6 +2166,7 @@ pub mod devices {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(install_updates::BuildRequestError)?;
         let rsp = client.execute(req).await.context(install_updates::ExecuteRequestError)?;
         match rsp.status() {
@@ -2390,6 +2394,7 @@ pub mod devices {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(scan_for_updates::BuildRequestError)?;
         let rsp = client.execute(req).await.context(scan_for_updates::ExecuteRequestError)?;
         match rsp.status() {
@@ -3749,6 +3754,7 @@ pub mod file_servers {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(backup_now::BuildRequestError)?;
         let rsp = client.execute(req).await.context(backup_now::ExecuteRequestError)?;
         match rsp.status() {
@@ -4629,6 +4635,7 @@ pub mod iscsi_servers {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(backup_now::BuildRequestError)?;
         let rsp = client.execute(req).await.context(backup_now::ExecuteRequestError)?;
         match rsp.status() {

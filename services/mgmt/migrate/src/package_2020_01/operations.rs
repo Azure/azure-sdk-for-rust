@@ -954,6 +954,7 @@ pub mod hyper_v_sites {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(refresh_site::BuildRequestError)?;
         let rsp = client.execute(req).await.context(refresh_site::ExecuteRequestError)?;
         match rsp.status() {
@@ -999,6 +1000,7 @@ pub mod hyper_v_sites {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(get_site_health_summary::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get_site_health_summary::ExecuteRequestError)?;
         match rsp.status() {
@@ -1049,6 +1051,7 @@ pub mod hyper_v_sites {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(get_site_usage::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get_site_usage::ExecuteRequestError)?;
         match rsp.status() {
@@ -1325,6 +1328,7 @@ pub mod machines {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(stop_machine::BuildRequestError)?;
         let rsp = client.execute(req).await.context(stop_machine::ExecuteRequestError)?;
         match rsp.status() {
@@ -1371,6 +1375,7 @@ pub mod machines {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(start_machine::BuildRequestError)?;
         let rsp = client.execute(req).await.context(start_machine::ExecuteRequestError)?;
         match rsp.status() {
@@ -1751,6 +1756,7 @@ pub mod sites {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(refresh_site::BuildRequestError)?;
         let rsp = client.execute(req).await.context(refresh_site::ExecuteRequestError)?;
         match rsp.status() {
@@ -1796,6 +1802,7 @@ pub mod sites {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(get_site_health_summary::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get_site_health_summary::ExecuteRequestError)?;
         match rsp.status() {
@@ -1846,6 +1853,7 @@ pub mod sites {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(get_site_usage::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get_site_usage::ExecuteRequestError)?;
         match rsp.status() {

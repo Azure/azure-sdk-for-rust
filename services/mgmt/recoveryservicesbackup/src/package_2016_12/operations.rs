@@ -432,6 +432,7 @@ pub mod protection_containers {
         if let Some(filter) = filter {
             req_builder = req_builder.query(&[("$filter", filter)]);
         }
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(inquire::BuildRequestError)?;
         let rsp = client.execute(req).await.context(inquire::ExecuteRequestError)?;
         match rsp.status() {
@@ -482,6 +483,7 @@ pub mod protection_containers {
         if let Some(filter) = filter {
             req_builder = req_builder.query(&[("$filter", filter)]);
         }
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(refresh::BuildRequestError)?;
         let rsp = client.execute(req).await.context(refresh::ExecuteRequestError)?;
         match rsp.status() {
@@ -811,6 +813,7 @@ pub mod item_level_recovery_connections {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(revoke::BuildRequestError)?;
         let rsp = client.execute(req).await.context(revoke::ExecuteRequestError)?;
         match rsp.status() {
@@ -1209,6 +1212,7 @@ pub mod security_pi_ns {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(get::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
         match rsp.status() {

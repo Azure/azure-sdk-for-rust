@@ -4427,6 +4427,7 @@ pub mod incidents {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(list_of_alerts::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_of_alerts::ExecuteRequestError)?;
         match rsp.status() {
@@ -4502,6 +4503,7 @@ pub mod incidents {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(list_of_bookmarks::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_of_bookmarks::ExecuteRequestError)?;
         match rsp.status() {
@@ -4578,6 +4580,7 @@ pub mod incidents {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(list_of_entities::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_of_entities::ExecuteRequestError)?;
         match rsp.status() {
@@ -5301,74 +5304,6 @@ pub mod watchlists {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
-        use reqwest::StatusCode;
-        use snafu::Snafu;
-        #[derive(Debug, Snafu)]
-        #[snafu(visibility(pub(crate)))]
-        pub enum Error {
-            DefaultResponse {
-                status_code: StatusCode,
-                value: models::CloudError,
-            },
-            BuildRequestError {
-                source: reqwest::Error,
-            },
-            ExecuteRequestError {
-                source: reqwest::Error,
-            },
-            ResponseBytesError {
-                source: reqwest::Error,
-            },
-            DeserializeError {
-                source: serde_json::Error,
-                body: bytes::Bytes,
-            },
-            GetTokenError {
-                source: azure_core::errors::AzureError,
-            },
-        }
-    }
-    pub async fn list_by_subscription(
-        operation_config: &crate::OperationConfig,
-        subscription_id: &str,
-        operational_insights_resource_provider: &str,
-        workspace_name: &str,
-    ) -> std::result::Result<WatchlistList, list_by_subscription::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
-            "{}/subscriptions/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/watchlists",
-            &operation_config.base_path, subscription_id, operational_insights_resource_provider, workspace_name
-        );
-        let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(list_by_subscription::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
-        }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        let req = req_builder.build().context(list_by_subscription::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(list_by_subscription::ExecuteRequestError)?;
-        match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(list_by_subscription::ResponseBytesError)?;
-                let rsp_value: WatchlistList = serde_json::from_slice(&body).context(list_by_subscription::DeserializeError { body })?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(list_by_subscription::ResponseBytesError)?;
-                let rsp_value: CloudError = serde_json::from_slice(&body).context(list_by_subscription::DeserializeError { body })?;
-                list_by_subscription::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                }
-                .fail()
-            }
-        }
-    }
-    pub mod list_by_subscription {
         use crate::{models, models::*};
         use reqwest::StatusCode;
         use snafu::Snafu;

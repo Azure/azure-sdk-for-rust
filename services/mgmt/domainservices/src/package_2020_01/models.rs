@@ -47,8 +47,14 @@ pub struct DomainServiceProperties {
     pub replica_sets: Vec<ReplicaSet>,
     #[serde(rename = "ldapsSettings", skip_serializing_if = "Option::is_none")]
     pub ldaps_settings: Option<LdapsSettings>,
+    #[serde(rename = "resourceForestSettings", skip_serializing_if = "Option::is_none")]
+    pub resource_forest_settings: Option<ResourceForestSettings>,
     #[serde(rename = "domainSecuritySettings", skip_serializing_if = "Option::is_none")]
     pub domain_security_settings: Option<DomainSecuritySettings>,
+    #[serde(rename = "domainConfigurationType", skip_serializing_if = "Option::is_none")]
+    pub domain_configuration_type: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub sku: Option<String>,
     #[serde(rename = "filteredSync", skip_serializing_if = "Option::is_none")]
     pub filtered_sync: Option<domain_service_properties::FilteredSync>,
     #[serde(rename = "notificationSettings", skip_serializing_if = "Option::is_none")]
@@ -166,6 +172,26 @@ pub mod notification_settings {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ResourceForestSettings {
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub settings: Vec<ForestTrust>,
+    #[serde(rename = "resourceForest", skip_serializing_if = "Option::is_none")]
+    pub resource_forest: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ForestTrust {
+    #[serde(rename = "trustedDomainFqdn", skip_serializing_if = "Option::is_none")]
+    pub trusted_domain_fqdn: Option<String>,
+    #[serde(rename = "trustDirection", skip_serializing_if = "Option::is_none")]
+    pub trust_direction: Option<String>,
+    #[serde(rename = "friendlyName", skip_serializing_if = "Option::is_none")]
+    pub friendly_name: Option<String>,
+    #[serde(rename = "remoteDnsIps", skip_serializing_if = "Option::is_none")]
+    pub remote_dns_ips: Option<String>,
+    #[serde(rename = "trustPassword", skip_serializing_if = "Option::is_none")]
+    pub trust_password: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DomainSecuritySettings {
     #[serde(rename = "ntlmV1", skip_serializing_if = "Option::is_none")]
     pub ntlm_v1: Option<domain_security_settings::NtlmV1>,
@@ -173,6 +199,10 @@ pub struct DomainSecuritySettings {
     pub tls_v1: Option<domain_security_settings::TlsV1>,
     #[serde(rename = "syncNtlmPasswords", skip_serializing_if = "Option::is_none")]
     pub sync_ntlm_passwords: Option<domain_security_settings::SyncNtlmPasswords>,
+    #[serde(rename = "syncKerberosPasswords", skip_serializing_if = "Option::is_none")]
+    pub sync_kerberos_passwords: Option<domain_security_settings::SyncKerberosPasswords>,
+    #[serde(rename = "syncOnPremPasswords", skip_serializing_if = "Option::is_none")]
+    pub sync_on_prem_passwords: Option<domain_security_settings::SyncOnPremPasswords>,
 }
 pub mod domain_security_settings {
     use super::*;
@@ -188,6 +218,16 @@ pub mod domain_security_settings {
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum SyncNtlmPasswords {
+        Enabled,
+        Disabled,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum SyncKerberosPasswords {
+        Enabled,
+        Disabled,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum SyncOnPremPasswords {
         Enabled,
         Disabled,
     }
@@ -263,6 +303,8 @@ pub struct OuContainerProperties {
     pub accounts: Vec<ContainerAccount>,
     #[serde(rename = "serviceStatus", skip_serializing)]
     pub service_status: Option<String>,
+    #[serde(rename = "distinguishedName", skip_serializing)]
+    pub distinguished_name: Option<String>,
     #[serde(rename = "provisioningState", skip_serializing)]
     pub provisioning_state: Option<String>,
 }

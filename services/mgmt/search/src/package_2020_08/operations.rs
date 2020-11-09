@@ -31,7 +31,12 @@ pub mod operations {
             }
             status_code => {
                 let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
-                list::UnexpectedResponse { status_code, body: body }.fail()
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                list::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
             }
         }
     }
@@ -42,12 +47,26 @@ pub mod operations {
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
-            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
-            BuildRequestError { source: reqwest::Error },
-            ExecuteRequestError { source: reqwest::Error },
-            ResponseBytesError { source: reqwest::Error },
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            GetTokenError { source: azure_core::errors::AzureError },
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
 }
@@ -79,6 +98,7 @@ pub mod admin_keys {
         if let Some(x_ms_client_request_id) = x_ms_client_request_id {
             req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
         }
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(get::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
         match rsp.status() {
@@ -152,6 +172,7 @@ pub mod admin_keys {
         if let Some(x_ms_client_request_id) = x_ms_client_request_id {
             req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
         }
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(regenerate::BuildRequestError)?;
         let rsp = client.execute(req).await.context(regenerate::ExecuteRequestError)?;
         match rsp.status() {
@@ -230,6 +251,7 @@ pub mod query_keys {
         if let Some(x_ms_client_request_id) = x_ms_client_request_id {
             req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
         }
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(create::BuildRequestError)?;
         let rsp = client.execute(req).await.context(create::ExecuteRequestError)?;
         match rsp.status() {
@@ -302,6 +324,7 @@ pub mod query_keys {
         if let Some(x_ms_client_request_id) = x_ms_client_request_id {
             req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
         }
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(list_by_search_service::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_by_search_service::ExecuteRequestError)?;
         match rsp.status() {

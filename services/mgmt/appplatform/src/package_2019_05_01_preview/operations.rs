@@ -327,6 +327,7 @@ pub mod services {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(list_test_keys::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_test_keys::ExecuteRequestError)?;
         match rsp.status() {
@@ -465,6 +466,7 @@ pub mod services {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(disable_test_endpoint::BuildRequestError)?;
         let rsp = client.execute(req).await.context(disable_test_endpoint::ExecuteRequestError)?;
         match rsp.status() {
@@ -529,6 +531,7 @@ pub mod services {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(enable_test_endpoint::BuildRequestError)?;
         let rsp = client.execute(req).await.context(enable_test_endpoint::ExecuteRequestError)?;
         match rsp.status() {
@@ -1181,6 +1184,7 @@ pub mod apps {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(get_resource_upload_url::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get_resource_upload_url::ExecuteRequestError)?;
         match rsp.status() {
@@ -2788,6 +2792,7 @@ pub mod deployments {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(start::BuildRequestError)?;
         let rsp = client.execute(req).await.context(start::ExecuteRequestError)?;
         match rsp.status() {
@@ -2860,6 +2865,7 @@ pub mod deployments {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(stop::BuildRequestError)?;
         let rsp = client.execute(req).await.context(stop::ExecuteRequestError)?;
         match rsp.status() {
@@ -2932,6 +2938,7 @@ pub mod deployments {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(restart::BuildRequestError)?;
         let rsp = client.execute(req).await.context(restart::ExecuteRequestError)?;
         match rsp.status() {
@@ -3004,6 +3011,7 @@ pub mod deployments {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(get_log_file_url::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get_log_file_url::ExecuteRequestError)?;
         match rsp.status() {

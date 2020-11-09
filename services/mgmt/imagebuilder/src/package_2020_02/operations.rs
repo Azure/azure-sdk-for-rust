@@ -375,6 +375,7 @@ pub mod virtual_machine_image_templates {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(run::BuildRequestError)?;
         let rsp = client.execute(req).await.context(run::ExecuteRequestError)?;
         match rsp.status() {
@@ -433,6 +434,7 @@ pub mod virtual_machine_image_templates {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(cancel::BuildRequestError)?;
         let rsp = client.execute(req).await.context(cancel::ExecuteRequestError)?;
         match rsp.status() {

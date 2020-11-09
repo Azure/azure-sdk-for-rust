@@ -32,6 +32,8 @@ where
     C: Client,
 {
     fn get_blob<'a>(&'a self) -> blob::requests::GetBlobBuilder<'a, C, No, No>;
+    fn get_blob_properties<'a>(&'a self)
+        -> blob::requests::GetBlobPropertiesBuilder<'a, C, No, No>;
     fn put_block_blob<'a>(&'a self) -> blob::requests::PutBlockBlobBuilder<'a, C, No, No, No>;
     fn put_page_blob<'a>(&'a self) -> blob::requests::PutPageBlobBuilder<'a, C, No, No, No>;
     fn put_append_blob<'a>(&'a self) -> blob::requests::PutAppendBlobBuilder<'a, C, No, No>;
@@ -98,6 +100,12 @@ where
 {
     fn get_blob<'a>(&'a self) -> blob::requests::GetBlobBuilder<'a, C, No, No> {
         blob::requests::GetBlobBuilder::new(self)
+    }
+
+    fn get_blob_properties<'a>(
+        &'a self,
+    ) -> blob::requests::GetBlobPropertiesBuilder<'a, C, No, No> {
+        blob::requests::GetBlobPropertiesBuilder::new(self)
     }
 
     fn put_block_blob<'a>(&'a self) -> blob::requests::PutBlockBlobBuilder<'a, C, No, No, No> {

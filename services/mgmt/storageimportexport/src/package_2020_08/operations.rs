@@ -639,6 +639,7 @@ pub mod bit_locker_keys {
         if let Some(accept_language) = accept_language {
             req_builder = req_builder.header("Accept-Language", accept_language);
         }
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(list::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
         match rsp.status() {

@@ -548,6 +548,7 @@ pub mod intelligence_packs {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(disable::BuildRequestError)?;
         let rsp = client.execute(req).await.context(disable::ExecuteRequestError)?;
         match rsp.status() {
@@ -594,6 +595,7 @@ pub mod intelligence_packs {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(enable::BuildRequestError)?;
         let rsp = client.execute(req).await.context(enable::ExecuteRequestError)?;
         match rsp.status() {
@@ -1275,6 +1277,7 @@ pub mod shared_keys {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(get_shared_keys::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get_shared_keys::ExecuteRequestError)?;
         match rsp.status() {
@@ -1324,6 +1327,7 @@ pub mod shared_keys {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(regenerate::BuildRequestError)?;
         let rsp = client.execute(req).await.context(regenerate::ExecuteRequestError)?;
         match rsp.status() {
@@ -2812,6 +2816,7 @@ pub mod schema {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(get::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
         match rsp.status() {

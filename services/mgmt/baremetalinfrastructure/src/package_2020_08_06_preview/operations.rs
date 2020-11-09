@@ -29,6 +29,7 @@ pub mod azure_bare_metal_instances {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(start::BuildRequestError)?;
         let rsp = client.execute(req).await.context(start::ExecuteRequestError)?;
         match rsp.status() {
@@ -99,6 +100,7 @@ pub mod azure_bare_metal_instances {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(restart::BuildRequestError)?;
         let rsp = client.execute(req).await.context(restart::ExecuteRequestError)?;
         match rsp.status() {
@@ -169,6 +171,7 @@ pub mod azure_bare_metal_instances {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(shutdown::BuildRequestError)?;
         let rsp = client.execute(req).await.context(shutdown::ExecuteRequestError)?;
         match rsp.status() {

@@ -79,6 +79,7 @@ pub mod admin_keys {
         if let Some(x_ms_client_request_id) = x_ms_client_request_id {
             req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
         }
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(get::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
         match rsp.status() {
@@ -152,6 +153,7 @@ pub mod admin_keys {
         if let Some(x_ms_client_request_id) = x_ms_client_request_id {
             req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
         }
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(regenerate::BuildRequestError)?;
         let rsp = client.execute(req).await.context(regenerate::ExecuteRequestError)?;
         match rsp.status() {
@@ -230,6 +232,7 @@ pub mod query_keys {
         if let Some(x_ms_client_request_id) = x_ms_client_request_id {
             req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
         }
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(create::BuildRequestError)?;
         let rsp = client.execute(req).await.context(create::ExecuteRequestError)?;
         match rsp.status() {
@@ -375,6 +378,7 @@ pub mod query_keys {
         if let Some(x_ms_client_request_id) = x_ms_client_request_id {
             req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
         }
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(list_by_search_service::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_by_search_service::ExecuteRequestError)?;
         match rsp.status() {

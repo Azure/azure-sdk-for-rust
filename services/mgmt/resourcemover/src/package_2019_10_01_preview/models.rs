@@ -123,8 +123,8 @@ pub struct MoveResourceProperties {
     pub existing_target_id: Option<String>,
     #[serde(rename = "resourceSettings", skip_serializing_if = "Option::is_none")]
     pub resource_settings: Option<ResourceSettings>,
-    #[serde(rename = "sourceResourceSettings", skip_serializing)]
-    pub source_resource_settings: Option<serde_json::Value>,
+    #[serde(rename = "sourceResourceSettings", skip_serializing_if = "Option::is_none")]
+    pub source_resource_settings: Option<ResourceSettings>,
     #[serde(rename = "moveStatus", skip_serializing)]
     pub move_status: Option<serde_json::Value>,
     #[serde(rename = "dependsOn", skip_serializing)]

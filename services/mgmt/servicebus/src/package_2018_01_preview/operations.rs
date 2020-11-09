@@ -1486,6 +1486,7 @@ pub mod namespaces {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(list_keys::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_keys::ExecuteRequestError)?;
         match rsp.status() {
@@ -2178,6 +2179,697 @@ pub mod operations {
         }
     }
 }
+pub mod disaster_recovery_configs {
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
+    pub async fn check_name_availability(
+        operation_config: &crate::OperationConfig,
+        resource_group_name: &str,
+        namespace_name: &str,
+        subscription_id: &str,
+        parameters: &CheckNameAvailability,
+    ) -> std::result::Result<CheckNameAvailabilityResult, check_name_availability::Error> {
+        let client = &operation_config.client;
+        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ServiceBus/namespaces/{}/disasterRecoveryConfigs/CheckNameAvailability" , & operation_config . base_path , subscription_id , resource_group_name , namespace_name) ;
+        let mut req_builder = client.post(uri_str);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(check_name_availability::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        }
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.json(parameters);
+        let req = req_builder.build().context(check_name_availability::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(check_name_availability::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(check_name_availability::ResponseBytesError)?;
+                let rsp_value: CheckNameAvailabilityResult =
+                    serde_json::from_slice(&body).context(check_name_availability::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(check_name_availability::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(check_name_availability::DeserializeError { body })?;
+                check_name_availability::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod check_name_availability {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
+        }
+    }
+    pub async fn list(
+        operation_config: &crate::OperationConfig,
+        resource_group_name: &str,
+        namespace_name: &str,
+        subscription_id: &str,
+    ) -> std::result::Result<ArmDisasterRecoveryListResult, list::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ServiceBus/namespaces/{}/disasterRecoveryConfigs",
+            &operation_config.base_path, subscription_id, resource_group_name, namespace_name
+        );
+        let mut req_builder = client.get(uri_str);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        }
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let req = req_builder.build().context(list::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: ArmDisasterRecoveryListResult = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                list::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
+        }
+    }
+    pub async fn get(
+        operation_config: &crate::OperationConfig,
+        resource_group_name: &str,
+        namespace_name: &str,
+        alias: &str,
+        subscription_id: &str,
+    ) -> std::result::Result<ArmDisasterRecovery, get::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ServiceBus/namespaces/{}/disasterRecoveryConfigs/{}",
+            &operation_config.base_path, subscription_id, resource_group_name, namespace_name, alias
+        );
+        let mut req_builder = client.get(uri_str);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(get::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        }
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let req = req_builder.build().context(get::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: ArmDisasterRecovery = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                get::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod get {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
+        }
+    }
+    pub async fn create_or_update(
+        operation_config: &crate::OperationConfig,
+        resource_group_name: &str,
+        namespace_name: &str,
+        alias: &str,
+        parameters: &ArmDisasterRecovery,
+        subscription_id: &str,
+    ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ServiceBus/namespaces/{}/disasterRecoveryConfigs/{}",
+            &operation_config.base_path, subscription_id, resource_group_name, namespace_name, alias
+        );
+        let mut req_builder = client.put(uri_str);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(create_or_update::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        }
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.json(parameters);
+        let req = req_builder.build().context(create_or_update::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(create_or_update::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
+                let rsp_value: ArmDisasterRecovery = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                Ok(create_or_update::Response::Ok200(rsp_value))
+            }
+            StatusCode::CREATED => Ok(create_or_update::Response::Created201),
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                create_or_update::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod create_or_update {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(ArmDisasterRecovery),
+            Created201,
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
+        }
+    }
+    pub async fn delete(
+        operation_config: &crate::OperationConfig,
+        resource_group_name: &str,
+        namespace_name: &str,
+        alias: &str,
+        subscription_id: &str,
+    ) -> std::result::Result<(), delete::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ServiceBus/namespaces/{}/disasterRecoveryConfigs/{}",
+            &operation_config.base_path, subscription_id, resource_group_name, namespace_name, alias
+        );
+        let mut req_builder = client.delete(uri_str);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(delete::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        }
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let req = req_builder.build().context(delete::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => Ok(()),
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(delete::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(delete::DeserializeError { body })?;
+                delete::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod delete {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
+        }
+    }
+    pub async fn break_pairing(
+        operation_config: &crate::OperationConfig,
+        resource_group_name: &str,
+        namespace_name: &str,
+        alias: &str,
+        subscription_id: &str,
+    ) -> std::result::Result<(), break_pairing::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ServiceBus/namespaces/{}/disasterRecoveryConfigs/{}/breakPairing",
+            &operation_config.base_path, subscription_id, resource_group_name, namespace_name, alias
+        );
+        let mut req_builder = client.post(uri_str);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(break_pairing::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        }
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
+        let req = req_builder.build().context(break_pairing::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(break_pairing::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => Ok(()),
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(break_pairing::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(break_pairing::DeserializeError { body })?;
+                break_pairing::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod break_pairing {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
+        }
+    }
+    pub async fn fail_over(
+        operation_config: &crate::OperationConfig,
+        resource_group_name: &str,
+        namespace_name: &str,
+        alias: &str,
+        subscription_id: &str,
+        parameters: Option<&FailoverProperties>,
+    ) -> std::result::Result<(), fail_over::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ServiceBus/namespaces/{}/disasterRecoveryConfigs/{}/failover",
+            &operation_config.base_path, subscription_id, resource_group_name, namespace_name, alias
+        );
+        let mut req_builder = client.post(uri_str);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(fail_over::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        }
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        if let Some(parameters) = parameters {
+            req_builder = req_builder.json(parameters);
+        }
+        let req = req_builder.build().context(fail_over::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(fail_over::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => Ok(()),
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(fail_over::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(fail_over::DeserializeError { body })?;
+                fail_over::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod fail_over {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
+        }
+    }
+    pub async fn list_authorization_rules(
+        operation_config: &crate::OperationConfig,
+        resource_group_name: &str,
+        namespace_name: &str,
+        alias: &str,
+        subscription_id: &str,
+    ) -> std::result::Result<SbAuthorizationRuleListResult, list_authorization_rules::Error> {
+        let client = &operation_config.client;
+        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ServiceBus/namespaces/{}/disasterRecoveryConfigs/{}/authorizationRules" , & operation_config . base_path , subscription_id , resource_group_name , namespace_name , alias) ;
+        let mut req_builder = client.get(uri_str);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list_authorization_rules::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        }
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let req = req_builder.build().context(list_authorization_rules::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list_authorization_rules::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_authorization_rules::ResponseBytesError)?;
+                let rsp_value: SbAuthorizationRuleListResult =
+                    serde_json::from_slice(&body).context(list_authorization_rules::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_authorization_rules::ResponseBytesError)?;
+                let rsp_value: ErrorResponse =
+                    serde_json::from_slice(&body).context(list_authorization_rules::DeserializeError { body })?;
+                list_authorization_rules::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list_authorization_rules {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
+        }
+    }
+    pub async fn get_authorization_rule(
+        operation_config: &crate::OperationConfig,
+        resource_group_name: &str,
+        namespace_name: &str,
+        alias: &str,
+        authorization_rule_name: &str,
+        subscription_id: &str,
+    ) -> std::result::Result<SbAuthorizationRule, get_authorization_rule::Error> {
+        let client = &operation_config.client;
+        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ServiceBus/namespaces/{}/disasterRecoveryConfigs/{}/authorizationRules/{}" , & operation_config . base_path , subscription_id , resource_group_name , namespace_name , alias , authorization_rule_name) ;
+        let mut req_builder = client.get(uri_str);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(get_authorization_rule::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        }
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let req = req_builder.build().context(get_authorization_rule::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get_authorization_rule::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get_authorization_rule::ResponseBytesError)?;
+                let rsp_value: SbAuthorizationRule =
+                    serde_json::from_slice(&body).context(get_authorization_rule::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get_authorization_rule::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(get_authorization_rule::DeserializeError { body })?;
+                get_authorization_rule::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod get_authorization_rule {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
+        }
+    }
+    pub async fn list_keys(
+        operation_config: &crate::OperationConfig,
+        resource_group_name: &str,
+        namespace_name: &str,
+        alias: &str,
+        authorization_rule_name: &str,
+        subscription_id: &str,
+    ) -> std::result::Result<AccessKeys, list_keys::Error> {
+        let client = &operation_config.client;
+        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ServiceBus/namespaces/{}/disasterRecoveryConfigs/{}/authorizationRules/{}/listKeys" , & operation_config . base_path , subscription_id , resource_group_name , namespace_name , alias , authorization_rule_name) ;
+        let mut req_builder = client.post(uri_str);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list_keys::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        }
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
+        let req = req_builder.build().context(list_keys::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list_keys::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_keys::ResponseBytesError)?;
+                let rsp_value: AccessKeys = serde_json::from_slice(&body).context(list_keys::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_keys::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(list_keys::DeserializeError { body })?;
+                list_keys::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list_keys {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
+        }
+    }
+}
 pub mod queues {
     use crate::models::*;
     use reqwest::StatusCode;
@@ -2498,6 +3190,7 @@ pub mod queues {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(list_keys::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_keys::ExecuteRequestError)?;
         match rsp.status() {
@@ -3223,6 +3916,7 @@ pub mod topics {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(list_keys::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_keys::ExecuteRequestError)?;
         match rsp.status() {
@@ -3602,691 +4296,6 @@ pub mod topics {
             Ok200,
             NoContent204,
         }
-        #[derive(Debug, Snafu)]
-        #[snafu(visibility(pub(crate)))]
-        pub enum Error {
-            DefaultResponse {
-                status_code: StatusCode,
-                value: models::ErrorResponse,
-            },
-            BuildRequestError {
-                source: reqwest::Error,
-            },
-            ExecuteRequestError {
-                source: reqwest::Error,
-            },
-            ResponseBytesError {
-                source: reqwest::Error,
-            },
-            DeserializeError {
-                source: serde_json::Error,
-                body: bytes::Bytes,
-            },
-            GetTokenError {
-                source: azure_core::errors::AzureError,
-            },
-        }
-    }
-}
-pub mod disaster_recovery_configs {
-    use crate::models::*;
-    use reqwest::StatusCode;
-    use snafu::{ResultExt, Snafu};
-    pub async fn check_name_availability(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        namespace_name: &str,
-        subscription_id: &str,
-        parameters: &CheckNameAvailability,
-    ) -> std::result::Result<CheckNameAvailabilityResult, check_name_availability::Error> {
-        let client = &operation_config.client;
-        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ServiceBus/namespaces/{}/disasterRecoveryConfigs/CheckNameAvailability" , & operation_config . base_path , subscription_id , resource_group_name , namespace_name) ;
-        let mut req_builder = client.post(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(check_name_availability::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
-        }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        req_builder = req_builder.json(parameters);
-        let req = req_builder.build().context(check_name_availability::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(check_name_availability::ExecuteRequestError)?;
-        match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(check_name_availability::ResponseBytesError)?;
-                let rsp_value: CheckNameAvailabilityResult =
-                    serde_json::from_slice(&body).context(check_name_availability::DeserializeError { body })?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(check_name_availability::ResponseBytesError)?;
-                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(check_name_availability::DeserializeError { body })?;
-                check_name_availability::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                }
-                .fail()
-            }
-        }
-    }
-    pub mod check_name_availability {
-        use crate::{models, models::*};
-        use reqwest::StatusCode;
-        use snafu::Snafu;
-        #[derive(Debug, Snafu)]
-        #[snafu(visibility(pub(crate)))]
-        pub enum Error {
-            DefaultResponse {
-                status_code: StatusCode,
-                value: models::ErrorResponse,
-            },
-            BuildRequestError {
-                source: reqwest::Error,
-            },
-            ExecuteRequestError {
-                source: reqwest::Error,
-            },
-            ResponseBytesError {
-                source: reqwest::Error,
-            },
-            DeserializeError {
-                source: serde_json::Error,
-                body: bytes::Bytes,
-            },
-            GetTokenError {
-                source: azure_core::errors::AzureError,
-            },
-        }
-    }
-    pub async fn list(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        namespace_name: &str,
-        subscription_id: &str,
-    ) -> std::result::Result<ArmDisasterRecoveryListResult, list::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ServiceBus/namespaces/{}/disasterRecoveryConfigs",
-            &operation_config.base_path, subscription_id, resource_group_name, namespace_name
-        );
-        let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(list::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
-        }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        let req = req_builder.build().context(list::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
-        match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
-                let rsp_value: ArmDisasterRecoveryListResult = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
-                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
-                list::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                }
-                .fail()
-            }
-        }
-    }
-    pub mod list {
-        use crate::{models, models::*};
-        use reqwest::StatusCode;
-        use snafu::Snafu;
-        #[derive(Debug, Snafu)]
-        #[snafu(visibility(pub(crate)))]
-        pub enum Error {
-            DefaultResponse {
-                status_code: StatusCode,
-                value: models::ErrorResponse,
-            },
-            BuildRequestError {
-                source: reqwest::Error,
-            },
-            ExecuteRequestError {
-                source: reqwest::Error,
-            },
-            ResponseBytesError {
-                source: reqwest::Error,
-            },
-            DeserializeError {
-                source: serde_json::Error,
-                body: bytes::Bytes,
-            },
-            GetTokenError {
-                source: azure_core::errors::AzureError,
-            },
-        }
-    }
-    pub async fn get(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        namespace_name: &str,
-        alias: &str,
-        subscription_id: &str,
-    ) -> std::result::Result<ArmDisasterRecovery, get::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ServiceBus/namespaces/{}/disasterRecoveryConfigs/{}",
-            &operation_config.base_path, subscription_id, resource_group_name, namespace_name, alias
-        );
-        let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(get::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
-        }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        let req = req_builder.build().context(get::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
-        match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
-                let rsp_value: ArmDisasterRecovery = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
-                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
-                get::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                }
-                .fail()
-            }
-        }
-    }
-    pub mod get {
-        use crate::{models, models::*};
-        use reqwest::StatusCode;
-        use snafu::Snafu;
-        #[derive(Debug, Snafu)]
-        #[snafu(visibility(pub(crate)))]
-        pub enum Error {
-            DefaultResponse {
-                status_code: StatusCode,
-                value: models::ErrorResponse,
-            },
-            BuildRequestError {
-                source: reqwest::Error,
-            },
-            ExecuteRequestError {
-                source: reqwest::Error,
-            },
-            ResponseBytesError {
-                source: reqwest::Error,
-            },
-            DeserializeError {
-                source: serde_json::Error,
-                body: bytes::Bytes,
-            },
-            GetTokenError {
-                source: azure_core::errors::AzureError,
-            },
-        }
-    }
-    pub async fn create_or_update(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        namespace_name: &str,
-        alias: &str,
-        parameters: &ArmDisasterRecovery,
-        subscription_id: &str,
-    ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ServiceBus/namespaces/{}/disasterRecoveryConfigs/{}",
-            &operation_config.base_path, subscription_id, resource_group_name, namespace_name, alias
-        );
-        let mut req_builder = client.put(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(create_or_update::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
-        }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        req_builder = req_builder.json(parameters);
-        let req = req_builder.build().context(create_or_update::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(create_or_update::ExecuteRequestError)?;
-        match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
-                let rsp_value: ArmDisasterRecovery = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
-                Ok(create_or_update::Response::Ok200(rsp_value))
-            }
-            StatusCode::CREATED => Ok(create_or_update::Response::Created201),
-            status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
-                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
-                create_or_update::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                }
-                .fail()
-            }
-        }
-    }
-    pub mod create_or_update {
-        use crate::{models, models::*};
-        use reqwest::StatusCode;
-        use snafu::Snafu;
-        #[derive(Debug)]
-        pub enum Response {
-            Ok200(ArmDisasterRecovery),
-            Created201,
-        }
-        #[derive(Debug, Snafu)]
-        #[snafu(visibility(pub(crate)))]
-        pub enum Error {
-            DefaultResponse {
-                status_code: StatusCode,
-                value: models::ErrorResponse,
-            },
-            BuildRequestError {
-                source: reqwest::Error,
-            },
-            ExecuteRequestError {
-                source: reqwest::Error,
-            },
-            ResponseBytesError {
-                source: reqwest::Error,
-            },
-            DeserializeError {
-                source: serde_json::Error,
-                body: bytes::Bytes,
-            },
-            GetTokenError {
-                source: azure_core::errors::AzureError,
-            },
-        }
-    }
-    pub async fn delete(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        namespace_name: &str,
-        alias: &str,
-        subscription_id: &str,
-    ) -> std::result::Result<(), delete::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ServiceBus/namespaces/{}/disasterRecoveryConfigs/{}",
-            &operation_config.base_path, subscription_id, resource_group_name, namespace_name, alias
-        );
-        let mut req_builder = client.delete(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(delete::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
-        }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        let req = req_builder.build().context(delete::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
-        match rsp.status() {
-            StatusCode::OK => Ok(()),
-            status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(delete::ResponseBytesError)?;
-                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(delete::DeserializeError { body })?;
-                delete::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                }
-                .fail()
-            }
-        }
-    }
-    pub mod delete {
-        use crate::{models, models::*};
-        use reqwest::StatusCode;
-        use snafu::Snafu;
-        #[derive(Debug, Snafu)]
-        #[snafu(visibility(pub(crate)))]
-        pub enum Error {
-            DefaultResponse {
-                status_code: StatusCode,
-                value: models::ErrorResponse,
-            },
-            BuildRequestError {
-                source: reqwest::Error,
-            },
-            ExecuteRequestError {
-                source: reqwest::Error,
-            },
-            ResponseBytesError {
-                source: reqwest::Error,
-            },
-            DeserializeError {
-                source: serde_json::Error,
-                body: bytes::Bytes,
-            },
-            GetTokenError {
-                source: azure_core::errors::AzureError,
-            },
-        }
-    }
-    pub async fn break_pairing(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        namespace_name: &str,
-        alias: &str,
-        subscription_id: &str,
-    ) -> std::result::Result<(), break_pairing::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ServiceBus/namespaces/{}/disasterRecoveryConfigs/{}/breakPairing",
-            &operation_config.base_path, subscription_id, resource_group_name, namespace_name, alias
-        );
-        let mut req_builder = client.post(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(break_pairing::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
-        }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        let req = req_builder.build().context(break_pairing::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(break_pairing::ExecuteRequestError)?;
-        match rsp.status() {
-            StatusCode::OK => Ok(()),
-            status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(break_pairing::ResponseBytesError)?;
-                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(break_pairing::DeserializeError { body })?;
-                break_pairing::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                }
-                .fail()
-            }
-        }
-    }
-    pub mod break_pairing {
-        use crate::{models, models::*};
-        use reqwest::StatusCode;
-        use snafu::Snafu;
-        #[derive(Debug, Snafu)]
-        #[snafu(visibility(pub(crate)))]
-        pub enum Error {
-            DefaultResponse {
-                status_code: StatusCode,
-                value: models::ErrorResponse,
-            },
-            BuildRequestError {
-                source: reqwest::Error,
-            },
-            ExecuteRequestError {
-                source: reqwest::Error,
-            },
-            ResponseBytesError {
-                source: reqwest::Error,
-            },
-            DeserializeError {
-                source: serde_json::Error,
-                body: bytes::Bytes,
-            },
-            GetTokenError {
-                source: azure_core::errors::AzureError,
-            },
-        }
-    }
-    pub async fn fail_over(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        namespace_name: &str,
-        alias: &str,
-        subscription_id: &str,
-    ) -> std::result::Result<(), fail_over::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ServiceBus/namespaces/{}/disasterRecoveryConfigs/{}/failover",
-            &operation_config.base_path, subscription_id, resource_group_name, namespace_name, alias
-        );
-        let mut req_builder = client.post(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(fail_over::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
-        }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        let req = req_builder.build().context(fail_over::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(fail_over::ExecuteRequestError)?;
-        match rsp.status() {
-            StatusCode::OK => Ok(()),
-            status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(fail_over::ResponseBytesError)?;
-                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(fail_over::DeserializeError { body })?;
-                fail_over::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                }
-                .fail()
-            }
-        }
-    }
-    pub mod fail_over {
-        use crate::{models, models::*};
-        use reqwest::StatusCode;
-        use snafu::Snafu;
-        #[derive(Debug, Snafu)]
-        #[snafu(visibility(pub(crate)))]
-        pub enum Error {
-            DefaultResponse {
-                status_code: StatusCode,
-                value: models::ErrorResponse,
-            },
-            BuildRequestError {
-                source: reqwest::Error,
-            },
-            ExecuteRequestError {
-                source: reqwest::Error,
-            },
-            ResponseBytesError {
-                source: reqwest::Error,
-            },
-            DeserializeError {
-                source: serde_json::Error,
-                body: bytes::Bytes,
-            },
-            GetTokenError {
-                source: azure_core::errors::AzureError,
-            },
-        }
-    }
-    pub async fn list_authorization_rules(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        namespace_name: &str,
-        alias: &str,
-        subscription_id: &str,
-    ) -> std::result::Result<SbAuthorizationRuleListResult, list_authorization_rules::Error> {
-        let client = &operation_config.client;
-        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ServiceBus/namespaces/{}/disasterRecoveryConfigs/{}/AuthorizationRules" , & operation_config . base_path , subscription_id , resource_group_name , namespace_name , alias) ;
-        let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(list_authorization_rules::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
-        }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        let req = req_builder.build().context(list_authorization_rules::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(list_authorization_rules::ExecuteRequestError)?;
-        match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(list_authorization_rules::ResponseBytesError)?;
-                let rsp_value: SbAuthorizationRuleListResult =
-                    serde_json::from_slice(&body).context(list_authorization_rules::DeserializeError { body })?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(list_authorization_rules::ResponseBytesError)?;
-                let rsp_value: ErrorResponse =
-                    serde_json::from_slice(&body).context(list_authorization_rules::DeserializeError { body })?;
-                list_authorization_rules::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                }
-                .fail()
-            }
-        }
-    }
-    pub mod list_authorization_rules {
-        use crate::{models, models::*};
-        use reqwest::StatusCode;
-        use snafu::Snafu;
-        #[derive(Debug, Snafu)]
-        #[snafu(visibility(pub(crate)))]
-        pub enum Error {
-            DefaultResponse {
-                status_code: StatusCode,
-                value: models::ErrorResponse,
-            },
-            BuildRequestError {
-                source: reqwest::Error,
-            },
-            ExecuteRequestError {
-                source: reqwest::Error,
-            },
-            ResponseBytesError {
-                source: reqwest::Error,
-            },
-            DeserializeError {
-                source: serde_json::Error,
-                body: bytes::Bytes,
-            },
-            GetTokenError {
-                source: azure_core::errors::AzureError,
-            },
-        }
-    }
-    pub async fn get_authorization_rule(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        namespace_name: &str,
-        alias: &str,
-        authorization_rule_name: &str,
-        subscription_id: &str,
-    ) -> std::result::Result<SbAuthorizationRule, get_authorization_rule::Error> {
-        let client = &operation_config.client;
-        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ServiceBus/namespaces/{}/disasterRecoveryConfigs/{}/AuthorizationRules/{}" , & operation_config . base_path , subscription_id , resource_group_name , namespace_name , alias , authorization_rule_name) ;
-        let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(get_authorization_rule::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
-        }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        let req = req_builder.build().context(get_authorization_rule::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(get_authorization_rule::ExecuteRequestError)?;
-        match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(get_authorization_rule::ResponseBytesError)?;
-                let rsp_value: SbAuthorizationRule =
-                    serde_json::from_slice(&body).context(get_authorization_rule::DeserializeError { body })?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(get_authorization_rule::ResponseBytesError)?;
-                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(get_authorization_rule::DeserializeError { body })?;
-                get_authorization_rule::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                }
-                .fail()
-            }
-        }
-    }
-    pub mod get_authorization_rule {
-        use crate::{models, models::*};
-        use reqwest::StatusCode;
-        use snafu::Snafu;
-        #[derive(Debug, Snafu)]
-        #[snafu(visibility(pub(crate)))]
-        pub enum Error {
-            DefaultResponse {
-                status_code: StatusCode,
-                value: models::ErrorResponse,
-            },
-            BuildRequestError {
-                source: reqwest::Error,
-            },
-            ExecuteRequestError {
-                source: reqwest::Error,
-            },
-            ResponseBytesError {
-                source: reqwest::Error,
-            },
-            DeserializeError {
-                source: serde_json::Error,
-                body: bytes::Bytes,
-            },
-            GetTokenError {
-                source: azure_core::errors::AzureError,
-            },
-        }
-    }
-    pub async fn list_keys(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        namespace_name: &str,
-        alias: &str,
-        authorization_rule_name: &str,
-        subscription_id: &str,
-    ) -> std::result::Result<AccessKeys, list_keys::Error> {
-        let client = &operation_config.client;
-        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ServiceBus/namespaces/{}/disasterRecoveryConfigs/{}/AuthorizationRules/{}/listKeys" , & operation_config . base_path , subscription_id , resource_group_name , namespace_name , alias , authorization_rule_name) ;
-        let mut req_builder = client.post(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(list_keys::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
-        }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        let req = req_builder.build().context(list_keys::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(list_keys::ExecuteRequestError)?;
-        match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(list_keys::ResponseBytesError)?;
-                let rsp_value: AccessKeys = serde_json::from_slice(&body).context(list_keys::DeserializeError { body })?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(list_keys::ResponseBytesError)?;
-                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(list_keys::DeserializeError { body })?;
-                list_keys::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                }
-                .fail()
-            }
-        }
-    }
-    pub mod list_keys {
-        use crate::{models, models::*};
-        use reqwest::StatusCode;
-        use snafu::Snafu;
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
@@ -4698,6 +4707,7 @@ pub mod migration_configs {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(complete_migration::BuildRequestError)?;
         let rsp = client.execute(req).await.context(complete_migration::ExecuteRequestError)?;
         match rsp.status() {
@@ -4763,6 +4773,7 @@ pub mod migration_configs {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(revert::BuildRequestError)?;
         let rsp = client.execute(req).await.context(revert::ExecuteRequestError)?;
         match rsp.status() {

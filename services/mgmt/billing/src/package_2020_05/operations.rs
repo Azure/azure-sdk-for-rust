@@ -238,6 +238,7 @@ pub mod billing_accounts {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder
             .build()
             .context(list_invoice_sections_by_create_subscription_permission::BuildRequestError)?;
@@ -3024,6 +3025,7 @@ pub mod invoices {
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.query(&[("downloadToken", download_token)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(download_invoice::BuildRequestError)?;
         let rsp = client.execute(req).await.context(download_invoice::ExecuteRequestError)?;
         match rsp.status() {
@@ -3333,6 +3335,7 @@ pub mod invoices {
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.query(&[("downloadToken", download_token)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder
             .build()
             .context(download_billing_subscription_invoice::BuildRequestError)?;

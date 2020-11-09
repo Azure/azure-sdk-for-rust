@@ -4724,18 +4724,9 @@ pub mod execute_data_flow_activity_type_properties {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Compute {
         #[serde(rename = "computeType", skip_serializing_if = "Option::is_none")]
-        pub compute_type: Option<compute::ComputeType>,
+        pub compute_type: Option<serde_json::Value>,
         #[serde(rename = "coreCount", skip_serializing_if = "Option::is_none")]
-        pub core_count: Option<i64>,
-    }
-    pub mod compute {
-        use super::*;
-        #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-        pub enum ComputeType {
-            General,
-            MemoryOptimized,
-            ComputeOptimized,
-        }
+        pub core_count: Option<serde_json::Value>,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

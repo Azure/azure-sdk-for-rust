@@ -97,7 +97,7 @@ pub struct OfferProperties {
     #[serde(rename = "specificPlanIdsLimitation", skip_serializing_if = "Vec::is_empty")]
     pub specific_plan_ids_limitation: Vec<String>,
     #[serde(rename = "updateSuppressedDueIdempotence", skip_serializing_if = "Option::is_none")]
-    pub update_suppressed_due_idempotence: Option<String>,
+    pub update_suppressed_due_idempotence: Option<bool>,
     #[serde(rename = "iconFileUris", skip_serializing_if = "Vec::is_empty")]
     pub icon_file_uris: Vec<Icon>,
 }
