@@ -4,34 +4,39 @@ use chrono::Utc;
 use oauth2::{
     basic::BasicClient, reqwest::async_http_client, AccessToken, AuthType, AuthUrl, Scope, TokenUrl,
 };
-use std::{borrow::Cow, str, time::Duration};
+use std::{str, time::Duration};
 use url::Url;
 
 /// Provides options to configure how the Identity library makes authentication
 /// requests to Azure Active Directory.
 #[derive(Clone, Debug, PartialEq)]
 pub struct TokenCredentialOptions {
-    /// The authority host to use for authentication requests.  The default is
-    /// "https://login.microsoftonline.com".
-    pub authority_host: Option<Cow<'static, str>>,
+    authority_host: String,
 }
-
-const DEFAULT_TOKEN_CREDENTIAL_OPTIONS: TokenCredentialOptions = TokenCredentialOptions {
-    authority_host: Some(Cow::Borrowed(authority_hosts::AZURE_PUBLIC_CLOUD)),
-};
 
 impl Default for TokenCredentialOptions {
     fn default() -> Self {
-        DEFAULT_TOKEN_CREDENTIAL_OPTIONS
+        Self {
+            authority_host: authority_hosts::AZURE_PUBLIC_CLOUD.to_owned(),
+        }
     }
 }
 
 impl TokenCredentialOptions {
-    pub fn authority_host(&self) -> &str {
-        match &self.authority_host {
-            Some(authority_host) => authority_host,
-            None => authority_hosts::AZURE_PUBLIC_CLOUD,
+    pub fn new(authority_host: &str) -> Self {
+        Self {
+            authority_host: authority_host.to_owned(),
         }
+    }
+
+    pub fn set_authority_host(&mut self, authority_host: &str) {
+        self.authority_host = authority_host.to_owned()
+    }
+
+    /// The authority host to use for authentication requests.  The default is
+    /// "https://login.microsoftonline.com".
+    pub fn authority_host(&self) -> &str {
+        &self.authority_host
     }
 }
 
