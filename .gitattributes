@@ -1,0 +1,6 @@
+# Don't allow people to merge changes to these generated files, because the result
+# may be invalid.  You need to run "cargo update" again.
+Cargo.lock merge=binary
+
+# Use unix line endings everywhere, even on Windows
+* text=auto eol=lf
