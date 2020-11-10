@@ -1,4 +1,4 @@
-use azure_identity::token_credentials::ClientSecretCredential;
+use azure_identity::token_credentials::{ClientSecretCredential, TokenCredentialOptions};
 use azure_key_vault::{KeyVaultClient, RecoveryLevel};
 use chrono::prelude::*;
 use chrono::Duration;
@@ -16,7 +16,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let secret_version =
         env::var("SECRET_VERSION").expect("Missing SECRET_VERSION environment variable.");
 
-    let creds = ClientSecretCredential::new(tenant_id, client_id, client_secret);
+    let creds = ClientSecretCredential::new(
+        tenant_id,
+        client_id,
+        client_secret,
+        TokenCredentialOptions::default(),
+    );
     let mut client = KeyVaultClient::new(&creds, &keyvault_name);
 
     // Disable secret.

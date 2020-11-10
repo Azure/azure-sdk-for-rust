@@ -1,4 +1,4 @@
-use super::ClientSecretCredential;
+use super::{ClientSecretCredential, TokenCredentialOptions};
 use azure_core::errors::AzureError;
 use azure_core::{TokenCredential, TokenResponse};
 
@@ -22,7 +22,23 @@ const AZURE_CLIENT_CERTIFICATE_PATH_ENV_KEY: &str = "AZURE_CLIENT_CERTIFICATE_PA
 /// This credential ultimately uses a `ClientSecretCredential` to perform the authentication using
 /// these details.
 /// Please consult the documentation of that class for more details.
-pub struct EnvironmentCredential;
+pub struct EnvironmentCredential {
+    options: TokenCredentialOptions,
+}
+
+impl EnvironmentCredential {
+    pub fn new(options: TokenCredentialOptions) -> Self {
+        Self { options }
+    }
+}
+
+impl Default for EnvironmentCredential {
+    fn default() -> Self {
+        Self {
+            options: TokenCredentialOptions::default(),
+        }
+    }
+}
 
 #[async_trait::async_trait]
 impl TokenCredential for EnvironmentCredential {
@@ -46,7 +62,12 @@ impl TokenCredential for EnvironmentCredential {
         let client_certificate_path = std::env::var(AZURE_CLIENT_CERTIFICATE_PATH_ENV_KEY);
 
         if let Ok(client_secret) = client_secret {
-            let credential = ClientSecretCredential::new(tenant_id, client_id, client_secret);
+            let credential = ClientSecretCredential::new(
+                tenant_id,
+                client_id,
+                client_secret,
+                self.options.clone(),
+            );
             return credential.get_token(resource).await;
         } else if username.is_ok() && password.is_ok() {
             // Could use multiple if-let with #![feature(let_chains)] once stabilised - see https://github.com/rust-lang/rust/issues/53667
