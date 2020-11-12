@@ -8,6 +8,7 @@ extern crate quick_error;
 #[macro_use]
 extern crate serde_derive;
 
+mod http_client;
 #[macro_use]
 pub mod errors;
 pub mod parsing;
@@ -25,6 +26,7 @@ pub mod util;
 
 use errors::AzureError;
 use headers::*;
+pub use http_client::*;
 use lease::LeaseId;
 use modify_conditions::{IfMatchCondition, IfSinceCondition, SequenceNumberCondition};
 pub use stored_access_policy::{StoredAccessPolicy, StoredAccessPolicyList};
@@ -39,8 +41,8 @@ use hyper::header::{
 use oauth2::AccessToken;
 use uuid::Uuid;
 
-use std::collections::HashMap;
 use std::fmt::Debug;
+use std::{collections::HashMap, sync::Arc};
 
 pub type RequestId = Uuid;
 pub type SessionToken = String;
@@ -66,6 +68,21 @@ impl TokenResponse {
 pub trait TokenCredential {
     /// Gets a `TokenResponse` for the specified resource
     async fn get_token(&self, resource: &str) -> Result<TokenResponse, AzureError>;
+}
+
+#[derive(Clone)]
+pub struct TokenCredentialArc(Arc<Box<dyn TokenCredential>>);
+
+impl TokenCredentialArc {
+    pub fn new(token_credential: Box<dyn TokenCredential>) -> TokenCredentialArc {
+        TokenCredentialArc(Arc::new(token_credential))
+    }
+}
+
+impl AsRef<Box<dyn TokenCredential>> for TokenCredentialArc {
+    fn as_ref(&self) -> &Box<dyn TokenCredential> {
+        self.0.as_ref()
+    }
 }
 
 #[macro_export]
