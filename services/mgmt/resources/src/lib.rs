@@ -167,29 +167,61 @@ pub use package_managedapplications_2017_09::{models, operations, API_VERSION};
 mod package_managedapplications_2016_09;
 #[cfg(feature = "package-managedapplications-2016-09")]
 pub use package_managedapplications_2016_09::{models, operations, API_VERSION};
+#[derive(Clone)]
 pub struct OperationConfig {
-    pub api_version: String,
-    pub client: reqwest::Client,
-    pub base_path: String,
-    pub token_credential: Option<Box<dyn azure_core::TokenCredential>>,
-    pub token_credential_resource: String,
+    http_client: azure_core::HttpClientArc,
+    token_credential: azure_core::TokenCredentialArc,
+    token_credential_resource: String,
+    base_path: String,
+    api_version: String,
 }
 impl OperationConfig {
-    pub fn new(token_credential: Box<dyn azure_core::TokenCredential>) -> Self {
+    pub fn new(http_client: azure_core::HttpClientArc, token_credential: azure_core::TokenCredentialArc) -> Self {
         Self {
-            token_credential: Some(token_credential),
-            ..Default::default()
+            http_client,
+            token_credential,
+            token_credential_resource: "https://management.azure.com/".to_owned(),
+            base_path: "https://management.azure.com".to_owned(),
+            api_version: API_VERSION.to_owned(),
         }
     }
-}
-impl Default for OperationConfig {
-    fn default() -> Self {
+    pub fn new_all(
+        http_client: azure_core::HttpClientArc,
+        token_credential: azure_core::TokenCredentialArc,
+        token_credential_resource: String,
+        base_path: String,
+        api_version: String,
+    ) -> Self {
         Self {
-            api_version: API_VERSION.to_owned(),
-            client: reqwest::Client::new(),
-            base_path: "https://management.azure.com".to_owned(),
-            token_credential: None,
-            token_credential_resource: "https://management.azure.com/".to_owned(),
+            http_client,
+            token_credential,
+            token_credential_resource,
+            base_path,
+            api_version,
         }
+    }
+    pub fn http_client(&self) -> &reqwest::Client {
+        self.http_client.as_ref()
+    }
+    pub fn token_credential(&self) -> &dyn azure_core::TokenCredential {
+        self.token_credential.as_ref().as_ref()
+    }
+    pub fn set_token_credential_resource(&mut self, token_credential_resource: String) {
+        self.token_credential_resource = token_credential_resource;
+    }
+    pub fn token_credential_resource(&self) -> &str {
+        &self.token_credential_resource
+    }
+    pub fn set_base_path(&mut self, base_path: String) {
+        self.base_path = base_path;
+    }
+    pub fn base_path(&self) -> &str {
+        &self.base_path
+    }
+    pub fn set_api_version(&mut self, api_version: String) {
+        self.api_version = api_version;
+    }
+    pub fn api_version(&self) -> &str {
+        &self.api_version
     }
 }
