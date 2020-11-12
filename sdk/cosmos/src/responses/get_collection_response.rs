@@ -1,9 +1,9 @@
 use crate::collection::Collection;
 use crate::from_headers::*;
-use azure_core::errors::AzureError;
+use crate::CosmosError;
 use azure_core::headers::{etag_from_headers, session_token_from_headers};
 use chrono::{DateTime, Utc};
-use http::HeaderMap;
+use http::response::Response;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct GetCollectionResponse {
@@ -29,15 +29,15 @@ pub struct GetCollectionResponse {
     pub gateway_version: String,
 }
 
-impl std::convert::TryFrom<(&HeaderMap, &[u8])> for GetCollectionResponse {
-    type Error = AzureError;
-    fn try_from(value: (&HeaderMap, &[u8])) -> Result<Self, Self::Error> {
-        let headers = value.0;
-        let body = value.1;
+impl std::convert::TryFrom<Response<Vec<u8>>> for GetCollectionResponse {
+    type Error = CosmosError;
 
-        debug!("body == {}", std::str::from_utf8(body)?);
+    fn try_from(response: Response<Vec<u8>>) -> Result<Self, Self::Error> {
+        let headers = response.headers();
+        let body = response.body();
 
         debug!("headers == {:#?}", headers);
+        debug!("body == {}", std::str::from_utf8(body)?);
 
         Ok(Self {
             collection: serde_json::from_slice(body)?,

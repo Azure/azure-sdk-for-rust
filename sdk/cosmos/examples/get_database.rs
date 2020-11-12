@@ -22,7 +22,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let http_client: Box<dyn HttpClient> = Box::new(reqwest::Client::new());
     let http_client = Arc::new(http_client);
 
-    let client = azure_cosmos::client_builder::new(&account, authorization_token)?
+    let client = azure_cosmos::client_builder::build_default_client(&account, authorization_token)?
         .with_http_client(http_client)
         .build();
     let database_client = client.into_database_client(&database_name);
@@ -37,7 +37,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         Box::new(hyper::Client::builder().build(HttpsConnector::new()));
     let http_client = Arc::new(http_client);
 
-    let client = azure_cosmos::client_builder::new(&account, authorization_token)?
+    let client = azure_cosmos::client_builder::build_default_client(&account, authorization_token)?
         .with_http_client(http_client)
         .build();
     let database_client = client.into_database_client(&database_name);

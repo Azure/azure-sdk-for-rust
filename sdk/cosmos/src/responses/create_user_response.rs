@@ -1,8 +1,8 @@
 use crate::from_headers::*;
+use crate::CosmosError;
 use crate::User;
-use azure_core::errors::AzureError;
 use azure_core::headers::{etag_from_headers, session_token_from_headers};
-use http::HeaderMap;
+use http::response::Response;
 use std::convert::TryInto;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -14,11 +14,12 @@ pub struct CreateUserResponse {
     pub session_token: String,
 }
 
-impl std::convert::TryFrom<(&HeaderMap, &[u8])> for CreateUserResponse {
-    type Error = AzureError;
-    fn try_from(value: (&HeaderMap, &[u8])) -> Result<Self, Self::Error> {
-        let headers = value.0;
-        let body = value.1;
+impl std::convert::TryFrom<Response<Vec<u8>>> for CreateUserResponse {
+    type Error = CosmosError;
+
+    fn try_from(response: Response<Vec<u8>>) -> Result<Self, Self::Error> {
+        let headers = response.headers();
+        let body: &[u8] = response.body();
 
         Ok(Self {
             user: body.try_into()?,

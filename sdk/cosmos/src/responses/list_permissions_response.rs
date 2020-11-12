@@ -1,9 +1,9 @@
 use crate::from_headers::*;
 use crate::permission::CosmosPermission;
+use crate::CosmosError;
 use crate::Permission;
-use azure_core::errors::AzureError;
 use azure_core::headers::{continuation_token_from_headers_optional, session_token_from_headers};
-use http::HeaderMap;
+use http::response::Response;
 use std::borrow::Cow;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -17,11 +17,12 @@ pub struct ListPermissionsResponse<'a> {
     pub continuation_token: Option<String>,
 }
 
-impl<'a> std::convert::TryFrom<(&HeaderMap, &[u8])> for ListPermissionsResponse<'a> {
-    type Error = AzureError;
-    fn try_from(value: (&HeaderMap, &[u8])) -> Result<Self, Self::Error> {
-        let headers = value.0;
-        let body = value.1;
+impl<'a> std::convert::TryFrom<Response<Vec<u8>>> for ListPermissionsResponse<'a> {
+    type Error = CosmosError;
+
+    fn try_from(response: Response<Vec<u8>>) -> Result<Self, Self::Error> {
+        let headers = response.headers();
+        let body = response.body();
 
         debug!("headers == {:#?}", headers);
         debug!("body == {:#?}", std::str::from_utf8(body)?);
@@ -44,7 +45,7 @@ impl<'a> std::convert::TryFrom<(&HeaderMap, &[u8])> for ListPermissionsResponse<
             .permissions
             .into_iter()
             .map(Permission::try_from)
-            .collect::<Result<Vec<Permission<'_, Cow<'_, str>>>, AzureError>>()?;
+            .collect::<Result<Vec<Permission<'_, Cow<'_, str>>>, CosmosError>>()?;
 
         Ok(Self {
             permissions,

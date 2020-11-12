@@ -1,9 +1,9 @@
 use crate::from_headers::*;
+use crate::CosmosError;
 use crate::PartitionKeyRange;
-use azure_core::errors::AzureError;
 use azure_core::headers::session_token_from_headers;
 use chrono::{DateTime, Utc};
-use http::HeaderMap;
+use http::response::Response;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct GetPartitionKeyRangesResponse {
@@ -29,15 +29,15 @@ pub struct GetPartitionKeyRangesResponse {
     pub partition_key_ranges: Vec<PartitionKeyRange>,
 }
 
-impl std::convert::TryFrom<(&HeaderMap, &[u8])> for GetPartitionKeyRangesResponse {
-    type Error = AzureError;
-    fn try_from(value: (&HeaderMap, &[u8])) -> Result<Self, Self::Error> {
-        let headers = value.0;
-        let body = value.1;
+impl std::convert::TryFrom<Response<Vec<u8>>> for GetPartitionKeyRangesResponse {
+    type Error = CosmosError;
 
-        debug!("body == {}", std::str::from_utf8(body)?);
+    fn try_from(response: Response<Vec<u8>>) -> Result<Self, Self::Error> {
+        let headers = response.headers();
+        let body = response.body();
 
         debug!("headers == {:#?}", headers);
+        debug!("body == {}", std::str::from_utf8(body)?);
 
         #[derive(Debug, Deserialize)]
         struct Response {

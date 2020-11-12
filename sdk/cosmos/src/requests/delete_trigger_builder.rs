@@ -2,7 +2,7 @@ use crate::prelude::*;
 use crate::responses::DeleteTriggerResponse;
 use azure_core::errors::{check_status_extract_headers_and_body, AzureError};
 use azure_core::prelude::*;
-use hyper::StatusCode;
+use http::StatusCode;
 use std::convert::TryInto;
 
 #[derive(Debug, Clone)]

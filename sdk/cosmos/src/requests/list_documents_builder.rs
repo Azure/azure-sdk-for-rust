@@ -4,7 +4,7 @@ use crate::ResourceType;
 use azure_core::errors::{check_status_extract_headers_and_body, AzureError};
 use azure_core::prelude::*;
 use futures::stream::{unfold, Stream};
-use hyper::StatusCode;
+use http::StatusCode;
 use serde::de::DeserializeOwned;
 use std::convert::TryInto;
 

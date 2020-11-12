@@ -75,8 +75,7 @@ impl HttpClient for hyper::Client<HttpsConnector<hyper::client::HttpConnector>> 
             hyper_request = hyper_request.header(header.0, header.1);
         }
 
-        let body = String::from_utf8(request.body().to_vec())?;
-        let hyper_request = hyper_request.body(Body::from(body))?;
+        let hyper_request = hyper_request.body(Body::from(request.body().to_vec()))?;
 
         let hyper_response = self.request(hyper_request).await?;
 
@@ -84,8 +83,8 @@ impl HttpClient for hyper::Client<HttpsConnector<hyper::client::HttpConnector>> 
             .status(hyper_response.status())
             .version(hyper_response.version());
 
-        for header in hyper_response.headers() {
-            response = response.header(header.0, header.1);
+        for (key, value) in hyper_response.headers() {
+            response = response.header(key, value);
         }
 
         let response = response.body(body::to_bytes(hyper_response.into_body()).await?.to_vec())?;
@@ -115,8 +114,8 @@ impl HttpClient for reqwest::Client {
             .status(reqwest_response.status())
             .version(reqwest_response.version());
 
-        for header in reqwest_response.headers() {
-            response = response.header(header.0, header.1);
+        for (key, value) in reqwest_response.headers() {
+            response = response.header(key, value);
         }
 
         let response = response.body(reqwest_response.bytes().await?.to_vec())?;

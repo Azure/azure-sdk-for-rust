@@ -1,12 +1,12 @@
 use crate::document_attributes::DocumentAttributes;
 use crate::errors::ConversionToDocumentError;
 use crate::from_headers::*;
+use crate::CosmosError;
 use crate::ResourceQuota;
-use azure_core::errors::AzureError;
 use azure_core::headers::{continuation_token_from_headers_optional, session_token_from_headers};
 use azure_core::SessionToken;
 use chrono::{DateTime, Utc};
-use hyper::header::HeaderMap;
+use http::response::Response;
 use serde::de::DeserializeOwned;
 use serde_json::Value;
 use std::convert::TryInto;
@@ -19,16 +19,14 @@ pub struct DocumentQueryResult<T> {
     pub result: T,
 }
 
-impl<T> std::convert::TryFrom<(&HeaderMap, &[u8])> for DocumentQueryResult<T>
+impl<T> std::convert::TryFrom<Response<Vec<u8>>> for DocumentQueryResult<T>
 where
     T: DeserializeOwned,
 {
-    type Error = AzureError;
-    fn try_from(value: (&HeaderMap, &[u8])) -> Result<Self, Self::Error> {
-        let _headers = value.0;
-        let body = value.1;
+    type Error = CosmosError;
 
-        Ok(serde_json::from_slice(body)?)
+    fn try_from(response: Response<Vec<u8>>) -> Result<Self, Self::Error> {
+        Ok(serde_json::from_slice(response.body())?)
     }
 }
 
@@ -40,13 +38,11 @@ pub struct QueryResponseMeta {
     pub count: u64,
 }
 
-impl std::convert::TryFrom<(&HeaderMap, &[u8])> for QueryResponseMeta {
-    type Error = AzureError;
-    fn try_from(value: (&HeaderMap, &[u8])) -> Result<Self, Self::Error> {
-        let _headers = value.0;
-        let body = value.1;
+impl std::convert::TryFrom<Response<Vec<u8>>> for QueryResponseMeta {
+    type Error = CosmosError;
 
-        Ok(serde_json::from_slice(body)?)
+    fn try_from(response: Response<Vec<u8>>) -> Result<Self, Self::Error> {
+        Ok(serde_json::from_slice(response.body())?)
     }
 }
 
@@ -99,14 +95,15 @@ impl<T> QueryDocumentsResponse<T> {
     }
 }
 
-impl<T> std::convert::TryFrom<(&HeaderMap, &[u8])> for QueryDocumentsResponse<T>
+impl<T> std::convert::TryFrom<Response<Vec<u8>>> for QueryDocumentsResponse<T>
 where
     T: DeserializeOwned,
 {
-    type Error = AzureError;
-    fn try_from(value: (&HeaderMap, &[u8])) -> Result<Self, Self::Error> {
-        let headers = value.0;
-        let body = value.1;
+    type Error = CosmosError;
+
+    fn try_from(response: Response<Vec<u8>>) -> Result<Self, Self::Error> {
+        let headers = response.headers();
+        let body = response.body();
 
         debug!("headers == {:#?}", headers);
         debug!("body == {}", std::str::from_utf8(body)?);
@@ -139,7 +136,6 @@ where
         }
 
         Ok(QueryDocumentsResponse {
-            query_response_meta: value.try_into()?,
             results,
             last_state_change: last_state_change_from_headers(headers)?,
             resource_quota: resource_quota_from_headers(headers)?,
@@ -165,6 +161,8 @@ where
             gateway_version: gateway_version_from_headers(headers)?.to_owned(),
             continuation_token: continuation_token_from_headers_optional(headers)?,
             date: date_from_headers(headers)?,
+
+            query_response_meta: response.try_into()?,
         })
     }
 }

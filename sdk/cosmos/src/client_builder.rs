@@ -6,7 +6,7 @@ use azure_core::errors::AzureError;
 use std::borrow::Cow;
 use std::marker::PhantomData;
 
-pub fn new<'a, IntoCowStr>(
+pub fn build_default_client<'a, IntoCowStr>(
     account: IntoCowStr,
     auth_token: AuthorizationToken,
 ) -> Result<ClientBuilder<'a, DefaultCosmosUri, HTTPClientNotAssigned>, AzureError>
@@ -25,7 +25,7 @@ where
     })
 }
 
-pub fn new_china<'a, IntoCowStr>(
+pub fn build_china_client<'a, IntoCowStr>(
     account: IntoCowStr,
     auth_token: AuthorizationToken,
 ) -> Result<ClientBuilder<'a, ChinaCosmosUri, HTTPClientNotAssigned>, AzureError>
@@ -44,7 +44,7 @@ where
     })
 }
 
-pub fn new_custom<'a, IntoCowStr>(
+pub fn build_custom_client<'a, IntoCowStr>(
     account: IntoCowStr,
     auth_token: AuthorizationToken,
     uri: String,
@@ -61,7 +61,7 @@ where
     })
 }
 
-pub fn new_emulator(
+pub fn build_emulator_client(
     address: &str,
     port: u16,
 ) -> Result<ClientBuilder<CustomCosmosUri, HTTPClientNotAssigned>, AzureError> {

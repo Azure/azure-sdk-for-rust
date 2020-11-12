@@ -3,7 +3,7 @@ use crate::responses::ExecuteStoredProcedureResponse;
 use crate::stored_procedure::Parameters;
 use azure_core::errors::{check_status_extract_headers_and_body, AzureError};
 use azure_core::prelude::*;
-use hyper::StatusCode;
+use http::StatusCode;
 use serde::de::DeserializeOwned;
 use std::convert::TryInto;
 

@@ -5,7 +5,7 @@ use azure_core::errors::{extract_status_headers_and_body, AzureError, Unexpected
 use azure_core::prelude::*;
 use azure_core::{No, ToAssign, Yes};
 use chrono::{DateTime, Utc};
-use hyper::StatusCode;
+use http::StatusCode;
 use serde::Serialize;
 use std::convert::TryFrom;
 use std::marker::PhantomData;

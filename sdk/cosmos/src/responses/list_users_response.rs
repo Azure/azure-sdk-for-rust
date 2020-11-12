@@ -1,9 +1,9 @@
 use crate::from_headers::*;
+use crate::CosmosError;
 use crate::User;
-use azure_core::errors::AzureError;
 use azure_core::headers::{continuation_token_from_headers_optional, session_token_from_headers};
 use azure_core::SessionToken;
-use http::HeaderMap;
+use http::response::Response;
 use serde::Deserialize;
 
 #[derive(Debug, Clone, Deserialize, PartialEq)]
@@ -25,11 +25,12 @@ pub struct ListUsersResponse {
     pub continuation_token: Option<String>,
 }
 
-impl std::convert::TryFrom<(&HeaderMap, &[u8])> for ListUsersResponse {
-    type Error = AzureError;
-    fn try_from(value: (&HeaderMap, &[u8])) -> Result<Self, Self::Error> {
-        let headers = value.0;
-        let body = value.1;
+impl std::convert::TryFrom<Response<Vec<u8>>> for ListUsersResponse {
+    type Error = CosmosError;
+
+    fn try_from(response: Response<Vec<u8>>) -> Result<Self, Self::Error> {
+        let headers = response.headers();
+        let body = response.body();
 
         let mut list_users_response: ListUsersResponse = serde_json::from_slice(body)?;
         list_users_response.charge = request_charge_from_headers(headers)?;

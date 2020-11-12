@@ -6,7 +6,7 @@ use azure_core::modify_conditions::IfMatchCondition;
 use azure_core::prelude::*;
 use azure_core::{IfMatchConditionOption, IfMatchConditionSupport};
 use chrono::{DateTime, Utc};
-use hyper::StatusCode;
+use http::StatusCode;
 use serde::de::DeserializeOwned;
 use std::convert::TryFrom;
 
