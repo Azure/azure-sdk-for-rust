@@ -232,7 +232,7 @@ where
         debug!("\nrequest == {:#?}", request);
 
         let (headers, body) = check_status_extract_headers_and_body(
-            self.permission_client.hyper_client().request(request),
+            self.permission_client.http_client().request(request),
             StatusCode::OK,
         )
         .await?;

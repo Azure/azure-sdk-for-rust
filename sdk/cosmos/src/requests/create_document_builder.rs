@@ -474,7 +474,7 @@ where
         let req = req.body(hyper::Body::from(serialized))?;
 
         let (status_code, headers, whole_body) =
-            extract_status_headers_and_body(self.collection_client.hyper_client().request(req))
+            extract_status_headers_and_body(self.collection_client.http_client().request(req))
                 .await?;
 
         debug!("status_core == {:?}", status_code);

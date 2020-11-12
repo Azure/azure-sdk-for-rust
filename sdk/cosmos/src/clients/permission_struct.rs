@@ -1,6 +1,6 @@
 use crate::requests;
 use crate::traits::*;
-//use azure_core::No;
+use azure_core::HttpClient;
 use std::borrow::Cow;
 use std::marker::PhantomData;
 
@@ -33,17 +33,15 @@ where
     }
 }
 
-impl<'a, C, D, USER> HasHyperClient for PermissionStruct<'a, C, D, USER>
+impl<'a, C, D, USER> HasHttpClient for PermissionStruct<'a, C, D, USER>
 where
     C: CosmosClient + Clone,
     D: DatabaseClient<C> + Clone,
     USER: UserClient<C, D> + Clone,
 {
     #[inline]
-    fn hyper_client(
-        &self,
-    ) -> &hyper::Client<hyper_rustls::HttpsConnector<hyper::client::HttpConnector>> {
-        self.user_client.hyper_client()
+    fn http_client(&self) -> &dyn HttpClient {
+        self.user_client.http_client()
     }
 }
 
@@ -93,19 +91,19 @@ where
         &self.permission_name
     }
 
-    fn create_permission(&self) -> requests::CreatePermissionBuilder<'_, '_, C, D, USER> {
-        requests::CreatePermissionBuilder::new(self)
-    }
+    // fn create_permission(&self) -> requests::CreatePermissionBuilder<'_, '_, C, D, USER> {
+    //     requests::CreatePermissionBuilder::new(self)
+    // }
 
-    fn replace_permission(&self) -> requests::ReplacePermissionBuilder<'_, '_, C, D, USER> {
-        requests::ReplacePermissionBuilder::new(self)
-    }
+    // fn replace_permission(&self) -> requests::ReplacePermissionBuilder<'_, '_, C, D, USER> {
+    //     requests::ReplacePermissionBuilder::new(self)
+    // }
 
-    fn get_permission(&self) -> requests::GetPermissionBuilder<'_, '_, C, D, USER> {
-        requests::GetPermissionBuilder::new(self)
-    }
+    // fn get_permission(&self) -> requests::GetPermissionBuilder<'_, '_, C, D, USER> {
+    //     requests::GetPermissionBuilder::new(self)
+    // }
 
-    fn delete_permission(&self) -> requests::DeletePermissionsBuilder<'_, '_, C, D, USER> {
-        requests::DeletePermissionsBuilder::new(self)
-    }
+    // fn delete_permission(&self) -> requests::DeletePermissionsBuilder<'_, '_, C, D, USER> {
+    //     requests::DeletePermissionsBuilder::new(self)
+    // }
 }

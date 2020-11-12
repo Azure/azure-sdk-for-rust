@@ -23,11 +23,14 @@ hyper = "0.13"
 log = "0.4"
 url = "2.1"
 hyper-rustls = "0.21"
+http = "*"
 
 [dev-dependencies]
 futures = "0.3"
 tokio = { version = "0.2", features = ["macros"] }
 env_logger = "0.7"
+reqwest = "*"
+rand = "*"
 
 [features]
 test_e2e = []

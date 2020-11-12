@@ -156,7 +156,7 @@ where
         debug!("\nreq == {:?}", req);
 
         let (status_code, headers, body) =
-            extract_status_headers_and_body(self.user_client.hyper_client().request(req)).await?;
+            extract_status_headers_and_body(self.user_client.http_client().request(req)).await?;
 
         match status_code {
             StatusCode::NOT_FOUND => Ok(None),

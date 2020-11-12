@@ -28,5 +28,5 @@ pub use crate::{
     SequenceNumberOption, SequenceNumberSupport, SnapshotOption, SnapshotRequired, SnapshotSupport,
     SourceContentMD5Option, SourceContentMD5Support, SourceLeaseIdOption, SourceLeaseIdSupport,
     SourceUrlRequired, SourceUrlSupport, StoredAccessPolicy, StoredAccessPolicyList, TimeoutOption,
-    TimeoutSupport, UserAgentOption, UserAgentSupport,
+    TimeoutSupport, UserAgentOption, UserAgentSupport, EMPTY_BODY,
 };

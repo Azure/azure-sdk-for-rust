@@ -254,7 +254,7 @@ where
         let req = req.body(hyper::Body::empty())?;
 
         let (status_code, headers, whole_body) =
-            extract_status_headers_and_body(self.document_client.hyper_client().request(req))
+            extract_status_headers_and_body(self.document_client.http_client().request(req))
                 .await?;
 
         if status_code != StatusCode::OK

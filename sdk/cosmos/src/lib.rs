@@ -11,6 +11,7 @@ extern crate azure_core;
 
 pub mod attachment;
 mod authorization_token;
+pub mod client_builder;
 pub mod clients;
 pub mod collection;
 mod consistency_level;
@@ -68,6 +69,8 @@ use crate::stored_procedure::Parameters;
 pub use crate::user::{User, UserName};
 pub use crate::user_defined_function::UserDefinedFunctionName;
 use http::request::Builder;
+
+pub type CosmosError = Box<dyn std::error::Error + Sync + Send>;
 
 #[allow(dead_code)]
 #[derive(Debug, Clone, Copy)]

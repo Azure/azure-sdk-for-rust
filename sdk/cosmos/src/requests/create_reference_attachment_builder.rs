@@ -325,7 +325,7 @@ where
         debug!("req == {:#?}", req);
 
         let (headers, whole_body) = check_status_extract_headers_and_body(
-            self.attachment_client.hyper_client().request(req),
+            self.attachment_client.http_client().request(req),
             StatusCode::CREATED,
         )
         .await?;

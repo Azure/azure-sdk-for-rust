@@ -2,11 +2,11 @@ use crate::clients::*;
 use crate::requests;
 use crate::{
     CollectionClient, CosmosClient, DatabaseClient, HasCosmosClient, HasDatabaseClient,
-    HasHyperClient, IntoDocumentClient, IntoStoredProcedureClient, IntoTriggerClient,
+    HasHttpClient, IntoDocumentClient, IntoStoredProcedureClient, IntoTriggerClient,
     IntoUserDefinedFunctionClient, PartitionKeys, UserDefinedFunctionStruct, WithDocumentClient,
     WithStoredProcedureClient, WithTriggerClient, WithUserDefinedFunctionClient,
 };
-use azure_core::No;
+use azure_core::{HttpClient, No};
 use std::borrow::Cow;
 use std::marker::PhantomData;
 
@@ -36,16 +36,14 @@ where
     }
 }
 
-impl<'a, C, D> HasHyperClient for CollectionStruct<'a, C, D>
+impl<'a, C, D> HasHttpClient for CollectionStruct<'a, C, D>
 where
     C: CosmosClient + Clone,
     D: DatabaseClient<C> + Clone,
 {
     #[inline]
-    fn hyper_client(
-        &self,
-    ) -> &hyper::Client<hyper_rustls::HttpsConnector<hyper::client::HttpConnector>> {
-        self.cosmos_client().hyper_client()
+    fn http_client(&self) -> &dyn HttpClient {
+        self.cosmos_client().http_client()
     }
 }
 
@@ -81,51 +79,51 @@ where
         &self.collection_name
     }
 
-    fn get_collection(&self) -> requests::GetCollectionBuilder<'_, C, D> {
-        requests::GetCollectionBuilder::new(self)
-    }
+    //fn get_collection(&self) -> requests::GetCollectionBuilder<'_, C, D> {
+    //    requests::GetCollectionBuilder::new(self)
+    //}
 
-    fn delete_collection(&self) -> requests::DeleteCollectionBuilder<'_, C, D> {
-        requests::DeleteCollectionBuilder::new(self)
-    }
+    //fn delete_collection(&self) -> requests::DeleteCollectionBuilder<'_, C, D> {
+    //    requests::DeleteCollectionBuilder::new(self)
+    //}
 
-    fn replace_collection(&self) -> requests::ReplaceCollectionBuilder<'_, '_, C, D, No, No> {
-        requests::ReplaceCollectionBuilder::new(self)
-    }
+    //fn replace_collection(&self) -> requests::ReplaceCollectionBuilder<'_, '_, C, D, No, No> {
+    //    requests::ReplaceCollectionBuilder::new(self)
+    //}
 
-    fn list_documents(&self) -> requests::ListDocumentsBuilder<'_, '_, C, D> {
-        requests::ListDocumentsBuilder::new(self)
-    }
+    //fn list_documents(&self) -> requests::ListDocumentsBuilder<'_, '_, C, D> {
+    //    requests::ListDocumentsBuilder::new(self)
+    //}
 
-    fn create_document(&self) -> requests::CreateDocumentBuilder<'_, '_, C, D, No> {
-        requests::CreateDocumentBuilder::new(self)
-    }
+    //fn create_document(&self) -> requests::CreateDocumentBuilder<'_, '_, C, D, No> {
+    //    requests::CreateDocumentBuilder::new(self)
+    //}
 
-    fn replace_document(&self) -> requests::ReplaceDocumentBuilder<'_, '_, C, D, No, No> {
-        requests::ReplaceDocumentBuilder::new(self)
-    }
+    //fn replace_document(&self) -> requests::ReplaceDocumentBuilder<'_, '_, C, D, No, No> {
+    //    requests::ReplaceDocumentBuilder::new(self)
+    //}
 
-    fn query_documents(&self) -> requests::QueryDocumentsBuilder<'_, '_, C, D, No> {
-        requests::QueryDocumentsBuilder::new(self)
-    }
+    //fn query_documents(&self) -> requests::QueryDocumentsBuilder<'_, '_, C, D, No> {
+    //    requests::QueryDocumentsBuilder::new(self)
+    //}
 
-    fn list_stored_procedures(&self) -> requests::ListStoredProceduresBuilder<'_, '_, C, D> {
-        requests::ListStoredProceduresBuilder::new(self)
-    }
+    //fn list_stored_procedures(&self) -> requests::ListStoredProceduresBuilder<'_, '_, C, D> {
+    //    requests::ListStoredProceduresBuilder::new(self)
+    //}
 
-    fn list_user_defined_functions(
-        &self,
-    ) -> requests::ListUserDefinedFunctionsBuilder<'_, '_, C, D> {
-        requests::ListUserDefinedFunctionsBuilder::new(self)
-    }
+    //fn list_user_defined_functions(
+    //    &self,
+    //) -> requests::ListUserDefinedFunctionsBuilder<'_, '_, C, D> {
+    //    requests::ListUserDefinedFunctionsBuilder::new(self)
+    //}
 
-    fn list_triggers(&self) -> requests::ListTriggersBuilder<'_, '_, C, D> {
-        requests::ListTriggersBuilder::new(self)
-    }
+    //fn list_triggers(&self) -> requests::ListTriggersBuilder<'_, '_, C, D> {
+    //    requests::ListTriggersBuilder::new(self)
+    //}
 
-    fn get_partition_key_ranges(&self) -> requests::GetPartitionKeyRangesBuilder<'_, '_, C, D> {
-        requests::GetPartitionKeyRangesBuilder::new(self)
-    }
+    //fn get_partition_key_ranges(&self) -> requests::GetPartitionKeyRangesBuilder<'_, '_, C, D> {
+    //    requests::GetPartitionKeyRangesBuilder::new(self)
+    //}
 }
 
 impl<'a, 'b, C, D> IntoDocumentClient<'b, C, D, Self, DocumentStruct<'a, 'b, C, D, Self>>

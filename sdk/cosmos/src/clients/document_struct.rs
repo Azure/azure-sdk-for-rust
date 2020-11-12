@@ -1,9 +1,10 @@
 use crate::requests;
 use crate::{
     AttachmentStruct, CollectionClient, CosmosClient, DatabaseClient, DocumentClient,
-    HasCollectionClient, HasCosmosClient, HasDatabaseClient, HasHyperClient, IntoAttachmentClient,
+    HasCollectionClient, HasCosmosClient, HasDatabaseClient, HasHttpClient, IntoAttachmentClient,
     PartitionKeys, WithAttachmentClient,
 };
+use azure_core::HttpClient;
 use std::borrow::Cow;
 use std::marker::PhantomData;
 
@@ -42,17 +43,15 @@ where
     }
 }
 
-impl<'a, 'b, C, D, COLL> HasHyperClient for DocumentStruct<'a, 'b, C, D, COLL>
+impl<'a, 'b, C, D, COLL> HasHttpClient for DocumentStruct<'a, 'b, C, D, COLL>
 where
     C: CosmosClient + Clone,
     D: DatabaseClient<C> + Clone,
     COLL: CollectionClient<C, D> + Clone,
 {
     #[inline]
-    fn hyper_client(
-        &self,
-    ) -> &hyper::Client<hyper_rustls::HttpsConnector<hyper::client::HttpConnector>> {
-        self.collection_client().hyper_client()
+    fn http_client(&self) -> &dyn HttpClient {
+        self.collection_client().http_client()
     }
 }
 
@@ -106,17 +105,17 @@ where
         &self.partition_keys
     }
 
-    fn get_document(&self) -> requests::GetDocumentBuilder<'_, '_, C, D, COLL> {
-        requests::GetDocumentBuilder::new(self)
-    }
+    //fn get_document(&self) -> requests::GetDocumentBuilder<'_, '_, C, D, COLL> {
+    //    requests::GetDocumentBuilder::new(self)
+    //}
 
-    fn delete_document(&self) -> requests::DeleteDocumentBuilder<'_, C, D, COLL> {
-        requests::DeleteDocumentBuilder::new(self)
-    }
+    //fn delete_document(&self) -> requests::DeleteDocumentBuilder<'_, C, D, COLL> {
+    //    requests::DeleteDocumentBuilder::new(self)
+    //}
 
-    fn list_attachments(&self) -> requests::ListAttachmentsBuilder<'_, '_, C, D, COLL> {
-        requests::ListAttachmentsBuilder::new(self)
-    }
+    //fn list_attachments(&self) -> requests::ListAttachmentsBuilder<'_, '_, C, D, COLL> {
+    //    requests::ListAttachmentsBuilder::new(self)
+    //}
 }
 
 impl<'a, 'b, C, D, COLL>

@@ -418,7 +418,7 @@ where
         let request = req.body(hyper::Body::from(request))?;
 
         let (headers, body) = check_status_extract_headers_and_body(
-            self.trigger_client().hyper_client().request(request),
+            self.trigger_client().http_client().request(request),
             if self.is_create() {
                 StatusCode::CREATED
             } else {

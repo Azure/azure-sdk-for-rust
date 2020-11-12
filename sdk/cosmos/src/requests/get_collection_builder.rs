@@ -164,7 +164,7 @@ where
 
         let request = request.body(hyper::Body::empty())?;
 
-        let future_response = self.collection_client().hyper_client().request(request);
+        let future_response = self.collection_client().http_client().request(request);
         let (headers, body) =
             check_status_extract_headers_and_body(future_response, StatusCode::OK).await?;
 

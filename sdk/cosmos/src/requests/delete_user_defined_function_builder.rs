@@ -175,7 +175,7 @@ where
 
         let (headers, body) = check_status_extract_headers_and_body(
             self.user_defined_function_client()
-                .hyper_client()
+                .http_client()
                 .request(request),
             StatusCode::NO_CONTENT,
         )

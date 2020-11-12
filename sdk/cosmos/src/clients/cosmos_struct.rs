@@ -2,22 +2,23 @@ use crate::clients::DatabaseStruct;
 use crate::headers::*;
 use crate::requests;
 use crate::{
-    AuthorizationToken, CosmosClient, HasHyperClient, IntoDatabaseClient, ResourceType,
+    AuthorizationToken, CosmosClient, HasHttpClient, IntoDatabaseClient, ResourceType,
     WithDatabaseClient,
 };
 use azure_core::errors::AzureError;
-use azure_core::No;
+use azure_core::{HttpClient, No, ToAssign, Yes};
 use base64;
 use chrono;
+use core::marker::PhantomData;
 use http::request::Builder as RequestBuilder;
 use hyper::{
     self,
     header::{self, HeaderValue},
 };
-use hyper_rustls::HttpsConnector;
 use ring::hmac;
 use std::borrow::Cow;
 use std::fmt::Debug;
+use std::sync::Arc;
 use url::form_urlencoded;
 
 const AZURE_VERSION: &str = "2018-12-31";
@@ -33,7 +34,7 @@ pub struct CosmosStruct<'a, CUB>
 where
     CUB: CosmosUriBuilder,
 {
-    hyper_client: hyper::Client<HttpsConnector<hyper::client::HttpConnector>>,
+    http_client: Arc<Box<dyn HttpClient>>,
     account: Cow<'a, str>,
     auth_token: AuthorizationToken,
     cosmos_uri_builder: CUB,
@@ -45,7 +46,7 @@ where
 {
     pub fn with_auth_token(&self, auth_token: AuthorizationToken) -> Self {
         Self {
-            hyper_client: self.hyper_client.clone(),
+            http_client: self.http_client.clone(),
             account: self.account.clone(),
             auth_token,
             cosmos_uri_builder: self.cosmos_uri_builder.clone(),
@@ -59,7 +60,7 @@ pub struct DefaultCosmosUri {
 }
 
 impl DefaultCosmosUri {
-    fn new(account: &str) -> DefaultCosmosUri {
+    pub(crate) fn new(account: &str) -> DefaultCosmosUri {
         DefaultCosmosUri {
             uri: format!("https://{}.documents.azure.com", account),
         }
@@ -103,60 +104,55 @@ impl CosmosUriBuilder for CustomCosmosUri {
     }
 }
 
-pub struct ClientBuilder {}
+pub struct ClientBuilder<'a, CUB, HTTPClientToAssign>
+where
+    CUB: CosmosUriBuilder,
+{
+    pub(crate) http_client: Option<Arc<Box<dyn HttpClient>>>,
+    pub(crate) p_http_client_to_assign: PhantomData<HTTPClientToAssign>,
+    pub(crate) account: Cow<'a, str>,
+    pub(crate) auth_token: AuthorizationToken,
+    pub(crate) cosmos_uri_builder: CUB,
+}
 
-impl ClientBuilder {
-    #[allow(clippy::new_ret_no_self)]
-    pub fn new<'a, IntoCowStr>(
+#[derive(Debug, Clone, Copy)]
+pub struct HTTPClientNotAssigned {}
+impl ToAssign for HTTPClientNotAssigned {}
+
+impl<'a, CUB> ClientBuilder<'a, CUB, HTTPClientNotAssigned>
+where
+    CUB: CosmosUriBuilder,
+{
+    pub fn new_china<IntoCowStr>(
         account: IntoCowStr,
         auth_token: AuthorizationToken,
-    ) -> Result<CosmosStruct<'a, DefaultCosmosUri>, AzureError>
+    ) -> Result<ClientBuilder<'a, ChinaCosmosUri, HTTPClientNotAssigned>, AzureError>
     where
         IntoCowStr: Into<Cow<'a, str>>,
     {
         let account = account.into();
-        let client = hyper::Client::builder().build(HttpsConnector::new());
-        let cosmos_uri_builder = DefaultCosmosUri::new(account.as_ref());
-
-        Ok(CosmosStruct {
-            hyper_client: client,
-            account: account,
-            auth_token,
-            cosmos_uri_builder,
-        })
-    }
-
-    pub fn new_china<'a, IntoCowStr>(
-        account: IntoCowStr,
-        auth_token: AuthorizationToken,
-    ) -> Result<CosmosStruct<'a, ChinaCosmosUri>, AzureError>
-    where
-        IntoCowStr: Into<Cow<'a, str>>,
-    {
-        let account = account.into();
-        let client = hyper::Client::builder().build(HttpsConnector::new());
         let cosmos_uri_builder = ChinaCosmosUri::new(account.as_ref());
 
-        Ok(CosmosStruct {
-            hyper_client: client,
+        Ok(ClientBuilder {
+            http_client: None,
+            p_http_client_to_assign: PhantomData {},
             account,
             auth_token,
             cosmos_uri_builder,
         })
     }
 
-    pub fn new_custom<'a, IntoCowStr>(
+    pub fn new_custom<IntoCowStr>(
         account: IntoCowStr,
         auth_token: AuthorizationToken,
         uri: String,
-    ) -> Result<CosmosStruct<'a, CustomCosmosUri>, AzureError>
+    ) -> Result<ClientBuilder<'a, CustomCosmosUri, HTTPClientNotAssigned>, AzureError>
     where
         IntoCowStr: Into<Cow<'a, str>>,
     {
-        let client = hyper::Client::builder().build(HttpsConnector::new());
-
-        Ok(CosmosStruct {
-            hyper_client: client,
+        Ok(ClientBuilder {
+            http_client: None,
+            p_http_client_to_assign: PhantomData {},
             account: account.into(),
             auth_token,
             cosmos_uri_builder: CustomCosmosUri { uri },
@@ -166,16 +162,15 @@ impl ClientBuilder {
     pub fn new_emulator(
         address: &str,
         port: u16,
-    ) -> Result<CosmosStruct<CustomCosmosUri>, AzureError> {
-        let client = hyper::Client::builder().build(HttpsConnector::new());
-
+    ) -> Result<ClientBuilder<CustomCosmosUri, HTTPClientNotAssigned>, AzureError> {
         //Account name: localhost:<port>
         //Account key: C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==
         let auth_token = AuthorizationToken::new_master(
             "C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==",
         ).unwrap();
-        Ok(CosmosStruct {
-            hyper_client: client,
+        Ok(ClientBuilder {
+            http_client: None,
+            p_http_client_to_assign: PhantomData {},
             account: Cow::Owned(format!("{}:{}", address, port)),
             auth_token,
             cosmos_uri_builder: CustomCosmosUri {
@@ -183,15 +178,42 @@ impl ClientBuilder {
             },
         })
     }
+
+    pub fn with_http_client(
+        self,
+        http_client: Arc<Box<dyn HttpClient>>,
+    ) -> ClientBuilder<'a, CUB, Yes> {
+        ClientBuilder {
+            http_client: Some(http_client),
+            p_http_client_to_assign: PhantomData {},
+            account: self.account,
+            auth_token: self.auth_token,
+            cosmos_uri_builder: self.cosmos_uri_builder,
+        }
+    }
 }
 
-impl<'a, CUB> HasHyperClient for CosmosStruct<'a, CUB>
+impl<'a, CUB> ClientBuilder<'a, CUB, Yes>
+where
+    CUB: CosmosUriBuilder,
+{
+    pub fn build(self) -> CosmosStruct<'a, CUB> {
+        CosmosStruct {
+            http_client: self.http_client.unwrap(),
+            account: self.account,
+            auth_token: self.auth_token,
+            cosmos_uri_builder: self.cosmos_uri_builder,
+        }
+    }
+}
+
+impl<'a, CUB> HasHttpClient for CosmosStruct<'a, CUB>
 where
     CUB: CosmosUriBuilder + Debug,
 {
     #[inline]
-    fn hyper_client(&self) -> &hyper::Client<HttpsConnector<hyper::client::HttpConnector>> {
-        &self.hyper_client
+    fn http_client(&self) -> &dyn HttpClient {
+        self.http_client.as_ref().as_ref()
     }
 }
 
@@ -199,19 +221,19 @@ impl<'a, CUB> CosmosClient for CosmosStruct<'a, CUB>
 where
     CUB: CosmosUriBuilder + Debug,
 {
-    fn create_database(&self) -> requests::CreateDatabaseBuilder<'_, No> {
-        requests::CreateDatabaseBuilder::new(self)
-    }
+    //fn create_database(&self) -> requests::CreateDatabaseBuilder<'_, No> {
+    //    requests::CreateDatabaseBuilder::new(self)
+    //}
 
-    fn list_databases(&self) -> requests::ListDatabasesBuilder<'_> {
-        requests::ListDatabasesBuilder::new(self)
-    }
+    //fn list_databases(&self) -> requests::ListDatabasesBuilder<'_> {
+    //    requests::ListDatabasesBuilder::new(self)
+    //}
 
     #[inline]
     fn prepare_request(
         &self,
         uri_path: &str,
-        http_method: hyper::Method,
+        http_method: http::Method,
         resource_type: ResourceType,
     ) -> RequestBuilder {
         let time = format!("{}", chrono::Utc::now().format(TIME_FORMAT));
@@ -285,7 +307,7 @@ where
     fn prepare_request_with_signature(
         &self,
         uri_path: &str,
-        http_method: hyper::Method,
+        http_method: http::Method,
         time: &str,
         signature: &str,
     ) -> RequestBuilder {
@@ -295,7 +317,8 @@ where
             "cosmos::client::prepare_request_with_resource_signature::uri == {:?}",
             uri
         );
-        hyper::Request::builder()
+
+        http::request::Builder::new()
             .method(http_method)
             .uri(uri)
             .header(HEADER_DATE, time)

@@ -295,7 +295,7 @@ where
         debug!("{:?}", req);
 
         let (headers, body) = check_status_extract_headers_and_body(
-            self.document_client.hyper_client().request(req),
+            self.document_client.http_client().request(req),
             StatusCode::NO_CONTENT,
         )
         .await?;

@@ -362,7 +362,7 @@ where
         let req = req.body(hyper::Body::empty())?;
 
         let (headers, whole_body) = check_status_extract_headers_and_body(
-            self.document_client.hyper_client().request(req),
+            self.document_client.http_client().request(req),
             StatusCode::OK,
         )
         .await?;

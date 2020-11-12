@@ -298,7 +298,7 @@ where
         let request = request.body(hyper::Body::empty())?;
 
         let (headers, body) = check_status_extract_headers_and_body(
-            self.collection_client().hyper_client().request(request),
+            self.collection_client().http_client().request(request),
             StatusCode::OK,
         )
         .await?;

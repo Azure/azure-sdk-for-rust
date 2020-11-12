@@ -498,7 +498,7 @@ where
         debug!("\nreq == {:?}", req);
 
         let (headers, body) = check_status_extract_headers_and_body(
-            self.database_client.hyper_client().request(req),
+            self.database_client.http_client().request(req),
             StatusCode::CREATED,
         )
         .await?;

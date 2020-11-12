@@ -1,5 +1,6 @@
 use crate::requests;
 use crate::traits::*;
+use azure_core::HttpClient;
 use azure_core::No;
 use std::borrow::Cow;
 use std::marker::PhantomData;
@@ -37,7 +38,7 @@ where
     }
 }
 
-impl<'a, C, D, COLL, DOC> HasHyperClient for AttachmentStruct<'a, C, D, COLL, DOC>
+impl<'a, C, D, COLL, DOC> HasHttpClient for AttachmentStruct<'a, C, D, COLL, DOC>
 where
     C: CosmosClient + Clone,
     D: DatabaseClient<C> + Clone,
@@ -45,10 +46,8 @@ where
     DOC: DocumentClient<C, D, COLL> + Clone,
 {
     #[inline]
-    fn hyper_client(
-        &self,
-    ) -> &hyper::Client<hyper_rustls::HttpsConnector<hyper::client::HttpConnector>> {
-        self.document_client().hyper_client()
+    fn http_client(&self) -> &dyn HttpClient {
+        self.document_client().http_client()
     }
 }
 
@@ -117,35 +116,35 @@ where
         &self.attachment_name
     }
 
-    fn create_slug(
-        &self,
-    ) -> requests::CreateSlugAttachmentBuilder<'_, '_, C, D, COLL, DOC, No, No> {
-        requests::CreateSlugAttachmentBuilder::new(self)
-    }
+    //fn create_slug(
+    //    &self,
+    //) -> requests::CreateSlugAttachmentBuilder<'_, '_, C, D, COLL, DOC, No, No> {
+    //    requests::CreateSlugAttachmentBuilder::new(self)
+    //}
 
-    fn replace_slug(
-        &self,
-    ) -> requests::ReplaceSlugAttachmentBuilder<'_, '_, C, D, COLL, DOC, No, No> {
-        requests::ReplaceSlugAttachmentBuilder::new(self)
-    }
+    //fn replace_slug(
+    //    &self,
+    //) -> requests::ReplaceSlugAttachmentBuilder<'_, '_, C, D, COLL, DOC, No, No> {
+    //    requests::ReplaceSlugAttachmentBuilder::new(self)
+    //}
 
-    fn create_reference(
-        &self,
-    ) -> requests::CreateReferenceAttachmentBuilder<'_, '_, C, D, COLL, DOC, No, No> {
-        requests::CreateReferenceAttachmentBuilder::new(self)
-    }
+    //fn create_reference(
+    //    &self,
+    //) -> requests::CreateReferenceAttachmentBuilder<'_, '_, C, D, COLL, DOC, No, No> {
+    //    requests::CreateReferenceAttachmentBuilder::new(self)
+    //}
 
-    fn replace_reference(
-        &self,
-    ) -> requests::ReplaceReferenceAttachmentBuilder<'_, '_, C, D, COLL, DOC, No, No> {
-        requests::ReplaceReferenceAttachmentBuilder::new(self)
-    }
+    //fn replace_reference(
+    //    &self,
+    //) -> requests::ReplaceReferenceAttachmentBuilder<'_, '_, C, D, COLL, DOC, No, No> {
+    //    requests::ReplaceReferenceAttachmentBuilder::new(self)
+    //}
 
-    fn delete(&self) -> requests::DeleteAttachmentBuilder<'_, '_, C, D, COLL, DOC> {
-        requests::DeleteAttachmentBuilder::new(self)
-    }
+    //fn delete(&self) -> requests::DeleteAttachmentBuilder<'_, '_, C, D, COLL, DOC> {
+    //    requests::DeleteAttachmentBuilder::new(self)
+    //}
 
-    fn get(&self) -> requests::GetAttachmentBuilder<'_, '_, C, D, COLL, DOC> {
-        requests::GetAttachmentBuilder::new(self)
-    }
+    //fn get(&self) -> requests::GetAttachmentBuilder<'_, '_, C, D, COLL, DOC> {
+    //    requests::GetAttachmentBuilder::new(self)
+    //}
 }

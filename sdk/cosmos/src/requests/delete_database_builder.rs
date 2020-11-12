@@ -137,7 +137,7 @@ where
 
         trace!("request prepared == {:?}", request);
 
-        let future_response = self.database_client().hyper_client().request(request);
+        let future_response = self.database_client().http_client().request(request);
         let (headers, body) =
             check_status_extract_headers_and_body(future_response, StatusCode::NO_CONTENT).await?;
 

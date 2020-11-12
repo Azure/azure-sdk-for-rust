@@ -168,7 +168,7 @@ where
         debug!("\nrequest == {:#?}", request);
 
         let (status, headers, body) =
-            extract_status_headers_and_body(self.permission_client.hyper_client().request(request))
+            extract_status_headers_and_body(self.permission_client.http_client().request(request))
                 .await?;
 
         match status {

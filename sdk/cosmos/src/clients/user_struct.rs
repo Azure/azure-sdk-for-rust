@@ -2,6 +2,7 @@
 use crate::requests;
 use crate::traits::*;
 use crate::PermissionStruct;
+use azure_core::HttpClient;
 use azure_core::No;
 use std::borrow::Cow;
 use std::marker::PhantomData;
@@ -31,16 +32,14 @@ where
     }
 }
 
-impl<'a, C, D> HasHyperClient for UserStruct<'a, C, D>
+impl<'a, C, D> HasHttpClient for UserStruct<'a, C, D>
 where
     C: CosmosClient + Clone,
     D: DatabaseClient<C> + Clone,
 {
     #[inline]
-    fn hyper_client(
-        &self,
-    ) -> &hyper::Client<hyper_rustls::HttpsConnector<hyper::client::HttpConnector>> {
-        self.database_client().hyper_client()
+    fn http_client(&self) -> &dyn HttpClient {
+        self.database_client().http_client()
     }
 }
 
@@ -75,25 +74,25 @@ where
         &self.user_name
     }
 
-    fn create_user(&self) -> requests::CreateUserBuilder<'_, '_, C, D> {
-        requests::CreateUserBuilder::new(self)
-    }
+    // fn create_user(&self) -> requests::CreateUserBuilder<'_, '_, C, D> {
+    //     requests::CreateUserBuilder::new(self)
+    // }
 
-    fn get_user(&self) -> requests::GetUserBuilder<'_, '_, C, D> {
-        requests::GetUserBuilder::new(self)
-    }
+    // fn get_user(&self) -> requests::GetUserBuilder<'_, '_, C, D> {
+    //     requests::GetUserBuilder::new(self)
+    // }
 
-    fn replace_user(&self) -> requests::ReplaceUserBuilder<'_, '_, C, D, No> {
-        requests::ReplaceUserBuilder::new(self)
-    }
+    // fn replace_user(&self) -> requests::ReplaceUserBuilder<'_, '_, C, D, No> {
+    //     requests::ReplaceUserBuilder::new(self)
+    // }
 
-    fn delete_user(&self) -> requests::DeleteUserBuilder<'_, '_, C, D> {
-        requests::DeleteUserBuilder::new(self)
-    }
+    // fn delete_user(&self) -> requests::DeleteUserBuilder<'_, '_, C, D> {
+    //     requests::DeleteUserBuilder::new(self)
+    // }
 
-    fn list_permissions(&self) -> requests::ListPermissionsBuilder<'_, '_, C, D> {
-        requests::ListPermissionsBuilder::new(self)
-    }
+    // fn list_permissions(&self) -> requests::ListPermissionsBuilder<'_, '_, C, D> {
+    //     requests::ListPermissionsBuilder::new(self)
+    // }
 }
 
 impl<'a, C, D> IntoPermissionClient<'a, C, D, Self, PermissionStruct<'a, C, D, Self>>

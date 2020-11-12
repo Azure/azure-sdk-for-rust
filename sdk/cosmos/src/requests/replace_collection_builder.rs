@@ -290,7 +290,7 @@ where
         // They say you should receive 201 instead azure returns 200 upon success. I've filed a PR
         // to correct it.
         let (headers, body) = check_status_extract_headers_and_body(
-            self.collection_client.hyper_client().request(req),
+            self.collection_client.http_client().request(req),
             StatusCode::OK,
         )
         .await?;

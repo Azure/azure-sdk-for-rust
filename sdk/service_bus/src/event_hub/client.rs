@@ -1,29 +1,28 @@
-use crate::event_hub::{
-    delete_message, peek_lock, peek_lock_full, receive_and_delete, renew_lock, send_event,
-    unlock_message, PeekLockResponse,
-};
-use azure_core::errors::AzureError;
+use azure_core::errors::{AzureError, UnexpectedHTTPResult};
+use azure_core::HttpClient;
 use chrono::Duration;
-use hyper_rustls::HttpsConnector;
+use http::{header, status::StatusCode, Request, Response};
 use ring::hmac::Key;
+use url::{form_urlencoded, Url};
 
-type HttpClient = hyper::Client<HttpsConnector<hyper::client::HttpConnector>>;
+//type HttpClient = hyper::Client<HttpsConnector<hyper::client::HttpConnector>>;
 
 pub struct Client {
     namespace: String,
     event_hub: String,
     policy_name: String,
     signing_key: Key,
-    http_client: HttpClient,
+    http_client: Box<dyn HttpClient>,
 }
 
 impl Client {
     pub fn new<N, E, P, K>(
+        http_client: Box<dyn HttpClient>,
         namespace: N,
         event_hub: E,
         policy_name: P,
         key: K,
-    ) -> Result<Client, AzureError>
+    ) -> Result<Self, AzureError>
     where
         N: Into<String>,
         E: Into<String>,
@@ -31,7 +30,6 @@ impl Client {
         K: AsRef<str>,
     {
         let signing_key = Key::new(ring::hmac::HMAC_SHA256, key.as_ref().as_bytes());
-        let http_client = hyper::Client::builder().build(HttpsConnector::new());
 
         Ok(Client {
             namespace: namespace.into(),
@@ -46,121 +44,165 @@ impl Client {
         &mut self,
         event_body: &str,
         duration: Duration,
-    ) -> Result<(), AzureError> {
-        send_event(
-            &self.http_client,
-            &self.namespace,
-            &self.event_hub,
+    ) -> Result<Response<Vec<u8>>, Box<dyn std::error::Error + Send + Sync>> {
+        // prepare the url to call
+        let url = format!(
+            "https://{}.servicebus.windows.net/{}/messages",
+            self.namespace, self.event_hub
+        );
+        debug!("url == {:?}", url);
+
+        // generate sas signature based on key name, key value, url and duration.
+        let sas = crate::event_hub::generate_signature(
             &self.policy_name,
             &self.signing_key,
-            event_body,
+            &url,
             duration,
-        )
-        .await
+        );
+        debug!("sas == {}", sas);
+
+        let event_body: &str = event_body.into();
+        let event_body = event_body.as_bytes();
+
+        let request = Request::builder()
+            .uri(url)
+            .header(header::AUTHORIZATION, sas)
+            .body(event_body)?;
+
+        Ok(self
+            .http_client
+            .execute_request_check_status(request, StatusCode::OK)
+            .await?)
     }
 
     pub async fn peek_lock(
         &mut self,
         duration: Duration,
         timeout: Option<Duration>,
-    ) -> Result<String, AzureError> {
-        peek_lock(
-            &self.http_client,
-            &self.namespace,
-            &self.event_hub,
+    ) -> Result<Response<Vec<u8>>, Box<dyn std::error::Error + Send + Sync>> {
+        // prepare the url to call
+        let mut url = Url::parse(&format!(
+            "https://{}.servicebus.windows.net/{}/messages/head",
+            self.namespace, self.event_hub
+        ))?;
+        if let Some(t) = timeout {
+            url.query_pairs_mut()
+                .append_pair("timeout", &t.num_seconds().to_string());
+        }
+        debug!("url == {:?}", url);
+
+        // generate sas signature based on key name, key value, url and duration.
+        let sas = crate::event_hub::generate_signature(
             &self.policy_name,
             &self.signing_key,
+            &url.as_str(),
             duration,
-            timeout,
-        )
-        .await
+        );
+        debug!("sas == {}", sas);
+
+        let request = Request::builder()
+            .uri(url.as_str())
+            .method("POST")
+            .header(header::AUTHORIZATION, sas)
+            .header(header::CONTENT_LENGTH, 0)
+            .body(azure_core::EMPTY_BODY.as_ref())?;
+
+        let response = self
+            .http_client
+            .execute_request_check_statuses(
+                request,
+                &vec![StatusCode::CREATED, StatusCode::NO_CONTENT],
+            )
+            .await?;
+
+        Ok(response)
     }
 
-    pub async fn peek_lock_full(
-        &mut self,
-        duration: Duration,
-        timeout: Option<Duration>,
-    ) -> Result<PeekLockResponse, AzureError> {
-        peek_lock_full(
-            &self.http_client,
-            &self.namespace,
-            &self.event_hub,
-            &self.policy_name,
-            &self.signing_key,
-            duration,
-            timeout,
-        )
-        .await
-    }
+    //pub async fn peek_lock_full(
+    //    &mut self,
+    //    duration: Duration,
+    //    timeout: Option<Duration>,
+    //) -> Result<PeekLockResponse, AzureError> {
+    //    peek_lock_full(
+    //        self.http_client.as_ref(),
+    //        &self.namespace,
+    //        &self.event_hub,
+    //        &self.policy_name,
+    //        &self.signing_key,
+    //        duration,
+    //        timeout,
+    //    )
+    //    .await
+    //}
 
-    pub async fn receive_and_delete(&mut self, duration: Duration) -> Result<String, AzureError> {
-        receive_and_delete(
-            &self.http_client,
-            &self.namespace,
-            &self.event_hub,
-            &self.policy_name,
-            &self.signing_key,
-            duration,
-        )
-        .await
-    }
+    //pub async fn receive_and_delete(&mut self, duration: Duration) -> Result<String, AzureError> {
+    //    receive_and_delete(
+    //        self.http_client.as_ref(),
+    //        &self.namespace,
+    //        &self.event_hub,
+    //        &self.policy_name,
+    //        &self.signing_key,
+    //        duration,
+    //    )
+    //    .await
+    //}
 
-    pub async fn unlock_message(
-        &mut self,
-        message_id: &str,
-        lock_token: &str,
-        duration: Duration,
-    ) -> Result<(), AzureError> {
-        unlock_message(
-            &self.http_client,
-            &self.namespace,
-            &self.event_hub,
-            &self.policy_name,
-            &self.signing_key,
-            duration,
-            message_id,
-            lock_token,
-        )
-        .await
-    }
+    //pub async fn unlock_message(
+    //    &mut self,
+    //    message_id: &str,
+    //    lock_token: &str,
+    //    duration: Duration,
+    //) -> Result<(), AzureError> {
+    //    unlock_message(
+    //        self.http_client.as_ref(),
+    //        &self.namespace,
+    //        &self.event_hub,
+    //        &self.policy_name,
+    //        &self.signing_key,
+    //        duration,
+    //        message_id,
+    //        lock_token,
+    //    )
+    //    .await
+    //}
 
-    pub async fn delete_message(
-        &mut self,
-        message_id: &str,
-        lock_token: &str,
-        duration: Duration,
-    ) -> Result<(), AzureError> {
-        delete_message(
-            &self.http_client,
-            &self.namespace,
-            &self.event_hub,
-            &self.policy_name,
-            &self.signing_key,
-            duration,
-            message_id,
-            lock_token,
-        )
-        .await
-    }
+    //pub async fn delete_message(
+    //    &mut self,
+    //    message_id: &str,
+    //    lock_token: &str,
+    //    duration: Duration,
+    //) -> Result<(), AzureError> {
+    //    delete_message(
+    //        self.http_client.as_ref(),
+    //        &self.namespace,
+    //        &self.event_hub,
+    //        &self.policy_name,
+    //        &self.signing_key,
+    //        duration,
+    //        message_id,
+    //        lock_token,
+    //    )
+    //    .await
+    //}
 
-    pub async fn renew_lock(
-        &mut self,
-        message_id: &str,
-        lock_token: &str,
-        duration: Duration,
-    ) -> Result<(), AzureError> {
-        renew_lock(
-            &self.http_client,
-            &self.namespace,
-            &self.event_hub,
-            &self.policy_name,
-            &self.signing_key,
-            duration,
-            message_id,
-            lock_token,
-        )
-        .await
-    }
+    //pub async fn renew_lock(
+    //    &mut self,
+    //    message_id: &str,
+    //    lock_token: &str,
+    //    duration: Duration,
+    //) -> Result<(), AzureError> {
+    //    renew_lock(
+    //        self.http_client.as_ref(),
+    //        &self.namespace,
+    //        &self.event_hub,
+    //        &self.policy_name,
+    //        &self.signing_key,
+    //        duration,
+    //        message_id,
+    //        lock_token,
+    //    )
+    //    .await
+    //}
 }
 
 #[cfg(test)]
@@ -173,7 +215,14 @@ mod test {
     pub fn client_enc() {
         let str_to_sign = "This must be secret!";
 
-        let c = Client::new("namespace", "event_hub", "policy", "key").unwrap();
+        let c = Client::new(
+            Box::new(reqwest::Client::new()),
+            "namespace",
+            "event_hub",
+            "policy",
+            "key",
+        )
+        .unwrap();
 
         let sig = hmac::sign(&c.signing_key, str_to_sign.as_bytes());
         let sig = ::base64::encode(sig.as_ref());

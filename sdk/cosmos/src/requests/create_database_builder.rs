@@ -176,7 +176,7 @@ impl<'a> CreateDatabaseBuilder<'a, Yes> {
 
         debug!("create database request prepared == {:?}", request);
 
-        let future_response = self.cosmos_client().hyper_client().request(request);
+        let future_response = self.cosmos_client().http_client().request(request);
         let (headers, body) =
             check_status_extract_headers_and_body(future_response, StatusCode::CREATED).await?;
 
