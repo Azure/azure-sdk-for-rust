@@ -1,10 +1,9 @@
 use crate::prelude::*;
 use crate::responses::CreateDatabaseResponse;
 use crate::ResourceType;
-use azure_core::errors::{check_status_extract_headers_and_body, AzureError};
 use azure_core::prelude::*;
 use azure_core::{No, ToAssign, Yes};
-use hyper::StatusCode;
+use http::StatusCode;
 use std::convert::TryInto;
 use std::marker::PhantomData;
 
@@ -150,7 +149,7 @@ where
 
 // methods callable only when every mandatory field has been filled
 impl<'a> CreateDatabaseBuilder<'a, Yes> {
-    pub async fn execute(&self) -> Result<CreateDatabaseResponse, AzureError> {
+    pub async fn execute(&self) -> Result<CreateDatabaseResponse, CosmosError> {
         trace!("CreateDatabaseBuilder::execute called");
 
         #[derive(Serialize, Debug)]
@@ -172,14 +171,15 @@ impl<'a> CreateDatabaseBuilder<'a, Yes> {
         let request = ActivityIdOption::add_header(self, request);
         let request = ConsistencyLevelOption::add_header(self, request);
 
-        let request = request.body(hyper::Body::from(req))?; // todo: set content-length here and elsewhere without builders
+        let request = request.body(req.as_bytes())?; // todo: set content-length here and elsewhere without builders
 
         debug!("create database request prepared == {:?}", request);
 
-        let future_response = self.cosmos_client().http_client().request(request);
-        let (headers, body) =
-            check_status_extract_headers_and_body(future_response, StatusCode::CREATED).await?;
-
-        Ok((&headers, &body as &[u8]).try_into()?)
+        Ok(self
+            .cosmos_client()
+            .http_client()
+            .execute_request_check_status(request, StatusCode::CREATED)
+            .await?
+            .try_into()?)
     }
 }

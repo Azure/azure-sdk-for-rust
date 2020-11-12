@@ -10,7 +10,7 @@ pub trait HasHttpClient: Debug + Send + Sync {
 }
 
 pub trait CosmosClient: HasHttpClient + Send + Sync {
-    //fn create_database(&self) -> requests::CreateDatabaseBuilder<'_, No>;
+    fn create_database(&self) -> requests::CreateDatabaseBuilder<'_, No>;
     //fn list_databases(&self) -> requests::ListDatabasesBuilder<'_>;
 
     fn prepare_request(
