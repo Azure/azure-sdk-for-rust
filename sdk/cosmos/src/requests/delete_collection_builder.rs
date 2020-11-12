@@ -147,13 +147,13 @@ where
 
         let request = self
             .collection_client()
-            .prepare_request_with_collection_name(hyper::Method::DELETE);
+            .prepare_request_with_collection_name(http::Method::DELETE);
 
         let request = UserAgentOption::add_header(self, request);
         let request = ActivityIdOption::add_header(self, request);
         let request = ConsistencyLevelOption::add_header(self, request);
 
-        let request = request.body(hyper::Body::empty())?;
+        let request = request.body(EMPTY_BODY.as_ref())?;
 
         let (headers, body) = check_status_extract_headers_and_body(
             self.collection_client().http_client().request(request),

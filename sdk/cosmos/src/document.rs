@@ -1,6 +1,6 @@
 use crate::DocumentAttributes;
 use azure_core::errors::AzureError;
-use hyper::header::HeaderMap;
+use http::header::HeaderMap;
 use serde::de::DeserializeOwned;
 
 pub trait DocumentName: std::fmt::Debug {

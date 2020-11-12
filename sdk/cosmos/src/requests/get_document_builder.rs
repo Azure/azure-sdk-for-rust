@@ -240,7 +240,7 @@ where
     {
         let mut req = self
             .document_client
-            .prepare_request_with_document_name(hyper::Method::GET);
+            .prepare_request_with_document_name(http::Method::GET);
 
         // add trait headers
         req = IfMatchConditionOption::add_header(self, req);
@@ -251,7 +251,7 @@ where
 
         req = crate::add_partition_keys_header(self.document_client.partition_keys(), req);
 
-        let req = req.body(hyper::Body::empty())?;
+        let req = req.body(EMPTY_BODY.as_ref())?;
 
         let (status_code, headers, whole_body) =
             extract_status_headers_and_body(self.document_client.http_client().request(req))

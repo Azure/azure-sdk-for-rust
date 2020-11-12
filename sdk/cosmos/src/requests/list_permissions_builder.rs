@@ -242,7 +242,7 @@ where
                 self.user_client.database_client().database_name(),
                 self.user_client.user_name().id(),
             ),
-            hyper::Method::GET,
+            http::Method::GET,
             ResourceType::Permissions,
         );
 
@@ -252,7 +252,7 @@ where
         let request = ContinuationOption::add_header(self, request);
         let request = MaxItemCountOption::add_header(self, request);
 
-        let request = request.body(hyper::Body::empty())?;
+        let request = request.body(EMPTY_BODY.as_ref())?;
         debug!("\nrequest == {:#?}", request);
 
         let (headers, body) = check_status_extract_headers_and_body(

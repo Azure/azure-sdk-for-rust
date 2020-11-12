@@ -224,11 +224,11 @@ where
 
         let req = self.database_client.cosmos_client().prepare_request(
             &format!("dbs/{}/users", self.database_client.database_name()),
-            hyper::Method::GET,
+            http::Method::GET,
             ResourceType::Users,
         );
 
-        let req = req.body(hyper::Body::empty())?;
+        let req = req.body(EMPTY_BODY.as_ref())?;
         debug!("\nreq == {:?}", req);
 
         let (headers, body) = check_status_extract_headers_and_body(

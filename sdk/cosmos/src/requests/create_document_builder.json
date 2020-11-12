@@ -9,7 +9,7 @@
     "azure_core::prelude::*",
     "azure_core::{No, ToAssign, Yes}",
     "chrono::{DateTime, Utc}",
-    "hyper::StatusCode",
+    "http::StatusCode",
     "serde::Serialize",
     "std::convert::TryFrom",
     "std::marker::PhantomData"

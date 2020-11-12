@@ -158,13 +158,13 @@ where
 
         let request = self
             .permission_client
-            .prepare_request_with_permission_name(hyper::Method::GET);
+            .prepare_request_with_permission_name(http::Method::GET);
 
         let request = UserAgentOption::add_header(self, request);
         let request = ActivityIdOption::add_header(self, request);
         let request = ConsistencyLevelOption::add_header(self, request);
 
-        let request = request.body(hyper::Body::empty())?;
+        let request = request.body(EMPTY_BODY.as_ref())?;
         debug!("\nrequest == {:#?}", request);
 
         let (status, headers, body) =

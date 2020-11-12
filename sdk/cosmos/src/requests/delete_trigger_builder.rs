@@ -158,14 +158,14 @@ where
 
         let req = self
             .trigger_client
-            .prepare_request_with_trigger_name(hyper::Method::DELETE);
+            .prepare_request_with_trigger_name(http::Method::DELETE);
 
         // add trait headers
         let req = UserAgentOption::add_header(self, req);
         let req = ActivityIdOption::add_header(self, req);
         let req = ConsistencyLevelOption::add_header(self, req);
 
-        let request = req.body(hyper::Body::empty())?;
+        let request = req.body(EMPTY_BODY.as_ref())?;
 
         let (headers, body) = check_status_extract_headers_and_body(
             self.trigger_client().http_client().request(request),

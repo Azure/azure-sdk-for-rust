@@ -455,7 +455,7 @@ where
                 self.collection_client.database_client().database_name(),
                 self.collection_client.collection_name()
             ),
-            hyper::Method::POST,
+            http::Method::POST,
             ResourceType::Documents,
         );
 

@@ -156,13 +156,13 @@ where
 
         let request = self
             .collection_client()
-            .prepare_request_with_collection_name(hyper::Method::GET);
+            .prepare_request_with_collection_name(http::Method::GET);
 
         let request = UserAgentOption::add_header(self, request);
         let request = ActivityIdOption::add_header(self, request);
         let request = ConsistencyLevelOption::add_header(self, request);
 
-        let request = request.body(hyper::Body::empty())?;
+        let request = request.body(EMPTY_BODY.as_ref())?;
 
         let future_response = self.collection_client().http_client().request(request);
         let (headers, body) =

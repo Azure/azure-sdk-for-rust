@@ -163,7 +163,7 @@ impl<'a> CreateDatabaseBuilder<'a, Yes> {
 
         let request = self.cosmos_client().prepare_request(
             "dbs",
-            hyper::Method::POST,
+            http::Method::POST,
             ResourceType::Databases,
         );
 

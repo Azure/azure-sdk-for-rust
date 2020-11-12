@@ -385,9 +385,9 @@ where
 
         let req = self.trigger_client;
         let req = if self.is_create() {
-            req.prepare_request(hyper::Method::POST)
+            req.prepare_request(http::Method::POST)
         } else {
-            req.prepare_request_with_trigger_name(hyper::Method::PUT)
+            req.prepare_request_with_trigger_name(http::Method::PUT)
         };
 
         // add trait headers

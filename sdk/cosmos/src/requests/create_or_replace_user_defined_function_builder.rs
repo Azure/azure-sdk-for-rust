@@ -229,10 +229,10 @@ where
         let req = match self.is_create {
             true => self
                 .user_defined_function_client
-                .prepare_request(hyper::Method::POST),
+                .prepare_request(http::Method::POST),
             false => self
                 .user_defined_function_client
-                .prepare_request_with_user_defined_function_name(hyper::Method::PUT),
+                .prepare_request_with_user_defined_function_name(http::Method::PUT),
         };
 
         // add trait headers

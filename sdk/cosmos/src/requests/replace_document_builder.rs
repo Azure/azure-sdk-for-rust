@@ -480,7 +480,7 @@ where
                 self.collection_client.collection_name(),
                 self.document_id()
             ),
-            hyper::Method::PUT,
+            http::Method::PUT,
             ResourceType::Documents,
         );
 

@@ -345,7 +345,7 @@ where
     ) -> Result<crate::responses::ReplaceReferenceAttachmentResponse, AzureError> {
         let mut req = self
             .attachment_client
-            .prepare_request_with_attachment_name(hyper::Method::PUT);
+            .prepare_request_with_attachment_name(http::Method::PUT);
 
         // add trait headers
         req = IfMatchConditionOption::add_header(self, req);

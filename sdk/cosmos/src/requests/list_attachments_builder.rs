@@ -344,7 +344,7 @@ where
                 self.document_client.collection_client().collection_name(),
                 self.document_client.document_name().name()
             ),
-            hyper::Method::GET,
+            http::Method::GET,
             ResourceType::Attachments,
         );
 
@@ -359,7 +359,7 @@ where
 
         req = crate::add_partition_keys_header(self.document_client.partition_keys(), req);
 
-        let req = req.body(hyper::Body::empty())?;
+        let req = req.body(EMPTY_BODY.as_ref())?;
 
         let (headers, whole_body) = check_status_extract_headers_and_body(
             self.document_client.http_client().request(req),

@@ -341,7 +341,7 @@ where
     DOC: DocumentClient<C, D, COLL>,
 {
     pub async fn execute(&self) -> Result<CreateSlugAttachmentResponse, AzureError> {
-        let mut req = self.attachment_client.prepare_request(hyper::Method::PUT);
+        let mut req = self.attachment_client.prepare_request(http::Method::PUT);
 
         // add trait headers
         req = IfMatchConditionOption::add_header(self, req);

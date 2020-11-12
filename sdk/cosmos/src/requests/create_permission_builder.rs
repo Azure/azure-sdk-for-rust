@@ -207,7 +207,7 @@ where
                 self.permission_client.database_client().database_name(),
                 self.permission_client.user_client().user_name().id(),
             ),
-            hyper::Method::POST,
+            http::Method::POST,
             ResourceType::Permissions,
         );
 

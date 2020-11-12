@@ -225,18 +225,18 @@ where
                 self.collection_client.database_client().database_name(),
                 self.collection_client.collection_name()
             ),
-            hyper::Method::GET,
+            http::Method::GET,
             ResourceType::PartitionKeyRanges,
         );
 
-        let request = request.header(hyper::header::CONTENT_LENGTH, "0");
+        let request = request.header(http::header::CONTENT_LENGTH, "0");
         let request = IfMatchConditionOption::add_header(self, request);
         let request = IfModifiedSinceOption::add_header(self, request);
         let request = UserAgentOption::add_header(self, request);
         let request = ActivityIdOption::add_header(self, request);
         let request = ConsistencyLevelOption::add_header(self, request);
 
-        let request = request.body(hyper::Body::empty())?;
+        let request = request.body(EMPTY_BODY.as_ref())?;
 
         let future_response = self.collection_client().http_client().request(request);
         let (headers, body) =

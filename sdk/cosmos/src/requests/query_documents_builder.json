@@ -10,7 +10,7 @@
     "azure_core::{No, ToAssign, Yes}",
     "chrono::{DateTime, Utc}",
     "futures::stream::{unfold, Stream}",
-    "hyper::StatusCode",
+    "http::StatusCode",
     "serde::de::DeserializeOwned",
     "std::convert::TryInto",
     "std::marker::PhantomData"

@@ -370,7 +370,7 @@ where
                 self.collection_client.database_client().database_name(),
                 self.collection_client.collection_name()
             ),
-            hyper::Method::GET,
+            http::Method::GET,
             ResourceType::Documents,
         );
 
@@ -384,7 +384,7 @@ where
         let req = AIMOption::add_header(self, req);
         let req = PartitionRangeIdOption::add_header(self, req);
 
-        let req = req.body(hyper::Body::empty())?;
+        let req = req.body(EMPTY_BODY.as_ref())?;
 
         let (headers, whole_body) = check_status_extract_headers_and_body(
             self.collection_client.http_client().request(req),

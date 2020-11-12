@@ -286,7 +286,7 @@ where
 
         let request = self
             .stored_procedure_client()
-            .prepare_request_with_stored_procedure_name(hyper::Method::POST);
+            .prepare_request_with_stored_procedure_name(http::Method::POST);
 
         // add trait headers
         let request = UserAgentOption::add_header(self, request);

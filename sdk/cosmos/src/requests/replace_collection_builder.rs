@@ -256,7 +256,7 @@ where
 
         let req = self
             .collection_client
-            .prepare_request_with_collection_name(hyper::Method::PUT);
+            .prepare_request_with_collection_name(http::Method::PUT);
 
         let req = UserAgentOption::add_header(self, req);
         let req = ActivityIdOption::add_header(self, req);

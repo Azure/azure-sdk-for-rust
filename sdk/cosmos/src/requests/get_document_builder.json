@@ -10,7 +10,7 @@
     "azure_core::prelude::*",
     "azure_core::{IfMatchConditionOption, IfMatchConditionSupport}",
     "chrono::{DateTime, Utc}",
-    "hyper::StatusCode",
+    "http::StatusCode",
     "serde::de::DeserializeOwned",
     "std::convert::TryFrom"
   ],

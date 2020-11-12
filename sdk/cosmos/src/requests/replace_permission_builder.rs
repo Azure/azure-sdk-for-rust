@@ -203,7 +203,7 @@ where
 
         let request = self
             .permission_client
-            .prepare_request_with_permission_name(hyper::Method::PUT);
+            .prepare_request_with_permission_name(http::Method::PUT);
 
         let request = UserAgentOption::add_header(self, request);
         let request = ActivityIdOption::add_header(self, request);

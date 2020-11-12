@@ -164,14 +164,14 @@ where
 
         let request = self
             .user_defined_function_client
-            .prepare_request_with_user_defined_function_name(hyper::Method::DELETE);
+            .prepare_request_with_user_defined_function_name(http::Method::DELETE);
 
         // add trait headers
         let request = UserAgentOption::add_header(self, request);
         let request = ActivityIdOption::add_header(self, request);
         let request = ConsistencyLevelOption::add_header(self, request);
 
-        let request = request.body(hyper::Body::empty())?;
+        let request = request.body(EMPTY_BODY.as_ref())?;
 
         let (headers, body) = check_status_extract_headers_and_body(
             self.user_defined_function_client()

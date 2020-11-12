@@ -7,7 +7,7 @@
     "azure_core::errors::{check_status_extract_headers_and_body, AzureError}",
     "crate::responses::GetPartitionKeyRangesResponse",
     "chrono::{DateTime, Utc}",
-    "hyper::StatusCode",
+    "http::StatusCode",
     "crate::ResourceType",
     "std::convert::TryInto"
   ],

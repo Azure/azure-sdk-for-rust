@@ -242,7 +242,7 @@ where
                 self.collection_client.database_client().database_name(),
                 self.collection_client.collection_name(),
             ),
-            hyper::Method::GET,
+            http::Method::GET,
             ResourceType::StoredProcedures,
         );
 
@@ -253,7 +253,7 @@ where
         let request = ContinuationOption::add_header(self, request);
         let request = MaxItemCountOption::add_header(self, request);
 
-        let request = request.body(hyper::Body::empty())?;
+        let request = request.body(EMPTY_BODY.as_ref())?;
 
         let (headers, body) = check_status_extract_headers_and_body(
             self.collection_client().http_client().request(request),

@@ -279,7 +279,7 @@ where
 
         let mut req = self
             .document_client
-            .prepare_request_with_document_name(hyper::Method::DELETE);
+            .prepare_request_with_document_name(http::Method::DELETE);
 
         // add trait headers
         req = IfMatchConditionOption::add_header(self, req);
@@ -291,7 +291,7 @@ where
 
         req = crate::add_partition_keys_header(self.document_client.partition_keys(), req);
 
-        let req = req.body(hyper::Body::empty())?;
+        let req = req.body(EMPTY_BODY.as_ref())?;
         debug!("{:?}", req);
 
         let (headers, body) = check_status_extract_headers_and_body(

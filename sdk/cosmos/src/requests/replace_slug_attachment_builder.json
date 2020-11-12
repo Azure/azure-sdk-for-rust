@@ -7,7 +7,7 @@
     "azure_core::prelude::*",
     "azure_core::{Yes, No, ToAssign}",
     "std::marker::PhantomData",
-    "hyper::StatusCode",
+    "http::StatusCode",
     "crate::responses::CreateSlugAttachmentResponse",
     "std::convert::TryInto"
   ],

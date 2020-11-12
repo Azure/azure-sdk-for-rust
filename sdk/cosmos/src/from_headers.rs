@@ -255,8 +255,8 @@ pub(crate) fn schema_version_from_headers(headers: &HeaderMap) -> Result<&str, A
 
 pub(crate) fn server_from_headers(headers: &HeaderMap) -> Result<&str, AzureError> {
     Ok(headers
-        .get(hyper::header::SERVER)
-        .ok_or_else(|| AzureError::HeaderNotFound(hyper::header::SERVER.to_string()))?
+        .get(http::header::SERVER)
+        .ok_or_else(|| AzureError::HeaderNotFound(http::header::SERVER.to_string()))?
         .to_str()?)
 }
 

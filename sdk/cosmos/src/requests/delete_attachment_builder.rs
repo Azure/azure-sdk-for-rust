@@ -212,7 +212,7 @@ where
     pub async fn execute(&self) -> Result<crate::responses::DeleteAttachmentResponse, AzureError> {
         let mut req = self
             .attachment_client
-            .prepare_request_with_attachment_name(hyper::Method::DELETE);
+            .prepare_request_with_attachment_name(http::Method::DELETE);
 
         // add trait headers
         req = IfMatchConditionOption::add_header(self, req);
@@ -225,7 +225,7 @@ where
             req,
         );
 
-        let req = req.body(hyper::Body::empty())?;
+        let req = req.body(EMPTY_BODY.as_ref())?;
 
         debug!("req == {:#?}", req);
 

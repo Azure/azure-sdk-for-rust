@@ -5,16 +5,12 @@ use crate::{
     AuthorizationToken, CosmosClient, HasHttpClient, IntoDatabaseClient, ResourceType,
     WithDatabaseClient,
 };
-use azure_core::errors::AzureError;
 use azure_core::{HttpClient, No, ToAssign, Yes};
 use base64;
 use chrono;
 use core::marker::PhantomData;
 use http::request::Builder as RequestBuilder;
-use hyper::{
-    self,
-    header::{self, HeaderValue},
-};
+use http::{header, HeaderValue};
 use ring::hmac;
 use std::borrow::Cow;
 use std::fmt::Debug;
@@ -273,7 +269,7 @@ where
 
 fn generate_authorization(
     auth_token: &AuthorizationToken,
-    http_method: &hyper::Method,
+    http_method: &http::Method,
     resource_type: ResourceType,
     resource_link: &str,
     time: &str,
@@ -312,7 +308,7 @@ fn encode_str_to_sign(str_to_sign: &str, key: &[u8]) -> String {
 }
 
 fn string_to_sign(
-    http_method: &hyper::Method,
+    http_method: &http::Method,
     rt: ResourceType,
     resource_link: &str,
     time: &str,
@@ -329,15 +325,15 @@ fn string_to_sign(
     format!(
         "{}\n{}\n{}\n{}\n\n",
         match *http_method {
-            hyper::Method::GET => "get",
-            hyper::Method::PUT => "put",
-            hyper::Method::POST => "post",
-            hyper::Method::DELETE => "delete",
-            hyper::Method::HEAD => "head",
-            hyper::Method::TRACE => "trace",
-            hyper::Method::OPTIONS => "options",
-            hyper::Method::CONNECT => "connect",
-            hyper::Method::PATCH => "patch",
+            http::Method::GET => "get",
+            http::Method::PUT => "put",
+            http::Method::POST => "post",
+            http::Method::DELETE => "delete",
+            http::Method::HEAD => "head",
+            http::Method::TRACE => "trace",
+            http::Method::OPTIONS => "options",
+            http::Method::CONNECT => "connect",
+            http::Method::PATCH => "patch",
             _ => "extension",
         },
         match rt {
@@ -408,7 +404,7 @@ mod tests {
         let time = format!("{}", time.format(TIME_FORMAT));
 
         let ret = string_to_sign(
-            &hyper::Method::GET,
+            &http::Method::GET,
             ResourceType::Databases,
             "dbs/MyDatabase/colls/MyCollection",
             &time,
@@ -438,7 +434,7 @@ mon, 01 jan 1900 01:00:00 gmt
 
         let ret = generate_authorization(
             &auth_token,
-            &hyper::Method::GET,
+            &http::Method::GET,
             ResourceType::Databases,
             "dbs/MyDatabase/colls/MyCollection",
             &time,
@@ -463,7 +459,7 @@ mon, 01 jan 1900 01:00:00 gmt
 
         let ret = generate_authorization(
             &auth_token,
-            &hyper::Method::GET,
+            &http::Method::GET,
             ResourceType::Databases,
             "dbs/ToDoList",
             &time,

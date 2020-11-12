@@ -151,7 +151,7 @@ impl<'a> ListDatabasesBuilder<'a> {
 
         let request =
             self.cosmos_client
-                .prepare_request("dbs", hyper::Method::GET, ResourceType::Databases);
+                .prepare_request("dbs", http::Method::GET, ResourceType::Databases);
 
         let request = UserAgentOption::add_header(self, request);
         let request = ActivityIdOption::add_header(self, request);
@@ -159,7 +159,7 @@ impl<'a> ListDatabasesBuilder<'a> {
         let request = ContinuationOption::add_header(self, request);
         let request = MaxItemCountOption::add_header(self, request);
 
-        let request = request.body(hyper::Body::empty())?;
+        let request = request.body(EMPTY_BODY.as_ref())?;
 
         let future_response = self.cosmos_client.http_client().request(request);
         let (headers, body) =

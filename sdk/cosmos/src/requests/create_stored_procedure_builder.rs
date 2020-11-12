@@ -229,7 +229,7 @@ where
 
         let req = self
             .stored_procedure_client
-            .prepare_request(hyper::Method::POST);
+            .prepare_request(http::Method::POST);
 
         // add trait headers
         let req = UserAgentOption::add_header(self, req);

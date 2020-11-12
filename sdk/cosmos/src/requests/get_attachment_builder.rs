@@ -209,7 +209,7 @@ where
     pub async fn execute(&self) -> Result<crate::responses::GetAttachmentResponse, AzureError> {
         let mut req = self
             .attachment_client
-            .prepare_request_with_attachment_name(hyper::Method::GET);
+            .prepare_request_with_attachment_name(http::Method::GET);
 
         // add trait headers
         req = IfMatchConditionOption::add_header(self, req);
@@ -222,7 +222,7 @@ where
             req,
         );
 
-        let req = req.body(hyper::Body::empty())?;
+        let req = req.body(EMPTY_BODY.as_ref())?;
 
         debug!("req == {:#?}", req);
 

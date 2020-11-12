@@ -8,7 +8,7 @@
     "crate::ResourceType",
     "azure_core::errors::{check_status_extract_headers_and_body, AzureError}",
     "futures::stream::{unfold, Stream}",
-    "hyper::StatusCode",
+    "http::StatusCode",
     "std::convert::TryInto"
   ],
   "inline": true,

@@ -7,7 +7,7 @@
     "azure_core::prelude::*",
     "crate::prelude::*",
     "std::convert::TryInto",
-    "hyper::StatusCode"
+    "http::StatusCode"
   ],
   "extra_types": [
     "'a",

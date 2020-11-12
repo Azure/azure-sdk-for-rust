@@ -145,13 +145,13 @@ where
 
         let req = self
             .user_client
-            .prepare_request_with_user_name(hyper::Method::DELETE);
+            .prepare_request_with_user_name(http::Method::DELETE);
 
         let req = UserAgentOption::add_header(self, req);
         let req = ActivityIdOption::add_header(self, req);
         let req = ConsistencyLevelOption::add_header(self, req);
 
-        let req = req.body(hyper::Body::empty())?;
+        let req = req.body(EMPTY_BODY.as_ref())?;
         debug!("\nreq == {:?}", req);
 
         let (headers, body) = check_status_extract_headers_and_body(

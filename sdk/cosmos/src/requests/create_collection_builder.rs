@@ -473,7 +473,7 @@ where
 
         let mut req = self.database_client.cosmos_client().prepare_request(
             &format!("dbs/{}/colls", self.database_client.database_name()),
-            hyper::Method::POST,
+            http::Method::POST,
             ResourceType::Collections,
         );
 

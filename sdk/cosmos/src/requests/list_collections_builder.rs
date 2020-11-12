@@ -208,7 +208,7 @@ where
         trace!("ListCollectionsBuilder::execute called");
         let request = self.database_client.cosmos_client().prepare_request(
             &format!("dbs/{}/colls", self.database_client.database_name().name()),
-            hyper::Method::GET,
+            http::Method::GET,
             ResourceType::Collections,
         );
 
@@ -218,7 +218,7 @@ where
         let request = ContinuationOption::add_header(self, request);
         let request = MaxItemCountOption::add_header(self, request);
 
-        let request = request.body(hyper::Body::empty())?;
+        let request = request.body(EMPTY_BODY.as_ref())?;
 
         trace!("request prepared == {:?}", request);
 

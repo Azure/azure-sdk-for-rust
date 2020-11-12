@@ -6,7 +6,7 @@
     "azure_core::prelude::*",
     "crate::responses::CreateUserResponse",
     "azure_core::errors::UnexpectedHTTPResult",
-    "hyper::StatusCode",
+    "http::StatusCode",
     "std::convert::TryInto",
     "std::marker::PhantomData",
     "azure_core::{Yes,No,ToAssign}"

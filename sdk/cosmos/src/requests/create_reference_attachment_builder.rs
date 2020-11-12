@@ -292,7 +292,7 @@ where
     pub async fn execute(
         &self,
     ) -> Result<crate::responses::CreateReferenceAttachmentResponse, AzureError> {
-        let mut req = self.attachment_client.prepare_request(hyper::Method::POST);
+        let mut req = self.attachment_client.prepare_request(http::Method::POST);
 
         // add trait headers
         req = UserAgentOption::add_header(self, req);

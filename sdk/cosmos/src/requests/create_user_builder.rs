@@ -143,7 +143,7 @@ where
     pub async fn execute(&self) -> Result<CreateUserResponse, AzureError> {
         trace!("CreateUserBuilder::execute called");
 
-        let req = self.user_client.prepare_request(hyper::Method::POST);
+        let req = self.user_client.prepare_request(http::Method::POST);
 
         let req = UserAgentOption::add_header(self, req);
         let req = ActivityIdOption::add_header(self, req);
