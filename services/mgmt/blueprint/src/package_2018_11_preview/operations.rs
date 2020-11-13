@@ -14,20 +14,24 @@ pub mod blueprints {
         resource_scope: &str,
         blueprint_name: &str,
     ) -> std::result::Result<Blueprint, get::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/{}/providers/Microsoft.Blueprint/blueprints/{}",
-            &operation_config.base_path, resource_scope, blueprint_name
+            operation_config.base_path(),
+            resource_scope,
+            blueprint_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(get::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(get::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         let req = req_builder.build().context(get::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
         match rsp.status() {
@@ -63,20 +67,24 @@ pub mod blueprints {
         blueprint_name: &str,
         blueprint: &Blueprint,
     ) -> std::result::Result<Blueprint, create_or_update::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/{}/providers/Microsoft.Blueprint/blueprints/{}",
-            &operation_config.base_path, resource_scope, blueprint_name
+            operation_config.base_path(),
+            resource_scope,
+            blueprint_name
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(create_or_update::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(create_or_update::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         req_builder = req_builder.json(blueprint);
         let req = req_builder.build().context(create_or_update::BuildRequestError)?;
         let rsp = client.execute(req).await.context(create_or_update::ExecuteRequestError)?;
@@ -112,20 +120,24 @@ pub mod blueprints {
         resource_scope: &str,
         blueprint_name: &str,
     ) -> std::result::Result<delete::Response, delete::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/{}/providers/Microsoft.Blueprint/blueprints/{}",
-            &operation_config.base_path, resource_scope, blueprint_name
+            operation_config.base_path(),
+            resource_scope,
+            blueprint_name
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(delete::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(delete::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         let req = req_builder.build().context(delete::BuildRequestError)?;
         let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
         match rsp.status() {
@@ -162,20 +174,23 @@ pub mod blueprints {
         }
     }
     pub async fn list(operation_config: &crate::OperationConfig, resource_scope: &str) -> std::result::Result<BlueprintList, list::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/{}/providers/Microsoft.Blueprint/blueprints",
-            &operation_config.base_path, resource_scope
+            operation_config.base_path(),
+            resource_scope
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(list::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(list::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         let req = req_builder.build().context(list::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
         match rsp.status() {
@@ -216,20 +231,25 @@ pub mod artifacts {
         blueprint_name: &str,
         artifact_name: &str,
     ) -> std::result::Result<Artifact, get::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/{}/providers/Microsoft.Blueprint/blueprints/{}/artifacts/{}",
-            &operation_config.base_path, resource_scope, blueprint_name, artifact_name
+            operation_config.base_path(),
+            resource_scope,
+            blueprint_name,
+            artifact_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(get::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(get::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         let req = req_builder.build().context(get::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
         match rsp.status() {
@@ -266,20 +286,25 @@ pub mod artifacts {
         artifact_name: &str,
         artifact: &Artifact,
     ) -> std::result::Result<Artifact, create_or_update::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/{}/providers/Microsoft.Blueprint/blueprints/{}/artifacts/{}",
-            &operation_config.base_path, resource_scope, blueprint_name, artifact_name
+            operation_config.base_path(),
+            resource_scope,
+            blueprint_name,
+            artifact_name
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(create_or_update::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(create_or_update::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         req_builder = req_builder.json(artifact);
         let req = req_builder.build().context(create_or_update::BuildRequestError)?;
         let rsp = client.execute(req).await.context(create_or_update::ExecuteRequestError)?;
@@ -316,20 +341,25 @@ pub mod artifacts {
         blueprint_name: &str,
         artifact_name: &str,
     ) -> std::result::Result<delete::Response, delete::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/{}/providers/Microsoft.Blueprint/blueprints/{}/artifacts/{}",
-            &operation_config.base_path, resource_scope, blueprint_name, artifact_name
+            operation_config.base_path(),
+            resource_scope,
+            blueprint_name,
+            artifact_name
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(delete::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(delete::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         let req = req_builder.build().context(delete::BuildRequestError)?;
         let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
         match rsp.status() {
@@ -370,20 +400,24 @@ pub mod artifacts {
         resource_scope: &str,
         blueprint_name: &str,
     ) -> std::result::Result<ArtifactList, list::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/{}/providers/Microsoft.Blueprint/blueprints/{}/artifacts",
-            &operation_config.base_path, resource_scope, blueprint_name
+            operation_config.base_path(),
+            resource_scope,
+            blueprint_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(list::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(list::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         let req = req_builder.build().context(list::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
         match rsp.status() {
@@ -424,20 +458,25 @@ pub mod published_blueprints {
         blueprint_name: &str,
         version_id: &str,
     ) -> std::result::Result<PublishedBlueprint, get::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/{}/providers/Microsoft.Blueprint/blueprints/{}/versions/{}",
-            &operation_config.base_path, resource_scope, blueprint_name, version_id
+            operation_config.base_path(),
+            resource_scope,
+            blueprint_name,
+            version_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(get::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(get::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         let req = req_builder.build().context(get::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
         match rsp.status() {
@@ -474,20 +513,25 @@ pub mod published_blueprints {
         version_id: &str,
         published_blueprint: Option<&PublishedBlueprint>,
     ) -> std::result::Result<PublishedBlueprint, create::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/{}/providers/Microsoft.Blueprint/blueprints/{}/versions/{}",
-            &operation_config.base_path, resource_scope, blueprint_name, version_id
+            operation_config.base_path(),
+            resource_scope,
+            blueprint_name,
+            version_id
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(create::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(create::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         if let Some(published_blueprint) = published_blueprint {
             req_builder = req_builder.json(published_blueprint);
         }
@@ -526,20 +570,25 @@ pub mod published_blueprints {
         blueprint_name: &str,
         version_id: &str,
     ) -> std::result::Result<delete::Response, delete::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/{}/providers/Microsoft.Blueprint/blueprints/{}/versions/{}",
-            &operation_config.base_path, resource_scope, blueprint_name, version_id
+            operation_config.base_path(),
+            resource_scope,
+            blueprint_name,
+            version_id
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(delete::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(delete::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         let req = req_builder.build().context(delete::BuildRequestError)?;
         let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
         match rsp.status() {
@@ -580,20 +629,24 @@ pub mod published_blueprints {
         resource_scope: &str,
         blueprint_name: &str,
     ) -> std::result::Result<PublishedBlueprintList, list::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/{}/providers/Microsoft.Blueprint/blueprints/{}/versions",
-            &operation_config.base_path, resource_scope, blueprint_name
+            operation_config.base_path(),
+            resource_scope,
+            blueprint_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(list::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(list::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         let req = req_builder.build().context(list::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
         match rsp.status() {
@@ -635,20 +688,26 @@ pub mod published_artifacts {
         version_id: &str,
         artifact_name: &str,
     ) -> std::result::Result<Artifact, get::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/{}/providers/Microsoft.Blueprint/blueprints/{}/versions/{}/artifacts/{}",
-            &operation_config.base_path, resource_scope, blueprint_name, version_id, artifact_name
+            operation_config.base_path(),
+            resource_scope,
+            blueprint_name,
+            version_id,
+            artifact_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(get::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(get::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         let req = req_builder.build().context(get::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
         match rsp.status() {
@@ -684,20 +743,25 @@ pub mod published_artifacts {
         blueprint_name: &str,
         version_id: &str,
     ) -> std::result::Result<ArtifactList, list::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/{}/providers/Microsoft.Blueprint/blueprints/{}/versions/{}/artifacts",
-            &operation_config.base_path, resource_scope, blueprint_name, version_id
+            operation_config.base_path(),
+            resource_scope,
+            blueprint_name,
+            version_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(list::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(list::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         let req = req_builder.build().context(list::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
         match rsp.status() {
@@ -737,20 +801,24 @@ pub mod assignments {
         resource_scope: &str,
         assignment_name: &str,
     ) -> std::result::Result<Assignment, get::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/{}/providers/Microsoft.Blueprint/blueprintAssignments/{}",
-            &operation_config.base_path, resource_scope, assignment_name
+            operation_config.base_path(),
+            resource_scope,
+            assignment_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(get::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(get::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         let req = req_builder.build().context(get::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
         match rsp.status() {
@@ -786,20 +854,24 @@ pub mod assignments {
         assignment_name: &str,
         assignment: &Assignment,
     ) -> std::result::Result<Assignment, create_or_update::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/{}/providers/Microsoft.Blueprint/blueprintAssignments/{}",
-            &operation_config.base_path, resource_scope, assignment_name
+            operation_config.base_path(),
+            resource_scope,
+            assignment_name
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(create_or_update::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(create_or_update::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         req_builder = req_builder.json(assignment);
         let req = req_builder.build().context(create_or_update::BuildRequestError)?;
         let rsp = client.execute(req).await.context(create_or_update::ExecuteRequestError)?;
@@ -836,20 +908,24 @@ pub mod assignments {
         assignment_name: &str,
         delete_behavior: Option<&str>,
     ) -> std::result::Result<delete::Response, delete::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/{}/providers/Microsoft.Blueprint/blueprintAssignments/{}",
-            &operation_config.base_path, resource_scope, assignment_name
+            operation_config.base_path(),
+            resource_scope,
+            assignment_name
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(delete::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(delete::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         if let Some(delete_behavior) = delete_behavior {
             req_builder = req_builder.query(&[("deleteBehavior", delete_behavior)]);
         }
@@ -893,20 +969,24 @@ pub mod assignments {
         resource_scope: &str,
         assignment_name: &str,
     ) -> std::result::Result<WhoIsBlueprintContract, who_is_blueprint::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/{}/providers/Microsoft.Blueprint/blueprintAssignments/{}/WhoIsBlueprint",
-            &operation_config.base_path, resource_scope, assignment_name
+            operation_config.base_path(),
+            resource_scope,
+            assignment_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(who_is_blueprint::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(who_is_blueprint::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(who_is_blueprint::BuildRequestError)?;
         let rsp = client.execute(req).await.context(who_is_blueprint::ExecuteRequestError)?;
@@ -939,20 +1019,23 @@ pub mod assignments {
         }
     }
     pub async fn list(operation_config: &crate::OperationConfig, resource_scope: &str) -> std::result::Result<AssignmentList, list::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/{}/providers/Microsoft.Blueprint/blueprintAssignments",
-            &operation_config.base_path, resource_scope
+            operation_config.base_path(),
+            resource_scope
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(list::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(list::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         let req = req_builder.build().context(list::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
         match rsp.status() {
@@ -992,20 +1075,24 @@ pub mod assignment_operations {
         resource_scope: &str,
         assignment_name: &str,
     ) -> std::result::Result<AssignmentOperationList, list::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/{}/providers/Microsoft.Blueprint/blueprintAssignments/{}/assignmentOperations",
-            &operation_config.base_path, resource_scope, assignment_name
+            operation_config.base_path(),
+            resource_scope,
+            assignment_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(list::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(list::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         let req = req_builder.build().context(list::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
         match rsp.status() {
@@ -1041,20 +1128,25 @@ pub mod assignment_operations {
         assignment_name: &str,
         assignment_operation_name: &str,
     ) -> std::result::Result<AssignmentOperation, get::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/{}/providers/Microsoft.Blueprint/blueprintAssignments/{}/assignmentOperations/{}",
-            &operation_config.base_path, resource_scope, assignment_name, assignment_operation_name
+            operation_config.base_path(),
+            resource_scope,
+            assignment_name,
+            assignment_operation_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(get::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(get::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         let req = req_builder.build().context(get::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
         match rsp.status() {

@@ -14,20 +14,23 @@ pub mod registries {
         subscription_id: &str,
         registry_name_check_request: &RegistryNameCheckRequest,
     ) -> std::result::Result<RegistryNameStatus, check_name_availability::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.ContainerRegistry/checkNameAvailability",
-            &operation_config.base_path, subscription_id
+            operation_config.base_path(),
+            subscription_id
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(check_name_availability::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(check_name_availability::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         req_builder = req_builder.json(registry_name_check_request);
         let req = req_builder.build().context(check_name_availability::BuildRequestError)?;
         let rsp = client.execute(req).await.context(check_name_availability::ExecuteRequestError)?;
@@ -65,20 +68,25 @@ pub mod registries {
         resource_group_name: &str,
         registry_name: &str,
     ) -> std::result::Result<Registry, get::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerRegistry/registries/{}",
-            &operation_config.base_path, subscription_id, resource_group_name, registry_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            registry_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(get::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(get::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         let req = req_builder.build().context(get::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
         match rsp.status() {
@@ -115,20 +123,25 @@ pub mod registries {
         registry_name: &str,
         registry_create_parameters: &RegistryCreateParameters,
     ) -> std::result::Result<create::Response, create::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerRegistry/registries/{}",
-            &operation_config.base_path, subscription_id, resource_group_name, registry_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            registry_name
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(create::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(create::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         req_builder = req_builder.json(registry_create_parameters);
         let req = req_builder.build().context(create::BuildRequestError)?;
         let rsp = client.execute(req).await.context(create::ExecuteRequestError)?;
@@ -172,20 +185,25 @@ pub mod registries {
         registry_name: &str,
         registry_update_parameters: &RegistryUpdateParameters,
     ) -> std::result::Result<Registry, update::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerRegistry/registries/{}",
-            &operation_config.base_path, subscription_id, resource_group_name, registry_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            registry_name
         );
         let mut req_builder = client.patch(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(update::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(update::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         req_builder = req_builder.json(registry_update_parameters);
         let req = req_builder.build().context(update::BuildRequestError)?;
         let rsp = client.execute(req).await.context(update::ExecuteRequestError)?;
@@ -222,20 +240,25 @@ pub mod registries {
         resource_group_name: &str,
         registry_name: &str,
     ) -> std::result::Result<delete::Response, delete::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerRegistry/registries/{}",
-            &operation_config.base_path, subscription_id, resource_group_name, registry_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            registry_name
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(delete::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(delete::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         let req = req_builder.build().context(delete::BuildRequestError)?;
         let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
         match rsp.status() {
@@ -272,20 +295,24 @@ pub mod registries {
         subscription_id: &str,
         resource_group_name: &str,
     ) -> std::result::Result<RegistryListResult, list_by_resource_group::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerRegistry/registries",
-            &operation_config.base_path, subscription_id, resource_group_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(list_by_resource_group::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(list_by_resource_group::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         let req = req_builder.build().context(list_by_resource_group::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_by_resource_group::ExecuteRequestError)?;
         match rsp.status() {
@@ -320,20 +347,23 @@ pub mod registries {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
     ) -> std::result::Result<RegistryListResult, list::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.ContainerRegistry/registries",
-            &operation_config.base_path, subscription_id
+            operation_config.base_path(),
+            subscription_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(list::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(list::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         let req = req_builder.build().context(list::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
         match rsp.status() {
@@ -369,20 +399,25 @@ pub mod registries {
         resource_group_name: &str,
         registry_name: &str,
     ) -> std::result::Result<RegistryListCredentialsResult, list_credentials::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerRegistry/registries/{}/listCredentials",
-            &operation_config.base_path, subscription_id, resource_group_name, registry_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            registry_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(list_credentials::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(list_credentials::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(list_credentials::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_credentials::ExecuteRequestError)?;
@@ -421,20 +456,25 @@ pub mod registries {
         registry_name: &str,
         regenerate_credential_parameters: &RegenerateCredentialParameters,
     ) -> std::result::Result<RegistryListCredentialsResult, regenerate_credential::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerRegistry/registries/{}/regenerateCredential",
-            &operation_config.base_path, subscription_id, resource_group_name, registry_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            registry_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(regenerate_credential::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(regenerate_credential::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         req_builder = req_builder.json(regenerate_credential_parameters);
         let req = req_builder.build().context(regenerate_credential::BuildRequestError)?;
         let rsp = client.execute(req).await.context(regenerate_credential::ExecuteRequestError)?;
@@ -472,17 +512,19 @@ pub mod operations {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationListResult, list::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!("{}/providers/Microsoft.ContainerRegistry/operations", &operation_config.base_path,);
+        let client = operation_config.http_client();
+        let uri_str = &format!("{}/providers/Microsoft.ContainerRegistry/operations", operation_config.base_path(),);
         let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(list::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(list::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         let req = req_builder.build().context(list::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
         match rsp.status() {

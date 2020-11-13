@@ -10,17 +10,19 @@ pub mod operations {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationListResult, list::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!("{}/providers/Microsoft.Storage/operations", &operation_config.base_path,);
+        let client = operation_config.http_client();
+        let uri_str = &format!("{}/providers/Microsoft.Storage/operations", operation_config.base_path(),);
         let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(list::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(list::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         let req = req_builder.build().context(list::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
         match rsp.status() {
@@ -59,20 +61,23 @@ pub mod skus {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
     ) -> std::result::Result<StorageSkuListResult, list::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Storage/skus",
-            &operation_config.base_path, subscription_id
+            operation_config.base_path(),
+            subscription_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(list::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(list::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         let req = req_builder.build().context(list::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
         match rsp.status() {
@@ -112,20 +117,23 @@ pub mod storage_accounts {
         account_name: &StorageAccountCheckNameAvailabilityParameters,
         subscription_id: &str,
     ) -> std::result::Result<CheckNameAvailabilityResult, check_name_availability::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Storage/checkNameAvailability",
-            &operation_config.base_path, subscription_id
+            operation_config.base_path(),
+            subscription_id
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(check_name_availability::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(check_name_availability::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         req_builder = req_builder.json(account_name);
         let req = req_builder.build().context(check_name_availability::BuildRequestError)?;
         let rsp = client.execute(req).await.context(check_name_availability::ExecuteRequestError)?;
@@ -163,20 +171,25 @@ pub mod storage_accounts {
         account_name: &str,
         subscription_id: &str,
     ) -> std::result::Result<StorageAccount, get_properties::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}",
-            &operation_config.base_path, subscription_id, resource_group_name, account_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            account_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(get_properties::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(get_properties::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         let req = req_builder.build().context(get_properties::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get_properties::ExecuteRequestError)?;
         match rsp.status() {
@@ -213,20 +226,25 @@ pub mod storage_accounts {
         parameters: &StorageAccountCreateParameters,
         subscription_id: &str,
     ) -> std::result::Result<create::Response, create::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}",
-            &operation_config.base_path, subscription_id, resource_group_name, account_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            account_name
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(create::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(create::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         req_builder = req_builder.json(parameters);
         let req = req_builder.build().context(create::BuildRequestError)?;
         let rsp = client.execute(req).await.context(create::ExecuteRequestError)?;
@@ -270,20 +288,25 @@ pub mod storage_accounts {
         parameters: &StorageAccountUpdateParameters,
         subscription_id: &str,
     ) -> std::result::Result<StorageAccount, update::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}",
-            &operation_config.base_path, subscription_id, resource_group_name, account_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            account_name
         );
         let mut req_builder = client.patch(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(update::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(update::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         req_builder = req_builder.json(parameters);
         let req = req_builder.build().context(update::BuildRequestError)?;
         let rsp = client.execute(req).await.context(update::ExecuteRequestError)?;
@@ -320,20 +343,25 @@ pub mod storage_accounts {
         account_name: &str,
         subscription_id: &str,
     ) -> std::result::Result<delete::Response, delete::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}",
-            &operation_config.base_path, subscription_id, resource_group_name, account_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            account_name
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(delete::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(delete::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         let req = req_builder.build().context(delete::BuildRequestError)?;
         let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
         match rsp.status() {
@@ -369,20 +397,23 @@ pub mod storage_accounts {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
     ) -> std::result::Result<StorageAccountListResult, list::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Storage/storageAccounts",
-            &operation_config.base_path, subscription_id
+            operation_config.base_path(),
+            subscription_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(list::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(list::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         let req = req_builder.build().context(list::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
         match rsp.status() {
@@ -417,20 +448,24 @@ pub mod storage_accounts {
         resource_group_name: &str,
         subscription_id: &str,
     ) -> std::result::Result<StorageAccountListResult, list_by_resource_group::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts",
-            &operation_config.base_path, subscription_id, resource_group_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(list_by_resource_group::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(list_by_resource_group::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         let req = req_builder.build().context(list_by_resource_group::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_by_resource_group::ExecuteRequestError)?;
         match rsp.status() {
@@ -467,20 +502,25 @@ pub mod storage_accounts {
         account_name: &str,
         subscription_id: &str,
     ) -> std::result::Result<StorageAccountListKeysResult, list_keys::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/listKeys",
-            &operation_config.base_path, subscription_id, resource_group_name, account_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            account_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(list_keys::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(list_keys::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(list_keys::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_keys::ExecuteRequestError)?;
@@ -519,20 +559,25 @@ pub mod storage_accounts {
         regenerate_key: &StorageAccountRegenerateKeyParameters,
         subscription_id: &str,
     ) -> std::result::Result<StorageAccountListKeysResult, regenerate_key::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/regenerateKey",
-            &operation_config.base_path, subscription_id, resource_group_name, account_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            account_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(regenerate_key::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(regenerate_key::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         req_builder = req_builder.json(regenerate_key);
         let req = req_builder.build().context(regenerate_key::BuildRequestError)?;
         let rsp = client.execute(req).await.context(regenerate_key::ExecuteRequestError)?;
@@ -571,20 +616,25 @@ pub mod storage_accounts {
         parameters: &AccountSasParameters,
         subscription_id: &str,
     ) -> std::result::Result<ListAccountSasResponse, list_account_sas::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/ListAccountSas",
-            &operation_config.base_path, subscription_id, resource_group_name, account_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            account_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(list_account_sas::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(list_account_sas::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         req_builder = req_builder.json(parameters);
         let req = req_builder.build().context(list_account_sas::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_account_sas::ExecuteRequestError)?;
@@ -623,20 +673,25 @@ pub mod storage_accounts {
         parameters: &ServiceSasParameters,
         subscription_id: &str,
     ) -> std::result::Result<ListServiceSasResponse, list_service_sas::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/ListServiceSas",
-            &operation_config.base_path, subscription_id, resource_group_name, account_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            account_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(list_service_sas::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(list_service_sas::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         req_builder = req_builder.json(parameters);
         let req = req_builder.build().context(list_service_sas::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_service_sas::ExecuteRequestError)?;
@@ -677,20 +732,23 @@ pub mod usage {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
     ) -> std::result::Result<UsageListResult, list::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Storage/usages",
-            &operation_config.base_path, subscription_id
+            operation_config.base_path(),
+            subscription_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(list::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(list::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         let req = req_builder.build().context(list::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
         match rsp.status() {
@@ -725,20 +783,24 @@ pub mod usage {
         subscription_id: &str,
         location: &str,
     ) -> std::result::Result<UsageListResult, list_by_location::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Storage/locations/{}/usages",
-            &operation_config.base_path, subscription_id, location
+            operation_config.base_path(),
+            subscription_id,
+            location
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(list_by_location::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(list_by_location::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         let req = req_builder.build().context(list_by_location::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_by_location::ExecuteRequestError)?;
         match rsp.status() {
@@ -779,20 +841,25 @@ pub mod blob_containers {
         account_name: &str,
         subscription_id: &str,
     ) -> std::result::Result<ListContainerItems, list::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/blobServices/default/containers",
-            &operation_config.base_path, subscription_id, resource_group_name, account_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            account_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(list::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(list::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         let req = req_builder.build().context(list::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
         match rsp.status() {
@@ -829,20 +896,26 @@ pub mod blob_containers {
         container_name: &str,
         subscription_id: &str,
     ) -> std::result::Result<BlobContainer, get::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/blobServices/default/containers/{}",
-            &operation_config.base_path, subscription_id, resource_group_name, account_name, container_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            account_name,
+            container_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(get::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(get::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         let req = req_builder.build().context(get::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
         match rsp.status() {
@@ -880,20 +953,26 @@ pub mod blob_containers {
         blob_container: &BlobContainer,
         subscription_id: &str,
     ) -> std::result::Result<BlobContainer, create::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/blobServices/default/containers/{}",
-            &operation_config.base_path, subscription_id, resource_group_name, account_name, container_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            account_name,
+            container_name
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(create::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(create::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         req_builder = req_builder.json(blob_container);
         let req = req_builder.build().context(create::BuildRequestError)?;
         let rsp = client.execute(req).await.context(create::ExecuteRequestError)?;
@@ -932,20 +1011,26 @@ pub mod blob_containers {
         blob_container: &BlobContainer,
         subscription_id: &str,
     ) -> std::result::Result<BlobContainer, update::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/blobServices/default/containers/{}",
-            &operation_config.base_path, subscription_id, resource_group_name, account_name, container_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            account_name,
+            container_name
         );
         let mut req_builder = client.patch(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(update::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(update::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         req_builder = req_builder.json(blob_container);
         let req = req_builder.build().context(update::BuildRequestError)?;
         let rsp = client.execute(req).await.context(update::ExecuteRequestError)?;
@@ -983,20 +1068,26 @@ pub mod blob_containers {
         container_name: &str,
         subscription_id: &str,
     ) -> std::result::Result<delete::Response, delete::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/blobServices/default/containers/{}",
-            &operation_config.base_path, subscription_id, resource_group_name, account_name, container_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            account_name,
+            container_name
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(delete::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(delete::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         let req = req_builder.build().context(delete::BuildRequestError)?;
         let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
         match rsp.status() {
@@ -1036,17 +1127,19 @@ pub mod blob_containers {
         subscription_id: &str,
         legal_hold: &LegalHold,
     ) -> std::result::Result<LegalHold, set_legal_hold::Error> {
-        let client = &operation_config.client;
-        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/blobServices/default/containers/{}/setLegalHold" , & operation_config . base_path , subscription_id , resource_group_name , account_name , container_name) ;
+        let client = operation_config.http_client();
+        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/blobServices/default/containers/{}/setLegalHold" , operation_config . base_path () , subscription_id , resource_group_name , account_name , container_name) ;
         let mut req_builder = client.post(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(set_legal_hold::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(set_legal_hold::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         req_builder = req_builder.json(legal_hold);
         let req = req_builder.build().context(set_legal_hold::BuildRequestError)?;
         let rsp = client.execute(req).await.context(set_legal_hold::ExecuteRequestError)?;
@@ -1085,17 +1178,19 @@ pub mod blob_containers {
         subscription_id: &str,
         legal_hold: &LegalHold,
     ) -> std::result::Result<LegalHold, clear_legal_hold::Error> {
-        let client = &operation_config.client;
-        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/blobServices/default/containers/{}/clearLegalHold" , & operation_config . base_path , subscription_id , resource_group_name , account_name , container_name) ;
+        let client = operation_config.http_client();
+        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/blobServices/default/containers/{}/clearLegalHold" , operation_config . base_path () , subscription_id , resource_group_name , account_name , container_name) ;
         let mut req_builder = client.post(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(clear_legal_hold::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(clear_legal_hold::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         req_builder = req_builder.json(legal_hold);
         let req = req_builder.build().context(clear_legal_hold::BuildRequestError)?;
         let rsp = client.execute(req).await.context(clear_legal_hold::ExecuteRequestError)?;
@@ -1135,17 +1230,19 @@ pub mod blob_containers {
         subscription_id: &str,
         if_match: Option<&str>,
     ) -> std::result::Result<ImmutabilityPolicy, get_immutability_policy::Error> {
-        let client = &operation_config.client;
-        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/blobServices/default/containers/{}/immutabilityPolicies/{}" , & operation_config . base_path , subscription_id , resource_group_name , account_name , container_name , immutability_policy_name) ;
+        let client = operation_config.http_client();
+        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/blobServices/default/containers/{}/immutabilityPolicies/{}" , operation_config . base_path () , subscription_id , resource_group_name , account_name , container_name , immutability_policy_name) ;
         let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(get_immutability_policy::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(get_immutability_policy::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         if let Some(if_match) = if_match {
             req_builder = req_builder.header("If-Match", if_match);
         }
@@ -1189,17 +1286,19 @@ pub mod blob_containers {
         parameters: Option<&ImmutabilityPolicy>,
         if_match: Option<&str>,
     ) -> std::result::Result<ImmutabilityPolicy, create_or_update_immutability_policy::Error> {
-        let client = &operation_config.client;
-        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/blobServices/default/containers/{}/immutabilityPolicies/{}" , & operation_config . base_path , subscription_id , resource_group_name , account_name , container_name , immutability_policy_name) ;
+        let client = operation_config.http_client();
+        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/blobServices/default/containers/{}/immutabilityPolicies/{}" , operation_config . base_path () , subscription_id , resource_group_name , account_name , container_name , immutability_policy_name) ;
         let mut req_builder = client.put(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(create_or_update_immutability_policy::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(create_or_update_immutability_policy::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         if let Some(parameters) = parameters {
             req_builder = req_builder.json(parameters);
         }
@@ -1256,17 +1355,19 @@ pub mod blob_containers {
         subscription_id: &str,
         if_match: &str,
     ) -> std::result::Result<ImmutabilityPolicy, delete_immutability_policy::Error> {
-        let client = &operation_config.client;
-        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/blobServices/default/containers/{}/immutabilityPolicies/{}" , & operation_config . base_path , subscription_id , resource_group_name , account_name , container_name , immutability_policy_name) ;
+        let client = operation_config.http_client();
+        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/blobServices/default/containers/{}/immutabilityPolicies/{}" , operation_config . base_path () , subscription_id , resource_group_name , account_name , container_name , immutability_policy_name) ;
         let mut req_builder = client.delete(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(delete_immutability_policy::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(delete_immutability_policy::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         req_builder = req_builder.header("If-Match", if_match);
         let req = req_builder.build().context(delete_immutability_policy::BuildRequestError)?;
         let rsp = client.execute(req).await.context(delete_immutability_policy::ExecuteRequestError)?;
@@ -1306,17 +1407,19 @@ pub mod blob_containers {
         subscription_id: &str,
         if_match: &str,
     ) -> std::result::Result<ImmutabilityPolicy, lock_immutability_policy::Error> {
-        let client = &operation_config.client;
-        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/blobServices/default/containers/{}/immutabilityPolicies/default/lock" , & operation_config . base_path , subscription_id , resource_group_name , account_name , container_name) ;
+        let client = operation_config.http_client();
+        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/blobServices/default/containers/{}/immutabilityPolicies/default/lock" , operation_config . base_path () , subscription_id , resource_group_name , account_name , container_name) ;
         let mut req_builder = client.post(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(lock_immutability_policy::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(lock_immutability_policy::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         req_builder = req_builder.header("If-Match", if_match);
         req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(lock_immutability_policy::BuildRequestError)?;
@@ -1358,17 +1461,19 @@ pub mod blob_containers {
         parameters: Option<&ImmutabilityPolicy>,
         if_match: &str,
     ) -> std::result::Result<ImmutabilityPolicy, extend_immutability_policy::Error> {
-        let client = &operation_config.client;
-        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/blobServices/default/containers/{}/immutabilityPolicies/default/extend" , & operation_config . base_path , subscription_id , resource_group_name , account_name , container_name) ;
+        let client = operation_config.http_client();
+        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/blobServices/default/containers/{}/immutabilityPolicies/default/extend" , operation_config . base_path () , subscription_id , resource_group_name , account_name , container_name) ;
         let mut req_builder = client.post(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(extend_immutability_policy::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(extend_immutability_policy::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         if let Some(parameters) = parameters {
             req_builder = req_builder.json(parameters);
         }
@@ -1411,20 +1516,26 @@ pub mod blob_containers {
         subscription_id: &str,
         parameters: Option<&LeaseContainerRequest>,
     ) -> std::result::Result<LeaseContainerResponse, lease::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.Storage/storageAccounts/{}/blobServices/default/containers/{}/lease",
-            &operation_config.base_path, subscription_id, resource_group_name, account_name, container_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            account_name,
+            container_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(lease::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(lease::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         if let Some(parameters) = parameters {
             req_builder = req_builder.json(parameters);
         }

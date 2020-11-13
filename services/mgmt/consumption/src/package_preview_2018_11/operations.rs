@@ -10,17 +10,19 @@ pub mod operations {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationListResult, list::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!("{}/providers/Microsoft.Consumption/operations", &operation_config.base_path,);
+        let client = operation_config.http_client();
+        let uri_str = &format!("{}/providers/Microsoft.Consumption/operations", operation_config.base_path(),);
         let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(list::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(list::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         let req = req_builder.build().context(list::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
         match rsp.status() {
@@ -79,20 +81,24 @@ pub mod credit_summary_by_billing_profile {
         billing_account_id: &str,
         billing_profile_id: &str,
     ) -> std::result::Result<CreditSummary, get::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/billingProfiles/{}/providers/Microsoft.Consumption/credits/balanceSummary",
-            &operation_config.base_path, billing_account_id, billing_profile_id
+            operation_config.base_path(),
+            billing_account_id,
+            billing_profile_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(get::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(get::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         let req = req_builder.build().context(get::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
         match rsp.status() {
@@ -153,20 +159,24 @@ pub mod events_by_billing_profile {
         start_date: &str,
         end_date: &str,
     ) -> std::result::Result<Events, list::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/billingProfiles/{}/providers/Microsoft.Consumption/events",
-            &operation_config.base_path, billing_account_id, billing_profile_id
+            operation_config.base_path(),
+            billing_account_id,
+            billing_profile_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(list::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(list::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         req_builder = req_builder.query(&[("startDate", start_date)]);
         req_builder = req_builder.query(&[("endDate", end_date)]);
         let req = req_builder.build().context(list::BuildRequestError)?;
@@ -227,20 +237,24 @@ pub mod lots_by_billing_profile {
         billing_account_id: &str,
         billing_profile_id: &str,
     ) -> std::result::Result<Lots, list::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/billingProfiles/{}/providers/Microsoft.Consumption/lots",
-            &operation_config.base_path, billing_account_id, billing_profile_id
+            operation_config.base_path(),
+            billing_account_id,
+            billing_profile_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(list::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(list::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         let req = req_builder.build().context(list::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
         match rsp.status() {
@@ -299,20 +313,24 @@ pub mod invoice_pricesheet {
         billing_account_id: &str,
         invoice_name: &str,
     ) -> std::result::Result<download::Response, download::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/providers/Microsoft.Consumption/billingAccounts/{}/invoices/{}/pricesheet/default/download",
-            &operation_config.base_path, billing_account_id, invoice_name
+            operation_config.base_path(),
+            billing_account_id,
+            invoice_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(download::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(download::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(download::BuildRequestError)?;
         let rsp = client.execute(req).await.context(download::ExecuteRequestError)?;
@@ -378,20 +396,24 @@ pub mod billing_profile_pricesheet {
         billing_account_id: &str,
         billing_profile_id: &str,
     ) -> std::result::Result<download::Response, download::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/providers/Microsoft.Consumption/billingAccounts/{}/billingProfiles/{}/pricesheet/default/download",
-            &operation_config.base_path, billing_account_id, billing_profile_id
+            operation_config.base_path(),
+            billing_account_id,
+            billing_profile_id
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(download::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(download::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(download::BuildRequestError)?;
         let rsp = client.execute(req).await.context(download::ExecuteRequestError)?;
@@ -459,20 +481,23 @@ pub mod charges_by_billing_account {
         end_date: &str,
         apply: Option<&str>,
     ) -> std::result::Result<ChargesListByBillingAccount, list::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/providers/Microsoft.Consumption/charges",
-            &operation_config.base_path, billing_account_id
+            operation_config.base_path(),
+            billing_account_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(list::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(list::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         req_builder = req_builder.query(&[("startDate", start_date)]);
         req_builder = req_builder.query(&[("endDate", end_date)]);
         if let Some(apply) = apply {
@@ -538,20 +563,24 @@ pub mod charges_by_billing_profile {
         start_date: &str,
         end_date: &str,
     ) -> std::result::Result<ChargesListByBillingProfile, list::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/billingProfiles/{}/providers/Microsoft.Consumption/charges",
-            &operation_config.base_path, billing_account_id, billing_profile_id
+            operation_config.base_path(),
+            billing_account_id,
+            billing_profile_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(list::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(list::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         req_builder = req_builder.query(&[("startDate", start_date)]);
         req_builder = req_builder.query(&[("endDate", end_date)]);
         let req = req_builder.build().context(list::BuildRequestError)?;
@@ -615,20 +644,24 @@ pub mod charges_by_invoice_section {
         end_date: &str,
         apply: Option<&str>,
     ) -> std::result::Result<ChargesListByInvoiceSection, list::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/invoiceSections/{}/providers/Microsoft.Consumption/charges",
-            &operation_config.base_path, billing_account_id, invoice_section_id
+            operation_config.base_path(),
+            billing_account_id,
+            invoice_section_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(list::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(list::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         req_builder = req_builder.query(&[("startDate", start_date)]);
         req_builder = req_builder.query(&[("endDate", end_date)]);
         if let Some(apply) = apply {

@@ -10,17 +10,19 @@ pub mod operations {
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationListResponse, list::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!("{}/providers/Microsoft.DataFactory/operations", &operation_config.base_path,);
+        let client = operation_config.http_client();
+        let uri_str = &format!("{}/providers/Microsoft.DataFactory/operations", operation_config.base_path(),);
         let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(list::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(list::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         let req = req_builder.build().context(list::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
         match rsp.status() {
@@ -78,20 +80,23 @@ pub mod factories {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
     ) -> std::result::Result<FactoryListResponse, list::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.DataFactory/factories",
-            &operation_config.base_path, subscription_id
+            operation_config.base_path(),
+            subscription_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(list::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(list::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         let req = req_builder.build().context(list::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
         match rsp.status() {
@@ -146,20 +151,24 @@ pub mod factories {
         location_id: &str,
         factory_repo_update: &FactoryRepoUpdate,
     ) -> std::result::Result<Factory, configure_factory_repo::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.DataFactory/locations/{}/configureFactoryRepo",
-            &operation_config.base_path, subscription_id, location_id
+            operation_config.base_path(),
+            subscription_id,
+            location_id
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(configure_factory_repo::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(configure_factory_repo::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         req_builder = req_builder.json(factory_repo_update);
         let req = req_builder.build().context(configure_factory_repo::BuildRequestError)?;
         let rsp = client.execute(req).await.context(configure_factory_repo::ExecuteRequestError)?;
@@ -214,20 +223,24 @@ pub mod factories {
         subscription_id: &str,
         resource_group_name: &str,
     ) -> std::result::Result<FactoryListResponse, list_by_resource_group::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories",
-            &operation_config.base_path, subscription_id, resource_group_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(list_by_resource_group::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(list_by_resource_group::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         let req = req_builder.build().context(list_by_resource_group::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_by_resource_group::ExecuteRequestError)?;
         match rsp.status() {
@@ -284,20 +297,25 @@ pub mod factories {
         factory_name: &str,
         if_none_match: Option<&str>,
     ) -> std::result::Result<Factory, get::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(get::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(get::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         if let Some(if_none_match) = if_none_match {
             req_builder = req_builder.header("If-None-Match", if_none_match);
         }
@@ -359,20 +377,25 @@ pub mod factories {
         factory: &Factory,
         if_match: Option<&str>,
     ) -> std::result::Result<Factory, create_or_update::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(create_or_update::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(create_or_update::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         req_builder = req_builder.json(factory);
         if let Some(if_match) = if_match {
             req_builder = req_builder.header("If-Match", if_match);
@@ -432,20 +455,25 @@ pub mod factories {
         factory_name: &str,
         factory_update_parameters: &FactoryUpdateParameters,
     ) -> std::result::Result<Factory, update::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name
         );
         let mut req_builder = client.patch(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(update::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(update::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         req_builder = req_builder.json(factory_update_parameters);
         let req = req_builder.build().context(update::BuildRequestError)?;
         let rsp = client.execute(req).await.context(update::ExecuteRequestError)?;
@@ -501,20 +529,25 @@ pub mod factories {
         resource_group_name: &str,
         factory_name: &str,
     ) -> std::result::Result<delete::Response, delete::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(delete::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(delete::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         let req = req_builder.build().context(delete::BuildRequestError)?;
         let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
         match rsp.status() {
@@ -572,20 +605,25 @@ pub mod factories {
         factory_name: &str,
         git_hub_access_token_request: &GitHubAccessTokenRequest,
     ) -> std::result::Result<GitHubAccessTokenResponse, get_git_hub_access_token::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/getGitHubAccessToken",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(get_git_hub_access_token::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(get_git_hub_access_token::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         req_builder = req_builder.json(git_hub_access_token_request);
         let req = req_builder.build().context(get_git_hub_access_token::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get_git_hub_access_token::ExecuteRequestError)?;
@@ -643,20 +681,25 @@ pub mod factories {
         factory_name: &str,
         policy: &UserAccessPolicy,
     ) -> std::result::Result<AccessPolicyResponse, get_data_plane_access::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/getDataPlaneAccess",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(get_data_plane_access::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(get_data_plane_access::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         req_builder = req_builder.json(policy);
         let req = req_builder.build().context(get_data_plane_access::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get_data_plane_access::ExecuteRequestError)?;
@@ -718,20 +761,24 @@ pub mod exposure_control {
         location_id: &str,
         exposure_control_request: &ExposureControlRequest,
     ) -> std::result::Result<ExposureControlResponse, get_feature_value::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.DataFactory/locations/{}/getFeatureValue",
-            &operation_config.base_path, subscription_id, location_id
+            operation_config.base_path(),
+            subscription_id,
+            location_id
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(get_feature_value::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(get_feature_value::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         req_builder = req_builder.json(exposure_control_request);
         let req = req_builder.build().context(get_feature_value::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get_feature_value::ExecuteRequestError)?;
@@ -789,20 +836,25 @@ pub mod exposure_control {
         factory_name: &str,
         exposure_control_request: &ExposureControlRequest,
     ) -> std::result::Result<ExposureControlResponse, get_feature_value_by_factory::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/getFeatureValue",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(get_feature_value_by_factory::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(get_feature_value_by_factory::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         req_builder = req_builder.json(exposure_control_request);
         let req = req_builder.build().context(get_feature_value_by_factory::BuildRequestError)?;
         let rsp = client
@@ -864,20 +916,25 @@ pub mod exposure_control {
         factory_name: &str,
         exposure_control_batch_request: &ExposureControlBatchRequest,
     ) -> std::result::Result<ExposureControlBatchResponse, query_feature_values_by_factory::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/queryFeaturesValue",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(query_feature_values_by_factory::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(query_feature_values_by_factory::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         req_builder = req_builder.json(exposure_control_batch_request);
         let req = req_builder.build().context(query_feature_values_by_factory::BuildRequestError)?;
         let rsp = client
@@ -943,20 +1000,25 @@ pub mod integration_runtimes {
         resource_group_name: &str,
         factory_name: &str,
     ) -> std::result::Result<IntegrationRuntimeListResponse, list_by_factory::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/integrationRuntimes",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(list_by_factory::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(list_by_factory::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         let req = req_builder.build().context(list_by_factory::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_by_factory::ExecuteRequestError)?;
         match rsp.status() {
@@ -1014,20 +1076,26 @@ pub mod integration_runtimes {
         integration_runtime_name: &str,
         if_none_match: Option<&str>,
     ) -> std::result::Result<IntegrationRuntimeResource, get::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/integrationRuntimes/{}",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name, integration_runtime_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name,
+            integration_runtime_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(get::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(get::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         if let Some(if_none_match) = if_none_match {
             req_builder = req_builder.header("If-None-Match", if_none_match);
         }
@@ -1090,20 +1158,26 @@ pub mod integration_runtimes {
         if_match: Option<&str>,
         integration_runtime: &IntegrationRuntimeResource,
     ) -> std::result::Result<IntegrationRuntimeResource, create_or_update::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/integrationRuntimes/{}",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name, integration_runtime_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name,
+            integration_runtime_name
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(create_or_update::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(create_or_update::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         if let Some(if_match) = if_match {
             req_builder = req_builder.header("If-Match", if_match);
         }
@@ -1165,20 +1239,26 @@ pub mod integration_runtimes {
         integration_runtime_name: &str,
         update_integration_runtime_request: &UpdateIntegrationRuntimeRequest,
     ) -> std::result::Result<IntegrationRuntimeResource, update::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/integrationRuntimes/{}",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name, integration_runtime_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name,
+            integration_runtime_name
         );
         let mut req_builder = client.patch(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(update::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(update::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         req_builder = req_builder.json(update_integration_runtime_request);
         let req = req_builder.build().context(update::BuildRequestError)?;
         let rsp = client.execute(req).await.context(update::ExecuteRequestError)?;
@@ -1235,20 +1315,26 @@ pub mod integration_runtimes {
         factory_name: &str,
         integration_runtime_name: &str,
     ) -> std::result::Result<delete::Response, delete::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/integrationRuntimes/{}",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name, integration_runtime_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name,
+            integration_runtime_name
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(delete::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(delete::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         let req = req_builder.build().context(delete::BuildRequestError)?;
         let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
         match rsp.status() {
@@ -1306,20 +1392,26 @@ pub mod integration_runtimes {
         factory_name: &str,
         integration_runtime_name: &str,
     ) -> std::result::Result<IntegrationRuntimeStatusResponse, get_status::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/integrationRuntimes/{}/getStatus",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name, integration_runtime_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name,
+            integration_runtime_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(get_status::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(get_status::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(get_status::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get_status::ExecuteRequestError)?;
@@ -1377,20 +1469,26 @@ pub mod integration_runtimes {
         factory_name: &str,
         integration_runtime_name: &str,
     ) -> std::result::Result<IntegrationRuntimeConnectionInfo, get_connection_info::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/integrationRuntimes/{}/getConnectionInfo",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name, integration_runtime_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name,
+            integration_runtime_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(get_connection_info::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(get_connection_info::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(get_connection_info::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get_connection_info::ExecuteRequestError)?;
@@ -1449,20 +1547,26 @@ pub mod integration_runtimes {
         integration_runtime_name: &str,
         regenerate_key_parameters: &IntegrationRuntimeRegenerateKeyParameters,
     ) -> std::result::Result<IntegrationRuntimeAuthKeys, regenerate_auth_key::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/integrationRuntimes/{}/regenerateAuthKey",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name, integration_runtime_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name,
+            integration_runtime_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(regenerate_auth_key::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(regenerate_auth_key::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         req_builder = req_builder.json(regenerate_key_parameters);
         let req = req_builder.build().context(regenerate_auth_key::BuildRequestError)?;
         let rsp = client.execute(req).await.context(regenerate_auth_key::ExecuteRequestError)?;
@@ -1520,20 +1624,26 @@ pub mod integration_runtimes {
         factory_name: &str,
         integration_runtime_name: &str,
     ) -> std::result::Result<IntegrationRuntimeAuthKeys, list_auth_keys::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/integrationRuntimes/{}/listAuthKeys",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name, integration_runtime_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name,
+            integration_runtime_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(list_auth_keys::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(list_auth_keys::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(list_auth_keys::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_auth_keys::ExecuteRequestError)?;
@@ -1591,20 +1701,26 @@ pub mod integration_runtimes {
         factory_name: &str,
         integration_runtime_name: &str,
     ) -> std::result::Result<start::Response, start::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/integrationRuntimes/{}/start",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name, integration_runtime_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name,
+            integration_runtime_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(start::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(start::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(start::BuildRequestError)?;
         let rsp = client.execute(req).await.context(start::ExecuteRequestError)?;
@@ -1668,20 +1784,26 @@ pub mod integration_runtimes {
         factory_name: &str,
         integration_runtime_name: &str,
     ) -> std::result::Result<stop::Response, stop::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/integrationRuntimes/{}/stop",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name, integration_runtime_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name,
+            integration_runtime_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(stop::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(stop::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(stop::BuildRequestError)?;
         let rsp = client.execute(req).await.context(stop::ExecuteRequestError)?;
@@ -1740,20 +1862,26 @@ pub mod integration_runtimes {
         factory_name: &str,
         integration_runtime_name: &str,
     ) -> std::result::Result<(), sync_credentials::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/integrationRuntimes/{}/syncCredentials",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name, integration_runtime_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name,
+            integration_runtime_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(sync_credentials::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(sync_credentials::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(sync_credentials::BuildRequestError)?;
         let rsp = client.execute(req).await.context(sync_credentials::ExecuteRequestError)?;
@@ -1806,20 +1934,26 @@ pub mod integration_runtimes {
         factory_name: &str,
         integration_runtime_name: &str,
     ) -> std::result::Result<IntegrationRuntimeMonitoringData, get_monitoring_data::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/integrationRuntimes/{}/monitoringData",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name, integration_runtime_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name,
+            integration_runtime_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(get_monitoring_data::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(get_monitoring_data::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(get_monitoring_data::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get_monitoring_data::ExecuteRequestError)?;
@@ -1877,20 +2011,26 @@ pub mod integration_runtimes {
         factory_name: &str,
         integration_runtime_name: &str,
     ) -> std::result::Result<(), upgrade::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/integrationRuntimes/{}/upgrade",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name, integration_runtime_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name,
+            integration_runtime_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(upgrade::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(upgrade::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(upgrade::BuildRequestError)?;
         let rsp = client.execute(req).await.context(upgrade::ExecuteRequestError)?;
@@ -1944,20 +2084,26 @@ pub mod integration_runtimes {
         integration_runtime_name: &str,
         linked_integration_runtime_request: &LinkedIntegrationRuntimeRequest,
     ) -> std::result::Result<(), remove_links::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/integrationRuntimes/{}/removeLinks",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name, integration_runtime_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name,
+            integration_runtime_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(remove_links::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(remove_links::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         req_builder = req_builder.json(linked_integration_runtime_request);
         let req = req_builder.build().context(remove_links::BuildRequestError)?;
         let rsp = client.execute(req).await.context(remove_links::ExecuteRequestError)?;
@@ -2011,17 +2157,19 @@ pub mod integration_runtimes {
         integration_runtime_name: &str,
         create_linked_integration_runtime_request: &CreateLinkedIntegrationRuntimeRequest,
     ) -> std::result::Result<IntegrationRuntimeStatusResponse, create_linked_integration_runtime::Error> {
-        let client = &operation_config.client;
-        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/integrationRuntimes/{}/linkedIntegrationRuntime" , & operation_config . base_path , subscription_id , resource_group_name , factory_name , integration_runtime_name) ;
+        let client = operation_config.http_client();
+        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/integrationRuntimes/{}/linkedIntegrationRuntime" , operation_config . base_path () , subscription_id , resource_group_name , factory_name , integration_runtime_name) ;
         let mut req_builder = client.post(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(create_linked_integration_runtime::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(create_linked_integration_runtime::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         req_builder = req_builder.json(create_linked_integration_runtime_request);
         let req = req_builder.build().context(create_linked_integration_runtime::BuildRequestError)?;
         let rsp = client
@@ -2088,17 +2236,19 @@ pub mod integration_runtime_object_metadata {
         factory_name: &str,
         integration_runtime_name: &str,
     ) -> std::result::Result<refresh::Response, refresh::Error> {
-        let client = &operation_config.client;
-        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/integrationRuntimes/{}/refreshObjectMetadata" , & operation_config . base_path , subscription_id , resource_group_name , factory_name , integration_runtime_name) ;
+        let client = operation_config.http_client();
+        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/integrationRuntimes/{}/refreshObjectMetadata" , operation_config . base_path () , subscription_id , resource_group_name , factory_name , integration_runtime_name) ;
         let mut req_builder = client.post(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(refresh::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(refresh::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(refresh::BuildRequestError)?;
         let rsp = client.execute(req).await.context(refresh::ExecuteRequestError)?;
@@ -2163,20 +2313,26 @@ pub mod integration_runtime_object_metadata {
         integration_runtime_name: &str,
         get_metadata_request: Option<&GetSsisObjectMetadataRequest>,
     ) -> std::result::Result<SsisObjectMetadataListResponse, get::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/integrationRuntimes/{}/getObjectMetadata",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name, integration_runtime_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name,
+            integration_runtime_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(get::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(get::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         if let Some(get_metadata_request) = get_metadata_request {
             req_builder = req_builder.json(get_metadata_request);
         }
@@ -2241,20 +2397,27 @@ pub mod integration_runtime_nodes {
         integration_runtime_name: &str,
         node_name: &str,
     ) -> std::result::Result<SelfHostedIntegrationRuntimeNode, get::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/integrationRuntimes/{}/nodes/{}",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name, integration_runtime_name, node_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name,
+            integration_runtime_name,
+            node_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(get::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(get::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         let req = req_builder.build().context(get::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
         match rsp.status() {
@@ -2312,20 +2475,27 @@ pub mod integration_runtime_nodes {
         node_name: &str,
         update_integration_runtime_node_request: &UpdateIntegrationRuntimeNodeRequest,
     ) -> std::result::Result<SelfHostedIntegrationRuntimeNode, update::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/integrationRuntimes/{}/nodes/{}",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name, integration_runtime_name, node_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name,
+            integration_runtime_name,
+            node_name
         );
         let mut req_builder = client.patch(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(update::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(update::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         req_builder = req_builder.json(update_integration_runtime_node_request);
         let req = req_builder.build().context(update::BuildRequestError)?;
         let rsp = client.execute(req).await.context(update::ExecuteRequestError)?;
@@ -2384,20 +2554,27 @@ pub mod integration_runtime_nodes {
         integration_runtime_name: &str,
         node_name: &str,
     ) -> std::result::Result<delete::Response, delete::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/integrationRuntimes/{}/nodes/{}",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name, integration_runtime_name, node_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name,
+            integration_runtime_name,
+            node_name
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(delete::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(delete::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         let req = req_builder.build().context(delete::BuildRequestError)?;
         let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
         match rsp.status() {
@@ -2456,20 +2633,27 @@ pub mod integration_runtime_nodes {
         integration_runtime_name: &str,
         node_name: &str,
     ) -> std::result::Result<IntegrationRuntimeNodeIpAddress, get_ip_address::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/integrationRuntimes/{}/nodes/{}/ipAddress",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name, integration_runtime_name, node_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name,
+            integration_runtime_name,
+            node_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(get_ip_address::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(get_ip_address::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(get_ip_address::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get_ip_address::ExecuteRequestError)?;
@@ -2531,20 +2715,25 @@ pub mod linked_services {
         resource_group_name: &str,
         factory_name: &str,
     ) -> std::result::Result<LinkedServiceListResponse, list_by_factory::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/linkedservices",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(list_by_factory::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(list_by_factory::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         let req = req_builder.build().context(list_by_factory::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_by_factory::ExecuteRequestError)?;
         match rsp.status() {
@@ -2602,20 +2791,26 @@ pub mod linked_services {
         linked_service_name: &str,
         if_none_match: Option<&str>,
     ) -> std::result::Result<LinkedServiceResource, get::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/linkedservices/{}",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name, linked_service_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name,
+            linked_service_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(get::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(get::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         if let Some(if_none_match) = if_none_match {
             req_builder = req_builder.header("If-None-Match", if_none_match);
         }
@@ -2678,20 +2873,26 @@ pub mod linked_services {
         if_match: Option<&str>,
         linked_service: &LinkedServiceResource,
     ) -> std::result::Result<LinkedServiceResource, create_or_update::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/linkedservices/{}",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name, linked_service_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name,
+            linked_service_name
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(create_or_update::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(create_or_update::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         if let Some(if_match) = if_match {
             req_builder = req_builder.header("If-Match", if_match);
         }
@@ -2752,20 +2953,26 @@ pub mod linked_services {
         factory_name: &str,
         linked_service_name: &str,
     ) -> std::result::Result<delete::Response, delete::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/linkedservices/{}",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name, linked_service_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name,
+            linked_service_name
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(delete::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(delete::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         let req = req_builder.build().context(delete::BuildRequestError)?;
         let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
         match rsp.status() {
@@ -2827,20 +3034,25 @@ pub mod datasets {
         resource_group_name: &str,
         factory_name: &str,
     ) -> std::result::Result<DatasetListResponse, list_by_factory::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/datasets",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(list_by_factory::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(list_by_factory::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         let req = req_builder.build().context(list_by_factory::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_by_factory::ExecuteRequestError)?;
         match rsp.status() {
@@ -2897,20 +3109,26 @@ pub mod datasets {
         dataset_name: &str,
         if_none_match: Option<&str>,
     ) -> std::result::Result<DatasetResource, get::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/datasets/{}",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name, dataset_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name,
+            dataset_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(get::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(get::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         if let Some(if_none_match) = if_none_match {
             req_builder = req_builder.header("If-None-Match", if_none_match);
         }
@@ -2973,20 +3191,26 @@ pub mod datasets {
         if_match: Option<&str>,
         dataset: &DatasetResource,
     ) -> std::result::Result<DatasetResource, create_or_update::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/datasets/{}",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name, dataset_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name,
+            dataset_name
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(create_or_update::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(create_or_update::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         if let Some(if_match) = if_match {
             req_builder = req_builder.header("If-Match", if_match);
         }
@@ -3046,20 +3270,26 @@ pub mod datasets {
         factory_name: &str,
         dataset_name: &str,
     ) -> std::result::Result<delete::Response, delete::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/datasets/{}",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name, dataset_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name,
+            dataset_name
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(delete::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(delete::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         let req = req_builder.build().context(delete::BuildRequestError)?;
         let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
         match rsp.status() {
@@ -3121,20 +3351,25 @@ pub mod pipelines {
         resource_group_name: &str,
         factory_name: &str,
     ) -> std::result::Result<PipelineListResponse, list_by_factory::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/pipelines",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(list_by_factory::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(list_by_factory::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         let req = req_builder.build().context(list_by_factory::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_by_factory::ExecuteRequestError)?;
         match rsp.status() {
@@ -3191,20 +3426,26 @@ pub mod pipelines {
         pipeline_name: &str,
         if_none_match: Option<&str>,
     ) -> std::result::Result<PipelineResource, get::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/pipelines/{}",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name, pipeline_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name,
+            pipeline_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(get::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(get::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         if let Some(if_none_match) = if_none_match {
             req_builder = req_builder.header("If-None-Match", if_none_match);
         }
@@ -3267,20 +3508,26 @@ pub mod pipelines {
         if_match: Option<&str>,
         pipeline: &PipelineResource,
     ) -> std::result::Result<PipelineResource, create_or_update::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/pipelines/{}",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name, pipeline_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name,
+            pipeline_name
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(create_or_update::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(create_or_update::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         if let Some(if_match) = if_match {
             req_builder = req_builder.header("If-Match", if_match);
         }
@@ -3340,20 +3587,26 @@ pub mod pipelines {
         factory_name: &str,
         pipeline_name: &str,
     ) -> std::result::Result<delete::Response, delete::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/pipelines/{}",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name, pipeline_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name,
+            pipeline_name
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(delete::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(delete::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         let req = req_builder.build().context(delete::BuildRequestError)?;
         let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
         match rsp.status() {
@@ -3416,20 +3669,26 @@ pub mod pipelines {
         start_from_failure: Option<bool>,
         parameters: Option<&ParameterValueSpecification>,
     ) -> std::result::Result<CreateRunResponse, create_run::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/pipelines/{}/createRun",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name, pipeline_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name,
+            pipeline_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(create_run::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(create_run::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         if let Some(reference_pipeline_run_id) = reference_pipeline_run_id {
             req_builder = req_builder.query(&[("referencePipelineRunId", reference_pipeline_run_id)]);
         }
@@ -3505,20 +3764,25 @@ pub mod pipeline_runs {
         factory_name: &str,
         filter_parameters: &RunFilterParameters,
     ) -> std::result::Result<PipelineRunsQueryResponse, query_by_factory::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/queryPipelineRuns",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(query_by_factory::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(query_by_factory::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         req_builder = req_builder.json(filter_parameters);
         let req = req_builder.build().context(query_by_factory::BuildRequestError)?;
         let rsp = client.execute(req).await.context(query_by_factory::ExecuteRequestError)?;
@@ -3576,20 +3840,26 @@ pub mod pipeline_runs {
         factory_name: &str,
         run_id: &str,
     ) -> std::result::Result<PipelineRun, get::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/pipelineruns/{}",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name, run_id
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name,
+            run_id
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(get::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(get::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         let req = req_builder.build().context(get::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
         match rsp.status() {
@@ -3646,20 +3916,26 @@ pub mod pipeline_runs {
         run_id: &str,
         is_recursive: Option<bool>,
     ) -> std::result::Result<(), cancel::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/pipelineruns/{}/cancel",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name, run_id
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name,
+            run_id
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(cancel::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(cancel::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         if let Some(is_recursive) = is_recursive {
             req_builder = req_builder.query(&[("isRecursive", is_recursive)]);
         }
@@ -3721,20 +3997,26 @@ pub mod activity_runs {
         run_id: &str,
         filter_parameters: &RunFilterParameters,
     ) -> std::result::Result<ActivityRunsQueryResponse, query_by_pipeline_run::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/pipelineruns/{}/queryActivityruns",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name, run_id
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name,
+            run_id
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(query_by_pipeline_run::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(query_by_pipeline_run::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         req_builder = req_builder.json(filter_parameters);
         let req = req_builder.build().context(query_by_pipeline_run::BuildRequestError)?;
         let rsp = client.execute(req).await.context(query_by_pipeline_run::ExecuteRequestError)?;
@@ -3796,20 +4078,25 @@ pub mod triggers {
         resource_group_name: &str,
         factory_name: &str,
     ) -> std::result::Result<TriggerListResponse, list_by_factory::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/triggers",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(list_by_factory::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(list_by_factory::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         let req = req_builder.build().context(list_by_factory::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_by_factory::ExecuteRequestError)?;
         match rsp.status() {
@@ -3865,20 +4152,25 @@ pub mod triggers {
         factory_name: &str,
         filter_parameters: &TriggerFilterParameters,
     ) -> std::result::Result<TriggerQueryResponse, query_by_factory::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/querytriggers",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(query_by_factory::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(query_by_factory::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         req_builder = req_builder.json(filter_parameters);
         let req = req_builder.build().context(query_by_factory::BuildRequestError)?;
         let rsp = client.execute(req).await.context(query_by_factory::ExecuteRequestError)?;
@@ -3936,20 +4228,26 @@ pub mod triggers {
         trigger_name: &str,
         if_none_match: Option<&str>,
     ) -> std::result::Result<TriggerResource, get::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/triggers/{}",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name, trigger_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name,
+            trigger_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(get::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(get::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         if let Some(if_none_match) = if_none_match {
             req_builder = req_builder.header("If-None-Match", if_none_match);
         }
@@ -4012,20 +4310,26 @@ pub mod triggers {
         if_match: Option<&str>,
         trigger: &TriggerResource,
     ) -> std::result::Result<TriggerResource, create_or_update::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/triggers/{}",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name, trigger_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name,
+            trigger_name
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(create_or_update::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(create_or_update::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         if let Some(if_match) = if_match {
             req_builder = req_builder.header("If-Match", if_match);
         }
@@ -4085,20 +4389,26 @@ pub mod triggers {
         factory_name: &str,
         trigger_name: &str,
     ) -> std::result::Result<delete::Response, delete::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/triggers/{}",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name, trigger_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name,
+            trigger_name
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(delete::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(delete::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         let req = req_builder.build().context(delete::BuildRequestError)?;
         let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
         match rsp.status() {
@@ -4156,20 +4466,26 @@ pub mod triggers {
         factory_name: &str,
         trigger_name: &str,
     ) -> std::result::Result<subscribe_to_events::Response, subscribe_to_events::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/triggers/{}/subscribeToEvents",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name, trigger_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name,
+            trigger_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(subscribe_to_events::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(subscribe_to_events::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(subscribe_to_events::BuildRequestError)?;
         let rsp = client.execute(req).await.context(subscribe_to_events::ExecuteRequestError)?;
@@ -4233,20 +4549,26 @@ pub mod triggers {
         factory_name: &str,
         trigger_name: &str,
     ) -> std::result::Result<TriggerSubscriptionOperationStatus, get_event_subscription_status::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/triggers/{}/getEventSubscriptionStatus",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name, trigger_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name,
+            trigger_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(get_event_subscription_status::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(get_event_subscription_status::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(get_event_subscription_status::BuildRequestError)?;
         let rsp = client
@@ -4308,20 +4630,26 @@ pub mod triggers {
         factory_name: &str,
         trigger_name: &str,
     ) -> std::result::Result<unsubscribe_from_events::Response, unsubscribe_from_events::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/triggers/{}/unsubscribeFromEvents",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name, trigger_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name,
+            trigger_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(unsubscribe_from_events::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(unsubscribe_from_events::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(unsubscribe_from_events::BuildRequestError)?;
         let rsp = client.execute(req).await.context(unsubscribe_from_events::ExecuteRequestError)?;
@@ -4385,20 +4713,26 @@ pub mod triggers {
         factory_name: &str,
         trigger_name: &str,
     ) -> std::result::Result<(), start::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/triggers/{}/start",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name, trigger_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name,
+            trigger_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(start::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(start::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(start::BuildRequestError)?;
         let rsp = client.execute(req).await.context(start::ExecuteRequestError)?;
@@ -4451,20 +4785,26 @@ pub mod triggers {
         factory_name: &str,
         trigger_name: &str,
     ) -> std::result::Result<(), stop::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/triggers/{}/stop",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name, trigger_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name,
+            trigger_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(stop::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(stop::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(stop::BuildRequestError)?;
         let rsp = client.execute(req).await.context(stop::ExecuteRequestError)?;
@@ -4523,20 +4863,27 @@ pub mod trigger_runs {
         trigger_name: &str,
         run_id: &str,
     ) -> std::result::Result<(), rerun::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/triggers/{}/triggerRuns/{}/rerun",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name, trigger_name, run_id
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name,
+            trigger_name,
+            run_id
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(rerun::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(rerun::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(rerun::BuildRequestError)?;
         let rsp = client.execute(req).await.context(rerun::ExecuteRequestError)?;
@@ -4590,20 +4937,27 @@ pub mod trigger_runs {
         trigger_name: &str,
         run_id: &str,
     ) -> std::result::Result<(), cancel::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/triggers/{}/triggerRuns/{}/cancel",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name, trigger_name, run_id
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name,
+            trigger_name,
+            run_id
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(cancel::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(cancel::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(cancel::BuildRequestError)?;
         let rsp = client.execute(req).await.context(cancel::ExecuteRequestError)?;
@@ -4656,20 +5010,25 @@ pub mod trigger_runs {
         factory_name: &str,
         filter_parameters: &RunFilterParameters,
     ) -> std::result::Result<TriggerRunsQueryResponse, query_by_factory::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/queryTriggerRuns",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(query_by_factory::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(query_by_factory::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         req_builder = req_builder.json(filter_parameters);
         let req = req_builder.build().context(query_by_factory::BuildRequestError)?;
         let rsp = client.execute(req).await.context(query_by_factory::ExecuteRequestError)?;
@@ -4733,20 +5092,26 @@ pub mod data_flows {
         data_flow_name: &str,
         if_none_match: Option<&str>,
     ) -> std::result::Result<DataFlowResource, get::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/dataflows/{}",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name, data_flow_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name,
+            data_flow_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(get::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(get::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         if let Some(if_none_match) = if_none_match {
             req_builder = req_builder.header("If-None-Match", if_none_match);
         }
@@ -4807,20 +5172,26 @@ pub mod data_flows {
         if_match: Option<&str>,
         data_flow: &DataFlowResource,
     ) -> std::result::Result<DataFlowResource, create_or_update::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/dataflows/{}",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name, data_flow_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name,
+            data_flow_name
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(create_or_update::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(create_or_update::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         if let Some(if_match) = if_match {
             req_builder = req_builder.header("If-Match", if_match);
         }
@@ -4880,20 +5251,26 @@ pub mod data_flows {
         factory_name: &str,
         data_flow_name: &str,
     ) -> std::result::Result<delete::Response, delete::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/dataflows/{}",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name, data_flow_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name,
+            data_flow_name
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(delete::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(delete::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         let req = req_builder.build().context(delete::BuildRequestError)?;
         let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
         match rsp.status() {
@@ -4950,20 +5327,25 @@ pub mod data_flows {
         resource_group_name: &str,
         factory_name: &str,
     ) -> std::result::Result<DataFlowListResponse, list_by_factory::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/dataflows",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(list_by_factory::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(list_by_factory::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         let req = req_builder.build().context(list_by_factory::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_by_factory::ExecuteRequestError)?;
         match rsp.status() {
@@ -5024,20 +5406,25 @@ pub mod data_flow_debug_session {
         factory_name: &str,
         request: &CreateDataFlowDebugSessionRequest,
     ) -> std::result::Result<create::Response, create::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/createDataFlowDebugSession",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(create::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(create::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         req_builder = req_builder.json(request);
         let req = req_builder.build().context(create::BuildRequestError)?;
         let rsp = client.execute(req).await.context(create::ExecuteRequestError)?;
@@ -5100,20 +5487,25 @@ pub mod data_flow_debug_session {
         resource_group_name: &str,
         factory_name: &str,
     ) -> std::result::Result<QueryDataFlowDebugSessionsResponse, query_by_factory::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/queryDataFlowDebugSessions",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(query_by_factory::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(query_by_factory::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
         let req = req_builder.build().context(query_by_factory::BuildRequestError)?;
         let rsp = client.execute(req).await.context(query_by_factory::ExecuteRequestError)?;
@@ -5171,20 +5563,25 @@ pub mod data_flow_debug_session {
         factory_name: &str,
         request: &DataFlowDebugPackage,
     ) -> std::result::Result<AddDataFlowToDebugSessionResponse, add_data_flow::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/addDataFlowToDebugSession",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(add_data_flow::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(add_data_flow::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         req_builder = req_builder.json(request);
         let req = req_builder.build().context(add_data_flow::BuildRequestError)?;
         let rsp = client.execute(req).await.context(add_data_flow::ExecuteRequestError)?;
@@ -5242,20 +5639,25 @@ pub mod data_flow_debug_session {
         factory_name: &str,
         request: &DeleteDataFlowDebugSessionRequest,
     ) -> std::result::Result<(), delete::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/deleteDataFlowDebugSession",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(delete::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(delete::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         req_builder = req_builder.json(request);
         let req = req_builder.build().context(delete::BuildRequestError)?;
         let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
@@ -5308,20 +5710,25 @@ pub mod data_flow_debug_session {
         factory_name: &str,
         request: &DataFlowDebugCommandRequest,
     ) -> std::result::Result<execute_command::Response, execute_command::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/executeDataFlowDebugCommand",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(execute_command::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(execute_command::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         req_builder = req_builder.json(request);
         let req = req_builder.build().context(execute_command::BuildRequestError)?;
         let rsp = client.execute(req).await.context(execute_command::ExecuteRequestError)?;
@@ -5389,20 +5796,25 @@ pub mod managed_virtual_networks {
         resource_group_name: &str,
         factory_name: &str,
     ) -> std::result::Result<ManagedVirtualNetworkListResponse, list_by_factory::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/managedVirtualNetworks",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(list_by_factory::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(list_by_factory::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         let req = req_builder.build().context(list_by_factory::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_by_factory::ExecuteRequestError)?;
         match rsp.status() {
@@ -5460,20 +5872,26 @@ pub mod managed_virtual_networks {
         managed_virtual_network_name: &str,
         if_none_match: Option<&str>,
     ) -> std::result::Result<ManagedVirtualNetworkResource, get::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/managedVirtualNetworks/{}",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name, managed_virtual_network_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name,
+            managed_virtual_network_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(get::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(get::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         if let Some(if_none_match) = if_none_match {
             req_builder = req_builder.header("If-None-Match", if_none_match);
         }
@@ -5534,20 +5952,26 @@ pub mod managed_virtual_networks {
         if_match: Option<&str>,
         managed_virtual_network: &ManagedVirtualNetworkResource,
     ) -> std::result::Result<ManagedVirtualNetworkResource, create_or_update::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/managedVirtualNetworks/{}",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name, managed_virtual_network_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name,
+            managed_virtual_network_name
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(create_or_update::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(create_or_update::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         if let Some(if_match) = if_match {
             req_builder = req_builder.header("If-Match", if_match);
         }
@@ -5613,17 +6037,19 @@ pub mod managed_private_endpoints {
         factory_name: &str,
         managed_virtual_network_name: &str,
     ) -> std::result::Result<ManagedPrivateEndpointListResponse, list_by_factory::Error> {
-        let client = &operation_config.client;
-        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/managedVirtualNetworks/{}/managedPrivateEndpoints" , & operation_config . base_path , subscription_id , resource_group_name , factory_name , managed_virtual_network_name) ;
+        let client = operation_config.http_client();
+        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/managedVirtualNetworks/{}/managedPrivateEndpoints" , operation_config . base_path () , subscription_id , resource_group_name , factory_name , managed_virtual_network_name) ;
         let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(list_by_factory::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(list_by_factory::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         let req = req_builder.build().context(list_by_factory::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list_by_factory::ExecuteRequestError)?;
         match rsp.status() {
@@ -5682,17 +6108,19 @@ pub mod managed_private_endpoints {
         managed_private_endpoint_name: &str,
         if_none_match: Option<&str>,
     ) -> std::result::Result<ManagedPrivateEndpointResource, get::Error> {
-        let client = &operation_config.client;
-        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/managedVirtualNetworks/{}/managedPrivateEndpoints/{}" , & operation_config . base_path , subscription_id , resource_group_name , factory_name , managed_virtual_network_name , managed_private_endpoint_name) ;
+        let client = operation_config.http_client();
+        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/managedVirtualNetworks/{}/managedPrivateEndpoints/{}" , operation_config . base_path () , subscription_id , resource_group_name , factory_name , managed_virtual_network_name , managed_private_endpoint_name) ;
         let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(get::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(get::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         if let Some(if_none_match) = if_none_match {
             req_builder = req_builder.header("If-None-Match", if_none_match);
         }
@@ -5754,17 +6182,19 @@ pub mod managed_private_endpoints {
         if_match: Option<&str>,
         managed_private_endpoint: &ManagedPrivateEndpointResource,
     ) -> std::result::Result<ManagedPrivateEndpointResource, create_or_update::Error> {
-        let client = &operation_config.client;
-        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/managedVirtualNetworks/{}/managedPrivateEndpoints/{}" , & operation_config . base_path , subscription_id , resource_group_name , factory_name , managed_virtual_network_name , managed_private_endpoint_name) ;
+        let client = operation_config.http_client();
+        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/managedVirtualNetworks/{}/managedPrivateEndpoints/{}" , operation_config . base_path () , subscription_id , resource_group_name , factory_name , managed_virtual_network_name , managed_private_endpoint_name) ;
         let mut req_builder = client.put(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(create_or_update::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(create_or_update::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         if let Some(if_match) = if_match {
             req_builder = req_builder.header("If-Match", if_match);
         }
@@ -5826,17 +6256,19 @@ pub mod managed_private_endpoints {
         managed_virtual_network_name: &str,
         managed_private_endpoint_name: &str,
     ) -> std::result::Result<delete::Response, delete::Error> {
-        let client = &operation_config.client;
-        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/managedVirtualNetworks/{}/managedPrivateEndpoints/{}" , & operation_config . base_path , subscription_id , resource_group_name , factory_name , managed_virtual_network_name , managed_private_endpoint_name) ;
+        let client = operation_config.http_client();
+        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/managedVirtualNetworks/{}/managedPrivateEndpoints/{}" , operation_config . base_path () , subscription_id , resource_group_name , factory_name , managed_virtual_network_name , managed_private_endpoint_name) ;
         let mut req_builder = client.delete(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(delete::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(delete::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         let req = req_builder.build().context(delete::BuildRequestError)?;
         let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
         match rsp.status() {

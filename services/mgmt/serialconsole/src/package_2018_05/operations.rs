@@ -8,17 +8,19 @@ use snafu::{ResultExt, Snafu};
 pub async fn list_operations(
     operation_config: &crate::OperationConfig,
 ) -> std::result::Result<SerialConsoleOperations, list_operations::Error> {
-    let client = &operation_config.client;
-    let uri_str = &format!("{}/providers/Microsoft.SerialConsole/operations", &operation_config.base_path,);
+    let client = operation_config.http_client();
+    let uri_str = &format!("{}/providers/Microsoft.SerialConsole/operations", operation_config.base_path(),);
     let mut req_builder = client.get(uri_str);
-    if let Some(token_credential) = &operation_config.token_credential {
-        let token_response = token_credential
-            .get_token(&operation_config.token_credential_resource)
-            .await
-            .context(list_operations::GetTokenError)?;
-        req_builder = req_builder.bearer_auth(token_response.token.secret());
+    if let Some(user_agent) = operation_config.user_agent() {
+        req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
     }
-    req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+    let token_response = operation_config
+        .token_credential()
+        .get_token(operation_config.token_credential_resource())
+        .await
+        .context(list_operations::GetTokenError)?;
+    req_builder = req_builder.bearer_auth(token_response.token.secret());
+    req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
     let req = req_builder.build().context(list_operations::BuildRequestError)?;
     let rsp = client.execute(req).await.context(list_operations::ExecuteRequestError)?;
     match rsp.status() {
@@ -53,20 +55,24 @@ pub async fn get_console_status(
     subscription_id: &str,
     default: &str,
 ) -> std::result::Result<SerialConsoleStatus, get_console_status::Error> {
-    let client = &operation_config.client;
+    let client = operation_config.http_client();
     let uri_str = &format!(
         "{}/subscriptions/{}/providers/Microsoft.SerialConsole/consoleServices/{}",
-        &operation_config.base_path, subscription_id, default
+        operation_config.base_path(),
+        subscription_id,
+        default
     );
     let mut req_builder = client.get(uri_str);
-    if let Some(token_credential) = &operation_config.token_credential {
-        let token_response = token_credential
-            .get_token(&operation_config.token_credential_resource)
-            .await
-            .context(get_console_status::GetTokenError)?;
-        req_builder = req_builder.bearer_auth(token_response.token.secret());
+    if let Some(user_agent) = operation_config.user_agent() {
+        req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
     }
-    req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+    let token_response = operation_config
+        .token_credential()
+        .get_token(operation_config.token_credential_resource())
+        .await
+        .context(get_console_status::GetTokenError)?;
+    req_builder = req_builder.bearer_auth(token_response.token.secret());
+    req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
     let req = req_builder.build().context(get_console_status::BuildRequestError)?;
     let rsp = client.execute(req).await.context(get_console_status::ExecuteRequestError)?;
     match rsp.status() {
@@ -124,20 +130,24 @@ pub async fn disable_console(
     subscription_id: &str,
     default: &str,
 ) -> std::result::Result<DisableSerialConsoleResult, disable_console::Error> {
-    let client = &operation_config.client;
+    let client = operation_config.http_client();
     let uri_str = &format!(
         "{}/subscriptions/{}/providers/Microsoft.SerialConsole/consoleServices/{}/disableConsole",
-        &operation_config.base_path, subscription_id, default
+        operation_config.base_path(),
+        subscription_id,
+        default
     );
     let mut req_builder = client.post(uri_str);
-    if let Some(token_credential) = &operation_config.token_credential {
-        let token_response = token_credential
-            .get_token(&operation_config.token_credential_resource)
-            .await
-            .context(disable_console::GetTokenError)?;
-        req_builder = req_builder.bearer_auth(token_response.token.secret());
+    if let Some(user_agent) = operation_config.user_agent() {
+        req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
     }
-    req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+    let token_response = operation_config
+        .token_credential()
+        .get_token(operation_config.token_credential_resource())
+        .await
+        .context(disable_console::GetTokenError)?;
+    req_builder = req_builder.bearer_auth(token_response.token.secret());
+    req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
     req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
     let req = req_builder.build().context(disable_console::BuildRequestError)?;
     let rsp = client.execute(req).await.context(disable_console::ExecuteRequestError)?;
@@ -197,20 +207,24 @@ pub async fn enable_console(
     subscription_id: &str,
     default: &str,
 ) -> std::result::Result<EnableSerialConsoleResult, enable_console::Error> {
-    let client = &operation_config.client;
+    let client = operation_config.http_client();
     let uri_str = &format!(
         "{}/subscriptions/{}/providers/Microsoft.SerialConsole/consoleServices/{}/enableConsole",
-        &operation_config.base_path, subscription_id, default
+        operation_config.base_path(),
+        subscription_id,
+        default
     );
     let mut req_builder = client.post(uri_str);
-    if let Some(token_credential) = &operation_config.token_credential {
-        let token_response = token_credential
-            .get_token(&operation_config.token_credential_resource)
-            .await
-            .context(enable_console::GetTokenError)?;
-        req_builder = req_builder.bearer_auth(token_response.token.secret());
+    if let Some(user_agent) = operation_config.user_agent() {
+        req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
     }
-    req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+    let token_response = operation_config
+        .token_credential()
+        .get_token(operation_config.token_credential_resource())
+        .await
+        .context(enable_console::GetTokenError)?;
+    req_builder = req_builder.bearer_auth(token_response.token.secret());
+    req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
     req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
     let req = req_builder.build().context(enable_console::BuildRequestError)?;
     let rsp = client.execute(req).await.context(enable_console::ExecuteRequestError)?;

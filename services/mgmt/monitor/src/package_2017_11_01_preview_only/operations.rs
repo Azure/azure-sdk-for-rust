@@ -19,20 +19,24 @@ pub mod metric_baseline {
         sensitivities: Option<&str>,
         result_type: Option<&str>,
     ) -> std::result::Result<BaselineResponse, get::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/{}/providers/microsoft.insights/baseline/{}",
-            &operation_config.base_path, resource_uri, metric_name
+            operation_config.base_path(),
+            resource_uri,
+            metric_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(get::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(get::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         if let Some(timespan) = timespan {
             req_builder = req_builder.query(&[("timespan", timespan)]);
         }
@@ -101,20 +105,23 @@ pub mod metric_baseline {
         resource_uri: &str,
         time_series_information: &TimeSeriesInformation,
     ) -> std::result::Result<CalculateBaselineResponse, calculate_baseline::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/{}/providers/microsoft.insights/calculatebaseline",
-            &operation_config.base_path, resource_uri
+            operation_config.base_path(),
+            resource_uri
         );
         let mut req_builder = client.post(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(calculate_baseline::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(calculate_baseline::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         req_builder = req_builder.json(time_series_information);
         let req = req_builder.build().context(calculate_baseline::BuildRequestError)?;
         let rsp = client.execute(req).await.context(calculate_baseline::ExecuteRequestError)?;

@@ -22,6 +22,9 @@ pub mod policy_assignments {
             policy_assignment_name
         );
         let mut req_builder = client.get(uri_str);
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
+        }
         let token_response = operation_config
             .token_credential()
             .get_token(operation_config.token_credential_resource())
@@ -91,6 +94,9 @@ pub mod policy_assignments {
             policy_assignment_name
         );
         let mut req_builder = client.put(uri_str);
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
+        }
         let token_response = operation_config
             .token_credential()
             .get_token(operation_config.token_credential_resource())
@@ -160,6 +166,9 @@ pub mod policy_assignments {
             policy_assignment_name
         );
         let mut req_builder = client.delete(uri_str);
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
+        }
         let token_response = operation_config
             .token_credential()
             .get_token(operation_config.token_credential_resource())
@@ -235,6 +244,9 @@ pub mod policy_assignments {
             resource_group_name
         );
         let mut req_builder = client.get(uri_str);
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
+        }
         let token_response = operation_config
             .token_credential()
             .get_token(operation_config.token_credential_resource())
@@ -316,6 +328,9 @@ pub mod policy_assignments {
             resource_name
         );
         let mut req_builder = client.get(uri_str);
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
+        }
         let token_response = operation_config
             .token_credential()
             .get_token(operation_config.token_credential_resource())
@@ -387,6 +402,9 @@ pub mod policy_assignments {
             management_group_id
         );
         let mut req_builder = client.get(uri_str);
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
+        }
         let token_response = operation_config
             .token_credential()
             .get_token(operation_config.token_credential_resource())
@@ -456,6 +474,9 @@ pub mod policy_assignments {
             subscription_id
         );
         let mut req_builder = client.get(uri_str);
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
+        }
         let token_response = operation_config
             .token_credential()
             .get_token(operation_config.token_credential_resource())
@@ -521,6 +542,9 @@ pub mod policy_assignments {
         let client = operation_config.http_client();
         let uri_str = &format!("{}/{}", operation_config.base_path(), policy_assignment_id);
         let mut req_builder = client.get(uri_str);
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
+        }
         let token_response = operation_config
             .token_credential()
             .get_token(operation_config.token_credential_resource())
@@ -584,6 +608,9 @@ pub mod policy_assignments {
         let client = operation_config.http_client();
         let uri_str = &format!("{}/{}", operation_config.base_path(), policy_assignment_id);
         let mut req_builder = client.put(uri_str);
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
+        }
         let token_response = operation_config
             .token_credential()
             .get_token(operation_config.token_credential_resource())
@@ -647,6 +674,9 @@ pub mod policy_assignments {
         let client = operation_config.http_client();
         let uri_str = &format!("{}/{}", operation_config.base_path(), policy_assignment_id);
         let mut req_builder = client.delete(uri_str);
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
+        }
         let token_response = operation_config
             .token_credential()
             .get_token(operation_config.token_credential_resource())
@@ -726,6 +756,9 @@ pub mod policy_definitions {
             policy_definition_name
         );
         let mut req_builder = client.get(uri_str);
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
+        }
         let token_response = operation_config
             .token_credential()
             .get_token(operation_config.token_credential_resource())
@@ -795,6 +828,9 @@ pub mod policy_definitions {
             policy_definition_name
         );
         let mut req_builder = client.put(uri_str);
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
+        }
         let token_response = operation_config
             .token_credential()
             .get_token(operation_config.token_credential_resource())
@@ -864,6 +900,9 @@ pub mod policy_definitions {
             policy_definition_name
         );
         let mut req_builder = client.delete(uri_str);
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
+        }
         let token_response = operation_config
             .token_credential()
             .get_token(operation_config.token_credential_resource())
@@ -932,6 +971,9 @@ pub mod policy_definitions {
             policy_definition_name
         );
         let mut req_builder = client.get(uri_str);
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
+        }
         let token_response = operation_config
             .token_credential()
             .get_token(operation_config.token_credential_resource())
@@ -1000,6 +1042,9 @@ pub mod policy_definitions {
             policy_definition_name
         );
         let mut req_builder = client.get(uri_str);
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
+        }
         let token_response = operation_config
             .token_credential()
             .get_token(operation_config.token_credential_resource())
@@ -1070,6 +1115,9 @@ pub mod policy_definitions {
             policy_definition_name
         );
         let mut req_builder = client.put(uri_str);
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
+        }
         let token_response = operation_config
             .token_credential()
             .get_token(operation_config.token_credential_resource())
@@ -1152,6 +1200,9 @@ pub mod policy_definitions {
             policy_definition_name
         );
         let mut req_builder = client.delete(uri_str);
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
+        }
         let token_response = operation_config
             .token_credential()
             .get_token(operation_config.token_credential_resource())
@@ -1220,6 +1271,9 @@ pub mod policy_definitions {
             subscription_id
         );
         let mut req_builder = client.get(uri_str);
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
+        }
         let token_response = operation_config
             .token_credential()
             .get_token(operation_config.token_credential_resource())
@@ -1284,6 +1338,9 @@ pub mod policy_definitions {
             operation_config.base_path(),
         );
         let mut req_builder = client.get(uri_str);
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
+        }
         let token_response = operation_config
             .token_credential()
             .get_token(operation_config.token_credential_resource())
@@ -1351,6 +1408,9 @@ pub mod policy_definitions {
             management_group_id
         );
         let mut req_builder = client.get(uri_str);
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
+        }
         let token_response = operation_config
             .token_credential()
             .get_token(operation_config.token_credential_resource())
@@ -1425,6 +1485,9 @@ pub mod policy_set_definitions {
             policy_set_definition_name
         );
         let mut req_builder = client.get(uri_str);
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
+        }
         let token_response = operation_config
             .token_credential()
             .get_token(operation_config.token_credential_resource())
@@ -1494,6 +1557,9 @@ pub mod policy_set_definitions {
             policy_set_definition_name
         );
         let mut req_builder = client.put(uri_str);
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
+        }
         let token_response = operation_config
             .token_credential()
             .get_token(operation_config.token_credential_resource())
@@ -1573,6 +1639,9 @@ pub mod policy_set_definitions {
             policy_set_definition_name
         );
         let mut req_builder = client.delete(uri_str);
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
+        }
         let token_response = operation_config
             .token_credential()
             .get_token(operation_config.token_credential_resource())
@@ -1641,6 +1710,9 @@ pub mod policy_set_definitions {
             policy_set_definition_name
         );
         let mut req_builder = client.get(uri_str);
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
+        }
         let token_response = operation_config
             .token_credential()
             .get_token(operation_config.token_credential_resource())
@@ -1707,6 +1779,9 @@ pub mod policy_set_definitions {
             subscription_id
         );
         let mut req_builder = client.get(uri_str);
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
+        }
         let token_response = operation_config
             .token_credential()
             .get_token(operation_config.token_credential_resource())
@@ -1771,6 +1846,9 @@ pub mod policy_set_definitions {
             operation_config.base_path(),
         );
         let mut req_builder = client.get(uri_str);
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
+        }
         let token_response = operation_config
             .token_credential()
             .get_token(operation_config.token_credential_resource())
@@ -1840,6 +1918,9 @@ pub mod policy_set_definitions {
             policy_set_definition_name
         );
         let mut req_builder = client.get(uri_str);
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
+        }
         let token_response = operation_config
             .token_credential()
             .get_token(operation_config.token_credential_resource())
@@ -1910,6 +1991,9 @@ pub mod policy_set_definitions {
             policy_set_definition_name
         );
         let mut req_builder = client.put(uri_str);
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
+        }
         let token_response = operation_config
             .token_credential()
             .get_token(operation_config.token_credential_resource())
@@ -2006,6 +2090,9 @@ pub mod policy_set_definitions {
             policy_set_definition_name
         );
         let mut req_builder = client.delete(uri_str);
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
+        }
         let token_response = operation_config
             .token_credential()
             .get_token(operation_config.token_credential_resource())
@@ -2074,6 +2161,9 @@ pub mod policy_set_definitions {
             management_group_id
         );
         let mut req_builder = client.get(uri_str);
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
+        }
         let token_response = operation_config
             .token_credential()
             .get_token(operation_config.token_credential_resource())

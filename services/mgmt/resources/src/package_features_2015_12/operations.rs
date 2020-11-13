@@ -11,6 +11,9 @@ pub async fn list_operations(
     let client = operation_config.http_client();
     let uri_str = &format!("{}/providers/Microsoft.Features/operations", operation_config.base_path(),);
     let mut req_builder = client.get(uri_str);
+    if let Some(user_agent) = operation_config.user_agent() {
+        req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
+    }
     let token_response = operation_config
         .token_credential()
         .get_token(operation_config.token_credential_resource())
@@ -62,6 +65,9 @@ pub mod features {
             subscription_id
         );
         let mut req_builder = client.get(uri_str);
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
+        }
         let token_response = operation_config
             .token_credential()
             .get_token(operation_config.token_credential_resource())
@@ -111,6 +117,9 @@ pub mod features {
             resource_provider_namespace
         );
         let mut req_builder = client.get(uri_str);
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
+        }
         let token_response = operation_config
             .token_credential()
             .get_token(operation_config.token_credential_resource())
@@ -162,6 +171,9 @@ pub mod features {
             feature_name
         );
         let mut req_builder = client.get(uri_str);
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
+        }
         let token_response = operation_config
             .token_credential()
             .get_token(operation_config.token_credential_resource())
@@ -213,6 +225,9 @@ pub mod features {
             feature_name
         );
         let mut req_builder = client.post(uri_str);
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
+        }
         let token_response = operation_config
             .token_credential()
             .get_token(operation_config.token_credential_resource())
@@ -265,6 +280,9 @@ pub mod features {
             feature_name
         );
         let mut req_builder = client.post(uri_str);
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
+        }
         let token_response = operation_config
             .token_credential()
             .get_token(operation_config.token_credential_resource())

@@ -13,6 +13,9 @@ pub mod operations {
         let client = operation_config.http_client();
         let uri_str = &format!("{}/providers/Microsoft.Resources/operations", operation_config.base_path(),);
         let mut req_builder = client.get(uri_str);
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
+        }
         let token_response = operation_config
             .token_credential()
             .get_token(operation_config.token_credential_resource())
@@ -61,6 +64,9 @@ pub mod subscriptions {
         let client = operation_config.http_client();
         let uri_str = &format!("{}/subscriptions/{}/locations", operation_config.base_path(), subscription_id);
         let mut req_builder = client.get(uri_str);
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
+        }
         let token_response = operation_config
             .token_credential()
             .get_token(operation_config.token_credential_resource())
@@ -101,6 +107,9 @@ pub mod subscriptions {
         let client = operation_config.http_client();
         let uri_str = &format!("{}/subscriptions/{}", operation_config.base_path(), subscription_id);
         let mut req_builder = client.get(uri_str);
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
+        }
         let token_response = operation_config
             .token_credential()
             .get_token(operation_config.token_credential_resource())
@@ -141,6 +150,9 @@ pub mod subscriptions {
         let client = operation_config.http_client();
         let uri_str = &format!("{}/subscriptions", operation_config.base_path(),);
         let mut req_builder = client.get(uri_str);
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
+        }
         let token_response = operation_config
             .token_credential()
             .get_token(operation_config.token_credential_resource())
@@ -186,6 +198,9 @@ pub mod tenants {
         let client = operation_config.http_client();
         let uri_str = &format!("{}/tenants", operation_config.base_path(),);
         let mut req_builder = client.get(uri_str);
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
+        }
         let token_response = operation_config
             .token_credential()
             .get_token(operation_config.token_credential_resource())
@@ -230,6 +245,9 @@ pub async fn check_resource_name(
     let client = operation_config.http_client();
     let uri_str = &format!("{}/providers/Microsoft.Resources/checkResourceName", operation_config.base_path(),);
     let mut req_builder = client.post(uri_str);
+    if let Some(user_agent) = operation_config.user_agent() {
+        req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
+    }
     let token_response = operation_config
         .token_credential()
         .get_token(operation_config.token_credential_resource())

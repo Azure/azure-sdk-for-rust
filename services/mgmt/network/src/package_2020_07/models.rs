@@ -6192,8 +6192,6 @@ pub struct ExpressRouteConnectionProperties {
     pub routing_weight: Option<i64>,
     #[serde(rename = "enableInternetSecurity", skip_serializing_if = "Option::is_none")]
     pub enable_internet_security: Option<bool>,
-    #[serde(rename = "expressRouteGatewayBypass", skip_serializing_if = "Option::is_none")]
-    pub express_route_gateway_bypass: Option<bool>,
     #[serde(rename = "routingConfiguration", skip_serializing_if = "Option::is_none")]
     pub routing_configuration: Option<RoutingConfiguration>,
 }

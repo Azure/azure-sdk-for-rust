@@ -6,17 +6,19 @@ use crate::models::*;
 use reqwest::StatusCode;
 use snafu::{ResultExt, Snafu};
 pub async fn get_locations(operation_config: &crate::OperationConfig) -> std::result::Result<LocationCollection, get_locations::Error> {
-    let client = &operation_config.client;
-    let uri_str = &format!("{}/providers/Microsoft.Intune/locations", &operation_config.base_path,);
+    let client = operation_config.http_client();
+    let uri_str = &format!("{}/providers/Microsoft.Intune/locations", operation_config.base_path(),);
     let mut req_builder = client.get(uri_str);
-    if let Some(token_credential) = &operation_config.token_credential {
-        let token_response = token_credential
-            .get_token(&operation_config.token_credential_resource)
-            .await
-            .context(get_locations::GetTokenError)?;
-        req_builder = req_builder.bearer_auth(token_response.token.secret());
+    if let Some(user_agent) = operation_config.user_agent() {
+        req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
     }
-    req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+    let token_response = operation_config
+        .token_credential()
+        .get_token(operation_config.token_credential_resource())
+        .await
+        .context(get_locations::GetTokenError)?;
+    req_builder = req_builder.bearer_auth(token_response.token.secret());
+    req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
     let req = req_builder.build().context(get_locations::BuildRequestError)?;
     let rsp = client.execute(req).await.context(get_locations::ExecuteRequestError)?;
     match rsp.status() {
@@ -54,17 +56,19 @@ pub mod get_locations {
 pub async fn get_location_by_host_name(
     operation_config: &crate::OperationConfig,
 ) -> std::result::Result<Location, get_location_by_host_name::Error> {
-    let client = &operation_config.client;
-    let uri_str = &format!("{}/providers/Microsoft.Intune/locations/hostName", &operation_config.base_path,);
+    let client = operation_config.http_client();
+    let uri_str = &format!("{}/providers/Microsoft.Intune/locations/hostName", operation_config.base_path(),);
     let mut req_builder = client.get(uri_str);
-    if let Some(token_credential) = &operation_config.token_credential {
-        let token_response = token_credential
-            .get_token(&operation_config.token_credential_resource)
-            .await
-            .context(get_location_by_host_name::GetTokenError)?;
-        req_builder = req_builder.bearer_auth(token_response.token.secret());
+    if let Some(user_agent) = operation_config.user_agent() {
+        req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
     }
-    req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+    let token_response = operation_config
+        .token_credential()
+        .get_token(operation_config.token_credential_resource())
+        .await
+        .context(get_location_by_host_name::GetTokenError)?;
+    req_builder = req_builder.bearer_auth(token_response.token.secret());
+    req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
     let req = req_builder.build().context(get_location_by_host_name::BuildRequestError)?;
     let rsp = client.execute(req).await.context(get_location_by_host_name::ExecuteRequestError)?;
     match rsp.status() {
@@ -106,20 +110,23 @@ pub async fn get_apps(
     top: Option<i32>,
     select: Option<&str>,
 ) -> std::result::Result<ApplicationCollection, get_apps::Error> {
-    let client = &operation_config.client;
+    let client = operation_config.http_client();
     let uri_str = &format!(
         "{}/providers/Microsoft.Intune/locations/{}/apps",
-        &operation_config.base_path, host_name
+        operation_config.base_path(),
+        host_name
     );
     let mut req_builder = client.get(uri_str);
-    if let Some(token_credential) = &operation_config.token_credential {
-        let token_response = token_credential
-            .get_token(&operation_config.token_credential_resource)
-            .await
-            .context(get_apps::GetTokenError)?;
-        req_builder = req_builder.bearer_auth(token_response.token.secret());
+    if let Some(user_agent) = operation_config.user_agent() {
+        req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
     }
-    req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+    let token_response = operation_config
+        .token_credential()
+        .get_token(operation_config.token_credential_resource())
+        .await
+        .context(get_apps::GetTokenError)?;
+    req_builder = req_builder.bearer_auth(token_response.token.secret());
+    req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
     if let Some(filter) = filter {
         req_builder = req_builder.query(&[("$filter", filter)]);
     }
@@ -171,20 +178,24 @@ pub async fn get_mam_user_devices(
     top: Option<i32>,
     select: Option<&str>,
 ) -> std::result::Result<DeviceCollection, get_mam_user_devices::Error> {
-    let client = &operation_config.client;
+    let client = operation_config.http_client();
     let uri_str = &format!(
         "{}/providers/Microsoft.Intune/locations/{}/users/{}/devices",
-        &operation_config.base_path, host_name, user_name
+        operation_config.base_path(),
+        host_name,
+        user_name
     );
     let mut req_builder = client.get(uri_str);
-    if let Some(token_credential) = &operation_config.token_credential {
-        let token_response = token_credential
-            .get_token(&operation_config.token_credential_resource)
-            .await
-            .context(get_mam_user_devices::GetTokenError)?;
-        req_builder = req_builder.bearer_auth(token_response.token.secret());
+    if let Some(user_agent) = operation_config.user_agent() {
+        req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
     }
-    req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+    let token_response = operation_config
+        .token_credential()
+        .get_token(operation_config.token_credential_resource())
+        .await
+        .context(get_mam_user_devices::GetTokenError)?;
+    req_builder = req_builder.bearer_auth(token_response.token.secret());
+    req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
     if let Some(filter) = filter {
         req_builder = req_builder.query(&[("$filter", filter)]);
     }
@@ -235,20 +246,25 @@ pub async fn get_mam_user_device_by_device_name(
     device_name: &str,
     select: Option<&str>,
 ) -> std::result::Result<Device, get_mam_user_device_by_device_name::Error> {
-    let client = &operation_config.client;
+    let client = operation_config.http_client();
     let uri_str = &format!(
         "{}/providers/Microsoft.Intune/locations/{}/users/{}/devices/{}",
-        &operation_config.base_path, host_name, user_name, device_name
+        operation_config.base_path(),
+        host_name,
+        user_name,
+        device_name
     );
     let mut req_builder = client.get(uri_str);
-    if let Some(token_credential) = &operation_config.token_credential {
-        let token_response = token_credential
-            .get_token(&operation_config.token_credential_resource)
-            .await
-            .context(get_mam_user_device_by_device_name::GetTokenError)?;
-        req_builder = req_builder.bearer_auth(token_response.token.secret());
+    if let Some(user_agent) = operation_config.user_agent() {
+        req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
     }
-    req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+    let token_response = operation_config
+        .token_credential()
+        .get_token(operation_config.token_credential_resource())
+        .await
+        .context(get_mam_user_device_by_device_name::GetTokenError)?;
+    req_builder = req_builder.bearer_auth(token_response.token.secret());
+    req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
     if let Some(select) = select {
         req_builder = req_builder.query(&[("$select", select)]);
     }
@@ -295,20 +311,25 @@ pub async fn wipe_mam_user_device(
     user_name: &str,
     device_name: &str,
 ) -> std::result::Result<WipeDeviceOperationResult, wipe_mam_user_device::Error> {
-    let client = &operation_config.client;
+    let client = operation_config.http_client();
     let uri_str = &format!(
         "{}/providers/Microsoft.Intune/locations/{}/users/{}/devices/{}/wipe",
-        &operation_config.base_path, host_name, user_name, device_name
+        operation_config.base_path(),
+        host_name,
+        user_name,
+        device_name
     );
     let mut req_builder = client.post(uri_str);
-    if let Some(token_credential) = &operation_config.token_credential {
-        let token_response = token_credential
-            .get_token(&operation_config.token_credential_resource)
-            .await
-            .context(wipe_mam_user_device::GetTokenError)?;
-        req_builder = req_builder.bearer_auth(token_response.token.secret());
+    if let Some(user_agent) = operation_config.user_agent() {
+        req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
     }
-    req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+    let token_response = operation_config
+        .token_credential()
+        .get_token(operation_config.token_credential_resource())
+        .await
+        .context(wipe_mam_user_device::GetTokenError)?;
+    req_builder = req_builder.bearer_auth(token_response.token.secret());
+    req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
     req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
     let req = req_builder.build().context(wipe_mam_user_device::BuildRequestError)?;
     let rsp = client.execute(req).await.context(wipe_mam_user_device::ExecuteRequestError)?;
@@ -352,20 +373,23 @@ pub async fn get_operation_results(
     top: Option<i32>,
     select: Option<&str>,
 ) -> std::result::Result<OperationResultCollection, get_operation_results::Error> {
-    let client = &operation_config.client;
+    let client = operation_config.http_client();
     let uri_str = &format!(
         "{}/providers/Microsoft.Intune/locations/{}/operationResults",
-        &operation_config.base_path, host_name
+        operation_config.base_path(),
+        host_name
     );
     let mut req_builder = client.get(uri_str);
-    if let Some(token_credential) = &operation_config.token_credential {
-        let token_response = token_credential
-            .get_token(&operation_config.token_credential_resource)
-            .await
-            .context(get_operation_results::GetTokenError)?;
-        req_builder = req_builder.bearer_auth(token_response.token.secret());
+    if let Some(user_agent) = operation_config.user_agent() {
+        req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
     }
-    req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+    let token_response = operation_config
+        .token_credential()
+        .get_token(operation_config.token_credential_resource())
+        .await
+        .context(get_operation_results::GetTokenError)?;
+    req_builder = req_builder.bearer_auth(token_response.token.secret());
+    req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
     if let Some(filter) = filter {
         req_builder = req_builder.query(&[("$filter", filter)]);
     }
@@ -414,20 +438,23 @@ pub async fn get_mam_statuses(
     operation_config: &crate::OperationConfig,
     host_name: &str,
 ) -> std::result::Result<StatusesDefault, get_mam_statuses::Error> {
-    let client = &operation_config.client;
+    let client = operation_config.http_client();
     let uri_str = &format!(
         "{}/providers/Microsoft.Intune/locations/{}/statuses/default",
-        &operation_config.base_path, host_name
+        operation_config.base_path(),
+        host_name
     );
     let mut req_builder = client.get(uri_str);
-    if let Some(token_credential) = &operation_config.token_credential {
-        let token_response = token_credential
-            .get_token(&operation_config.token_credential_resource)
-            .await
-            .context(get_mam_statuses::GetTokenError)?;
-        req_builder = req_builder.bearer_auth(token_response.token.secret());
+    if let Some(user_agent) = operation_config.user_agent() {
+        req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
     }
-    req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+    let token_response = operation_config
+        .token_credential()
+        .get_token(operation_config.token_credential_resource())
+        .await
+        .context(get_mam_statuses::GetTokenError)?;
+    req_builder = req_builder.bearer_auth(token_response.token.secret());
+    req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
     let req = req_builder.build().context(get_mam_statuses::BuildRequestError)?;
     let rsp = client.execute(req).await.context(get_mam_statuses::ExecuteRequestError)?;
     match rsp.status() {
@@ -469,20 +496,23 @@ pub async fn get_mam_flagged_users(
     top: Option<i32>,
     select: Option<&str>,
 ) -> std::result::Result<FlaggedUserCollection, get_mam_flagged_users::Error> {
-    let client = &operation_config.client;
+    let client = operation_config.http_client();
     let uri_str = &format!(
         "{}/providers/Microsoft.Intune/locations/{}/flaggedUsers",
-        &operation_config.base_path, host_name
+        operation_config.base_path(),
+        host_name
     );
     let mut req_builder = client.get(uri_str);
-    if let Some(token_credential) = &operation_config.token_credential {
-        let token_response = token_credential
-            .get_token(&operation_config.token_credential_resource)
-            .await
-            .context(get_mam_flagged_users::GetTokenError)?;
-        req_builder = req_builder.bearer_auth(token_response.token.secret());
+    if let Some(user_agent) = operation_config.user_agent() {
+        req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
     }
-    req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+    let token_response = operation_config
+        .token_credential()
+        .get_token(operation_config.token_credential_resource())
+        .await
+        .context(get_mam_flagged_users::GetTokenError)?;
+    req_builder = req_builder.bearer_auth(token_response.token.secret());
+    req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
     if let Some(filter) = filter {
         req_builder = req_builder.query(&[("$filter", filter)]);
     }
@@ -533,20 +563,24 @@ pub async fn get_mam_flagged_user_by_name(
     user_name: &str,
     select: Option<&str>,
 ) -> std::result::Result<FlaggedUser, get_mam_flagged_user_by_name::Error> {
-    let client = &operation_config.client;
+    let client = operation_config.http_client();
     let uri_str = &format!(
         "{}/providers/Microsoft.Intune/locations/{}/flaggedUsers/{}",
-        &operation_config.base_path, host_name, user_name
+        operation_config.base_path(),
+        host_name,
+        user_name
     );
     let mut req_builder = client.get(uri_str);
-    if let Some(token_credential) = &operation_config.token_credential {
-        let token_response = token_credential
-            .get_token(&operation_config.token_credential_resource)
-            .await
-            .context(get_mam_flagged_user_by_name::GetTokenError)?;
-        req_builder = req_builder.bearer_auth(token_response.token.secret());
+    if let Some(user_agent) = operation_config.user_agent() {
+        req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
     }
-    req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+    let token_response = operation_config
+        .token_credential()
+        .get_token(operation_config.token_credential_resource())
+        .await
+        .context(get_mam_flagged_user_by_name::GetTokenError)?;
+    req_builder = req_builder.bearer_auth(token_response.token.secret());
+    req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
     if let Some(select) = select {
         req_builder = req_builder.query(&[("$select", select)]);
     }
@@ -595,20 +629,24 @@ pub async fn get_mam_user_flagged_enrolled_apps(
     top: Option<i32>,
     select: Option<&str>,
 ) -> std::result::Result<FlaggedEnrolledAppCollection, get_mam_user_flagged_enrolled_apps::Error> {
-    let client = &operation_config.client;
+    let client = operation_config.http_client();
     let uri_str = &format!(
         "{}/providers/Microsoft.Intune/locations/{}/flaggedUsers/{}/flaggedEnrolledApps",
-        &operation_config.base_path, host_name, user_name
+        operation_config.base_path(),
+        host_name,
+        user_name
     );
     let mut req_builder = client.get(uri_str);
-    if let Some(token_credential) = &operation_config.token_credential {
-        let token_response = token_credential
-            .get_token(&operation_config.token_credential_resource)
-            .await
-            .context(get_mam_user_flagged_enrolled_apps::GetTokenError)?;
-        req_builder = req_builder.bearer_auth(token_response.token.secret());
+    if let Some(user_agent) = operation_config.user_agent() {
+        req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
     }
-    req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+    let token_response = operation_config
+        .token_credential()
+        .get_token(operation_config.token_credential_resource())
+        .await
+        .context(get_mam_user_flagged_enrolled_apps::GetTokenError)?;
+    req_builder = req_builder.bearer_auth(token_response.token.secret());
+    req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
     if let Some(filter) = filter {
         req_builder = req_builder.query(&[("$filter", filter)]);
     }
@@ -667,20 +705,23 @@ pub mod ios {
         top: Option<i32>,
         select: Option<&str>,
     ) -> std::result::Result<IosmamPolicyCollection, get_mam_policies::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/providers/Microsoft.Intune/locations/{}/iosPolicies",
-            &operation_config.base_path, host_name
+            operation_config.base_path(),
+            host_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(get_mam_policies::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(get_mam_policies::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         if let Some(filter) = filter {
             req_builder = req_builder.query(&[("$filter", filter)]);
         }
@@ -731,20 +772,24 @@ pub mod ios {
         policy_name: &str,
         select: Option<&str>,
     ) -> std::result::Result<IOsmamPolicy, get_mam_policy_by_name::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/providers/Microsoft.Intune/locations/{}/iosPolicies/{}",
-            &operation_config.base_path, host_name, policy_name
+            operation_config.base_path(),
+            host_name,
+            policy_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(get_mam_policy_by_name::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(get_mam_policy_by_name::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         if let Some(select) = select {
             req_builder = req_builder.query(&[("$select", select)]);
         }
@@ -788,20 +833,24 @@ pub mod ios {
         policy_name: &str,
         parameters: &IOsmamPolicy,
     ) -> std::result::Result<IOsmamPolicy, create_or_update_mam_policy::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/providers/Microsoft.Intune/locations/{}/iosPolicies/{}",
-            &operation_config.base_path, host_name, policy_name
+            operation_config.base_path(),
+            host_name,
+            policy_name
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(create_or_update_mam_policy::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(create_or_update_mam_policy::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         req_builder = req_builder.json(parameters);
         let req = req_builder.build().context(create_or_update_mam_policy::BuildRequestError)?;
         let rsp = client
@@ -847,20 +896,24 @@ pub mod ios {
         policy_name: &str,
         parameters: &IOsmamPolicy,
     ) -> std::result::Result<IOsmamPolicy, patch_mam_policy::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/providers/Microsoft.Intune/locations/{}/iosPolicies/{}",
-            &operation_config.base_path, host_name, policy_name
+            operation_config.base_path(),
+            host_name,
+            policy_name
         );
         let mut req_builder = client.patch(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(patch_mam_policy::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(patch_mam_policy::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         req_builder = req_builder.json(parameters);
         let req = req_builder.build().context(patch_mam_policy::BuildRequestError)?;
         let rsp = client.execute(req).await.context(patch_mam_policy::ExecuteRequestError)?;
@@ -901,20 +954,24 @@ pub mod ios {
         host_name: &str,
         policy_name: &str,
     ) -> std::result::Result<delete_mam_policy::Response, delete_mam_policy::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/providers/Microsoft.Intune/locations/{}/iosPolicies/{}",
-            &operation_config.base_path, host_name, policy_name
+            operation_config.base_path(),
+            host_name,
+            policy_name
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(delete_mam_policy::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(delete_mam_policy::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         let req = req_builder.build().context(delete_mam_policy::BuildRequestError)?;
         let rsp = client.execute(req).await.context(delete_mam_policy::ExecuteRequestError)?;
         match rsp.status() {
@@ -959,20 +1016,24 @@ pub mod ios {
         top: Option<i32>,
         select: Option<&str>,
     ) -> std::result::Result<ApplicationCollection, get_app_for_mam_policy::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/providers/Microsoft.Intune/locations/{}/iosPolicies/{}/apps",
-            &operation_config.base_path, host_name, policy_name
+            operation_config.base_path(),
+            host_name,
+            policy_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(get_app_for_mam_policy::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(get_app_for_mam_policy::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         if let Some(filter) = filter {
             req_builder = req_builder.query(&[("$filter", filter)]);
         }
@@ -1024,20 +1085,25 @@ pub mod ios {
         app_name: &str,
         parameters: &MamPolicyAppIdOrGroupIdPayload,
     ) -> std::result::Result<add_app_for_mam_policy::Response, add_app_for_mam_policy::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/providers/Microsoft.Intune/locations/{}/iosPolicies/{}/apps/{}",
-            &operation_config.base_path, host_name, policy_name, app_name
+            operation_config.base_path(),
+            host_name,
+            policy_name,
+            app_name
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(add_app_for_mam_policy::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(add_app_for_mam_policy::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         req_builder = req_builder.json(parameters);
         let req = req_builder.build().context(add_app_for_mam_policy::BuildRequestError)?;
         let rsp = client.execute(req).await.context(add_app_for_mam_policy::ExecuteRequestError)?;
@@ -1081,20 +1147,25 @@ pub mod ios {
         policy_name: &str,
         app_name: &str,
     ) -> std::result::Result<delete_app_for_mam_policy::Response, delete_app_for_mam_policy::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/providers/Microsoft.Intune/locations/{}/iosPolicies/{}/apps/{}",
-            &operation_config.base_path, host_name, policy_name, app_name
+            operation_config.base_path(),
+            host_name,
+            policy_name,
+            app_name
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(delete_app_for_mam_policy::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(delete_app_for_mam_policy::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         let req = req_builder.build().context(delete_app_for_mam_policy::BuildRequestError)?;
         let rsp = client.execute(req).await.context(delete_app_for_mam_policy::ExecuteRequestError)?;
         match rsp.status() {
@@ -1136,20 +1207,24 @@ pub mod ios {
         host_name: &str,
         policy_name: &str,
     ) -> std::result::Result<GroupsCollection, get_groups_for_mam_policy::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/providers/Microsoft.Intune/locations/{}/iosPolicies/{}/groups",
-            &operation_config.base_path, host_name, policy_name
+            operation_config.base_path(),
+            host_name,
+            policy_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(get_groups_for_mam_policy::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(get_groups_for_mam_policy::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         let req = req_builder.build().context(get_groups_for_mam_policy::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get_groups_for_mam_policy::ExecuteRequestError)?;
         match rsp.status() {
@@ -1192,20 +1267,25 @@ pub mod ios {
         group_id: &str,
         parameters: &MamPolicyAppIdOrGroupIdPayload,
     ) -> std::result::Result<add_group_for_mam_policy::Response, add_group_for_mam_policy::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/providers/Microsoft.Intune/locations/{}/iosPolicies/{}/groups/{}",
-            &operation_config.base_path, host_name, policy_name, group_id
+            operation_config.base_path(),
+            host_name,
+            policy_name,
+            group_id
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(add_group_for_mam_policy::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(add_group_for_mam_policy::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         req_builder = req_builder.json(parameters);
         let req = req_builder.build().context(add_group_for_mam_policy::BuildRequestError)?;
         let rsp = client.execute(req).await.context(add_group_for_mam_policy::ExecuteRequestError)?;
@@ -1249,20 +1329,25 @@ pub mod ios {
         policy_name: &str,
         group_id: &str,
     ) -> std::result::Result<delete_group_for_mam_policy::Response, delete_group_for_mam_policy::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/providers/Microsoft.Intune/locations/{}/iosPolicies/{}/groups/{}",
-            &operation_config.base_path, host_name, policy_name, group_id
+            operation_config.base_path(),
+            host_name,
+            policy_name,
+            group_id
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(delete_group_for_mam_policy::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(delete_group_for_mam_policy::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         let req = req_builder.build().context(delete_group_for_mam_policy::BuildRequestError)?;
         let rsp = client
             .execute(req)
@@ -1314,20 +1399,23 @@ pub mod android {
         top: Option<i32>,
         select: Option<&str>,
     ) -> std::result::Result<AndroidMamPolicyCollection, get_mam_policies::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/providers/Microsoft.Intune/locations/{}/androidPolicies",
-            &operation_config.base_path, host_name
+            operation_config.base_path(),
+            host_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(get_mam_policies::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(get_mam_policies::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         if let Some(filter) = filter {
             req_builder = req_builder.query(&[("$filter", filter)]);
         }
@@ -1378,20 +1466,24 @@ pub mod android {
         policy_name: &str,
         select: Option<&str>,
     ) -> std::result::Result<AndroidMamPolicy, get_mam_policy_by_name::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/providers/Microsoft.Intune/locations/{}/androidPolicies/{}",
-            &operation_config.base_path, host_name, policy_name
+            operation_config.base_path(),
+            host_name,
+            policy_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(get_mam_policy_by_name::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(get_mam_policy_by_name::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         if let Some(select) = select {
             req_builder = req_builder.query(&[("$select", select)]);
         }
@@ -1436,20 +1528,24 @@ pub mod android {
         policy_name: &str,
         parameters: &AndroidMamPolicy,
     ) -> std::result::Result<AndroidMamPolicy, create_or_update_mam_policy::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/providers/Microsoft.Intune/locations/{}/androidPolicies/{}",
-            &operation_config.base_path, host_name, policy_name
+            operation_config.base_path(),
+            host_name,
+            policy_name
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(create_or_update_mam_policy::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(create_or_update_mam_policy::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         req_builder = req_builder.json(parameters);
         let req = req_builder.build().context(create_or_update_mam_policy::BuildRequestError)?;
         let rsp = client
@@ -1495,20 +1591,24 @@ pub mod android {
         policy_name: &str,
         parameters: &AndroidMamPolicy,
     ) -> std::result::Result<AndroidMamPolicy, patch_mam_policy::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/providers/Microsoft.Intune/locations/{}/androidPolicies/{}",
-            &operation_config.base_path, host_name, policy_name
+            operation_config.base_path(),
+            host_name,
+            policy_name
         );
         let mut req_builder = client.patch(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(patch_mam_policy::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(patch_mam_policy::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         req_builder = req_builder.json(parameters);
         let req = req_builder.build().context(patch_mam_policy::BuildRequestError)?;
         let rsp = client.execute(req).await.context(patch_mam_policy::ExecuteRequestError)?;
@@ -1549,20 +1649,24 @@ pub mod android {
         host_name: &str,
         policy_name: &str,
     ) -> std::result::Result<delete_mam_policy::Response, delete_mam_policy::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/providers/Microsoft.Intune/locations/{}/androidPolicies/{}",
-            &operation_config.base_path, host_name, policy_name
+            operation_config.base_path(),
+            host_name,
+            policy_name
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(delete_mam_policy::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(delete_mam_policy::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         let req = req_builder.build().context(delete_mam_policy::BuildRequestError)?;
         let rsp = client.execute(req).await.context(delete_mam_policy::ExecuteRequestError)?;
         match rsp.status() {
@@ -1607,20 +1711,24 @@ pub mod android {
         top: Option<i32>,
         select: Option<&str>,
     ) -> std::result::Result<ApplicationCollection, get_app_for_mam_policy::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/providers/Microsoft.Intune/locations/{}/AndroidPolicies/{}/apps",
-            &operation_config.base_path, host_name, policy_name
+            operation_config.base_path(),
+            host_name,
+            policy_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(get_app_for_mam_policy::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(get_app_for_mam_policy::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         if let Some(filter) = filter {
             req_builder = req_builder.query(&[("$filter", filter)]);
         }
@@ -1672,20 +1780,25 @@ pub mod android {
         app_name: &str,
         parameters: &MamPolicyAppIdOrGroupIdPayload,
     ) -> std::result::Result<add_app_for_mam_policy::Response, add_app_for_mam_policy::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/providers/Microsoft.Intune/locations/{}/androidPolicies/{}/apps/{}",
-            &operation_config.base_path, host_name, policy_name, app_name
+            operation_config.base_path(),
+            host_name,
+            policy_name,
+            app_name
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(add_app_for_mam_policy::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(add_app_for_mam_policy::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         req_builder = req_builder.json(parameters);
         let req = req_builder.build().context(add_app_for_mam_policy::BuildRequestError)?;
         let rsp = client.execute(req).await.context(add_app_for_mam_policy::ExecuteRequestError)?;
@@ -1729,20 +1842,25 @@ pub mod android {
         policy_name: &str,
         app_name: &str,
     ) -> std::result::Result<delete_app_for_mam_policy::Response, delete_app_for_mam_policy::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/providers/Microsoft.Intune/locations/{}/androidPolicies/{}/apps/{}",
-            &operation_config.base_path, host_name, policy_name, app_name
+            operation_config.base_path(),
+            host_name,
+            policy_name,
+            app_name
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(delete_app_for_mam_policy::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(delete_app_for_mam_policy::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         let req = req_builder.build().context(delete_app_for_mam_policy::BuildRequestError)?;
         let rsp = client.execute(req).await.context(delete_app_for_mam_policy::ExecuteRequestError)?;
         match rsp.status() {
@@ -1784,20 +1902,24 @@ pub mod android {
         host_name: &str,
         policy_name: &str,
     ) -> std::result::Result<GroupsCollection, get_groups_for_mam_policy::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/providers/Microsoft.Intune/locations/{}/androidPolicies/{}/groups",
-            &operation_config.base_path, host_name, policy_name
+            operation_config.base_path(),
+            host_name,
+            policy_name
         );
         let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(get_groups_for_mam_policy::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(get_groups_for_mam_policy::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         let req = req_builder.build().context(get_groups_for_mam_policy::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get_groups_for_mam_policy::ExecuteRequestError)?;
         match rsp.status() {
@@ -1840,20 +1962,25 @@ pub mod android {
         group_id: &str,
         parameters: &MamPolicyAppIdOrGroupIdPayload,
     ) -> std::result::Result<add_group_for_mam_policy::Response, add_group_for_mam_policy::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/providers/Microsoft.Intune/locations/{}/androidPolicies/{}/groups/{}",
-            &operation_config.base_path, host_name, policy_name, group_id
+            operation_config.base_path(),
+            host_name,
+            policy_name,
+            group_id
         );
         let mut req_builder = client.put(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(add_group_for_mam_policy::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(add_group_for_mam_policy::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         req_builder = req_builder.json(parameters);
         let req = req_builder.build().context(add_group_for_mam_policy::BuildRequestError)?;
         let rsp = client.execute(req).await.context(add_group_for_mam_policy::ExecuteRequestError)?;
@@ -1897,20 +2024,25 @@ pub mod android {
         policy_name: &str,
         group_id: &str,
     ) -> std::result::Result<delete_group_for_mam_policy::Response, delete_group_for_mam_policy::Error> {
-        let client = &operation_config.client;
+        let client = operation_config.http_client();
         let uri_str = &format!(
             "{}/providers/Microsoft.Intune/locations/{}/androidPolicies/{}/groups/{}",
-            &operation_config.base_path, host_name, policy_name, group_id
+            operation_config.base_path(),
+            host_name,
+            policy_name,
+            group_id
         );
         let mut req_builder = client.delete(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(delete_group_for_mam_policy::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        if let Some(user_agent) = operation_config.user_agent() {
+            req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let token_response = operation_config
+            .token_credential()
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(delete_group_for_mam_policy::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
         let req = req_builder.build().context(delete_group_for_mam_policy::BuildRequestError)?;
         let rsp = client
             .execute(req)

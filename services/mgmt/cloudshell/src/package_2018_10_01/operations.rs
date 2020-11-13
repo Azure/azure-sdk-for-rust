@@ -10,20 +10,24 @@ pub async fn get_user_settings_with_location(
     user_settings_name: &str,
     location: &str,
 ) -> std::result::Result<UserSettingsResponse, get_user_settings_with_location::Error> {
-    let client = &operation_config.client;
+    let client = operation_config.http_client();
     let uri_str = &format!(
         "{}/providers/Microsoft.Portal/locations/{}/userSettings/{}",
-        &operation_config.base_path, location, user_settings_name
+        operation_config.base_path(),
+        location,
+        user_settings_name
     );
     let mut req_builder = client.get(uri_str);
-    if let Some(token_credential) = &operation_config.token_credential {
-        let token_response = token_credential
-            .get_token(&operation_config.token_credential_resource)
-            .await
-            .context(get_user_settings_with_location::GetTokenError)?;
-        req_builder = req_builder.bearer_auth(token_response.token.secret());
+    if let Some(user_agent) = operation_config.user_agent() {
+        req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
     }
-    req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+    let token_response = operation_config
+        .token_credential()
+        .get_token(operation_config.token_credential_resource())
+        .await
+        .context(get_user_settings_with_location::GetTokenError)?;
+    req_builder = req_builder.bearer_auth(token_response.token.secret());
+    req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
     let req = req_builder.build().context(get_user_settings_with_location::BuildRequestError)?;
     let rsp = client
         .execute(req)
@@ -83,20 +87,24 @@ pub async fn put_user_settings_with_location(
     location: &str,
     parameters: &CloudShellUserSettings,
 ) -> std::result::Result<UserSettingsResponse, put_user_settings_with_location::Error> {
-    let client = &operation_config.client;
+    let client = operation_config.http_client();
     let uri_str = &format!(
         "{}/providers/Microsoft.Portal/locations/{}/userSettings/{}",
-        &operation_config.base_path, location, user_settings_name
+        operation_config.base_path(),
+        location,
+        user_settings_name
     );
     let mut req_builder = client.put(uri_str);
-    if let Some(token_credential) = &operation_config.token_credential {
-        let token_response = token_credential
-            .get_token(&operation_config.token_credential_resource)
-            .await
-            .context(put_user_settings_with_location::GetTokenError)?;
-        req_builder = req_builder.bearer_auth(token_response.token.secret());
+    if let Some(user_agent) = operation_config.user_agent() {
+        req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
     }
-    req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+    let token_response = operation_config
+        .token_credential()
+        .get_token(operation_config.token_credential_resource())
+        .await
+        .context(put_user_settings_with_location::GetTokenError)?;
+    req_builder = req_builder.bearer_auth(token_response.token.secret());
+    req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
     req_builder = req_builder.json(parameters);
     let req = req_builder.build().context(put_user_settings_with_location::BuildRequestError)?;
     let rsp = client
@@ -157,20 +165,24 @@ pub async fn patch_user_settings_with_location(
     location: &str,
     parameters: &CloudShellPatchUserSettings,
 ) -> std::result::Result<UserSettingsResponse, patch_user_settings_with_location::Error> {
-    let client = &operation_config.client;
+    let client = operation_config.http_client();
     let uri_str = &format!(
         "{}/providers/Microsoft.Portal/locations/{}/userSettings/{}",
-        &operation_config.base_path, location, user_settings_name
+        operation_config.base_path(),
+        location,
+        user_settings_name
     );
     let mut req_builder = client.patch(uri_str);
-    if let Some(token_credential) = &operation_config.token_credential {
-        let token_response = token_credential
-            .get_token(&operation_config.token_credential_resource)
-            .await
-            .context(patch_user_settings_with_location::GetTokenError)?;
-        req_builder = req_builder.bearer_auth(token_response.token.secret());
+    if let Some(user_agent) = operation_config.user_agent() {
+        req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
     }
-    req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+    let token_response = operation_config
+        .token_credential()
+        .get_token(operation_config.token_credential_resource())
+        .await
+        .context(patch_user_settings_with_location::GetTokenError)?;
+    req_builder = req_builder.bearer_auth(token_response.token.secret());
+    req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
     req_builder = req_builder.json(parameters);
     let req = req_builder.build().context(patch_user_settings_with_location::BuildRequestError)?;
     let rsp = client
@@ -230,20 +242,24 @@ pub async fn delete_user_settings_with_location(
     user_settings_name: &str,
     location: &str,
 ) -> std::result::Result<delete_user_settings_with_location::Response, delete_user_settings_with_location::Error> {
-    let client = &operation_config.client;
+    let client = operation_config.http_client();
     let uri_str = &format!(
         "{}/providers/Microsoft.Portal/locations/{}/userSettings/{}",
-        &operation_config.base_path, location, user_settings_name
+        operation_config.base_path(),
+        location,
+        user_settings_name
     );
     let mut req_builder = client.delete(uri_str);
-    if let Some(token_credential) = &operation_config.token_credential {
-        let token_response = token_credential
-            .get_token(&operation_config.token_credential_resource)
-            .await
-            .context(delete_user_settings_with_location::GetTokenError)?;
-        req_builder = req_builder.bearer_auth(token_response.token.secret());
+    if let Some(user_agent) = operation_config.user_agent() {
+        req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
     }
-    req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+    let token_response = operation_config
+        .token_credential()
+        .get_token(operation_config.token_credential_resource())
+        .await
+        .context(delete_user_settings_with_location::GetTokenError)?;
+    req_builder = req_builder.bearer_auth(token_response.token.secret());
+    req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
     let req = req_builder.build().context(delete_user_settings_with_location::BuildRequestError)?;
     let rsp = client
         .execute(req)
@@ -303,20 +319,24 @@ pub async fn get_console_with_location(
     console_name: &str,
     location: &str,
 ) -> std::result::Result<CloudShellConsole, get_console_with_location::Error> {
-    let client = &operation_config.client;
+    let client = operation_config.http_client();
     let uri_str = &format!(
         "{}/providers/Microsoft.Portal/locations/{}/consoles/{}",
-        &operation_config.base_path, location, console_name
+        operation_config.base_path(),
+        location,
+        console_name
     );
     let mut req_builder = client.get(uri_str);
-    if let Some(token_credential) = &operation_config.token_credential {
-        let token_response = token_credential
-            .get_token(&operation_config.token_credential_resource)
-            .await
-            .context(get_console_with_location::GetTokenError)?;
-        req_builder = req_builder.bearer_auth(token_response.token.secret());
+    if let Some(user_agent) = operation_config.user_agent() {
+        req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
     }
-    req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+    let token_response = operation_config
+        .token_credential()
+        .get_token(operation_config.token_credential_resource())
+        .await
+        .context(get_console_with_location::GetTokenError)?;
+    req_builder = req_builder.bearer_auth(token_response.token.secret());
+    req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
     let req = req_builder.build().context(get_console_with_location::BuildRequestError)?;
     let rsp = client.execute(req).await.context(get_console_with_location::ExecuteRequestError)?;
     match rsp.status() {
@@ -371,20 +391,24 @@ pub async fn put_console_with_location(
     console_name: &str,
     location: &str,
 ) -> std::result::Result<put_console_with_location::Response, put_console_with_location::Error> {
-    let client = &operation_config.client;
+    let client = operation_config.http_client();
     let uri_str = &format!(
         "{}/providers/Microsoft.Portal/locations/{}/consoles/{}",
-        &operation_config.base_path, location, console_name
+        operation_config.base_path(),
+        location,
+        console_name
     );
     let mut req_builder = client.put(uri_str);
-    if let Some(token_credential) = &operation_config.token_credential {
-        let token_response = token_credential
-            .get_token(&operation_config.token_credential_resource)
-            .await
-            .context(put_console_with_location::GetTokenError)?;
-        req_builder = req_builder.bearer_auth(token_response.token.secret());
+    if let Some(user_agent) = operation_config.user_agent() {
+        req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
     }
-    req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+    let token_response = operation_config
+        .token_credential()
+        .get_token(operation_config.token_credential_resource())
+        .await
+        .context(put_console_with_location::GetTokenError)?;
+    req_builder = req_builder.bearer_auth(token_response.token.secret());
+    req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
     let req = req_builder.build().context(put_console_with_location::BuildRequestError)?;
     let rsp = client.execute(req).await.context(put_console_with_location::ExecuteRequestError)?;
     match rsp.status() {
@@ -450,20 +474,24 @@ pub async fn delete_console_with_location(
     console_name: &str,
     location: &str,
 ) -> std::result::Result<delete_console_with_location::Response, delete_console_with_location::Error> {
-    let client = &operation_config.client;
+    let client = operation_config.http_client();
     let uri_str = &format!(
         "{}/providers/Microsoft.Portal/locations/{}/consoles/{}",
-        &operation_config.base_path, location, console_name
+        operation_config.base_path(),
+        location,
+        console_name
     );
     let mut req_builder = client.delete(uri_str);
-    if let Some(token_credential) = &operation_config.token_credential {
-        let token_response = token_credential
-            .get_token(&operation_config.token_credential_resource)
-            .await
-            .context(delete_console_with_location::GetTokenError)?;
-        req_builder = req_builder.bearer_auth(token_response.token.secret());
+    if let Some(user_agent) = operation_config.user_agent() {
+        req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
     }
-    req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+    let token_response = operation_config
+        .token_credential()
+        .get_token(operation_config.token_credential_resource())
+        .await
+        .context(delete_console_with_location::GetTokenError)?;
+    req_builder = req_builder.bearer_auth(token_response.token.secret());
+    req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
     let req = req_builder.build().context(delete_console_with_location::BuildRequestError)?;
     let rsp = client
         .execute(req)
@@ -523,19 +551,23 @@ pub async fn keep_alive_with_location(
     console_name: &str,
     location: &str,
 ) -> std::result::Result<(), keep_alive_with_location::Error> {
-    let client = &operation_config.client;
+    let client = operation_config.http_client();
     let uri_str = &format!(
         "{}/providers/Microsoft.Portal/locations/{}/consoles/{}/keepAlive",
-        &operation_config.base_path, location, console_name
+        operation_config.base_path(),
+        location,
+        console_name
     );
     let mut req_builder = client.post(uri_str);
-    if let Some(token_credential) = &operation_config.token_credential {
-        let token_response = token_credential
-            .get_token(&operation_config.token_credential_resource)
-            .await
-            .context(keep_alive_with_location::GetTokenError)?;
-        req_builder = req_builder.bearer_auth(token_response.token.secret());
+    if let Some(user_agent) = operation_config.user_agent() {
+        req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
     }
+    let token_response = operation_config
+        .token_credential()
+        .get_token(operation_config.token_credential_resource())
+        .await
+        .context(keep_alive_with_location::GetTokenError)?;
+    req_builder = req_builder.bearer_auth(token_response.token.secret());
     req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
     let req = req_builder.build().context(keep_alive_with_location::BuildRequestError)?;
     let rsp = client.execute(req).await.context(keep_alive_with_location::ExecuteRequestError)?;
@@ -585,20 +617,23 @@ pub async fn get_user_settings(
     operation_config: &crate::OperationConfig,
     user_settings_name: &str,
 ) -> std::result::Result<UserSettingsResponse, get_user_settings::Error> {
-    let client = &operation_config.client;
+    let client = operation_config.http_client();
     let uri_str = &format!(
         "{}/providers/Microsoft.Portal/userSettings/{}",
-        &operation_config.base_path, user_settings_name
+        operation_config.base_path(),
+        user_settings_name
     );
     let mut req_builder = client.get(uri_str);
-    if let Some(token_credential) = &operation_config.token_credential {
-        let token_response = token_credential
-            .get_token(&operation_config.token_credential_resource)
-            .await
-            .context(get_user_settings::GetTokenError)?;
-        req_builder = req_builder.bearer_auth(token_response.token.secret());
+    if let Some(user_agent) = operation_config.user_agent() {
+        req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
     }
-    req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+    let token_response = operation_config
+        .token_credential()
+        .get_token(operation_config.token_credential_resource())
+        .await
+        .context(get_user_settings::GetTokenError)?;
+    req_builder = req_builder.bearer_auth(token_response.token.secret());
+    req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
     let req = req_builder.build().context(get_user_settings::BuildRequestError)?;
     let rsp = client.execute(req).await.context(get_user_settings::ExecuteRequestError)?;
     match rsp.status() {
@@ -652,20 +687,23 @@ pub async fn put_user_settings(
     user_settings_name: &str,
     parameters: &CloudShellUserSettings,
 ) -> std::result::Result<UserSettingsResponse, put_user_settings::Error> {
-    let client = &operation_config.client;
+    let client = operation_config.http_client();
     let uri_str = &format!(
         "{}/providers/Microsoft.Portal/userSettings/{}",
-        &operation_config.base_path, user_settings_name
+        operation_config.base_path(),
+        user_settings_name
     );
     let mut req_builder = client.put(uri_str);
-    if let Some(token_credential) = &operation_config.token_credential {
-        let token_response = token_credential
-            .get_token(&operation_config.token_credential_resource)
-            .await
-            .context(put_user_settings::GetTokenError)?;
-        req_builder = req_builder.bearer_auth(token_response.token.secret());
+    if let Some(user_agent) = operation_config.user_agent() {
+        req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
     }
-    req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+    let token_response = operation_config
+        .token_credential()
+        .get_token(operation_config.token_credential_resource())
+        .await
+        .context(put_user_settings::GetTokenError)?;
+    req_builder = req_builder.bearer_auth(token_response.token.secret());
+    req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
     req_builder = req_builder.json(parameters);
     let req = req_builder.build().context(put_user_settings::BuildRequestError)?;
     let rsp = client.execute(req).await.context(put_user_settings::ExecuteRequestError)?;
@@ -720,20 +758,23 @@ pub async fn patch_user_settings(
     user_settings_name: &str,
     parameters: &CloudShellPatchUserSettings,
 ) -> std::result::Result<UserSettingsResponse, patch_user_settings::Error> {
-    let client = &operation_config.client;
+    let client = operation_config.http_client();
     let uri_str = &format!(
         "{}/providers/Microsoft.Portal/userSettings/{}",
-        &operation_config.base_path, user_settings_name
+        operation_config.base_path(),
+        user_settings_name
     );
     let mut req_builder = client.patch(uri_str);
-    if let Some(token_credential) = &operation_config.token_credential {
-        let token_response = token_credential
-            .get_token(&operation_config.token_credential_resource)
-            .await
-            .context(patch_user_settings::GetTokenError)?;
-        req_builder = req_builder.bearer_auth(token_response.token.secret());
+    if let Some(user_agent) = operation_config.user_agent() {
+        req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
     }
-    req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+    let token_response = operation_config
+        .token_credential()
+        .get_token(operation_config.token_credential_resource())
+        .await
+        .context(patch_user_settings::GetTokenError)?;
+    req_builder = req_builder.bearer_auth(token_response.token.secret());
+    req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
     req_builder = req_builder.json(parameters);
     let req = req_builder.build().context(patch_user_settings::BuildRequestError)?;
     let rsp = client.execute(req).await.context(patch_user_settings::ExecuteRequestError)?;
@@ -787,20 +828,23 @@ pub async fn delete_user_settings(
     operation_config: &crate::OperationConfig,
     user_settings_name: &str,
 ) -> std::result::Result<delete_user_settings::Response, delete_user_settings::Error> {
-    let client = &operation_config.client;
+    let client = operation_config.http_client();
     let uri_str = &format!(
         "{}/providers/Microsoft.Portal/userSettings/{}",
-        &operation_config.base_path, user_settings_name
+        operation_config.base_path(),
+        user_settings_name
     );
     let mut req_builder = client.delete(uri_str);
-    if let Some(token_credential) = &operation_config.token_credential {
-        let token_response = token_credential
-            .get_token(&operation_config.token_credential_resource)
-            .await
-            .context(delete_user_settings::GetTokenError)?;
-        req_builder = req_builder.bearer_auth(token_response.token.secret());
+    if let Some(user_agent) = operation_config.user_agent() {
+        req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
     }
-    req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+    let token_response = operation_config
+        .token_credential()
+        .get_token(operation_config.token_credential_resource())
+        .await
+        .context(delete_user_settings::GetTokenError)?;
+    req_builder = req_builder.bearer_auth(token_response.token.secret());
+    req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
     let req = req_builder.build().context(delete_user_settings::BuildRequestError)?;
     let rsp = client.execute(req).await.context(delete_user_settings::ExecuteRequestError)?;
     match rsp.status() {
@@ -855,20 +899,23 @@ pub async fn get_console(
     operation_config: &crate::OperationConfig,
     console_name: &str,
 ) -> std::result::Result<CloudShellConsole, get_console::Error> {
-    let client = &operation_config.client;
+    let client = operation_config.http_client();
     let uri_str = &format!(
         "{}/providers/Microsoft.Portal/consoles/{}",
-        &operation_config.base_path, console_name
+        operation_config.base_path(),
+        console_name
     );
     let mut req_builder = client.get(uri_str);
-    if let Some(token_credential) = &operation_config.token_credential {
-        let token_response = token_credential
-            .get_token(&operation_config.token_credential_resource)
-            .await
-            .context(get_console::GetTokenError)?;
-        req_builder = req_builder.bearer_auth(token_response.token.secret());
+    if let Some(user_agent) = operation_config.user_agent() {
+        req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
     }
-    req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+    let token_response = operation_config
+        .token_credential()
+        .get_token(operation_config.token_credential_resource())
+        .await
+        .context(get_console::GetTokenError)?;
+    req_builder = req_builder.bearer_auth(token_response.token.secret());
+    req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
     let req = req_builder.build().context(get_console::BuildRequestError)?;
     let rsp = client.execute(req).await.context(get_console::ExecuteRequestError)?;
     match rsp.status() {
@@ -922,20 +969,23 @@ pub async fn put_console(
     console_name: &str,
     parameters: &ConsoleDefinition,
 ) -> std::result::Result<put_console::Response, put_console::Error> {
-    let client = &operation_config.client;
+    let client = operation_config.http_client();
     let uri_str = &format!(
         "{}/providers/Microsoft.Portal/consoles/{}",
-        &operation_config.base_path, console_name
+        operation_config.base_path(),
+        console_name
     );
     let mut req_builder = client.put(uri_str);
-    if let Some(token_credential) = &operation_config.token_credential {
-        let token_response = token_credential
-            .get_token(&operation_config.token_credential_resource)
-            .await
-            .context(put_console::GetTokenError)?;
-        req_builder = req_builder.bearer_auth(token_response.token.secret());
+    if let Some(user_agent) = operation_config.user_agent() {
+        req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
     }
-    req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+    let token_response = operation_config
+        .token_credential()
+        .get_token(operation_config.token_credential_resource())
+        .await
+        .context(put_console::GetTokenError)?;
+    req_builder = req_builder.bearer_auth(token_response.token.secret());
+    req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
     req_builder = req_builder.json(parameters);
     let req = req_builder.build().context(put_console::BuildRequestError)?;
     let rsp = client.execute(req).await.context(put_console::ExecuteRequestError)?;
@@ -999,20 +1049,23 @@ pub async fn delete_console(
     operation_config: &crate::OperationConfig,
     console_name: &str,
 ) -> std::result::Result<delete_console::Response, delete_console::Error> {
-    let client = &operation_config.client;
+    let client = operation_config.http_client();
     let uri_str = &format!(
         "{}/providers/Microsoft.Portal/consoles/{}",
-        &operation_config.base_path, console_name
+        operation_config.base_path(),
+        console_name
     );
     let mut req_builder = client.delete(uri_str);
-    if let Some(token_credential) = &operation_config.token_credential {
-        let token_response = token_credential
-            .get_token(&operation_config.token_credential_resource)
-            .await
-            .context(delete_console::GetTokenError)?;
-        req_builder = req_builder.bearer_auth(token_response.token.secret());
+    if let Some(user_agent) = operation_config.user_agent() {
+        req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
     }
-    req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+    let token_response = operation_config
+        .token_credential()
+        .get_token(operation_config.token_credential_resource())
+        .await
+        .context(delete_console::GetTokenError)?;
+    req_builder = req_builder.bearer_auth(token_response.token.secret());
+    req_builder = req_builder.query(&[("api-version", operation_config.api_version())]);
     let req = req_builder.build().context(delete_console::BuildRequestError)?;
     let rsp = client.execute(req).await.context(delete_console::ExecuteRequestError)?;
     match rsp.status() {
@@ -1064,19 +1117,22 @@ pub mod delete_console {
     }
 }
 pub async fn keep_alive(operation_config: &crate::OperationConfig, console_name: &str) -> std::result::Result<(), keep_alive::Error> {
-    let client = &operation_config.client;
+    let client = operation_config.http_client();
     let uri_str = &format!(
         "{}/providers/Microsoft.Portal/consoles/{}/keepAlive",
-        &operation_config.base_path, console_name
+        operation_config.base_path(),
+        console_name
     );
     let mut req_builder = client.post(uri_str);
-    if let Some(token_credential) = &operation_config.token_credential {
-        let token_response = token_credential
-            .get_token(&operation_config.token_credential_resource)
-            .await
-            .context(keep_alive::GetTokenError)?;
-        req_builder = req_builder.bearer_auth(token_response.token.secret());
+    if let Some(user_agent) = operation_config.user_agent() {
+        req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent);
     }
+    let token_response = operation_config
+        .token_credential()
+        .get_token(operation_config.token_credential_resource())
+        .await
+        .context(keep_alive::GetTokenError)?;
+    req_builder = req_builder.bearer_auth(token_response.token.secret());
     req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
     let req = req_builder.build().context(keep_alive::BuildRequestError)?;
     let rsp = client.execute(req).await.context(keep_alive::ExecuteRequestError)?;
