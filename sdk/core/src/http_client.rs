@@ -14,3 +14,9 @@ impl AsRef<reqwest::Client> for HttpClientArc {
         self.0.as_ref()
     }
 }
+
+impl Default for HttpClientArc {
+    fn default() -> Self {
+        Self::new(reqwest::Client::new())
+    }
+}

@@ -7,6 +7,7 @@ export RESOURCE_GROUP_LOCATION=southcentralus
 cargo run --example group_create
 */
 
+use azure_core::{HttpClientArc, TokenCredentialArc};
 use azure_identity::token_credentials::AzureCliCredential;
 use azure_mgmt_resources::{models::ResourceGroup, operations::resource_groups};
 use std::env;
@@ -19,7 +20,7 @@ async fn main() -> Result<()> {
     let subscription_id = &AzureCliCredential::get_subscription()?;
     let resource_group_name = &env::var("RESOURCE_GROUP_NAME").map_err(|_| "RESOURCE_GROUP_NAME required")?;
     let resource_group_location = env::var("RESOURCE_GROUP_LOCATION").map_err(|_| "RESOURCE_GROUP_LOCATION required")?;
-    let config = &azure_mgmt_resources::OperationConfig::new(Box::new(token_credential));
+    let config = &azure_mgmt_resources::OperationConfig::new(HttpClientArc::default(), TokenCredentialArc::new(Box::new(token_credential)));
 
     let group = ResourceGroup {
         id: None,
