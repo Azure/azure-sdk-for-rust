@@ -5,7 +5,6 @@
     "crate::prelude::*",
     "crate::responses::DeleteDocumentResponse",
     "crate::DocumentClientRequired",
-    "azure_core::errors::{check_status_extract_headers_and_body, AzureError}",
     "azure_core::modify_conditions::IfMatchCondition",
     "azure_core::prelude::*",
     "azure_core::{IfMatchConditionOption, IfMatchConditionSupport}",

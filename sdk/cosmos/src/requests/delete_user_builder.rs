@@ -1,6 +1,5 @@
 use crate::prelude::*;
 use crate::responses::DeleteUserResponse;
-use azure_core::errors::{check_status_extract_headers_and_body, AzureError};
 use azure_core::prelude::*;
 use http::StatusCode;
 use std::convert::TryInto;
@@ -140,7 +139,7 @@ where
     C: CosmosClient,
     D: DatabaseClient<C>,
 {
-    pub async fn execute(&self) -> Result<DeleteUserResponse, AzureError> {
+    pub async fn execute(&self) -> Result<DeleteUserResponse, CosmosError> {
         trace!("DeleteUserBuilder::execute called");
 
         let req = self
@@ -154,12 +153,11 @@ where
         let req = req.body(EMPTY_BODY.as_ref())?;
         debug!("\nreq == {:?}", req);
 
-        let (headers, body) = check_status_extract_headers_and_body(
-            self.user_client.http_client().request(req),
-            StatusCode::NO_CONTENT,
-        )
-        .await?;
-
-        Ok((&headers, &body as &[u8]).try_into()?)
+        Ok(self
+            .user_client
+            .http_client()
+            .execute_request_check_status(req, StatusCode::NO_CONTENT)
+            .await?
+            .try_into()?)
     }
 }

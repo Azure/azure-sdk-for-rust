@@ -5,7 +5,6 @@
     "crate::prelude::*",
     "azure_core::prelude::*",
     "crate::responses::GetPermissionResponse",
-    "azure_core::errors::{UnexpectedHTTPResult, extract_status_headers_and_body, AzureError}",
     "http::StatusCode",
     "std::convert::TryInto"
   ],

@@ -5,7 +5,7 @@
     "crate::prelude::*",
     "crate::ResourceType",
     "crate::responses::CreateDocumentResponse",
-    "azure_core::errors::{extract_status_headers_and_body, AzureError, UnexpectedHTTPResult}",
+    "azure_core::errors::UnexpectedHTTPResult",
     "azure_core::prelude::*",
     "azure_core::{No, ToAssign, Yes}",
     "chrono::{DateTime, Utc}",

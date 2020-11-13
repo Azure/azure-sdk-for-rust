@@ -1,7 +1,6 @@
 use crate::prelude::*;
 use crate::responses::ListUsersResponse;
 use crate::ResourceType;
-use azure_core::errors::{check_status_extract_headers_and_body, AzureError};
 use azure_core::prelude::*;
 use futures::stream::{unfold, Stream};
 use http::StatusCode;
@@ -219,7 +218,7 @@ impl<'a, 'b, C> ListUsersBuilder<'a, 'b, C>
 where
     C: CosmosClient,
 {
-    pub async fn execute(&self) -> Result<ListUsersResponse, AzureError> {
+    pub async fn execute(&self) -> Result<ListUsersResponse, CosmosError> {
         trace!("ListUsersBuilder::execute called");
 
         let req = self.database_client.cosmos_client().prepare_request(
@@ -231,16 +230,15 @@ where
         let req = req.body(EMPTY_BODY.as_ref())?;
         debug!("\nreq == {:?}", req);
 
-        let (headers, body) = check_status_extract_headers_and_body(
-            self.database_client.http_client().request(req),
-            StatusCode::OK,
-        )
-        .await?;
-
-        Ok((&headers, &body as &[u8]).try_into()?)
+        Ok(self
+            .database_client
+            .http_client()
+            .execute_request_check_status(req, StatusCode::OK)
+            .await?
+            .try_into()?)
     }
 
-    pub fn stream(&self) -> impl Stream<Item = Result<ListUsersResponse, AzureError>> + '_ {
+    pub fn stream(&self) -> impl Stream<Item = Result<ListUsersResponse, CosmosError>> + '_ {
         #[derive(Debug, Clone, PartialEq)]
         enum States {
             Init,

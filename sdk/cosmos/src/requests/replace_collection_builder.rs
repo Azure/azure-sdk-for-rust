@@ -2,7 +2,6 @@ use crate::collection::IndexingPolicy;
 use crate::collection::PartitionKey;
 use crate::prelude::*;
 use crate::responses::CreateCollectionResponse;
-use azure_core::errors::{check_status_extract_headers_and_body, AzureError};
 use azure_core::prelude::*;
 use azure_core::{No, ToAssign, Yes};
 use http::StatusCode;
@@ -251,7 +250,7 @@ where
     C: CosmosClient,
     D: DatabaseClient<C>,
 {
-    pub async fn execute(&self) -> Result<CreateCollectionResponse, AzureError> {
+    pub async fn execute(&self) -> Result<CreateCollectionResponse, CosmosError> {
         trace!("ReplaceCollectionBuilder::execute called");
 
         let req = self
@@ -282,19 +281,18 @@ where
         let body = serde_json::to_string(&request)?;
         debug!("body == {}", body);
 
-        let req = req.body(hyper::Body::from(body))?;
+        let req = req.body(body.as_bytes())?;
         debug!("\nreq == {:?}", req);
 
         // the docs are wrong here
         // [https://docs.microsoft.com/en-us/rest/api/cosmos-db/replace-a-collection](https://docs.microsoft.com/en-us/rest/api/cosmos-db/replace-a-collection).
         // They say you should receive 201 instead azure returns 200 upon success. I've filed a PR
         // to correct it.
-        let (headers, body) = check_status_extract_headers_and_body(
-            self.collection_client.http_client().request(req),
-            StatusCode::OK,
-        )
-        .await?;
-
-        Ok((&headers, &body as &[u8]).try_into()?)
+        Ok(self
+            .collection_client
+            .http_client()
+            .execute_request_check_status(req, StatusCode::OK)
+            .await?
+            .try_into()?)
     }
 }

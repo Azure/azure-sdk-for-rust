@@ -6,7 +6,6 @@
     "azure_core::prelude::*",
     "crate::responses::QueryDocumentsResponse",
     "crate::{ResourceType, Query}",
-    "azure_core::errors::{check_status_extract_headers_and_body, AzureError}",
     "azure_core::{No, ToAssign, Yes}",
     "chrono::{DateTime, Utc}",
     "futures::stream::{unfold, Stream}",

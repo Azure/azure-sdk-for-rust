@@ -1,7 +1,5 @@
 use crate::prelude::*;
 use crate::responses::CreateUserResponse;
-use azure_core::errors::UnexpectedHTTPResult;
-use azure_core::errors::{extract_status_headers_and_body, AzureError};
 use azure_core::prelude::*;
 use http::StatusCode;
 use std::convert::TryInto;
@@ -141,7 +139,7 @@ where
     C: CosmosClient,
     D: DatabaseClient<C>,
 {
-    pub async fn execute(&self) -> Result<Option<CreateUserResponse>, AzureError> {
+    pub async fn execute(&self) -> Result<Option<CreateUserResponse>, CosmosError> {
         trace!("GetUserBuilder::execute called");
 
         let req = self
@@ -155,18 +153,16 @@ where
         let req = req.body(EMPTY_BODY.as_ref())?;
         debug!("\nreq == {:?}", req);
 
-        let (status_code, headers, body) =
-            extract_status_headers_and_body(self.user_client.http_client().request(req)).await?;
+        let response = self
+            .user_client
+            .http_client()
+            .execute_request_check_statuses(req, &vec![StatusCode::NOT_FOUND, StatusCode::OK])
+            .await?;
 
-        match status_code {
+        match response.status() {
             StatusCode::NOT_FOUND => Ok(None),
-            StatusCode::OK => Ok(Some((&headers, &body as &[u8]).try_into()?)),
-            _ => Err(UnexpectedHTTPResult::new_multiple(
-                vec![StatusCode::OK, StatusCode::NOT_FOUND],
-                status_code,
-                std::str::from_utf8(&body)?,
-            )
-            .into()),
+            StatusCode::OK => Ok(Some(response.try_into()?)),
+            _ => unreachable!(),
         }
     }
 }

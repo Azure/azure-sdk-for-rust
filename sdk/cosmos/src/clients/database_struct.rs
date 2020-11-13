@@ -56,25 +56,25 @@ where
         &self.database_name
     }
 
-    //fn list_collections(&self) -> requests::ListCollectionsBuilder<'_, C> {
-    //    requests::ListCollectionsBuilder::new(self)
-    //}
-
     fn get_database(&self) -> requests::GetDatabaseBuilder<'_, '_, C> {
         requests::GetDatabaseBuilder::new(self)
     }
 
-    //fn delete_database(&self) -> requests::DeleteDatabaseBuilder<'_, C> {
-    //    requests::DeleteDatabaseBuilder::new(self)
-    //}
+    fn list_collections(&self) -> requests::ListCollectionsBuilder<'_, C> {
+        requests::ListCollectionsBuilder::new(self)
+    }
 
-    //fn create_collection(&self) -> requests::CreateCollectionBuilder<'_, C, No, No, No, No> {
-    //    requests::CreateCollectionBuilder::new(self)
-    //}
+    fn delete_database(&self) -> requests::DeleteDatabaseBuilder<'_, C> {
+        requests::DeleteDatabaseBuilder::new(self)
+    }
 
-    //fn list_users(&self) -> requests::ListUsersBuilder<'_, '_, C> {
-    //    requests::ListUsersBuilder::new(self)
-    //}
+    fn create_collection(&self) -> requests::CreateCollectionBuilder<'_, C, No, No, No, No> {
+        requests::CreateCollectionBuilder::new(self)
+    }
+
+    fn list_users(&self) -> requests::ListUsersBuilder<'_, '_, C> {
+        requests::ListUsersBuilder::new(self)
+    }
 }
 
 impl<'a, C> WithCollectionClient<'a, C, Self, CollectionStruct<'a, C, Self>>

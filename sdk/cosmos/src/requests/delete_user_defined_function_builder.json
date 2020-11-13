@@ -4,7 +4,6 @@
   "uses": [
     "crate::prelude::*",
     "azure_core::prelude::*",
-    "azure_core::errors::{check_status_extract_headers_and_body, AzureError}",
     "http::StatusCode",
     "crate::responses::DeleteUserDefinedFunctionResponse",
     "std::convert::TryInto"

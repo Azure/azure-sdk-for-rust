@@ -1,6 +1,5 @@
 use crate::prelude::*;
 use crate::responses::DeleteUserDefinedFunctionResponse;
-use azure_core::errors::{check_status_extract_headers_and_body, AzureError};
 use azure_core::prelude::*;
 use http::StatusCode;
 use std::convert::TryInto;
@@ -159,7 +158,7 @@ where
     D: DatabaseClient<C>,
     COLL: CollectionClient<C, D>,
 {
-    pub async fn execute(&self) -> Result<DeleteUserDefinedFunctionResponse, AzureError> {
+    pub async fn execute(&self) -> Result<DeleteUserDefinedFunctionResponse, CosmosError> {
         trace!("DeleteUserDefinedFunctionBuilder::execute called");
 
         let request = self
@@ -173,14 +172,11 @@ where
 
         let request = request.body(EMPTY_BODY.as_ref())?;
 
-        let (headers, body) = check_status_extract_headers_and_body(
-            self.user_defined_function_client()
-                .http_client()
-                .request(request),
-            StatusCode::NO_CONTENT,
-        )
-        .await?;
-
-        Ok((&headers, &body as &[u8]).try_into()?)
+        Ok(self
+            .user_defined_function_client()
+            .http_client()
+            .execute_request_check_status(request, StatusCode::NO_CONTENT)
+            .await?
+            .try_into()?)
     }
 }

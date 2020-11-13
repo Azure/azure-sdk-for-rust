@@ -105,17 +105,17 @@ where
         &self.partition_keys
     }
 
-    //fn get_document(&self) -> requests::GetDocumentBuilder<'_, '_, C, D, COLL> {
-    //    requests::GetDocumentBuilder::new(self)
-    //}
+    fn get_document(&self) -> requests::GetDocumentBuilder<'_, '_, C, D, COLL> {
+        requests::GetDocumentBuilder::new(self)
+    }
 
-    //fn delete_document(&self) -> requests::DeleteDocumentBuilder<'_, C, D, COLL> {
-    //    requests::DeleteDocumentBuilder::new(self)
-    //}
+    fn delete_document(&self) -> requests::DeleteDocumentBuilder<'_, C, D, COLL> {
+        requests::DeleteDocumentBuilder::new(self)
+    }
 
-    //fn list_attachments(&self) -> requests::ListAttachmentsBuilder<'_, '_, C, D, COLL> {
-    //    requests::ListAttachmentsBuilder::new(self)
-    //}
+    fn list_attachments(&self) -> requests::ListAttachmentsBuilder<'_, '_, C, D, COLL> {
+        requests::ListAttachmentsBuilder::new(self)
+    }
 }
 
 impl<'a, 'b, C, D, COLL>

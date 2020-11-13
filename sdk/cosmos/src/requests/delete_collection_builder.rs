@@ -1,6 +1,5 @@
 use crate::prelude::*;
 use crate::responses::DeleteCollectionResponse;
-use azure_core::errors::{check_status_extract_headers_and_body, AzureError};
 use azure_core::prelude::*;
 use http::StatusCode;
 use std::convert::TryInto;
@@ -142,7 +141,7 @@ where
     C: CosmosClient,
     D: DatabaseClient<C>,
 {
-    pub async fn execute(&self) -> Result<DeleteCollectionResponse, AzureError> {
+    pub async fn execute(&self) -> Result<DeleteCollectionResponse, CosmosError> {
         trace!("DeleteCollectionBuilder::execute called");
 
         let request = self
@@ -155,12 +154,11 @@ where
 
         let request = request.body(EMPTY_BODY.as_ref())?;
 
-        let (headers, body) = check_status_extract_headers_and_body(
-            self.collection_client().http_client().request(request),
-            StatusCode::NO_CONTENT,
-        )
-        .await?;
-
-        Ok((&headers, &body as &[u8]).try_into()?)
+        Ok(self
+            .collection_client()
+            .http_client()
+            .execute_request_check_status(request, StatusCode::NO_CONTENT)
+            .await?
+            .try_into()?)
     }
 }

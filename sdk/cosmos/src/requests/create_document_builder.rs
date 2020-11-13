@@ -1,7 +1,7 @@
 use crate::prelude::*;
 use crate::responses::CreateDocumentResponse;
 use crate::ResourceType;
-use azure_core::errors::{extract_status_headers_and_body, AzureError, UnexpectedHTTPResult};
+use azure_core::errors::UnexpectedHTTPResult;
 use azure_core::prelude::*;
 use azure_core::{No, ToAssign, Yes};
 use chrono::{DateTime, Utc};
@@ -445,7 +445,7 @@ where
     pub async fn execute_with_document<T>(
         &self,
         document: &T,
-    ) -> Result<CreateDocumentResponse, AzureError>
+    ) -> Result<CreateDocumentResponse, CosmosError>
     where
         T: Serialize,
     {
@@ -471,34 +471,36 @@ where
         req = AllowTentativeWritesOption::add_header(self, req);
 
         let serialized = serde_json::to_string(document)?;
-        let req = req.body(hyper::Body::from(serialized))?;
+        let req = req.body(serialized.as_bytes())?;
 
-        let (status_code, headers, whole_body) =
-            extract_status_headers_and_body(self.collection_client.http_client().request(req))
-                .await?;
+        let response = self
+            .collection_client
+            .http_client()
+            .execute_request(req)
+            .await?;
 
-        debug!("status_core == {:?}", status_code);
-        debug!("headers == {:?}", headers);
-        debug!("whole body == {:#?}", whole_body);
+        debug!("status_core == {:?}", response.status());
+        debug!("headers == {:?}", response.headers());
+        debug!("whole body == {:#?}", response.body());
 
         // expect CREATED is IsUpsert is off. Otherwise either
         // CREATED or OK means success.
-        if !self.is_upsert() && status_code != StatusCode::CREATED {
+        if !self.is_upsert() && response.status() != StatusCode::CREATED {
             return Err(UnexpectedHTTPResult::new(
                 StatusCode::CREATED,
-                status_code,
-                std::str::from_utf8(&whole_body)?,
+                response.status(),
+                std::str::from_utf8(response.body())?,
             )
             .into());
-        } else if status_code != StatusCode::CREATED && status_code != StatusCode::OK {
+        } else if response.status() != StatusCode::CREATED && response.status() != StatusCode::OK {
             return Err(UnexpectedHTTPResult::new_multiple(
                 vec![StatusCode::CREATED, StatusCode::OK],
-                status_code,
-                std::str::from_utf8(&whole_body)?,
+                response.status(),
+                std::str::from_utf8(response.body())?,
             )
             .into());
         }
 
-        CreateDocumentResponse::try_from((status_code, &headers, &whole_body as &[u8]))
+        CreateDocumentResponse::try_from(response)
     }
 }

@@ -1,5 +1,4 @@
-use crate::DocumentAttributes;
-use azure_core::errors::AzureError;
+use crate::{CosmosError, DocumentAttributes};
 use http::header::HeaderMap;
 use serde::de::DeserializeOwned;
 
@@ -48,7 +47,7 @@ impl<T> std::convert::TryFrom<(&HeaderMap, &[u8])> for Document<T>
 where
     T: DeserializeOwned,
 {
-    type Error = AzureError;
+    type Error = CosmosError;
     fn try_from(value: (&HeaderMap, &[u8])) -> Result<Self, Self::Error> {
         let _headers = value.0;
         let body = value.1;

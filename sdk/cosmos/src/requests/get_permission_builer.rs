@@ -1,6 +1,5 @@
 use crate::prelude::*;
 use crate::responses::GetPermissionResponse;
-use azure_core::errors::{extract_status_headers_and_body, AzureError, UnexpectedHTTPResult};
 use azure_core::prelude::*;
 use http::StatusCode;
 use std::convert::TryInto;
@@ -153,7 +152,7 @@ where
     D: DatabaseClient<C>,
     USER: UserClient<C, D>,
 {
-    pub async fn execute(&self) -> Result<Option<GetPermissionResponse<'a>>, AzureError> {
+    pub async fn execute(&self) -> Result<Option<GetPermissionResponse<'a>>, CosmosError> {
         trace!("GetPermissionBuilder::execute called");
 
         let request = self
@@ -167,19 +166,16 @@ where
         let request = request.body(EMPTY_BODY.as_ref())?;
         debug!("\nrequest == {:#?}", request);
 
-        let (status, headers, body) =
-            extract_status_headers_and_body(self.permission_client.http_client().request(request))
-                .await?;
+        let response = self
+            .permission_client
+            .http_client()
+            .execute_request_check_statuses(request, &vec![StatusCode::OK, StatusCode::NOT_FOUND])
+            .await?;
 
-        match status {
-            StatusCode::OK => Ok(Some((&headers, &body as &[u8]).try_into()?)),
+        match response.status() {
+            StatusCode::OK => Ok(Some(response.try_into()?)),
             StatusCode::NOT_FOUND => Ok(None),
-            _ => Err(UnexpectedHTTPResult::new_multiple(
-                vec![StatusCode::OK, StatusCode::NOT_FOUND],
-                status,
-                std::str::from_utf8(&body)?,
-            )
-            .into()),
+            _ => unreachable!(),
         }
     }
 }

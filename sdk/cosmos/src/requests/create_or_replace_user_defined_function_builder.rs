@@ -1,6 +1,5 @@
 use crate::prelude::*;
 use crate::responses::CreateUserDefinedFunctionResponse;
-use azure_core::errors::{check_status_extract_headers_and_body, AzureError};
 use azure_core::prelude::*;
 use azure_core::{No, ToAssign, Yes};
 use http::StatusCode;
@@ -219,7 +218,7 @@ where
     D: DatabaseClient<C>,
     COLL: CollectionClient<C, D>,
 {
-    pub async fn execute(&self) -> Result<CreateUserDefinedFunctionResponse, AzureError> {
+    pub async fn execute(&self) -> Result<CreateUserDefinedFunctionResponse, CosmosError> {
         trace!("CreateOrReplaceUserDefinedFunctionBuilder::execute called");
 
         // Create is POST with no name in the URL. Expected return is CREATED.
@@ -255,19 +254,20 @@ where
         };
 
         let request = serde_json::to_string(&request)?;
-        let request = req.body(hyper::Body::from(request))?;
+        let request = req.body(request.as_bytes())?;
 
-        let (headers, body) = check_status_extract_headers_and_body(
+        Ok(if self.is_create {
             self.user_defined_function_client()
                 .http_client()
-                .request(request),
-            match self.is_create {
-                true => StatusCode::CREATED,
-                false => StatusCode::OK,
-            },
-        )
-        .await?;
-
-        Ok((&headers, &body as &[u8]).try_into()?)
+                .execute_request_check_status(request, StatusCode::CREATED)
+                .await?
+                .try_into()?
+        } else {
+            self.user_defined_function_client()
+                .http_client()
+                .execute_request_check_status(request, StatusCode::OK)
+                .await?
+                .try_into()?
+        })
     }
 }

@@ -6,7 +6,6 @@
     "azure_core::prelude::*",
     "crate::responses::ReplacePermissionResponse",
     "crate::{PermissionMode, PermissionResource}",
-    "azure_core::errors::{check_status_extract_headers_and_body, AzureError}",
     "http::StatusCode",
     "std::convert::TryInto"
   ],

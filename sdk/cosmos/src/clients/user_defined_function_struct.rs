@@ -96,21 +96,21 @@ where
         &self.user_defined_function_name
     }
 
-    //fn create_user_defined_function(
-    //    &self,
-    //) -> requests::CreateOrReplaceUserDefinedFunctionBuilder<'_, '_, C, D, COLL, No> {
-    //    requests::CreateOrReplaceUserDefinedFunctionBuilder::new(self, true)
-    //}
+    fn create_user_defined_function(
+        &self,
+    ) -> requests::CreateOrReplaceUserDefinedFunctionBuilder<'_, '_, C, D, COLL, No> {
+        requests::CreateOrReplaceUserDefinedFunctionBuilder::new(self, true)
+    }
 
-    //fn replace_user_defined_function(
-    //    &self,
-    //) -> requests::CreateOrReplaceUserDefinedFunctionBuilder<'_, '_, C, D, COLL, No> {
-    //    requests::CreateOrReplaceUserDefinedFunctionBuilder::new(self, false)
-    //}
+    fn replace_user_defined_function(
+        &self,
+    ) -> requests::CreateOrReplaceUserDefinedFunctionBuilder<'_, '_, C, D, COLL, No> {
+        requests::CreateOrReplaceUserDefinedFunctionBuilder::new(self, false)
+    }
 
-    //fn delete_user_defined_function(
-    //    &self,
-    //) -> requests::DeleteUserDefinedFunctionBuilder<'_, '_, C, D, COLL> {
-    //    requests::DeleteUserDefinedFunctionBuilder::new(self)
-    //}
+    fn delete_user_defined_function(
+        &self,
+    ) -> requests::DeleteUserDefinedFunctionBuilder<'_, '_, C, D, COLL> {
+        requests::DeleteUserDefinedFunctionBuilder::new(self)
+    }
 }

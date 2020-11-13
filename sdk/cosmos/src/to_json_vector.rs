@@ -1,4 +1,4 @@
-use azure_core::errors::AzureError;
+use crate::CosmosError;
 use serde::ser::Serialize;
 use std::borrow::Cow;
 
@@ -20,7 +20,7 @@ impl ToJsonVector {
     // serialization of the items. Ideally we should collect the &dyn Serialize
     // trait objects and serialize in one shot at the end but unfortunately
     // Serialize cannot be made a trait object so no dynamic dispatch :(
-    pub fn push<T>(&mut self, t: T) -> Result<&mut Self, AzureError>
+    pub fn push<T>(&mut self, t: T) -> Result<&mut Self, CosmosError>
     where
         T: Serialize,
     {
@@ -58,7 +58,7 @@ impl<T> std::convert::TryFrom<&[T]> for ToJsonVector
 where
     T: Serialize,
 {
-    type Error = AzureError;
+    type Error = CosmosError;
 
     fn try_from(slice: &[T]) -> Result<Self, Self::Error> {
         let mut to_json_vector = ToJsonVector::new();
@@ -73,7 +73,7 @@ impl<T> std::convert::TryFrom<&Vec<T>> for ToJsonVector
 where
     T: Serialize,
 {
-    type Error = AzureError;
+    type Error = CosmosError;
 
     fn try_from(v: &Vec<T>) -> Result<Self, Self::Error> {
         let mut to_json_vector = ToJsonVector::new();

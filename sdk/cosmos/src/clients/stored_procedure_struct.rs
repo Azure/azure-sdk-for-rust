@@ -95,27 +95,27 @@ where
         &self.stored_procedure_name
     }
 
-    //fn create_stored_procedure(
-    //    &self,
-    //) -> requests::CreateStoredProcedureBuilder<'_, '_, C, D, COLL, No> {
-    //    requests::CreateStoredProcedureBuilder::new(self)
-    //}
+    fn create_stored_procedure(
+        &self,
+    ) -> requests::CreateStoredProcedureBuilder<'_, '_, C, D, COLL, No> {
+        requests::CreateStoredProcedureBuilder::new(self)
+    }
 
-    //fn replace_stored_procedure(
-    //    &self,
-    //) -> requests::ReplaceStoredProcedureBuilder<'_, '_, C, D, COLL, No> {
-    //    requests::ReplaceStoredProcedureBuilder::new(self)
-    //}
+    fn replace_stored_procedure(
+        &self,
+    ) -> requests::ReplaceStoredProcedureBuilder<'_, '_, C, D, COLL, No> {
+        requests::ReplaceStoredProcedureBuilder::new(self)
+    }
 
-    //fn execute_stored_procedure(
-    //    &self,
-    //) -> requests::ExecuteStoredProcedureBuilder<'_, '_, C, D, COLL> {
-    //    requests::ExecuteStoredProcedureBuilder::new(self)
-    //}
+    fn execute_stored_procedure(
+        &self,
+    ) -> requests::ExecuteStoredProcedureBuilder<'_, '_, C, D, COLL> {
+        requests::ExecuteStoredProcedureBuilder::new(self)
+    }
 
-    //fn delete_stored_procedure(
-    //    &self,
-    //) -> requests::DeleteStoredProcedureBuilder<'_, '_, C, D, COLL> {
-    //    requests::DeleteStoredProcedureBuilder::new(self)
-    //}
+    fn delete_stored_procedure(
+        &self,
+    ) -> requests::DeleteStoredProcedureBuilder<'_, '_, C, D, COLL> {
+        requests::DeleteStoredProcedureBuilder::new(self)
+    }
 }

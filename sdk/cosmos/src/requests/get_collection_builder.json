@@ -4,7 +4,6 @@
   "uses": [
     "crate::prelude::*",
     "crate::responses::GetCollectionResponse",
-    "azure_core::errors::{check_status_extract_headers_and_body, AzureError}",
     "http::StatusCode",
     "azure_core::prelude::*",
     "std::convert::TryInto"

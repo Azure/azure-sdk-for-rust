@@ -1,7 +1,6 @@
 use crate::prelude::*;
 use crate::responses::ListCollectionsResponse;
 use crate::{DatabaseClientRequired, ResourceType};
-use azure_core::errors::{check_status_extract_headers_and_body, AzureError};
 use azure_core::prelude::*;
 use futures::stream::{unfold, Stream};
 use http::StatusCode;
@@ -204,7 +203,7 @@ impl<'a, C> ListCollectionsBuilder<'a, C>
 where
     C: CosmosClient,
 {
-    pub async fn execute(&self) -> Result<ListCollectionsResponse, AzureError> {
+    pub async fn execute(&self) -> Result<ListCollectionsResponse, CosmosError> {
         trace!("ListCollectionsBuilder::execute called");
         let request = self.database_client.cosmos_client().prepare_request(
             &format!("dbs/{}/colls", self.database_client.database_name().name()),
@@ -222,13 +221,15 @@ where
 
         trace!("request prepared == {:?}", request);
 
-        let future_response = self.database_client.http_client().request(request);
-        let (headers, body) =
-            check_status_extract_headers_and_body(future_response, StatusCode::OK).await?;
-        Ok((&headers, &body as &[u8]).try_into()?)
+        Ok(self
+            .database_client
+            .http_client()
+            .execute_request_check_status(request, StatusCode::OK)
+            .await?
+            .try_into()?)
     }
 
-    pub fn stream(&self) -> impl Stream<Item = Result<ListCollectionsResponse, AzureError>> + '_ {
+    pub fn stream(&self) -> impl Stream<Item = Result<ListCollectionsResponse, CosmosError>> + '_ {
         #[derive(Debug, Clone, PartialEq)]
         enum States {
             Init,

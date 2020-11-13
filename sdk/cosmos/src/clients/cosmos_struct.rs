@@ -165,9 +165,9 @@ where
         requests::CreateDatabaseBuilder::new(self)
     }
 
-    //fn list_databases(&self) -> requests::ListDatabasesBuilder<'_> {
-    //    requests::ListDatabasesBuilder::new(self)
-    //}
+    fn list_databases(&self) -> requests::ListDatabasesBuilder<'_> {
+        requests::ListDatabasesBuilder::new(self)
+    }
 
     #[inline]
     fn prepare_request(
@@ -218,26 +218,6 @@ where
         DatabaseStruct::new(Cow::Borrowed(self), database_name.into())
     }
 }
-
-//impl<CUB> Cosmos for CosmosStruct<CUB>
-//where
-//    CUB: CosmosUriBuilder,
-//{
-//    //fn list_databases(&self) -> ListDatabasesBuilder<'_, CUB> {
-//    //    ListDatabasesBuilder::new(self)
-//    //}
-//
-//    //fn with_database<'a>(&'a self, database_name: &'a dyn DatabaseName) -> DatabaseClient<'a, CUB> {
-//    //    DatabaseClient::new(self, database_name)
-//    //}
-//
-//    //fn create_database<DB>(&self) -> requests::CreateDatabaseBuilder<'_, CUB, DB, No>
-//    //where
-//    //    DB: DatabaseName,
-//    //{
-//    //    CreateDatabaseBuilder::new(self)
-//    //}
-//}
 
 impl<'a, CUB> CosmosStruct<'a, CUB>
 where

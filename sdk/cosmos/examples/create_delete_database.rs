@@ -17,8 +17,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // This is how you construct an authorization token.
     // Remember to pick the correct token type.
     // Here we assume master.
-    // Most methods return a ```Result<_, AzureError>```.
-    // ```AzureError``` is an enum union of all the possible underlying
+    // Most methods return a ```Result<_, CosmosError>```.
+    // ```CosmosError``` is an enum union of all the possible underlying
     // errors, plus Azure specific ones. For example if a REST call returns the
     // unexpected result (ie NotFound instead of Ok) we return an Err telling
     // you that.

@@ -1,6 +1,5 @@
 use crate::prelude::*;
 use crate::responses::DeleteDatabaseResponse;
-use azure_core::errors::{check_status_extract_headers_and_body, AzureError};
 use azure_core::prelude::*;
 use http::StatusCode;
 use std::convert::TryInto;
@@ -122,7 +121,7 @@ impl<'a, C> DeleteDatabaseBuilder<'a, C>
 where
     C: CosmosClient,
 {
-    pub async fn execute(&self) -> Result<DeleteDatabaseResponse, AzureError> {
+    pub async fn execute(&self) -> Result<DeleteDatabaseResponse, CosmosError> {
         trace!("DeleteDatabaseResponse::execute called");
 
         let request = self
@@ -137,10 +136,11 @@ where
 
         trace!("request prepared == {:?}", request);
 
-        let future_response = self.database_client().http_client().request(request);
-        let (headers, body) =
-            check_status_extract_headers_and_body(future_response, StatusCode::NO_CONTENT).await?;
-
-        Ok((&headers, &body as &[u8]).try_into()?)
+        Ok(self
+            .database_client()
+            .http_client()
+            .execute_request_check_status(request, StatusCode::NO_CONTENT)
+            .await?
+            .try_into()?)
     }
 }

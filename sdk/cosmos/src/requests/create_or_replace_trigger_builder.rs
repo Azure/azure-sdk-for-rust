@@ -1,7 +1,6 @@
 use crate::prelude::*;
 use crate::responses::CreateTriggerResponse;
 use crate::trigger::*;
-use azure_core::errors::{check_status_extract_headers_and_body, AzureError};
 use azure_core::prelude::*;
 use azure_core::{No, ToAssign, Yes};
 use http::StatusCode;
@@ -380,7 +379,7 @@ where
     D: DatabaseClient<C>,
     COLL: CollectionClient<C, D>,
 {
-    pub async fn execute(&self) -> Result<CreateTriggerResponse, AzureError> {
+    pub async fn execute(&self) -> Result<CreateTriggerResponse, CosmosError> {
         trace!("CreateOrReplaceTriggerBuilder::execute called");
 
         let req = self.trigger_client;
@@ -415,18 +414,19 @@ where
         };
 
         let request = serde_json::to_string(&request)?;
-        let request = req.body(hyper::Body::from(request))?;
+        let request = req.body(request.as_bytes())?;
 
-        let (headers, body) = check_status_extract_headers_and_body(
-            self.trigger_client().http_client().request(request),
-            if self.is_create() {
-                StatusCode::CREATED
-            } else {
-                StatusCode::OK
-            },
-        )
-        .await?;
+        let expected_status = if self.is_create() {
+            StatusCode::CREATED
+        } else {
+            StatusCode::OK
+        };
 
-        Ok((&headers, &body as &[u8]).try_into()?)
+        Ok(self
+            .trigger_client()
+            .http_client()
+            .execute_request_check_status(request, expected_status)
+            .await?
+            .try_into()?)
     }
 }

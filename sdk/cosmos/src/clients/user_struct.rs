@@ -74,25 +74,25 @@ where
         &self.user_name
     }
 
-    // fn create_user(&self) -> requests::CreateUserBuilder<'_, '_, C, D> {
-    //     requests::CreateUserBuilder::new(self)
-    // }
+    fn create_user(&self) -> requests::CreateUserBuilder<'_, '_, C, D> {
+        requests::CreateUserBuilder::new(self)
+    }
 
-    // fn get_user(&self) -> requests::GetUserBuilder<'_, '_, C, D> {
-    //     requests::GetUserBuilder::new(self)
-    // }
+    fn get_user(&self) -> requests::GetUserBuilder<'_, '_, C, D> {
+        requests::GetUserBuilder::new(self)
+    }
 
-    // fn replace_user(&self) -> requests::ReplaceUserBuilder<'_, '_, C, D, No> {
-    //     requests::ReplaceUserBuilder::new(self)
-    // }
+    fn replace_user(&self) -> requests::ReplaceUserBuilder<'_, '_, C, D, No> {
+        requests::ReplaceUserBuilder::new(self)
+    }
 
-    // fn delete_user(&self) -> requests::DeleteUserBuilder<'_, '_, C, D> {
-    //     requests::DeleteUserBuilder::new(self)
-    // }
+    fn delete_user(&self) -> requests::DeleteUserBuilder<'_, '_, C, D> {
+        requests::DeleteUserBuilder::new(self)
+    }
 
-    // fn list_permissions(&self) -> requests::ListPermissionsBuilder<'_, '_, C, D> {
-    //     requests::ListPermissionsBuilder::new(self)
-    // }
+    fn list_permissions(&self) -> requests::ListPermissionsBuilder<'_, '_, C, D> {
+        requests::ListPermissionsBuilder::new(self)
+    }
 }
 
 impl<'a, C, D> IntoPermissionClient<'a, C, D, Self, PermissionStruct<'a, C, D, Self>>

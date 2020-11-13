@@ -1,6 +1,5 @@
 use crate::prelude::*;
 use crate::responses::CreateUserResponse;
-use azure_core::errors::UnexpectedHTTPResult;
 use azure_core::prelude::*;
 use azure_core::{No, ToAssign, Yes};
 use http::StatusCode;
@@ -223,19 +222,16 @@ where
         let req = req.body(request_body.as_bytes())?;
         debug!("\nreq == {:?}", req);
 
-        let response = self.user_client.http_client().execute_request(req).await?;
+        let response = self
+            .user_client
+            .http_client()
+            .execute_request_check_statuses(req, &vec![StatusCode::OK, StatusCode::NOT_FOUND])
+            .await?;
 
         match response.status() {
             StatusCode::NOT_FOUND => Ok(None),
-            StatusCode::OK => Ok(Some(
-                (response.headers(), response.body().as_ref()).try_into()?,
-            )),
-            _ => Err(UnexpectedHTTPResult::new_multiple(
-                vec![StatusCode::OK, StatusCode::NOT_FOUND],
-                response.status(),
-                std::str::from_utf8(response.body())?,
-            )
-            .into()),
+            StatusCode::OK => Ok(Some(response.try_into()?)),
+            _ => unreachable!(),
         }
     }
 }

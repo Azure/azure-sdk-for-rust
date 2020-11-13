@@ -3,7 +3,6 @@
   "derive": "Debug, Clone",
   "uses": [
     "crate::collection::{IndexingPolicy}",
-    "azure_core::errors::{check_status_extract_headers_and_body, AzureError}",
     "crate::responses::CreateCollectionResponse",
     "crate::prelude::*",
     "azure_core::prelude::*",

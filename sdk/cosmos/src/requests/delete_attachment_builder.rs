@@ -1,5 +1,4 @@
 use crate::prelude::*;
-use azure_core::errors::{check_status_extract_headers_and_body, AzureError};
 use azure_core::prelude::*;
 use http::StatusCode;
 use std::convert::TryInto;
@@ -209,7 +208,7 @@ where
     COLL: CollectionClient<C, D>,
     DOC: DocumentClient<C, D, COLL>,
 {
-    pub async fn execute(&self) -> Result<crate::responses::DeleteAttachmentResponse, AzureError> {
+    pub async fn execute(&self) -> Result<crate::responses::DeleteAttachmentResponse, CosmosError> {
         let mut req = self
             .attachment_client
             .prepare_request_with_attachment_name(http::Method::DELETE);
@@ -229,15 +228,11 @@ where
 
         debug!("req == {:#?}", req);
 
-        let (headers, whole_body) = check_status_extract_headers_and_body(
-            self.attachment_client.http_client().request(req),
-            StatusCode::NO_CONTENT,
-        )
-        .await?;
-
-        debug!("\nheaders == {:?}", headers);
-        debug!("\nwhole body == {:#?}", whole_body);
-
-        Ok((&headers, &whole_body as &[u8]).try_into()?)
+        Ok(self
+            .attachment_client
+            .http_client()
+            .execute_request_check_status(req, StatusCode::NO_CONTENT)
+            .await?
+            .try_into()?)
     }
 }

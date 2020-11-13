@@ -1,6 +1,5 @@
 use crate::prelude::*;
 use crate::responses::ReplaceStoredProcedureResponse;
-use azure_core::errors::{check_status_extract_headers_and_body, AzureError};
 use azure_core::prelude::*;
 use azure_core::{No, ToAssign, Yes};
 use http::StatusCode;
@@ -214,7 +213,7 @@ where
     D: DatabaseClient<C>,
     COLL: CollectionClient<C, D>,
 {
-    pub async fn execute(&self) -> Result<ReplaceStoredProcedureResponse, AzureError> {
+    pub async fn execute(&self) -> Result<ReplaceStoredProcedureResponse, CosmosError> {
         trace!("ReplaceStoredProcedureBuilder::execute called");
 
         let req = self
@@ -239,16 +238,13 @@ where
         };
 
         let request = serde_json::to_string(&request)?;
-        let request = req.body(hyper::Body::from(request))?;
+        let request = req.body(request.as_bytes())?;
 
-        let (headers, body) = check_status_extract_headers_and_body(
-            self.stored_procedure_client()
-                .http_client()
-                .request(request),
-            StatusCode::OK,
-        )
-        .await?;
-
-        Ok((&headers, &body as &[u8]).try_into()?)
+        Ok(self
+            .stored_procedure_client()
+            .http_client()
+            .execute_request_check_status(request, StatusCode::OK)
+            .await?
+            .try_into()?)
     }
 }

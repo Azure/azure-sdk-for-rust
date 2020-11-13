@@ -1,7 +1,6 @@
 use crate::prelude::*;
 use crate::responses::GetPartitionKeyRangesResponse;
 use crate::ResourceType;
-use azure_core::errors::{check_status_extract_headers_and_body, AzureError};
 use azure_core::prelude::*;
 use chrono::{DateTime, Utc};
 use http::StatusCode;
@@ -216,7 +215,7 @@ where
     C: CosmosClient,
     D: DatabaseClient<C>,
 {
-    pub async fn execute(&self) -> Result<GetPartitionKeyRangesResponse, AzureError> {
+    pub async fn execute(&self) -> Result<GetPartitionKeyRangesResponse, CosmosError> {
         trace!("GetPartitionKeyRangesBuilder::execute called");
 
         let request = self.collection_client().cosmos_client().prepare_request(
@@ -238,10 +237,11 @@ where
 
         let request = request.body(EMPTY_BODY.as_ref())?;
 
-        let future_response = self.collection_client().http_client().request(request);
-        let (headers, body) =
-            check_status_extract_headers_and_body(future_response, StatusCode::OK).await?;
-
-        Ok((&headers, &body as &[u8]).try_into()?)
+        Ok(self
+            .collection_client()
+            .http_client()
+            .execute_request_check_status(request, StatusCode::OK)
+            .await?
+            .try_into()?)
     }
 }

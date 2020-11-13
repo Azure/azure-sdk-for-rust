@@ -6,7 +6,6 @@
     "azure_core::prelude::*",
     "crate::{ResourceType, DocumentClient}",
     "crate::DocumentClientRequired",
-    "azure_core::errors::{check_status_extract_headers_and_body, AzureError}",
     "http::StatusCode",
     "crate::responses::ListAttachmentsResponse",
     "std::convert::TryInto"

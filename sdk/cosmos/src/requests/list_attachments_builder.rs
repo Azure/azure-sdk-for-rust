@@ -2,7 +2,6 @@ use crate::prelude::*;
 use crate::responses::ListAttachmentsResponse;
 use crate::DocumentClientRequired;
 use crate::{DocumentClient, ResourceType};
-use azure_core::errors::{check_status_extract_headers_and_body, AzureError};
 use azure_core::prelude::*;
 use futures::stream::{unfold, Stream};
 use http::StatusCode;
@@ -336,7 +335,7 @@ where
     D: DatabaseClient<C>,
     COLL: CollectionClient<C, D>,
 {
-    pub async fn execute(&self) -> Result<ListAttachmentsResponse, AzureError> {
+    pub async fn execute(&self) -> Result<ListAttachmentsResponse, CosmosError> {
         let mut req = self.document_client.cosmos_client().prepare_request(
             &format!(
                 "dbs/{}/colls/{}/docs/{}/attachments",
@@ -361,19 +360,15 @@ where
 
         let req = req.body(EMPTY_BODY.as_ref())?;
 
-        let (headers, whole_body) = check_status_extract_headers_and_body(
-            self.document_client.http_client().request(req),
-            StatusCode::OK,
-        )
-        .await?;
-
-        debug!("\nheaders == {:?}", headers);
-        debug!("\nwhole body == {:#?}", whole_body);
-
-        Ok((&headers, &whole_body as &[u8]).try_into()?)
+        Ok(self
+            .document_client
+            .http_client()
+            .execute_request_check_status(req, StatusCode::OK)
+            .await?
+            .try_into()?)
     }
 
-    pub fn stream(&self) -> impl Stream<Item = Result<ListAttachmentsResponse, AzureError>> + '_ {
+    pub fn stream(&self) -> impl Stream<Item = Result<ListAttachmentsResponse, CosmosError>> + '_ {
         #[derive(Debug, Clone, PartialEq)]
         enum States {
             Init,

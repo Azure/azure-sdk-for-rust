@@ -1,15 +1,14 @@
 use crate::clients::{
     ChinaCosmosUri, ClientBuilder, CustomCosmosUri, DefaultCosmosUri, HTTPClientNotAssigned,
 };
-use crate::AuthorizationToken;
-use azure_core::errors::AzureError;
+use crate::{AuthorizationToken, CosmosError};
 use std::borrow::Cow;
 use std::marker::PhantomData;
 
 pub fn build_default_client<'a, IntoCowStr>(
     account: IntoCowStr,
     auth_token: AuthorizationToken,
-) -> Result<ClientBuilder<'a, DefaultCosmosUri, HTTPClientNotAssigned>, AzureError>
+) -> Result<ClientBuilder<'a, DefaultCosmosUri, HTTPClientNotAssigned>, CosmosError>
 where
     IntoCowStr: Into<Cow<'a, str>>,
 {
@@ -28,7 +27,7 @@ where
 pub fn build_china_client<'a, IntoCowStr>(
     account: IntoCowStr,
     auth_token: AuthorizationToken,
-) -> Result<ClientBuilder<'a, ChinaCosmosUri, HTTPClientNotAssigned>, AzureError>
+) -> Result<ClientBuilder<'a, ChinaCosmosUri, HTTPClientNotAssigned>, CosmosError>
 where
     IntoCowStr: Into<Cow<'a, str>>,
 {
@@ -48,7 +47,7 @@ pub fn build_custom_client<'a, IntoCowStr>(
     account: IntoCowStr,
     auth_token: AuthorizationToken,
     uri: String,
-) -> Result<ClientBuilder<'a, CustomCosmosUri, HTTPClientNotAssigned>, AzureError>
+) -> Result<ClientBuilder<'a, CustomCosmosUri, HTTPClientNotAssigned>, CosmosError>
 where
     IntoCowStr: Into<Cow<'a, str>>,
 {
@@ -64,7 +63,7 @@ where
 pub fn build_emulator_client(
     address: &str,
     port: u16,
-) -> Result<ClientBuilder<CustomCosmosUri, HTTPClientNotAssigned>, AzureError> {
+) -> Result<ClientBuilder<CustomCosmosUri, HTTPClientNotAssigned>, CosmosError> {
     //Account name: localhost:<port>
     //Account key: C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==
     let auth_token = AuthorizationToken::new_master(

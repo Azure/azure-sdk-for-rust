@@ -91,19 +91,19 @@ where
         &self.permission_name
     }
 
-    // fn create_permission(&self) -> requests::CreatePermissionBuilder<'_, '_, C, D, USER> {
-    //     requests::CreatePermissionBuilder::new(self)
-    // }
+    fn create_permission(&self) -> requests::CreatePermissionBuilder<'_, '_, C, D, USER> {
+        requests::CreatePermissionBuilder::new(self)
+    }
 
-    // fn replace_permission(&self) -> requests::ReplacePermissionBuilder<'_, '_, C, D, USER> {
-    //     requests::ReplacePermissionBuilder::new(self)
-    // }
+    fn replace_permission(&self) -> requests::ReplacePermissionBuilder<'_, '_, C, D, USER> {
+        requests::ReplacePermissionBuilder::new(self)
+    }
 
-    // fn get_permission(&self) -> requests::GetPermissionBuilder<'_, '_, C, D, USER> {
-    //     requests::GetPermissionBuilder::new(self)
-    // }
+    fn get_permission(&self) -> requests::GetPermissionBuilder<'_, '_, C, D, USER> {
+        requests::GetPermissionBuilder::new(self)
+    }
 
-    // fn delete_permission(&self) -> requests::DeletePermissionsBuilder<'_, '_, C, D, USER> {
-    //     requests::DeletePermissionsBuilder::new(self)
-    // }
+    fn delete_permission(&self) -> requests::DeletePermissionsBuilder<'_, '_, C, D, USER> {
+        requests::DeletePermissionsBuilder::new(self)
+    }
 }

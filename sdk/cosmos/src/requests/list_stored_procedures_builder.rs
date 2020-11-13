@@ -1,7 +1,6 @@
 use crate::prelude::*;
 use crate::responses::ListStoredProceduresResponse;
 use crate::ResourceType;
-use azure_core::errors::{check_status_extract_headers_and_body, AzureError};
 use azure_core::prelude::*;
 use futures::stream::{unfold, Stream};
 use http::StatusCode;
@@ -233,7 +232,7 @@ where
     C: CosmosClient,
     D: DatabaseClient<C>,
 {
-    pub async fn execute(&self) -> Result<ListStoredProceduresResponse, AzureError> {
+    pub async fn execute(&self) -> Result<ListStoredProceduresResponse, CosmosError> {
         trace!("ListStoredProceduresBuilder::execute called");
 
         let request = self.collection_client.cosmos_client().prepare_request(
@@ -255,18 +254,17 @@ where
 
         let request = request.body(EMPTY_BODY.as_ref())?;
 
-        let (headers, body) = check_status_extract_headers_and_body(
-            self.collection_client().http_client().request(request),
-            StatusCode::OK,
-        )
-        .await?;
-
-        Ok((&headers, &body as &[u8]).try_into()?)
+        Ok(self
+            .collection_client()
+            .http_client()
+            .execute_request_check_status(request, StatusCode::OK)
+            .await?
+            .try_into()?)
     }
 
     pub fn stream(
         &self,
-    ) -> impl Stream<Item = Result<ListStoredProceduresResponse, AzureError>> + '_ {
+    ) -> impl Stream<Item = Result<ListStoredProceduresResponse, CosmosError>> + '_ {
         #[derive(Debug, Clone, PartialEq)]
         enum States {
             Init,

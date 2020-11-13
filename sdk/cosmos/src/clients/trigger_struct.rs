@@ -92,19 +92,19 @@ where
         &self.trigger_name
     }
 
-    //fn create_trigger(
-    //    &self,
-    //) -> requests::CreateOrReplaceTriggerBuilder<'_, C, D, COLL, No, No, No> {
-    //    requests::CreateOrReplaceTriggerBuilder::new(self, true)
-    //}
+    fn create_trigger(
+        &self,
+    ) -> requests::CreateOrReplaceTriggerBuilder<'_, C, D, COLL, No, No, No> {
+        requests::CreateOrReplaceTriggerBuilder::new(self, true)
+    }
 
-    //fn replace_trigger(
-    //    &self,
-    //) -> requests::CreateOrReplaceTriggerBuilder<'_, C, D, COLL, No, No, No> {
-    //    requests::CreateOrReplaceTriggerBuilder::new(self, false)
-    //}
+    fn replace_trigger(
+        &self,
+    ) -> requests::CreateOrReplaceTriggerBuilder<'_, C, D, COLL, No, No, No> {
+        requests::CreateOrReplaceTriggerBuilder::new(self, false)
+    }
 
-    //fn delete_trigger(&self) -> requests::DeleteTriggerBuilder<'_, '_, C, D, COLL> {
-    //    requests::DeleteTriggerBuilder::new(self)
-    //}
+    fn delete_trigger(&self) -> requests::DeleteTriggerBuilder<'_, '_, C, D, COLL> {
+        requests::DeleteTriggerBuilder::new(self)
+    }
 }

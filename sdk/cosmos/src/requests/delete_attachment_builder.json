@@ -3,7 +3,6 @@
   "derive": "Debug, Clone",
   "uses": [
     "crate::prelude::*",
-    "azure_core::errors::{check_status_extract_headers_and_body, AzureError}",
     "azure_core::prelude::*",
     "http::StatusCode",
     "std::convert::TryInto"

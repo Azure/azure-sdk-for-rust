@@ -1,7 +1,6 @@
 use crate::prelude::*;
 use crate::responses::DeleteDocumentResponse;
 use crate::DocumentClientRequired;
-use azure_core::errors::{check_status_extract_headers_and_body, AzureError};
 use azure_core::modify_conditions::IfMatchCondition;
 use azure_core::prelude::*;
 use azure_core::{IfMatchConditionOption, IfMatchConditionSupport};
@@ -274,7 +273,7 @@ where
     D: DatabaseClient<C>,
     COLL: CollectionClient<C, D>,
 {
-    pub async fn execute(&self) -> Result<DeleteDocumentResponse, AzureError> {
+    pub async fn execute(&self) -> Result<DeleteDocumentResponse, CosmosError> {
         trace!("DeleteDocumentBuilder::execute called");
 
         let mut req = self
@@ -294,12 +293,11 @@ where
         let req = req.body(EMPTY_BODY.as_ref())?;
         debug!("{:?}", req);
 
-        let (headers, body) = check_status_extract_headers_and_body(
-            self.document_client.http_client().request(req),
-            StatusCode::NO_CONTENT,
-        )
-        .await?;
-
-        Ok((&headers, &body as &[u8]).try_into()?)
+        Ok(self
+            .document_client
+            .http_client()
+            .execute_request_check_status(req, StatusCode::NO_CONTENT)
+            .await?
+            .try_into()?)
     }
 }

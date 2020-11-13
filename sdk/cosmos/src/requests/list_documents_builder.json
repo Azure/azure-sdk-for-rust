@@ -6,7 +6,6 @@
     "azure_core::prelude::*",
     "crate::ResourceType",
     "crate::responses::ListDocumentsResponse",
-    "azure_core::errors::{check_status_extract_headers_and_body, AzureError}",
     "futures::stream::{unfold, Stream}",
     "http::StatusCode",
     "serde::de::DeserializeOwned",

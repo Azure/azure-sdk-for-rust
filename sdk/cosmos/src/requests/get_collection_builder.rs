@@ -1,7 +1,6 @@
 use crate::prelude::*;
 use crate::responses::GetCollectionResponse;
 use crate::CollectionClientRequired;
-use azure_core::errors::{check_status_extract_headers_and_body, AzureError};
 use azure_core::prelude::*;
 use http::StatusCode;
 use std::convert::TryInto;
@@ -137,21 +136,13 @@ where
     }
 }
 
-// methods callable regardless
-impl<'a, C, D> GetCollectionBuilder<'a, C, D>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-{
-}
-
 // methods callable only when every mandatory field has been filled
 impl<'a, C, D> GetCollectionBuilder<'a, C, D>
 where
     C: CosmosClient,
     D: DatabaseClient<C>,
 {
-    pub async fn execute(&self) -> Result<GetCollectionResponse, AzureError> {
+    pub async fn execute(&self) -> Result<GetCollectionResponse, CosmosError> {
         trace!("GetCollectionResponse::execute called");
 
         let request = self
@@ -164,10 +155,11 @@ where
 
         let request = request.body(EMPTY_BODY.as_ref())?;
 
-        let future_response = self.collection_client().http_client().request(request);
-        let (headers, body) =
-            check_status_extract_headers_and_body(future_response, StatusCode::OK).await?;
-
-        Ok((&headers, &body as &[u8]).try_into()?)
+        Ok(self
+            .collection_client()
+            .http_client()
+            .execute_request_check_status(request, StatusCode::OK)
+            .await?
+            .try_into()?)
     }
 }

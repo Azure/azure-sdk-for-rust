@@ -1,5 +1,4 @@
 use crate::prelude::*;
-use azure_core::errors::{check_status_extract_headers_and_body, AzureError};
 use azure_core::prelude::*;
 use azure_core::{No, ToAssign, Yes};
 use http::StatusCode;
@@ -342,7 +341,7 @@ where
 {
     pub async fn execute(
         &self,
-    ) -> Result<crate::responses::ReplaceReferenceAttachmentResponse, AzureError> {
+    ) -> Result<crate::responses::ReplaceReferenceAttachmentResponse, CosmosError> {
         let mut req = self
             .attachment_client
             .prepare_request_with_attachment_name(http::Method::PUT);
@@ -375,18 +374,14 @@ where
 
         req = req.header(http::header::CONTENT_TYPE, "application/json");
         req = req.header(http::header::CONTENT_LENGTH, request.len());
-        let req = req.body(hyper::Body::from(request))?;
+        let req = req.body(request.as_bytes())?;
         debug!("req == {:#?}", req);
 
-        let (headers, whole_body) = check_status_extract_headers_and_body(
-            self.attachment_client.http_client().request(req),
-            StatusCode::OK,
-        )
-        .await?;
-
-        debug!("\nheaders == {:?}", headers);
-        debug!("\nwhole body == {:#?}", whole_body);
-
-        Ok((&headers, &whole_body as &[u8]).try_into()?)
+        Ok(self
+            .attachment_client
+            .http_client()
+            .execute_request_check_status(req, StatusCode::OK)
+            .await?
+            .try_into()?)
     }
 }
