@@ -18,7 +18,7 @@ where
     Ok(ClientBuilder {
         http_client: None,
         p_http_client_to_assign: PhantomData {},
-        account: account,
+        account,
         auth_token,
         cosmos_uri_builder,
     })

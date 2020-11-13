@@ -6,8 +6,6 @@ use crate::{
     WithDatabaseClient,
 };
 use azure_core::{HttpClient, No, ToAssign, Yes};
-use base64;
-use chrono;
 use core::marker::PhantomData;
 use http::request::Builder as RequestBuilder;
 use http::{header, HeaderValue};

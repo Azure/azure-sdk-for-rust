@@ -169,7 +169,7 @@ where
         let response = self
             .permission_client
             .http_client()
-            .execute_request_check_statuses(request, &vec![StatusCode::OK, StatusCode::NOT_FOUND])
+            .execute_request_check_statuses(request, &[StatusCode::OK, StatusCode::NOT_FOUND])
             .await?;
 
         match response.status() {

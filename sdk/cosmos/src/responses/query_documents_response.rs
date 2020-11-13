@@ -276,7 +276,7 @@ impl<T> std::convert::TryFrom<QueryDocumentsResponse<T>> for QueryDocumentsRespo
     #[inline]
     fn try_from(q: QueryDocumentsResponse<T>) -> Result<Self, Self::Error> {
         // first check if there is a Raw document. In case we bail out
-        if let Some(_) = q.results.iter().find(|r| match r {
+        if q.results.iter().any(|r| match r {
             QueryResult::Document(_) => false,
             QueryResult::Raw(_) => true,
         }) {

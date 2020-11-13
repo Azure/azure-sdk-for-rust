@@ -225,7 +225,7 @@ where
         let response = self
             .user_client
             .http_client()
-            .execute_request_check_statuses(req, &vec![StatusCode::OK, StatusCode::NOT_FOUND])
+            .execute_request_check_statuses(req, &[StatusCode::OK, StatusCode::NOT_FOUND])
             .await?;
 
         match response.status() {

@@ -257,7 +257,7 @@ where
             .http_client()
             .execute_request_check_statuses(
                 req,
-                &vec![
+                &[
                     StatusCode::OK,
                     StatusCode::NOT_MODIFIED,
                     StatusCode::NOT_FOUND,
