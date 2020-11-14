@@ -1,8 +1,10 @@
+use azure_core::HttpClient;
 use azure_cosmos::prelude::*;
 use std::error::Error;
+use std::sync::Arc;
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn Error>> {
+async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // First we retrieve the account name and master key from environment variables.
     // We expect master keys (ie, not resource constrained)
     let master_key =
@@ -18,7 +20,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let authorization_token = AuthorizationToken::new_master(&master_key)?;
 
-    let client = ClientBuilder::new(&account, authorization_token)?;
+    let client = {
+        let http_client: Arc<Box<dyn HttpClient>> = Arc::new(Box::new(reqwest::Client::new()));
+        azure_cosmos::client_builder::build_default_client(&account, authorization_token)?
+            .with_http_client(http_client)
+            .build()
+    };
     let database_client = client.with_database_client(&database_name);
     let user_client = database_client.with_user_client(&user_name);
 

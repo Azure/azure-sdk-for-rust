@@ -1,9 +1,11 @@
+use azure_core::HttpClient;
 use azure_cosmos::prelude::*;
 use futures::stream::StreamExt;
 use std::error::Error;
+use std::sync::Arc;
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn Error>> {
+async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // First we retrieve the account name and master key from environment variables.
     // We expect master keys (ie, not resource constrained)
     let master_key =
@@ -27,7 +29,11 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // Once we have an authorization token you can create a client instance. You can change the
     // authorization token at later time if you need, for example, to escalate the privileges for a
     // single operation.
-    let client = ClientBuilder::new(&account, authorization_token)?;
+    let http_client: Box<dyn HttpClient> = Box::new(reqwest::Client::new());
+    let http_client = Arc::new(http_client);
+    let client = azure_cosmos::client_builder::build_default_client(&account, authorization_token)?
+        .with_http_client(http_client)
+        .build();
 
     // The Cosmos' client exposes a lot of methods. This one lists the databases in the specified
     // account. Database do not implement Display but deref to &str so you can pass it to methods

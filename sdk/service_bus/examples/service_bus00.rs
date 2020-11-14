@@ -1,8 +1,5 @@
-use azure_core::HttpClient;
 use azure_service_bus::prelude::*;
 use chrono::Duration;
-use hyper;
-use hyper_rustls::HttpsConnector;
 use std::error::Error;
 
 async fn send(
@@ -12,23 +9,14 @@ async fn send(
     policy_name: String,
     policy_key: String,
 ) -> Result<(), Box<dyn Error>> {
-    let http_client: Box<dyn HttpClient> = if rand::random() {
-        println!("using hyper");
-        Box::new(hyper::Client::builder().build(HttpsConnector::new()))
-    } else {
-        println!("using reqwest");
-        Box::new(reqwest::Client::new())
-    };
-
     let mut client = Client::new(
-        http_client,
         service_bus_namespace.to_owned(),
         event_hub_name.to_owned(),
         policy_name.to_owned(),
         policy_key.to_owned(),
     )?;
 
-    println!("before sending message {:?}", s);
+    println!("before {:?} message send!", s);
     match client.send_event(&s, Duration::days(1)).await {
         Ok(_) => println!("{:?} message sent!", s),
 
