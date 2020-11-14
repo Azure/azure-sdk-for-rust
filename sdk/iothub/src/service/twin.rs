@@ -4,6 +4,7 @@ use hyper_tls::HttpsConnector;
 use serde::de::{self};
 use serde::{Deserialize, Deserializer};
 use std::collections::HashMap;
+use std::marker::PhantomData;
 
 use crate::service::{ServiceClient, API_VERSION};
 
@@ -131,7 +132,7 @@ pub struct DeviceTwin {
     pub x509_thumbprint: X509ThumbPrint,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct ModuleTwin {
     pub authentication_type: AuthenticationType,
@@ -149,6 +150,151 @@ pub struct ModuleTwin {
     pub x509_thumbprint: X509ThumbPrint,
 }
 
+struct DesiredTwin {
+    contents: serde_json::Value,
+}
+
+pub struct DesiredTwinBuilder<'a, R>
+where
+    for<'de> R: Deserialize<'de>,
+{
+    service_client: &'a ServiceClient,
+    pub(crate) device_id: String,
+    pub(crate) module_id: Option<String>,
+    if_match: Option<String>,
+    desired_properties: Option<serde_json::Value>,
+    desired_tags: HashMap<String, String>,
+    pub(crate) method: Method,
+    desired_twin_return_type: PhantomData<R>,
+}
+
+impl<'a, R> DesiredTwinBuilder<'a, R>
+where
+    for<'de> R: Deserialize<'de>,
+{
+    pub(crate) fn new(
+        service_client: &'a ServiceClient,
+        device_id: String,
+        module_id: Option<String>,
+        method: Method,
+    ) -> Self {
+        Self {
+            service_client,
+            device_id,
+            module_id,
+            if_match: None,
+            desired_properties: None,
+            desired_tags: HashMap::new(),
+            method,
+            desired_twin_return_type: PhantomData,
+        }
+    }
+
+    /// Add a new tag to the desired twin.
+    ///
+    /// This function can be invoked multiple times to add multiple tags to the desired twin.
+    /// When adding a tag which is already in the desired twin, its value will be updated.
+    ///
+    /// # Example
+    /// ```
+    /// # let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
+    /// use iothub::service::ServiceClient;
+    ///
+    /// let iothub = ServiceClient::from_connection_string(connection_string, 3600).expect("Failed to create the ServiceClient!");
+    /// let twin = iothub.update_device_twin("some-device")
+    ///                  .tag("TagName", "TagValue")
+    ///                  .tag("AnotherTag", "WithAnotherValue")
+    ///                  .tag("LastTag", "LastValue");
+    /// ```
+    pub fn tag<T>(mut self, tag_name: T, tag_value: T) -> Self
+    where
+        T: Into<String>,
+    {
+        self.desired_tags.insert(tag_name.into(), tag_value.into());
+        self
+    }
+
+    /// Add new properties to the desired twin
+    ///
+    /// # Example
+    /// ```
+    /// use iothub::service::ServiceClient;
+    /// # #[macro_use]
+    /// # extern crate serde_json;
+    ///
+    /// fn main() {
+    ///     # let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
+    ///     let iothub = ServiceClient::from_connection_string(connection_string, 3600).expect("Failed to create the ServiceClient!");
+    ///     let twin = iothub.update_device_twin("some-device")
+    ///                  .properties(json!({
+    ///                    "PropertyName": "PropertyValue",
+    ///                    "ParentProperty": {
+    ///                      "ChildProperty": "ChildValue"
+    ///                    }
+    ///                  }));
+    /// }
+    pub fn properties(mut self, desired_properties: serde_json::Value) -> Self {
+        self.desired_properties = Some(desired_properties);
+        self
+    }
+
+    /// Set the ETag for the twin
+    ///
+    /// ```
+    /// # let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
+    /// use iothub::service::ServiceClient;
+    ///
+    /// let iothub = ServiceClient::from_connection_string(connection_string, 3600).expect("Failed to create the ServiceClient!");
+    /// let twin = iothub.update_device_twin("some-device")
+    ///                  .if_match("AAAAAAAAAAA=");
+    /// ```
+    pub fn if_match<T>(mut self, if_match: T) -> Self
+    where
+        T: Into<String>,
+    {
+        self.if_match = Some(if_match.into());
+        self
+    }
+
+    /// Updates the twin with the desired settings
+    ///
+    /// ```
+    /// use iothub::service::ServiceClient;
+    /// # #[macro_use]
+    /// # extern crate serde_json;
+    ///
+    /// fn main() {
+    ///     # let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
+    ///     let iothub = ServiceClient::from_connection_string(connection_string, 3600).expect("Failed to create the ServiceClient!");
+    ///     let twin = iothub.update_device_twin("some-device")
+    ///                  .tag("TagName", "TagValue")
+    ///                  .properties(json!({"PropertyName": "PropertyValue"}))
+    ///                  .execute();
+    /// }
+    /// ```
+    pub async fn execute(self) -> Result<R, AzureError> {
+        let desired_twin = DesiredTwin {
+            contents: json!({
+                "properties": {
+                    "desired": self.desired_properties.unwrap_or_else(|| json!({}))
+                },
+                "tags": self.desired_tags
+            }),
+        };
+
+        update_twin(
+            self.service_client,
+            self.method,
+            self.device_id,
+            self.module_id,
+            self.if_match,
+            desired_twin,
+        )
+        .await
+    }
+}
+
+/// Helper function for getting a device/module twin
 async fn get_twin<T>(service_client: &ServiceClient, uri: String) -> Result<T, AzureError>
 where
     for<'de> T: Deserialize<'de>,
@@ -175,6 +321,7 @@ where
     Ok(serde_json::from_slice(&whole_body)?)
 }
 
+/// Get a module twin from a given device and module
 pub(crate) async fn get_module_twin<S, T>(
     service_client: &ServiceClient,
     device_id: S,
@@ -195,6 +342,7 @@ where
     get_twin(service_client, uri).await
 }
 
+/// Get a device twin from a given device
 pub(crate) async fn get_device_twin<T>(
     service_client: &ServiceClient,
     device_id: T,
@@ -210,4 +358,62 @@ where
     );
 
     get_twin(service_client, uri).await
+}
+
+async fn update_twin<S, T, U, V>(
+    service_client: &ServiceClient,
+    method: Method,
+    device_id: S,
+    module_id: Option<T>,
+    if_match: Option<U>,
+    desired_twin: DesiredTwin,
+) -> Result<V, AzureError>
+where
+    S: Into<String>,
+    T: Into<String>,
+    U: Into<String>,
+    for<'de> V: Deserialize<'de>,
+{
+    let uri = match module_id {
+        Some(val) => format!(
+            "https://{}.azure-devices.net/twins/{}/modules/{}?api-version={}",
+            service_client.iothub_name,
+            device_id.into(),
+            val.into(),
+            API_VERSION
+        ),
+        None => format!(
+            "https://{}.azure-devices.net/twins/{}?api-version={}",
+            service_client.iothub_name,
+            device_id.into(),
+            API_VERSION
+        ),
+    };
+
+    let https = HttpsConnector::new();
+    let client = Client::builder().build::<_, hyper::Body>(https);
+    let mut request_builder = Request::builder()
+        .uri(uri)
+        .method(method)
+        .header("Authorization", &service_client.sas_token)
+        .header("Content-Type", "application/json");
+
+    if let Some(if_match) = if_match {
+        request_builder = request_builder.header("If-Match", if_match.into());
+    }
+
+    let request =
+        request_builder.body(Body::from(serde_json::to_string(&desired_twin.contents)?))?;
+    let (status_code, _, whole_body) =
+        extract_status_headers_and_body(client.request(request)).await?;
+
+    if !status_code.is_success() {
+        return Err(AzureError::UnexpectedHTTPResult(UnexpectedHTTPResult::new(
+            StatusCode::OK,
+            status_code,
+            std::str::from_utf8(&whole_body)?,
+        )));
+    }
+
+    Ok(serde_json::from_slice(&whole_body)?)
 }

@@ -1,13 +1,16 @@
 use azure_core::errors::AzureError;
 use base64::{decode, encode_config};
 use hmac::{Hmac, Mac, NewMac};
+use hyper::Method;
 use sha2::Sha256;
 
 pub mod directmethod;
 pub mod twin;
 
 use crate::service::directmethod::DirectMethod;
-use crate::service::twin::{get_device_twin, get_module_twin, DeviceTwin, ModuleTwin};
+use crate::service::twin::{
+    get_device_twin, get_module_twin, DesiredTwinBuilder, DeviceTwin, ModuleTwin,
+};
 
 pub const API_VERSION: &str = "2020-03-13";
 
@@ -307,10 +310,118 @@ impl ServiceClient {
     {
         get_device_twin(&self, device_id.into()).await
     }
+
+    /// Update the module twin of a given device or module
+    ///
+    /// ```
+    /// use iothub::service::ServiceClient;
+    /// # #[macro_use]
+    /// # extern crate serde_json;
+    ///
+    /// fn main() {
+    ///     # let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
+    ///     let iothub = ServiceClient::from_connection_string(connection_string, 3600).expect("Failed to create the ServiceClient!");
+    ///     let twin = iothub.update_module_twin("some-device", "some-module")
+    ///                  .tag("TagName", "TagValue")
+    ///                  .properties(json!({"PropertyName": "PropertyValue"}))
+    ///                  .execute();
+    /// }
+    /// ```
+    pub fn update_module_twin<S, T>(
+        &self,
+        device_id: S,
+        module_id: T,
+    ) -> DesiredTwinBuilder<'_, ModuleTwin>
+    where
+        S: Into<String>,
+        T: Into<String>,
+    {
+        DesiredTwinBuilder::new(
+            &self,
+            device_id.into(),
+            Some(module_id.into()),
+            Method::PATCH,
+        )
+    }
+
+    /// Replace the module twin of a given device and module
+    ///
+    /// ```
+    /// use iothub::service::ServiceClient;
+    /// # #[macro_use]
+    /// # extern crate serde_json;
+    ///
+    /// fn main() {
+    ///     # let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
+    ///     let iothub = ServiceClient::from_connection_string(connection_string, 3600).expect("Failed to create the ServiceClient!");
+    ///     let twin = iothub.replace_module_twin("some-device", "some-module")
+    ///                  .tag("TagName", "TagValue")
+    ///                  .properties(json!({"PropertyName": "PropertyValue"}))
+    ///                  .execute();
+    /// }
+    /// ```
+    pub fn replace_module_twin<S, T>(
+        &self,
+        device_id: S,
+        module_id: T,
+    ) -> DesiredTwinBuilder<'_, ModuleTwin>
+    where
+        S: Into<String>,
+        T: Into<String>,
+    {
+        DesiredTwinBuilder::new(&self, device_id.into(), Some(module_id.into()), Method::PUT)
+    }
+    /// Update the device twin of a given device
+    ///
+    /// ```
+    /// use iothub::service::ServiceClient;
+    /// # #[macro_use]
+    /// # extern crate serde_json;
+    ///
+    /// fn main() {
+    ///     # let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
+    ///     let iothub = ServiceClient::from_connection_string(connection_string, 3600).expect("Failed to create the ServiceClient!");
+    ///     let twin = iothub.update_device_twin("some-device")
+    ///                  .tag("TagName", "TagValue")
+    ///                  .properties(json!({"PropertyName": "PropertyValue"}))
+    ///                  .execute();
+    /// }
+    /// ```
+    pub fn update_device_twin<S>(&self, device_id: S) -> DesiredTwinBuilder<'_, DeviceTwin>
+    where
+        S: Into<String>,
+    {
+        DesiredTwinBuilder::new(&self, device_id.into(), None, Method::PATCH)
+    }
+
+    /// Replace the device twin of a given device
+    ///
+    /// ```
+    /// use iothub::service::ServiceClient;
+    /// # #[macro_use]
+    /// # extern crate serde_json;
+    ///
+    /// fn main() {
+    ///     # let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
+    ///     let iothub = ServiceClient::from_connection_string(connection_string, 3600).expect("Failed to create the ServiceClient!");
+    ///     let twin = iothub.replace_device_twin("some-device")
+    ///                  .tag("TagName", "TagValue")
+    ///                  .properties(json!({"PropertyName": "PropertyValue"}))
+    ///                  .execute();
+    /// }
+    /// ```
+    pub fn replace_device_twin<S>(&self, device_id: S) -> DesiredTwinBuilder<'_, DeviceTwin>
+    where
+        S: Into<String>,
+    {
+        DesiredTwinBuilder::new(&self, device_id.into(), None, Method::PUT)
+    }
 }
 
 #[cfg(test)]
 mod tests {
+    use hyper::Method;
+
     #[test]
     fn from_connectionstring_success() -> Result<(), Box<dyn std::error::Error>> {
         use crate::service::ServiceClient;
@@ -344,6 +455,62 @@ mod tests {
     ) -> Result<(), Box<dyn std::error::Error>> {
         use crate::service::ServiceClient;
         let _ = ServiceClient::from_connection_string("HostName=cool-iot-hub.azure-devices.net;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==", 3600).is_err();
+        Ok(())
+    }
+
+    #[test]
+    fn update_module_twin_should_create_builder() -> Result<(), Box<dyn std::error::Error>> {
+        use crate::service::ServiceClient;
+        let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
+        let service_client = ServiceClient::from_connection_string(connection_string, 3600)?;
+
+        let builder = service_client.update_module_twin("deviceid", "moduleid");
+        assert_eq!(builder.device_id, "deviceid".to_string());
+        assert_eq!(builder.module_id, Some("moduleid".to_string()));
+        assert_eq!(builder.method, Method::PATCH);
+
+        Ok(())
+    }
+
+    #[test]
+    fn replace_module_twin_should_create_builder() -> Result<(), Box<dyn std::error::Error>> {
+        use crate::service::ServiceClient;
+        let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
+        let service_client = ServiceClient::from_connection_string(connection_string, 3600)?;
+
+        let builder = service_client.replace_module_twin("deviceid", "moduleid");
+        assert_eq!(builder.device_id, "deviceid".to_string());
+        assert_eq!(builder.module_id, Some("moduleid".to_string()));
+        assert_eq!(builder.method, Method::PUT);
+
+        Ok(())
+    }
+
+    #[test]
+    fn update_device_twin_should_create_builder() -> Result<(), Box<dyn std::error::Error>> {
+        use crate::service::ServiceClient;
+        let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
+        let service_client = ServiceClient::from_connection_string(connection_string, 3600)?;
+
+        let builder = service_client.update_device_twin("deviceid");
+        assert_eq!(builder.device_id, "deviceid".to_string());
+        assert_eq!(builder.module_id, None);
+        assert_eq!(builder.method, Method::PATCH);
+
+        Ok(())
+    }
+
+    #[test]
+    fn replace_device_twin_should_create_builder() -> Result<(), Box<dyn std::error::Error>> {
+        use crate::service::ServiceClient;
+        let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
+        let service_client = ServiceClient::from_connection_string(connection_string, 3600)?;
+
+        let builder = service_client.replace_device_twin("deviceid");
+        assert_eq!(builder.device_id, "deviceid".to_string());
+        assert_eq!(builder.module_id, None);
+        assert_eq!(builder.method, Method::PUT);
+
         Ok(())
     }
 }

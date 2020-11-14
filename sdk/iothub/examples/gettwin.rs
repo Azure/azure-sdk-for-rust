@@ -3,7 +3,6 @@ use std::error::Error;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
-    // First we retrieve the account name and master key from environment variables.
     let iothub_connection_string = std::env::var("IOTHUB_CONNECTION_STRING")
         .expect("Set env variable IOTHUB_CONNECTION_STRING first!");
 
