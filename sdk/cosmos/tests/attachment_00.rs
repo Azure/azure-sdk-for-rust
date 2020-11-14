@@ -2,7 +2,6 @@
 use azure_core::prelude::*;
 use azure_cosmos::prelude::*;
 use std::borrow::Cow;
-use std::error::Error;
 #[macro_use]
 extern crate serde_derive;
 
@@ -23,7 +22,7 @@ struct MySampleStruct<'a> {
 }
 
 #[tokio::test]
-async fn attachment() -> Result<(), Box<dyn Error>> {
+async fn attachment() -> Result<(), CosmosError> {
     const DATABASE_NAME: &str = "test-cosmos-db-attachment";
     const COLLECTION_NAME: &str = "test-collection-attachment";
 
