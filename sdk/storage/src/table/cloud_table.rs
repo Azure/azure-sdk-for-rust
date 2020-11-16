@@ -331,12 +331,6 @@ where
     where
         T: Serialize + DeserializeOwned + 'a,
     {
-        #[derive(Debug, Clone)]
-        enum States {
-            Init,
-            Continuation(ContinuationToken),
-        };
-
         futures::stream::unfold(
             Some(States::Init),
             move |state: Option<States>| async move {
@@ -354,7 +348,10 @@ where
                     Err(err) => return Some((Err(err), None)),
                 };
 
-                let continuation_token = response.continuation_token.map(|ct| States::Continuation(ct.to_owned()));
+                let continuation_token = response
+                    .continuation_token
+                    .clone()
+                    .map(|ct| States::Continuation(ct));
 
                 Some((Ok(response), continuation_token))
             },
@@ -368,12 +365,6 @@ where
     where
         T: Serialize + DeserializeOwned + 'a,
     {
-        #[derive(Debug, Clone)]
-        enum States {
-            Init,
-            Continuation(ContinuationToken),
-        };
-
         futures::stream::unfold(
             Some(States::Init),
             move |state: Option<States>| async move {
@@ -391,10 +382,10 @@ where
                     Err(err) => return Some((Err(err), None)),
                 };
 
-                let continuation_token = match &response.continuation_token {
-                    Some(ct) => Some(States::Continuation(ct.to_owned())),
-                    None => None,
-                };
+                let continuation_token = response
+                    .continuation_token
+                    .clone()
+                    .map(|ct| States::Continuation(ct));
 
                 Some((Ok(response), continuation_token))
             },
@@ -418,4 +409,10 @@ where
         // info!("{}", body);
         Ok(())
     }
+}
+
+#[derive(Debug, Clone)]
+enum States {
+    Init,
+    Continuation(ContinuationToken),
 }
