@@ -18,10 +18,7 @@ where
 {
     type Error = AzureError;
 
-    fn try_from(val: (&str, &HeaderMap, &body::Bytes)) -> Result<Self, Self::Error> {
-        let query_path = val.0;
-        let headers = val.1;
-        let body = val.2;
+    fn try_from((query_path, headers, body): (&str, &HeaderMap, &body::Bytes)) -> Result<Self, Self::Error> {
 
         log::debug!("body == {}", std::str::from_utf8(body)?);
 
