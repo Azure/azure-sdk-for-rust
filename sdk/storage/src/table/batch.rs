@@ -1,6 +1,5 @@
 use crate::{entity_path, TableEntity};
 use serde::Serialize;
-use serde_json;
 
 const BATCH_MAX_SIZE: usize = 100;
 
@@ -40,9 +39,9 @@ pub enum BatchOperation {
 }
 
 impl BatchOperation {
-    fn into_payload(&self, uri_prefix: &str, table: &str, partition_key: &str, body: &mut String) {
+    fn into_payload(self, uri_prefix: &str, table: &str, partition_key: &str, body: &mut String) {
         // todo: consider using the cloud_table request builder to generate payloads
-        match *self {
+        match self {
             BatchOperation::Insert { ref payload, .. } => {
                 body.push_str("POST ");
                 body.push_str(uri_prefix);
@@ -51,7 +50,7 @@ impl BatchOperation {
                 body.push_str("Accept: application/json;odata=nometadata\n");
                 body.push_str("Content-Type: application/json\n\n");
                 body.push_str(&payload);
-                body.push_str("\n");
+                body.push('\n');
             }
 
             BatchOperation::Update {
@@ -73,7 +72,7 @@ impl BatchOperation {
                     body.push_str("If-Match: *\n\n");
                 }
                 body.push_str(&payload);
-                body.push_str("\n");
+                body.push('\n');
             }
 
             BatchOperation::Delete {
@@ -93,7 +92,7 @@ impl BatchOperation {
                 } else {
                     body.push_str("If-Match: *\n");
                 }
-                body.push_str("\n");
+                body.push('\n');
             }
         }
     }
@@ -118,7 +117,7 @@ impl Batch {
     /// Create a new changeset for the given partition key
     pub fn new(partition_key: String) -> Batch {
         Batch {
-            partition_key: partition_key,
+            partition_key,
             items: vec![],
         }
     }
@@ -186,9 +185,9 @@ impl Batch {
         T: Serialize,
     {
         self.add_operation(BatchOperation::Update {
-            row_key: row_key.to_owned(),
+            row_key,
             payload: serde_json::to_string(data)?,
-            etag: etag,
+            etag,
         })
     }
 
@@ -210,10 +209,7 @@ impl Batch {
         row_key: String,
         etag: Option<String>,
     ) -> Result<&mut Self, BatchError> {
-        self.add_operation(BatchOperation::Delete {
-            row_key: row_key.to_owned(),
-            etag: etag,
-        })
+        self.add_operation(BatchOperation::Delete { row_key, etag })
     }
 
     /// Add a delete operation using a TableEntitiy
@@ -238,7 +234,7 @@ impl Batch {
             payload.push_str("Content-Type: application/http\n");
             payload.push_str("Content-Transfer-Encoding: binary\n\n");
             item.into_payload(uri_prefix, table, &self.partition_key, &mut payload);
-            payload.push_str("\n");
+            payload.push('\n');
         }
 
         payload.push_str("--changeset_8a28b620-b4bb-458c-a177-0959fb14c977--\n");

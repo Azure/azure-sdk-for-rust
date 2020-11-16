@@ -11,8 +11,6 @@ use hyper::{
     header::{self, HeaderValue},
 };
 use hyper::{Method, StatusCode};
-use log;
-use serde_json;
 
 const TABLE_TABLES: &str = "TABLES";
 
@@ -74,7 +72,7 @@ impl TableClient<KeyClient> {
                 client: client::with_access_key(account, key),
             }),
             _ => {
-                return Err(AzureError::GenericErrorWithText(
+                Err(AzureError::GenericErrorWithText(
                     "Could not create an Azure Table client from the provided connection string. Please validate that you have specified the account name and means of authentication (key, SAS, etc.)."
                         .to_owned(),
                 ))
