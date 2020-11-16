@@ -251,19 +251,7 @@ where
         T: DeserializeOwned,
     {
         log::debug!("begin_get_all()");
-
-        let future_response = self.client.request_with_default_header(
-            &self.table_name,
-            &Method::GET,
-            None,
-            MetadataDetail::Full, // etag is provided through metadata only
-            &|req| req,
-        )?;
-
-        let (headers, body) =
-            check_status_extract_headers_and_body(future_response, StatusCode::OK).await?;
-
-        Ok((self.table_name.as_str(), &headers, &body).try_into()?)
+        self.begin_get_request(None).await
     }
 
     pub async fn begin_query<T>(&self, query: &str) -> Result<QueryResult<T>, AzureError>
@@ -271,9 +259,19 @@ where
         T: DeserializeOwned,
     {
         log::debug!("begin_query(query = {:?})", query);
+        self.begin_get_request(Some(query)).await
+    }
+
+    async fn begin_get_request<T>(&self, query: Option<&str>) -> Result<QueryResult<T>, AzureError>
+    where
+        T: DeserializeOwned,
+    {
+        log::debug!("begin_get_request(query = {:?})", query);
 
         let mut path = self.table_name.to_owned();
-        path.push_str(&format!("?{}", query));
+        if let Some(query) = query {
+            path.push_str(&format!("?{}", query));
+        }
 
         let future_response = self.client.request_with_default_header(
             path.as_str(),
