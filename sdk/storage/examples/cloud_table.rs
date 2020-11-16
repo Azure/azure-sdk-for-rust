@@ -1,7 +1,7 @@
 #[macro_use]
 extern crate serde_derive;
 
-use azure_storage::table::{Batch, CloudTable, Continuation, TableClient};
+use azure_storage::table::{Batch, CloudTable, TableClient};
 use std::error::Error;
 use std::mem;
 
@@ -51,20 +51,20 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .await?;
     println!("entity(value): {:?}", entity);
 
-    let mut cont = Continuation::start();
-    while let Some(entities) = cloud_table
-        .execute_query::<MyEntity>(None, &mut cont)
-        .await?
-    {
-        println!("segment: {:?}", entities.first());
+    let mut response = cloud_table.begin_get_all::<MyEntity>().await?;
+    while let Some(continuation_token) = response.continuation_token {
+        println!("we have more data!");
+
+        response = cloud_table.continue_execution(continuation_token).await?;
+        println!("segment: {:?}", response.entities.first());
     }
 
-    let mut cont = Continuation::start();
-    while let Some(entities) = cloud_table
-        .execute_query::<serde_json::Value>(None, &mut cont)
-        .await?
-    {
-        println!("segment(value): {:?}", entities.first());
+    let mut response = cloud_table.begin_get_all::<serde_json::Value>().await?;
+    while let Some(continuation_token) = response.continuation_token {
+        println!("we have more data!");
+
+        response = cloud_table.continue_execution(continuation_token).await?;
+        println!("segment: {:?}", response.entities.first());
     }
 
     let mut batch = Batch::new("big2".to_owned());
