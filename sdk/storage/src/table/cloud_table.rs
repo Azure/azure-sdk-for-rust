@@ -248,7 +248,7 @@ where
 
     pub async fn begin_get_all<T>(&self) -> Result<QueryResult<T>, AzureError>
     where
-        T: DeserializeOwned + Serialize,
+        T: DeserializeOwned,
     {
         log::debug!("begin_get_all()");
 
@@ -268,7 +268,7 @@ where
 
     pub async fn begin_query<T>(&self, query: &str) -> Result<QueryResult<T>, AzureError>
     where
-        T: DeserializeOwned + Serialize,
+        T: DeserializeOwned,
     {
         log::debug!("begin_query(query = {:?})", query);
 
@@ -294,7 +294,7 @@ where
         continuation_token: ContinuationToken,
     ) -> Result<QueryResult<T>, AzureError>
     where
-        T: DeserializeOwned + Serialize,
+        T: DeserializeOwned,
     {
         log::debug!(
             "continue_execution(continuation_token = {:?})",

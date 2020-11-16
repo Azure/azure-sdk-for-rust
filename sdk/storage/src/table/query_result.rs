@@ -6,15 +6,15 @@ use serde::{de::DeserializeOwned, Serialize};
 
 pub struct QueryResult<T>
 where
-    T: DeserializeOwned + Serialize,
+    T: DeserializeOwned,
 {
     pub entities: Vec<TableEntity<T>>,
-    pub(crate) continuation_token: Option<ContinuationToken>,
+    pub continuation_token: Option<ContinuationToken>,
 }
 
 impl<T> std::convert::TryFrom<(&str, &HeaderMap, &body::Bytes)> for QueryResult<T>
 where
-    T: DeserializeOwned + Serialize,
+    T: DeserializeOwned,
 {
     type Error = AzureError;
 
@@ -22,6 +22,8 @@ where
         let query_path = val.0;
         let headers = val.1;
         let body = val.2;
+
+        log::debug!("body == {}", std::str::from_utf8(body)?);
 
         Ok(Self {
             entities: serde_json::from_slice::<EntityCollection<T>>(body)?.value,
