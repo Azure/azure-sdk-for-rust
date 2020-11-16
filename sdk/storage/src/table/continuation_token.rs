@@ -17,13 +17,12 @@ impl ContinuationToken {
         const HEADER_NEXTROWKEY: &str = "x-ms-continuation-NextRowKey";
 
         Ok(
-            if headers.contains_key(HEADER_NEXTPARTITIONKEY)
-                && headers.contains_key(HEADER_NEXTROWKEY)
+            if let (Some(partition_key), Some(row_key)) = (headers.get(HEADER_NEXTPARTITIONKEY), headers.get(HEADER_NEXTROWKEY))
             {
                 Some(Self {
                     query_path: query_path.to_owned(),
-                    partition_key: headers[HEADER_NEXTPARTITIONKEY].to_str()?.to_owned(),
-                    row_key: headers[HEADER_NEXTROWKEY].to_str()?.to_owned(),
+                    partition_key: partition_key.to_str()?.to_owned(),
+                    row_key: row_key.to_str()?.to_owned(),
                 })
             } else {
                 None
