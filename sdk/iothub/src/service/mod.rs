@@ -8,9 +8,7 @@ pub mod directmethod;
 pub mod twin;
 
 use crate::service::directmethod::DirectMethod;
-use crate::service::twin::{
-    get_device_twin, get_module_twin, DesiredTwinBuilder, DeviceTwin, ModuleTwin,
-};
+use crate::service::twin::{get_twin, DesiredTwinBuilder, DeviceTwin, ModuleTwin};
 
 pub const API_VERSION: &str = "2020-03-13";
 
@@ -292,7 +290,15 @@ impl ServiceClient {
         S: Into<String>,
         T: Into<String>,
     {
-        get_module_twin(&self, device_id.into(), module_id.into()).await
+        let uri = format!(
+            "https://{}.azure-devices.net/twins/{}/modules/{}?api-version={}",
+            self.iothub_name,
+            device_id.into(),
+            module_id.into(),
+            API_VERSION
+        );
+
+        get_twin(self, uri).await
     }
 
     /// Get the device twin of a given device
@@ -308,24 +314,28 @@ impl ServiceClient {
     where
         S: Into<String>,
     {
-        get_device_twin(&self, device_id.into()).await
+        let uri = format!(
+            "https://{}.azure-devices.net/twins/{}?api-version={}",
+            self.iothub_name,
+            device_id.into(),
+            API_VERSION
+        );
+
+        get_twin(self, uri).await
     }
 
     /// Update the module twin of a given device or module
     ///
     /// ```
     /// use iothub::service::ServiceClient;
-    /// # #[macro_use]
-    /// # extern crate serde_json;
+    /// use serde_json;
     ///
-    /// fn main() {
-    ///     # let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
-    ///     let iothub = ServiceClient::from_connection_string(connection_string, 3600).expect("Failed to create the ServiceClient!");
-    ///     let twin = iothub.update_module_twin("some-device", "some-module")
-    ///                  .tag("TagName", "TagValue")
-    ///                  .properties(json!({"PropertyName": "PropertyValue"}))
-    ///                  .execute();
-    /// }
+    /// # let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
+    /// let iothub = ServiceClient::from_connection_string(connection_string, 3600).expect("Failed to create the ServiceClient!");
+    /// let twin = iothub.update_module_twin("some-device", "some-module")
+    ///              .tag("TagName", "TagValue")
+    ///              .properties(serde_json::json!({"PropertyName": "PropertyValue"}))
+    ///              .execute();
     /// ```
     pub fn update_module_twin<S, T>(
         &self,
@@ -348,17 +358,14 @@ impl ServiceClient {
     ///
     /// ```
     /// use iothub::service::ServiceClient;
-    /// # #[macro_use]
-    /// # extern crate serde_json;
+    /// use serde_json;
     ///
-    /// fn main() {
-    ///     # let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
-    ///     let iothub = ServiceClient::from_connection_string(connection_string, 3600).expect("Failed to create the ServiceClient!");
-    ///     let twin = iothub.replace_module_twin("some-device", "some-module")
-    ///                  .tag("TagName", "TagValue")
-    ///                  .properties(json!({"PropertyName": "PropertyValue"}))
-    ///                  .execute();
-    /// }
+    ///# let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
+    /// let iothub = ServiceClient::from_connection_string(connection_string, 3600).expect("Failed to create the ServiceClient!");
+    /// let twin = iothub.replace_module_twin("some-device", "some-module")
+    ///              .tag("TagName", "TagValue")
+    ///              .properties(serde_json::json!({"PropertyName": "PropertyValue"}))
+    ///              .execute();
     /// ```
     pub fn replace_module_twin<S, T>(
         &self,
@@ -371,21 +378,19 @@ impl ServiceClient {
     {
         DesiredTwinBuilder::new(&self, device_id.into(), Some(module_id.into()), Method::PUT)
     }
+
     /// Update the device twin of a given device
     ///
     /// ```
     /// use iothub::service::ServiceClient;
-    /// # #[macro_use]
-    /// # extern crate serde_json;
+    /// use serde_json;
     ///
-    /// fn main() {
-    ///     # let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
-    ///     let iothub = ServiceClient::from_connection_string(connection_string, 3600).expect("Failed to create the ServiceClient!");
-    ///     let twin = iothub.update_device_twin("some-device")
-    ///                  .tag("TagName", "TagValue")
-    ///                  .properties(json!({"PropertyName": "PropertyValue"}))
-    ///                  .execute();
-    /// }
+    /// # let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
+    /// let iothub = ServiceClient::from_connection_string(connection_string, 3600).expect("Failed to create the ServiceClient!");
+    /// let twin = iothub.update_device_twin("some-device")
+    ///              .tag("TagName", "TagValue")
+    ///              .properties(serde_json::json!({"PropertyName": "PropertyValue"}))
+    ///              .execute();
     /// ```
     pub fn update_device_twin<S>(&self, device_id: S) -> DesiredTwinBuilder<'_, DeviceTwin>
     where
@@ -398,17 +403,14 @@ impl ServiceClient {
     ///
     /// ```
     /// use iothub::service::ServiceClient;
-    /// # #[macro_use]
-    /// # extern crate serde_json;
+    /// use serde_json;
     ///
-    /// fn main() {
-    ///     # let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
-    ///     let iothub = ServiceClient::from_connection_string(connection_string, 3600).expect("Failed to create the ServiceClient!");
-    ///     let twin = iothub.replace_device_twin("some-device")
-    ///                  .tag("TagName", "TagValue")
-    ///                  .properties(json!({"PropertyName": "PropertyValue"}))
-    ///                  .execute();
-    /// }
+    /// # let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
+    /// let iothub = ServiceClient::from_connection_string(connection_string, 3600).expect("Failed to create the ServiceClient!");
+    /// let twin = iothub.replace_device_twin("some-device")
+    ///              .tag("TagName", "TagValue")
+    ///              .properties(serde_json::json!({"PropertyName": "PropertyValue"}))
+    ///              .execute();
     /// ```
     pub fn replace_device_twin<S>(&self, device_id: S) -> DesiredTwinBuilder<'_, DeviceTwin>
     where

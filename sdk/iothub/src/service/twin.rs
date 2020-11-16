@@ -1,95 +1,42 @@
 use azure_core::errors::{extract_status_headers_and_body, AzureError, UnexpectedHTTPResult};
 use hyper::{Body, Client, Method, Request, StatusCode};
 use hyper_tls::HttpsConnector;
-use serde::de::{self};
-use serde::{Deserialize, Deserializer};
+use serde::de::DeserializeOwned;
+use serde::Deserialize;
 use std::collections::HashMap;
 use std::marker::PhantomData;
 
 use crate::service::{ServiceClient, API_VERSION};
 
 /// AuthenticationType of a module or device
-#[derive(Debug)]
+#[derive(Debug, Deserialize)]
 pub enum AuthenticationType {
+    #[serde(rename = "certificate")]
     Certificate,
+    #[serde(rename = "Authority")]
     Authority,
+    #[serde(rename = "none")]
     None,
+    #[serde(rename = "sas")]
     SAS,
+    #[serde(rename = "selfSigned")]
     SelfSigned,
 }
 
-impl<'de> Deserialize<'de> for AuthenticationType {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        let s = String::deserialize(deserializer)?;
-        match s.as_str() {
-            "certificate" => Ok(AuthenticationType::Certificate),
-            "sas" => Ok(AuthenticationType::SAS),
-            "Authority" => Ok(AuthenticationType::Authority),
-            "selfSigned" => Ok(AuthenticationType::SelfSigned),
-            "none" => Ok(AuthenticationType::None),
-            _ => Err(de::Error::custom(format!("Expected status to be 'certificate','sas','Authority','selfSigned' or 'none' but received: {}", s))),
-        }
-    }
-}
-
 /// The connection state of a module or device
-#[derive(Debug)]
+#[derive(Debug, Deserialize)]
 pub enum ConnectionState {
     Connected,
     Disconnected,
 }
 
-impl std::fmt::Display for ConnectionState {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        match self {
-            ConnectionState::Connected => write!(f, "connected"),
-            ConnectionState::Disconnected => write!(f, "disconnected"),
-        }
-    }
-}
-
-impl<'de> Deserialize<'de> for ConnectionState {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        let s = String::deserialize(deserializer)?;
-        match s.as_str() {
-            "Connected" => Ok(ConnectionState::Connected),
-            "Disconnected" => Ok(ConnectionState::Disconnected),
-            _ => Err(de::Error::custom(format!(
-                "Expected status to be 'Connected' or 'Disconnected' but received: {}",
-                s
-            ))),
-        }
-    }
-}
-
 /// Device or module status
-#[derive(Debug)]
+#[derive(Deserialize, Debug)]
 pub enum Status {
+    #[serde(rename = "disabled")]
     Disabled,
+    #[serde(rename = "enabled")]
     Enabled,
-}
-
-impl<'de> Deserialize<'de> for Status {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        let s = String::deserialize(deserializer)?;
-        match s.as_str() {
-            "disabled" => Ok(Status::Disabled),
-            "enabled" => Ok(Status::Enabled),
-            _ => Err(de::Error::custom(format!(
-                "Expected status to be enabled or disabled but received: {}",
-                s
-            ))),
-        }
-    }
 }
 
 #[derive(Deserialize, Debug)]
@@ -156,7 +103,7 @@ struct DesiredTwin {
 
 pub struct DesiredTwinBuilder<'a, R>
 where
-    for<'de> R: Deserialize<'de>,
+    R: DeserializeOwned,
 {
     service_client: &'a ServiceClient,
     pub(crate) device_id: String,
@@ -170,7 +117,7 @@ where
 
 impl<'a, R> DesiredTwinBuilder<'a, R>
 where
-    for<'de> R: Deserialize<'de>,
+    R: DeserializeOwned,
 {
     pub(crate) fn new(
         service_client: &'a ServiceClient,
@@ -219,20 +166,17 @@ where
     /// # Example
     /// ```
     /// use iothub::service::ServiceClient;
-    /// # #[macro_use]
-    /// # extern crate serde_json;
+    /// use serde_json;
     ///
-    /// fn main() {
-    ///     # let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
-    ///     let iothub = ServiceClient::from_connection_string(connection_string, 3600).expect("Failed to create the ServiceClient!");
-    ///     let twin = iothub.update_device_twin("some-device")
-    ///                  .properties(json!({
-    ///                    "PropertyName": "PropertyValue",
-    ///                    "ParentProperty": {
-    ///                      "ChildProperty": "ChildValue"
-    ///                    }
-    ///                  }));
-    /// }
+    /// # let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
+    /// let iothub = ServiceClient::from_connection_string(connection_string, 3600).expect("Failed to create the ServiceClient!");
+    /// let twin = iothub.update_device_twin("some-device")
+    ///              .properties(serde_json::json!({
+    ///                "PropertyName": "PropertyValue",
+    ///                "ParentProperty": {
+    ///                  "ChildProperty": "ChildValue"
+    ///                }
+    ///              }));
     pub fn properties(mut self, desired_properties: serde_json::Value) -> Self {
         self.desired_properties = Some(desired_properties);
         self
@@ -260,23 +204,20 @@ where
     ///
     /// ```
     /// use iothub::service::ServiceClient;
-    /// # #[macro_use]
-    /// # extern crate serde_json;
+    /// use serde_json;
     ///
-    /// fn main() {
-    ///     # let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
-    ///     let iothub = ServiceClient::from_connection_string(connection_string, 3600).expect("Failed to create the ServiceClient!");
-    ///     let twin = iothub.update_device_twin("some-device")
-    ///                  .tag("TagName", "TagValue")
-    ///                  .properties(json!({"PropertyName": "PropertyValue"}))
-    ///                  .execute();
-    /// }
+    /// # let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
+    /// let iothub = ServiceClient::from_connection_string(connection_string, 3600).expect("Failed to create the ServiceClient!");
+    /// let twin = iothub.update_device_twin("some-device")
+    ///              .tag("TagName", "TagValue")
+    ///              .properties(serde_json::json!({"PropertyName": "PropertyValue"}))
+    ///              .execute();
     /// ```
     pub async fn execute(self) -> Result<R, AzureError> {
         let desired_twin = DesiredTwin {
-            contents: json!({
+            contents: serde_json::json!({
                 "properties": {
-                    "desired": self.desired_properties.unwrap_or_else(|| json!({}))
+                    "desired": self.desired_properties.unwrap_or_else(|| serde_json::json!({}))
                 },
                 "tags": self.desired_tags
             }),
@@ -295,9 +236,12 @@ where
 }
 
 /// Helper function for getting a device/module twin
-async fn get_twin<T>(service_client: &ServiceClient, uri: String) -> Result<T, AzureError>
+pub(crate) async fn get_twin<T>(
+    service_client: &ServiceClient,
+    uri: String,
+) -> Result<T, AzureError>
 where
-    for<'de> T: Deserialize<'de>,
+    T: DeserializeOwned,
 {
     let https = HttpsConnector::new();
     let client = Client::builder().build::<_, hyper::Body>(https);
@@ -321,45 +265,7 @@ where
     Ok(serde_json::from_slice(&whole_body)?)
 }
 
-/// Get a module twin from a given device and module
-pub(crate) async fn get_module_twin<S, T>(
-    service_client: &ServiceClient,
-    device_id: S,
-    module_id: T,
-) -> Result<ModuleTwin, AzureError>
-where
-    S: Into<String>,
-    T: Into<String>,
-{
-    let uri = format!(
-        "https://{}.azure-devices.net/twins/{}/modules/{}?api-version={}",
-        service_client.iothub_name,
-        device_id.into(),
-        module_id.into(),
-        API_VERSION
-    );
-
-    get_twin(service_client, uri).await
-}
-
-/// Get a device twin from a given device
-pub(crate) async fn get_device_twin<T>(
-    service_client: &ServiceClient,
-    device_id: T,
-) -> Result<DeviceTwin, AzureError>
-where
-    T: Into<String>,
-{
-    let uri = format!(
-        "https://{}.azure-devices.net/twins/{}?api-version={}",
-        service_client.iothub_name,
-        device_id.into(),
-        API_VERSION
-    );
-
-    get_twin(service_client, uri).await
-}
-
+/// Helper function for updating the device/module twin
 async fn update_twin<S, T, U, V>(
     service_client: &ServiceClient,
     method: Method,
