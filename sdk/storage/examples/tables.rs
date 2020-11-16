@@ -24,8 +24,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
     }
 
     let table_client = CloudTable::new(client, "example");
-    let response = table_client.begin_get_all::<MyEntity>().await?;
 
+    let response = table_client.begin_get_all::<MyEntity>().await?;
     println!("{:?}", response.entities);
     println!("{:?}", response.continuation_token);
 
@@ -36,9 +36,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     while let Some(continuation_token) = response.continuation_token {
         println!("we have more data!");
 
-        response = table_client
-            .continue_execution::<MyEntity>(continuation_token)
-            .await?;
+        response = table_client.continue_execution(continuation_token).await?;
         println!("{:?}", response.entities);
         println!("{:?}", response.continuation_token);
     }

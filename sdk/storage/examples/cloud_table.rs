@@ -53,16 +53,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let mut response = cloud_table.begin_get_all::<MyEntity>().await?;
     while let Some(continuation_token) = response.continuation_token {
-        println!("we have more data!");
-
         response = cloud_table.continue_execution(continuation_token).await?;
         println!("segment: {:?}", response.entities.first());
     }
 
     let mut response = cloud_table.begin_get_all::<serde_json::Value>().await?;
     while let Some(continuation_token) = response.continuation_token {
-        println!("we have more data!");
-
         response = cloud_table.continue_execution(continuation_token).await?;
         println!("segment: {:?}", response.entities.first());
     }
