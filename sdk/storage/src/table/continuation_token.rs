@@ -1,7 +1,7 @@
 use azure_core::errors::AzureError;
 use http::HeaderMap;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ContinuationToken {
     pub(crate) query_path: String,
     pub(crate) partition_key: String,
