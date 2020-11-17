@@ -306,7 +306,7 @@ where
             continuation_token
         );
 
-        let path = &continuation_token.new_url[Position::BeforePath..];
+        let path = &continuation_token.new_url[Position::BeforePath..][1..];
 
         let future_response = self.client.request_with_default_header(
             path,
@@ -348,7 +348,7 @@ where
                 let continuation_token = response
                     .continuation_token
                     .clone()
-                    .map(|ct| States::Continuation(ct));
+                    .map(States::Continuation);
 
                 Some((Ok(response), continuation_token))
             },
@@ -382,7 +382,7 @@ where
                 let continuation_token = response
                     .continuation_token
                     .clone()
-                    .map(|ct| States::Continuation(ct));
+                    .map(States::Continuation);
 
                 Some((Ok(response), continuation_token))
             },
