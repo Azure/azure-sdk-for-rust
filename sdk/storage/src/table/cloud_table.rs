@@ -285,7 +285,10 @@ where
         let (headers, body) =
             check_status_extract_headers_and_body(future_response, StatusCode::OK).await?;
 
-        // TODO: extract a valid address
+        // TODO: extract a valid address. this is unnecessary
+        // at the moment because the host part will be replaced
+        // by the client using a valid Azure host and
+        // url::Url does not accept relative URIs.
         Ok((
             url::Url::parse(&format!("http://dummy.org/{}", path.as_str()))?,
             &headers,
