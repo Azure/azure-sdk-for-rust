@@ -12,20 +12,40 @@ where
     pub continuation_token: Option<ContinuationToken>,
 }
 
-impl<T> std::convert::TryFrom<(&str, &HeaderMap, &body::Bytes)> for QueryResult<T>
+impl<T> std::convert::TryFrom<(url::Url, &HeaderMap, &body::Bytes)> for QueryResult<T>
 where
     T: DeserializeOwned,
 {
     type Error = AzureError;
 
-    fn try_from((query_path, headers, body): (&str, &HeaderMap, &body::Bytes)) -> Result<Self, Self::Error> {
+    fn try_from(
+        (url, headers, body): (url::Url, &HeaderMap, &body::Bytes),
+    ) -> Result<Self, Self::Error> {
+        log::debug!("body == {}", std::str::from_utf8(body)?);
 
+        Ok(Self {
+            entities: serde_json::from_slice::<EntityCollection<T>>(body)?.value,
+            continuation_token: ContinuationToken::parse_from_headers_optional(url, headers)?,
+        })
+    }
+}
+
+impl<T> std::convert::TryFrom<(ContinuationToken, &HeaderMap, &body::Bytes)> for QueryResult<T>
+where
+    T: DeserializeOwned,
+{
+    type Error = AzureError;
+
+    fn try_from(
+        (continuation_token, headers, body): (ContinuationToken, &HeaderMap, &body::Bytes),
+    ) -> Result<Self, Self::Error> {
         log::debug!("body == {}", std::str::from_utf8(body)?);
 
         Ok(Self {
             entities: serde_json::from_slice::<EntityCollection<T>>(body)?.value,
             continuation_token: ContinuationToken::parse_from_headers_optional(
-                query_path, headers,
+                continuation_token.new_url,
+                headers,
             )?,
         })
     }

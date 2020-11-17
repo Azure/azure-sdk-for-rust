@@ -11,6 +11,7 @@ use hyper::{header, Method, StatusCode};
 use serde::{de::DeserializeOwned, Serialize};
 use std::convert::TryFrom;
 use std::convert::TryInto;
+use url::Position;
 
 /// Represents a table in the Microsoft Azure Table service.
 #[derive(Clone)]
@@ -284,7 +285,13 @@ where
         let (headers, body) =
             check_status_extract_headers_and_body(future_response, StatusCode::OK).await?;
 
-        Ok((path.as_str(), &headers, &body).try_into()?)
+        // TODO: extract a valid address
+        Ok((
+            url::Url::parse(&format!("http://dummy.org/{}", path.as_str()))?,
+            &headers,
+            &body,
+        )
+            .try_into()?)
     }
 
     pub async fn continue_execution<T>(
@@ -294,25 +301,15 @@ where
     where
         T: DeserializeOwned,
     {
-        log::debug!(
+        println!(
             "continue_execution(continuation_token = {:?})",
             continuation_token
         );
 
-        let path = format!(
-            "{}{}NextPartitionKey={}&NextRowKey={}",
-            continuation_token.query_path,
-            if continuation_token.query_path.contains('?') {
-                '&'
-            } else {
-                '?'
-            },
-            continuation_token.partition_key,
-            continuation_token.row_key,
-        );
+        let path = &continuation_token.new_url[Position::BeforePath..];
 
         let future_response = self.client.request_with_default_header(
-            path.as_str(),
+            path,
             &Method::GET,
             None,
             MetadataDetail::Full, // etag is provided through metadata only
@@ -322,7 +319,7 @@ where
         let (headers, body) =
             check_status_extract_headers_and_body(future_response, StatusCode::OK).await?;
 
-        Ok((continuation_token.query_path.as_str(), &headers, &body).try_into()?)
+        Ok((continuation_token, &headers, &body).try_into()?)
     }
 
     pub fn stream_get_all<'a, T>(

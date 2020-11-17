@@ -206,6 +206,9 @@ quick_error! {
         HeadersNotFound(headers: Vec<String>) {
             display("At least one of these headers must be present: {:?}", headers)
         }
+        UrlQueryParameterNotFound(expected_parameter: String, url: url::Url) {
+            display("The expected query parameter {} was not found in the provided Url: {:?}", expected_parameter, url)
+        }
         ResponseParsingError(err: TraversingError){
             from()
             display("Traversing error: {}", err)
