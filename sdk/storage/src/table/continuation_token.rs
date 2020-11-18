@@ -1,5 +1,6 @@
 use azure_core::errors::AzureError;
 use http::HeaderMap;
+use std::borrow::Cow;
 use url::Url;
 
 const HEADER_NEXTPARTITIONKEY: &str = "x-ms-continuation-NextPartitionKey";
@@ -18,7 +19,7 @@ impl ContinuationToken {
         let mut partition_key_replaced = false;
         let mut row_key_replaced = false;
 
-        let v: Vec<(String, String)> = previous_url
+        let v: Vec<(_, _)> = previous_url
             .query_pairs()
             // filter_map allows us to strip the QUERY_PARAM_NEXTROWKEY
             // if next_row_key is empty.
@@ -26,21 +27,17 @@ impl ContinuationToken {
                 let new_v = match k.as_ref() {
                     QUERY_PARAM_NEXTPARTITIONKEY => {
                         partition_key_replaced = true;
-                        Some(next_partition_key.to_string())
+                        Some(Cow::Borrowed(next_partition_key))
                     }
                     QUERY_PARAM_NEXTROWKEY => {
                         row_key_replaced = true;
-                        if let Some(next_row_key) = next_row_key {
-                            Some(next_row_key.to_string())
-                        } else {
-                            None
-                        }
+                        next_row_key.map(|next_row_key| Cow::Borrowed(next_row_key))
                     }
-                    _ => Some(v.into_owned()),
+                    _ => Some(v),
                 };
 
                 if let Some(new_v) = new_v {
-                    Some((k.into_owned(), new_v))
+                    Some((k, new_v))
                 } else {
                     None
                 }
