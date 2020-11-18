@@ -24,7 +24,7 @@ impl ContinuationToken {
             // filter_map allows us to strip the QUERY_PARAM_NEXTROWKEY
             // if next_row_key is empty.
             .filter_map(|(k, v)| {
-                let new_v = match k.as_ref() {
+                match k.as_ref() {
                     QUERY_PARAM_NEXTPARTITIONKEY => {
                         partition_key_replaced = true;
                         Some(Cow::Borrowed(next_partition_key))
@@ -34,13 +34,8 @@ impl ContinuationToken {
                         next_row_key.map(|next_row_key| Cow::Borrowed(next_row_key))
                     }
                     _ => Some(v),
-                };
-
-                if let Some(new_v) = new_v {
-                    Some((k, new_v))
-                } else {
-                    None
                 }
+                .map(|new_v| (k, new_v))
             })
             .collect();
 
