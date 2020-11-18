@@ -14,26 +14,36 @@ pub struct ContinuationToken {
 }
 
 impl ContinuationToken {
-    pub fn new(previous_url: Url, next_partition_key: &str, next_row_key: &str) -> Self {
+    pub fn new(previous_url: Url, next_partition_key: &str, next_row_key: Option<&str>) -> Self {
         let mut partition_key_replaced = false;
         let mut row_key_replaced = false;
 
         let v: Vec<(String, String)> = previous_url
             .query_pairs()
-            .map(|(k, v)| {
+            // filter_map allows us to strip the QUERY_PARAM_NEXTROWKEY
+            // if next_row_key is empty.
+            .filter_map(|(k, v)| {
                 let new_v = match k.as_ref() {
                     QUERY_PARAM_NEXTPARTITIONKEY => {
                         partition_key_replaced = true;
-                        next_partition_key.to_string()
+                        Some(next_partition_key.to_string())
                     }
                     QUERY_PARAM_NEXTROWKEY => {
                         row_key_replaced = true;
-                        next_row_key.to_string()
+                        if let Some(next_row_key) = next_row_key {
+                            Some(next_row_key.to_string())
+                        } else {
+                            None
+                        }
                     }
-                    _ => v.into_owned(),
+                    _ => Some(v.into_owned()),
                 };
 
-                (k.into_owned(), new_v)
+                if let Some(new_v) = new_v {
+                    Some((k.into_owned(), new_v))
+                } else {
+                    None
+                }
             })
             .collect();
 
@@ -45,9 +55,11 @@ impl ContinuationToken {
                 .append_pair(QUERY_PARAM_NEXTPARTITIONKEY, &next_partition_key);
         }
         if !row_key_replaced {
-            new_url
-                .query_pairs_mut()
-                .append_pair(QUERY_PARAM_NEXTROWKEY, &next_row_key);
+            if let Some(next_row_key) = next_row_key {
+                new_url
+                    .query_pairs_mut()
+                    .append_pair(QUERY_PARAM_NEXTROWKEY, &next_row_key);
+            }
         }
 
         Self {
@@ -115,18 +127,16 @@ impl ContinuationToken {
         previous_url: Url,
         headers: &HeaderMap,
     ) -> Result<Option<Self>, AzureError> {
-        let result = if let (Some(partition_key), Some(row_key)) = (
-            headers.get(HEADER_NEXTPARTITIONKEY),
-            headers.get(HEADER_NEXTROWKEY),
-        ) {
-            println!("partition_key == {:?}", partition_key.to_str());
-            println!("row_key == {:?}", row_key.to_str());
+        let result = if let Some(partition_key) = headers.get(HEADER_NEXTPARTITIONKEY) {
+            debug!("partition_key == {:?}", partition_key.to_str());
 
-            Some(Self::new(
-                previous_url,
-                partition_key.to_str()?,
-                row_key.to_str()?,
-            ))
+            let row_key = match headers.get(HEADER_NEXTROWKEY) {
+                Some(row_key) => Some(row_key.to_str()?),
+                None => None,
+            };
+            debug!("row_key == {:?}", row_key);
+
+            Some(Self::new(previous_url, partition_key.to_str()?, row_key))
         } else {
             None
         };
@@ -146,12 +156,12 @@ mod test {
             "http://www.microsoft.com/?some=value&NextPartitionKey=p1&NextRowKey=r1&someother=cc",
         )
         .unwrap();
-        let c: ContinuationToken = ContinuationToken::new(u, "new_pp", "new_rk");
+        let c: ContinuationToken = ContinuationToken::new(u, "new_pp", Some("new_rk"));
         assert_eq!(&format!("{}", c.new_url()),
             "http://www.microsoft.com/?some=value&NextPartitionKey=new_pp&NextRowKey=new_rk&someother=cc");
 
         let u = Url::parse("https://myaccount.table.core.windows.net/mytable()?$filter=query-expression&$select=comma-separated-property-names").unwrap();
-        let c: ContinuationToken = ContinuationToken::new(u, "new_pp", "new_rk");
+        let c: ContinuationToken = ContinuationToken::new(u, "new_pp", Some("new_rk"));
         assert_eq!(&format!("{}", c.new_url()),
             "https://myaccount.table.core.windows.net/mytable()?%24filter=query-expression&%24select=comma-separated-property-names&NextPartitionKey=new_pp&NextRowKey=new_rk");
 

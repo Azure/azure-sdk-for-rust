@@ -304,7 +304,7 @@ where
     where
         T: DeserializeOwned,
     {
-        println!(
+        log::debug!(
             "continue_execution(continuation_token = {:?})",
             continuation_token
         );
