@@ -224,7 +224,7 @@ fn string_to_sign(
     //      ResourceLink + "\n" +
     //      Date.toLowerCase() + "\n" +
     //      "" + "\n";
-    // Notice the empty string at the end so we need to add two carriage returns
+    // Notice the empty string at the end so we need to add two new lines
 
     format!(
         "{}\n{}\n{}\n{}\n\n",
@@ -297,8 +297,8 @@ fn generate_resource_link(u: &str) -> &str {
 
 /// The cloud with which you want to interact.
 ///
-/// All variants except for [`Custom`](CloudLocation::Custom) require the cosmos account name.
-/// `Custom` requires a valid base URL (e.g. https://custom.documents.azure.com)
+/// All variants require the cosmos account name. `Custom` also requires a valid
+/// base URL (e.g. https://custom.documents.azure.com)
 #[derive(Debug, Clone)]
 enum CloudLocation {
     /// Azure public cloud
@@ -311,7 +311,7 @@ enum CloudLocation {
 }
 
 impl CloudLocation {
-    /// Consumes the location, returning a base URL
+    /// the base URL for a given cloud location
     fn url(&self) -> String {
         match self {
             CloudLocation::Public(account) => format!("https://{}.documents.azure.com", account),
