@@ -40,7 +40,7 @@
     },
     {
       "name": "consistency_level",
-      "field_type": "ConsistencyLevel<'a>",
+      "field_type": "ConsistencyLevel",
       "optional": true,
       "trait_get": "ConsistencyLevelOption<'a>",
       "trait_set": "ConsistencyLevelSupport<'a>",

@@ -29,9 +29,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let authorization_token = AuthorizationToken::new_master(&master_key)?;
 
-    let client = ClientBuilder::new(account, authorization_token)?;
-    let client = client.into_database_client(&database_name);
-    let client = client.into_collection_client(&collection_name);
+    let client = CosmosClient::new(account, authorization_token);
+    let client = client.into_database_client(database_name);
+    let client = client.into_collection_client(collection_name);
 
     let mut doc = Document::new(MySampleStruct {
         id: Cow::Owned(format!("unique_id{}", 500)),
@@ -56,8 +56,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
         create_document_response
     );
 
-    let document_client =
-        client.with_document_client(&doc.document.id as &str, partition_keys.clone());
+    let document_client = client
+        .clone()
+        .into_document_client(doc.document.id.clone().into_owned(), partition_keys.clone());
 
     let get_document_response = document_client
         .get_document()
@@ -66,7 +67,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .await?;
     println!("get_document_response == {:#?}", get_document_response);
 
-    let document_client = client.with_document_client("ciccia", partition_keys.clone());
+    let document_client = client
+        .clone()
+        .into_document_client("ciccia", partition_keys.clone());
 
     let get_document_response = document_client
         .get_document()

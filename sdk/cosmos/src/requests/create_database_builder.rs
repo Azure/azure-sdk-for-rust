@@ -13,19 +13,19 @@ pub struct CreateDatabaseBuilder<'a, DatabaseNameSet>
 where
     DatabaseNameSet: ToAssign,
 {
-    cosmos_client: &'a dyn CosmosClient,
+    cosmos_client: &'a CosmosClient,
     p_database_name: PhantomData<DatabaseNameSet>,
     database_name: Option<&'a dyn DatabaseName>,
     user_agent: Option<&'a str>,
     activity_id: Option<&'a str>,
-    consistency_level: Option<ConsistencyLevel<'a>>,
+    consistency_level: Option<ConsistencyLevel>,
 }
 
 impl<'a> CreateDatabaseBuilder<'a, No> {
-    pub(crate) fn new(cosmos_client: &'a dyn CosmosClient) -> CreateDatabaseBuilder<'a, No> {
-        CreateDatabaseBuilder {
+    pub(crate) fn new(cosmos_client: &'a CosmosClient) -> Self {
+        Self {
             cosmos_client,
-            p_database_name: PhantomData {},
+            p_database_name: PhantomData,
             database_name: None,
             user_agent: None,
             activity_id: None,
@@ -38,7 +38,7 @@ impl<'a, DatabaseNameSet> CosmosClientRequired<'a> for CreateDatabaseBuilder<'a,
 where
     DatabaseNameSet: ToAssign,
 {
-    fn cosmos_client(&self) -> &'a dyn CosmosClient {
+    fn cosmos_client(&self) -> &'a CosmosClient {
         self.cosmos_client
     }
 }
@@ -74,7 +74,7 @@ impl<'a, DatabaseNameSet> ConsistencyLevelOption<'a> for CreateDatabaseBuilder<'
 where
     DatabaseNameSet: ToAssign,
 {
-    fn consistency_level(&self) -> Option<ConsistencyLevel<'a>> {
+    fn consistency_level(&self) -> Option<ConsistencyLevel> {
         self.consistency_level.clone()
     }
 }
@@ -136,7 +136,7 @@ where
 {
     type O = CreateDatabaseBuilder<'a, DatabaseNameSet>;
 
-    fn with_consistency_level(self, consistency_level: ConsistencyLevel<'a>) -> Self::O {
+    fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self::O {
         CreateDatabaseBuilder {
             cosmos_client: self.cosmos_client,
             p_database_name: PhantomData {},

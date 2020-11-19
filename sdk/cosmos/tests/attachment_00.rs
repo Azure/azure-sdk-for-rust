@@ -37,7 +37,7 @@ async fn attachment() -> Result<(), Box<dyn Error>> {
         .await
         .unwrap();
 
-    let database_client = client.with_database_client(DATABASE_NAME);
+    let database_client = client.into_database_client(DATABASE_NAME);
 
     // create a temp collection
     let _create_collection_response = {
@@ -70,7 +70,7 @@ async fn attachment() -> Result<(), Box<dyn Error>> {
             .unwrap()
     };
 
-    let collection_client = database_client.with_collection_client(COLLECTION_NAME);
+    let collection_client = database_client.into_collection_client(COLLECTION_NAME);
 
     let id = format!("unique_id{}", 100);
 
@@ -91,7 +91,7 @@ async fn attachment() -> Result<(), Box<dyn Error>> {
 
     let mut partition_keys = PartitionKeys::new();
     partition_keys.push(doc.document.id)?;
-    let document_client = collection_client.with_document_client(&id, partition_keys);
+    let document_client = collection_client.into_document_client(&id, partition_keys);
 
     // list attachments, there must be none.
     let ret = document_client

@@ -22,10 +22,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let authorization_token = AuthorizationToken::new_master(&master_key)?;
 
-    let client = ClientBuilder::new(account, authorization_token)?;
-    let database_client = client.with_database_client(&database_name);
-    let collection_client = database_client.with_collection_client(&collection_name);
-    let user_client = database_client.with_user_client(&user_name);
+    let client = CosmosClient::new(account, authorization_token);
+    let database_client = client.clone().into_database_client(database_name.clone());
+    let collection_client = database_client
+        .clone()
+        .into_collection_client(collection_name.clone());
+    let user_client = database_client.into_user_client(user_name.clone());
 
     let get_collection_response = collection_client.get_collection().execute().await?;
     println!("get_collection_response == {:#?}", get_collection_response);
@@ -45,7 +47,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     );
 
     // create the first permission!
-    let permission_client = user_client.with_permission_client("matrix");
+    let permission_client = user_client.clone().into_permission_client("matrix");
 
     let permission_mode = PermissionMode::Read(get_collection_response.clone().collection);
 
@@ -70,12 +72,14 @@ async fn main() -> Result<(), Box<dyn Error>> {
         "Replacing authorization_token with {:?}.",
         new_authorization_token
     );
-    let new_client = client.with_auth_token(new_authorization_token);
+    let mut client = client.clone();
+    client.with_auth_token(new_authorization_token);
 
     // let's list the documents with the new auth token
-    let list_documents_response = new_client
-        .with_database_client(&database_name)
-        .with_collection_client(&collection_name)
+    let list_documents_response = client
+        .clone()
+        .into_database_client(database_name.clone())
+        .into_collection_client(collection_name.clone())
         .list_documents()
         .execute::<serde_json::Value>()
         .await
@@ -104,9 +108,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
         document
     );
 
-    match new_client
-        .with_database_client(&database_name)
-        .with_collection_client(&collection_name)
+    match client
+        .clone()
+        .into_database_client(database_name.clone())
+        .into_collection_client(collection_name.clone())
         .create_document()
         .with_is_upsert(true)
         .with_partition_keys(PartitionKeys::new().push("Gianluigi Bombatomica")?)
@@ -140,13 +145,13 @@ async fn main() -> Result<(), Box<dyn Error>> {
         "Replacing authorization_token with {:?}.",
         new_authorization_token
     );
-    let new_client = client.with_auth_token(new_authorization_token);
+    client.with_auth_token(new_authorization_token);
 
     // now we have an "All" authorization_token
     // so the create_document should succeed!
-    let create_document_response = new_client
-        .with_database_client(&database_name)
-        .with_collection_client(&collection_name)
+    let create_document_response = client
+        .into_database_client(database_name)
+        .into_collection_client(collection_name)
         .create_document()
         .with_is_upsert(true)
         .with_partition_keys(PartitionKeys::new().push("Gianluigi Bombatomica")?)

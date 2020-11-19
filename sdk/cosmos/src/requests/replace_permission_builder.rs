@@ -7,30 +7,17 @@ use hyper::StatusCode;
 use std::convert::TryInto;
 
 #[derive(Debug, Clone)]
-pub struct ReplacePermissionBuilder<'a, 'b, C, D, USER>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    USER: UserClient<C, D>,
-{
-    permission_client: &'a dyn PermissionClient<C, D, USER>,
+pub struct ReplacePermissionBuilder<'a, 'b> {
+    permission_client: &'a PermissionClient,
     expiry_seconds: u64,
     user_agent: Option<&'b str>,
     activity_id: Option<&'b str>,
-    consistency_level: Option<ConsistencyLevel<'b>>,
+    consistency_level: Option<ConsistencyLevel>,
 }
 
-impl<'a, 'b, C, D, USER> ReplacePermissionBuilder<'a, 'b, C, D, USER>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    USER: UserClient<C, D>,
-{
-    #[inline]
-    pub(crate) fn new(
-        permission_client: &'a dyn PermissionClient<C, D, USER>,
-    ) -> ReplacePermissionBuilder<'a, 'b, C, D, USER> {
-        ReplacePermissionBuilder {
+impl<'a, 'b> ReplacePermissionBuilder<'a, 'b> {
+    pub(crate) fn new(permission_client: &'a PermissionClient) -> Self {
+        Self {
             permission_client,
             expiry_seconds: 3600,
             user_agent: None,
@@ -40,158 +27,82 @@ where
     }
 }
 
-impl<'a, 'b, C, D, USER> PermissionClientRequired<'a, C, D, USER>
-    for ReplacePermissionBuilder<'a, 'b, C, D, USER>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    USER: UserClient<C, D>,
-{
-    #[inline]
-    fn permission_client(&self) -> &'a dyn PermissionClient<C, D, USER> {
+impl<'a, 'b> PermissionClientRequired<'a> for ReplacePermissionBuilder<'a, 'b> {
+    fn permission_client(&self) -> &'a PermissionClient {
         self.permission_client
     }
 }
 
-//get mandatory no traits methods
-
-//set mandatory no traits methods
-impl<'a, 'b, C, D, USER> ExpirySecondsOption for ReplacePermissionBuilder<'a, 'b, C, D, USER>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    USER: UserClient<C, D>,
-{
-    #[inline]
+impl<'a, 'b> ExpirySecondsOption for ReplacePermissionBuilder<'a, 'b> {
     fn expiry_seconds(&self) -> u64 {
         self.expiry_seconds
     }
 }
 
-impl<'a, 'b, C, D, USER> UserAgentOption<'b> for ReplacePermissionBuilder<'a, 'b, C, D, USER>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    USER: UserClient<C, D>,
-{
-    #[inline]
+impl<'a, 'b> UserAgentOption<'b> for ReplacePermissionBuilder<'a, 'b> {
     fn user_agent(&self) -> Option<&'b str> {
         self.user_agent
     }
 }
 
-impl<'a, 'b, C, D, USER> ActivityIdOption<'b> for ReplacePermissionBuilder<'a, 'b, C, D, USER>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    USER: UserClient<C, D>,
-{
-    #[inline]
+impl<'a, 'b> ActivityIdOption<'b> for ReplacePermissionBuilder<'a, 'b> {
     fn activity_id(&self) -> Option<&'b str> {
         self.activity_id
     }
 }
 
-impl<'a, 'b, C, D, USER> ConsistencyLevelOption<'b> for ReplacePermissionBuilder<'a, 'b, C, D, USER>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    USER: UserClient<C, D>,
-{
-    #[inline]
-    fn consistency_level(&self) -> Option<ConsistencyLevel<'b>> {
+impl<'a, 'b> ConsistencyLevelOption<'b> for ReplacePermissionBuilder<'a, 'b> {
+    fn consistency_level(&self) -> Option<ConsistencyLevel> {
         self.consistency_level.clone()
     }
 }
 
-impl<'a, 'b, C, D, USER> ExpirySecondsSupport for ReplacePermissionBuilder<'a, 'b, C, D, USER>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    USER: UserClient<C, D>,
-{
-    type O = ReplacePermissionBuilder<'a, 'b, C, D, USER>;
+impl<'a, 'b> ExpirySecondsSupport for ReplacePermissionBuilder<'a, 'b> {
+    type O = Self;
 
-    #[inline]
     fn with_expiry_seconds(self, expiry_seconds: u64) -> Self::O {
-        ReplacePermissionBuilder {
-            permission_client: self.permission_client,
+        Self {
             expiry_seconds,
-            user_agent: self.user_agent,
-            activity_id: self.activity_id,
-            consistency_level: self.consistency_level,
+            ..self
         }
     }
 }
 
-impl<'a, 'b, C, D, USER> UserAgentSupport<'b> for ReplacePermissionBuilder<'a, 'b, C, D, USER>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    USER: UserClient<C, D>,
-{
-    type O = ReplacePermissionBuilder<'a, 'b, C, D, USER>;
+impl<'a, 'b> UserAgentSupport<'b> for ReplacePermissionBuilder<'a, 'b> {
+    type O = Self;
 
-    #[inline]
     fn with_user_agent(self, user_agent: &'b str) -> Self::O {
-        ReplacePermissionBuilder {
-            permission_client: self.permission_client,
-            expiry_seconds: self.expiry_seconds,
+        Self {
             user_agent: Some(user_agent),
-            activity_id: self.activity_id,
-            consistency_level: self.consistency_level,
+            ..self
         }
     }
 }
 
-impl<'a, 'b, C, D, USER> ActivityIdSupport<'b> for ReplacePermissionBuilder<'a, 'b, C, D, USER>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    USER: UserClient<C, D>,
-{
-    type O = ReplacePermissionBuilder<'a, 'b, C, D, USER>;
+impl<'a, 'b> ActivityIdSupport<'b> for ReplacePermissionBuilder<'a, 'b> {
+    type O = Self;
 
-    #[inline]
     fn with_activity_id(self, activity_id: &'b str) -> Self::O {
-        ReplacePermissionBuilder {
-            permission_client: self.permission_client,
-            expiry_seconds: self.expiry_seconds,
-            user_agent: self.user_agent,
+        Self {
             activity_id: Some(activity_id),
-            consistency_level: self.consistency_level,
+            ..self
         }
     }
 }
 
-impl<'a, 'b, C, D, USER> ConsistencyLevelSupport<'b>
-    for ReplacePermissionBuilder<'a, 'b, C, D, USER>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    USER: UserClient<C, D>,
-{
-    type O = ReplacePermissionBuilder<'a, 'b, C, D, USER>;
+impl<'a, 'b> ConsistencyLevelSupport<'b> for ReplacePermissionBuilder<'a, 'b> {
+    type O = Self;
 
-    #[inline]
-    fn with_consistency_level(self, consistency_level: ConsistencyLevel<'b>) -> Self::O {
-        ReplacePermissionBuilder {
-            permission_client: self.permission_client,
-            expiry_seconds: self.expiry_seconds,
-            user_agent: self.user_agent,
-            activity_id: self.activity_id,
+    fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self::O {
+        Self {
             consistency_level: Some(consistency_level),
+            ..self
         }
     }
 }
 
 // methods callable only when every mandatory field has been filled
-impl<'a, 'b, C, D, USER> ReplacePermissionBuilder<'a, 'b, C, D, USER>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    USER: UserClient<C, D>,
-{
+impl<'a, 'b> ReplacePermissionBuilder<'a, 'b> {
     pub async fn execute_with_permission<R>(
         &self,
         permission_mode: &PermissionMode<R>,

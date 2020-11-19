@@ -23,9 +23,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let authorization_token = AuthorizationToken::new_master(&master_key)?;
 
-    let client = ClientBuilder::new(&account, authorization_token)?;
-    let client = client.with_database_client(&database_name);
-    let client = client.with_collection_client(&collection_name);
+    let client = CosmosClient::new(account, authorization_token);
+    let client = client.into_database_client(database_name);
+    let client = client.into_collection_client(collection_name);
 
     let mut documents = Vec::new();
 
@@ -63,7 +63,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
         );
 
         client
-            .with_document_client(id, partition_key)
+            .clone()
+            .into_document_client(id.clone(), partition_key)
             .delete_document()
             .execute()
             .await?;

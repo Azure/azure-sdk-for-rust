@@ -35,11 +35,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let authorization_token = AuthorizationToken::new_master(&master_key)?;
 
-    let client = ClientBuilder::new(account, authorization_token)?;
-    let database_client = client.with_database_client(database_name);
-    let collection_client = database_client.with_collection_client(collection_name);
-    let stored_procedure_client =
-        collection_client.with_stored_procedure_client(stored_procedure_name);
+    let client = CosmosClient::new(account, authorization_token);
+    let database_client = client.into_database_client(database_name);
+    let collection_client = database_client.into_collection_client(collection_name);
+    let stored_procedure_client = collection_client
+        .clone()
+        .into_stored_procedure_client(stored_procedure_name);
 
     let list_stored_procedures_response =
         collection_client.list_stored_procedures().execute().await?;

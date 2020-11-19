@@ -24,11 +24,11 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let authorization_token = AuthorizationToken::new_master(&master_key)?;
 
-    let client = ClientBuilder::new(account, authorization_token)?;
+    let client = CosmosClient::new(account, authorization_token);
 
     let ret = client
-        .into_database_client(&database)
-        .into_collection_client(&collection)
+        .into_database_client(database)
+        .into_collection_client(collection)
         .into_stored_procedure_client("test_proc")
         .execute_stored_procedure()
         .with_parameters(Parameters::new().push("Robert")?)
