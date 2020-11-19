@@ -25,9 +25,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let authorization_token = AuthorizationToken::new_master(&master_key)?;
 
     let http_client: Arc<Box<dyn HttpClient>> = Arc::new(Box::new(reqwest::Client::new()));
-    let client = azure_cosmos::client_builder::build_default_client(&account, authorization_token)?
-        .with_http_client(http_client)
-        .build();
+    let client = CosmosStruct::new(http_client, account, authorization_token);
 
     let dbs = client.list_databases().execute().await?;
 

@@ -11,7 +11,6 @@ extern crate azure_core;
 
 pub mod attachment;
 mod authorization_token;
-pub mod client_builder;
 pub mod clients;
 pub mod collection;
 mod consistency_level;
