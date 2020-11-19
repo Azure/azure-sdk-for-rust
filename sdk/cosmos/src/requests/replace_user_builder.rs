@@ -18,7 +18,7 @@ where
     user_name: Option<&'a dyn UserName>,
     user_agent: Option<&'b str>,
     activity_id: Option<&'b str>,
-    consistency_level: Option<ConsistencyLevel<'b>>,
+    consistency_level: Option<ConsistencyLevel>,
 }
 
 impl<'a, 'b, C, D> ReplaceUserBuilder<'a, 'b, C, D, No>
@@ -102,7 +102,7 @@ where
     D: DatabaseClient<C>,
 {
     #[inline]
-    fn consistency_level(&self) -> Option<ConsistencyLevel<'b>> {
+    fn consistency_level(&self) -> Option<ConsistencyLevel> {
         self.consistency_level.clone()
     }
 }
@@ -181,7 +181,7 @@ where
     type O = ReplaceUserBuilder<'a, 'b, C, D, UserNameSet>;
 
     #[inline]
-    fn with_consistency_level(self, consistency_level: ConsistencyLevel<'b>) -> Self::O {
+    fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self::O {
         ReplaceUserBuilder {
             user_client: self.user_client,
             p_user_name: PhantomData {},

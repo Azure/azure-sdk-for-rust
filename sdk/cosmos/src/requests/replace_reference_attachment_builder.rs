@@ -23,7 +23,7 @@ where
     media: Option<&'b str>,
     user_agent: Option<&'b str>,
     activity_id: Option<&'b str>,
-    consistency_level: Option<ConsistencyLevel<'b>>,
+    consistency_level: Option<ConsistencyLevel>,
 }
 
 impl<'a, 'b, C, D, COLL, DOC> ReplaceReferenceAttachmentBuilder<'a, 'b, C, D, COLL, DOC, No, No>
@@ -160,7 +160,7 @@ where
     DOC: DocumentClient<C, D, COLL>,
 {
     #[inline]
-    fn consistency_level(&self) -> Option<ConsistencyLevel<'b>> {
+    fn consistency_level(&self) -> Option<ConsistencyLevel> {
         self.consistency_level.clone()
     }
 }
@@ -316,7 +316,7 @@ where
     type O = ReplaceReferenceAttachmentBuilder<'a, 'b, C, D, COLL, DOC, ContentTypeSet, MediaSet>;
 
     #[inline]
-    fn with_consistency_level(self, consistency_level: ConsistencyLevel<'b>) -> Self::O {
+    fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self::O {
         ReplaceReferenceAttachmentBuilder {
             attachment_client: self.attachment_client,
             p_content_type: PhantomData {},

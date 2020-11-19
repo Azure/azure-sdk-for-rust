@@ -19,7 +19,7 @@ where
     body: Option<&'a str>,
     user_agent: Option<&'b str>,
     activity_id: Option<&'b str>,
-    consistency_level: Option<ConsistencyLevel<'b>>,
+    consistency_level: Option<ConsistencyLevel>,
 }
 
 impl<'a, 'b, C, D, COLL> CreateStoredProcedureBuilder<'a, 'b, C, D, COLL, No>
@@ -110,7 +110,7 @@ where
     COLL: CollectionClient<C, D>,
 {
     #[inline]
-    fn consistency_level(&self) -> Option<ConsistencyLevel<'b>> {
+    fn consistency_level(&self) -> Option<ConsistencyLevel> {
         self.consistency_level.clone()
     }
 }
@@ -194,7 +194,7 @@ where
     type O = CreateStoredProcedureBuilder<'a, 'b, C, D, COLL, BodySet>;
 
     #[inline]
-    fn with_consistency_level(self, consistency_level: ConsistencyLevel<'b>) -> Self::O {
+    fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self::O {
         CreateStoredProcedureBuilder {
             stored_procedure_client: self.stored_procedure_client,
             p_body: PhantomData {},

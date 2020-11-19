@@ -35,7 +35,7 @@ pub struct CreateCollectionBuilder<
     partition_key: Option<&'a PartitionKey>,
     user_agent: Option<&'a str>,
     activity_id: Option<&'a str>,
-    consistency_level: Option<ConsistencyLevel<'a>>,
+    consistency_level: Option<ConsistencyLevel>,
 }
 
 impl<'a, C> CreateCollectionBuilder<'a, C, No, No, No, No>
@@ -207,7 +207,7 @@ where
     C: CosmosClient,
 {
     #[inline]
-    fn consistency_level(&self) -> Option<ConsistencyLevel<'a>> {
+    fn consistency_level(&self) -> Option<ConsistencyLevel> {
         self.consistency_level.clone()
     }
 }
@@ -444,7 +444,7 @@ where
     >;
 
     #[inline]
-    fn with_consistency_level(self, consistency_level: ConsistencyLevel<'a>) -> Self::O {
+    fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self::O {
         CreateCollectionBuilder {
             database_client: self.database_client,
             p_offer: PhantomData {},

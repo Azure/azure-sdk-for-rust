@@ -200,11 +200,11 @@ pub trait AllowTentativeWritesOption {
 
 pub trait ConsistencyLevelSupport<'a> {
     type O;
-    fn with_consistency_level(self, consistency_level: ConsistencyLevel<'a>) -> Self::O;
+    fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self::O;
 }
 
 pub trait ConsistencyLevelOption<'a> {
-    fn consistency_level(&self) -> Option<ConsistencyLevel<'a>>;
+    fn consistency_level(&self) -> Option<ConsistencyLevel>;
 
     #[must_use]
     fn add_header(&self, builder: Builder) -> Builder {
@@ -217,7 +217,7 @@ pub trait ConsistencyLevelOption<'a> {
             // if we have a Session consistency level we make sure to pass
             // the x-ms-session-token header too.
             if let ConsistencyLevel::Session(session_token) = consistency_level {
-                builder.header(HEADER_SESSION_TOKEN, session_token.as_ref())
+                builder.header(HEADER_SESSION_TOKEN, session_token)
             } else {
                 builder
             }

@@ -14,7 +14,7 @@ where
     stored_procedure_client: &'a dyn StoredProcedureClient<C, D, COLL>,
     user_agent: Option<&'b str>,
     activity_id: Option<&'b str>,
-    consistency_level: Option<ConsistencyLevel<'b>>,
+    consistency_level: Option<ConsistencyLevel>,
 }
 
 impl<'a, 'b, C, D, COLL> DeleteStoredProcedureBuilder<'a, 'b, C, D, COLL>
@@ -84,7 +84,7 @@ where
     COLL: CollectionClient<C, D>,
 {
     #[inline]
-    fn consistency_level(&self) -> Option<ConsistencyLevel<'b>> {
+    fn consistency_level(&self) -> Option<ConsistencyLevel> {
         self.consistency_level.clone()
     }
 }
@@ -137,7 +137,7 @@ where
     type O = DeleteStoredProcedureBuilder<'a, 'b, C, D, COLL>;
 
     #[inline]
-    fn with_consistency_level(self, consistency_level: ConsistencyLevel<'b>) -> Self::O {
+    fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self::O {
         DeleteStoredProcedureBuilder {
             stored_procedure_client: self.stored_procedure_client,
             user_agent: self.user_agent,

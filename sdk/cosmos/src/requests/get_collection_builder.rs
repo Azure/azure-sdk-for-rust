@@ -14,7 +14,7 @@ where
     collection_client: &'a dyn CollectionClient<C, D>,
     user_agent: Option<&'a str>,
     activity_id: Option<&'a str>,
-    consistency_level: Option<ConsistencyLevel<'a>>,
+    consistency_level: Option<ConsistencyLevel>,
 }
 
 impl<'a, C, D> GetCollectionBuilder<'a, C, D>
@@ -77,7 +77,7 @@ where
     D: DatabaseClient<C>,
 {
     #[inline]
-    fn consistency_level(&self) -> Option<ConsistencyLevel<'a>> {
+    fn consistency_level(&self) -> Option<ConsistencyLevel> {
         self.consistency_level.clone()
     }
 }
@@ -126,7 +126,7 @@ where
     type O = GetCollectionBuilder<'a, C, D>;
 
     #[inline]
-    fn with_consistency_level(self, consistency_level: ConsistencyLevel<'a>) -> Self::O {
+    fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self::O {
         GetCollectionBuilder {
             collection_client: self.collection_client,
             user_agent: self.user_agent,

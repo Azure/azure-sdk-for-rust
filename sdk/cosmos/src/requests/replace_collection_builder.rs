@@ -23,7 +23,7 @@ where
     indexing_policy: Option<&'a IndexingPolicy>,
     user_agent: Option<&'b str>,
     activity_id: Option<&'b str>,
-    consistency_level: Option<ConsistencyLevel<'b>>,
+    consistency_level: Option<ConsistencyLevel>,
 }
 
 impl<'a, 'b, C, D> ReplaceCollectionBuilder<'a, 'b, C, D, No, No>
@@ -121,7 +121,7 @@ where
     C: CosmosClient,
     D: DatabaseClient<C>,
 {
-    fn consistency_level(&self) -> Option<ConsistencyLevel<'b>> {
+    fn consistency_level(&self) -> Option<ConsistencyLevel> {
         self.consistency_level.clone()
     }
 }
@@ -230,7 +230,7 @@ where
 {
     type O = ReplaceCollectionBuilder<'a, 'b, C, D, PartitionKeysSet, IndexingPolicySet>;
 
-    fn with_consistency_level(self, consistency_level: ConsistencyLevel<'b>) -> Self::O {
+    fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self::O {
         ReplaceCollectionBuilder {
             collection_client: self.collection_client,
             p_partition_key: PhantomData {},

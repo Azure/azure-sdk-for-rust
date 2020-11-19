@@ -27,7 +27,7 @@ where
     if_modified_since: Option<&'b DateTime<Utc>>,
     user_agent: Option<&'b str>,
     activity_id: Option<&'b str>,
-    consistency_level: Option<ConsistencyLevel<'b>>,
+    consistency_level: Option<ConsistencyLevel>,
     allow_tentative_writes: bool,
 }
 
@@ -179,7 +179,7 @@ where
     D: DatabaseClient<C>,
 {
     #[inline]
-    fn consistency_level(&self) -> Option<ConsistencyLevel<'b>> {
+    fn consistency_level(&self) -> Option<ConsistencyLevel> {
         self.consistency_level.clone()
     }
 }
@@ -410,7 +410,7 @@ where
     type O = ReplaceDocumentBuilder<'a, 'b, C, D, PartitionKeysSet, DocumentIdSet>;
 
     #[inline]
-    fn with_consistency_level(self, consistency_level: ConsistencyLevel<'b>) -> Self::O {
+    fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self::O {
         ReplaceDocumentBuilder {
             collection_client: self.collection_client,
             p_partition_keys: PhantomData {},
