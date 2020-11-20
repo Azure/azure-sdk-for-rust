@@ -5,29 +5,16 @@ use http::StatusCode;
 use std::convert::TryInto;
 
 #[derive(Debug, Clone)]
-pub struct DeleteUserDefinedFunctionBuilder<'a, 'b, C, D, COLL>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-{
-    user_defined_function_client: &'a dyn UserDefinedFunctionClient<C, D, COLL>,
+pub struct DeleteUserDefinedFunctionBuilder<'a, 'b> {
+    user_defined_function_client: &'a UserDefinedFunctionClient,
     user_agent: Option<&'b str>,
     activity_id: Option<&'b str>,
     consistency_level: Option<ConsistencyLevel>,
 }
 
-impl<'a, 'b, C, D, COLL> DeleteUserDefinedFunctionBuilder<'a, 'b, C, D, COLL>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-{
-    #[inline]
-    pub(crate) fn new(
-        user_defined_function_client: &'a dyn UserDefinedFunctionClient<C, D, COLL>,
-    ) -> DeleteUserDefinedFunctionBuilder<'a, 'b, C, D, COLL> {
-        DeleteUserDefinedFunctionBuilder {
+impl<'a, 'b> DeleteUserDefinedFunctionBuilder<'a, 'b> {
+    pub(crate) fn new(user_defined_function_client: &'a UserDefinedFunctionClient) -> Self {
+        Self {
             user_defined_function_client,
             user_agent: None,
             activity_id: None,
@@ -36,128 +23,65 @@ where
     }
 }
 
-impl<'a, 'b, C, D, COLL> UserDefinedFunctionClientRequired<'a, C, D, COLL>
-    for DeleteUserDefinedFunctionBuilder<'a, 'b, C, D, COLL>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-{
-    #[inline]
-    fn user_defined_function_client(&self) -> &'a dyn UserDefinedFunctionClient<C, D, COLL> {
+impl<'a, 'b> UserDefinedFunctionClientRequired<'a> for DeleteUserDefinedFunctionBuilder<'a, 'b> {
+    fn user_defined_function_client(&self) -> &'a UserDefinedFunctionClient {
         self.user_defined_function_client
     }
 }
 
-//get mandatory no traits methods
-
-//set mandatory no traits methods
-impl<'a, 'b, C, D, COLL> UserAgentOption<'b>
-    for DeleteUserDefinedFunctionBuilder<'a, 'b, C, D, COLL>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-{
-    #[inline]
+impl<'a, 'b> UserAgentOption<'b> for DeleteUserDefinedFunctionBuilder<'a, 'b> {
     fn user_agent(&self) -> Option<&'b str> {
         self.user_agent
     }
 }
 
-impl<'a, 'b, C, D, COLL> ActivityIdOption<'b>
-    for DeleteUserDefinedFunctionBuilder<'a, 'b, C, D, COLL>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-{
-    #[inline]
+impl<'a, 'b> ActivityIdOption<'b> for DeleteUserDefinedFunctionBuilder<'a, 'b> {
     fn activity_id(&self) -> Option<&'b str> {
         self.activity_id
     }
 }
 
-impl<'a, 'b, C, D, COLL> ConsistencyLevelOption<'b>
-    for DeleteUserDefinedFunctionBuilder<'a, 'b, C, D, COLL>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-{
-    #[inline]
+impl<'a, 'b> ConsistencyLevelOption<'b> for DeleteUserDefinedFunctionBuilder<'a, 'b> {
     fn consistency_level(&self) -> Option<ConsistencyLevel> {
         self.consistency_level.clone()
     }
 }
 
-impl<'a, 'b, C, D, COLL> UserAgentSupport<'b>
-    for DeleteUserDefinedFunctionBuilder<'a, 'b, C, D, COLL>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-{
-    type O = DeleteUserDefinedFunctionBuilder<'a, 'b, C, D, COLL>;
+impl<'a, 'b> UserAgentSupport<'b> for DeleteUserDefinedFunctionBuilder<'a, 'b> {
+    type O = Self;
 
-    #[inline]
     fn with_user_agent(self, user_agent: &'b str) -> Self::O {
-        DeleteUserDefinedFunctionBuilder {
-            user_defined_function_client: self.user_defined_function_client,
+        Self {
             user_agent: Some(user_agent),
-            activity_id: self.activity_id,
-            consistency_level: self.consistency_level,
+            ..self
         }
     }
 }
 
-impl<'a, 'b, C, D, COLL> ActivityIdSupport<'b>
-    for DeleteUserDefinedFunctionBuilder<'a, 'b, C, D, COLL>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-{
-    type O = DeleteUserDefinedFunctionBuilder<'a, 'b, C, D, COLL>;
+impl<'a, 'b> ActivityIdSupport<'b> for DeleteUserDefinedFunctionBuilder<'a, 'b> {
+    type O = Self;
 
-    #[inline]
     fn with_activity_id(self, activity_id: &'b str) -> Self::O {
-        DeleteUserDefinedFunctionBuilder {
-            user_defined_function_client: self.user_defined_function_client,
-            user_agent: self.user_agent,
+        Self {
             activity_id: Some(activity_id),
-            consistency_level: self.consistency_level,
+            ..self
         }
     }
 }
 
-impl<'a, 'b, C, D, COLL> ConsistencyLevelSupport<'b>
-    for DeleteUserDefinedFunctionBuilder<'a, 'b, C, D, COLL>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-{
-    type O = DeleteUserDefinedFunctionBuilder<'a, 'b, C, D, COLL>;
+impl<'a, 'b> ConsistencyLevelSupport<'b> for DeleteUserDefinedFunctionBuilder<'a, 'b> {
+    type O = Self;
 
-    #[inline]
     fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self::O {
-        DeleteUserDefinedFunctionBuilder {
-            user_defined_function_client: self.user_defined_function_client,
-            user_agent: self.user_agent,
-            activity_id: self.activity_id,
+        Self {
             consistency_level: Some(consistency_level),
+            ..self
         }
     }
 }
 
 // methods callable only when every mandatory field has been filled
-impl<'a, 'b, C, D, COLL> DeleteUserDefinedFunctionBuilder<'a, 'b, C, D, COLL>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-{
+impl<'a, 'b> DeleteUserDefinedFunctionBuilder<'a, 'b> {
     pub async fn execute(&self) -> Result<DeleteUserDefinedFunctionResponse, CosmosError> {
         trace!("DeleteUserDefinedFunctionBuilder::execute called");
 

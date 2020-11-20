@@ -25,18 +25,18 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let authorization_token = AuthorizationToken::new_master(&master_key)?;
 
     let http_client: Arc<Box<dyn HttpClient>> = Arc::new(Box::new(reqwest::Client::new()));
-    let client = CosmosStruct::new(http_client, account, authorization_token);
+    let client = CosmosClient::new(http_client, account, authorization_token);
 
     let dbs = client.list_databases().execute().await?;
 
     for db in dbs.databases {
         println!("database == {:?}", db);
-        let database = client.with_database_client(db.name());
+        let database = client.clone().into_database_client(db.name().to_owned());
 
         let collections = database.list_collections().execute().await?;
         for collection in collections.collections {
             println!("collection == {:?}", collection);
-            let collection_client = database.with_collection_client(collection.id);
+            let collection_client = database.clone().into_collection_client(collection.id);
 
             if collection_client.collection_name().name() == "democ" {
                 println!("democ!");

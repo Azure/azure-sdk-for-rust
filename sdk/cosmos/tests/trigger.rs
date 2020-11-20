@@ -51,7 +51,7 @@ async fn trigger() -> Result<(), CosmosError> {
         .await
         .unwrap();
 
-    let database_client = client.with_database_client(DATABASE_NAME);
+    let database_client = client.into_database_client(DATABASE_NAME);
 
     // create a temp collection
     let _create_collection_response = {
@@ -84,8 +84,8 @@ async fn trigger() -> Result<(), CosmosError> {
             .unwrap()
     };
 
-    let collection_client = database_client.with_collection_client(COLLECTION_NAME);
-    let trigger_client = collection_client.with_trigger_client(TRIGGER_NAME);
+    let collection_client = database_client.into_collection_client(COLLECTION_NAME);
+    let trigger_client = collection_client.into_trigger_client(TRIGGER_NAME);
 
     let ret = trigger_client
         .create_trigger()

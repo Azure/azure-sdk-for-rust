@@ -42,10 +42,10 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let authorization_token = AuthorizationToken::new_master(&master_key)?;
 
     let http_client: Arc<Box<dyn HttpClient>> = Arc::new(Box::new(reqwest::Client::new()));
-    let client = CosmosStruct::new(http_client, account.clone(), authorization_token);
+    let client = CosmosClient::new(http_client, account.clone(), authorization_token);
 
-    let client = client.with_database_client(database_name);
-    let client = client.with_collection_client(collection_name);
+    let client = client.into_database_client(database_name);
+    let client = client.into_collection_client(collection_name);
 
     let query_obj = Query::new(&query);
 

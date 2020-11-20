@@ -7,13 +7,8 @@ use serde::de::DeserializeOwned;
 use std::convert::TryInto;
 
 #[derive(Debug, Clone)]
-pub struct ExecuteStoredProcedureBuilder<'a, 'b, C, D, COLL>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-{
-    stored_procedure_client: &'a dyn StoredProcedureClient<C, D, COLL>,
+pub struct ExecuteStoredProcedureBuilder<'a, 'b> {
+    stored_procedure_client: &'a StoredProcedureClient,
     parameters: Option<&'b Parameters>,
     user_agent: Option<&'b str>,
     activity_id: Option<&'b str>,
@@ -22,17 +17,9 @@ where
     partition_keys: Option<&'b PartitionKeys>,
 }
 
-impl<'a, 'b, C, D, COLL> ExecuteStoredProcedureBuilder<'a, 'b, C, D, COLL>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-{
-    #[inline]
-    pub(crate) fn new(
-        stored_procedure_client: &'a dyn StoredProcedureClient<C, D, COLL>,
-    ) -> ExecuteStoredProcedureBuilder<'a, 'b, C, D, COLL> {
-        ExecuteStoredProcedureBuilder {
+impl<'a, 'b> ExecuteStoredProcedureBuilder<'a, 'b> {
+    pub(crate) fn new(stored_procedure_client: &'a StoredProcedureClient) -> Self {
+        Self {
             stored_procedure_client,
             parameters: None,
             user_agent: None,
@@ -44,239 +31,116 @@ where
     }
 }
 
-impl<'a, 'b, C, D, COLL> StoredProcedureClientRequired<'a, C, D, COLL>
-    for ExecuteStoredProcedureBuilder<'a, 'b, C, D, COLL>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-{
-    #[inline]
-    fn stored_procedure_client(&self) -> &'a dyn StoredProcedureClient<C, D, COLL> {
+impl<'a, 'b> StoredProcedureClientRequired<'a> for ExecuteStoredProcedureBuilder<'a, 'b> {
+    fn stored_procedure_client(&self) -> &'a StoredProcedureClient {
         self.stored_procedure_client
     }
 }
 
-//get mandatory no traits methods
-
-//set mandatory no traits methods
-impl<'a, 'b, C, D, COLL> ParametersOption<'b> for ExecuteStoredProcedureBuilder<'a, 'b, C, D, COLL>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-{
-    #[inline]
+impl<'a, 'b> ParametersOption<'b> for ExecuteStoredProcedureBuilder<'a, 'b> {
     fn parameters(&self) -> Option<&'b Parameters> {
         self.parameters
     }
 }
 
-impl<'a, 'b, C, D, COLL> UserAgentOption<'b> for ExecuteStoredProcedureBuilder<'a, 'b, C, D, COLL>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-{
-    #[inline]
+impl<'a, 'b> UserAgentOption<'b> for ExecuteStoredProcedureBuilder<'a, 'b> {
     fn user_agent(&self) -> Option<&'b str> {
         self.user_agent
     }
 }
 
-impl<'a, 'b, C, D, COLL> ActivityIdOption<'b> for ExecuteStoredProcedureBuilder<'a, 'b, C, D, COLL>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-{
-    #[inline]
+impl<'a, 'b> ActivityIdOption<'b> for ExecuteStoredProcedureBuilder<'a, 'b> {
     fn activity_id(&self) -> Option<&'b str> {
         self.activity_id
     }
 }
 
-impl<'a, 'b, C, D, COLL> ConsistencyLevelOption<'b>
-    for ExecuteStoredProcedureBuilder<'a, 'b, C, D, COLL>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-{
-    #[inline]
+impl<'a, 'b> ConsistencyLevelOption<'b> for ExecuteStoredProcedureBuilder<'a, 'b> {
     fn consistency_level(&self) -> Option<ConsistencyLevel> {
         self.consistency_level.clone()
     }
 }
 
-impl<'a, 'b, C, D, COLL> AllowTentativeWritesOption
-    for ExecuteStoredProcedureBuilder<'a, 'b, C, D, COLL>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-{
-    #[inline]
+impl<'a, 'b> AllowTentativeWritesOption for ExecuteStoredProcedureBuilder<'a, 'b> {
     fn allow_tentative_writes(&self) -> bool {
         self.allow_tentative_writes
     }
 }
 
-impl<'a, 'b, C, D, COLL> PartitionKeysOption<'b>
-    for ExecuteStoredProcedureBuilder<'a, 'b, C, D, COLL>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-{
-    #[inline]
+impl<'a, 'b> PartitionKeysOption<'b> for ExecuteStoredProcedureBuilder<'a, 'b> {
     fn partition_keys(&self) -> Option<&'b PartitionKeys> {
         self.partition_keys
     }
 }
 
-impl<'a, 'b, C, D, COLL> ParametersSupport<'b> for ExecuteStoredProcedureBuilder<'a, 'b, C, D, COLL>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-{
-    type O = ExecuteStoredProcedureBuilder<'a, 'b, C, D, COLL>;
+impl<'a, 'b> ParametersSupport<'b> for ExecuteStoredProcedureBuilder<'a, 'b> {
+    type O = Self;
 
-    #[inline]
     fn with_parameters(self, parameters: &'b Parameters) -> Self::O {
-        ExecuteStoredProcedureBuilder {
-            stored_procedure_client: self.stored_procedure_client,
+        Self {
             parameters: Some(parameters),
-            user_agent: self.user_agent,
-            activity_id: self.activity_id,
-            consistency_level: self.consistency_level,
-            allow_tentative_writes: self.allow_tentative_writes,
-            partition_keys: self.partition_keys,
+            ..self
         }
     }
 }
 
-impl<'a, 'b, C, D, COLL> UserAgentSupport<'b> for ExecuteStoredProcedureBuilder<'a, 'b, C, D, COLL>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-{
-    type O = ExecuteStoredProcedureBuilder<'a, 'b, C, D, COLL>;
+impl<'a, 'b> UserAgentSupport<'b> for ExecuteStoredProcedureBuilder<'a, 'b> {
+    type O = Self;
 
-    #[inline]
     fn with_user_agent(self, user_agent: &'b str) -> Self::O {
-        ExecuteStoredProcedureBuilder {
-            stored_procedure_client: self.stored_procedure_client,
-            parameters: self.parameters,
+        Self {
             user_agent: Some(user_agent),
-            activity_id: self.activity_id,
-            consistency_level: self.consistency_level,
-            allow_tentative_writes: self.allow_tentative_writes,
-            partition_keys: self.partition_keys,
+            ..self
         }
     }
 }
 
-impl<'a, 'b, C, D, COLL> ActivityIdSupport<'b> for ExecuteStoredProcedureBuilder<'a, 'b, C, D, COLL>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-{
-    type O = ExecuteStoredProcedureBuilder<'a, 'b, C, D, COLL>;
+impl<'a, 'b> ActivityIdSupport<'b> for ExecuteStoredProcedureBuilder<'a, 'b> {
+    type O = Self;
 
-    #[inline]
     fn with_activity_id(self, activity_id: &'b str) -> Self::O {
         ExecuteStoredProcedureBuilder {
-            stored_procedure_client: self.stored_procedure_client,
-            parameters: self.parameters,
-            user_agent: self.user_agent,
             activity_id: Some(activity_id),
-            consistency_level: self.consistency_level,
-            allow_tentative_writes: self.allow_tentative_writes,
-            partition_keys: self.partition_keys,
+            ..self
         }
     }
 }
 
-impl<'a, 'b, C, D, COLL> ConsistencyLevelSupport<'b>
-    for ExecuteStoredProcedureBuilder<'a, 'b, C, D, COLL>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-{
-    type O = ExecuteStoredProcedureBuilder<'a, 'b, C, D, COLL>;
+impl<'a, 'b> ConsistencyLevelSupport<'b> for ExecuteStoredProcedureBuilder<'a, 'b> {
+    type O = Self;
 
-    #[inline]
     fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self::O {
-        ExecuteStoredProcedureBuilder {
-            stored_procedure_client: self.stored_procedure_client,
-            parameters: self.parameters,
-            user_agent: self.user_agent,
-            activity_id: self.activity_id,
+        Self {
             consistency_level: Some(consistency_level),
-            allow_tentative_writes: self.allow_tentative_writes,
-            partition_keys: self.partition_keys,
+            ..self
         }
     }
 }
 
-impl<'a, 'b, C, D, COLL> AllowTentativeWritesSupport
-    for ExecuteStoredProcedureBuilder<'a, 'b, C, D, COLL>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-{
-    type O = ExecuteStoredProcedureBuilder<'a, 'b, C, D, COLL>;
+impl<'a, 'b> AllowTentativeWritesSupport for ExecuteStoredProcedureBuilder<'a, 'b> {
+    type O = Self;
 
-    #[inline]
     fn with_allow_tentative_writes(self, allow_tentative_writes: bool) -> Self::O {
-        ExecuteStoredProcedureBuilder {
-            stored_procedure_client: self.stored_procedure_client,
-            parameters: self.parameters,
-            user_agent: self.user_agent,
-            activity_id: self.activity_id,
-            consistency_level: self.consistency_level,
+        Self {
             allow_tentative_writes,
-            partition_keys: self.partition_keys,
+            ..self
         }
     }
 }
 
-impl<'a, 'b, C, D, COLL> PartitionKeysSupport<'b>
-    for ExecuteStoredProcedureBuilder<'a, 'b, C, D, COLL>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-{
-    type O = ExecuteStoredProcedureBuilder<'a, 'b, C, D, COLL>;
+impl<'a, 'b> PartitionKeysSupport<'b> for ExecuteStoredProcedureBuilder<'a, 'b> {
+    type O = Self;
 
-    #[inline]
     fn with_partition_keys(self, partition_keys: &'b PartitionKeys) -> Self::O {
-        ExecuteStoredProcedureBuilder {
-            stored_procedure_client: self.stored_procedure_client,
-            parameters: self.parameters,
-            user_agent: self.user_agent,
-            activity_id: self.activity_id,
-            consistency_level: self.consistency_level,
-            allow_tentative_writes: self.allow_tentative_writes,
+        Self {
             partition_keys: Some(partition_keys),
+            ..self
         }
     }
 }
 
 // methods callable only when every mandatory field has been filled
-impl<'a, 'b, C, D, COLL> ExecuteStoredProcedureBuilder<'a, 'b, C, D, COLL>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-{
+impl<'a, 'b> ExecuteStoredProcedureBuilder<'a, 'b> {
     pub async fn execute<T>(&self) -> Result<ExecuteStoredProcedureResponse<T>, CosmosError>
     where
         T: DeserializeOwned,

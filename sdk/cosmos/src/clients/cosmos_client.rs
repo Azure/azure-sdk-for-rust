@@ -1,10 +1,7 @@
-use crate::clients::DatabaseStruct;
+use super::DatabaseClient;
 use crate::headers::*;
 use crate::requests;
-use crate::{
-    AuthorizationToken, CosmosClient, HasHttpClient, IntoDatabaseClient, ResourceType,
-    WithDatabaseClient,
-};
+use crate::{AuthorizationToken, ReadonlyString, ResourceType};
 use azure_core::{HttpClient, No};
 use http::request::Builder as RequestBuilder;
 use http::{header, HeaderValue};
@@ -20,14 +17,14 @@ const VERSION: &str = "1.0";
 const TIME_FORMAT: &str = "%a, %d %h %Y %T GMT";
 
 #[derive(Debug, Clone)]
-pub struct CosmosStruct {
+pub struct CosmosClient {
     http_client: Arc<Box<dyn HttpClient>>,
     auth_token: AuthorizationToken,
     cloud_location: CloudLocation,
 }
 
-impl CosmosStruct {
-    /// Create a new `CosmosStruct` which connects to the account's instance in the public Azure cloud.
+impl CosmosClient {
+    /// Create a new `CosmosClient` which connects to the account's instance in the public Azure cloud.
     pub fn new(
         http_client: Arc<Box<dyn HttpClient>>,
         account: String,
@@ -111,18 +108,16 @@ impl CosmosStruct {
             .header(HEADER_VERSION, HeaderValue::from_static(AZURE_VERSION))
             .header(header::AUTHORIZATION, signature)
     }
-}
 
-impl CosmosClient for CosmosStruct {
-    fn create_database(&self) -> requests::CreateDatabaseBuilder<'_, No> {
+    pub fn create_database(&self) -> requests::CreateDatabaseBuilder<'_, No> {
         requests::CreateDatabaseBuilder::new(self)
     }
 
-    fn list_databases(&self) -> requests::ListDatabasesBuilder<'_> {
+    pub fn list_databases(&self) -> requests::ListDatabasesBuilder<'_> {
         requests::ListDatabasesBuilder::new(self)
     }
 
-    fn prepare_request(
+    pub fn prepare_request(
         &self,
         uri_path: &str,
         http_method: http::Method,
@@ -142,32 +137,13 @@ impl CosmosClient for CosmosStruct {
         };
         self.prepare_request_with_signature(uri_path, http_method, &time, &auth)
     }
-}
 
-impl HasHttpClient for CosmosStruct {
-    fn http_client(&self) -> &dyn HttpClient {
+    pub fn into_database_client<S: Into<ReadonlyString>>(self, database_name: S) -> DatabaseClient {
+        DatabaseClient::new(self, database_name)
+    }
+
+    pub fn http_client(&self) -> &dyn HttpClient {
         self.http_client.as_ref().as_ref()
-    }
-}
-
-impl<'a> IntoDatabaseClient<'a, Self, DatabaseStruct<'a, Self>> for CosmosStruct {
-    fn into_database_client<IntoCowStr>(self, database_name: IntoCowStr) -> DatabaseStruct<'a, Self>
-    where
-        IntoCowStr: Into<Cow<'a, str>>,
-    {
-        DatabaseStruct::new(Cow::Owned(self), database_name.into())
-    }
-}
-
-impl<'a> WithDatabaseClient<'a, Self, DatabaseStruct<'a, Self>> for CosmosStruct {
-    fn with_database_client<IntoCowStr>(
-        &'a self,
-        database_name: IntoCowStr,
-    ) -> DatabaseStruct<'a, Self>
-    where
-        IntoCowStr: Into<Cow<'a, str>>,
-    {
-        DatabaseStruct::new(Cow::Borrowed(self), database_name.into())
     }
 }
 
@@ -196,7 +172,6 @@ fn generate_authorization(
             AuthorizationToken::Resource(key) => Cow::Borrowed(key),
         },
     );
-
     debug!(
         "generate_authorization::str_unencoded == {:?}",
         str_unencoded

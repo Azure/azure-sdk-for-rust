@@ -9,13 +9,8 @@ use http::StatusCode;
 use std::convert::TryInto;
 
 #[derive(Debug, Clone)]
-pub struct DeleteDocumentBuilder<'a, C, D, COLL>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-{
-    document_client: &'a dyn DocumentClient<C, D, COLL>,
+pub struct DeleteDocumentBuilder<'a> {
+    document_client: &'a DocumentClient,
     if_match_condition: Option<IfMatchCondition<'a>>,
     if_modified_since: Option<&'a DateTime<Utc>>,
     user_agent: Option<&'a str>,
@@ -24,17 +19,9 @@ where
     allow_tentative_writes: bool,
 }
 
-impl<'a, C, D, COLL> DeleteDocumentBuilder<'a, C, D, COLL>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-{
-    #[inline]
-    pub(crate) fn new(
-        document_client: &'a dyn DocumentClient<C, D, COLL>,
-    ) -> DeleteDocumentBuilder<'a, C, D, COLL> {
-        DeleteDocumentBuilder {
+impl<'a> DeleteDocumentBuilder<'a> {
+    pub(crate) fn new(document_client: &'a DocumentClient) -> DeleteDocumentBuilder<'a> {
+        Self {
             document_client,
             if_match_condition: None,
             if_modified_since: None,
@@ -46,233 +33,116 @@ where
     }
 }
 
-impl<'a, C, D, COLL> DocumentClientRequired<'a, C, D, COLL>
-    for DeleteDocumentBuilder<'a, C, D, COLL>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-{
-    #[inline]
-    fn document_client(&self) -> &'a dyn DocumentClient<C, D, COLL> {
+impl<'a> DocumentClientRequired<'a> for DeleteDocumentBuilder<'a> {
+    fn document_client(&self) -> &'a DocumentClient {
         self.document_client
     }
 }
 
-//get mandatory no traits methods
-
-//set mandatory no traits methods
-impl<'a, C, D, COLL> IfMatchConditionOption<'a> for DeleteDocumentBuilder<'a, C, D, COLL>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-{
-    #[inline]
+impl<'a> IfMatchConditionOption<'a> for DeleteDocumentBuilder<'a> {
     fn if_match_condition(&self) -> Option<IfMatchCondition<'a>> {
         self.if_match_condition
     }
 }
 
-impl<'a, C, D, COLL> IfModifiedSinceOption<'a> for DeleteDocumentBuilder<'a, C, D, COLL>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-{
-    #[inline]
+impl<'a> IfModifiedSinceOption<'a> for DeleteDocumentBuilder<'a> {
     fn if_modified_since(&self) -> Option<&'a DateTime<Utc>> {
         self.if_modified_since
     }
 }
 
-impl<'a, C, D, COLL> UserAgentOption<'a> for DeleteDocumentBuilder<'a, C, D, COLL>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-{
-    #[inline]
+impl<'a> UserAgentOption<'a> for DeleteDocumentBuilder<'a> {
     fn user_agent(&self) -> Option<&'a str> {
         self.user_agent
     }
 }
 
-impl<'a, C, D, COLL> ActivityIdOption<'a> for DeleteDocumentBuilder<'a, C, D, COLL>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-{
-    #[inline]
+impl<'a> ActivityIdOption<'a> for DeleteDocumentBuilder<'a> {
     fn activity_id(&self) -> Option<&'a str> {
         self.activity_id
     }
 }
 
-impl<'a, C, D, COLL> ConsistencyLevelOption<'a> for DeleteDocumentBuilder<'a, C, D, COLL>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-{
-    #[inline]
+impl<'a> ConsistencyLevelOption<'a> for DeleteDocumentBuilder<'a> {
     fn consistency_level(&self) -> Option<ConsistencyLevel> {
         self.consistency_level.clone()
     }
 }
 
-impl<'a, C, D, COLL> AllowTentativeWritesOption for DeleteDocumentBuilder<'a, C, D, COLL>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-{
-    #[inline]
+impl<'a> AllowTentativeWritesOption for DeleteDocumentBuilder<'a> {
     fn allow_tentative_writes(&self) -> bool {
         self.allow_tentative_writes
     }
 }
 
-impl<'a, C, D, COLL> IfMatchConditionSupport<'a> for DeleteDocumentBuilder<'a, C, D, COLL>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-{
-    type O = DeleteDocumentBuilder<'a, C, D, COLL>;
+impl<'a> IfMatchConditionSupport<'a> for DeleteDocumentBuilder<'a> {
+    type O = Self;
 
-    #[inline]
     fn with_if_match_condition(self, if_match_condition: IfMatchCondition<'a>) -> Self::O {
-        DeleteDocumentBuilder {
-            document_client: self.document_client,
+        Self {
             if_match_condition: Some(if_match_condition),
-            if_modified_since: self.if_modified_since,
-            user_agent: self.user_agent,
-            activity_id: self.activity_id,
-            consistency_level: self.consistency_level,
-            allow_tentative_writes: self.allow_tentative_writes,
+            ..self
         }
     }
 }
 
-impl<'a, C, D, COLL> IfModifiedSinceSupport<'a> for DeleteDocumentBuilder<'a, C, D, COLL>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-{
-    type O = DeleteDocumentBuilder<'a, C, D, COLL>;
+impl<'a> IfModifiedSinceSupport<'a> for DeleteDocumentBuilder<'a> {
+    type O = Self;
 
-    #[inline]
     fn with_if_modified_since(self, if_modified_since: &'a DateTime<Utc>) -> Self::O {
-        DeleteDocumentBuilder {
-            document_client: self.document_client,
-            if_match_condition: self.if_match_condition,
+        Self {
             if_modified_since: Some(if_modified_since),
-            user_agent: self.user_agent,
-            activity_id: self.activity_id,
-            consistency_level: self.consistency_level,
-            allow_tentative_writes: self.allow_tentative_writes,
+            ..self
         }
     }
 }
 
-impl<'a, C, D, COLL> UserAgentSupport<'a> for DeleteDocumentBuilder<'a, C, D, COLL>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-{
-    type O = DeleteDocumentBuilder<'a, C, D, COLL>;
+impl<'a> UserAgentSupport<'a> for DeleteDocumentBuilder<'a> {
+    type O = Self;
 
-    #[inline]
     fn with_user_agent(self, user_agent: &'a str) -> Self::O {
-        DeleteDocumentBuilder {
-            document_client: self.document_client,
-            if_match_condition: self.if_match_condition,
-            if_modified_since: self.if_modified_since,
+        Self {
             user_agent: Some(user_agent),
-            activity_id: self.activity_id,
-            consistency_level: self.consistency_level,
-            allow_tentative_writes: self.allow_tentative_writes,
+            ..self
         }
     }
 }
 
-impl<'a, C, D, COLL> ActivityIdSupport<'a> for DeleteDocumentBuilder<'a, C, D, COLL>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-{
-    type O = DeleteDocumentBuilder<'a, C, D, COLL>;
+impl<'a> ActivityIdSupport<'a> for DeleteDocumentBuilder<'a> {
+    type O = Self;
 
-    #[inline]
     fn with_activity_id(self, activity_id: &'a str) -> Self::O {
-        DeleteDocumentBuilder {
-            document_client: self.document_client,
-            if_match_condition: self.if_match_condition,
-            if_modified_since: self.if_modified_since,
-            user_agent: self.user_agent,
+        Self {
             activity_id: Some(activity_id),
-            consistency_level: self.consistency_level,
-            allow_tentative_writes: self.allow_tentative_writes,
+            ..self
         }
     }
 }
 
-impl<'a, C, D, COLL> ConsistencyLevelSupport<'a> for DeleteDocumentBuilder<'a, C, D, COLL>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-{
-    type O = DeleteDocumentBuilder<'a, C, D, COLL>;
+impl<'a> ConsistencyLevelSupport<'a> for DeleteDocumentBuilder<'a> {
+    type O = Self;
 
-    #[inline]
     fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self::O {
-        DeleteDocumentBuilder {
-            document_client: self.document_client,
-            if_match_condition: self.if_match_condition,
-            if_modified_since: self.if_modified_since,
-            user_agent: self.user_agent,
-            activity_id: self.activity_id,
+        Self {
             consistency_level: Some(consistency_level),
-            allow_tentative_writes: self.allow_tentative_writes,
+            ..self
         }
     }
 }
 
-impl<'a, C, D, COLL> AllowTentativeWritesSupport for DeleteDocumentBuilder<'a, C, D, COLL>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-{
-    type O = DeleteDocumentBuilder<'a, C, D, COLL>;
+impl<'a> AllowTentativeWritesSupport for DeleteDocumentBuilder<'a> {
+    type O = Self;
 
-    #[inline]
     fn with_allow_tentative_writes(self, allow_tentative_writes: bool) -> Self::O {
-        DeleteDocumentBuilder {
-            document_client: self.document_client,
-            if_match_condition: self.if_match_condition,
-            if_modified_since: self.if_modified_since,
-            user_agent: self.user_agent,
-            activity_id: self.activity_id,
-            consistency_level: self.consistency_level,
+        Self {
             allow_tentative_writes,
+            ..self
         }
     }
 }
 
 // methods callable only when every mandatory field has been filled
-impl<'a, C, D, COLL> DeleteDocumentBuilder<'a, C, D, COLL>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-{
+impl<'a> DeleteDocumentBuilder<'a> {
     pub async fn execute(&self) -> Result<DeleteDocumentResponse, CosmosError> {
         trace!("DeleteDocumentBuilder::execute called");
 

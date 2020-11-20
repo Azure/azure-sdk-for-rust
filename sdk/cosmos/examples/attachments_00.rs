@@ -39,7 +39,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let authorization_token = AuthorizationToken::new_master(&master_key)?;
 
     let http_client: Arc<Box<dyn HttpClient>> = Arc::new(Box::new(reqwest::Client::new()));
-    let client = CosmosStruct::new(http_client, account, authorization_token);
+    let client = CosmosClient::new(http_client, account, authorization_token);
     let client = client.into_database_client(database_name);
     let client = client.into_collection_client(collection_name);
 
@@ -69,7 +69,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let mut partition_keys = PartitionKeys::new();
     partition_keys.push(&doc.document.id)?;
-    let document_client = client.with_document_client(id, partition_keys);
+    let document_client = client.into_document_client(id, partition_keys);
 
     // list attachments
     let ret = document_client.list_attachments().execute().await?;
@@ -77,7 +77,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     // reference attachment
     println!("creating");
-    let attachment_client = document_client.with_attachment_client("myref06");
+    let attachment_client = document_client.clone().into_attachment_client("myref06");
     let resp = attachment_client
         .create_reference()
         .with_consistency_level((&ret).into())
@@ -103,7 +103,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let session_token: ConsistencyLevel = resp.into();
 
     println!("replacing");
-    let attachment_client = document_client.with_attachment_client("myref06");
+    let attachment_client = document_client.clone().into_attachment_client("myref06");
     let resp = attachment_client
         .replace_reference()
         .with_consistency_level(session_token)
@@ -125,7 +125,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     // slug attachment
     println!("creating slug attachment");
-    let attachment_client = document_client.with_attachment_client("slug00");
+    let attachment_client = document_client.into_attachment_client("slug00".to_owned());
     let resp = attachment_client
         .create_slug()
         .with_consistency_level((&resp_delete).into())

@@ -8,23 +8,13 @@ use std::convert::TryInto;
 use std::marker::PhantomData;
 
 #[derive(Debug, Clone)]
-pub struct CreateOrReplaceTriggerBuilder<
-    'a,
-    C,
-    D,
-    COLL,
-    TriggerOperationSet,
-    TriggerTypeSet,
-    BodySet,
-> where
+pub struct CreateOrReplaceTriggerBuilder<'a, TriggerOperationSet, TriggerTypeSet, BodySet>
+where
     TriggerOperationSet: ToAssign,
     TriggerTypeSet: ToAssign,
     BodySet: ToAssign,
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
 {
-    trigger_client: &'a dyn TriggerClient<C, D, COLL>,
+    trigger_client: &'a TriggerClient,
     is_create: bool,
     p_trigger_operation: PhantomData<TriggerOperationSet>,
     p_trigger_type: PhantomData<TriggerTypeSet>,
@@ -37,18 +27,9 @@ pub struct CreateOrReplaceTriggerBuilder<
     consistency_level: Option<ConsistencyLevel>,
 }
 
-impl<'a, C, D, COLL> CreateOrReplaceTriggerBuilder<'a, C, D, COLL, No, No, No>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-{
-    #[inline]
-    pub(crate) fn new(
-        trigger_client: &'a dyn TriggerClient<C, D, COLL>,
-        is_create: bool,
-    ) -> CreateOrReplaceTriggerBuilder<'a, C, D, COLL, No, No, No> {
-        CreateOrReplaceTriggerBuilder {
+impl<'a> CreateOrReplaceTriggerBuilder<'a, No, No, No> {
+    pub(crate) fn new(trigger_client: &'a TriggerClient, is_create: bool) -> Self {
+        Self {
             trigger_client,
             is_create,
             p_trigger_operation: PhantomData {},
@@ -64,129 +45,96 @@ where
     }
 }
 
-impl<'a, C, D, COLL, TriggerOperationSet, TriggerTypeSet, BodySet>
-    TriggerClientRequired<'a, C, D, COLL>
-    for CreateOrReplaceTriggerBuilder<'a, C, D, COLL, TriggerOperationSet, TriggerTypeSet, BodySet>
+impl<'a, TriggerOperationSet, TriggerTypeSet, BodySet> TriggerClientRequired<'a>
+    for CreateOrReplaceTriggerBuilder<'a, TriggerOperationSet, TriggerTypeSet, BodySet>
 where
     TriggerOperationSet: ToAssign,
     TriggerTypeSet: ToAssign,
     BodySet: ToAssign,
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
 {
-    #[inline]
-    fn trigger_client(&self) -> &'a dyn TriggerClient<C, D, COLL> {
+    fn trigger_client(&self) -> &'a TriggerClient {
         self.trigger_client
     }
 }
 
 //set mandatory no traits methods
-impl<'a, C, D, COLL, TriggerTypeSet, BodySet> TriggerOperationRequired
-    for CreateOrReplaceTriggerBuilder<'a, C, D, COLL, Yes, TriggerTypeSet, BodySet>
+impl<'a, TriggerTypeSet, BodySet> TriggerOperationRequired
+    for CreateOrReplaceTriggerBuilder<'a, Yes, TriggerTypeSet, BodySet>
 where
     TriggerTypeSet: ToAssign,
     BodySet: ToAssign,
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
 {
-    #[inline]
     fn trigger_operation(&self) -> TriggerOperation {
         self.trigger_operation
     }
 }
 
-impl<'a, C, D, COLL, TriggerOperationSet, BodySet> TriggerTypeRequired
-    for CreateOrReplaceTriggerBuilder<'a, C, D, COLL, TriggerOperationSet, Yes, BodySet>
+impl<'a, TriggerOperationSet, BodySet> TriggerTypeRequired
+    for CreateOrReplaceTriggerBuilder<'a, TriggerOperationSet, Yes, BodySet>
 where
     TriggerOperationSet: ToAssign,
     BodySet: ToAssign,
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
 {
-    #[inline]
     fn trigger_type(&self) -> TriggerType {
         self.trigger_type
     }
 }
 
-impl<'a, C, D, COLL, TriggerOperationSet, TriggerTypeSet> TriggerBodyRequired<'a>
-    for CreateOrReplaceTriggerBuilder<'a, C, D, COLL, TriggerOperationSet, TriggerTypeSet, Yes>
+impl<'a, TriggerOperationSet, TriggerTypeSet> TriggerBodyRequired<'a>
+    for CreateOrReplaceTriggerBuilder<'a, TriggerOperationSet, TriggerTypeSet, Yes>
 where
     TriggerOperationSet: ToAssign,
     TriggerTypeSet: ToAssign,
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
 {
-    #[inline]
     fn body(&self) -> &'a str {
         self.body.unwrap()
     }
 }
 
-impl<'a, C, D, COLL, TriggerOperationSet, TriggerTypeSet, BodySet> UserAgentOption<'a>
-    for CreateOrReplaceTriggerBuilder<'a, C, D, COLL, TriggerOperationSet, TriggerTypeSet, BodySet>
+impl<'a, TriggerOperationSet, TriggerTypeSet, BodySet> UserAgentOption<'a>
+    for CreateOrReplaceTriggerBuilder<'a, TriggerOperationSet, TriggerTypeSet, BodySet>
 where
     TriggerOperationSet: ToAssign,
     TriggerTypeSet: ToAssign,
     BodySet: ToAssign,
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
 {
-    #[inline]
     fn user_agent(&self) -> Option<&'a str> {
         self.user_agent
     }
 }
 
-impl<'a, C, D, COLL, TriggerOperationSet, TriggerTypeSet, BodySet> ActivityIdOption<'a>
-    for CreateOrReplaceTriggerBuilder<'a, C, D, COLL, TriggerOperationSet, TriggerTypeSet, BodySet>
+impl<'a, TriggerOperationSet, TriggerTypeSet, BodySet> ActivityIdOption<'a>
+    for CreateOrReplaceTriggerBuilder<'a, TriggerOperationSet, TriggerTypeSet, BodySet>
 where
     TriggerOperationSet: ToAssign,
     TriggerTypeSet: ToAssign,
     BodySet: ToAssign,
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
 {
-    #[inline]
     fn activity_id(&self) -> Option<&'a str> {
         self.activity_id
     }
 }
 
-impl<'a, C, D, COLL, TriggerOperationSet, TriggerTypeSet, BodySet> ConsistencyLevelOption<'a>
-    for CreateOrReplaceTriggerBuilder<'a, C, D, COLL, TriggerOperationSet, TriggerTypeSet, BodySet>
+impl<'a, TriggerOperationSet, TriggerTypeSet, BodySet> ConsistencyLevelOption<'a>
+    for CreateOrReplaceTriggerBuilder<'a, TriggerOperationSet, TriggerTypeSet, BodySet>
 where
     TriggerOperationSet: ToAssign,
     TriggerTypeSet: ToAssign,
     BodySet: ToAssign,
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
 {
-    #[inline]
     fn consistency_level(&self) -> Option<ConsistencyLevel> {
         self.consistency_level.clone()
     }
 }
 
-impl<'a, C, D, COLL, TriggerTypeSet, BodySet> TriggerOperationSupport
-    for CreateOrReplaceTriggerBuilder<'a, C, D, COLL, No, TriggerTypeSet, BodySet>
+impl<'a, TriggerTypeSet, BodySet> TriggerOperationSupport
+    for CreateOrReplaceTriggerBuilder<'a, No, TriggerTypeSet, BodySet>
 where
     TriggerTypeSet: ToAssign,
     BodySet: ToAssign,
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
 {
-    type O = CreateOrReplaceTriggerBuilder<'a, C, D, COLL, Yes, TriggerTypeSet, BodySet>;
+    type O = CreateOrReplaceTriggerBuilder<'a, Yes, TriggerTypeSet, BodySet>;
 
-    #[inline]
     fn with_trigger_operation(self, trigger_operation: TriggerOperation) -> Self::O {
         CreateOrReplaceTriggerBuilder {
             trigger_client: self.trigger_client,
@@ -204,18 +152,14 @@ where
     }
 }
 
-impl<'a, C, D, COLL, TriggerOperationSet, BodySet> TriggerTypeSupport
-    for CreateOrReplaceTriggerBuilder<'a, C, D, COLL, TriggerOperationSet, No, BodySet>
+impl<'a, TriggerOperationSet, BodySet> TriggerTypeSupport
+    for CreateOrReplaceTriggerBuilder<'a, TriggerOperationSet, No, BodySet>
 where
     TriggerOperationSet: ToAssign,
     BodySet: ToAssign,
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
 {
-    type O = CreateOrReplaceTriggerBuilder<'a, C, D, COLL, TriggerOperationSet, Yes, BodySet>;
+    type O = CreateOrReplaceTriggerBuilder<'a, TriggerOperationSet, Yes, BodySet>;
 
-    #[inline]
     fn with_trigger_type(self, trigger_type: TriggerType) -> Self::O {
         CreateOrReplaceTriggerBuilder {
             trigger_client: self.trigger_client,
@@ -233,19 +177,14 @@ where
     }
 }
 
-impl<'a, C, D, COLL, TriggerOperationSet, TriggerTypeSet> TriggerBodySupport<'a>
-    for CreateOrReplaceTriggerBuilder<'a, C, D, COLL, TriggerOperationSet, TriggerTypeSet, No>
+impl<'a, TriggerOperationSet, TriggerTypeSet> TriggerBodySupport<'a>
+    for CreateOrReplaceTriggerBuilder<'a, TriggerOperationSet, TriggerTypeSet, No>
 where
     TriggerOperationSet: ToAssign,
     TriggerTypeSet: ToAssign,
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
 {
-    type O =
-        CreateOrReplaceTriggerBuilder<'a, C, D, COLL, TriggerOperationSet, TriggerTypeSet, Yes>;
+    type O = CreateOrReplaceTriggerBuilder<'a, TriggerOperationSet, TriggerTypeSet, Yes>;
 
-    #[inline]
     fn with_body(self, body: &'a str) -> Self::O {
         CreateOrReplaceTriggerBuilder {
             trigger_client: self.trigger_client,
@@ -263,109 +202,64 @@ where
     }
 }
 
-impl<'a, C, D, COLL, TriggerOperationSet, TriggerTypeSet, BodySet> UserAgentSupport<'a>
-    for CreateOrReplaceTriggerBuilder<'a, C, D, COLL, TriggerOperationSet, TriggerTypeSet, BodySet>
+impl<'a, TriggerOperationSet, TriggerTypeSet, BodySet> UserAgentSupport<'a>
+    for CreateOrReplaceTriggerBuilder<'a, TriggerOperationSet, TriggerTypeSet, BodySet>
 where
     TriggerOperationSet: ToAssign,
     TriggerTypeSet: ToAssign,
     BodySet: ToAssign,
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
 {
-    type O =
-        CreateOrReplaceTriggerBuilder<'a, C, D, COLL, TriggerOperationSet, TriggerTypeSet, BodySet>;
+    type O = CreateOrReplaceTriggerBuilder<'a, TriggerOperationSet, TriggerTypeSet, BodySet>;
 
-    #[inline]
     fn with_user_agent(self, user_agent: &'a str) -> Self::O {
-        CreateOrReplaceTriggerBuilder {
-            trigger_client: self.trigger_client,
-            is_create: self.is_create,
-            p_trigger_operation: PhantomData {},
-            p_trigger_type: PhantomData {},
-            p_body: PhantomData {},
-            trigger_operation: self.trigger_operation,
-            trigger_type: self.trigger_type,
-            body: self.body,
+        Self {
             user_agent: Some(user_agent),
-            activity_id: self.activity_id,
-            consistency_level: self.consistency_level,
+            ..self
         }
     }
 }
 
-impl<'a, C, D, COLL, TriggerOperationSet, TriggerTypeSet, BodySet> ActivityIdSupport<'a>
-    for CreateOrReplaceTriggerBuilder<'a, C, D, COLL, TriggerOperationSet, TriggerTypeSet, BodySet>
+impl<'a, TriggerOperationSet, TriggerTypeSet, BodySet> ActivityIdSupport<'a>
+    for CreateOrReplaceTriggerBuilder<'a, TriggerOperationSet, TriggerTypeSet, BodySet>
 where
     TriggerOperationSet: ToAssign,
     TriggerTypeSet: ToAssign,
     BodySet: ToAssign,
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
 {
-    type O =
-        CreateOrReplaceTriggerBuilder<'a, C, D, COLL, TriggerOperationSet, TriggerTypeSet, BodySet>;
+    type O = Self;
 
-    #[inline]
     fn with_activity_id(self, activity_id: &'a str) -> Self::O {
-        CreateOrReplaceTriggerBuilder {
-            trigger_client: self.trigger_client,
-            is_create: self.is_create,
-            p_trigger_operation: PhantomData {},
-            p_trigger_type: PhantomData {},
-            p_body: PhantomData {},
-            trigger_operation: self.trigger_operation,
-            trigger_type: self.trigger_type,
-            body: self.body,
-            user_agent: self.user_agent,
+        Self {
             activity_id: Some(activity_id),
-            consistency_level: self.consistency_level,
+            ..self
         }
     }
 }
 
-impl<'a, C, D, COLL, TriggerOperationSet, TriggerTypeSet, BodySet> ConsistencyLevelSupport<'a>
-    for CreateOrReplaceTriggerBuilder<'a, C, D, COLL, TriggerOperationSet, TriggerTypeSet, BodySet>
+impl<'a, TriggerOperationSet, TriggerTypeSet, BodySet> ConsistencyLevelSupport<'a>
+    for CreateOrReplaceTriggerBuilder<'a, TriggerOperationSet, TriggerTypeSet, BodySet>
 where
     TriggerOperationSet: ToAssign,
     TriggerTypeSet: ToAssign,
     BodySet: ToAssign,
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
 {
-    type O =
-        CreateOrReplaceTriggerBuilder<'a, C, D, COLL, TriggerOperationSet, TriggerTypeSet, BodySet>;
+    type O = Self;
 
-    #[inline]
     fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self::O {
-        CreateOrReplaceTriggerBuilder {
-            trigger_client: self.trigger_client,
-            is_create: self.is_create,
-            p_trigger_operation: PhantomData {},
-            p_trigger_type: PhantomData {},
-            p_body: PhantomData {},
-            trigger_operation: self.trigger_operation,
-            trigger_type: self.trigger_type,
-            body: self.body,
-            user_agent: self.user_agent,
-            activity_id: self.activity_id,
+        Self {
             consistency_level: Some(consistency_level),
+            ..self
         }
     }
 }
 
 // methods callable regardless
-impl<'a, C, D, COLL, TriggerOperationSet, TriggerTypeSet, BodySet>
-    CreateOrReplaceTriggerBuilder<'a, C, D, COLL, TriggerOperationSet, TriggerTypeSet, BodySet>
+impl<'a, TriggerOperationSet, TriggerTypeSet, BodySet>
+    CreateOrReplaceTriggerBuilder<'a, TriggerOperationSet, TriggerTypeSet, BodySet>
 where
     TriggerOperationSet: ToAssign,
     TriggerTypeSet: ToAssign,
     BodySet: ToAssign,
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
 {
     fn is_create(&self) -> bool {
         self.is_create
@@ -373,12 +267,7 @@ where
 }
 
 // methods callable only when every mandatory field has been filled
-impl<'a, C, D, COLL> CreateOrReplaceTriggerBuilder<'a, C, D, COLL, Yes, Yes, Yes>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-{
+impl<'a> CreateOrReplaceTriggerBuilder<'a, Yes, Yes, Yes> {
     pub async fn execute(&self) -> Result<CreateTriggerResponse, CosmosError> {
         trace!("CreateOrReplaceTriggerBuilder::execute called");
 

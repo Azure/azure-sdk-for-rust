@@ -14,15 +14,15 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let authorization_token = AuthorizationToken::new_master(&master_key)?;
 
     let http_client: Arc<Box<dyn HttpClient>> = Arc::new(Box::new(reqwest::Client::new()));
-    let client = CosmosStruct::new(http_client, account, authorization_token);
+    let client = CosmosClient::new(http_client, account, authorization_token);
 
-    let database_client = client.with_database_client("pollo");
+    let database_client = client.into_database_client("pollo");
     println!("database_name == {}", database_client.database_name());
 
     let collections = database_client.list_collections().execute().await?;
     println!("collections == {:#?}", collections);
 
-    let collection_client = database_client.with_collection_client("cnt");
+    let collection_client = database_client.into_collection_client("cnt");
     let collection = collection_client.get_collection().execute().await?;
     println!("collection == {:#?}", collection);
 

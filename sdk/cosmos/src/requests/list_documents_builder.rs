@@ -7,13 +7,9 @@ use http::StatusCode;
 use serde::de::DeserializeOwned;
 use std::convert::TryInto;
 
-#[derive(Debug)]
-pub struct ListDocumentsBuilder<'a, 'b, C, D>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-{
-    collection_client: &'a dyn CollectionClient<C, D>,
+#[derive(Debug, Clone)]
+pub struct ListDocumentsBuilder<'a, 'b> {
+    collection_client: &'a CollectionClient,
     if_match_condition: Option<IfMatchCondition<'b>>,
     user_agent: Option<&'b str>,
     activity_id: Option<&'b str>,
@@ -24,36 +20,9 @@ where
     partition_range_id: Option<&'b str>,
 }
 
-impl<'a, 'b, C, D> Clone for ListDocumentsBuilder<'a, 'b, C, D>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-{
-    fn clone(&self) -> Self {
+impl<'a, 'b> ListDocumentsBuilder<'a, 'b> {
+    pub(crate) fn new(collection_client: &'a CollectionClient) -> Self {
         Self {
-            collection_client: self.collection_client,
-            if_match_condition: self.if_match_condition,
-            user_agent: self.user_agent,
-            activity_id: self.activity_id,
-            consistency_level: self.consistency_level.clone(),
-            continuation: self.continuation,
-            max_item_count: self.max_item_count,
-            a_im: self.a_im,
-            partition_range_id: self.partition_range_id,
-        }
-    }
-}
-
-impl<'a, 'b, C, D> ListDocumentsBuilder<'a, 'b, C, D>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-{
-    #[inline]
-    pub(crate) fn new(
-        collection_client: &'a dyn CollectionClient<C, D>,
-    ) -> ListDocumentsBuilder<'a, 'b, C, D> {
-        ListDocumentsBuilder {
             collection_client,
             if_match_condition: None,
             user_agent: None,
@@ -67,114 +36,62 @@ where
     }
 }
 
-impl<'a, 'b, C, D> CollectionClientRequired<'a, C, D> for ListDocumentsBuilder<'a, 'b, C, D>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-{
-    #[inline]
-    fn collection_client(&self) -> &'a dyn CollectionClient<C, D> {
+impl<'a, 'b> CollectionClientRequired<'a> for ListDocumentsBuilder<'a, 'b> {
+    fn collection_client(&self) -> &'a CollectionClient {
         self.collection_client
     }
 }
 
-//get mandatory no traits methods
-
-//set mandatory no traits methods
-impl<'a, 'b, C, D> IfMatchConditionOption<'b> for ListDocumentsBuilder<'a, 'b, C, D>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-{
-    #[inline]
+impl<'a, 'b> IfMatchConditionOption<'b> for ListDocumentsBuilder<'a, 'b> {
     fn if_match_condition(&self) -> Option<IfMatchCondition<'b>> {
         self.if_match_condition
     }
 }
 
-impl<'a, 'b, C, D> UserAgentOption<'b> for ListDocumentsBuilder<'a, 'b, C, D>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-{
-    #[inline]
+impl<'a, 'b> UserAgentOption<'b> for ListDocumentsBuilder<'a, 'b> {
     fn user_agent(&self) -> Option<&'b str> {
         self.user_agent
     }
 }
 
-impl<'a, 'b, C, D> ActivityIdOption<'b> for ListDocumentsBuilder<'a, 'b, C, D>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-{
-    #[inline]
+impl<'a, 'b> ActivityIdOption<'b> for ListDocumentsBuilder<'a, 'b> {
     fn activity_id(&self) -> Option<&'b str> {
         self.activity_id
     }
 }
 
-impl<'a, 'b, C, D> ConsistencyLevelOption<'b> for ListDocumentsBuilder<'a, 'b, C, D>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-{
-    #[inline]
+impl<'a, 'b> ConsistencyLevelOption<'b> for ListDocumentsBuilder<'a, 'b> {
     fn consistency_level(&self) -> Option<ConsistencyLevel> {
         self.consistency_level.clone()
     }
 }
 
-impl<'a, 'b, C, D> ContinuationOption<'b> for ListDocumentsBuilder<'a, 'b, C, D>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-{
-    #[inline]
+impl<'a, 'b> ContinuationOption<'b> for ListDocumentsBuilder<'a, 'b> {
     fn continuation(&self) -> Option<&'b str> {
         self.continuation
     }
 }
 
-impl<'a, 'b, C, D> MaxItemCountOption for ListDocumentsBuilder<'a, 'b, C, D>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-{
-    #[inline]
+impl<'a, 'b> MaxItemCountOption for ListDocumentsBuilder<'a, 'b> {
     fn max_item_count(&self) -> i32 {
         self.max_item_count
     }
 }
 
-impl<'a, 'b, C, D> AIMOption for ListDocumentsBuilder<'a, 'b, C, D>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-{
-    #[inline]
+impl<'a, 'b> AIMOption for ListDocumentsBuilder<'a, 'b> {
     fn a_im(&self) -> bool {
         self.a_im
     }
 }
 
-impl<'a, 'b, C, D> PartitionRangeIdOption<'b> for ListDocumentsBuilder<'a, 'b, C, D>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-{
-    #[inline]
+impl<'a, 'b> PartitionRangeIdOption<'b> for ListDocumentsBuilder<'a, 'b> {
     fn partition_range_id(&self) -> Option<&'b str> {
         self.partition_range_id
     }
 }
 
-impl<'a, 'b, C, D> IfMatchConditionSupport<'b> for ListDocumentsBuilder<'a, 'b, C, D>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-{
-    type O = ListDocumentsBuilder<'a, 'b, C, D>;
+impl<'a, 'b> IfMatchConditionSupport<'b> for ListDocumentsBuilder<'a, 'b> {
+    type O = Self;
 
     #[inline]
     fn with_if_match_condition(self, if_match_condition: IfMatchCondition<'b>) -> Self::O {
@@ -192,173 +109,82 @@ where
     }
 }
 
-impl<'a, 'b, C, D> UserAgentSupport<'b> for ListDocumentsBuilder<'a, 'b, C, D>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-{
-    type O = ListDocumentsBuilder<'a, 'b, C, D>;
+impl<'a, 'b> UserAgentSupport<'b> for ListDocumentsBuilder<'a, 'b> {
+    type O = Self;
 
-    #[inline]
     fn with_user_agent(self, user_agent: &'b str) -> Self::O {
-        ListDocumentsBuilder {
-            collection_client: self.collection_client,
-            if_match_condition: self.if_match_condition,
+        Self {
             user_agent: Some(user_agent),
-            activity_id: self.activity_id,
-            consistency_level: self.consistency_level,
-            continuation: self.continuation,
-            max_item_count: self.max_item_count,
-            a_im: self.a_im,
-            partition_range_id: self.partition_range_id,
+            ..self
         }
     }
 }
 
-impl<'a, 'b, C, D> ActivityIdSupport<'b> for ListDocumentsBuilder<'a, 'b, C, D>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-{
-    type O = ListDocumentsBuilder<'a, 'b, C, D>;
+impl<'a, 'b> ActivityIdSupport<'b> for ListDocumentsBuilder<'a, 'b> {
+    type O = Self;
 
-    #[inline]
     fn with_activity_id(self, activity_id: &'b str) -> Self::O {
-        ListDocumentsBuilder {
-            collection_client: self.collection_client,
-            if_match_condition: self.if_match_condition,
-            user_agent: self.user_agent,
+        Self {
             activity_id: Some(activity_id),
-            consistency_level: self.consistency_level,
-            continuation: self.continuation,
-            max_item_count: self.max_item_count,
-            a_im: self.a_im,
-            partition_range_id: self.partition_range_id,
+            ..self
         }
     }
 }
 
-impl<'a, 'b, C, D> ConsistencyLevelSupport<'b> for ListDocumentsBuilder<'a, 'b, C, D>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-{
-    type O = ListDocumentsBuilder<'a, 'b, C, D>;
+impl<'a, 'b> ConsistencyLevelSupport<'b> for ListDocumentsBuilder<'a, 'b> {
+    type O = Self;
 
-    #[inline]
     fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self::O {
-        ListDocumentsBuilder {
-            collection_client: self.collection_client,
-            if_match_condition: self.if_match_condition,
-            user_agent: self.user_agent,
-            activity_id: self.activity_id,
+        Self {
             consistency_level: Some(consistency_level),
-            continuation: self.continuation,
-            max_item_count: self.max_item_count,
-            a_im: self.a_im,
-            partition_range_id: self.partition_range_id,
+            ..self
         }
     }
 }
 
-impl<'a, 'b, C, D> ContinuationSupport<'b> for ListDocumentsBuilder<'a, 'b, C, D>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-{
-    type O = ListDocumentsBuilder<'a, 'b, C, D>;
+impl<'a, 'b> ContinuationSupport<'b> for ListDocumentsBuilder<'a, 'b> {
+    type O = Self;
 
-    #[inline]
     fn with_continuation(self, continuation: &'b str) -> Self::O {
-        ListDocumentsBuilder {
-            collection_client: self.collection_client,
-            if_match_condition: self.if_match_condition,
-            user_agent: self.user_agent,
-            activity_id: self.activity_id,
-            consistency_level: self.consistency_level,
+        Self {
             continuation: Some(continuation),
-            max_item_count: self.max_item_count,
-            a_im: self.a_im,
-            partition_range_id: self.partition_range_id,
+            ..self
         }
     }
 }
 
-impl<'a, 'b, C, D> MaxItemCountSupport for ListDocumentsBuilder<'a, 'b, C, D>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-{
-    type O = ListDocumentsBuilder<'a, 'b, C, D>;
+impl<'a, 'b> MaxItemCountSupport for ListDocumentsBuilder<'a, 'b> {
+    type O = Self;
 
-    #[inline]
     fn with_max_item_count(self, max_item_count: i32) -> Self::O {
-        ListDocumentsBuilder {
-            collection_client: self.collection_client,
-            if_match_condition: self.if_match_condition,
-            user_agent: self.user_agent,
-            activity_id: self.activity_id,
-            consistency_level: self.consistency_level,
-            continuation: self.continuation,
+        Self {
             max_item_count,
-            a_im: self.a_im,
-            partition_range_id: self.partition_range_id,
+            ..self
         }
     }
 }
 
-impl<'a, 'b, C, D> AIMSupport for ListDocumentsBuilder<'a, 'b, C, D>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-{
-    type O = ListDocumentsBuilder<'a, 'b, C, D>;
+impl<'a, 'b> AIMSupport for ListDocumentsBuilder<'a, 'b> {
+    type O = Self;
 
-    #[inline]
     fn with_a_im(self, a_im: bool) -> Self::O {
-        ListDocumentsBuilder {
-            collection_client: self.collection_client,
-            if_match_condition: self.if_match_condition,
-            user_agent: self.user_agent,
-            activity_id: self.activity_id,
-            consistency_level: self.consistency_level,
-            continuation: self.continuation,
-            max_item_count: self.max_item_count,
-            a_im,
-            partition_range_id: self.partition_range_id,
-        }
+        Self { a_im, ..self }
     }
 }
 
-impl<'a, 'b, C, D> PartitionRangeIdSupport<'b> for ListDocumentsBuilder<'a, 'b, C, D>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-{
-    type O = ListDocumentsBuilder<'a, 'b, C, D>;
+impl<'a, 'b> PartitionRangeIdSupport<'b> for ListDocumentsBuilder<'a, 'b> {
+    type O = Self;
 
-    #[inline]
     fn with_partition_range_id(self, partition_range_id: &'b str) -> Self::O {
-        ListDocumentsBuilder {
-            collection_client: self.collection_client,
-            if_match_condition: self.if_match_condition,
-            user_agent: self.user_agent,
-            activity_id: self.activity_id,
-            consistency_level: self.consistency_level,
-            continuation: self.continuation,
-            max_item_count: self.max_item_count,
-            a_im: self.a_im,
+        Self {
             partition_range_id: Some(partition_range_id),
+            ..self
         }
     }
 }
 
 // methods callable only when every mandatory field has been filled
-impl<'a, 'b, C, D> ListDocumentsBuilder<'a, 'b, C, D>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-{
+impl<'a, 'b> ListDocumentsBuilder<'a, 'b> {
     pub async fn execute<T>(&self) -> Result<ListDocumentsResponse<T>, CosmosError>
     where
         T: DeserializeOwned,

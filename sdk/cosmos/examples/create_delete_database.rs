@@ -30,7 +30,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // authorization token at later time if you need, for example, to escalate the privileges for a
     // single operation.
     let http_client: Arc<Box<dyn HttpClient>> = Arc::new(Box::new(reqwest::Client::new()));
-    let client = CosmosStruct::new(http_client, account, authorization_token);
+    let client = CosmosClient::new(http_client, account, authorization_token);
 
     // The Cosmos' client exposes a lot of methods. This one lists the databases in the specified
     // account. Database do not implement Display but deref to &str so you can pass it to methods
@@ -48,7 +48,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     // create collection!
     {
-        let db_client = client.with_database_client(&database_name);
+        let db_client = client.clone().into_database_client(database_name.clone());
 
         let indexes = IncludedPathIndex {
             kind: KeyKind::Hash,
@@ -82,7 +82,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
             create_collection_response
         );
 
-        let db_collection = db_client.with_collection_client("panzadoro");
+        let db_collection = db_client.clone().into_collection_client("panzadoro");
 
         let get_collection_response = db_collection.get_collection().execute().await?;
         println!("get_collection_response == {:#?}", get_collection_response);
@@ -99,7 +99,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     }
 
     let resp = client
-        .with_database_client(&database_name)
+        .into_database_client(database_name)
         .delete_database()
         .execute()
         .await?;

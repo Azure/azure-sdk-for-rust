@@ -21,10 +21,10 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let authorization_token = AuthorizationToken::new_master(&master_key)?;
 
     let http_client: Arc<Box<dyn HttpClient>> = Arc::new(Box::new(reqwest::Client::new()));
-    let client = CosmosStruct::new(http_client, account.clone(), authorization_token);
+    let client = CosmosClient::new(http_client, account.clone(), authorization_token);
 
-    let database_client = client.with_database_client(&database_name);
-    let user_client = database_client.with_user_client(&user_name);
+    let database_client = client.into_database_client(database_name);
+    let user_client = database_client.clone().into_user_client(user_name.clone());
 
     let create_user_response = user_client.create_user().execute().await?;
     println!("create_user_response == {:#?}", create_user_response);
@@ -44,7 +44,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .await?;
     println!("replace_user_response == {:#?}", replace_user_response);
 
-    let user_client = database_client.with_user_client(&new_user);
+    let user_client = database_client.into_user_client(new_user);
 
     let delete_user_response = user_client.delete_user().execute().await?;
     println!("delete_user_response == {:#?}", delete_user_response);

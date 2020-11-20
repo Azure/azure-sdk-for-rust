@@ -5,27 +5,16 @@ use http::StatusCode;
 use std::convert::TryInto;
 
 #[derive(Debug, Clone)]
-pub struct DeleteCollectionBuilder<'a, C, D>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-{
-    collection_client: &'a dyn CollectionClient<C, D>,
+pub struct DeleteCollectionBuilder<'a> {
+    collection_client: &'a CollectionClient,
     user_agent: Option<&'a str>,
     activity_id: Option<&'a str>,
     consistency_level: Option<ConsistencyLevel>,
 }
 
-impl<'a, C, D> DeleteCollectionBuilder<'a, C, D>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-{
-    #[inline]
-    pub(crate) fn new(
-        collection_client: &'a dyn CollectionClient<C, D>,
-    ) -> DeleteCollectionBuilder<'a, C, D> {
-        DeleteCollectionBuilder {
+impl<'a> DeleteCollectionBuilder<'a> {
+    pub(crate) fn new(collection_client: &'a CollectionClient) -> Self {
+        Self {
             collection_client,
             user_agent: None,
             activity_id: None,
@@ -34,113 +23,65 @@ where
     }
 }
 
-impl<'a, C, D> CollectionClientRequired<'a, C, D> for DeleteCollectionBuilder<'a, C, D>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-{
-    #[inline]
-    fn collection_client(&self) -> &'a dyn CollectionClient<C, D> {
+impl<'a> CollectionClientRequired<'a> for DeleteCollectionBuilder<'a> {
+    fn collection_client(&self) -> &'a CollectionClient {
         self.collection_client
     }
 }
 
-//get mandatory no traits methods
-
-//set mandatory no traits methods
-impl<'a, C, D> UserAgentOption<'a> for DeleteCollectionBuilder<'a, C, D>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-{
-    #[inline]
+impl<'a> UserAgentOption<'a> for DeleteCollectionBuilder<'a> {
     fn user_agent(&self) -> Option<&'a str> {
         self.user_agent
     }
 }
 
-impl<'a, C, D> ActivityIdOption<'a> for DeleteCollectionBuilder<'a, C, D>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-{
-    #[inline]
+impl<'a> ActivityIdOption<'a> for DeleteCollectionBuilder<'a> {
     fn activity_id(&self) -> Option<&'a str> {
         self.activity_id
     }
 }
 
-impl<'a, C, D> ConsistencyLevelOption<'a> for DeleteCollectionBuilder<'a, C, D>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-{
-    #[inline]
+impl<'a> ConsistencyLevelOption<'a> for DeleteCollectionBuilder<'a> {
     fn consistency_level(&self) -> Option<ConsistencyLevel> {
         self.consistency_level.clone()
     }
 }
 
-impl<'a, C, D> UserAgentSupport<'a> for DeleteCollectionBuilder<'a, C, D>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-{
-    type O = DeleteCollectionBuilder<'a, C, D>;
+impl<'a> UserAgentSupport<'a> for DeleteCollectionBuilder<'a> {
+    type O = Self;
 
-    #[inline]
     fn with_user_agent(self, user_agent: &'a str) -> Self::O {
-        DeleteCollectionBuilder {
-            collection_client: self.collection_client,
+        Self {
             user_agent: Some(user_agent),
-            activity_id: self.activity_id,
-            consistency_level: self.consistency_level,
+            ..self
         }
     }
 }
 
-impl<'a, C, D> ActivityIdSupport<'a> for DeleteCollectionBuilder<'a, C, D>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-{
-    type O = DeleteCollectionBuilder<'a, C, D>;
+impl<'a> ActivityIdSupport<'a> for DeleteCollectionBuilder<'a> {
+    type O = Self;
 
-    #[inline]
     fn with_activity_id(self, activity_id: &'a str) -> Self::O {
-        DeleteCollectionBuilder {
-            collection_client: self.collection_client,
-            user_agent: self.user_agent,
+        Self {
             activity_id: Some(activity_id),
-            consistency_level: self.consistency_level,
+            ..self
         }
     }
 }
 
-impl<'a, C, D> ConsistencyLevelSupport<'a> for DeleteCollectionBuilder<'a, C, D>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-{
-    type O = DeleteCollectionBuilder<'a, C, D>;
+impl<'a> ConsistencyLevelSupport<'a> for DeleteCollectionBuilder<'a> {
+    type O = Self;
 
-    #[inline]
     fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self::O {
-        DeleteCollectionBuilder {
-            collection_client: self.collection_client,
-            user_agent: self.user_agent,
-            activity_id: self.activity_id,
+        Self {
             consistency_level: Some(consistency_level),
+            ..self
         }
     }
 }
 
 // methods callable only when every mandatory field has been filled
-impl<'a, C, D> DeleteCollectionBuilder<'a, C, D>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-{
+impl<'a> DeleteCollectionBuilder<'a> {
     pub async fn execute(&self) -> Result<DeleteCollectionResponse, CosmosError> {
         trace!("DeleteCollectionBuilder::execute called");
 

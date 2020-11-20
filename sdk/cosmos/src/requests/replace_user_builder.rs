@@ -7,13 +7,11 @@ use std::convert::TryInto;
 use std::marker::PhantomData;
 
 #[derive(Debug, Clone)]
-pub struct ReplaceUserBuilder<'a, 'b, C, D, UserNameSet>
+pub struct ReplaceUserBuilder<'a, 'b, UserNameSet>
 where
     UserNameSet: ToAssign,
-    C: CosmosClient,
-    D: DatabaseClient<C>,
 {
-    user_client: &'a dyn UserClient<C, D>,
+    user_client: &'a UserClient,
     p_user_name: PhantomData<UserNameSet>,
     user_name: Option<&'a dyn UserName>,
     user_agent: Option<&'b str>,
@@ -21,16 +19,9 @@ where
     consistency_level: Option<ConsistencyLevel>,
 }
 
-impl<'a, 'b, C, D> ReplaceUserBuilder<'a, 'b, C, D, No>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-{
-    #[inline]
-    pub(crate) fn new(
-        user_client: &'a dyn UserClient<C, D>,
-    ) -> ReplaceUserBuilder<'a, 'b, C, D, No> {
-        ReplaceUserBuilder {
+impl<'a, 'b> ReplaceUserBuilder<'a, 'b, No> {
+    pub(crate) fn new(user_client: &'a UserClient) -> ReplaceUserBuilder<'a, 'b, No> {
+        Self {
             user_client,
             p_user_name: PhantomData {},
             user_name: None,
@@ -41,80 +32,51 @@ where
     }
 }
 
-impl<'a, 'b, C, D, UserNameSet> UserClientRequired<'a, C, D>
-    for ReplaceUserBuilder<'a, 'b, C, D, UserNameSet>
+impl<'a, 'b, UserNameSet> UserClientRequired<'a> for ReplaceUserBuilder<'a, 'b, UserNameSet>
 where
     UserNameSet: ToAssign,
-    C: CosmosClient,
-    D: DatabaseClient<C>,
 {
-    #[inline]
-    fn user_client(&self) -> &'a dyn UserClient<C, D> {
+    fn user_client(&self) -> &'a UserClient {
         self.user_client
     }
 }
 
-//get mandatory no traits methods
-
-//set mandatory no traits methods
-impl<'a, 'b, C, D> UserNameRequired<'a> for ReplaceUserBuilder<'a, 'b, C, D, Yes>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-{
-    #[inline]
+impl<'a, 'b> UserNameRequired<'a> for ReplaceUserBuilder<'a, 'b, Yes> {
     fn user_name(&self) -> &'a dyn UserName {
         self.user_name.unwrap()
     }
 }
 
-impl<'a, 'b, C, D, UserNameSet> UserAgentOption<'b>
-    for ReplaceUserBuilder<'a, 'b, C, D, UserNameSet>
+impl<'a, 'b, UserNameSet> UserAgentOption<'b> for ReplaceUserBuilder<'a, 'b, UserNameSet>
 where
     UserNameSet: ToAssign,
-    C: CosmosClient,
-    D: DatabaseClient<C>,
 {
-    #[inline]
     fn user_agent(&self) -> Option<&'b str> {
         self.user_agent
     }
 }
 
-impl<'a, 'b, C, D, UserNameSet> ActivityIdOption<'b>
-    for ReplaceUserBuilder<'a, 'b, C, D, UserNameSet>
+impl<'a, 'b, UserNameSet> ActivityIdOption<'b> for ReplaceUserBuilder<'a, 'b, UserNameSet>
 where
     UserNameSet: ToAssign,
-    C: CosmosClient,
-    D: DatabaseClient<C>,
 {
-    #[inline]
     fn activity_id(&self) -> Option<&'b str> {
         self.activity_id
     }
 }
 
-impl<'a, 'b, C, D, UserNameSet> ConsistencyLevelOption<'b>
-    for ReplaceUserBuilder<'a, 'b, C, D, UserNameSet>
+impl<'a, 'b, UserNameSet> ConsistencyLevelOption<'b> for ReplaceUserBuilder<'a, 'b, UserNameSet>
 where
     UserNameSet: ToAssign,
-    C: CosmosClient,
-    D: DatabaseClient<C>,
 {
-    #[inline]
     fn consistency_level(&self) -> Option<ConsistencyLevel> {
         self.consistency_level.clone()
     }
 }
 
-impl<'a, 'b, C, D> UserNameSupport<'a> for ReplaceUserBuilder<'a, 'b, C, D, No>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-{
-    type O = ReplaceUserBuilder<'a, 'b, C, D, Yes>;
+impl<'a, 'b> UserNameSupport<'a> for ReplaceUserBuilder<'a, 'b, No> {
+    type O = ReplaceUserBuilder<'a, 'b, Yes>;
 
-    #[inline]
     fn with_user_name(self, user_name: &'a dyn UserName) -> Self::O {
         ReplaceUserBuilder {
             user_client: self.user_client,
@@ -127,78 +89,50 @@ where
     }
 }
 
-impl<'a, 'b, C, D, UserNameSet> UserAgentSupport<'b>
-    for ReplaceUserBuilder<'a, 'b, C, D, UserNameSet>
+impl<'a, 'b, UserNameSet> UserAgentSupport<'b> for ReplaceUserBuilder<'a, 'b, UserNameSet>
 where
     UserNameSet: ToAssign,
-    C: CosmosClient,
-    D: DatabaseClient<C>,
 {
-    type O = ReplaceUserBuilder<'a, 'b, C, D, UserNameSet>;
+    type O = Self;
 
-    #[inline]
     fn with_user_agent(self, user_agent: &'b str) -> Self::O {
-        ReplaceUserBuilder {
-            user_client: self.user_client,
-            p_user_name: PhantomData {},
-            user_name: self.user_name,
+        Self {
             user_agent: Some(user_agent),
-            activity_id: self.activity_id,
-            consistency_level: self.consistency_level,
+            ..self
         }
     }
 }
 
-impl<'a, 'b, C, D, UserNameSet> ActivityIdSupport<'b>
-    for ReplaceUserBuilder<'a, 'b, C, D, UserNameSet>
+impl<'a, 'b, UserNameSet> ActivityIdSupport<'b> for ReplaceUserBuilder<'a, 'b, UserNameSet>
 where
     UserNameSet: ToAssign,
-    C: CosmosClient,
-    D: DatabaseClient<C>,
 {
-    type O = ReplaceUserBuilder<'a, 'b, C, D, UserNameSet>;
+    type O = Self;
 
-    #[inline]
     fn with_activity_id(self, activity_id: &'b str) -> Self::O {
-        ReplaceUserBuilder {
-            user_client: self.user_client,
-            p_user_name: PhantomData {},
-            user_name: self.user_name,
-            user_agent: self.user_agent,
+        Self {
             activity_id: Some(activity_id),
-            consistency_level: self.consistency_level,
+            ..self
         }
     }
 }
 
-impl<'a, 'b, C, D, UserNameSet> ConsistencyLevelSupport<'b>
-    for ReplaceUserBuilder<'a, 'b, C, D, UserNameSet>
+impl<'a, 'b, UserNameSet> ConsistencyLevelSupport<'b> for ReplaceUserBuilder<'a, 'b, UserNameSet>
 where
     UserNameSet: ToAssign,
-    C: CosmosClient,
-    D: DatabaseClient<C>,
 {
-    type O = ReplaceUserBuilder<'a, 'b, C, D, UserNameSet>;
+    type O = Self;
 
-    #[inline]
     fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self::O {
-        ReplaceUserBuilder {
-            user_client: self.user_client,
-            p_user_name: PhantomData {},
-            user_name: self.user_name,
-            user_agent: self.user_agent,
-            activity_id: self.activity_id,
+        Self {
             consistency_level: Some(consistency_level),
+            ..self
         }
     }
 }
 
 // methods callable only when every mandatory field has been filled
-impl<'a, 'b, C, D> ReplaceUserBuilder<'a, 'b, C, D, Yes>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-{
+impl<'a, 'b> ReplaceUserBuilder<'a, 'b, Yes> {
     pub async fn execute(&self) -> Result<Option<CreateUserResponse>, CosmosError> {
         trace!("ReplaceUserBuilder::execute called");
 

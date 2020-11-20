@@ -7,14 +7,9 @@ use futures::stream::{unfold, Stream};
 use http::StatusCode;
 use std::convert::TryInto;
 
-#[derive(Debug)]
-pub struct ListAttachmentsBuilder<'a, 'b, C, D, COLL>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-{
-    document_client: &'a dyn DocumentClient<C, D, COLL>,
+#[derive(Debug, Clone)]
+pub struct ListAttachmentsBuilder<'a, 'b> {
+    document_client: &'a DocumentClient,
     if_match_condition: Option<IfMatchCondition<'b>>,
     user_agent: Option<&'b str>,
     activity_id: Option<&'b str>,
@@ -24,17 +19,9 @@ where
     a_im: bool,
 }
 
-impl<'a, 'b, C, D, COLL> ListAttachmentsBuilder<'a, 'b, C, D, COLL>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-{
-    #[inline]
-    pub(crate) fn new(
-        document_client: &'a dyn DocumentClient<C, D, COLL>,
-    ) -> ListAttachmentsBuilder<'a, 'b, C, D, COLL> {
-        ListAttachmentsBuilder {
+impl<'a, 'b> ListAttachmentsBuilder<'a, 'b> {
+    pub(crate) fn new(document_client: &'a DocumentClient) -> Self {
+        Self {
             document_client,
             if_match_condition: None,
             user_agent: None,
@@ -47,294 +34,131 @@ where
     }
 }
 
-impl<'a, 'b, C, D, COLL> Clone for ListAttachmentsBuilder<'a, 'b, C, D, COLL>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-{
-    fn clone(&self) -> Self {
-        Self {
-            document_client: self.document_client,
-            if_match_condition: self.if_match_condition,
-            user_agent: self.user_agent,
-            activity_id: self.activity_id,
-            consistency_level: self.consistency_level.clone(),
-            continuation: self.continuation,
-            max_item_count: self.max_item_count,
-            a_im: self.a_im,
-        }
-    }
-}
-
-impl<'a, 'b, C, D, COLL> DocumentClientRequired<'a, C, D, COLL>
-    for ListAttachmentsBuilder<'a, 'b, C, D, COLL>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-{
+impl<'a, 'b> DocumentClientRequired<'a> for ListAttachmentsBuilder<'a, 'b> {
     #[inline]
-    fn document_client(&self) -> &'a dyn DocumentClient<C, D, COLL> {
+    fn document_client(&self) -> &'a DocumentClient {
         self.document_client
     }
 }
 
-//get mandatory no traits methods
-
-//set mandatory no traits methods
-impl<'a, 'b, C, D, COLL> IfMatchConditionOption<'b> for ListAttachmentsBuilder<'a, 'b, C, D, COLL>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-{
-    #[inline]
+impl<'a, 'b> IfMatchConditionOption<'b> for ListAttachmentsBuilder<'a, 'b> {
     fn if_match_condition(&self) -> Option<IfMatchCondition<'b>> {
         self.if_match_condition
     }
 }
 
-impl<'a, 'b, C, D, COLL> UserAgentOption<'b> for ListAttachmentsBuilder<'a, 'b, C, D, COLL>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-{
-    #[inline]
+impl<'a, 'b> UserAgentOption<'b> for ListAttachmentsBuilder<'a, 'b> {
     fn user_agent(&self) -> Option<&'b str> {
         self.user_agent
     }
 }
 
-impl<'a, 'b, C, D, COLL> ActivityIdOption<'b> for ListAttachmentsBuilder<'a, 'b, C, D, COLL>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-{
-    #[inline]
+impl<'a, 'b> ActivityIdOption<'b> for ListAttachmentsBuilder<'a, 'b> {
     fn activity_id(&self) -> Option<&'b str> {
         self.activity_id
     }
 }
 
-impl<'a, 'b, C, D, COLL> ConsistencyLevelOption<'b> for ListAttachmentsBuilder<'a, 'b, C, D, COLL>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-{
-    #[inline]
+impl<'a, 'b> ConsistencyLevelOption<'b> for ListAttachmentsBuilder<'a, 'b> {
     fn consistency_level(&self) -> Option<ConsistencyLevel> {
         self.consistency_level.clone()
     }
 }
 
-impl<'a, 'b, C, D, COLL> ContinuationOption<'b> for ListAttachmentsBuilder<'a, 'b, C, D, COLL>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-{
-    #[inline]
+impl<'a, 'b> ContinuationOption<'b> for ListAttachmentsBuilder<'a, 'b> {
     fn continuation(&self) -> Option<&'b str> {
         self.continuation
     }
 }
 
-impl<'a, 'b, C, D, COLL> MaxItemCountOption for ListAttachmentsBuilder<'a, 'b, C, D, COLL>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-{
-    #[inline]
+impl<'a, 'b> MaxItemCountOption for ListAttachmentsBuilder<'a, 'b> {
     fn max_item_count(&self) -> i32 {
         self.max_item_count
     }
 }
 
-impl<'a, 'b, C, D, COLL> AIMOption for ListAttachmentsBuilder<'a, 'b, C, D, COLL>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-{
-    #[inline]
+impl<'a, 'b> AIMOption for ListAttachmentsBuilder<'a, 'b> {
     fn a_im(&self) -> bool {
         self.a_im
     }
 }
 
-impl<'a, 'b, C, D, COLL> IfMatchConditionSupport<'b> for ListAttachmentsBuilder<'a, 'b, C, D, COLL>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-{
-    type O = ListAttachmentsBuilder<'a, 'b, C, D, COLL>;
+impl<'a, 'b> IfMatchConditionSupport<'b> for ListAttachmentsBuilder<'a, 'b> {
+    type O = Self;
 
-    #[inline]
     fn with_if_match_condition(self, if_match_condition: IfMatchCondition<'b>) -> Self::O {
-        ListAttachmentsBuilder {
-            document_client: self.document_client,
+        Self {
             if_match_condition: Some(if_match_condition),
-            user_agent: self.user_agent,
-            activity_id: self.activity_id,
-            consistency_level: self.consistency_level,
-            continuation: self.continuation,
-            max_item_count: self.max_item_count,
-            a_im: self.a_im,
+            ..self
         }
     }
 }
 
-impl<'a, 'b, C, D, COLL> UserAgentSupport<'b> for ListAttachmentsBuilder<'a, 'b, C, D, COLL>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-{
-    type O = ListAttachmentsBuilder<'a, 'b, C, D, COLL>;
+impl<'a, 'b> UserAgentSupport<'b> for ListAttachmentsBuilder<'a, 'b> {
+    type O = Self;
 
-    #[inline]
     fn with_user_agent(self, user_agent: &'b str) -> Self::O {
-        ListAttachmentsBuilder {
-            document_client: self.document_client,
-            if_match_condition: self.if_match_condition,
+        Self {
             user_agent: Some(user_agent),
-            activity_id: self.activity_id,
-            consistency_level: self.consistency_level,
-            continuation: self.continuation,
-            max_item_count: self.max_item_count,
-            a_im: self.a_im,
+            ..self
         }
     }
 }
 
-impl<'a, 'b, C, D, COLL> ActivityIdSupport<'b> for ListAttachmentsBuilder<'a, 'b, C, D, COLL>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-{
-    type O = ListAttachmentsBuilder<'a, 'b, C, D, COLL>;
+impl<'a, 'b> ActivityIdSupport<'b> for ListAttachmentsBuilder<'a, 'b> {
+    type O = Self;
 
-    #[inline]
     fn with_activity_id(self, activity_id: &'b str) -> Self::O {
-        ListAttachmentsBuilder {
-            document_client: self.document_client,
-            if_match_condition: self.if_match_condition,
-            user_agent: self.user_agent,
+        Self {
             activity_id: Some(activity_id),
-            consistency_level: self.consistency_level,
-            continuation: self.continuation,
-            max_item_count: self.max_item_count,
-            a_im: self.a_im,
+            ..self
         }
     }
 }
 
-impl<'a, 'b, C, D, COLL> ConsistencyLevelSupport<'b> for ListAttachmentsBuilder<'a, 'b, C, D, COLL>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-{
-    type O = ListAttachmentsBuilder<'a, 'b, C, D, COLL>;
+impl<'a, 'b> ConsistencyLevelSupport<'b> for ListAttachmentsBuilder<'a, 'b> {
+    type O = Self;
 
-    #[inline]
     fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self::O {
-        ListAttachmentsBuilder {
-            document_client: self.document_client,
-            if_match_condition: self.if_match_condition,
-            user_agent: self.user_agent,
-            activity_id: self.activity_id,
+        Self {
             consistency_level: Some(consistency_level),
-            continuation: self.continuation,
-            max_item_count: self.max_item_count,
-            a_im: self.a_im,
+            ..self
         }
     }
 }
 
-impl<'a, 'b, C, D, COLL> ContinuationSupport<'b> for ListAttachmentsBuilder<'a, 'b, C, D, COLL>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-{
-    type O = ListAttachmentsBuilder<'a, 'b, C, D, COLL>;
+impl<'a, 'b> ContinuationSupport<'b> for ListAttachmentsBuilder<'a, 'b> {
+    type O = Self;
 
-    #[inline]
     fn with_continuation(self, continuation: &'b str) -> Self::O {
-        ListAttachmentsBuilder {
-            document_client: self.document_client,
-            if_match_condition: self.if_match_condition,
-            user_agent: self.user_agent,
-            activity_id: self.activity_id,
-            consistency_level: self.consistency_level,
+        Self {
             continuation: Some(continuation),
-            max_item_count: self.max_item_count,
-            a_im: self.a_im,
+            ..self
         }
     }
 }
 
-impl<'a, 'b, C, D, COLL> MaxItemCountSupport for ListAttachmentsBuilder<'a, 'b, C, D, COLL>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-{
-    type O = ListAttachmentsBuilder<'a, 'b, C, D, COLL>;
+impl<'a, 'b> MaxItemCountSupport for ListAttachmentsBuilder<'a, 'b> {
+    type O = Self;
 
-    #[inline]
     fn with_max_item_count(self, max_item_count: i32) -> Self::O {
-        ListAttachmentsBuilder {
-            document_client: self.document_client,
-            if_match_condition: self.if_match_condition,
-            user_agent: self.user_agent,
-            activity_id: self.activity_id,
-            consistency_level: self.consistency_level,
-            continuation: self.continuation,
+        Self {
             max_item_count,
-            a_im: self.a_im,
+            ..self
         }
     }
 }
 
-impl<'a, 'b, C, D, COLL> AIMSupport for ListAttachmentsBuilder<'a, 'b, C, D, COLL>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-{
-    type O = ListAttachmentsBuilder<'a, 'b, C, D, COLL>;
+impl<'a, 'b> AIMSupport for ListAttachmentsBuilder<'a, 'b> {
+    type O = Self;
 
-    #[inline]
     fn with_a_im(self, a_im: bool) -> Self::O {
-        ListAttachmentsBuilder {
-            document_client: self.document_client,
-            if_match_condition: self.if_match_condition,
-            user_agent: self.user_agent,
-            activity_id: self.activity_id,
-            consistency_level: self.consistency_level,
-            continuation: self.continuation,
-            max_item_count: self.max_item_count,
-            a_im,
-        }
+        Self { a_im, ..self }
     }
 }
 
 // methods callable only when every mandatory field has been filled
-impl<'a, 'b, C, D, COLL> ListAttachmentsBuilder<'a, 'b, C, D, COLL>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-{
+impl<'a, 'b> ListAttachmentsBuilder<'a, 'b> {
     pub async fn execute(&self) -> Result<ListAttachmentsResponse, CosmosError> {
         let mut req = self.document_client.cosmos_client().prepare_request(
             &format!(

@@ -4,32 +4,17 @@ use http::StatusCode;
 use std::convert::TryInto;
 
 #[derive(Debug, Clone)]
-pub struct DeleteAttachmentBuilder<'a, 'b, C, D, COLL, DOC>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-    DOC: DocumentClient<C, D, COLL>,
-{
-    attachment_client: &'a dyn AttachmentClient<C, D, COLL, DOC>,
+pub struct DeleteAttachmentBuilder<'a, 'b> {
+    attachment_client: &'a AttachmentClient,
     if_match_condition: Option<IfMatchCondition<'b>>,
     user_agent: Option<&'b str>,
     activity_id: Option<&'b str>,
     consistency_level: Option<ConsistencyLevel>,
 }
 
-impl<'a, 'b, C, D, COLL, DOC> DeleteAttachmentBuilder<'a, 'b, C, D, COLL, DOC>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-    DOC: DocumentClient<C, D, COLL>,
-{
-    #[inline]
-    pub(crate) fn new(
-        attachment_client: &'a dyn AttachmentClient<C, D, COLL, DOC>,
-    ) -> DeleteAttachmentBuilder<'a, 'b, C, D, COLL, DOC> {
-        DeleteAttachmentBuilder {
+impl<'a, 'b> DeleteAttachmentBuilder<'a, 'b> {
+    pub(crate) fn new(attachment_client: &'a AttachmentClient) -> Self {
+        Self {
             attachment_client,
             if_match_condition: None,
             user_agent: None,
@@ -39,175 +24,82 @@ where
     }
 }
 
-impl<'a, 'b, C, D, COLL, DOC> AttachmentClientRequired<'a, C, D, COLL, DOC>
-    for DeleteAttachmentBuilder<'a, 'b, C, D, COLL, DOC>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-    DOC: DocumentClient<C, D, COLL>,
-{
-    #[inline]
-    fn attachment_client(&self) -> &'a dyn AttachmentClient<C, D, COLL, DOC> {
+impl<'a, 'b> AttachmentClientRequired<'a> for DeleteAttachmentBuilder<'a, 'b> {
+    fn attachment_client(&self) -> &'a AttachmentClient {
         self.attachment_client
     }
 }
 
-//get mandatory no traits methods
-
-//set mandatory no traits methods
-impl<'a, 'b, C, D, COLL, DOC> IfMatchConditionOption<'b>
-    for DeleteAttachmentBuilder<'a, 'b, C, D, COLL, DOC>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-    DOC: DocumentClient<C, D, COLL>,
-{
-    #[inline]
+impl<'a, 'b> IfMatchConditionOption<'b> for DeleteAttachmentBuilder<'a, 'b> {
     fn if_match_condition(&self) -> Option<IfMatchCondition<'b>> {
         self.if_match_condition
     }
 }
 
-impl<'a, 'b, C, D, COLL, DOC> UserAgentOption<'b>
-    for DeleteAttachmentBuilder<'a, 'b, C, D, COLL, DOC>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-    DOC: DocumentClient<C, D, COLL>,
-{
-    #[inline]
+impl<'a, 'b> UserAgentOption<'b> for DeleteAttachmentBuilder<'a, 'b> {
     fn user_agent(&self) -> Option<&'b str> {
         self.user_agent
     }
 }
 
-impl<'a, 'b, C, D, COLL, DOC> ActivityIdOption<'b>
-    for DeleteAttachmentBuilder<'a, 'b, C, D, COLL, DOC>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-    DOC: DocumentClient<C, D, COLL>,
-{
-    #[inline]
+impl<'a, 'b> ActivityIdOption<'b> for DeleteAttachmentBuilder<'a, 'b> {
     fn activity_id(&self) -> Option<&'b str> {
         self.activity_id
     }
 }
 
-impl<'a, 'b, C, D, COLL, DOC> ConsistencyLevelOption<'b>
-    for DeleteAttachmentBuilder<'a, 'b, C, D, COLL, DOC>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-    DOC: DocumentClient<C, D, COLL>,
-{
-    #[inline]
+impl<'a, 'b> ConsistencyLevelOption<'b> for DeleteAttachmentBuilder<'a, 'b> {
     fn consistency_level(&self) -> Option<ConsistencyLevel> {
         self.consistency_level.clone()
     }
 }
 
-impl<'a, 'b, C, D, COLL, DOC> IfMatchConditionSupport<'b>
-    for DeleteAttachmentBuilder<'a, 'b, C, D, COLL, DOC>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-    DOC: DocumentClient<C, D, COLL>,
-{
-    type O = DeleteAttachmentBuilder<'a, 'b, C, D, COLL, DOC>;
+impl<'a, 'b> IfMatchConditionSupport<'b> for DeleteAttachmentBuilder<'a, 'b> {
+    type O = Self;
 
-    #[inline]
     fn with_if_match_condition(self, if_match_condition: IfMatchCondition<'b>) -> Self::O {
-        DeleteAttachmentBuilder {
-            attachment_client: self.attachment_client,
+        Self {
             if_match_condition: Some(if_match_condition),
-            user_agent: self.user_agent,
-            activity_id: self.activity_id,
-            consistency_level: self.consistency_level,
+            ..self
         }
     }
 }
 
-impl<'a, 'b, C, D, COLL, DOC> UserAgentSupport<'b>
-    for DeleteAttachmentBuilder<'a, 'b, C, D, COLL, DOC>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-    DOC: DocumentClient<C, D, COLL>,
-{
-    type O = DeleteAttachmentBuilder<'a, 'b, C, D, COLL, DOC>;
+impl<'a, 'b> UserAgentSupport<'b> for DeleteAttachmentBuilder<'a, 'b> {
+    type O = Self;
 
-    #[inline]
     fn with_user_agent(self, user_agent: &'b str) -> Self::O {
-        DeleteAttachmentBuilder {
-            attachment_client: self.attachment_client,
-            if_match_condition: self.if_match_condition,
+        Self {
             user_agent: Some(user_agent),
-            activity_id: self.activity_id,
-            consistency_level: self.consistency_level,
+            ..self
         }
     }
 }
 
-impl<'a, 'b, C, D, COLL, DOC> ActivityIdSupport<'b>
-    for DeleteAttachmentBuilder<'a, 'b, C, D, COLL, DOC>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-    DOC: DocumentClient<C, D, COLL>,
-{
-    type O = DeleteAttachmentBuilder<'a, 'b, C, D, COLL, DOC>;
+impl<'a, 'b> ActivityIdSupport<'b> for DeleteAttachmentBuilder<'a, 'b> {
+    type O = Self;
 
-    #[inline]
     fn with_activity_id(self, activity_id: &'b str) -> Self::O {
-        DeleteAttachmentBuilder {
-            attachment_client: self.attachment_client,
-            if_match_condition: self.if_match_condition,
-            user_agent: self.user_agent,
+        Self {
             activity_id: Some(activity_id),
-            consistency_level: self.consistency_level,
+            ..self
         }
     }
 }
 
-impl<'a, 'b, C, D, COLL, DOC> ConsistencyLevelSupport<'b>
-    for DeleteAttachmentBuilder<'a, 'b, C, D, COLL, DOC>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-    DOC: DocumentClient<C, D, COLL>,
-{
-    type O = DeleteAttachmentBuilder<'a, 'b, C, D, COLL, DOC>;
+impl<'a, 'b> ConsistencyLevelSupport<'b> for DeleteAttachmentBuilder<'a, 'b> {
+    type O = Self;
 
-    #[inline]
     fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self::O {
-        DeleteAttachmentBuilder {
-            attachment_client: self.attachment_client,
-            if_match_condition: self.if_match_condition,
-            user_agent: self.user_agent,
-            activity_id: self.activity_id,
+        Self {
             consistency_level: Some(consistency_level),
+            ..self
         }
     }
 }
 
 // methods callable only when every mandatory field has been filled
-impl<'a, 'b, C, D, COLL, DOC> DeleteAttachmentBuilder<'a, 'b, C, D, COLL, DOC>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-    DOC: DocumentClient<C, D, COLL>,
-{
+impl<'a, 'b> DeleteAttachmentBuilder<'a, 'b> {
     pub async fn execute(&self) -> Result<crate::responses::DeleteAttachmentResponse, CosmosError> {
         let mut req = self
             .attachment_client

@@ -42,9 +42,9 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let authorization_token = AuthorizationToken::new_master(&master_key)?;
 
     let http_client: Arc<Box<dyn HttpClient>> = Arc::new(Box::new(reqwest::Client::new()));
-    let client = CosmosStruct::new(http_client, account, authorization_token);
-    let client = client.with_database_client(&database_name);
-    let client = client.with_collection_client(&collection_name);
+    let client = CosmosClient::new(http_client, account, authorization_token);
+    let client = client.into_database_client(database_name);
+    let client = client.into_collection_client(collection_name);
 
     let mut response = None;
     for i in 0u64..5 {
@@ -126,7 +126,8 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let partition_keys: PartitionKeys = (&id).into();
 
     let response = client
-        .with_document_client(&id, partition_keys.clone())
+        .clone()
+        .into_document_client(id.clone(), partition_keys.clone())
         .get_document()
         .with_consistency_level(session_token)
         .execute::<MySampleStruct>()
@@ -166,7 +167,8 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let partition_keys: PartitionKeys = (&id).into();
 
     let response = client
-        .with_document_client(&id, partition_keys)
+        .clone()
+        .into_document_client(id.clone(), partition_keys)
         .get_document()
         .with_consistency_level((&response).into())
         .execute::<MySampleStruct>()
@@ -182,7 +184,8 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         let id = format!("unique_id{}", i);
         let partition_keys: PartitionKeys = (&id).into();
         client
-            .with_document_client(&id, partition_keys)
+            .clone()
+            .into_document_client(id, partition_keys)
             .delete_document()
             .with_consistency_level((&response).into())
             .execute()

@@ -4,22 +4,16 @@ use azure_core::prelude::*;
 use std::convert::TryInto;
 
 #[derive(Debug, Clone)]
-pub struct GetDatabaseBuilder<'a, 'b, C>
-where
-    C: CosmosClient,
-{
-    database_client: &'a dyn DatabaseClient<C>,
+pub struct GetDatabaseBuilder<'a, 'b> {
+    database_client: &'a DatabaseClient,
     user_agent: Option<&'b str>,
     activity_id: Option<&'b str>,
     consistency_level: Option<ConsistencyLevel>,
 }
 
-impl<'a, 'b, C> GetDatabaseBuilder<'a, 'b, C>
-where
-    C: CosmosClient,
-{
-    pub(crate) fn new(database_client: &'a dyn DatabaseClient<C>) -> GetDatabaseBuilder<'a, 'b, C> {
-        GetDatabaseBuilder {
+impl<'a, 'b> GetDatabaseBuilder<'a, 'b> {
+    pub(crate) fn new(database_client: &'a DatabaseClient) -> Self {
+        Self {
             database_client,
             user_agent: None,
             activity_id: None,
@@ -28,11 +22,8 @@ where
     }
 }
 
-impl<'a, 'b, C> DatabaseClientRequired<'a, C> for GetDatabaseBuilder<'a, 'b, C>
-where
-    C: CosmosClient,
-{
-    fn database_client(&self) -> &'a dyn DatabaseClient<C> {
+impl<'a, 'b> DatabaseClientRequired<'a> for GetDatabaseBuilder<'a, 'b> {
+    fn database_client(&self) -> &'a DatabaseClient {
         self.database_client
     }
 }
@@ -40,86 +31,59 @@ where
 //get mandatory no traits methods
 
 //set mandatory no traits methods
-impl<'a, 'b, C> UserAgentOption<'b> for GetDatabaseBuilder<'a, 'b, C>
-where
-    C: CosmosClient,
-{
+impl<'a, 'b> UserAgentOption<'b> for GetDatabaseBuilder<'a, 'b> {
     fn user_agent(&self) -> Option<&'b str> {
         self.user_agent
     }
 }
 
-impl<'a, 'b, C> ActivityIdOption<'b> for GetDatabaseBuilder<'a, 'b, C>
-where
-    C: CosmosClient,
-{
+impl<'a, 'b> ActivityIdOption<'b> for GetDatabaseBuilder<'a, 'b> {
     fn activity_id(&self) -> Option<&'b str> {
         self.activity_id
     }
 }
 
-impl<'a, 'b, C> ConsistencyLevelOption<'b> for GetDatabaseBuilder<'a, 'b, C>
-where
-    C: CosmosClient,
-{
+impl<'a, 'b> ConsistencyLevelOption<'b> for GetDatabaseBuilder<'a, 'b> {
     fn consistency_level(&self) -> Option<ConsistencyLevel> {
         self.consistency_level.clone()
     }
 }
 
-impl<'a, 'b, C> UserAgentSupport<'b> for GetDatabaseBuilder<'a, 'b, C>
-where
-    C: CosmosClient,
-{
-    type O = GetDatabaseBuilder<'a, 'b, C>;
+impl<'a, 'b> UserAgentSupport<'b> for GetDatabaseBuilder<'a, 'b> {
+    type O = Self;
 
     fn with_user_agent(self, user_agent: &'b str) -> Self::O {
-        GetDatabaseBuilder {
-            database_client: self.database_client,
+        Self {
             user_agent: Some(user_agent),
-            activity_id: self.activity_id,
-            consistency_level: self.consistency_level,
+            ..self
         }
     }
 }
 
-impl<'a, 'b, C> ActivityIdSupport<'b> for GetDatabaseBuilder<'a, 'b, C>
-where
-    C: CosmosClient,
-{
-    type O = GetDatabaseBuilder<'a, 'b, C>;
+impl<'a, 'b> ActivityIdSupport<'b> for GetDatabaseBuilder<'a, 'b> {
+    type O = Self;
 
     fn with_activity_id(self, activity_id: &'b str) -> Self::O {
-        GetDatabaseBuilder {
-            database_client: self.database_client,
-            user_agent: self.user_agent,
+        Self {
             activity_id: Some(activity_id),
-            consistency_level: self.consistency_level,
+            ..self
         }
     }
 }
 
-impl<'a, 'b, C> ConsistencyLevelSupport<'b> for GetDatabaseBuilder<'a, 'b, C>
-where
-    C: CosmosClient,
-{
-    type O = GetDatabaseBuilder<'a, 'b, C>;
+impl<'a, 'b> ConsistencyLevelSupport<'b> for GetDatabaseBuilder<'a, 'b> {
+    type O = Self;
 
     fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self::O {
-        GetDatabaseBuilder {
-            database_client: self.database_client,
-            user_agent: self.user_agent,
-            activity_id: self.activity_id,
+        Self {
             consistency_level: Some(consistency_level),
+            ..self
         }
     }
 }
 
 // methods callable only when every mandatory field has been filled
-impl<'a, 'b, C> GetDatabaseBuilder<'a, 'b, C>
-where
-    C: CosmosClient,
-{
+impl<'a, 'b> GetDatabaseBuilder<'a, 'b> {
     pub async fn execute(&self) -> Result<GetDatabaseResponse, CosmosError> {
         trace!("GetDatabaseResponse::execute called");
 

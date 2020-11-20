@@ -20,9 +20,9 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     // use reqwest
     let http_client: Arc<Box<dyn HttpClient>> = Arc::new(Box::new(reqwest::Client::new()));
-    let client = CosmosStruct::new(http_client, account.clone(), authorization_token);
+    let client = CosmosClient::new(http_client, account.clone(), authorization_token);
 
-    let database_client = client.into_database_client(&database_name);
+    let database_client = client.into_database_client(database_name.clone());
 
     let response = database_client.get_database().execute().await?;
     println!("from reqwest == {:?}", response);
@@ -34,8 +34,8 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         Box::new(hyper::Client::builder().build(HttpsConnector::new()));
     let http_client = Arc::new(http_client);
 
-    let client = CosmosStruct::new(http_client, account, authorization_token);
-    let database_client = client.into_database_client(&database_name);
+    let client = CosmosClient::new(http_client, account, authorization_token);
+    let database_client = client.into_database_client(database_name);
 
     let response = database_client.get_database().execute().await?;
     println!("from hyper == {:?}", response);

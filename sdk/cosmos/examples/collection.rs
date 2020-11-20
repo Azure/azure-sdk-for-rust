@@ -26,7 +26,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // single operation.
     // Here we are using reqwest but other clients are supported (check the documentation).
     let http_client: Arc<Box<dyn HttpClient>> = Arc::new(Box::new(reqwest::Client::new()));
-    let client = CosmosStruct::new(http_client, account.clone(), authorization_token);
+    let client = CosmosClient::new(http_client, account.clone(), authorization_token);
 
     // The Cosmos' client exposes a lot of methods. This one lists the databases in the specified
     // account. Database do not implement Display but deref to &str so you can pass it to methods
@@ -43,7 +43,8 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     if let Some(db) = databases.databases.first() {
         println!("getting info of database {}", &db.id);
         let db = client
-            .with_database_client(&db.id)
+            .clone()
+            .into_database_client(db.id.clone())
             .get_database()
             .execute()
             .await?;
@@ -52,12 +53,10 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     // Each Cosmos' database contains one or more collections. We can enumerate them using the
     // list_collection method.
+
     for db in databases.databases {
-        let collections = client
-            .with_database_client(&db.id)
-            .list_collections()
-            .execute()
-            .await?;
+        let database_client = client.clone().into_database_client(db.id.clone());
+        let collections = database_client.list_collections().execute().await?;
         println!(
             "database {} has {} collection(s)",
             db.id,
@@ -67,9 +66,9 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         for collection in collections.collections {
             println!("\tcollection {}", collection.id);
 
-            let collection_response = client
-                .with_database_client(&db.id)
-                .with_collection_client(&collection.id)
+            let collection_response = database_client
+                .clone()
+                .into_collection_client(collection.id)
                 .get_collection()
                 .execute()
                 .await?;
