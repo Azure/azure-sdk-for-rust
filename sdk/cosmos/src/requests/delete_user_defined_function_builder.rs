@@ -1,8 +1,7 @@
 use crate::prelude::*;
 use crate::responses::DeleteUserDefinedFunctionResponse;
-use azure_core::errors::{check_status_extract_headers_and_body, AzureError};
 use azure_core::prelude::*;
-use hyper::StatusCode;
+use http::StatusCode;
 use std::convert::TryInto;
 
 #[derive(Debug, Clone)]
@@ -159,28 +158,25 @@ where
     D: DatabaseClient<C>,
     COLL: CollectionClient<C, D>,
 {
-    pub async fn execute(&self) -> Result<DeleteUserDefinedFunctionResponse, AzureError> {
+    pub async fn execute(&self) -> Result<DeleteUserDefinedFunctionResponse, CosmosError> {
         trace!("DeleteUserDefinedFunctionBuilder::execute called");
 
         let request = self
             .user_defined_function_client
-            .prepare_request_with_user_defined_function_name(hyper::Method::DELETE);
+            .prepare_request_with_user_defined_function_name(http::Method::DELETE);
 
         // add trait headers
         let request = UserAgentOption::add_header(self, request);
         let request = ActivityIdOption::add_header(self, request);
         let request = ConsistencyLevelOption::add_header(self, request);
 
-        let request = request.body(hyper::Body::empty())?;
+        let request = request.body(EMPTY_BODY.as_ref())?;
 
-        let (headers, body) = check_status_extract_headers_and_body(
-            self.user_defined_function_client()
-                .hyper_client()
-                .request(request),
-            StatusCode::NO_CONTENT,
-        )
-        .await?;
-
-        Ok((&headers, &body as &[u8]).try_into()?)
+        Ok(self
+            .user_defined_function_client()
+            .http_client()
+            .execute_request_check_status(request, StatusCode::NO_CONTENT)
+            .await?
+            .try_into()?)
     }
 }

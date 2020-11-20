@@ -11,7 +11,7 @@ pub use crate::{
     AttachmentClient, AttachmentClientRequired, AuthorizationToken, CollectionClient,
     CollectionClientRequired, CollectionNameRequired, CollectionNameSupport, CollectionRequired,
     CollectionSupport, ConsistencyLevel, ConsistencyLevelOption, ConsistencyLevelSupport,
-    CosmosClient, CosmosClientRequired, DatabaseClient, DatabaseClientRequired,
+    CosmosClient, CosmosClientRequired, CosmosError, DatabaseClient, DatabaseClientRequired,
     DatabaseNameRequired, DatabaseNameSupport, DocumentClient, DocumentIdRequired,
     DocumentIdSupport, ExpirySecondsOption, ExpirySecondsSupport, HasStoredProcedureClient,
     IndexingDirective, IndexingDirectiveOption, IndexingDirectiveSupport, IndexingPolicyRequired,

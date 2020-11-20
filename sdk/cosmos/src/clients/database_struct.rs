@@ -1,6 +1,7 @@
 use crate::clients::{CollectionStruct, UserStruct};
 use crate::traits::*;
 use crate::{requests, CosmosClient};
+use azure_core::HttpClient;
 use azure_core::No;
 use std::borrow::Cow;
 
@@ -26,15 +27,13 @@ where
     }
 }
 
-impl<'a, C> HasHyperClient for DatabaseStruct<'a, C>
+impl<'a, C> HasHttpClient for DatabaseStruct<'a, C>
 where
     C: CosmosClient + Clone,
 {
     #[inline]
-    fn hyper_client(
-        &self,
-    ) -> &hyper::Client<hyper_rustls::HttpsConnector<hyper::client::HttpConnector>> {
-        self.cosmos_client().hyper_client()
+    fn http_client(&self) -> &dyn HttpClient {
+        self.cosmos_client().http_client()
     }
 }
 
@@ -57,12 +56,12 @@ where
         &self.database_name
     }
 
-    fn list_collections(&self) -> requests::ListCollectionsBuilder<'_, C> {
-        requests::ListCollectionsBuilder::new(self)
-    }
-
     fn get_database(&self) -> requests::GetDatabaseBuilder<'_, '_, C> {
         requests::GetDatabaseBuilder::new(self)
+    }
+
+    fn list_collections(&self) -> requests::ListCollectionsBuilder<'_, C> {
+        requests::ListCollectionsBuilder::new(self)
     }
 
     fn delete_database(&self) -> requests::DeleteDatabaseBuilder<'_, C> {

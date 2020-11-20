@@ -1,5 +1,6 @@
 use crate::requests;
 use crate::traits::*;
+use azure_core::HttpClient;
 use azure_core::No;
 use std::borrow::Cow;
 use std::marker::PhantomData;
@@ -33,17 +34,15 @@ where
     }
 }
 
-impl<'a, C, D, COLL> HasHyperClient for TriggerStruct<'a, C, D, COLL>
+impl<'a, C, D, COLL> HasHttpClient for TriggerStruct<'a, C, D, COLL>
 where
     C: CosmosClient + Clone,
     D: DatabaseClient<C> + Clone,
     COLL: CollectionClient<C, D> + Clone,
 {
     #[inline]
-    fn hyper_client(
-        &self,
-    ) -> &hyper::Client<hyper_rustls::HttpsConnector<hyper::client::HttpConnector>> {
-        self.collection_client.hyper_client()
+    fn http_client(&self) -> &dyn HttpClient {
+        self.collection_client.http_client()
     }
 }
 

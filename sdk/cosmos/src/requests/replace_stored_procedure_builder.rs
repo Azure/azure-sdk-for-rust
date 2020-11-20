@@ -1,9 +1,8 @@
 use crate::prelude::*;
 use crate::responses::ReplaceStoredProcedureResponse;
-use azure_core::errors::{check_status_extract_headers_and_body, AzureError};
 use azure_core::prelude::*;
 use azure_core::{No, ToAssign, Yes};
-use hyper::StatusCode;
+use http::StatusCode;
 use std::convert::TryInto;
 use std::marker::PhantomData;
 
@@ -214,12 +213,12 @@ where
     D: DatabaseClient<C>,
     COLL: CollectionClient<C, D>,
 {
-    pub async fn execute(&self) -> Result<ReplaceStoredProcedureResponse, AzureError> {
+    pub async fn execute(&self) -> Result<ReplaceStoredProcedureResponse, CosmosError> {
         trace!("ReplaceStoredProcedureBuilder::execute called");
 
         let req = self
             .stored_procedure_client
-            .prepare_request_with_stored_procedure_name(hyper::Method::PUT);
+            .prepare_request_with_stored_procedure_name(http::Method::PUT);
 
         // add trait headers
         let req = UserAgentOption::add_header(self, req);
@@ -239,16 +238,13 @@ where
         };
 
         let request = serde_json::to_string(&request)?;
-        let request = req.body(hyper::Body::from(request))?;
+        let request = req.body(request.as_bytes())?;
 
-        let (headers, body) = check_status_extract_headers_and_body(
-            self.stored_procedure_client()
-                .hyper_client()
-                .request(request),
-            StatusCode::OK,
-        )
-        .await?;
-
-        Ok((&headers, &body as &[u8]).try_into()?)
+        Ok(self
+            .stored_procedure_client()
+            .http_client()
+            .execute_request_check_status(request, StatusCode::OK)
+            .await?
+            .try_into()?)
     }
 }

@@ -6,8 +6,7 @@
     "azure_core::prelude::*",
     "azure_core::{Yes, No, ToAssign}",
     "std::marker::PhantomData",
-    "azure_core::errors::{check_status_extract_headers_and_body, AzureError}",
-    "hyper::StatusCode",
+    "http::StatusCode",
     "crate::responses::CreateStoredProcedureResponse",
     "std::convert::TryInto"
   ],

@@ -3,11 +3,10 @@
   "derive": "Debug, Clone",
   "uses": [
     "crate::responses::DeleteDatabaseResponse",
-    "azure_core::errors::{check_status_extract_headers_and_body, AzureError}",
     "azure_core::prelude::*",
     "crate::prelude::*",
     "std::convert::TryInto",
-    "hyper::StatusCode"
+    "http::StatusCode"
   ],
   "extra_types": [
     "'a",

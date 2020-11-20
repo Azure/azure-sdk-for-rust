@@ -2,6 +2,7 @@
 use crate::requests;
 use crate::traits::*;
 use crate::PermissionStruct;
+use azure_core::HttpClient;
 use azure_core::No;
 use std::borrow::Cow;
 use std::marker::PhantomData;
@@ -31,16 +32,14 @@ where
     }
 }
 
-impl<'a, C, D> HasHyperClient for UserStruct<'a, C, D>
+impl<'a, C, D> HasHttpClient for UserStruct<'a, C, D>
 where
     C: CosmosClient + Clone,
     D: DatabaseClient<C> + Clone,
 {
     #[inline]
-    fn hyper_client(
-        &self,
-    ) -> &hyper::Client<hyper_rustls::HttpsConnector<hyper::client::HttpConnector>> {
-        self.database_client().hyper_client()
+    fn http_client(&self) -> &dyn HttpClient {
+        self.database_client().http_client()
     }
 }
 

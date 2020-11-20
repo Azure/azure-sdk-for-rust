@@ -1,11 +1,10 @@
 use crate::prelude::*;
 use crate::responses::ReplaceDocumentResponse;
 use crate::ResourceType;
-use azure_core::errors::{check_status_extract_headers_and_body, AzureError};
 use azure_core::prelude::*;
 use azure_core::{No, ToAssign, Yes};
 use chrono::{DateTime, Utc};
-use hyper::StatusCode;
+use http::StatusCode;
 use serde::Serialize;
 use std::convert::TryInto;
 use std::marker::PhantomData;
@@ -467,7 +466,7 @@ where
     pub async fn execute_with_document<T>(
         &self,
         document: &T,
-    ) -> Result<ReplaceDocumentResponse, AzureError>
+    ) -> Result<ReplaceDocumentResponse, CosmosError>
     where
         T: Serialize,
     {
@@ -480,7 +479,7 @@ where
                 self.collection_client.collection_name(),
                 self.document_id()
             ),
-            hyper::Method::PUT,
+            http::Method::PUT,
             ResourceType::Documents,
         );
 
@@ -496,15 +495,14 @@ where
 
         let serialized = serde_json::to_string(document)?;
 
-        let req = req.body(hyper::Body::from(serialized))?;
+        let req = req.body(serialized.as_bytes())?;
         debug!("request == {:#?}", req);
 
-        let (headers, body) = check_status_extract_headers_and_body(
-            self.collection_client.hyper_client().request(req),
-            StatusCode::OK,
-        )
-        .await?;
-
-        (&headers, &body as &[u8]).try_into()
+        Ok(self
+            .collection_client
+            .http_client()
+            .execute_request_check_status(req, StatusCode::OK)
+            .await?
+            .try_into()?)
     }
 }

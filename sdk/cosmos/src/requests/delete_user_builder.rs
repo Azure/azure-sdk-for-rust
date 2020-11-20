@@ -1,8 +1,7 @@
 use crate::prelude::*;
 use crate::responses::DeleteUserResponse;
-use azure_core::errors::{check_status_extract_headers_and_body, AzureError};
 use azure_core::prelude::*;
-use hyper::StatusCode;
+use http::StatusCode;
 use std::convert::TryInto;
 
 #[derive(Debug, Clone)]
@@ -140,26 +139,25 @@ where
     C: CosmosClient,
     D: DatabaseClient<C>,
 {
-    pub async fn execute(&self) -> Result<DeleteUserResponse, AzureError> {
+    pub async fn execute(&self) -> Result<DeleteUserResponse, CosmosError> {
         trace!("DeleteUserBuilder::execute called");
 
         let req = self
             .user_client
-            .prepare_request_with_user_name(hyper::Method::DELETE);
+            .prepare_request_with_user_name(http::Method::DELETE);
 
         let req = UserAgentOption::add_header(self, req);
         let req = ActivityIdOption::add_header(self, req);
         let req = ConsistencyLevelOption::add_header(self, req);
 
-        let req = req.body(hyper::Body::empty())?;
+        let req = req.body(EMPTY_BODY.as_ref())?;
         debug!("\nreq == {:?}", req);
 
-        let (headers, body) = check_status_extract_headers_and_body(
-            self.user_client.hyper_client().request(req),
-            StatusCode::NO_CONTENT,
-        )
-        .await?;
-
-        Ok((&headers, &body as &[u8]).try_into()?)
+        Ok(self
+            .user_client
+            .http_client()
+            .execute_request_check_status(req, StatusCode::NO_CONTENT)
+            .await?
+            .try_into()?)
     }
 }

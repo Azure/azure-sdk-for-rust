@@ -1,9 +1,8 @@
 use crate::prelude::*;
 use crate::responses::CreateStoredProcedureResponse;
-use azure_core::errors::{check_status_extract_headers_and_body, AzureError};
 use azure_core::prelude::*;
 use azure_core::{No, ToAssign, Yes};
-use hyper::StatusCode;
+use http::StatusCode;
 use std::convert::TryInto;
 use std::marker::PhantomData;
 
@@ -207,16 +206,6 @@ where
     }
 }
 
-// methods callable regardless
-impl<'a, 'b, C, D, COLL, BodySet> CreateStoredProcedureBuilder<'a, 'b, C, D, COLL, BodySet>
-where
-    BodySet: ToAssign,
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-{
-}
-
 // methods callable only when every mandatory field has been filled
 impl<'a, 'b, C, D, COLL> CreateStoredProcedureBuilder<'a, 'b, C, D, COLL, Yes>
 where
@@ -224,12 +213,12 @@ where
     D: DatabaseClient<C>,
     COLL: CollectionClient<C, D>,
 {
-    pub async fn execute(&self) -> Result<CreateStoredProcedureResponse, AzureError> {
+    pub async fn execute(&self) -> Result<CreateStoredProcedureResponse, CosmosError> {
         trace!("CreateStoredProcedureBuilder::execute called");
 
         let req = self
             .stored_procedure_client
-            .prepare_request(hyper::Method::POST);
+            .prepare_request(http::Method::POST);
 
         // add trait headers
         let req = UserAgentOption::add_header(self, req);
@@ -249,16 +238,13 @@ where
         };
 
         let request = serde_json::to_string(&request)?;
-        let request = req.body(hyper::Body::from(request))?;
+        let request = req.body(request.as_bytes())?;
 
-        let (headers, body) = check_status_extract_headers_and_body(
-            self.stored_procedure_client()
-                .hyper_client()
-                .request(request),
-            StatusCode::CREATED,
-        )
-        .await?;
-
-        Ok((&headers, &body as &[u8]).try_into()?)
+        Ok(self
+            .stored_procedure_client()
+            .http_client()
+            .execute_request_check_status(request, StatusCode::CREATED)
+            .await?
+            .try_into()?)
     }
 }

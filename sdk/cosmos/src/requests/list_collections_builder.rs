@@ -1,10 +1,9 @@
 use crate::prelude::*;
 use crate::responses::ListCollectionsResponse;
 use crate::{DatabaseClientRequired, ResourceType};
-use azure_core::errors::{check_status_extract_headers_and_body, AzureError};
 use azure_core::prelude::*;
 use futures::stream::{unfold, Stream};
-use hyper::StatusCode;
+use http::StatusCode;
 use std::convert::TryInto;
 
 #[derive(Debug)]
@@ -204,11 +203,11 @@ impl<'a, C> ListCollectionsBuilder<'a, C>
 where
     C: CosmosClient,
 {
-    pub async fn execute(&self) -> Result<ListCollectionsResponse, AzureError> {
+    pub async fn execute(&self) -> Result<ListCollectionsResponse, CosmosError> {
         trace!("ListCollectionsBuilder::execute called");
         let request = self.database_client.cosmos_client().prepare_request(
             &format!("dbs/{}/colls", self.database_client.database_name().name()),
-            hyper::Method::GET,
+            http::Method::GET,
             ResourceType::Collections,
         );
 
@@ -218,17 +217,19 @@ where
         let request = ContinuationOption::add_header(self, request);
         let request = MaxItemCountOption::add_header(self, request);
 
-        let request = request.body(hyper::Body::empty())?;
+        let request = request.body(EMPTY_BODY.as_ref())?;
 
         trace!("request prepared == {:?}", request);
 
-        let future_response = self.database_client.hyper_client().request(request);
-        let (headers, body) =
-            check_status_extract_headers_and_body(future_response, StatusCode::OK).await?;
-        Ok((&headers, &body as &[u8]).try_into()?)
+        Ok(self
+            .database_client
+            .http_client()
+            .execute_request_check_status(request, StatusCode::OK)
+            .await?
+            .try_into()?)
     }
 
-    pub fn stream(&self) -> impl Stream<Item = Result<ListCollectionsResponse, AzureError>> + '_ {
+    pub fn stream(&self) -> impl Stream<Item = Result<ListCollectionsResponse, CosmosError>> + '_ {
         #[derive(Debug, Clone, PartialEq)]
         enum States {
             Init,

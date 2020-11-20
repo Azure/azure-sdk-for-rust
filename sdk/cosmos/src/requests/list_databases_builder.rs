@@ -1,10 +1,9 @@
 use crate::prelude::*;
 use crate::responses::ListDatabasesResponse;
 use crate::ResourceType;
-use azure_core::errors::{check_status_extract_headers_and_body, AzureError};
 use azure_core::prelude::*;
 use futures::stream::{unfold, Stream};
-use hyper::StatusCode;
+use http::StatusCode;
 use std::convert::TryInto;
 
 #[derive(Debug, Clone)]
@@ -146,12 +145,12 @@ impl<'a> MaxItemCountSupport for ListDatabasesBuilder<'a> {
 
 // methods callable only when every mandatory field has been filled
 impl<'a> ListDatabasesBuilder<'a> {
-    pub async fn execute(&self) -> Result<ListDatabasesResponse, AzureError> {
+    pub async fn execute(&self) -> Result<ListDatabasesResponse, CosmosError> {
         trace!("ListDatabasesBuilder::execute called");
 
         let request =
             self.cosmos_client
-                .prepare_request("dbs", hyper::Method::GET, ResourceType::Databases);
+                .prepare_request("dbs", http::Method::GET, ResourceType::Databases);
 
         let request = UserAgentOption::add_header(self, request);
         let request = ActivityIdOption::add_header(self, request);
@@ -159,16 +158,17 @@ impl<'a> ListDatabasesBuilder<'a> {
         let request = ContinuationOption::add_header(self, request);
         let request = MaxItemCountOption::add_header(self, request);
 
-        let request = request.body(hyper::Body::empty())?;
+        let request = request.body(EMPTY_BODY.as_ref())?;
 
-        let future_response = self.cosmos_client.hyper_client().request(request);
-        let (headers, body) =
-            check_status_extract_headers_and_body(future_response, StatusCode::OK).await?;
-
-        Ok((&headers, &body as &[u8]).try_into()?)
+        Ok(self
+            .cosmos_client
+            .http_client()
+            .execute_request_check_status(request, StatusCode::OK)
+            .await?
+            .try_into()?)
     }
 
-    pub fn stream(&self) -> impl Stream<Item = Result<ListDatabasesResponse, AzureError>> + '_ {
+    pub fn stream(&self) -> impl Stream<Item = Result<ListDatabasesResponse, CosmosError>> + '_ {
         #[derive(Debug, Clone, PartialEq)]
         enum States {
             Init,

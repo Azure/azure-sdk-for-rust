@@ -1,5 +1,6 @@
 use crate::requests;
 use crate::traits::*;
+use azure_core::HttpClient;
 use azure_core::No;
 use std::borrow::Cow;
 use std::marker::PhantomData;
@@ -37,7 +38,7 @@ where
     }
 }
 
-impl<'a, C, D, COLL, DOC> HasHyperClient for AttachmentStruct<'a, C, D, COLL, DOC>
+impl<'a, C, D, COLL, DOC> HasHttpClient for AttachmentStruct<'a, C, D, COLL, DOC>
 where
     C: CosmosClient + Clone,
     D: DatabaseClient<C> + Clone,
@@ -45,10 +46,8 @@ where
     DOC: DocumentClient<C, D, COLL> + Clone,
 {
     #[inline]
-    fn hyper_client(
-        &self,
-    ) -> &hyper::Client<hyper_rustls::HttpsConnector<hyper::client::HttpConnector>> {
-        self.document_client().hyper_client()
+    fn http_client(&self) -> &dyn HttpClient {
+        self.document_client().http_client()
     }
 }
 

@@ -1,12 +1,11 @@
 use crate::prelude::*;
 use crate::responses::QueryDocumentsResponse;
 use crate::{Query, ResourceType};
-use azure_core::errors::{check_status_extract_headers_and_body, AzureError};
 use azure_core::prelude::*;
 use azure_core::{No, ToAssign, Yes};
 use chrono::{DateTime, Utc};
 use futures::stream::{unfold, Stream};
-use hyper::StatusCode;
+use http::StatusCode;
 use serde::de::DeserializeOwned;
 use std::convert::TryInto;
 use std::marker::PhantomData;
@@ -562,7 +561,7 @@ where
     C: CosmosClient,
     D: DatabaseClient<C>,
 {
-    pub async fn execute<T>(&self) -> Result<QueryDocumentsResponse<T>, AzureError>
+    pub async fn execute<T>(&self) -> Result<QueryDocumentsResponse<T>, CosmosError>
     where
         T: DeserializeOwned,
     {
@@ -574,7 +573,7 @@ where
                 self.collection_client.database_client().database_name(),
                 self.collection_client.collection_name()
             ),
-            hyper::Method::POST,
+            http::Method::POST,
             ResourceType::Documents,
         );
 
@@ -596,24 +595,20 @@ where
         let body = serde_json::to_string(self.query())?;
         debug!("body == {}", body);
 
-        let req = req.body(hyper::Body::from(body))?;
+        let req = req.body(body.as_bytes())?;
         debug!("{:?}", req);
 
-        let (headers, body) = check_status_extract_headers_and_body(
-            self.collection_client.hyper_client().request(req),
-            StatusCode::OK,
-        )
-        .await?;
-
-        debug!("\nheaders == {:?}", headers);
-        debug!("\nbody == {:#?}", body);
-
-        Ok((&headers, &body as &[u8]).try_into()?)
+        Ok(self
+            .collection_client
+            .http_client()
+            .execute_request_check_status(req, StatusCode::OK)
+            .await?
+            .try_into()?)
     }
 
     pub fn stream<T>(
         &self,
-    ) -> impl Stream<Item = Result<QueryDocumentsResponse<T>, AzureError>> + '_
+    ) -> impl Stream<Item = Result<QueryDocumentsResponse<T>, CosmosError>> + '_
     where
         T: DeserializeOwned,
     {

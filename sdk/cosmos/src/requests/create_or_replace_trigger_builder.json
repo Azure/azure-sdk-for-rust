@@ -5,10 +5,9 @@
     "crate::trigger::*",
     "crate::prelude::*",
     "azure_core::prelude::*",
-    "azure_core::errors::{check_status_extract_headers_and_body, AzureError}",
     "azure_core::{Yes,No,ToAssign}",
     "std::marker::PhantomData",
-    "hyper::StatusCode",
+    "http::StatusCode",
     "crate::responses::CreateTriggerResponse",
     "std::convert::TryInto"
   ],

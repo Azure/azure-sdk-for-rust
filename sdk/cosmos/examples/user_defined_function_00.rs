@@ -1,6 +1,8 @@
+use azure_core::HttpClient;
 use azure_cosmos::prelude::*;
 use futures::stream::StreamExt;
 use std::error::Error;
+use std::sync::Arc;
 
 const FN_BODY: &str = r#"
 function tax(income) {
@@ -15,7 +17,7 @@ function tax(income) {
 }"#;
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn Error>> {
+async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let database = std::env::args()
         .nth(1)
         .expect("please specify database name as first command line parameter");
@@ -29,7 +31,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let authorization_token = AuthorizationToken::new_master(&master_key)?;
 
-    let client = ClientBuilder::new(account, authorization_token)?;
+    let client = {
+        let http_client: Arc<Box<dyn HttpClient>> = Arc::new(Box::new(reqwest::Client::new()));
+        azure_cosmos::client_builder::build_default_client(&account, authorization_token)?
+            .with_http_client(http_client)
+            .build()
+    };
     let database_client = client.with_database_client(&database);
     let collection_client = database_client.with_collection_client(&collection);
     let user_defined_function_client =

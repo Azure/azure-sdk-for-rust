@@ -5,8 +5,7 @@
     "crate::prelude::*",
     "azure_core::prelude::*",
     "crate::stored_procedure::Parameters",
-    "azure_core::errors::{check_status_extract_headers_and_body, AzureError}",
-    "hyper::StatusCode",
+    "http::StatusCode",
     "crate::responses::ExecuteStoredProcedureResponse",
     "serde::de::DeserializeOwned",
     "std::convert::TryInto"

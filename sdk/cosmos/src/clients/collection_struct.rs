@@ -2,11 +2,11 @@ use crate::clients::*;
 use crate::requests;
 use crate::{
     CollectionClient, CosmosClient, DatabaseClient, HasCosmosClient, HasDatabaseClient,
-    HasHyperClient, IntoDocumentClient, IntoStoredProcedureClient, IntoTriggerClient,
+    HasHttpClient, IntoDocumentClient, IntoStoredProcedureClient, IntoTriggerClient,
     IntoUserDefinedFunctionClient, PartitionKeys, UserDefinedFunctionStruct, WithDocumentClient,
     WithStoredProcedureClient, WithTriggerClient, WithUserDefinedFunctionClient,
 };
-use azure_core::No;
+use azure_core::{HttpClient, No};
 use std::borrow::Cow;
 use std::marker::PhantomData;
 
@@ -36,16 +36,14 @@ where
     }
 }
 
-impl<'a, C, D> HasHyperClient for CollectionStruct<'a, C, D>
+impl<'a, C, D> HasHttpClient for CollectionStruct<'a, C, D>
 where
     C: CosmosClient + Clone,
     D: DatabaseClient<C> + Clone,
 {
     #[inline]
-    fn hyper_client(
-        &self,
-    ) -> &hyper::Client<hyper_rustls::HttpsConnector<hyper::client::HttpConnector>> {
-        self.cosmos_client().hyper_client()
+    fn http_client(&self) -> &dyn HttpClient {
+        self.cosmos_client().http_client()
     }
 }
 

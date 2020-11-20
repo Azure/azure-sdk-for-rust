@@ -1,28 +1,27 @@
 use crate::requests;
 use crate::{PartitionKeys, ResourceType};
-use azure_core::No;
+use azure_core::{HttpClient, No};
 use http::request::Builder;
-use hyper_rustls::HttpsConnector;
 use std::borrow::Cow;
 use std::fmt::Debug;
 
-pub trait HasHyperClient: Debug + Send + Sync {
-    fn hyper_client(&self) -> &hyper::Client<HttpsConnector<hyper::client::HttpConnector>>;
+pub trait HasHttpClient: Debug + Send + Sync {
+    fn http_client(&self) -> &dyn HttpClient;
 }
 
-pub trait CosmosClient: HasHyperClient + Send + Sync {
+pub trait CosmosClient: HasHttpClient + Send + Sync {
     fn create_database(&self) -> requests::CreateDatabaseBuilder<'_, No>;
     fn list_databases(&self) -> requests::ListDatabasesBuilder<'_>;
 
     fn prepare_request(
         &self,
         uri_path: &str,
-        http_method: hyper::Method,
+        http_method: http::Method,
         resource_type: ResourceType,
     ) -> Builder;
 }
 
-pub trait HasCosmosClient<C>: HasHyperClient
+pub trait HasCosmosClient<C>: HasHttpClient
 where
     C: CosmosClient,
 {
@@ -41,11 +40,11 @@ where
     fn delete_database(&self) -> requests::DeleteDatabaseBuilder<'_, C>;
     fn list_users(&self) -> requests::ListUsersBuilder<'_, '_, C>;
 
-    fn prepare_request(&self, method: hyper::Method) -> http::request::Builder {
+    fn prepare_request(&self, method: http::Method) -> http::request::Builder {
         self.cosmos_client()
             .prepare_request("dbs", method, ResourceType::Databases)
     }
-    fn prepare_request_with_database_name(&self, method: hyper::Method) -> http::request::Builder {
+    fn prepare_request_with_database_name(&self, method: http::Method) -> http::request::Builder {
         self.cosmos_client().prepare_request(
             &format!("dbs/{}", self.database_name()),
             method,
@@ -96,14 +95,14 @@ where
 
     fn list_permissions(&self) -> requests::ListPermissionsBuilder<'_, '_, C, D>;
 
-    fn prepare_request(&self, method: hyper::Method) -> http::request::Builder {
+    fn prepare_request(&self, method: http::Method) -> http::request::Builder {
         self.cosmos_client().prepare_request(
             &format!("dbs/{}/users", self.database_client().database_name()),
             method,
             ResourceType::Users,
         )
     }
-    fn prepare_request_with_user_name(&self, method: hyper::Method) -> http::request::Builder {
+    fn prepare_request_with_user_name(&self, method: http::Method) -> http::request::Builder {
         self.cosmos_client().prepare_request(
             &format!(
                 "dbs/{}/users/{}",
@@ -160,7 +159,7 @@ where
     fn replace_permission(&self) -> requests::ReplacePermissionBuilder<'_, '_, C, D, USER>;
     fn delete_permission(&self) -> requests::DeletePermissionsBuilder<'_, '_, C, D, USER>;
 
-    fn prepare_request(&self, method: hyper::Method) -> http::request::Builder {
+    fn prepare_request(&self, method: http::Method) -> http::request::Builder {
         self.cosmos_client().prepare_request(
             &format!(
                 "dbs/{}/users/{}/permissions",
@@ -171,10 +170,7 @@ where
             ResourceType::Permissions,
         )
     }
-    fn prepare_request_with_permission_name(
-        &self,
-        method: hyper::Method,
-    ) -> http::request::Builder {
+    fn prepare_request_with_permission_name(&self, method: http::Method) -> http::request::Builder {
         self.cosmos_client().prepare_request(
             &format!(
                 "dbs/{}/users/{}/permissions/{}",
@@ -246,17 +242,14 @@ where
 
     fn get_partition_key_ranges(&self) -> requests::GetPartitionKeyRangesBuilder<'_, '_, C, D>;
 
-    fn prepare_request(&self, method: hyper::Method) -> http::request::Builder {
+    fn prepare_request(&self, method: http::Method) -> http::request::Builder {
         self.cosmos_client().prepare_request(
             &format!("dbs/{}/colls", self.database_client().database_name()),
             method,
             ResourceType::Collections,
         )
     }
-    fn prepare_request_with_collection_name(
-        &self,
-        method: hyper::Method,
-    ) -> http::request::Builder {
+    fn prepare_request_with_collection_name(&self, method: http::Method) -> http::request::Builder {
         self.cosmos_client().prepare_request(
             &format!(
                 "dbs/{}/colls/{}",
@@ -318,7 +311,7 @@ where
         &self,
     ) -> requests::DeleteUserDefinedFunctionBuilder<'_, '_, C, D, COLL>;
 
-    fn prepare_request(&self, method: hyper::Method) -> http::request::Builder {
+    fn prepare_request(&self, method: http::Method) -> http::request::Builder {
         self.cosmos_client().prepare_request(
             &format!(
                 "dbs/{}/colls/{}/udfs",
@@ -331,7 +324,7 @@ where
     }
     fn prepare_request_with_user_defined_function_name(
         &self,
-        method: hyper::Method,
+        method: http::Method,
     ) -> http::request::Builder {
         self.cosmos_client().prepare_request(
             &format!(
@@ -406,7 +399,7 @@ where
         &self,
     ) -> requests::ReplaceStoredProcedureBuilder<'_, '_, C, D, COLL, No>;
 
-    fn prepare_request(&self, method: hyper::Method) -> http::request::Builder {
+    fn prepare_request(&self, method: http::Method) -> http::request::Builder {
         self.cosmos_client().prepare_request(
             &format!(
                 "dbs/{}/colls/{}/sprocs",
@@ -419,7 +412,7 @@ where
     }
     fn prepare_request_with_stored_procedure_name(
         &self,
-        method: hyper::Method,
+        method: http::Method,
     ) -> http::request::Builder {
         self.cosmos_client().prepare_request(
             &format!(
@@ -483,7 +476,7 @@ where
     ) -> requests::CreateOrReplaceTriggerBuilder<'_, C, D, COLL, No, No, No>;
     fn delete_trigger(&self) -> requests::DeleteTriggerBuilder<'_, '_, C, D, COLL>;
 
-    fn prepare_request(&self, method: hyper::Method) -> http::request::Builder {
+    fn prepare_request(&self, method: http::Method) -> http::request::Builder {
         self.cosmos_client().prepare_request(
             &format!(
                 "dbs/{}/colls/{}/triggers",
@@ -494,7 +487,7 @@ where
             ResourceType::Triggers,
         )
     }
-    fn prepare_request_with_trigger_name(&self, method: hyper::Method) -> http::request::Builder {
+    fn prepare_request_with_trigger_name(&self, method: http::Method) -> http::request::Builder {
         self.cosmos_client().prepare_request(
             &format!(
                 "dbs/{}/colls/{}/triggers/{}",
@@ -555,7 +548,7 @@ where
     fn delete_document(&self) -> requests::DeleteDocumentBuilder<'_, C, D, COLL>;
     fn list_attachments(&self) -> requests::ListAttachmentsBuilder<'_, '_, C, D, COLL>;
 
-    fn prepare_request(&self, method: hyper::Method) -> http::request::Builder {
+    fn prepare_request(&self, method: http::Method) -> http::request::Builder {
         self.cosmos_client().prepare_request(
             &format!(
                 "dbs/{}/colls/{}/docs",
@@ -566,7 +559,7 @@ where
             ResourceType::Documents,
         )
     }
-    fn prepare_request_with_document_name(&self, method: hyper::Method) -> http::request::Builder {
+    fn prepare_request_with_document_name(&self, method: http::Method) -> http::request::Builder {
         self.cosmos_client().prepare_request(
             &format!(
                 "dbs/{}/colls/{}/docs/{}",
@@ -645,7 +638,7 @@ where
     fn delete(&self) -> requests::DeleteAttachmentBuilder<'_, '_, C, D, COLL, DOC>;
     fn get(&self) -> requests::GetAttachmentBuilder<'_, '_, C, D, COLL, DOC>;
 
-    fn prepare_request(&self, method: hyper::Method) -> http::request::Builder {
+    fn prepare_request(&self, method: http::Method) -> http::request::Builder {
         self.cosmos_client().prepare_request(
             &format!(
                 "dbs/{}/colls/{}/docs/{}/attachments",
@@ -657,10 +650,7 @@ where
             ResourceType::Attachments,
         )
     }
-    fn prepare_request_with_attachment_name(
-        &self,
-        method: hyper::Method,
-    ) -> http::request::Builder {
+    fn prepare_request_with_attachment_name(&self, method: http::Method) -> http::request::Builder {
         self.cosmos_client().prepare_request(
             &format!(
                 "dbs/{}/colls/{}/docs/{}/attachments/{}",

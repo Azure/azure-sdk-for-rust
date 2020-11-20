@@ -3,10 +3,9 @@ use crate::collection::{Collection, IndexingPolicy, PartitionKey};
 use crate::prelude::*;
 use crate::responses::CreateCollectionResponse;
 use crate::{Offer, ResourceType};
-use azure_core::errors::{check_status_extract_headers_and_body, AzureError};
 use azure_core::prelude::*;
 use azure_core::{No, ToAssign, Yes};
-use hyper::StatusCode;
+use http::StatusCode;
 use std::convert::TryInto;
 use std::marker::PhantomData;
 
@@ -468,12 +467,12 @@ impl<'a, C> CreateCollectionBuilder<'a, C, Yes, Yes, Yes, Yes>
 where
     C: CosmosClient,
 {
-    pub async fn execute(&self) -> Result<CreateCollectionResponse, AzureError> {
+    pub async fn execute(&self) -> Result<CreateCollectionResponse, CosmosError> {
         trace!("CreateCollectionBuilder::execute called");
 
         let mut req = self.database_client.cosmos_client().prepare_request(
             &format!("dbs/{}/colls", self.database_client.database_name()),
-            hyper::Method::POST,
+            http::Method::POST,
             ResourceType::Collections,
         );
 
@@ -494,15 +493,14 @@ where
         let body = serde_json::to_string(&collection)?;
         debug!("body == {}", body);
 
-        let req = req.body(hyper::Body::from(body))?;
+        let req = req.body(body.as_bytes())?;
         debug!("\nreq == {:?}", req);
 
-        let (headers, body) = check_status_extract_headers_and_body(
-            self.database_client.hyper_client().request(req),
-            StatusCode::CREATED,
-        )
-        .await?;
-
-        Ok((&headers, &body as &[u8]).try_into()?)
+        Ok(self
+            .database_client
+            .http_client()
+            .execute_request_check_status(req, StatusCode::CREATED)
+            .await?
+            .try_into()?)
     }
 }

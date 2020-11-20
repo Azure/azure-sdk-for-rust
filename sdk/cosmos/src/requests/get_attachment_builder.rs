@@ -1,7 +1,6 @@
 use crate::prelude::*;
-use azure_core::errors::{check_status_extract_headers_and_body, AzureError};
 use azure_core::prelude::*;
-use hyper::StatusCode;
+use http::StatusCode;
 use std::convert::TryInto;
 
 #[derive(Debug, Clone)]
@@ -206,10 +205,10 @@ where
     COLL: CollectionClient<C, D>,
     DOC: DocumentClient<C, D, COLL>,
 {
-    pub async fn execute(&self) -> Result<crate::responses::GetAttachmentResponse, AzureError> {
+    pub async fn execute(&self) -> Result<crate::responses::GetAttachmentResponse, CosmosError> {
         let mut req = self
             .attachment_client
-            .prepare_request_with_attachment_name(hyper::Method::GET);
+            .prepare_request_with_attachment_name(http::Method::GET);
 
         // add trait headers
         req = IfMatchConditionOption::add_header(self, req);
@@ -222,19 +221,15 @@ where
             req,
         );
 
-        let req = req.body(hyper::Body::empty())?;
+        let req = req.body(EMPTY_BODY.as_ref())?;
 
         debug!("req == {:#?}", req);
 
-        let (headers, whole_body) = check_status_extract_headers_and_body(
-            self.attachment_client.hyper_client().request(req),
-            StatusCode::OK,
-        )
-        .await?;
-
-        debug!("\nheaders == {:?}", headers);
-        debug!("\nwhole body == {:#?}", whole_body);
-
-        Ok((&headers, &whole_body as &[u8]).try_into()?)
+        Ok(self
+            .attachment_client
+            .http_client()
+            .execute_request_check_status(req, StatusCode::OK)
+            .await?
+            .try_into()?)
     }
 }

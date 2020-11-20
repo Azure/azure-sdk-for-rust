@@ -1,9 +1,8 @@
 use crate::prelude::*;
 use crate::responses::ExecuteStoredProcedureResponse;
 use crate::stored_procedure::Parameters;
-use azure_core::errors::{check_status_extract_headers_and_body, AzureError};
 use azure_core::prelude::*;
-use hyper::StatusCode;
+use http::StatusCode;
 use serde::de::DeserializeOwned;
 use std::convert::TryInto;
 
@@ -278,7 +277,7 @@ where
     D: DatabaseClient<C>,
     COLL: CollectionClient<C, D>,
 {
-    pub async fn execute<T>(&self) -> Result<ExecuteStoredProcedureResponse<T>, AzureError>
+    pub async fn execute<T>(&self) -> Result<ExecuteStoredProcedureResponse<T>, CosmosError>
     where
         T: DeserializeOwned,
     {
@@ -286,7 +285,7 @@ where
 
         let request = self
             .stored_procedure_client()
-            .prepare_request_with_stored_procedure_name(hyper::Method::POST);
+            .prepare_request_with_stored_procedure_name(http::Method::POST);
 
         // add trait headers
         let request = UserAgentOption::add_header(self, request);
@@ -299,16 +298,13 @@ where
 
         let body = ParametersOption::generate_body(self);
 
-        let request = request.body(hyper::Body::from(body))?;
+        let request = request.body(body.as_bytes())?;
 
-        let (headers, body) = check_status_extract_headers_and_body(
-            self.stored_procedure_client()
-                .hyper_client()
-                .request(request),
-            StatusCode::OK,
-        )
-        .await?;
-
-        Ok((&headers, &body as &[u8]).try_into()?)
+        Ok(self
+            .stored_procedure_client()
+            .http_client()
+            .execute_request_check_status(request, StatusCode::OK)
+            .await?
+            .try_into()?)
     }
 }

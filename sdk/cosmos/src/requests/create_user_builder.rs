@@ -1,8 +1,7 @@
 use crate::prelude::*;
 use crate::responses::CreateUserResponse;
-use azure_core::errors::{check_status_extract_headers_and_body, AzureError};
 use azure_core::prelude::*;
-use hyper::StatusCode;
+use http::StatusCode;
 use std::convert::TryInto;
 
 #[derive(Debug, Clone)]
@@ -140,10 +139,10 @@ where
     C: CosmosClient,
     D: DatabaseClient<C>,
 {
-    pub async fn execute(&self) -> Result<CreateUserResponse, AzureError> {
+    pub async fn execute(&self) -> Result<CreateUserResponse, CosmosError> {
         trace!("CreateUserBuilder::execute called");
 
-        let req = self.user_client.prepare_request(hyper::Method::POST);
+        let req = self.user_client.prepare_request(http::Method::POST);
 
         let req = UserAgentOption::add_header(self, req);
         let req = ActivityIdOption::add_header(self, req);
@@ -160,15 +159,14 @@ where
         };
         let request_body = serde_json::to_string(&request_body)?;
 
-        let req = req.body(hyper::Body::from(request_body))?;
+        let req = req.body(request_body.as_bytes())?;
         debug!("\nreq == {:?}", req);
 
-        let (headers, body) = check_status_extract_headers_and_body(
-            self.user_client.hyper_client().request(req),
-            StatusCode::CREATED,
-        )
-        .await?;
-
-        Ok((&headers, &body as &[u8]).try_into()?)
+        Ok(self
+            .user_client
+            .http_client()
+            .execute_request_check_status(req, StatusCode::CREATED)
+            .await?
+            .try_into()?)
     }
 }

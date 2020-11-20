@@ -1,9 +1,8 @@
 use crate::prelude::*;
 use crate::responses::CreateSlugAttachmentResponse;
-use azure_core::errors::{check_status_extract_headers_and_body, AzureError};
 use azure_core::prelude::*;
 use azure_core::{No, ToAssign, Yes};
-use hyper::StatusCode;
+use http::StatusCode;
 use std::convert::TryInto;
 use std::marker::PhantomData;
 
@@ -340,8 +339,8 @@ where
     COLL: CollectionClient<C, D>,
     DOC: DocumentClient<C, D, COLL>,
 {
-    pub async fn execute(&self) -> Result<CreateSlugAttachmentResponse, AzureError> {
-        let mut req = self.attachment_client.prepare_request(hyper::Method::POST);
+    pub async fn execute(&self) -> Result<CreateSlugAttachmentResponse, CosmosError> {
+        let mut req = self.attachment_client.prepare_request(http::Method::POST);
 
         // add trait headers
         req = IfMatchConditionOption::add_header(self, req);
@@ -359,19 +358,15 @@ where
         req = req.header("Slug", self.attachment_client.attachment_name().name());
         req = req.header(http::header::CONTENT_LENGTH, self.body().len());
 
-        let req = req.body(hyper::Body::from(self.body().to_owned()))?;
+        let req = req.body(self.body())?;
 
         debug!("req == {:#?}", req);
 
-        let (headers, whole_body) = check_status_extract_headers_and_body(
-            self.attachment_client.hyper_client().request(req),
-            StatusCode::CREATED,
-        )
-        .await?;
-
-        debug!("\nheaders == {:?}", headers);
-        debug!("\nwhole body == {:#?}", whole_body);
-
-        Ok((&headers, &whole_body as &[u8]).try_into()?)
+        Ok(self
+            .attachment_client
+            .http_client()
+            .execute_request_check_status(req, StatusCode::CREATED)
+            .await?
+            .try_into()?)
     }
 }

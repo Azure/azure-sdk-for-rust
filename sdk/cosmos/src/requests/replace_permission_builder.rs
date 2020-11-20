@@ -1,9 +1,8 @@
 use crate::prelude::*;
 use crate::responses::ReplacePermissionResponse;
 use crate::{PermissionMode, PermissionResource};
-use azure_core::errors::{check_status_extract_headers_and_body, AzureError};
 use azure_core::prelude::*;
-use hyper::StatusCode;
+use http::StatusCode;
 use std::convert::TryInto;
 
 #[derive(Debug, Clone)]
@@ -195,7 +194,7 @@ where
     pub async fn execute_with_permission<R>(
         &self,
         permission_mode: &PermissionMode<R>,
-    ) -> Result<ReplacePermissionResponse<'a>, AzureError>
+    ) -> Result<ReplacePermissionResponse<'a>, CosmosError>
     where
         R: PermissionResource,
     {
@@ -203,7 +202,7 @@ where
 
         let request = self
             .permission_client
-            .prepare_request_with_permission_name(hyper::Method::PUT);
+            .prepare_request_with_permission_name(http::Method::PUT);
 
         let request = UserAgentOption::add_header(self, request);
         let request = ActivityIdOption::add_header(self, request);
@@ -228,15 +227,14 @@ where
         };
         let request_body = serde_json::to_string(&request_body)?;
 
-        let request = request.body(hyper::Body::from(request_body))?;
+        let request = request.body(request_body.as_bytes())?;
         debug!("\nrequest == {:#?}", request);
 
-        let (headers, body) = check_status_extract_headers_and_body(
-            self.permission_client.hyper_client().request(request),
-            StatusCode::OK,
-        )
-        .await?;
-
-        Ok((&headers, &body as &[u8]).try_into()?)
+        Ok(self
+            .permission_client
+            .http_client()
+            .execute_request_check_status(request, StatusCode::OK)
+            .await?
+            .try_into()?)
     }
 }

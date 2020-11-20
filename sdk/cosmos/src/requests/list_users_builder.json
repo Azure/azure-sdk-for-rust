@@ -6,8 +6,7 @@
     "azure_core::prelude::*",
     "crate::ResourceType",
     "crate::responses::ListUsersResponse",
-    "azure_core::errors::{check_status_extract_headers_and_body, AzureError}",
-    "hyper::StatusCode",
+    "http::StatusCode",
     "std::convert::TryInto",
     "futures::stream::{unfold, Stream}"
   ],

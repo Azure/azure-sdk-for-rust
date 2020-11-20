@@ -2,10 +2,9 @@ use crate::collection::IndexingPolicy;
 use crate::collection::PartitionKey;
 use crate::prelude::*;
 use crate::responses::CreateCollectionResponse;
-use azure_core::errors::{check_status_extract_headers_and_body, AzureError};
 use azure_core::prelude::*;
 use azure_core::{No, ToAssign, Yes};
-use hyper::StatusCode;
+use http::StatusCode;
 use std::convert::TryInto;
 use std::marker::PhantomData;
 
@@ -251,12 +250,12 @@ where
     C: CosmosClient,
     D: DatabaseClient<C>,
 {
-    pub async fn execute(&self) -> Result<CreateCollectionResponse, AzureError> {
+    pub async fn execute(&self) -> Result<CreateCollectionResponse, CosmosError> {
         trace!("ReplaceCollectionBuilder::execute called");
 
         let req = self
             .collection_client
-            .prepare_request_with_collection_name(hyper::Method::PUT);
+            .prepare_request_with_collection_name(http::Method::PUT);
 
         let req = UserAgentOption::add_header(self, req);
         let req = ActivityIdOption::add_header(self, req);
@@ -282,19 +281,18 @@ where
         let body = serde_json::to_string(&request)?;
         debug!("body == {}", body);
 
-        let req = req.body(hyper::Body::from(body))?;
+        let req = req.body(body.as_bytes())?;
         debug!("\nreq == {:?}", req);
 
         // the docs are wrong here
         // [https://docs.microsoft.com/en-us/rest/api/cosmos-db/replace-a-collection](https://docs.microsoft.com/en-us/rest/api/cosmos-db/replace-a-collection).
         // They say you should receive 201 instead azure returns 200 upon success. I've filed a PR
         // to correct it.
-        let (headers, body) = check_status_extract_headers_and_body(
-            self.collection_client.hyper_client().request(req),
-            StatusCode::OK,
-        )
-        .await?;
-
-        Ok((&headers, &body as &[u8]).try_into()?)
+        Ok(self
+            .collection_client
+            .http_client()
+            .execute_request_check_status(req, StatusCode::OK)
+            .await?
+            .try_into()?)
     }
 }
