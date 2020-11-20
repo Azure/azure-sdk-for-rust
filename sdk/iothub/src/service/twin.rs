@@ -13,7 +13,6 @@ use crate::service::{ServiceClient, API_VERSION};
 pub enum AuthenticationType {
     #[serde(rename = "certificate")]
     Certificate,
-    #[serde(rename = "Authority")]
     Authority,
     #[serde(rename = "none")]
     None,
@@ -31,11 +30,10 @@ pub enum ConnectionState {
 }
 
 /// Device or module status
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, PartialEq)]
+#[serde(rename_all = "lowercase")]
 pub enum Status {
-    #[serde(rename = "disabled")]
     Disabled,
-    #[serde(rename = "enabled")]
     Enabled,
 }
 
@@ -238,11 +236,23 @@ where
 /// Helper function for getting a device/module twin
 pub(crate) async fn get_twin<T>(
     service_client: &ServiceClient,
-    uri: String,
+    device_id: String,
+    module_id: Option<String>,
 ) -> Result<T, AzureError>
 where
     T: DeserializeOwned,
 {
+    let uri = match module_id {
+        Some(val) => format!(
+            "https://{}.azure-devices.net/twins/{}/modules/{}?api-version={}",
+            service_client.iothub_name, device_id, val, API_VERSION
+        ),
+        None => format!(
+            "https://{}.azure-devices.net/twins/{}?api-version={}",
+            service_client.iothub_name, device_id, API_VERSION
+        ),
+    };
+
     let https = HttpsConnector::new();
     let client = Client::builder().build::<_, hyper::Body>(https);
     let request = Request::builder()

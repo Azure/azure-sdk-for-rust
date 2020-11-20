@@ -290,15 +290,7 @@ impl ServiceClient {
         S: Into<String>,
         T: Into<String>,
     {
-        let uri = format!(
-            "https://{}.azure-devices.net/twins/{}/modules/{}?api-version={}",
-            self.iothub_name,
-            device_id.into(),
-            module_id.into(),
-            API_VERSION
-        );
-
-        get_twin(self, uri).await
+        get_twin(self, device_id.into(), Some(module_id.into())).await
     }
 
     /// Get the device twin of a given device
@@ -314,14 +306,7 @@ impl ServiceClient {
     where
         S: Into<String>,
     {
-        let uri = format!(
-            "https://{}.azure-devices.net/twins/{}?api-version={}",
-            self.iothub_name,
-            device_id.into(),
-            API_VERSION
-        );
-
-        get_twin(self, uri).await
+        get_twin(self, device_id.into(), None).await
     }
 
     /// Update the module twin of a given device or module
