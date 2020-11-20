@@ -25,11 +25,8 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // authorization token at later time if you need, for example, to escalate the privileges for a
     // single operation.
     // Here we are using reqwest but other clients are supported (check the documentation).
-    let http_client: Box<dyn HttpClient> = Box::new(reqwest::Client::new());
-    let http_client = Arc::new(http_client);
-    let client = azure_cosmos::client_builder::build_default_client(&account, authorization_token)?
-        .with_http_client(http_client)
-        .build();
+    let http_client: Arc<Box<dyn HttpClient>> = Arc::new(Box::new(reqwest::Client::new()));
+    let client = CosmosStruct::new(http_client, account.clone(), authorization_token);
 
     // The Cosmos' client exposes a lot of methods. This one lists the databases in the specified
     // account. Database do not implement Display but deref to &str so you can pass it to methods

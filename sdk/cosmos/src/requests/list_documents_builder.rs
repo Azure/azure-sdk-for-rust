@@ -17,7 +17,7 @@ where
     if_match_condition: Option<IfMatchCondition<'b>>,
     user_agent: Option<&'b str>,
     activity_id: Option<&'b str>,
-    consistency_level: Option<ConsistencyLevel<'b>>,
+    consistency_level: Option<ConsistencyLevel>,
     continuation: Option<&'b str>,
     max_item_count: i32,
     a_im: bool,
@@ -120,7 +120,7 @@ where
     D: DatabaseClient<C>,
 {
     #[inline]
-    fn consistency_level(&self) -> Option<ConsistencyLevel<'b>> {
+    fn consistency_level(&self) -> Option<ConsistencyLevel> {
         self.consistency_level.clone()
     }
 }
@@ -246,7 +246,7 @@ where
     type O = ListDocumentsBuilder<'a, 'b, C, D>;
 
     #[inline]
-    fn with_consistency_level(self, consistency_level: ConsistencyLevel<'b>) -> Self::O {
+    fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self::O {
         ListDocumentsBuilder {
             collection_client: self.collection_client,
             if_match_condition: self.if_match_condition,

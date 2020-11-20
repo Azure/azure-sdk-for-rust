@@ -53,12 +53,9 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let authorization_token = AuthorizationToken::new_master(&master_key)?;
 
-    let client = {
-        let http_client: Arc<Box<dyn HttpClient>> = Arc::new(Box::new(reqwest::Client::new()));
-        azure_cosmos::client_builder::build_default_client(&account, authorization_token)?
-            .with_http_client(http_client)
-            .build()
-    };
+    let http_client: Arc<Box<dyn HttpClient>> = Arc::new(Box::new(reqwest::Client::new()));
+    let client = CosmosStruct::new(http_client, account.clone(), authorization_token);
+
     let database_client = client.with_database_client(&database);
     let collection_client = database_client.with_collection_client(&collection);
     let trigger_client = collection_client.with_trigger_client(&trigger_name);

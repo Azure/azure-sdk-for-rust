@@ -16,15 +16,12 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .nth(1)
         .expect("Please provide the database name as first parameter");
 
-    // use reqwest
     let authorization_token = AuthorizationToken::new_master(&master_key)?;
 
-    let http_client: Box<dyn HttpClient> = Box::new(reqwest::Client::new());
-    let http_client = Arc::new(http_client);
+    // use reqwest
+    let http_client: Arc<Box<dyn HttpClient>> = Arc::new(Box::new(reqwest::Client::new()));
+    let client = CosmosStruct::new(http_client, account.clone(), authorization_token);
 
-    let client = azure_cosmos::client_builder::build_default_client(&account, authorization_token)?
-        .with_http_client(http_client)
-        .build();
     let database_client = client.into_database_client(&database_name);
 
     let response = database_client.get_database().execute().await?;
@@ -37,9 +34,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         Box::new(hyper::Client::builder().build(HttpsConnector::new()));
     let http_client = Arc::new(http_client);
 
-    let client = azure_cosmos::client_builder::build_default_client(&account, authorization_token)?
-        .with_http_client(http_client)
-        .build();
+    let client = CosmosStruct::new(http_client, account, authorization_token);
     let database_client = client.into_database_client(&database_name);
 
     let response = database_client.get_database().execute().await?;

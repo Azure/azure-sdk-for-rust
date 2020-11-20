@@ -14,7 +14,7 @@ where
     trigger_client: &'a dyn TriggerClient<C, D, COLL>,
     user_agent: Option<&'b str>,
     activity_id: Option<&'b str>,
-    consistency_level: Option<ConsistencyLevel<'b>>,
+    consistency_level: Option<ConsistencyLevel>,
 }
 
 impl<'a, 'b, C, D, COLL> DeleteTriggerBuilder<'a, 'b, C, D, COLL>
@@ -83,7 +83,7 @@ where
     COLL: CollectionClient<C, D>,
 {
     #[inline]
-    fn consistency_level(&self) -> Option<ConsistencyLevel<'b>> {
+    fn consistency_level(&self) -> Option<ConsistencyLevel> {
         self.consistency_level.clone()
     }
 }
@@ -135,7 +135,7 @@ where
     type O = DeleteTriggerBuilder<'a, 'b, C, D, COLL>;
 
     #[inline]
-    fn with_consistency_level(self, consistency_level: ConsistencyLevel<'b>) -> Self::O {
+    fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self::O {
         DeleteTriggerBuilder {
             trigger_client: self.trigger_client,
             user_agent: self.user_agent,

@@ -1,4 +1,4 @@
-pub use crate::clients::{ClientBuilder, CosmosStruct};
+pub use crate::clients::CosmosStruct;
 pub use crate::collection::{
     Collection, DataType, IncludedPath, IncludedPathIndex, IndexingMode, IndexingPolicy, KeyKind,
 };

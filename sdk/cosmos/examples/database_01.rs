@@ -12,13 +12,11 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let account = std::env::var("COSMOS_ACCOUNT").expect("Set env variable COSMOS_ACCOUNT first!");
 
     let authorization_token = AuthorizationToken::new_master(&master_key)?;
-    let http_client: Arc<Box<dyn HttpClient>> = Arc::new(Box::new(reqwest::Client::new()));
-    let cosmos_client =
-        azure_cosmos::client_builder::build_default_client(&account, authorization_token)?
-            .with_http_client(http_client)
-            .build();
 
-    let database_client = cosmos_client.with_database_client("pollo");
+    let http_client: Arc<Box<dyn HttpClient>> = Arc::new(Box::new(reqwest::Client::new()));
+    let client = CosmosStruct::new(http_client, account, authorization_token);
+
+    let database_client = client.with_database_client("pollo");
     println!("database_name == {}", database_client.database_name());
 
     let collections = database_client.list_collections().execute().await?;

@@ -21,7 +21,7 @@ where
     if_modified_since: Option<&'b DateTime<Utc>>,
     user_agent: Option<&'b str>,
     activity_id: Option<&'b str>,
-    consistency_level: Option<ConsistencyLevel<'b>>,
+    consistency_level: Option<ConsistencyLevel>,
 }
 
 impl<'a, 'b, C, D, COLL> GetDocumentBuilder<'a, 'b, C, D, COLL>
@@ -116,7 +116,7 @@ where
     COLL: CollectionClient<C, D>,
 {
     #[inline]
-    fn consistency_level(&self) -> Option<ConsistencyLevel<'b>> {
+    fn consistency_level(&self) -> Option<ConsistencyLevel> {
         self.consistency_level.clone()
     }
 }
@@ -214,7 +214,7 @@ where
     type O = GetDocumentBuilder<'a, 'b, C, D, COLL>;
 
     #[inline]
-    fn with_consistency_level(self, consistency_level: ConsistencyLevel<'b>) -> Self::O {
+    fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self::O {
         GetDocumentBuilder {
             document_client: self.document_client,
             if_match_condition: self.if_match_condition,

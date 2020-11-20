@@ -1,5 +1,5 @@
 [workspace]
 members = [
   "sdk/*",
-  "services/mgmt/*",
+  # "services/mgmt/*",
 ]

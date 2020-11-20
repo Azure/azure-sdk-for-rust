@@ -17,7 +17,7 @@ where
     database_name: Option<&'a dyn DatabaseName>,
     user_agent: Option<&'a str>,
     activity_id: Option<&'a str>,
-    consistency_level: Option<ConsistencyLevel<'a>>,
+    consistency_level: Option<ConsistencyLevel>,
 }
 
 impl<'a> CreateDatabaseBuilder<'a, No> {
@@ -73,7 +73,7 @@ impl<'a, DatabaseNameSet> ConsistencyLevelOption<'a> for CreateDatabaseBuilder<'
 where
     DatabaseNameSet: ToAssign,
 {
-    fn consistency_level(&self) -> Option<ConsistencyLevel<'a>> {
+    fn consistency_level(&self) -> Option<ConsistencyLevel> {
         self.consistency_level.clone()
     }
 }
@@ -135,7 +135,7 @@ where
 {
     type O = CreateDatabaseBuilder<'a, DatabaseNameSet>;
 
-    fn with_consistency_level(self, consistency_level: ConsistencyLevel<'a>) -> Self::O {
+    fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self::O {
         CreateDatabaseBuilder {
             cosmos_client: self.cosmos_client,
             p_database_name: PhantomData {},
