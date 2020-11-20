@@ -1,8 +1,7 @@
 use crate::prelude::*;
 use crate::responses::DeleteStoredProcedureResponse;
-use azure_core::errors::{check_status_extract_headers_and_body, AzureError};
 use azure_core::prelude::*;
-use hyper::StatusCode;
+use http::StatusCode;
 use std::convert::TryInto;
 
 #[derive(Debug, Clone)]
@@ -83,28 +82,25 @@ impl<'a, 'b> ConsistencyLevelSupport<'b> for DeleteStoredProcedureBuilder<'a, 'b
 
 // methods callable only when every mandatory field has been filled
 impl<'a, 'b> DeleteStoredProcedureBuilder<'a, 'b> {
-    pub async fn execute(&self) -> Result<DeleteStoredProcedureResponse, AzureError> {
+    pub async fn execute(&self) -> Result<DeleteStoredProcedureResponse, CosmosError> {
         trace!("DeleteStoredProcedureBuilder::execute called");
 
         let request = self
             .stored_procedure_client
-            .prepare_request_with_stored_procedure_name(hyper::Method::DELETE);
+            .prepare_request_with_stored_procedure_name(http::Method::DELETE);
 
         // add trait headers
         let request = UserAgentOption::add_header(self, request);
         let request = ActivityIdOption::add_header(self, request);
         let request = ConsistencyLevelOption::add_header(self, request);
 
-        let request = request.body(hyper::Body::empty())?;
+        let request = request.body(EMPTY_BODY.as_ref())?;
 
-        let (headers, body) = check_status_extract_headers_and_body(
-            self.stored_procedure_client()
-                .hyper_client()
-                .request(request),
-            StatusCode::NO_CONTENT,
-        )
-        .await?;
-
-        Ok((&headers, &body as &[u8]).try_into()?)
+        Ok(self
+            .stored_procedure_client()
+            .http_client()
+            .execute_request_check_status(request, StatusCode::NO_CONTENT)
+            .await?
+            .try_into()?)
     }
 }

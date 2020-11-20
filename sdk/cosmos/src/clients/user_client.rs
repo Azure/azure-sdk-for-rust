@@ -1,6 +1,6 @@
 use super::*;
 use crate::{requests, ReadonlyString, ResourceType};
-use azure_core::No;
+use azure_core::{HttpClient, No};
 
 #[derive(Debug, Clone)]
 pub struct UserClient {
@@ -19,18 +19,16 @@ impl UserClient {
         }
     }
 
-    pub fn hyper_client(
-        &self,
-    ) -> &hyper::Client<hyper_rustls::HttpsConnector<hyper::client::HttpConnector>> {
-        self.database_client().hyper_client()
-    }
-
     pub fn cosmos_client(&self) -> &CosmosClient {
         self.database_client().cosmos_client()
     }
 
     pub fn database_client(&self) -> &DatabaseClient {
         &self.database_client
+    }
+
+    pub fn http_client(&self) -> &dyn HttpClient {
+        self.cosmos_client().http_client()
     }
 
     pub fn user_name(&self) -> &str {
@@ -64,7 +62,7 @@ impl UserClient {
         PermissionClient::new(self, permission_name)
     }
 
-    pub fn prepare_request(&self, method: hyper::Method) -> http::request::Builder {
+    pub fn prepare_request(&self, method: http::Method) -> http::request::Builder {
         self.cosmos_client().prepare_request(
             &format!("dbs/{}/users", self.database_client().database_name()),
             method,
@@ -72,7 +70,7 @@ impl UserClient {
         )
     }
 
-    pub fn prepare_request_with_user_name(&self, method: hyper::Method) -> http::request::Builder {
+    pub fn prepare_request_with_user_name(&self, method: http::Method) -> http::request::Builder {
         self.cosmos_client().prepare_request(
             &format!(
                 "dbs/{}/users/{}",

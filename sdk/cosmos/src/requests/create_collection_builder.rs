@@ -3,10 +3,9 @@ use crate::collection::{Collection, IndexingPolicy, PartitionKey};
 use crate::prelude::*;
 use crate::responses::CreateCollectionResponse;
 use crate::{Offer, ResourceType};
-use azure_core::errors::{check_status_extract_headers_and_body, AzureError};
 use azure_core::prelude::*;
 use azure_core::{No, ToAssign, Yes};
-use hyper::StatusCode;
+use http::StatusCode;
 use std::convert::TryInto;
 use std::marker::PhantomData;
 
@@ -333,22 +332,33 @@ where
         PartitionKeySet,
     >;
 
+    #[inline]
     fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self::O {
-        Self {
+        CreateCollectionBuilder {
+            database_client: self.database_client,
+            p_offer: PhantomData {},
+            p_collection_name: PhantomData {},
+            p_indexing_policy: PhantomData {},
+            p_partition_key: PhantomData {},
+            offer: self.offer,
+            collection_name: self.collection_name,
+            indexing_policy: self.indexing_policy,
+            partition_key: self.partition_key,
+            user_agent: self.user_agent,
+            activity_id: self.activity_id,
             consistency_level: Some(consistency_level),
-            ..self
         }
     }
 }
 
 // methods callable only when every mandatory field has been filled
 impl<'a> CreateCollectionBuilder<'a, Yes, Yes, Yes, Yes> {
-    pub async fn execute(&self) -> Result<CreateCollectionResponse, AzureError> {
+    pub async fn execute(&self) -> Result<CreateCollectionResponse, CosmosError> {
         trace!("CreateCollectionBuilder::execute called");
 
         let mut req = self.database_client.cosmos_client().prepare_request(
             &format!("dbs/{}/colls", self.database_client.database_name()),
-            hyper::Method::POST,
+            http::Method::POST,
             ResourceType::Collections,
         );
 
@@ -369,15 +379,14 @@ impl<'a> CreateCollectionBuilder<'a, Yes, Yes, Yes, Yes> {
         let body = serde_json::to_string(&collection)?;
         debug!("body == {}", body);
 
-        let req = req.body(hyper::Body::from(body))?;
+        let req = req.body(body.as_bytes())?;
         debug!("\nreq == {:?}", req);
 
-        let (headers, body) = check_status_extract_headers_and_body(
-            self.database_client.hyper_client().request(req),
-            StatusCode::CREATED,
-        )
-        .await?;
-
-        Ok((&headers, &body as &[u8]).try_into()?)
+        Ok(self
+            .database_client
+            .http_client()
+            .execute_request_check_status(req, StatusCode::CREATED)
+            .await?
+            .try_into()?)
     }
 }

@@ -1,14 +1,13 @@
 use crate::prelude::*;
 use crate::responses::GetDocumentResponse;
 use crate::DocumentClientRequired;
-use azure_core::errors::{extract_status_headers_and_body, AzureError, UnexpectedHTTPResult};
 use azure_core::modify_conditions::IfMatchCondition;
 use azure_core::prelude::*;
 use azure_core::{IfMatchConditionOption, IfMatchConditionSupport};
 use chrono::{DateTime, Utc};
-use hyper::StatusCode;
+use http::StatusCode;
 use serde::de::DeserializeOwned;
-use std::convert::TryFrom;
+use std::convert::TryInto;
 
 #[derive(Debug, Clone)]
 pub struct GetDocumentBuilder<'a, 'b> {
@@ -126,13 +125,13 @@ impl<'a, 'b> ConsistencyLevelSupport<'b> for GetDocumentBuilder<'a, 'b> {
 
 // methods callable only when every mandatory field has been filled
 impl<'a, 'b> GetDocumentBuilder<'a, 'b> {
-    pub async fn execute<T>(&self) -> Result<GetDocumentResponse<T>, AzureError>
+    pub async fn execute<T>(&self) -> Result<GetDocumentResponse<T>, CosmosError>
     where
         T: DeserializeOwned,
     {
         let mut req = self
             .document_client
-            .prepare_request_with_document_name(hyper::Method::GET);
+            .prepare_request_with_document_name(http::Method::GET);
 
         // add trait headers
         req = IfMatchConditionOption::add_header(self, req);
@@ -143,32 +142,20 @@ impl<'a, 'b> GetDocumentBuilder<'a, 'b> {
 
         req = crate::add_partition_keys_header(self.document_client.partition_keys(), req);
 
-        let req = req.body(hyper::Body::empty())?;
+        let req = req.body(EMPTY_BODY.as_ref())?;
 
-        let (status_code, headers, whole_body) =
-            extract_status_headers_and_body(self.document_client.hyper_client().request(req))
-                .await?;
-
-        if status_code != StatusCode::OK
-            && status_code != StatusCode::NOT_MODIFIED
-            && status_code != StatusCode::NOT_FOUND
-        {
-            return Err(UnexpectedHTTPResult::new_multiple(
-                vec![
+        Ok(self
+            .document_client
+            .http_client()
+            .execute_request_check_statuses(
+                req,
+                &[
                     StatusCode::OK,
                     StatusCode::NOT_MODIFIED,
                     StatusCode::NOT_FOUND,
                 ],
-                status_code,
-                std::str::from_utf8(&whole_body)?,
             )
-            .into());
-        }
-
-        debug!("\nheaders == {:?}", headers);
-        debug!("\nwhole body == {:#?}", whole_body);
-
-        let resp = GetDocumentResponse::try_from((status_code, &headers, &whole_body as &[u8]))?;
-        Ok(resp)
+            .await?
+            .try_into()?)
     }
 }

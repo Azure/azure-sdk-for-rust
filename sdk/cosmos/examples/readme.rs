@@ -3,10 +3,12 @@ extern crate serde_derive;
 // Using the prelude module of the Cosmos crate makes easier to use the Rust Azure SDK for Cosmos
 // DB.
 use azure_core::prelude::*;
+use azure_core::HttpClient;
 use azure_cosmos::prelude::*;
 use futures::stream::StreamExt;
 use std::borrow::Cow;
 use std::error::Error;
+use std::sync::Arc;
 
 // This is the stuct we want to use in our sample.
 // Make sure to have a collection with partition key "a_number" for this example to
@@ -26,7 +28,7 @@ struct MySampleStruct<'a> {
 // 4. Delete the documents returned by task 4.
 // 5. Check the remaining documents.
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn Error>> {
+async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // Let's get Cosmos account and master key from env variables.
     // This helps automated testing.
     let master_key =
@@ -47,7 +49,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let authorization_token = AuthorizationToken::new_master(&master_key)?;
 
     // Next we will create a Cosmos client.
-    let client = CosmosClient::new(account, authorization_token);
+    let http_client: Arc<Box<dyn HttpClient>> = Arc::new(Box::new(reqwest::Client::new()));
+    let client = CosmosClient::new(http_client, account.clone(), authorization_token);
+
     // We know the database so we can obtain a database client.
     let database_client = client.into_database_client(database_name);
     // We know the collection so we can obtain a collection client.

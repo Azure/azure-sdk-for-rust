@@ -1,12 +1,11 @@
 use crate::prelude::*;
 use crate::responses::DeleteDocumentResponse;
 use crate::DocumentClientRequired;
-use azure_core::errors::{check_status_extract_headers_and_body, AzureError};
 use azure_core::modify_conditions::IfMatchCondition;
 use azure_core::prelude::*;
 use azure_core::{IfMatchConditionOption, IfMatchConditionSupport};
 use chrono::{DateTime, Utc};
-use hyper::StatusCode;
+use http::StatusCode;
 use std::convert::TryInto;
 
 #[derive(Debug, Clone)]
@@ -144,12 +143,12 @@ impl<'a> AllowTentativeWritesSupport for DeleteDocumentBuilder<'a> {
 
 // methods callable only when every mandatory field has been filled
 impl<'a> DeleteDocumentBuilder<'a> {
-    pub async fn execute(&self) -> Result<DeleteDocumentResponse, AzureError> {
+    pub async fn execute(&self) -> Result<DeleteDocumentResponse, CosmosError> {
         trace!("DeleteDocumentBuilder::execute called");
 
         let mut req = self
             .document_client
-            .prepare_request_with_document_name(hyper::Method::DELETE);
+            .prepare_request_with_document_name(http::Method::DELETE);
 
         // add trait headers
         req = IfMatchConditionOption::add_header(self, req);
@@ -161,15 +160,14 @@ impl<'a> DeleteDocumentBuilder<'a> {
 
         req = crate::add_partition_keys_header(self.document_client.partition_keys(), req);
 
-        let req = req.body(hyper::Body::empty())?;
+        let req = req.body(EMPTY_BODY.as_ref())?;
         debug!("{:?}", req);
 
-        let (headers, body) = check_status_extract_headers_and_body(
-            self.document_client.hyper_client().request(req),
-            StatusCode::NO_CONTENT,
-        )
-        .await?;
-
-        Ok((&headers, &body as &[u8]).try_into()?)
+        Ok(self
+            .document_client
+            .http_client()
+            .execute_request_check_status(req, StatusCode::NO_CONTENT)
+            .await?
+            .try_into()?)
     }
 }

@@ -5,9 +5,7 @@
     "crate::prelude::*",
     "azure_core::prelude::*",
     "crate::responses::CreateUserResponse",
-    "azure_core::errors::UnexpectedHTTPResult",
-    "azure_core::errors::{extract_status_headers_and_body, AzureError}",
-    "hyper::StatusCode",
+    "http::StatusCode",
     "std::convert::TryInto"
   ],
   "inline": true,

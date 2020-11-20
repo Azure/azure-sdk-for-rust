@@ -1,6 +1,7 @@
 use super::{AttachmentClient, CollectionClient, CosmosClient, DatabaseClient};
 use crate::requests;
 use crate::{PartitionKeys, ReadonlyString, ResourceType};
+use azure_core::HttpClient;
 
 #[derive(Debug, Clone)]
 pub struct DocumentClient {
@@ -22,12 +23,6 @@ impl DocumentClient {
         }
     }
 
-    pub fn hyper_client(
-        &self,
-    ) -> &hyper::Client<hyper_rustls::HttpsConnector<hyper::client::HttpConnector>> {
-        self.collection_client().hyper_client()
-    }
-
     pub fn cosmos_client(&self) -> &CosmosClient {
         self.collection_client().cosmos_client()
     }
@@ -42,6 +37,10 @@ impl DocumentClient {
 
     pub fn document_name(&self) -> &str {
         &self.document_name
+    }
+
+    pub fn http_client(&self) -> &dyn HttpClient {
+        self.cosmos_client().http_client()
     }
 
     pub fn partition_keys(&self) -> &PartitionKeys {
@@ -67,7 +66,7 @@ impl DocumentClient {
         AttachmentClient::new(self, attachment_name)
     }
 
-    pub fn prepare_request(&self, method: hyper::Method) -> http::request::Builder {
+    pub fn prepare_request(&self, method: http::Method) -> http::request::Builder {
         self.cosmos_client().prepare_request(
             &format!(
                 "dbs/{}/colls/{}/docs",
@@ -81,7 +80,7 @@ impl DocumentClient {
 
     pub fn prepare_request_with_document_name(
         &self,
-        method: hyper::Method,
+        method: http::Method,
     ) -> http::request::Builder {
         self.cosmos_client().prepare_request(
             &format!(

@@ -1,10 +1,9 @@
 use crate::prelude::*;
 use crate::responses::ListUserDefinedFunctionsResponse;
 use crate::ResourceType;
-use azure_core::errors::{check_status_extract_headers_and_body, AzureError};
 use azure_core::prelude::*;
 use futures::stream::{unfold, Stream};
-use hyper::StatusCode;
+use http::StatusCode;
 use std::convert::TryInto;
 
 #[derive(Debug, Clone)]
@@ -142,7 +141,7 @@ impl<'a, 'b> MaxItemCountSupport for ListUserDefinedFunctionsBuilder<'a, 'b> {
 
 // methods callable only when every mandatory field has been filled
 impl<'a, 'b> ListUserDefinedFunctionsBuilder<'a, 'b> {
-    pub async fn execute(&self) -> Result<ListUserDefinedFunctionsResponse, AzureError> {
+    pub async fn execute(&self) -> Result<ListUserDefinedFunctionsResponse, CosmosError> {
         trace!("ListUserDefinedFunctionsBuilder::execute called");
 
         let request = self.collection_client.cosmos_client().prepare_request(
@@ -151,7 +150,7 @@ impl<'a, 'b> ListUserDefinedFunctionsBuilder<'a, 'b> {
                 self.collection_client.database_client().database_name(),
                 self.collection_client.collection_name()
             ),
-            hyper::Method::GET,
+            http::Method::GET,
             ResourceType::UserDefinedFunctions,
         );
 
@@ -163,20 +162,19 @@ impl<'a, 'b> ListUserDefinedFunctionsBuilder<'a, 'b> {
         let request = ContinuationOption::add_header(self, request);
         let request = MaxItemCountOption::add_header(self, request);
 
-        let request = request.body(hyper::Body::empty())?;
+        let request = request.body(EMPTY_BODY.as_ref())?;
 
-        let (headers, body) = check_status_extract_headers_and_body(
-            self.collection_client().hyper_client().request(request),
-            StatusCode::OK,
-        )
-        .await?;
-
-        Ok((&headers, &body as &[u8]).try_into()?)
+        Ok(self
+            .collection_client()
+            .http_client()
+            .execute_request_check_status(request, StatusCode::OK)
+            .await?
+            .try_into()?)
     }
 
     pub fn stream(
         &self,
-    ) -> impl Stream<Item = Result<ListUserDefinedFunctionsResponse, AzureError>> + '_ {
+    ) -> impl Stream<Item = Result<ListUserDefinedFunctionsResponse, CosmosError>> + '_ {
         #[derive(Debug, Clone, PartialEq)]
         enum States {
             Init,

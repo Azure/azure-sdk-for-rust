@@ -68,6 +68,7 @@ pub use crate::user_defined_function::UserDefinedFunctionName;
 use http::request::Builder;
 
 type ReadonlyString = std::borrow::Cow<'static, str>;
+pub type CosmosError = Box<dyn std::error::Error + Sync + Send>;
 
 #[allow(dead_code)]
 #[derive(Debug, Clone, Copy)]

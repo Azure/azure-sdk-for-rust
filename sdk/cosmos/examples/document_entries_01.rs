@@ -1,6 +1,8 @@
+use azure_core::HttpClient;
 use azure_cosmos::prelude::*;
 use std::borrow::Cow;
 use std::error::Error;
+use std::sync::Arc;
 #[macro_use]
 extern crate serde_derive;
 
@@ -15,7 +17,7 @@ struct MySampleStruct<'a> {
 // This example expects you to have created a collection
 // with partitionKey on "id".
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn Error>> {
+async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let database_name = std::env::args()
         .nth(1)
         .expect("please specify database name as first command line parameter");
@@ -29,7 +31,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let authorization_token = AuthorizationToken::new_master(&master_key)?;
 
-    let client = CosmosClient::new(account, authorization_token);
+    let http_client: Arc<Box<dyn HttpClient>> = Arc::new(Box::new(reqwest::Client::new()));
+    let client = CosmosClient::new(http_client, account, authorization_token);
     let client = client.into_database_client(database_name);
     let client = client.into_collection_client(collection_name);
 

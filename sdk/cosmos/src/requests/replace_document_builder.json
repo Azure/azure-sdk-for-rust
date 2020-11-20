@@ -6,10 +6,9 @@
     "azure_core::prelude::*",
     "crate::ResourceType",
     "crate::responses::ReplaceDocumentResponse",
-    "azure_core::errors::{check_status_extract_headers_and_body, AzureError}",
     "azure_core::{No, ToAssign, Yes}",
     "chrono::{DateTime, Utc}",
-    "hyper::StatusCode",
+    "http::StatusCode",
     "serde::Serialize",
     "std::convert::TryInto",
     "std::marker::PhantomData"

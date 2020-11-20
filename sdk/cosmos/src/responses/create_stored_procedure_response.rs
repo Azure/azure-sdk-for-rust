@@ -1,10 +1,10 @@
 use crate::from_headers::*;
 use crate::stored_procedure::StoredProcedure;
+use crate::CosmosError;
 use crate::ResourceQuota;
-use azure_core::errors::AzureError;
 use azure_core::headers::{etag_from_headers, session_token_from_headers};
 use chrono::{DateTime, Utc};
-use http::HeaderMap;
+use http::response::Response;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct CreateStoredProcedureResponse {
@@ -21,11 +21,12 @@ pub struct CreateStoredProcedureResponse {
     pub current_replica_set_size: u64,
 }
 
-impl std::convert::TryFrom<(&HeaderMap, &[u8])> for CreateStoredProcedureResponse {
-    type Error = AzureError;
-    fn try_from(value: (&HeaderMap, &[u8])) -> Result<Self, Self::Error> {
-        let headers = value.0;
-        let body = value.1;
+impl std::convert::TryFrom<Response<Vec<u8>>> for CreateStoredProcedureResponse {
+    type Error = CosmosError;
+
+    fn try_from(response: Response<Vec<u8>>) -> Result<Self, Self::Error> {
+        let headers = response.headers();
+        let body = response.body();
 
         Ok(Self {
             stored_procedure: serde_json::from_slice(body)?,

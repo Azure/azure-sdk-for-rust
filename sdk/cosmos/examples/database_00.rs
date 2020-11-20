@@ -1,7 +1,9 @@
+use azure_core::HttpClient;
 use azure_cosmos::prelude::*;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::error::Error;
+use std::sync::Arc;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 struct MyStruct {
@@ -13,7 +15,7 @@ struct MyStruct {
 struct MyStruct2 {}
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn Error>> {
+async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // First we retrieve the account name and master key from environment variables.
     // We expect master keys (ie, not resource constrained)
     let master_key =
@@ -22,7 +24,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let authorization_token = AuthorizationToken::new_master(&master_key)?;
 
-    let client = CosmosClient::new(account, authorization_token);
+    let http_client: Arc<Box<dyn HttpClient>> = Arc::new(Box::new(reqwest::Client::new()));
+    let client = CosmosClient::new(http_client, account, authorization_token);
 
     let dbs = client.list_databases().execute().await?;
 

@@ -1,10 +1,9 @@
 use crate::prelude::*;
 use crate::responses::GetPartitionKeyRangesResponse;
 use crate::ResourceType;
-use azure_core::errors::{check_status_extract_headers_and_body, AzureError};
 use azure_core::prelude::*;
 use chrono::{DateTime, Utc};
-use hyper::StatusCode;
+use http::StatusCode;
 use std::convert::TryInto;
 
 #[derive(Debug, Clone)]
@@ -123,7 +122,7 @@ impl<'a, 'b> ConsistencyLevelSupport<'b> for GetPartitionKeyRangesBuilder<'a, 'b
 
 // methods callable only when every mandatory field has been filled
 impl<'a, 'b> GetPartitionKeyRangesBuilder<'a, 'b> {
-    pub async fn execute(&self) -> Result<GetPartitionKeyRangesResponse, AzureError> {
+    pub async fn execute(&self) -> Result<GetPartitionKeyRangesResponse, CosmosError> {
         trace!("GetPartitionKeyRangesBuilder::execute called");
 
         let request = self.collection_client().cosmos_client().prepare_request(
@@ -132,23 +131,24 @@ impl<'a, 'b> GetPartitionKeyRangesBuilder<'a, 'b> {
                 self.collection_client.database_client().database_name(),
                 self.collection_client.collection_name()
             ),
-            hyper::Method::GET,
+            http::Method::GET,
             ResourceType::PartitionKeyRanges,
         );
 
-        let request = request.header(hyper::header::CONTENT_LENGTH, "0");
+        let request = request.header(http::header::CONTENT_LENGTH, "0");
         let request = IfMatchConditionOption::add_header(self, request);
         let request = IfModifiedSinceOption::add_header(self, request);
         let request = UserAgentOption::add_header(self, request);
         let request = ActivityIdOption::add_header(self, request);
         let request = ConsistencyLevelOption::add_header(self, request);
 
-        let request = request.body(hyper::Body::empty())?;
+        let request = request.body(EMPTY_BODY.as_ref())?;
 
-        let future_response = self.collection_client().hyper_client().request(request);
-        let (headers, body) =
-            check_status_extract_headers_and_body(future_response, StatusCode::OK).await?;
-
-        Ok((&headers, &body as &[u8]).try_into()?)
+        Ok(self
+            .collection_client()
+            .http_client()
+            .execute_request_check_status(request, StatusCode::OK)
+            .await?
+            .try_into()?)
     }
 }

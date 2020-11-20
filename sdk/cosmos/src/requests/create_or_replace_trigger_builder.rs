@@ -1,10 +1,9 @@
 use crate::prelude::*;
 use crate::responses::CreateTriggerResponse;
 use crate::trigger::*;
-use azure_core::errors::{check_status_extract_headers_and_body, AzureError};
 use azure_core::prelude::*;
 use azure_core::{No, ToAssign, Yes};
-use hyper::StatusCode;
+use http::StatusCode;
 use std::convert::TryInto;
 use std::marker::PhantomData;
 
@@ -269,14 +268,14 @@ where
 
 // methods callable only when every mandatory field has been filled
 impl<'a> CreateOrReplaceTriggerBuilder<'a, Yes, Yes, Yes> {
-    pub async fn execute(&self) -> Result<CreateTriggerResponse, AzureError> {
+    pub async fn execute(&self) -> Result<CreateTriggerResponse, CosmosError> {
         trace!("CreateOrReplaceTriggerBuilder::execute called");
 
         let req = self.trigger_client;
         let req = if self.is_create() {
-            req.prepare_request(hyper::Method::POST)
+            req.prepare_request(http::Method::POST)
         } else {
-            req.prepare_request_with_trigger_name(hyper::Method::PUT)
+            req.prepare_request_with_trigger_name(http::Method::PUT)
         };
 
         // add trait headers
@@ -304,18 +303,19 @@ impl<'a> CreateOrReplaceTriggerBuilder<'a, Yes, Yes, Yes> {
         };
 
         let request = serde_json::to_string(&request)?;
-        let request = req.body(hyper::Body::from(request))?;
+        let request = req.body(request.as_bytes())?;
 
-        let (headers, body) = check_status_extract_headers_and_body(
-            self.trigger_client().hyper_client().request(request),
-            if self.is_create() {
-                StatusCode::CREATED
-            } else {
-                StatusCode::OK
-            },
-        )
-        .await?;
+        let expected_status = if self.is_create() {
+            StatusCode::CREATED
+        } else {
+            StatusCode::OK
+        };
 
-        Ok((&headers, &body as &[u8]).try_into()?)
+        Ok(self
+            .trigger_client()
+            .http_client()
+            .execute_request_check_status(request, expected_status)
+            .await?
+            .try_into()?)
     }
 }

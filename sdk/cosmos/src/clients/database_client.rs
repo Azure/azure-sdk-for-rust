@@ -1,7 +1,7 @@
 use super::*;
 use crate::requests;
 use crate::{ReadonlyString, ResourceType};
-use azure_core::No;
+use azure_core::{HttpClient, No};
 
 #[derive(Debug, Clone)]
 pub struct DatabaseClient {
@@ -20,18 +20,16 @@ impl DatabaseClient {
         }
     }
 
-    pub fn hyper_client(
-        &self,
-    ) -> &hyper::Client<hyper_rustls::HttpsConnector<hyper::client::HttpConnector>> {
-        self.cosmos_client().hyper_client()
-    }
-
     pub fn cosmos_client(&self) -> &CosmosClient {
         &self.cosmos_client
     }
 
     pub fn database_name(&self) -> &str {
         &self.database_name
+    }
+
+    pub fn http_client(&self) -> &dyn HttpClient {
+        self.cosmos_client().http_client()
     }
 
     pub fn list_collections(&self) -> requests::ListCollectionsBuilder<'_> {
@@ -65,14 +63,14 @@ impl DatabaseClient {
         UserClient::new(self, user_name)
     }
 
-    pub fn prepare_request(&self, method: hyper::Method) -> http::request::Builder {
+    pub fn prepare_request(&self, method: http::Method) -> http::request::Builder {
         self.cosmos_client()
             .prepare_request("dbs", method, ResourceType::Databases)
     }
 
     pub fn prepare_request_with_database_name(
         &self,
-        method: hyper::Method,
+        method: http::Method,
     ) -> http::request::Builder {
         self.cosmos_client().prepare_request(
             &format!("dbs/{}", self.database_name()),

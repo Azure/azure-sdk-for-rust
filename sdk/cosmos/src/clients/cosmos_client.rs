@@ -2,19 +2,15 @@ use super::DatabaseClient;
 use crate::headers::*;
 use crate::requests;
 use crate::{AuthorizationToken, ReadonlyString, ResourceType};
-
-use azure_core::No;
+use azure_core::{HttpClient, No};
 use http::request::Builder as RequestBuilder;
-use hyper::{
-    self,
-    header::{self, HeaderValue},
-};
-use hyper_rustls::HttpsConnector;
+use http::{header, HeaderValue};
 use ring::hmac;
 use url::form_urlencoded;
 
 use std::borrow::Cow;
 use std::fmt::Debug;
+use std::sync::Arc;
 
 const AZURE_VERSION: &str = "2018-12-31";
 const VERSION: &str = "1.0";
@@ -22,29 +18,54 @@ const TIME_FORMAT: &str = "%a, %d %h %Y %T GMT";
 
 #[derive(Debug, Clone)]
 pub struct CosmosClient {
-    hyper_client: hyper::Client<HttpsConnector<hyper::client::HttpConnector>>,
+    http_client: Arc<Box<dyn HttpClient>>,
     auth_token: AuthorizationToken,
     cloud_location: CloudLocation,
 }
 
 impl CosmosClient {
     /// Create a new `CosmosClient` which connects to the account's instance in the public Azure cloud.
-    pub fn new(account: String, auth_token: AuthorizationToken) -> Self {
+    pub fn new(
+        http_client: Arc<Box<dyn HttpClient>>,
+        account: String,
+        auth_token: AuthorizationToken,
+    ) -> Self {
         let cloud_location = CloudLocation::Public(account);
-        Self::new_with_cloud_location(cloud_location, auth_token)
+        Self {
+            http_client,
+            auth_token,
+            cloud_location,
+        }
     }
 
-    pub fn new_china(account: String, auth_token: AuthorizationToken) -> Self {
+    pub fn new_china(
+        http_client: Arc<Box<dyn HttpClient>>,
+        account: String,
+        auth_token: AuthorizationToken,
+    ) -> Self {
         let cloud_location = CloudLocation::China(account);
-        Self::new_with_cloud_location(cloud_location, auth_token)
+        Self {
+            http_client,
+            auth_token,
+            cloud_location,
+        }
     }
 
-    pub fn new_custom(account: String, auth_token: AuthorizationToken, uri: String) -> Self {
+    pub fn new_custom(
+        http_client: Arc<Box<dyn HttpClient>>,
+        account: String,
+        auth_token: AuthorizationToken,
+        uri: String,
+    ) -> Self {
         let cloud_location = CloudLocation::Custom { account, uri };
-        Self::new_with_cloud_location(cloud_location, auth_token)
+        Self {
+            http_client,
+            auth_token,
+            cloud_location,
+        }
     }
 
-    pub fn new_emulator(address: &str, port: u16) -> Self {
+    pub fn new_emulator(http_client: Arc<Box<dyn HttpClient>>, address: &str, port: u16) -> Self {
         //Account name: localhost:<port>
         //Account key: C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==
         let auth_token = AuthorizationToken::new_master(
@@ -55,17 +76,8 @@ impl CosmosClient {
             account: String::from("Custom"),
             uri,
         };
-        Self::new_with_cloud_location(cloud_location, auth_token)
-    }
-
-    fn new_with_cloud_location(
-        cloud_location: CloudLocation,
-        auth_token: AuthorizationToken,
-    ) -> Self {
-        let hyper_client = hyper::Client::builder().build(HttpsConnector::new());
-
         Self {
-            hyper_client,
+            http_client,
             auth_token,
             cloud_location,
         }
@@ -78,7 +90,7 @@ impl CosmosClient {
     fn prepare_request_with_signature(
         &self,
         uri_path: &str,
-        http_method: hyper::Method,
+        http_method: http::Method,
         time: &str,
         signature: &str,
     ) -> RequestBuilder {
@@ -88,16 +100,13 @@ impl CosmosClient {
             "cosmos::client::prepare_request_with_resource_signature::uri == {:?}",
             uri
         );
-        hyper::Request::builder()
+
+        http::request::Builder::new()
             .method(http_method)
             .uri(uri)
             .header(HEADER_DATE, time)
             .header(HEADER_VERSION, HeaderValue::from_static(AZURE_VERSION))
             .header(header::AUTHORIZATION, signature)
-    }
-
-    pub fn hyper_client(&self) -> &hyper::Client<HttpsConnector<hyper::client::HttpConnector>> {
-        &self.hyper_client
     }
 
     pub fn create_database(&self) -> requests::CreateDatabaseBuilder<'_, No> {
@@ -111,7 +120,7 @@ impl CosmosClient {
     pub fn prepare_request(
         &self,
         uri_path: &str,
-        http_method: hyper::Method,
+        http_method: http::Method,
         resource_type: ResourceType,
     ) -> RequestBuilder {
         let time = format!("{}", chrono::Utc::now().format(TIME_FORMAT));
@@ -132,11 +141,15 @@ impl CosmosClient {
     pub fn into_database_client<S: Into<ReadonlyString>>(self, database_name: S) -> DatabaseClient {
         DatabaseClient::new(self, database_name)
     }
+
+    pub fn http_client(&self) -> &dyn HttpClient {
+        self.http_client.as_ref().as_ref()
+    }
 }
 
 fn generate_authorization(
     auth_token: &AuthorizationToken,
-    http_method: &hyper::Method,
+    http_method: &http::Method,
     resource_type: ResourceType,
     resource_link: &str,
     time: &str,
@@ -175,7 +188,7 @@ fn encode_str_to_sign(str_to_sign: &str, key: &[u8]) -> String {
 }
 
 fn string_to_sign(
-    http_method: &hyper::Method,
+    http_method: &http::Method,
     rt: ResourceType,
     resource_link: &str,
     time: &str,
@@ -192,15 +205,15 @@ fn string_to_sign(
     format!(
         "{}\n{}\n{}\n{}\n\n",
         match *http_method {
-            hyper::Method::GET => "get",
-            hyper::Method::PUT => "put",
-            hyper::Method::POST => "post",
-            hyper::Method::DELETE => "delete",
-            hyper::Method::HEAD => "head",
-            hyper::Method::TRACE => "trace",
-            hyper::Method::OPTIONS => "options",
-            hyper::Method::CONNECT => "connect",
-            hyper::Method::PATCH => "patch",
+            http::Method::GET => "get",
+            http::Method::PUT => "put",
+            http::Method::POST => "post",
+            http::Method::DELETE => "delete",
+            http::Method::HEAD => "head",
+            http::Method::TRACE => "trace",
+            http::Method::OPTIONS => "options",
+            http::Method::CONNECT => "connect",
+            http::Method::PATCH => "patch",
             _ => "extension",
         },
         match rt {
@@ -297,7 +310,7 @@ mod tests {
         let time = format!("{}", time.format(TIME_FORMAT));
 
         let ret = string_to_sign(
-            &hyper::Method::GET,
+            &http::Method::GET,
             ResourceType::Databases,
             "dbs/MyDatabase/colls/MyCollection",
             &time,
@@ -327,7 +340,7 @@ mon, 01 jan 1900 01:00:00 gmt
 
         let ret = generate_authorization(
             &auth_token,
-            &hyper::Method::GET,
+            &http::Method::GET,
             ResourceType::Databases,
             "dbs/MyDatabase/colls/MyCollection",
             &time,
@@ -352,7 +365,7 @@ mon, 01 jan 1900 01:00:00 gmt
 
         let ret = generate_authorization(
             &auth_token,
-            &hyper::Method::GET,
+            &http::Method::GET,
             ResourceType::Databases,
             "dbs/ToDoList",
             &time,

@@ -1,8 +1,6 @@
 use crate::prelude::*;
 use crate::responses::GetDatabaseResponse;
-use azure_core::errors::{check_status_extract_headers_and_body, AzureError};
 use azure_core::prelude::*;
-use hyper::StatusCode;
 use std::convert::TryInto;
 
 #[derive(Debug, Clone)]
@@ -86,25 +84,26 @@ impl<'a, 'b> ConsistencyLevelSupport<'b> for GetDatabaseBuilder<'a, 'b> {
 
 // methods callable only when every mandatory field has been filled
 impl<'a, 'b> GetDatabaseBuilder<'a, 'b> {
-    pub async fn execute(&self) -> Result<GetDatabaseResponse, AzureError> {
+    pub async fn execute(&self) -> Result<GetDatabaseResponse, CosmosError> {
         trace!("GetDatabaseResponse::execute called");
 
         let request = self
             .database_client()
-            .prepare_request_with_database_name(hyper::Method::GET);
+            .prepare_request_with_database_name(http::Method::GET);
 
         let request = UserAgentOption::add_header(self, request);
         let request = ActivityIdOption::add_header(self, request);
         let request = ConsistencyLevelOption::add_header(self, request);
 
-        let request = request.body(hyper::Body::empty())?;
+        let request = request.body(EMPTY_BODY.as_ref())?;
 
         trace!("request prepared == {:?}", request);
 
-        let future_response = self.database_client().hyper_client().request(request);
-        let (headers, body) =
-            check_status_extract_headers_and_body(future_response, StatusCode::OK).await?;
-
-        Ok(((&headers, &body as &[u8])).try_into()?)
+        Ok(self
+            .database_client()
+            .http_client()
+            .execute_request_check_status(request, http::StatusCode::OK)
+            .await?
+            .try_into()?)
     }
 }

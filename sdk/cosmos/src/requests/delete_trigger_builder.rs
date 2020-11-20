@@ -1,8 +1,7 @@
 use crate::prelude::*;
 use crate::responses::DeleteTriggerResponse;
-use azure_core::errors::{check_status_extract_headers_and_body, AzureError};
 use azure_core::prelude::*;
-use hyper::StatusCode;
+use http::StatusCode;
 use std::convert::TryInto;
 
 #[derive(Debug, Clone)]
@@ -83,26 +82,25 @@ impl<'a, 'b> ConsistencyLevelSupport<'b> for DeleteTriggerBuilder<'a, 'b> {
 
 // methods callable only when every mandatory field has been filled
 impl<'a, 'b> DeleteTriggerBuilder<'a, 'b> {
-    pub async fn execute(&self) -> Result<DeleteTriggerResponse, AzureError> {
+    pub async fn execute(&self) -> Result<DeleteTriggerResponse, CosmosError> {
         trace!("DeleteTriggerBuilder::execute called");
 
         let req = self
             .trigger_client
-            .prepare_request_with_trigger_name(hyper::Method::DELETE);
+            .prepare_request_with_trigger_name(http::Method::DELETE);
 
         // add trait headers
         let req = UserAgentOption::add_header(self, req);
         let req = ActivityIdOption::add_header(self, req);
         let req = ConsistencyLevelOption::add_header(self, req);
 
-        let request = req.body(hyper::Body::empty())?;
+        let request = req.body(EMPTY_BODY.as_ref())?;
 
-        let (headers, body) = check_status_extract_headers_and_body(
-            self.trigger_client().hyper_client().request(request),
-            StatusCode::NO_CONTENT,
-        )
-        .await?;
-
-        Ok((&headers, &body as &[u8]).try_into()?)
+        Ok(self
+            .trigger_client()
+            .http_client()
+            .execute_request_check_status(request, StatusCode::NO_CONTENT)
+            .await?
+            .try_into()?)
     }
 }

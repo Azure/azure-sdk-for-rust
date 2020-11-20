@@ -1,7 +1,6 @@
 #![cfg(all(test, feature = "test_e2e"))]
 use azure_cosmos::prelude::*;
 use futures::stream::StreamExt;
-use std::error::Error;
 
 mod setup;
 
@@ -18,7 +17,7 @@ function tax(income) {
 }"#;
 
 #[tokio::test]
-async fn user_defined_function00() -> Result<(), Box<dyn Error>> {
+async fn user_defined_function00() -> Result<(), CosmosError> {
     const DATABASE_NAME: &str = "test-cosmos-db-udf";
     const COLLECTION_NAME: &str = "test-udf";
     const USER_DEFINED_FUNCTION_NAME: &str = "test";

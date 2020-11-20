@@ -1,10 +1,11 @@
 use crate::document_attributes::DocumentAttributes;
 use crate::from_headers::*;
+use crate::CosmosError;
 use crate::ResourceQuota;
-use azure_core::errors::AzureError;
 use azure_core::headers::{etag_from_headers, session_token_from_headers};
 use chrono::{DateTime, Utc};
-use http::{HeaderMap, StatusCode};
+use http::response::Response;
+use http::StatusCode;
 
 #[derive(Debug, Clone)]
 pub struct CreateDocumentResponse {
@@ -36,17 +37,19 @@ pub struct CreateDocumentResponse {
     pub date: DateTime<Utc>,
 }
 
-impl std::convert::TryFrom<(StatusCode, &HeaderMap, &[u8])> for CreateDocumentResponse {
-    type Error = AzureError;
-    fn try_from(value: (StatusCode, &HeaderMap, &[u8])) -> Result<Self, Self::Error> {
-        let status_code = value.0;
-        let headers = value.1;
-        let body = value.2;
+impl std::convert::TryFrom<Response<Vec<u8>>> for CreateDocumentResponse {
+    type Error = CosmosError;
 
+    fn try_from(response: Response<Vec<u8>>) -> Result<Self, Self::Error> {
+        let status_code = response.status();
+        let headers = response.headers();
+        let body = response.body();
+
+        debug!("status_code == {:#?}", status_code);
         debug!("headers == {:#?}", headers);
+        debug!("body == {:#?}", std::str::from_utf8(body));
 
         Ok(CreateDocumentResponse {
-            document_attributes: DocumentAttributes::try_from((headers, body))?,
             is_update: status_code == StatusCode::OK,
 
             last_state_change: last_state_change_from_headers(headers)?,
@@ -72,6 +75,8 @@ impl std::convert::TryFrom<(StatusCode, &HeaderMap, &[u8])> for CreateDocumentRe
             activity_id: activity_id_from_headers(headers)?,
             gateway_version: gateway_version_from_headers(headers)?.to_owned(),
             date: date_from_headers(headers)?,
+
+            document_attributes: DocumentAttributes::try_from(response)?,
         })
     }
 }

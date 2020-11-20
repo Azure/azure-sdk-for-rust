@@ -1,7 +1,6 @@
 use crate::prelude::*;
-use azure_core::errors::{check_status_extract_headers_and_body, AzureError};
 use azure_core::prelude::*;
-use hyper::StatusCode;
+use http::StatusCode;
 use std::convert::TryInto;
 
 #[derive(Debug, Clone)]
@@ -101,10 +100,10 @@ impl<'a, 'b> ConsistencyLevelSupport<'b> for DeleteAttachmentBuilder<'a, 'b> {
 
 // methods callable only when every mandatory field has been filled
 impl<'a, 'b> DeleteAttachmentBuilder<'a, 'b> {
-    pub async fn execute(&self) -> Result<crate::responses::DeleteAttachmentResponse, AzureError> {
+    pub async fn execute(&self) -> Result<crate::responses::DeleteAttachmentResponse, CosmosError> {
         let mut req = self
             .attachment_client
-            .prepare_request_with_attachment_name(hyper::Method::DELETE);
+            .prepare_request_with_attachment_name(http::Method::DELETE);
 
         // add trait headers
         req = IfMatchConditionOption::add_header(self, req);
@@ -117,19 +116,15 @@ impl<'a, 'b> DeleteAttachmentBuilder<'a, 'b> {
             req,
         );
 
-        let req = req.body(hyper::Body::empty())?;
+        let req = req.body(EMPTY_BODY.as_ref())?;
 
         debug!("req == {:#?}", req);
 
-        let (headers, whole_body) = check_status_extract_headers_and_body(
-            self.attachment_client.hyper_client().request(req),
-            StatusCode::NO_CONTENT,
-        )
-        .await?;
-
-        debug!("\nheaders == {:?}", headers);
-        debug!("\nwhole body == {:#?}", whole_body);
-
-        Ok((&headers, &whole_body as &[u8]).try_into()?)
+        Ok(self
+            .attachment_client
+            .http_client()
+            .execute_request_check_status(req, StatusCode::NO_CONTENT)
+            .await?
+            .try_into()?)
     }
 }

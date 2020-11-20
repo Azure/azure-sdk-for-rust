@@ -1,8 +1,7 @@
 use crate::prelude::*;
 use crate::responses::DeleteCollectionResponse;
-use azure_core::errors::{check_status_extract_headers_and_body, AzureError};
 use azure_core::prelude::*;
-use hyper::StatusCode;
+use http::StatusCode;
 use std::convert::TryInto;
 
 #[derive(Debug, Clone)]
@@ -83,25 +82,24 @@ impl<'a> ConsistencyLevelSupport<'a> for DeleteCollectionBuilder<'a> {
 
 // methods callable only when every mandatory field has been filled
 impl<'a> DeleteCollectionBuilder<'a> {
-    pub async fn execute(&self) -> Result<DeleteCollectionResponse, AzureError> {
+    pub async fn execute(&self) -> Result<DeleteCollectionResponse, CosmosError> {
         trace!("DeleteCollectionBuilder::execute called");
 
         let request = self
             .collection_client()
-            .prepare_request_with_collection_name(hyper::Method::DELETE);
+            .prepare_request_with_collection_name(http::Method::DELETE);
 
         let request = UserAgentOption::add_header(self, request);
         let request = ActivityIdOption::add_header(self, request);
         let request = ConsistencyLevelOption::add_header(self, request);
 
-        let request = request.body(hyper::Body::empty())?;
+        let request = request.body(EMPTY_BODY.as_ref())?;
 
-        let (headers, body) = check_status_extract_headers_and_body(
-            self.collection_client().hyper_client().request(request),
-            StatusCode::NO_CONTENT,
-        )
-        .await?;
-
-        Ok((&headers, &body as &[u8]).try_into()?)
+        Ok(self
+            .collection_client()
+            .http_client()
+            .execute_request_check_status(request, StatusCode::NO_CONTENT)
+            .await?
+            .try_into()?)
     }
 }

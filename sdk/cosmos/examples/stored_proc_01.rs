@@ -1,3 +1,4 @@
+use azure_core::HttpClient;
 /// This sample showcases execution of stored procedure
 /// Create stored procedure called test_proc, like so:
 /// function f(personToGreet) {
@@ -8,9 +9,10 @@
 use azure_cosmos::prelude::*;
 use azure_cosmos::stored_procedure::Parameters;
 use std::error::Error;
+use std::sync::Arc;
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn Error>> {
+async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let function_body: &str = r#"
         function f(personToGreet) {
             var context = getContext();
@@ -35,7 +37,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let authorization_token = AuthorizationToken::new_master(&master_key)?;
 
-    let client = CosmosClient::new(account, authorization_token);
+    let http_client: Arc<Box<dyn HttpClient>> = Arc::new(Box::new(reqwest::Client::new()));
+    let client = CosmosClient::new(http_client, account.clone(), authorization_token);
+
     let database_client = client.into_database_client(database_name);
     let collection_client = database_client.into_collection_client(collection_name);
     let stored_procedure_client = collection_client

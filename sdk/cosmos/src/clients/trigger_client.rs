@@ -1,7 +1,7 @@
 use super::*;
 use crate::requests;
 use crate::{ReadonlyString, ResourceType};
-use azure_core::No;
+use azure_core::{HttpClient, No};
 
 #[derive(Debug, Clone)]
 pub struct TriggerClient {
@@ -20,12 +20,6 @@ impl TriggerClient {
         }
     }
 
-    pub fn hyper_client(
-        &self,
-    ) -> &hyper::Client<hyper_rustls::HttpsConnector<hyper::client::HttpConnector>> {
-        self.collection_client.hyper_client()
-    }
-
     pub fn cosmos_client(&self) -> &CosmosClient {
         self.collection_client.cosmos_client()
     }
@@ -38,7 +32,11 @@ impl TriggerClient {
         &self.collection_client
     }
 
-    pub fn prepare_request(&self, method: hyper::Method) -> http::request::Builder {
+    pub fn http_client(&self) -> &dyn HttpClient {
+        self.cosmos_client().http_client()
+    }
+
+    pub fn prepare_request(&self, method: http::Method) -> http::request::Builder {
         self.cosmos_client().prepare_request(
             &format!(
                 "dbs/{}/colls/{}/triggers",
@@ -52,7 +50,7 @@ impl TriggerClient {
 
     pub fn prepare_request_with_trigger_name(
         &self,
-        method: hyper::Method,
+        method: http::Method,
     ) -> http::request::Builder {
         self.cosmos_client().prepare_request(
             &format!(

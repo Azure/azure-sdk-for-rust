@@ -1,10 +1,10 @@
 use crate::from_headers::*;
+use crate::CosmosError;
 use crate::{Attachment, ResourceQuota};
-use azure_core::errors::AzureError;
 use azure_core::headers::{continuation_token_from_headers_optional, session_token_from_headers};
 use azure_core::SessionToken;
 use chrono::{DateTime, Utc};
-use hyper::header::HeaderMap;
+use http::response::Response;
 
 #[derive(Debug, Clone, Deserialize)]
 struct JsonListAttachmentResponse {
@@ -44,16 +44,17 @@ pub struct ListAttachmentsResponse {
     pub continuation_token: Option<String>,
 }
 
-impl std::convert::TryFrom<(&HeaderMap, &[u8])> for ListAttachmentsResponse {
-    type Error = AzureError;
-    fn try_from(value: (&HeaderMap, &[u8])) -> Result<Self, Self::Error> {
-        let headers = value.0;
-        let body = std::str::from_utf8(value.1)?;
+impl std::convert::TryFrom<Response<Vec<u8>>> for ListAttachmentsResponse {
+    type Error = CosmosError;
+
+    fn try_from(response: Response<Vec<u8>>) -> Result<Self, Self::Error> {
+        let headers = response.headers();
+        let body = response.body();
 
         debug!("headers == {:#?}", headers);
         debug!("body == {:#?}", body);
 
-        let json: JsonListAttachmentResponse = serde_json::from_str(&body)?;
+        let json: JsonListAttachmentResponse = serde_json::from_slice(&body)?;
 
         Ok(Self {
             rid: json.rid,

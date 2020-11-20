@@ -1,10 +1,9 @@
 use crate::prelude::*;
 use crate::responses::ListDocumentsResponse;
 use crate::ResourceType;
-use azure_core::errors::{check_status_extract_headers_and_body, AzureError};
 use azure_core::prelude::*;
 use futures::stream::{unfold, Stream};
-use hyper::StatusCode;
+use http::StatusCode;
 use serde::de::DeserializeOwned;
 use std::convert::TryInto;
 
@@ -186,7 +185,7 @@ impl<'a, 'b> PartitionRangeIdSupport<'b> for ListDocumentsBuilder<'a, 'b> {
 
 // methods callable only when every mandatory field has been filled
 impl<'a, 'b> ListDocumentsBuilder<'a, 'b> {
-    pub async fn execute<T>(&self) -> Result<ListDocumentsResponse<T>, AzureError>
+    pub async fn execute<T>(&self) -> Result<ListDocumentsResponse<T>, CosmosError>
     where
         T: DeserializeOwned,
     {
@@ -196,7 +195,7 @@ impl<'a, 'b> ListDocumentsBuilder<'a, 'b> {
                 self.collection_client.database_client().database_name(),
                 self.collection_client.collection_name()
             ),
-            hyper::Method::GET,
+            http::Method::GET,
             ResourceType::Documents,
         );
 
@@ -210,21 +209,19 @@ impl<'a, 'b> ListDocumentsBuilder<'a, 'b> {
         let req = AIMOption::add_header(self, req);
         let req = PartitionRangeIdOption::add_header(self, req);
 
-        let req = req.body(hyper::Body::empty())?;
+        let req = req.body(EMPTY_BODY.as_ref())?;
 
-        let (headers, whole_body) = check_status_extract_headers_and_body(
-            self.collection_client.hyper_client().request(req),
-            StatusCode::OK,
-        )
-        .await?;
-
-        debug!("\nheaders == {:?}", headers);
-        debug!("\nwhole body == {:#?}", whole_body);
-
-        Ok((&headers, &whole_body as &[u8]).try_into()?)
+        Ok(self
+            .collection_client
+            .http_client()
+            .execute_request_check_status(req, StatusCode::OK)
+            .await?
+            .try_into()?)
     }
 
-    pub fn stream<T>(&self) -> impl Stream<Item = Result<ListDocumentsResponse<T>, AzureError>> + '_
+    pub fn stream<T>(
+        &self,
+    ) -> impl Stream<Item = Result<ListDocumentsResponse<T>, CosmosError>> + '_
     where
         T: DeserializeOwned,
     {

@@ -2,7 +2,7 @@ use super::{DatabaseClient, UserDefinedFunctionClient};
 use crate::clients::*;
 use crate::requests;
 use crate::{PartitionKeys, ReadonlyString, ResourceType};
-use azure_core::No;
+use azure_core::{HttpClient, No};
 
 #[derive(Debug, Clone)]
 pub struct CollectionClient {
@@ -21,18 +21,16 @@ impl CollectionClient {
         }
     }
 
-    pub fn hyper_client(
-        &self,
-    ) -> &hyper::Client<hyper_rustls::HttpsConnector<hyper::client::HttpConnector>> {
-        self.cosmos_client().hyper_client()
-    }
-
     pub fn cosmos_client(&self) -> &CosmosClient {
         self.database_client.cosmos_client()
     }
 
     pub fn database_client(&self) -> &DatabaseClient {
         &self.database_client
+    }
+
+    pub fn http_client(&self) -> &dyn HttpClient {
+        self.cosmos_client().http_client()
     }
 
     pub fn collection_name(&self) -> &str {
@@ -109,7 +107,7 @@ impl CollectionClient {
         StoredProcedureClient::new(self, stored_procedure_name)
     }
 
-    pub fn prepare_request(&self, method: hyper::Method) -> http::request::Builder {
+    pub fn prepare_request(&self, method: http::Method) -> http::request::Builder {
         self.cosmos_client().prepare_request(
             &format!("dbs/{}/colls", self.database_client().database_name()),
             method,
@@ -119,7 +117,7 @@ impl CollectionClient {
 
     pub fn prepare_request_with_collection_name(
         &self,
-        method: hyper::Method,
+        method: http::Method,
     ) -> http::request::Builder {
         self.cosmos_client().prepare_request(
             &format!(

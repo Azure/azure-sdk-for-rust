@@ -3,10 +3,12 @@ extern crate serde_derive;
 // Using the prelude module of the Cosmos crate makes easier to use the Rust Azure SDK for Cosmos
 // DB.
 use azure_core::prelude::*;
+use azure_core::HttpClient;
 use azure_cosmos::prelude::*;
 use azure_cosmos::responses::GetDocumentResponse;
 use std::borrow::Cow;
 use std::error::Error;
+use std::sync::Arc;
 
 #[derive(Serialize, Deserialize, Debug)]
 struct MySampleStruct<'a> {
@@ -26,7 +28,7 @@ const COLLECTION: &str = "azuresdktc";
 // 3. Store an entry in collection *COLLECTION* of database *DATABASE*.
 // 4. Delete everything.
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn Error>> {
+async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // Let's get Cosmos account and master key from env variables.
     // This helps automated testing.
     let master_key =
@@ -40,11 +42,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     // Next we will create a Cosmos client. You need an authorization_token but you can later
     // change it if needed.
-    let client = CosmosClient::new(account, authorization_token);
+    let http_client: Arc<Box<dyn HttpClient>> = Arc::new(Box::new(reqwest::Client::new()));
+    let client = CosmosClient::new(http_client, account, authorization_token);
 
     // list_databases will give us the databases available in our account. If there is
     // an error (for example, the given key is not valid) you will receive a
-    // specific AzureError. In this example we will look for a specific database
+    // specific CosmosError. In this example we will look for a specific database
     // so we chain a filter operation.
     let db = client
         .list_databases()

@@ -1,6 +1,6 @@
 use crate::requests;
 use crate::{ReadonlyString, ResourceType};
-use azure_core::No;
+use azure_core::{HttpClient, No};
 
 use super::*;
 
@@ -21,12 +21,6 @@ impl AttachmentClient {
         }
     }
 
-    pub fn hyper_client(
-        &self,
-    ) -> &hyper::Client<hyper_rustls::HttpsConnector<hyper::client::HttpConnector>> {
-        self.document_client().hyper_client()
-    }
-
     pub fn cosmos_client(&self) -> &CosmosClient {
         self.document_client().cosmos_client()
     }
@@ -41,6 +35,10 @@ impl AttachmentClient {
 
     pub fn document_client(&self) -> &DocumentClient {
         &self.document_client
+    }
+
+    pub fn http_client(&self) -> &dyn HttpClient {
+        self.cosmos_client().http_client()
     }
 
     pub fn attachment_name(&self) -> &str {
@@ -71,7 +69,7 @@ impl AttachmentClient {
         requests::GetAttachmentBuilder::new(self)
     }
 
-    pub fn prepare_request(&self, method: hyper::Method) -> http::request::Builder {
+    pub fn prepare_request(&self, method: http::Method) -> http::request::Builder {
         self.cosmos_client().prepare_request(
             &format!(
                 "dbs/{}/colls/{}/docs/{}/attachments",
@@ -86,7 +84,7 @@ impl AttachmentClient {
 
     pub fn prepare_request_with_attachment_name(
         &self,
-        method: hyper::Method,
+        method: http::Method,
     ) -> http::request::Builder {
         self.cosmos_client().prepare_request(
             &format!(

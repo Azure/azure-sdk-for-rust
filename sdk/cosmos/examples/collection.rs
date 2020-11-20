@@ -1,8 +1,10 @@
+use azure_core::HttpClient;
 use azure_cosmos::prelude::*;
 use std::error::Error;
+use std::sync::Arc;
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn Error>> {
+async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // First we retrieve the account name and master key from environment variables.
     // We expect master keys (ie, not resource constrained)
     let master_key =
@@ -12,8 +14,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // This is how you construct an authorization token.
     // Remember to pick the correct token type.
     // Here we assume master.
-    // Most methods return a ```Result<_, AzureError>```.
-    // ```AzureError``` is an enum union of all the possible underlying
+    // Most methods return a ```Result<_, CosmosError>```.
+    // ```CosmosError``` is an enum union of all the possible underlying
     // errors, plus Azure specific ones. For example if a REST call returns the
     // unexpected result (ie NotFound instead of Ok) we return an Err telling
     // you that.
@@ -22,7 +24,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // Once we have an authorization token you can create a client instance. You can change the
     // authorization token at later time if you need, for example, to escalate the privileges for a
     // single operation.
-    let client = CosmosClient::new(account.clone(), authorization_token);
+    // Here we are using reqwest but other clients are supported (check the documentation).
+    let http_client: Arc<Box<dyn HttpClient>> = Arc::new(Box::new(reqwest::Client::new()));
+    let client = CosmosClient::new(http_client, account.clone(), authorization_token);
 
     // The Cosmos' client exposes a lot of methods. This one lists the databases in the specified
     // account. Database do not implement Display but deref to &str so you can pass it to methods

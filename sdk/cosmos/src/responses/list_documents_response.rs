@@ -1,11 +1,11 @@
 use crate::from_headers::*;
+use crate::CosmosError;
 use crate::ResourceQuota;
 use crate::{Document, DocumentAttributes};
-use azure_core::errors::AzureError;
 use azure_core::headers::{continuation_token_from_headers_optional, session_token_from_headers};
 use azure_core::SessionToken;
 use chrono::{DateTime, Utc};
-use hyper::header::HeaderMap;
+use http::response::Response;
 use serde::de::DeserializeOwned;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -56,7 +56,7 @@ pub struct ListDocumentsResponseEntities<T> {
 }
 
 impl std::convert::TryFrom<&[u8]> for ListDocumentsResponseAttributes {
-    type Error = AzureError;
+    type Error = CosmosError;
     fn try_from(body: &[u8]) -> Result<Self, Self::Error> {
         Ok(serde_json::from_slice(body)?)
     }
@@ -66,22 +66,25 @@ impl<T> std::convert::TryFrom<&[u8]> for ListDocumentsResponseEntities<T>
 where
     T: DeserializeOwned,
 {
-    type Error = AzureError;
+    type Error = CosmosError;
+
     fn try_from(body: &[u8]) -> Result<Self, Self::Error> {
         Ok(serde_json::from_slice(body)?)
     }
 }
 
-impl<T> std::convert::TryFrom<(&HeaderMap, &[u8])> for ListDocumentsResponse<T>
+impl<T> std::convert::TryFrom<Response<Vec<u8>>> for ListDocumentsResponse<T>
 where
     T: DeserializeOwned,
 {
-    type Error = AzureError;
-    fn try_from(value: (&HeaderMap, &[u8])) -> Result<Self, Self::Error> {
-        let headers = value.0;
-        let body = value.1;
+    type Error = CosmosError;
+
+    fn try_from(response: Response<Vec<u8>>) -> Result<Self, Self::Error> {
+        let headers = response.headers();
+        let body: &[u8] = response.body();
 
         debug!("headers == {:#?}", headers);
+        debug!("body == {:#?}", std::str::from_utf8(body));
 
         // we will proceed in three steps:
         // 1- Deserialize the result as DocumentAttributes. The extra field will be ignored.

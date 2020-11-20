@@ -1,7 +1,7 @@
 use super::*;
 use crate::requests;
 use crate::{ReadonlyString, ResourceType};
-use azure_core::No;
+use azure_core::{HttpClient, No};
 
 #[derive(Debug, Clone)]
 pub struct UserDefinedFunctionClient {
@@ -20,12 +20,6 @@ impl UserDefinedFunctionClient {
         }
     }
 
-    pub fn hyper_client(
-        &self,
-    ) -> &hyper::Client<hyper_rustls::HttpsConnector<hyper::client::HttpConnector>> {
-        self.collection_client.hyper_client()
-    }
-
     pub fn cosmos_client(&self) -> &CosmosClient {
         self.collection_client.cosmos_client()
     }
@@ -36,6 +30,10 @@ impl UserDefinedFunctionClient {
 
     pub fn collection_client(&self) -> &CollectionClient {
         &self.collection_client
+    }
+
+    pub fn http_client(&self) -> &dyn HttpClient {
+        self.cosmos_client().http_client()
     }
 
     pub fn user_defined_function_name(&self) -> &str {
@@ -60,7 +58,7 @@ impl UserDefinedFunctionClient {
         requests::DeleteUserDefinedFunctionBuilder::new(self)
     }
 
-    pub fn prepare_request(&self, method: hyper::Method) -> http::request::Builder {
+    pub fn prepare_request(&self, method: http::Method) -> http::request::Builder {
         self.cosmos_client().prepare_request(
             &format!(
                 "dbs/{}/colls/{}/udfs",
@@ -74,7 +72,7 @@ impl UserDefinedFunctionClient {
 
     pub fn prepare_request_with_user_defined_function_name(
         &self,
-        method: hyper::Method,
+        method: http::Method,
     ) -> http::request::Builder {
         self.cosmos_client().prepare_request(
             &format!(

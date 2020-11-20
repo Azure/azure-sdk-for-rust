@@ -2,10 +2,9 @@ use crate::prelude::*;
 use crate::responses::ListAttachmentsResponse;
 use crate::DocumentClientRequired;
 use crate::{DocumentClient, ResourceType};
-use azure_core::errors::{check_status_extract_headers_and_body, AzureError};
 use azure_core::prelude::*;
 use futures::stream::{unfold, Stream};
-use hyper::StatusCode;
+use http::StatusCode;
 use std::convert::TryInto;
 
 #[derive(Debug, Clone)]
@@ -160,7 +159,7 @@ impl<'a, 'b> AIMSupport for ListAttachmentsBuilder<'a, 'b> {
 
 // methods callable only when every mandatory field has been filled
 impl<'a, 'b> ListAttachmentsBuilder<'a, 'b> {
-    pub async fn execute(&self) -> Result<ListAttachmentsResponse, AzureError> {
+    pub async fn execute(&self) -> Result<ListAttachmentsResponse, CosmosError> {
         let mut req = self.document_client.cosmos_client().prepare_request(
             &format!(
                 "dbs/{}/colls/{}/docs/{}/attachments",
@@ -168,7 +167,7 @@ impl<'a, 'b> ListAttachmentsBuilder<'a, 'b> {
                 self.document_client.collection_client().collection_name(),
                 self.document_client.document_name().name()
             ),
-            hyper::Method::GET,
+            http::Method::GET,
             ResourceType::Attachments,
         );
 
@@ -183,21 +182,17 @@ impl<'a, 'b> ListAttachmentsBuilder<'a, 'b> {
 
         req = crate::add_partition_keys_header(self.document_client.partition_keys(), req);
 
-        let req = req.body(hyper::Body::empty())?;
+        let req = req.body(EMPTY_BODY.as_ref())?;
 
-        let (headers, whole_body) = check_status_extract_headers_and_body(
-            self.document_client.hyper_client().request(req),
-            StatusCode::OK,
-        )
-        .await?;
-
-        debug!("\nheaders == {:?}", headers);
-        debug!("\nwhole body == {:#?}", whole_body);
-
-        Ok((&headers, &whole_body as &[u8]).try_into()?)
+        Ok(self
+            .document_client
+            .http_client()
+            .execute_request_check_status(req, StatusCode::OK)
+            .await?
+            .try_into()?)
     }
 
-    pub fn stream(&self) -> impl Stream<Item = Result<ListAttachmentsResponse, AzureError>> + '_ {
+    pub fn stream(&self) -> impl Stream<Item = Result<ListAttachmentsResponse, CosmosError>> + '_ {
         #[derive(Debug, Clone, PartialEq)]
         enum States {
             Init,
