@@ -172,7 +172,6 @@ fn generate_authorization(
             AuthorizationToken::Resource(key) => Cow::Borrowed(key),
         },
     );
-
     debug!(
         "generate_authorization::str_unencoded == {:?}",
         str_unencoded
