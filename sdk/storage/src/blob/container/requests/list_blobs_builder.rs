@@ -574,7 +574,7 @@ where
 
         trace!("list blob uri = {}", uri);
 
-        let future_response =
+        let (_, future_response) =
             self.client()
                 .perform_request(&uri, &Method::GET, &|request| request, None)?;
 

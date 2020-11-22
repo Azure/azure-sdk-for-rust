@@ -34,7 +34,7 @@ pub trait Client: std::fmt::Debug + Send + Sync {
         method: &Method,
         http_header_adder: &dyn Fn(Builder) -> Builder,
         request_body: Option<&[u8]>,
-    ) -> Result<hyper::client::ResponseFuture, AzureError>;
+    ) -> Result<(url::Url, hyper::client::ResponseFuture), AzureError>;
 
     fn perform_table_request(
         &self,
@@ -42,7 +42,7 @@ pub trait Client: std::fmt::Debug + Send + Sync {
         method: &Method,
         http_header_adder: &dyn Fn(Builder) -> Builder,
         request_str: Option<&[u8]>,
-    ) -> Result<hyper::client::ResponseFuture, AzureError>;
+    ) -> Result<(url::Url, hyper::client::ResponseFuture), AzureError>;
 }
 
 impl<C> Client for Box<C>
@@ -68,7 +68,7 @@ where
         method: &Method,
         http_header_adder: &dyn Fn(Builder) -> Builder,
         request_body: Option<&[u8]>,
-    ) -> Result<hyper::client::ResponseFuture, AzureError> {
+    ) -> Result<(url::Url, hyper::client::ResponseFuture), AzureError> {
         self.as_ref()
             .perform_request(uri, method, http_header_adder, request_body)
     }
@@ -79,7 +79,7 @@ where
         method: &Method,
         http_header_adder: &dyn Fn(Builder) -> Builder,
         request_str: Option<&[u8]>,
-    ) -> Result<hyper::client::ResponseFuture, AzureError> {
+    ) -> Result<(url::Url, hyper::client::ResponseFuture), AzureError> {
         self.as_ref()
             .perform_table_request(segment, method, http_header_adder, request_str)
     }
@@ -108,7 +108,7 @@ where
         method: &Method,
         http_header_adder: &dyn Fn(Builder) -> Builder,
         request_body: Option<&[u8]>,
-    ) -> Result<hyper::client::ResponseFuture, AzureError> {
+    ) -> Result<(url::Url, hyper::client::ResponseFuture), AzureError> {
         self.as_ref()
             .perform_request(uri, method, http_header_adder, request_body)
     }
@@ -119,7 +119,7 @@ where
         method: &Method,
         http_header_adder: &dyn Fn(Builder) -> Builder,
         request_str: Option<&[u8]>,
-    ) -> Result<hyper::client::ResponseFuture, AzureError> {
+    ) -> Result<(url::Url, hyper::client::ResponseFuture), AzureError> {
         self.as_ref()
             .perform_table_request(segment, method, http_header_adder, request_str)
     }

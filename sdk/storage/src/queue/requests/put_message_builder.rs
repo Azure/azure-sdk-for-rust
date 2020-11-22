@@ -250,7 +250,7 @@ where
 
         debug!("message about to be posted == {}", message);
 
-        let future_response = self.queue_name_service.storage_client().perform_request(
+        let (_, future_response) = self.queue_name_service.storage_client().perform_request(
             &uri,
             &http::Method::POST,
             &|mut request| {

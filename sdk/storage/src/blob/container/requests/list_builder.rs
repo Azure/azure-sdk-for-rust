@@ -258,7 +258,7 @@ where
 
         debug!("generated uri = {}", uri);
 
-        let future_response = self.client().perform_request(
+        let (_, future_response) = self.client().perform_request(
             &uri,
             &Method::GET,
             &|request| ClientRequestIdOption::add_header(&self, request),

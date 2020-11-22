@@ -89,7 +89,7 @@ impl Client for KeyClient {
         method: &Method,
         http_header_adder: &dyn Fn(Builder) -> Builder,
         request_body: Option<&[u8]>,
-    ) -> Result<hyper::client::ResponseFuture, AzureError> {
+    ) -> Result<(url::Url, hyper::client::ResponseFuture), AzureError> {
         let uri = self.add_sas_token_to_uri(uri);
 
         perform_request(
@@ -108,7 +108,7 @@ impl Client for KeyClient {
         method: &Method,
         http_header_adder: &dyn Fn(Builder) -> Builder,
         request_str: Option<&[u8]>,
-    ) -> Result<hyper::client::ResponseFuture, AzureError> {
+    ) -> Result<(url::Url, hyper::client::ResponseFuture), AzureError> {
         debug!("segment: {}, method: {:?}", segment, method,);
 
         let uri =

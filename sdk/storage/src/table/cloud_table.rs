@@ -58,7 +58,7 @@ where
         T: DeserializeOwned,
     {
         let path = &entity_path(&self.table_name, partition_key, row_key);
-        let future_response = self.client.request_with_default_header(
+        let (_, future_response) = self.client.request_with_default_header(
             path,
             &Method::GET,
             None,
@@ -101,7 +101,7 @@ where
         };
         let obj_ser = serde_json::to_string(&entity)?.to_owned();
 
-        let future_response = self.client.request_with_default_header(
+        let (_, future_response) = self.client.request_with_default_header(
             &self.table_name,
             &Method::POST,
             Some(&obj_ser),
@@ -147,7 +147,7 @@ where
         };
         let obj_ser = serde_json::to_string(&entity)?.to_owned();
         let path = &entity_path(&self.table_name, &entity.partition_key, &entity.row_key);
-        let future_response = self.client.request_with_default_header(
+        let (_, future_response) = self.client.request_with_default_header(
             &path,
             &Method::PUT,
             Some(&obj_ser),
@@ -190,7 +190,7 @@ where
         let obj_ser = serde_json::to_string(&entity)?.to_owned();
         let path = &entity_path(&self.table_name, &entity.partition_key, &entity.row_key);
         let etag = entity.etag;
-        let future_response = self.client.request_with_default_header(
+        let (_, future_response) = self.client.request_with_default_header(
             path,
             &Method::PUT,
             Some(&obj_ser),
@@ -226,7 +226,7 @@ where
         let path = &entity_path(&self.table_name, partition_key, row_key);
 
         let etag = etag.unwrap_or("*");
-        let future_response = self.client.request_with_default_header(
+        let (_, future_response) = self.client.request_with_default_header(
             path,
             &Method::DELETE,
             None,
@@ -274,7 +274,7 @@ where
             path.push_str(&format!("?{}", query));
         }
 
-        let future_response = self.client.request_with_default_header(
+        let (url, future_response) = self.client.request_with_default_header(
             path.as_str(),
             &Method::GET,
             None,
@@ -285,16 +285,7 @@ where
         let (headers, body) =
             check_status_extract_headers_and_body(future_response, StatusCode::OK).await?;
 
-        // TODO: extract a valid address. this is unnecessary
-        // at the moment because the host part will be replaced
-        // by the client using a valid Azure host and
-        // url::Url does not accept relative URIs.
-        Ok((
-            url::Url::parse(&format!("http://dummy.org/{}", path.as_str()))?,
-            &headers,
-            &body,
-        )
-            .try_into()?)
+        Ok((url, &headers, &body).try_into()?)
     }
 
     pub async fn continue_execution<T>(
@@ -311,7 +302,7 @@ where
 
         let path = &continuation_token.new_url[Position::BeforePath..][1..];
 
-        let future_response = self.client.request_with_default_header(
+        let (_, future_response) = self.client.request_with_default_header(
             path,
             &Method::GET,
             None,
@@ -395,7 +386,7 @@ where
     pub async fn execute_batch(&self, batch: Batch) -> Result<(), AzureError> {
         let payload = batch.into_payload(self.client.get_uri_prefix().as_str(), &self.table_name);
 
-        let future_response =
+        let (_, future_response) =
             self.client
                 .request("$batch", &Method::POST, Some(&payload), &|request| {
                     request.header(

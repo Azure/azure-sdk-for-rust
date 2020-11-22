@@ -188,7 +188,7 @@ where
 
         debug!("uri == {}", uri);
 
-        let future_response = self.queue_name_service.storage_client().perform_request(
+        let (_, future_response) = self.queue_name_service.storage_client().perform_request(
             &uri,
             &http::Method::GET,
             &|mut request| {

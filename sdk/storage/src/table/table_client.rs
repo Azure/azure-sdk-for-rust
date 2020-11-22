@@ -86,7 +86,7 @@ where
     C: Client,
 {
     pub async fn list_tables(&self) -> Result<Vec<String>, AzureError> {
-        let future_response = self.request_with_default_header(
+        let (_, future_response) = self.request_with_default_header(
             TABLE_TABLES,
             &Method::GET,
             None,
@@ -107,7 +107,7 @@ where
         })
         .unwrap();
         log::debug!("body == {}", body);
-        let future_response = self.request_with_default_header(
+        let (_, future_response) = self.request_with_default_header(
             TABLE_TABLES,
             &Method::POST,
             Some(body),
@@ -130,7 +130,7 @@ where
         request_str: Option<&str>,
         metadata: MetadataDetail,
         http_header_adder: &dyn Fn(Builder) -> Builder,
-    ) -> Result<ResponseFuture, AzureError> {
+    ) -> Result<(url::Url, ResponseFuture), AzureError> {
         self.request(segment, method, request_str, &|mut request| {
             request = match metadata {
                 MetadataDetail::Full => request.header(
@@ -163,7 +163,7 @@ where
         method: &Method,
         request_str: Option<&str>,
         http_header_adder: &dyn Fn(Builder) -> Builder,
-    ) -> Result<ResponseFuture, AzureError> {
+    ) -> Result<(url::Url, ResponseFuture), AzureError> {
         log::trace!("{:?} {}", method, segment);
         if let Some(body) = request_str {
             log::trace!("Request: {}", body);

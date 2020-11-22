@@ -47,12 +47,13 @@ impl<'a> BearerTokenClient<'a> {
         method: &Method,
         http_header_adder: &dyn Fn(Builder) -> Builder,
         request_body: Option<&[u8]>,
-    ) -> Result<hyper::client::ResponseFuture, AzureError> {
+    ) -> Result<(url::Url, hyper::client::ResponseFuture), AzureError> {
         let dt = chrono::Utc::now();
         let time = format!("{}", dt.format("%a, %d %h %Y %T GMT"));
 
         let mut request = hyper::Request::builder();
         request = request.method(method).uri(uri);
+        let uri = url::Url::parse(uri)?;
 
         // let's add content length to avoid "chunking" errors.
         match request_body {
@@ -81,7 +82,7 @@ impl<'a> BearerTokenClient<'a> {
             format_header_value(format!("Bearer {}", self.bearer_token))?,
         );
 
-        Ok(self.hc.request(request))
+        Ok((uri, self.hc.request(request)))
     }
 }
 
@@ -113,7 +114,7 @@ impl<'a> Client for BearerTokenClient<'a> {
         method: &Method,
         http_header_adder: &dyn Fn(Builder) -> Builder,
         request_body: Option<&[u8]>,
-    ) -> Result<hyper::client::ResponseFuture, AzureError> {
+    ) -> Result<(url::Url, hyper::client::ResponseFuture), AzureError> {
         self.perform_request_internal(uri, method, http_header_adder, request_body)
     }
 
@@ -124,7 +125,7 @@ impl<'a> Client for BearerTokenClient<'a> {
         method: &Method,
         http_header_adder: &dyn Fn(Builder) -> Builder,
         request_body: Option<&[u8]>,
-    ) -> Result<hyper::client::ResponseFuture, AzureError> {
+    ) -> Result<(url::Url, hyper::client::ResponseFuture), AzureError> {
         self.perform_request_internal(segment, method, http_header_adder, request_body)
     }
 }

@@ -486,7 +486,7 @@ where
 
         trace!("uri == {:?}", uri);
 
-        let future_response = self.client().perform_request(
+        let (_, future_response) = self.client().perform_request(
             &uri,
             &Method::PUT,
             &|mut request| {
