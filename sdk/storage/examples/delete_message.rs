@@ -23,14 +23,30 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     trace!("getting messages");
 
-    let response = queue
+    let get_response = queue
         .get_messages()
         .with_number_of_messages(2)
         .with_visibility_timeout(Duration::from_secs(5)) // the message will become visible again after 5 secs
         .execute()
         .await?;
 
-    println!("response == {:#?}", response);
+    println!("get_response == {:#?}", get_response);
+
+    if get_response.messages.is_empty() {
+        trace!("no message to delete");
+    } else {
+        for message in get_response.messages {
+            trace!("deleting message {}", message.message_id);
+
+            let delete_response = queue
+                .delete_message()
+                .with_message(&message)
+                .execute()
+                .await?;
+
+            println!("delete_response == {:#?}", delete_response);
+        }
+    }
 
     Ok(())
 }

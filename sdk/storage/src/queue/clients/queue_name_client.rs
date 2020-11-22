@@ -75,4 +75,8 @@ where
     fn get_messages(&self) -> requests::GetMessagesBuilder<'_, Self::StorageClient> {
         requests::GetMessagesBuilder::new(self)
     }
+
+    fn delete_message(&self) -> requests::DeleteMessageBuilder<'_, '_, Self::StorageClient> {
+        requests::DeleteMessageBuilder::new(self)
+    }
 }

@@ -4,6 +4,7 @@ pub mod requests;
 pub mod responses;
 
 use crate::core::Client;
+use crate::responses::Message;
 use azure_core::No;
 pub use clients::*;
 use std::borrow::Cow;
@@ -78,6 +79,18 @@ pub trait MessageBodyRequired {
     fn message_body<'b>(&self) -> &str;
 }
 
+/// Sets both the message id and the pop receipt for deleting a message as per Azure specification.
+/// See
+/// [https://docs.microsoft.com/en-us/rest/api/storageservices/delete-message2](https://docs.microsoft.com/en-us/rest/api/storageservices/delete-message2)
+pub trait MessageSupport<'b> {
+    type O;
+    fn with_message(self, message: &'b Message) -> Self::O;
+}
+
+pub trait MessageRequired {
+    fn message<'b>(&self) -> &Message;
+}
+
 //********* Queue service traits
 pub trait HasStorageClient: Debug + Send + Sync {
     type StorageClient: Client;
@@ -106,6 +119,7 @@ pub trait QueueNameService: HasStorageClient {
 
     fn put_message(&self) -> requests::PutMessageBuilder<'_, '_, Self::StorageClient, No>;
     fn get_messages(&self) -> requests::GetMessagesBuilder<'_, Self::StorageClient>;
+    fn delete_message(&self) -> requests::DeleteMessageBuilder<'_, '_, Self::StorageClient>;
 }
 
 pub trait WithQueueNameClient<'a, 'b>: Debug + Send + Sync {
