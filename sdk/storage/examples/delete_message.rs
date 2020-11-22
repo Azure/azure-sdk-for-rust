@@ -40,7 +40,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
             let delete_response = queue
                 .delete_message()
-                .with_message(&message)
+                .with_pop_receipt(message.into())
                 .execute()
                 .await?;
 

@@ -5,29 +5,30 @@ use azure_core::errors::{check_status_extract_headers_and_body, AzureError};
 use azure_core::prelude::*;
 use hyper::StatusCode;
 use std::convert::TryInto;
+use percent_encoding::{utf8_percent_encode, NON_ALPHANUMERIC};
 
-#[derive(Debug, Clone)]
-pub struct DeleteMessageBuilder<'a, 'b, C>
+#[derive(Debug)]
+pub struct DeleteMessageBuilder<'a, C>
 where
     C: Client,
 {
     queue_name_service: &'a dyn QueueNameService<StorageClient = C>,
-    message: Option<&'b Message>,
+    pop_receipt: Option<Box<dyn PopReceipt>>,
     timeout: Option<u64>,
     client_request_id: Option<&'a str>,
 }
 
-impl<'a, 'b, C> DeleteMessageBuilder<'a, 'b, C>
+impl<'a, C> DeleteMessageBuilder<'a, C>
 where
     C: Client,
 {
     #[inline]
     pub(crate) fn new(
         queue_name_service: &'a dyn QueueNameService<StorageClient = C>,
-    ) -> DeleteMessageBuilder<'a, 'b, C> {
+    ) -> DeleteMessageBuilder<'a, C> {
         DeleteMessageBuilder {
             queue_name_service,
-            message: None,
+            pop_receipt: None,
             timeout: None,
             client_request_id: None,
         }
@@ -35,17 +36,17 @@ where
 }
 
 //set mandatory no traits methods
-impl<'a, 'b, C> MessageRequired for DeleteMessageBuilder<'a, 'b, C>
+impl<'a, C> PopReceiptRequired for DeleteMessageBuilder<'a, C>
 where
     C: Client,
 {
     #[inline]
-    fn message(&self) -> &Message {
-        self.message.as_ref().unwrap()
+    fn pop_receipt(&self) -> &dyn PopReceipt {
+        self.pop_receipt.as_deref().unwrap()
     }
 }
 
-impl<'a, 'b, C> TimeoutOption for DeleteMessageBuilder<'a, 'b, C>
+impl<'a, C> TimeoutOption for DeleteMessageBuilder<'a, C>
 where
     C: Client,
 {
@@ -55,7 +56,7 @@ where
     }
 }
 
-impl<'a, 'b, C> ClientRequestIdOption<'a> for DeleteMessageBuilder<'a, 'b, C>
+impl<'a, C> ClientRequestIdOption<'a> for DeleteMessageBuilder<'a, C>
 where
     C: Client,
 {
@@ -65,51 +66,51 @@ where
     }
 }
 
-impl<'a, 'b, C> MessageSupport<'b> for DeleteMessageBuilder<'a, 'b, C>
+impl<'a, C> PopReceiptSupport for DeleteMessageBuilder<'a, C>
 where
     C: Client,
 {
-    type O = DeleteMessageBuilder<'a, 'b, C>;
+    type O = DeleteMessageBuilder<'a, C>;
 
     #[inline]
-    fn with_message(self, message: &'b Message) -> Self::O {
+    fn with_pop_receipt(self, pop_receipt: Box<dyn PopReceipt>) -> Self::O {
         DeleteMessageBuilder {
             queue_name_service: self.queue_name_service,
-            message: Some(message),
+            pop_receipt: Some(pop_receipt),
             timeout: self.timeout,
             client_request_id: self.client_request_id,
         }
     }
 }
 
-impl<'a, 'b, C> TimeoutSupport for DeleteMessageBuilder<'a, 'b, C>
+impl<'a, C> TimeoutSupport for DeleteMessageBuilder<'a, C>
 where
     C: Client,
 {
-    type O = DeleteMessageBuilder<'a, 'b, C>;
+    type O = DeleteMessageBuilder<'a, C>;
 
     #[inline]
     fn with_timeout(self, timeout: u64) -> Self::O {
         DeleteMessageBuilder {
             queue_name_service: self.queue_name_service,
-            message: self.message,
+            pop_receipt: self.pop_receipt,
             timeout: Some(timeout),
             client_request_id: self.client_request_id,
         }
     }
 }
 
-impl<'a, 'b, C> ClientRequestIdSupport<'a> for DeleteMessageBuilder<'a, 'b, C>
+impl<'a, C> ClientRequestIdSupport<'a> for DeleteMessageBuilder<'a, C>
 where
     C: Client,
 {
-    type O = DeleteMessageBuilder<'a, 'b, C>;
+    type O = DeleteMessageBuilder<'a, C>;
 
     #[inline]
     fn with_client_request_id(self, client_request_id: &'a str) -> Self::O {
         DeleteMessageBuilder {
             queue_name_service: self.queue_name_service,
-            message: self.message,
+            pop_receipt: self.pop_receipt,
             timeout: self.timeout,
             client_request_id: Some(client_request_id),
         }
@@ -117,7 +118,7 @@ where
 }
 
 // methods callable regardless
-impl<'a, 'b, C> DeleteMessageBuilder<'a, 'b, C>
+impl<'a, C> DeleteMessageBuilder<'a, C>
 where
     C: Client,
 {
@@ -127,19 +128,19 @@ where
 }
 
 // methods callable only when every mandatory field has been filled
-impl<'a, 'b, C> DeleteMessageBuilder<'a, 'b, C>
+impl<'a, C> DeleteMessageBuilder<'a, C>
 where
     C: Client,
 {
     pub async fn execute(self) -> Result<DeleteMessageResponse, AzureError> {
-        let message = self.message();
+        let pop_receipt = self.pop_receipt();
 
         let mut uri = format!(
             "{}/{}/messages/{}?popreceipt={}",
             self.queue_name_service.storage_client().queue_uri(),
             self.queue_name_service.queue_name(),
-            message.message_id,
-            message.pop_receipt
+            pop_receipt.message_id(),
+            utf8_percent_encode(pop_receipt.pop_receipt(), NON_ALPHANUMERIC)
         );
 
         if let Some(nm) = TimeoutOption::to_uri_parameter(&self) {
