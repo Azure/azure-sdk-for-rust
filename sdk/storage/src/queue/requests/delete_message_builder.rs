@@ -4,8 +4,8 @@ use crate::responses::*;
 use azure_core::errors::{check_status_extract_headers_and_body, AzureError};
 use azure_core::prelude::*;
 use hyper::StatusCode;
-use std::convert::TryInto;
 use percent_encoding::{utf8_percent_encode, NON_ALPHANUMERIC};
+use std::convert::TryInto;
 
 #[derive(Debug)]
 pub struct DeleteMessageBuilder<'a, C>

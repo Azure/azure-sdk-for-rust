@@ -28,7 +28,12 @@ impl From<Message> for Box<dyn PopReceipt> {
 
 impl std::fmt::Debug for dyn PopReceipt {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "PopReceipt {{ message_id: {}, pop_receipt: {} }}", self.message_id(), self.pop_receipt())
+        write!(
+            f,
+            "PopReceipt {{ message_id: {}, pop_receipt: {} }}",
+            self.message_id(),
+            self.pop_receipt()
+        )
     }
 }
 
