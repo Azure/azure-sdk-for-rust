@@ -78,7 +78,7 @@ impl ContinuationToken {
     }
 
     pub fn previous_row_key(&self) -> Option<String> {
-        self.new_url.query_pairs().find_map(|(k, v)| {
+        self.previous_url.query_pairs().find_map(|(k, v)| {
             if k == QUERY_PARAM_NEXTROWKEY {
                 Some(v.into_owned())
             } else {
