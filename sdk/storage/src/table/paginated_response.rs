@@ -4,7 +4,7 @@ use http::HeaderMap;
 use hyper::body;
 use serde::{de::DeserializeOwned, Serialize};
 
-pub struct QueryResult<T>
+pub struct PaginatedResponse<T>
 where
     T: DeserializeOwned,
 {
@@ -12,7 +12,7 @@ where
     pub continuation_token: Option<ContinuationToken>,
 }
 
-impl<T> std::convert::TryFrom<(url::Url, &HeaderMap, &body::Bytes)> for QueryResult<T>
+impl<T> std::convert::TryFrom<(url::Url, &HeaderMap, &body::Bytes)> for PaginatedResponse<T>
 where
     T: DeserializeOwned,
 {
@@ -30,7 +30,8 @@ where
     }
 }
 
-impl<T> std::convert::TryFrom<(ContinuationToken, &HeaderMap, &body::Bytes)> for QueryResult<T>
+impl<T> std::convert::TryFrom<(ContinuationToken, &HeaderMap, &body::Bytes)>
+    for PaginatedResponse<T>
 where
     T: DeserializeOwned,
 {

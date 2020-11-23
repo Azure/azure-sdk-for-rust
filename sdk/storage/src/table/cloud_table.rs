@@ -1,7 +1,7 @@
 use crate::core::Client;
 use crate::ContinuationToken;
 use crate::{
-    entity_path, get_batch_mime, Batch, MetadataDetail, QueryResult, TableClient, TableEntity,
+    entity_path, get_batch_mime, Batch, MetadataDetail, PaginatedResponse, TableClient, TableEntity,
 };
 use azure_core::errors::{
     check_status_extract_body, check_status_extract_headers_and_body, AzureError,
@@ -247,7 +247,7 @@ where
         .await
     }
 
-    pub async fn begin_get_all<T>(&self) -> Result<QueryResult<T>, AzureError>
+    pub async fn begin_get_all<T>(&self) -> Result<PaginatedResponse<T>, AzureError>
     where
         T: DeserializeOwned,
     {
@@ -255,7 +255,7 @@ where
         self.begin_get_request(None).await
     }
 
-    pub async fn begin_query<T>(&self, query: &str) -> Result<QueryResult<T>, AzureError>
+    pub async fn begin_query<T>(&self, query: &str) -> Result<PaginatedResponse<T>, AzureError>
     where
         T: DeserializeOwned,
     {
@@ -263,7 +263,10 @@ where
         self.begin_get_request(Some(query)).await
     }
 
-    async fn begin_get_request<T>(&self, query: Option<&str>) -> Result<QueryResult<T>, AzureError>
+    async fn begin_get_request<T>(
+        &self,
+        query: Option<&str>,
+    ) -> Result<PaginatedResponse<T>, AzureError>
     where
         T: DeserializeOwned,
     {
@@ -291,7 +294,7 @@ where
     pub async fn continue_execution<T>(
         &self,
         continuation_token: ContinuationToken,
-    ) -> Result<QueryResult<T>, AzureError>
+    ) -> Result<PaginatedResponse<T>, AzureError>
     where
         T: DeserializeOwned,
     {
@@ -318,7 +321,7 @@ where
 
     pub fn stream_get_all<'a, T>(
         &'a self,
-    ) -> impl Stream<Item = Result<QueryResult<T>, AzureError>> + 'a
+    ) -> impl Stream<Item = Result<PaginatedResponse<T>, AzureError>> + 'a
     where
         T: Serialize + DeserializeOwned + 'a,
     {
@@ -352,7 +355,7 @@ where
     pub fn stream_query<'a, T>(
         &'a self,
         query: &'a str,
-    ) -> impl Stream<Item = Result<QueryResult<T>, AzureError>> + 'a
+    ) -> impl Stream<Item = Result<PaginatedResponse<T>, AzureError>> + 'a
     where
         T: Serialize + DeserializeOwned + 'a,
     {
