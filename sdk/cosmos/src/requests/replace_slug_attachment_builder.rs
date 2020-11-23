@@ -1,23 +1,18 @@
 use crate::prelude::*;
 use crate::responses::CreateSlugAttachmentResponse;
-use azure_core::errors::{check_status_extract_headers_and_body, AzureError};
 use azure_core::prelude::*;
 use azure_core::{No, ToAssign, Yes};
-use hyper::StatusCode;
+use http::StatusCode;
 use std::convert::TryInto;
 use std::marker::PhantomData;
 
 #[derive(Debug, Clone)]
-pub struct ReplaceSlugAttachmentBuilder<'a, 'b, C, D, COLL, DOC, BodySet, ContentTypeSet>
+pub struct ReplaceSlugAttachmentBuilder<'a, 'b, BodySet, ContentTypeSet>
 where
     BodySet: ToAssign,
     ContentTypeSet: ToAssign,
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-    DOC: DocumentClient<C, D, COLL>,
 {
-    attachment_client: &'a dyn AttachmentClient<C, D, COLL, DOC>,
+    attachment_client: &'a AttachmentClient,
     p_body: PhantomData<BodySet>,
     p_content_type: PhantomData<ContentTypeSet>,
     body: Option<&'b [u8]>,
@@ -25,21 +20,12 @@ where
     if_match_condition: Option<IfMatchCondition<'b>>,
     user_agent: Option<&'b str>,
     activity_id: Option<&'b str>,
-    consistency_level: Option<ConsistencyLevel<'b>>,
+    consistency_level: Option<ConsistencyLevel>,
 }
 
-impl<'a, 'b, C, D, COLL, DOC> ReplaceSlugAttachmentBuilder<'a, 'b, C, D, COLL, DOC, No, No>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-    DOC: DocumentClient<C, D, COLL>,
-{
-    #[inline]
-    pub(crate) fn new(
-        attachment_client: &'a dyn AttachmentClient<C, D, COLL, DOC>,
-    ) -> ReplaceSlugAttachmentBuilder<'a, 'b, C, D, COLL, DOC, No, No> {
-        ReplaceSlugAttachmentBuilder {
+impl<'a, 'b> ReplaceSlugAttachmentBuilder<'a, 'b, No, No> {
+    pub(crate) fn new(attachment_client: &'a AttachmentClient) -> Self {
+        Self {
             attachment_client,
             p_body: PhantomData {},
             body: None,
@@ -53,131 +39,87 @@ where
     }
 }
 
-impl<'a, 'b, C, D, COLL, DOC, BodySet, ContentTypeSet> AttachmentClientRequired<'a, C, D, COLL, DOC>
-    for ReplaceSlugAttachmentBuilder<'a, 'b, C, D, COLL, DOC, BodySet, ContentTypeSet>
+impl<'a, 'b, BodySet, ContentTypeSet> AttachmentClientRequired<'a>
+    for ReplaceSlugAttachmentBuilder<'a, 'b, BodySet, ContentTypeSet>
 where
     BodySet: ToAssign,
     ContentTypeSet: ToAssign,
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-    DOC: DocumentClient<C, D, COLL>,
 {
-    #[inline]
-    fn attachment_client(&self) -> &'a dyn AttachmentClient<C, D, COLL, DOC> {
+    fn attachment_client(&self) -> &'a AttachmentClient {
         self.attachment_client
     }
 }
 
-//get mandatory no traits methods
-
-//set mandatory no traits methods
-impl<'a, 'b, C, D, COLL, DOC, ContentTypeSet> BodyRequired<'b>
-    for ReplaceSlugAttachmentBuilder<'a, 'b, C, D, COLL, DOC, Yes, ContentTypeSet>
+impl<'a, 'b, ContentTypeSet> BodyRequired<'b>
+    for ReplaceSlugAttachmentBuilder<'a, 'b, Yes, ContentTypeSet>
 where
     ContentTypeSet: ToAssign,
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-    DOC: DocumentClient<C, D, COLL>,
 {
-    #[inline]
     fn body(&self) -> &'b [u8] {
         self.body.unwrap()
     }
 }
 
-impl<'a, 'b, C, D, COLL, DOC, BodySet> ContentTypeRequired<'b>
-    for ReplaceSlugAttachmentBuilder<'a, 'b, C, D, COLL, DOC, BodySet, Yes>
+impl<'a, 'b, BodySet> ContentTypeRequired<'b> for ReplaceSlugAttachmentBuilder<'a, 'b, BodySet, Yes>
 where
     BodySet: ToAssign,
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-    DOC: DocumentClient<C, D, COLL>,
 {
-    #[inline]
     fn content_type(&self) -> &'b str {
         self.content_type.unwrap()
     }
 }
 
-impl<'a, 'b, C, D, COLL, DOC, BodySet, ContentTypeSet> IfMatchConditionOption<'b>
-    for ReplaceSlugAttachmentBuilder<'a, 'b, C, D, COLL, DOC, BodySet, ContentTypeSet>
+impl<'a, 'b, BodySet, ContentTypeSet> IfMatchConditionOption<'b>
+    for ReplaceSlugAttachmentBuilder<'a, 'b, BodySet, ContentTypeSet>
 where
     BodySet: ToAssign,
     ContentTypeSet: ToAssign,
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-    DOC: DocumentClient<C, D, COLL>,
 {
-    #[inline]
     fn if_match_condition(&self) -> Option<IfMatchCondition<'b>> {
         self.if_match_condition
     }
 }
 
-impl<'a, 'b, C, D, COLL, DOC, BodySet, ContentTypeSet> UserAgentOption<'b>
-    for ReplaceSlugAttachmentBuilder<'a, 'b, C, D, COLL, DOC, BodySet, ContentTypeSet>
+impl<'a, 'b, BodySet, ContentTypeSet> UserAgentOption<'b>
+    for ReplaceSlugAttachmentBuilder<'a, 'b, BodySet, ContentTypeSet>
 where
     BodySet: ToAssign,
     ContentTypeSet: ToAssign,
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-    DOC: DocumentClient<C, D, COLL>,
 {
-    #[inline]
     fn user_agent(&self) -> Option<&'b str> {
         self.user_agent
     }
 }
 
-impl<'a, 'b, C, D, COLL, DOC, BodySet, ContentTypeSet> ActivityIdOption<'b>
-    for ReplaceSlugAttachmentBuilder<'a, 'b, C, D, COLL, DOC, BodySet, ContentTypeSet>
+impl<'a, 'b, BodySet, ContentTypeSet> ActivityIdOption<'b>
+    for ReplaceSlugAttachmentBuilder<'a, 'b, BodySet, ContentTypeSet>
 where
     BodySet: ToAssign,
     ContentTypeSet: ToAssign,
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-    DOC: DocumentClient<C, D, COLL>,
 {
-    #[inline]
     fn activity_id(&self) -> Option<&'b str> {
         self.activity_id
     }
 }
 
-impl<'a, 'b, C, D, COLL, DOC, BodySet, ContentTypeSet> ConsistencyLevelOption<'b>
-    for ReplaceSlugAttachmentBuilder<'a, 'b, C, D, COLL, DOC, BodySet, ContentTypeSet>
+impl<'a, 'b, BodySet, ContentTypeSet> ConsistencyLevelOption<'b>
+    for ReplaceSlugAttachmentBuilder<'a, 'b, BodySet, ContentTypeSet>
 where
     BodySet: ToAssign,
     ContentTypeSet: ToAssign,
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-    DOC: DocumentClient<C, D, COLL>,
 {
-    #[inline]
-    fn consistency_level(&self) -> Option<ConsistencyLevel<'b>> {
+    fn consistency_level(&self) -> Option<ConsistencyLevel> {
         self.consistency_level.clone()
     }
 }
 
-impl<'a, 'b, C, D, COLL, DOC, ContentTypeSet> BodySupport<'b>
-    for ReplaceSlugAttachmentBuilder<'a, 'b, C, D, COLL, DOC, No, ContentTypeSet>
+impl<'a, 'b, ContentTypeSet> BodySupport<'b>
+    for ReplaceSlugAttachmentBuilder<'a, 'b, No, ContentTypeSet>
 where
     ContentTypeSet: ToAssign,
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-    DOC: DocumentClient<C, D, COLL>,
 {
-    type O = ReplaceSlugAttachmentBuilder<'a, 'b, C, D, COLL, DOC, Yes, ContentTypeSet>;
+    type O = ReplaceSlugAttachmentBuilder<'a, 'b, Yes, ContentTypeSet>;
 
-    #[inline]
     fn with_body(self, body: &'b [u8]) -> Self::O {
         ReplaceSlugAttachmentBuilder {
             attachment_client: self.attachment_client,
@@ -193,18 +135,12 @@ where
     }
 }
 
-impl<'a, 'b, C, D, COLL, DOC, BodySet> ContentTypeSupport<'b>
-    for ReplaceSlugAttachmentBuilder<'a, 'b, C, D, COLL, DOC, BodySet, No>
+impl<'a, 'b, BodySet> ContentTypeSupport<'b> for ReplaceSlugAttachmentBuilder<'a, 'b, BodySet, No>
 where
     BodySet: ToAssign,
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-    DOC: DocumentClient<C, D, COLL>,
 {
-    type O = ReplaceSlugAttachmentBuilder<'a, 'b, C, D, COLL, DOC, BodySet, Yes>;
+    type O = ReplaceSlugAttachmentBuilder<'a, 'b, BodySet, Yes>;
 
-    #[inline]
     fn with_content_type(self, content_type: &'b str) -> Self::O {
         ReplaceSlugAttachmentBuilder {
             attachment_client: self.attachment_client,
@@ -220,128 +156,74 @@ where
     }
 }
 
-impl<'a, 'b, C, D, COLL, DOC, BodySet, ContentTypeSet> IfMatchConditionSupport<'b>
-    for ReplaceSlugAttachmentBuilder<'a, 'b, C, D, COLL, DOC, BodySet, ContentTypeSet>
+impl<'a, 'b, BodySet, ContentTypeSet> IfMatchConditionSupport<'b>
+    for ReplaceSlugAttachmentBuilder<'a, 'b, BodySet, ContentTypeSet>
 where
     BodySet: ToAssign,
     ContentTypeSet: ToAssign,
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-    DOC: DocumentClient<C, D, COLL>,
 {
-    type O = ReplaceSlugAttachmentBuilder<'a, 'b, C, D, COLL, DOC, BodySet, ContentTypeSet>;
+    type O = Self;
 
-    #[inline]
     fn with_if_match_condition(self, if_match_condition: IfMatchCondition<'b>) -> Self::O {
-        ReplaceSlugAttachmentBuilder {
-            attachment_client: self.attachment_client,
-            p_body: PhantomData {},
-            p_content_type: PhantomData {},
-            body: self.body,
-            content_type: self.content_type,
+        Self {
             if_match_condition: Some(if_match_condition),
-            user_agent: self.user_agent,
-            activity_id: self.activity_id,
-            consistency_level: self.consistency_level,
+            ..self
         }
     }
 }
 
-impl<'a, 'b, C, D, COLL, DOC, BodySet, ContentTypeSet> UserAgentSupport<'b>
-    for ReplaceSlugAttachmentBuilder<'a, 'b, C, D, COLL, DOC, BodySet, ContentTypeSet>
+impl<'a, 'b, BodySet, ContentTypeSet> UserAgentSupport<'b>
+    for ReplaceSlugAttachmentBuilder<'a, 'b, BodySet, ContentTypeSet>
 where
     BodySet: ToAssign,
     ContentTypeSet: ToAssign,
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-    DOC: DocumentClient<C, D, COLL>,
 {
-    type O = ReplaceSlugAttachmentBuilder<'a, 'b, C, D, COLL, DOC, BodySet, ContentTypeSet>;
+    type O = Self;
 
-    #[inline]
     fn with_user_agent(self, user_agent: &'b str) -> Self::O {
-        ReplaceSlugAttachmentBuilder {
-            attachment_client: self.attachment_client,
-            p_body: PhantomData {},
-            p_content_type: PhantomData {},
-            body: self.body,
-            content_type: self.content_type,
-            if_match_condition: self.if_match_condition,
+        Self {
             user_agent: Some(user_agent),
-            activity_id: self.activity_id,
-            consistency_level: self.consistency_level,
+            ..self
         }
     }
 }
 
-impl<'a, 'b, C, D, COLL, DOC, BodySet, ContentTypeSet> ActivityIdSupport<'b>
-    for ReplaceSlugAttachmentBuilder<'a, 'b, C, D, COLL, DOC, BodySet, ContentTypeSet>
+impl<'a, 'b, BodySet, ContentTypeSet> ActivityIdSupport<'b>
+    for ReplaceSlugAttachmentBuilder<'a, 'b, BodySet, ContentTypeSet>
 where
     BodySet: ToAssign,
     ContentTypeSet: ToAssign,
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-    DOC: DocumentClient<C, D, COLL>,
 {
-    type O = ReplaceSlugAttachmentBuilder<'a, 'b, C, D, COLL, DOC, BodySet, ContentTypeSet>;
+    type O = Self;
 
-    #[inline]
     fn with_activity_id(self, activity_id: &'b str) -> Self::O {
-        ReplaceSlugAttachmentBuilder {
-            attachment_client: self.attachment_client,
-            p_body: PhantomData {},
-            p_content_type: PhantomData {},
-            body: self.body,
-            content_type: self.content_type,
-            if_match_condition: self.if_match_condition,
-            user_agent: self.user_agent,
+        Self {
             activity_id: Some(activity_id),
-            consistency_level: self.consistency_level,
+            ..self
         }
     }
 }
 
-impl<'a, 'b, C, D, COLL, DOC, BodySet, ContentTypeSet> ConsistencyLevelSupport<'b>
-    for ReplaceSlugAttachmentBuilder<'a, 'b, C, D, COLL, DOC, BodySet, ContentTypeSet>
+impl<'a, 'b, BodySet, ContentTypeSet> ConsistencyLevelSupport<'b>
+    for ReplaceSlugAttachmentBuilder<'a, 'b, BodySet, ContentTypeSet>
 where
     BodySet: ToAssign,
     ContentTypeSet: ToAssign,
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-    DOC: DocumentClient<C, D, COLL>,
 {
-    type O = ReplaceSlugAttachmentBuilder<'a, 'b, C, D, COLL, DOC, BodySet, ContentTypeSet>;
+    type O = Self;
 
-    #[inline]
-    fn with_consistency_level(self, consistency_level: ConsistencyLevel<'b>) -> Self::O {
-        ReplaceSlugAttachmentBuilder {
-            attachment_client: self.attachment_client,
-            p_body: PhantomData {},
-            p_content_type: PhantomData {},
-            body: self.body,
-            content_type: self.content_type,
-            if_match_condition: self.if_match_condition,
-            user_agent: self.user_agent,
-            activity_id: self.activity_id,
+    fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self::O {
+        Self {
             consistency_level: Some(consistency_level),
+            ..self
         }
     }
 }
 
 // methods callable only when every mandatory field has been filled
-impl<'a, 'b, C, D, COLL, DOC> ReplaceSlugAttachmentBuilder<'a, 'b, C, D, COLL, DOC, Yes, Yes>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-    DOC: DocumentClient<C, D, COLL>,
-{
-    pub async fn execute(&self) -> Result<CreateSlugAttachmentResponse, AzureError> {
-        let mut req = self.attachment_client.prepare_request(hyper::Method::PUT);
+impl<'a, 'b> ReplaceSlugAttachmentBuilder<'a, 'b, Yes, Yes> {
+    pub async fn execute(&self) -> Result<CreateSlugAttachmentResponse, CosmosError> {
+        let mut req = self.attachment_client.prepare_request(http::Method::PUT);
 
         // add trait headers
         req = IfMatchConditionOption::add_header(self, req);
@@ -359,19 +241,15 @@ where
         req = req.header("Slug", self.attachment_client.attachment_name().name());
         req = req.header(http::header::CONTENT_LENGTH, self.body().len());
 
-        let req = req.body(hyper::Body::from(self.body().to_owned()))?;
+        let req = req.body(self.body())?;
 
         debug!("req == {:#?}", req);
 
-        let (headers, whole_body) = check_status_extract_headers_and_body(
-            self.attachment_client.hyper_client().request(req),
-            StatusCode::OK,
-        )
-        .await?;
-
-        debug!("\nheaders == {:?}", headers);
-        debug!("\nwhole body == {:#?}", whole_body);
-
-        Ok((&headers, &whole_body as &[u8]).try_into()?)
+        Ok(self
+            .attachment_client
+            .http_client()
+            .execute_request_check_status(req, StatusCode::OK)
+            .await?
+            .try_into()?)
     }
 }

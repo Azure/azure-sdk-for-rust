@@ -4,3 +4,5 @@ mod list_queues_builder;
 pub use list_queues_builder::ListQueuesBuilder;
 mod get_messages_builder;
 pub use get_messages_builder::GetMessagesBuilder;
+mod delete_message_builder;
+pub use delete_message_builder::DeleteMessageBuilder;

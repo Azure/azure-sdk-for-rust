@@ -1,36 +1,24 @@
 use crate::prelude::*;
 use crate::responses::ListStoredProceduresResponse;
 use crate::ResourceType;
-use azure_core::errors::{check_status_extract_headers_and_body, AzureError};
 use azure_core::prelude::*;
 use futures::stream::{unfold, Stream};
-use hyper::StatusCode;
+use http::StatusCode;
 use std::convert::TryInto;
 
-#[derive(Debug)]
-pub struct ListStoredProceduresBuilder<'a, 'b, C, D>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-{
-    collection_client: &'a dyn CollectionClient<C, D>,
+#[derive(Debug, Clone)]
+pub struct ListStoredProceduresBuilder<'a, 'b> {
+    collection_client: &'a CollectionClient,
     user_agent: Option<&'b str>,
     activity_id: Option<&'b str>,
-    consistency_level: Option<ConsistencyLevel<'b>>,
+    consistency_level: Option<ConsistencyLevel>,
     continuation: Option<&'b str>,
     max_item_count: i32,
 }
 
-impl<'a, 'b, C, D> ListStoredProceduresBuilder<'a, 'b, C, D>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-{
-    #[inline]
-    pub(crate) fn new(
-        collection_client: &'a dyn CollectionClient<C, D>,
-    ) -> ListStoredProceduresBuilder<'a, 'b, C, D> {
-        ListStoredProceduresBuilder {
+impl<'a, 'b> ListStoredProceduresBuilder<'a, 'b> {
+    pub(crate) fn new(collection_client: &'a CollectionClient) -> Self {
+        Self {
             collection_client,
             user_agent: None,
             activity_id: None,
@@ -41,199 +29,100 @@ where
     }
 }
 
-impl<'a, 'b, C, D> Clone for ListStoredProceduresBuilder<'a, 'b, C, D>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-{
-    fn clone(&self) -> Self {
-        Self {
-            collection_client: self.collection_client,
-            user_agent: self.user_agent,
-            activity_id: self.activity_id,
-            consistency_level: self.consistency_level.clone(),
-            continuation: self.continuation,
-            max_item_count: self.max_item_count,
-        }
-    }
-}
-
-impl<'a, 'b, C, D> CollectionClientRequired<'a, C, D> for ListStoredProceduresBuilder<'a, 'b, C, D>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-{
-    #[inline]
-    fn collection_client(&self) -> &'a dyn CollectionClient<C, D> {
+impl<'a, 'b> CollectionClientRequired<'a> for ListStoredProceduresBuilder<'a, 'b> {
+    fn collection_client(&self) -> &'a CollectionClient {
         self.collection_client
     }
 }
 
-//get mandatory no traits methods
-
-//set mandatory no traits methods
-impl<'a, 'b, C, D> UserAgentOption<'b> for ListStoredProceduresBuilder<'a, 'b, C, D>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-{
-    #[inline]
+impl<'a, 'b> UserAgentOption<'b> for ListStoredProceduresBuilder<'a, 'b> {
     fn user_agent(&self) -> Option<&'b str> {
         self.user_agent
     }
 }
 
-impl<'a, 'b, C, D> ActivityIdOption<'b> for ListStoredProceduresBuilder<'a, 'b, C, D>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-{
-    #[inline]
+impl<'a, 'b> ActivityIdOption<'b> for ListStoredProceduresBuilder<'a, 'b> {
     fn activity_id(&self) -> Option<&'b str> {
         self.activity_id
     }
 }
 
-impl<'a, 'b, C, D> ConsistencyLevelOption<'b> for ListStoredProceduresBuilder<'a, 'b, C, D>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-{
-    #[inline]
-    fn consistency_level(&self) -> Option<ConsistencyLevel<'b>> {
+impl<'a, 'b> ConsistencyLevelOption<'b> for ListStoredProceduresBuilder<'a, 'b> {
+    fn consistency_level(&self) -> Option<ConsistencyLevel> {
         self.consistency_level.clone()
     }
 }
 
-impl<'a, 'b, C, D> ContinuationOption<'b> for ListStoredProceduresBuilder<'a, 'b, C, D>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-{
-    #[inline]
+impl<'a, 'b> ContinuationOption<'b> for ListStoredProceduresBuilder<'a, 'b> {
     fn continuation(&self) -> Option<&'b str> {
         self.continuation
     }
 }
 
-impl<'a, 'b, C, D> MaxItemCountOption for ListStoredProceduresBuilder<'a, 'b, C, D>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-{
-    #[inline]
+impl<'a, 'b> MaxItemCountOption for ListStoredProceduresBuilder<'a, 'b> {
     fn max_item_count(&self) -> i32 {
         self.max_item_count
     }
 }
 
-impl<'a, 'b, C, D> UserAgentSupport<'b> for ListStoredProceduresBuilder<'a, 'b, C, D>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-{
-    type O = ListStoredProceduresBuilder<'a, 'b, C, D>;
+impl<'a, 'b> UserAgentSupport<'b> for ListStoredProceduresBuilder<'a, 'b> {
+    type O = Self;
 
-    #[inline]
     fn with_user_agent(self, user_agent: &'b str) -> Self::O {
-        ListStoredProceduresBuilder {
-            collection_client: self.collection_client,
+        Self {
             user_agent: Some(user_agent),
-            activity_id: self.activity_id,
-            consistency_level: self.consistency_level,
-            continuation: self.continuation,
-            max_item_count: self.max_item_count,
+            ..self
         }
     }
 }
 
-impl<'a, 'b, C, D> ActivityIdSupport<'b> for ListStoredProceduresBuilder<'a, 'b, C, D>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-{
-    type O = ListStoredProceduresBuilder<'a, 'b, C, D>;
+impl<'a, 'b> ActivityIdSupport<'b> for ListStoredProceduresBuilder<'a, 'b> {
+    type O = Self;
 
-    #[inline]
     fn with_activity_id(self, activity_id: &'b str) -> Self::O {
-        ListStoredProceduresBuilder {
-            collection_client: self.collection_client,
-            user_agent: self.user_agent,
+        Self {
             activity_id: Some(activity_id),
-            consistency_level: self.consistency_level,
-            continuation: self.continuation,
-            max_item_count: self.max_item_count,
+            ..self
         }
     }
 }
 
-impl<'a, 'b, C, D> ConsistencyLevelSupport<'b> for ListStoredProceduresBuilder<'a, 'b, C, D>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-{
-    type O = ListStoredProceduresBuilder<'a, 'b, C, D>;
+impl<'a, 'b> ConsistencyLevelSupport<'b> for ListStoredProceduresBuilder<'a, 'b> {
+    type O = Self;
 
-    #[inline]
-    fn with_consistency_level(self, consistency_level: ConsistencyLevel<'b>) -> Self::O {
-        ListStoredProceduresBuilder {
-            collection_client: self.collection_client,
-            user_agent: self.user_agent,
-            activity_id: self.activity_id,
+    fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self::O {
+        Self {
             consistency_level: Some(consistency_level),
-            continuation: self.continuation,
-            max_item_count: self.max_item_count,
+            ..self
         }
     }
 }
 
-impl<'a, 'b, C, D> ContinuationSupport<'b> for ListStoredProceduresBuilder<'a, 'b, C, D>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-{
-    type O = ListStoredProceduresBuilder<'a, 'b, C, D>;
+impl<'a, 'b> ContinuationSupport<'b> for ListStoredProceduresBuilder<'a, 'b> {
+    type O = Self;
 
-    #[inline]
     fn with_continuation(self, continuation: &'b str) -> Self::O {
-        ListStoredProceduresBuilder {
-            collection_client: self.collection_client,
-            user_agent: self.user_agent,
-            activity_id: self.activity_id,
-            consistency_level: self.consistency_level,
+        Self {
             continuation: Some(continuation),
-            max_item_count: self.max_item_count,
+            ..self
         }
     }
 }
 
-impl<'a, 'b, C, D> MaxItemCountSupport for ListStoredProceduresBuilder<'a, 'b, C, D>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-{
-    type O = ListStoredProceduresBuilder<'a, 'b, C, D>;
+impl<'a, 'b> MaxItemCountSupport for ListStoredProceduresBuilder<'a, 'b> {
+    type O = Self;
 
-    #[inline]
     fn with_max_item_count(self, max_item_count: i32) -> Self::O {
-        ListStoredProceduresBuilder {
-            collection_client: self.collection_client,
-            user_agent: self.user_agent,
-            activity_id: self.activity_id,
-            consistency_level: self.consistency_level,
-            continuation: self.continuation,
+        Self {
             max_item_count,
+            ..self
         }
     }
 }
 
 // methods callable only when every mandatory field has been filled
-impl<'a, 'b, C, D> ListStoredProceduresBuilder<'a, 'b, C, D>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-{
-    pub async fn execute(&self) -> Result<ListStoredProceduresResponse, AzureError> {
+impl<'a, 'b> ListStoredProceduresBuilder<'a, 'b> {
+    pub async fn execute(&self) -> Result<ListStoredProceduresResponse, CosmosError> {
         trace!("ListStoredProceduresBuilder::execute called");
 
         let request = self.collection_client.cosmos_client().prepare_request(
@@ -242,7 +131,7 @@ where
                 self.collection_client.database_client().database_name(),
                 self.collection_client.collection_name(),
             ),
-            hyper::Method::GET,
+            http::Method::GET,
             ResourceType::StoredProcedures,
         );
 
@@ -253,20 +142,19 @@ where
         let request = ContinuationOption::add_header(self, request);
         let request = MaxItemCountOption::add_header(self, request);
 
-        let request = request.body(hyper::Body::empty())?;
+        let request = request.body(EMPTY_BODY.as_ref())?;
 
-        let (headers, body) = check_status_extract_headers_and_body(
-            self.collection_client().hyper_client().request(request),
-            StatusCode::OK,
-        )
-        .await?;
-
-        Ok((&headers, &body as &[u8]).try_into()?)
+        Ok(self
+            .collection_client()
+            .http_client()
+            .execute_request_check_status(request, StatusCode::OK)
+            .await?
+            .try_into()?)
     }
 
     pub fn stream(
         &self,
-    ) -> impl Stream<Item = Result<ListStoredProceduresResponse, AzureError>> + '_ {
+    ) -> impl Stream<Item = Result<ListStoredProceduresResponse, CosmosError>> + '_ {
         #[derive(Debug, Clone, PartialEq)]
         enum States {
             Init,

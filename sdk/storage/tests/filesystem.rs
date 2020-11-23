@@ -49,37 +49,43 @@ async fn create_and_delete() {
     assert_eq!(properties1, properties1_response.properties);
     assert_eq!(properties2, properties2_response.properties);
 
-    let (mut found1, mut found2) = (false, false);
-    for filesystem in client
-        .list_filesystems()
-        .finalize()
-        .await
-        .unwrap()
+    let file_systems = client.list_filesystems().finalize().await.unwrap();
+
+    let found1 = if file_systems
         .incomplete_vector
         .iter()
+        .any(|name| name.name == filesystem_name1)
     {
-        if filesystem.name == filesystem_name1 && !found1 {
-            found1 = true;
-        } else if filesystem.name == filesystem_name2 && !found2 {
-            found2 = true;
-        } else {
-            panic!("Unexpected filesystem name.");
-        }
-    }
-    assert!(found1 && found2);
+        client
+            .delete_filesystem()
+            .with_filesystem(filesystem_name1)
+            .finalize()
+            .await
+            .unwrap();
 
-    client
-        .delete_filesystem()
-        .with_filesystem(filesystem_name1)
-        .finalize()
-        .await
-        .unwrap();
-    client
-        .delete_filesystem()
-        .with_filesystem(filesystem_name2)
-        .finalize()
-        .await
-        .unwrap();
+        true
+    } else {
+        false
+    };
+
+    let found2 = if file_systems
+        .incomplete_vector
+        .iter()
+        .any(|name| name.name == filesystem_name2)
+    {
+        client
+            .delete_filesystem()
+            .with_filesystem(filesystem_name2)
+            .finalize()
+            .await
+            .unwrap();
+
+        true
+    } else {
+        false
+    };
+
+    assert!(found1 && found2);
 }
 
 fn initialize() -> Box<dyn Client> {

@@ -1,6 +1,6 @@
-use azure_core::errors::AzureError;
+use crate::CosmosError;
 use azure_core::prelude::IfMatchCondition;
-use http::HeaderMap;
+use http::response::Response;
 
 #[derive(Default, Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct DocumentAttributes {
@@ -70,11 +70,11 @@ impl DocumentAttributes {
     }
 }
 
-impl std::convert::TryFrom<(&HeaderMap, &[u8])> for DocumentAttributes {
-    type Error = AzureError;
-    fn try_from(value: (&HeaderMap, &[u8])) -> Result<Self, Self::Error> {
-        let body = value.1;
-        Ok(serde_json::from_slice(body)?)
+impl std::convert::TryFrom<Response<Vec<u8>>> for DocumentAttributes {
+    type Error = CosmosError;
+
+    fn try_from(response: Response<Vec<u8>>) -> Result<Self, Self::Error> {
+        Ok(serde_json::from_slice(response.body())?)
     }
 }
 

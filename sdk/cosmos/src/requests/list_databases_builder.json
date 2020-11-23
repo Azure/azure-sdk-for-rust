@@ -3,8 +3,7 @@
   "derive": "Debug, Clone",
   "uses": [
     "crate::responses::ListDatabasesResponse",
-    "azure_core::errors::{check_status_extract_headers_and_body, AzureError}",
-    "hyper::StatusCode",
+    "http::StatusCode",
     "crate::prelude::*",
     "crate::ResourceType",
     "azure_core::prelude::*",
@@ -39,7 +38,7 @@
     },
     {
       "name": "consistency_level",
-      "field_type": "ConsistencyLevel<'a>",
+      "field_type": "ConsistencyLevel",
       "optional": true,
       "trait_get": "ConsistencyLevelOption<'a>",
       "trait_set": "ConsistencyLevelSupport<'a>",

@@ -1,7 +1,9 @@
+use azure_core::HttpClient;
 use azure_cosmos::prelude::*;
 use azure_cosmos::trigger::*;
 use futures::stream::StreamExt;
 use std::error::Error;
+use std::sync::Arc;
 
 const TRIGGER_BODY: &str = r#"
 function updateMetadata() {
@@ -34,7 +36,7 @@ function updateMetadata() {
 }"#;
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn Error>> {
+async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let database = std::env::args()
         .nth(1)
         .expect("please specify database name as first command line parameter");
@@ -51,10 +53,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let authorization_token = AuthorizationToken::new_master(&master_key)?;
 
-    let client = ClientBuilder::new(account, authorization_token)?;
-    let database_client = client.with_database_client(&database);
-    let collection_client = database_client.with_collection_client(&collection);
-    let trigger_client = collection_client.with_trigger_client(&trigger_name);
+    let http_client: Arc<Box<dyn HttpClient>> = Arc::new(Box::new(reqwest::Client::new()));
+    let client = CosmosClient::new(http_client, account.clone(), authorization_token);
+
+    let database_client = client.into_database_client(database);
+    let collection_client = database_client.into_collection_client(collection);
+    let trigger_client = collection_client.clone().into_trigger_client(trigger_name);
 
     let ret = trigger_client
         .create_trigger()

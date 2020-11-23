@@ -35,7 +35,6 @@ mod resource_quota;
 pub mod responses;
 pub mod stored_procedure;
 mod to_json_vector;
-mod traits;
 pub mod trigger;
 mod user;
 mod user_defined_function;
@@ -57,7 +56,6 @@ pub use self::query::{Param, ParamDef, Query};
 pub use self::requests::*;
 pub use self::resource::Resource;
 pub use self::resource_quota::ResourceQuota;
-pub use self::traits::*;
 pub use self::trigger::{Trigger, TriggerName};
 use crate::clients::*;
 use crate::collection::Collection;
@@ -68,6 +66,9 @@ use crate::stored_procedure::Parameters;
 pub use crate::user::{User, UserName};
 pub use crate::user_defined_function::UserDefinedFunctionName;
 use http::request::Builder;
+
+type ReadonlyString = std::borrow::Cow<'static, str>;
+pub type CosmosError = Box<dyn std::error::Error + Sync + Send>;
 
 #[allow(dead_code)]
 #[derive(Debug, Clone, Copy)]
@@ -85,7 +86,7 @@ pub enum ResourceType {
 }
 
 pub trait CosmosClientRequired<'a> {
-    fn cosmos_client(&'a self) -> &'a dyn CosmosClient;
+    fn cosmos_client(&'a self) -> &'a CosmosClient;
 }
 
 pub trait DatabaseRequired<'a> {
@@ -197,11 +198,11 @@ pub trait AllowTentativeWritesOption {
 
 pub trait ConsistencyLevelSupport<'a> {
     type O;
-    fn with_consistency_level(self, consistency_level: ConsistencyLevel<'a>) -> Self::O;
+    fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self::O;
 }
 
 pub trait ConsistencyLevelOption<'a> {
-    fn consistency_level(&self) -> Option<ConsistencyLevel<'a>>;
+    fn consistency_level(&self) -> Option<ConsistencyLevel>;
 
     #[must_use]
     fn add_header(&self, builder: Builder) -> Builder {
@@ -214,7 +215,7 @@ pub trait ConsistencyLevelOption<'a> {
             // if we have a Session consistency level we make sure to pass
             // the x-ms-session-token header too.
             if let ConsistencyLevel::Session(session_token) = consistency_level {
-                builder.header(HEADER_SESSION_TOKEN, session_token.as_ref())
+                builder.header(HEADER_SESSION_TOKEN, session_token)
             } else {
                 builder
             }
@@ -395,11 +396,8 @@ pub trait ExpirySecondsSupport {
     fn with_expiry_seconds(self, expiry_seconds: u64) -> Self::O;
 }
 
-pub trait DatabaseClientRequired<'a, C>
-where
-    C: CosmosClient,
-{
-    fn database_client(&self) -> &'a dyn DatabaseClient<C>;
+pub trait DatabaseClientRequired<'a> {
+    fn database_client(&self) -> &'a DatabaseClient;
 }
 
 pub trait DatabaseSupport<'a> {
@@ -407,60 +405,28 @@ pub trait DatabaseSupport<'a> {
     fn with_database(self, database: &'a str) -> Self::O;
 }
 
-pub trait CollectionClientRequired<'a, C, D>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-{
-    fn collection_client(&self) -> &'a dyn CollectionClient<C, D>;
+pub trait CollectionClientRequired<'a> {
+    fn collection_client(&self) -> &'a CollectionClient;
 }
 
-//pub trait CollectionRequired<'a> {
-//    fn collection(&self) -> &'a str;
-//}
-
-pub trait AttachmentClientRequired<'a, C, D, COLL, DOC>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-{
-    fn attachment_client(&self) -> &'a dyn AttachmentClient<C, D, COLL, DOC>;
+pub trait AttachmentClientRequired<'a> {
+    fn attachment_client(&self) -> &'a AttachmentClient;
 }
 
-pub trait StoredProcedureClientRequired<'a, C, D, COLL>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-{
-    fn stored_procedure_client(&self) -> &'a dyn StoredProcedureClient<C, D, COLL>;
+pub trait StoredProcedureClientRequired<'a> {
+    fn stored_procedure_client(&self) -> &'a StoredProcedureClient;
 }
 
-pub trait UserDefinedFunctionClientRequired<'a, C, D, COLL>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-{
-    fn user_defined_function_client(&self) -> &'a dyn UserDefinedFunctionClient<C, D, COLL>;
+pub trait UserDefinedFunctionClientRequired<'a> {
+    fn user_defined_function_client(&self) -> &'a UserDefinedFunctionClient;
 }
 
-pub trait TriggerClientRequired<'a, C, D, COLL>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-{
-    fn trigger_client(&'a self) -> &'a dyn TriggerClient<C, D, COLL>;
+pub trait TriggerClientRequired<'a> {
+    fn trigger_client(&'a self) -> &'a TriggerClient;
 }
 
-pub trait UserClientRequired<'a, C, D>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-{
-    fn user_client(&'a self) -> &'a dyn UserClient<C, D>;
+pub trait UserClientRequired<'a> {
+    fn user_client(&'a self) -> &'a UserClient;
 }
 
 pub trait StoredProcedureNameRequired<'a> {
@@ -472,22 +438,12 @@ pub trait StoredProcedureNameSupport<'a> {
     fn with_stored_procedure_name(self, stored_procedure_name: &'a str) -> Self::O;
 }
 
-pub trait DocumentClientRequired<'a, C, D, COLL>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-{
-    fn document_client(&'a self) -> &'a dyn DocumentClient<C, D, COLL>;
+pub trait DocumentClientRequired<'a> {
+    fn document_client(&'a self) -> &'a DocumentClient;
 }
 
-pub trait PermissionClientRequired<'a, C, D, USER>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    USER: UserClient<C, D>,
-{
-    fn permission_client(&self) -> &'a dyn PermissionClient<C, D, USER>;
+pub trait PermissionClientRequired<'a> {
+    fn permission_client(&self) -> &'a PermissionClient;
 }
 
 pub trait OfferRequired {
@@ -535,11 +491,6 @@ pub trait IndexingPolicySupport<'a> {
     type O;
     fn with_indexing_policy(self, offer: &'a IndexingPolicy) -> Self::O;
 }
-
-//pub trait CollectionSupport<'a> {
-//    type O;
-//    fn with_collection(self, collection: &'a str) -> Self::O;
-//}
 
 pub trait DocumentIdRequired<'a> {
     fn document_id(&self) -> &'a str;

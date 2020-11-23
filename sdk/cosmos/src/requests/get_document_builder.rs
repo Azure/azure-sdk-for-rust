@@ -1,41 +1,27 @@
 use crate::prelude::*;
 use crate::responses::GetDocumentResponse;
 use crate::DocumentClientRequired;
-use azure_core::errors::{extract_status_headers_and_body, AzureError, UnexpectedHTTPResult};
 use azure_core::modify_conditions::IfMatchCondition;
 use azure_core::prelude::*;
 use azure_core::{IfMatchConditionOption, IfMatchConditionSupport};
 use chrono::{DateTime, Utc};
-use hyper::StatusCode;
+use http::StatusCode;
 use serde::de::DeserializeOwned;
-use std::convert::TryFrom;
+use std::convert::TryInto;
 
 #[derive(Debug, Clone)]
-pub struct GetDocumentBuilder<'a, 'b, C, D, COLL>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-{
-    document_client: &'a dyn DocumentClient<C, D, COLL>,
+pub struct GetDocumentBuilder<'a, 'b> {
+    document_client: &'a DocumentClient,
     if_match_condition: Option<IfMatchCondition<'b>>,
     if_modified_since: Option<&'b DateTime<Utc>>,
     user_agent: Option<&'b str>,
     activity_id: Option<&'b str>,
-    consistency_level: Option<ConsistencyLevel<'b>>,
+    consistency_level: Option<ConsistencyLevel>,
 }
 
-impl<'a, 'b, C, D, COLL> GetDocumentBuilder<'a, 'b, C, D, COLL>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-{
-    #[inline]
-    pub(crate) fn new(
-        document_client: &'a dyn DocumentClient<C, D, COLL>,
-    ) -> GetDocumentBuilder<'a, 'b, C, D, COLL> {
-        GetDocumentBuilder {
+impl<'a, 'b> GetDocumentBuilder<'a, 'b> {
+    pub(crate) fn new(document_client: &'a DocumentClient) -> Self {
+        Self {
             document_client,
             if_match_condition: None,
             if_modified_since: None,
@@ -46,201 +32,106 @@ where
     }
 }
 
-impl<'a, 'b, C, D, COLL> DocumentClientRequired<'a, C, D, COLL>
-    for GetDocumentBuilder<'a, 'b, C, D, COLL>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-{
-    #[inline]
-    fn document_client(&self) -> &'a dyn DocumentClient<C, D, COLL> {
+impl<'a, 'b> DocumentClientRequired<'a> for GetDocumentBuilder<'a, 'b> {
+    fn document_client(&self) -> &'a DocumentClient {
         self.document_client
     }
 }
 
-//get mandatory no traits methods
-
-//set mandatory no traits methods
-impl<'a, 'b, C, D, COLL> IfMatchConditionOption<'b> for GetDocumentBuilder<'a, 'b, C, D, COLL>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-{
-    #[inline]
+impl<'a, 'b> IfMatchConditionOption<'b> for GetDocumentBuilder<'a, 'b> {
     fn if_match_condition(&self) -> Option<IfMatchCondition<'b>> {
         self.if_match_condition
     }
 }
 
-impl<'a, 'b, C, D, COLL> IfModifiedSinceOption<'b> for GetDocumentBuilder<'a, 'b, C, D, COLL>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-{
-    #[inline]
+impl<'a, 'b> IfModifiedSinceOption<'b> for GetDocumentBuilder<'a, 'b> {
     fn if_modified_since(&self) -> Option<&'b DateTime<Utc>> {
         self.if_modified_since
     }
 }
 
-impl<'a, 'b, C, D, COLL> UserAgentOption<'b> for GetDocumentBuilder<'a, 'b, C, D, COLL>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-{
-    #[inline]
+impl<'a, 'b> UserAgentOption<'b> for GetDocumentBuilder<'a, 'b> {
     fn user_agent(&self) -> Option<&'b str> {
         self.user_agent
     }
 }
 
-impl<'a, 'b, C, D, COLL> ActivityIdOption<'b> for GetDocumentBuilder<'a, 'b, C, D, COLL>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-{
-    #[inline]
+impl<'a, 'b> ActivityIdOption<'b> for GetDocumentBuilder<'a, 'b> {
     fn activity_id(&self) -> Option<&'b str> {
         self.activity_id
     }
 }
 
-impl<'a, 'b, C, D, COLL> ConsistencyLevelOption<'b> for GetDocumentBuilder<'a, 'b, C, D, COLL>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-{
-    #[inline]
-    fn consistency_level(&self) -> Option<ConsistencyLevel<'b>> {
+impl<'a, 'b> ConsistencyLevelOption<'b> for GetDocumentBuilder<'a, 'b> {
+    fn consistency_level(&self) -> Option<ConsistencyLevel> {
         self.consistency_level.clone()
     }
 }
 
-impl<'a, 'b, C, D, COLL> IfMatchConditionSupport<'b> for GetDocumentBuilder<'a, 'b, C, D, COLL>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-{
-    type O = GetDocumentBuilder<'a, 'b, C, D, COLL>;
+impl<'a, 'b> IfMatchConditionSupport<'b> for GetDocumentBuilder<'a, 'b> {
+    type O = Self;
 
-    #[inline]
     fn with_if_match_condition(self, if_match_condition: IfMatchCondition<'b>) -> Self::O {
-        GetDocumentBuilder {
-            document_client: self.document_client,
+        Self {
             if_match_condition: Some(if_match_condition),
-            if_modified_since: self.if_modified_since,
-            user_agent: self.user_agent,
-            activity_id: self.activity_id,
-            consistency_level: self.consistency_level,
+            ..self
         }
     }
 }
 
-impl<'a, 'b, C, D, COLL> IfModifiedSinceSupport<'b> for GetDocumentBuilder<'a, 'b, C, D, COLL>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-{
-    type O = GetDocumentBuilder<'a, 'b, C, D, COLL>;
+impl<'a, 'b> IfModifiedSinceSupport<'b> for GetDocumentBuilder<'a, 'b> {
+    type O = Self;
 
-    #[inline]
     fn with_if_modified_since(self, if_modified_since: &'b DateTime<Utc>) -> Self::O {
-        GetDocumentBuilder {
-            document_client: self.document_client,
-            if_match_condition: self.if_match_condition,
+        Self {
             if_modified_since: Some(if_modified_since),
-            user_agent: self.user_agent,
-            activity_id: self.activity_id,
-            consistency_level: self.consistency_level,
+            ..self
         }
     }
 }
 
-impl<'a, 'b, C, D, COLL> UserAgentSupport<'b> for GetDocumentBuilder<'a, 'b, C, D, COLL>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-{
-    type O = GetDocumentBuilder<'a, 'b, C, D, COLL>;
+impl<'a, 'b> UserAgentSupport<'b> for GetDocumentBuilder<'a, 'b> {
+    type O = Self;
 
-    #[inline]
     fn with_user_agent(self, user_agent: &'b str) -> Self::O {
-        GetDocumentBuilder {
-            document_client: self.document_client,
-            if_match_condition: self.if_match_condition,
-            if_modified_since: self.if_modified_since,
+        Self {
             user_agent: Some(user_agent),
-            activity_id: self.activity_id,
-            consistency_level: self.consistency_level,
+            ..self
         }
     }
 }
 
-impl<'a, 'b, C, D, COLL> ActivityIdSupport<'b> for GetDocumentBuilder<'a, 'b, C, D, COLL>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-{
-    type O = GetDocumentBuilder<'a, 'b, C, D, COLL>;
+impl<'a, 'b> ActivityIdSupport<'b> for GetDocumentBuilder<'a, 'b> {
+    type O = Self;
 
-    #[inline]
     fn with_activity_id(self, activity_id: &'b str) -> Self::O {
-        GetDocumentBuilder {
-            document_client: self.document_client,
-            if_match_condition: self.if_match_condition,
-            if_modified_since: self.if_modified_since,
-            user_agent: self.user_agent,
+        Self {
             activity_id: Some(activity_id),
-            consistency_level: self.consistency_level,
+            ..self
         }
     }
 }
 
-impl<'a, 'b, C, D, COLL> ConsistencyLevelSupport<'b> for GetDocumentBuilder<'a, 'b, C, D, COLL>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-{
-    type O = GetDocumentBuilder<'a, 'b, C, D, COLL>;
+impl<'a, 'b> ConsistencyLevelSupport<'b> for GetDocumentBuilder<'a, 'b> {
+    type O = Self;
 
-    #[inline]
-    fn with_consistency_level(self, consistency_level: ConsistencyLevel<'b>) -> Self::O {
-        GetDocumentBuilder {
-            document_client: self.document_client,
-            if_match_condition: self.if_match_condition,
-            if_modified_since: self.if_modified_since,
-            user_agent: self.user_agent,
-            activity_id: self.activity_id,
+    fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self::O {
+        Self {
             consistency_level: Some(consistency_level),
+            ..self
         }
     }
 }
 
 // methods callable only when every mandatory field has been filled
-impl<'a, 'b, C, D, COLL> GetDocumentBuilder<'a, 'b, C, D, COLL>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-{
-    pub async fn execute<T>(&self) -> Result<GetDocumentResponse<T>, AzureError>
+impl<'a, 'b> GetDocumentBuilder<'a, 'b> {
+    pub async fn execute<T>(&self) -> Result<GetDocumentResponse<T>, CosmosError>
     where
         T: DeserializeOwned,
     {
         let mut req = self
             .document_client
-            .prepare_request_with_document_name(hyper::Method::GET);
+            .prepare_request_with_document_name(http::Method::GET);
 
         // add trait headers
         req = IfMatchConditionOption::add_header(self, req);
@@ -251,32 +142,20 @@ where
 
         req = crate::add_partition_keys_header(self.document_client.partition_keys(), req);
 
-        let req = req.body(hyper::Body::empty())?;
+        let req = req.body(EMPTY_BODY.as_ref())?;
 
-        let (status_code, headers, whole_body) =
-            extract_status_headers_and_body(self.document_client.hyper_client().request(req))
-                .await?;
-
-        if status_code != StatusCode::OK
-            && status_code != StatusCode::NOT_MODIFIED
-            && status_code != StatusCode::NOT_FOUND
-        {
-            return Err(UnexpectedHTTPResult::new_multiple(
-                vec![
+        Ok(self
+            .document_client
+            .http_client()
+            .execute_request_check_statuses(
+                req,
+                &[
                     StatusCode::OK,
                     StatusCode::NOT_MODIFIED,
                     StatusCode::NOT_FOUND,
                 ],
-                status_code,
-                std::str::from_utf8(&whole_body)?,
             )
-            .into());
-        }
-
-        debug!("\nheaders == {:?}", headers);
-        debug!("\nwhole body == {:#?}", whole_body);
-
-        let resp = GetDocumentResponse::try_from((status_code, &headers, &whole_body as &[u8]))?;
-        Ok(resp)
+            .await?
+            .try_into()?)
     }
 }

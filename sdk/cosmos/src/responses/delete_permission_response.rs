@@ -1,7 +1,7 @@
 use crate::from_headers::*;
-use azure_core::errors::AzureError;
+use crate::CosmosError;
 use azure_core::headers::session_token_from_headers;
-use http::HeaderMap;
+use http::response::Response;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct DeletePermissionResponse {
@@ -12,14 +12,15 @@ pub struct DeletePermissionResponse {
     pub alt_content_path: String,
 }
 
-impl std::convert::TryFrom<(&HeaderMap, &[u8])> for DeletePermissionResponse {
-    type Error = AzureError;
-    fn try_from(value: (&HeaderMap, &[u8])) -> Result<Self, Self::Error> {
-        let headers = value.0;
-        let _body = value.1;
+impl std::convert::TryFrom<Response<Vec<u8>>> for DeletePermissionResponse {
+    type Error = CosmosError;
+
+    fn try_from(response: Response<Vec<u8>>) -> Result<Self, Self::Error> {
+        let headers = response.headers();
+        let body = response.body();
 
         debug!("headers == {:#?}", headers);
-        debug!("_body == {:#?}", std::str::from_utf8(_body)?);
+        debug!("body == {:#?}", std::str::from_utf8(body)?);
 
         Ok(Self {
             charge: request_charge_from_headers(headers)?,

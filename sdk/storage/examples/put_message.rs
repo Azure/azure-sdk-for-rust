@@ -19,7 +19,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let client = client::with_access_key(&account, &master_key).into_queue_service_client();
 
-    trace!("enumerating queues");
+    trace!("putting message");
 
     let response = client
         .with_queue_name_client(&queue_name)

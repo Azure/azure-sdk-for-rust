@@ -5,11 +5,11 @@
     "crate::prelude::*",
     "crate::ResourceType",
     "crate::responses::CreateDocumentResponse",
-    "azure_core::errors::{extract_status_headers_and_body, AzureError, UnexpectedHTTPResult}",
+    "azure_core::errors::UnexpectedHTTPResult",
     "azure_core::prelude::*",
     "azure_core::{No, ToAssign, Yes}",
     "chrono::{DateTime, Utc}",
-    "hyper::StatusCode",
+    "http::StatusCode",
     "serde::Serialize",
     "std::convert::TryFrom",
     "std::marker::PhantomData"
@@ -87,7 +87,7 @@
     },
     {
       "name": "consistency_level",
-      "field_type": "ConsistencyLevel<'b>",
+      "field_type": "ConsistencyLevel",
       "optional": true,
       "trait_get": "ConsistencyLevelOption<'b>",
       "trait_set": "ConsistencyLevelSupport<'b>",

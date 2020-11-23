@@ -1,10 +1,9 @@
 use crate::database::Database;
 use crate::from_headers::*;
-use crate::ResourceQuota;
-use azure_core::errors::AzureError;
+use crate::{CosmosError, ResourceQuota};
 use azure_core::headers::{etag_from_headers, session_token_from_headers};
 use chrono::{DateTime, Utc};
-use hyper::header::HeaderMap;
+use http::response::Response;
 
 #[derive(Debug, Clone)]
 pub struct GetDatabaseResponse {
@@ -21,11 +20,12 @@ pub struct GetDatabaseResponse {
     pub gateway_version: String,
 }
 
-impl std::convert::TryFrom<(&HeaderMap, &[u8])> for GetDatabaseResponse {
-    type Error = AzureError;
-    fn try_from(value: (&HeaderMap, &[u8])) -> Result<Self, Self::Error> {
-        let headers = value.0;
-        let body = value.1;
+impl std::convert::TryFrom<Response<Vec<u8>>> for GetDatabaseResponse {
+    type Error = CosmosError;
+
+    fn try_from(response: Response<Vec<u8>>) -> Result<Self, Self::Error> {
+        let headers = response.headers();
+        let body = response.body();
 
         debug!("get database response == {}", std::str::from_utf8(body)?);
 

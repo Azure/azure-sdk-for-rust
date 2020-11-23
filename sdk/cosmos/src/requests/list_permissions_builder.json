@@ -6,8 +6,7 @@
     "azure_core::prelude::*",
     "crate::ResourceType",
     "crate::responses::ListPermissionsResponse",
-    "azure_core::errors::{check_status_extract_headers_and_body, AzureError}",
-    "hyper::StatusCode",
+    "http::StatusCode",
     "futures::stream::{unfold, Stream}",
     "std::convert::TryInto"
   ],
@@ -46,7 +45,7 @@
     },
     {
       "name": "consistency_level",
-      "field_type": "ConsistencyLevel<'b>",
+      "field_type": "ConsistencyLevel",
       "optional": true,
       "trait_get": "ConsistencyLevelOption<'b>",
       "trait_set": "ConsistencyLevelSupport<'b>",
