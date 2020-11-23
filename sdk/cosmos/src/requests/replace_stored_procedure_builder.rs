@@ -1,39 +1,27 @@
 use crate::prelude::*;
 use crate::responses::ReplaceStoredProcedureResponse;
-use azure_core::errors::{check_status_extract_headers_and_body, AzureError};
 use azure_core::prelude::*;
 use azure_core::{No, ToAssign, Yes};
-use hyper::StatusCode;
+use http::StatusCode;
 use std::convert::TryInto;
 use std::marker::PhantomData;
 
 #[derive(Debug, Clone)]
-pub struct ReplaceStoredProcedureBuilder<'a, 'b, C, D, COLL, BodySet>
+pub struct ReplaceStoredProcedureBuilder<'a, 'b, BodySet>
 where
     BodySet: ToAssign,
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
 {
-    stored_procedure_client: &'a dyn StoredProcedureClient<C, D, COLL>,
+    stored_procedure_client: &'a StoredProcedureClient,
     p_body: PhantomData<BodySet>,
     body: Option<&'b str>,
     user_agent: Option<&'b str>,
     activity_id: Option<&'b str>,
-    consistency_level: Option<ConsistencyLevel<'b>>,
+    consistency_level: Option<ConsistencyLevel>,
 }
 
-impl<'a, 'b, C, D, COLL> ReplaceStoredProcedureBuilder<'a, 'b, C, D, COLL, No>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-{
-    #[inline]
-    pub(crate) fn new(
-        stored_procedure_client: &'a dyn StoredProcedureClient<C, D, COLL>,
-    ) -> ReplaceStoredProcedureBuilder<'a, 'b, C, D, COLL, No> {
-        ReplaceStoredProcedureBuilder {
+impl<'a, 'b> ReplaceStoredProcedureBuilder<'a, 'b, No> {
+    pub(crate) fn new(stored_procedure_client: &'a StoredProcedureClient) -> Self {
+        Self {
             stored_procedure_client,
             p_body: PhantomData {},
             body: None,
@@ -44,16 +32,12 @@ where
     }
 }
 
-impl<'a, 'b, C, D, COLL, BodySet> StoredProcedureClientRequired<'a, C, D, COLL>
-    for ReplaceStoredProcedureBuilder<'a, 'b, C, D, COLL, BodySet>
+impl<'a, 'b, BodySet> StoredProcedureClientRequired<'a>
+    for ReplaceStoredProcedureBuilder<'a, 'b, BodySet>
 where
     BodySet: ToAssign,
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
 {
-    #[inline]
-    fn stored_procedure_client(&self) -> &'a dyn StoredProcedureClient<C, D, COLL> {
+    fn stored_procedure_client(&self) -> &'a StoredProcedureClient {
         self.stored_procedure_client
     }
 }
@@ -61,71 +45,42 @@ where
 //get mandatory no traits methods
 
 //set mandatory no traits methods
-impl<'a, 'b, C, D, COLL> StoredProcedureBodyRequired<'b>
-    for ReplaceStoredProcedureBuilder<'a, 'b, C, D, COLL, Yes>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-{
-    #[inline]
+impl<'a, 'b> StoredProcedureBodyRequired<'b> for ReplaceStoredProcedureBuilder<'a, 'b, Yes> {
     fn body(&self) -> &'b str {
         self.body.unwrap()
     }
 }
 
-impl<'a, 'b, C, D, COLL, BodySet> UserAgentOption<'b>
-    for ReplaceStoredProcedureBuilder<'a, 'b, C, D, COLL, BodySet>
+impl<'a, 'b, BodySet> UserAgentOption<'b> for ReplaceStoredProcedureBuilder<'a, 'b, BodySet>
 where
     BodySet: ToAssign,
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
 {
-    #[inline]
     fn user_agent(&self) -> Option<&'b str> {
         self.user_agent
     }
 }
 
-impl<'a, 'b, C, D, COLL, BodySet> ActivityIdOption<'b>
-    for ReplaceStoredProcedureBuilder<'a, 'b, C, D, COLL, BodySet>
+impl<'a, 'b, BodySet> ActivityIdOption<'b> for ReplaceStoredProcedureBuilder<'a, 'b, BodySet>
 where
     BodySet: ToAssign,
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
 {
-    #[inline]
     fn activity_id(&self) -> Option<&'b str> {
         self.activity_id
     }
 }
 
-impl<'a, 'b, C, D, COLL, BodySet> ConsistencyLevelOption<'b>
-    for ReplaceStoredProcedureBuilder<'a, 'b, C, D, COLL, BodySet>
+impl<'a, 'b, BodySet> ConsistencyLevelOption<'b> for ReplaceStoredProcedureBuilder<'a, 'b, BodySet>
 where
     BodySet: ToAssign,
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
 {
-    #[inline]
-    fn consistency_level(&self) -> Option<ConsistencyLevel<'b>> {
+    fn consistency_level(&self) -> Option<ConsistencyLevel> {
         self.consistency_level.clone()
     }
 }
 
-impl<'a, 'b, C, D, COLL> StoredProcedureBodySupport<'b>
-    for ReplaceStoredProcedureBuilder<'a, 'b, C, D, COLL, No>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-{
-    type O = ReplaceStoredProcedureBuilder<'a, 'b, C, D, COLL, Yes>;
+impl<'a, 'b> StoredProcedureBodySupport<'b> for ReplaceStoredProcedureBuilder<'a, 'b, No> {
+    type O = ReplaceStoredProcedureBuilder<'a, 'b, Yes>;
 
-    #[inline]
     fn with_body(self, body: &'b str) -> Self::O {
         ReplaceStoredProcedureBuilder {
             stored_procedure_client: self.stored_procedure_client,
@@ -138,88 +93,56 @@ where
     }
 }
 
-impl<'a, 'b, C, D, COLL, BodySet> UserAgentSupport<'b>
-    for ReplaceStoredProcedureBuilder<'a, 'b, C, D, COLL, BodySet>
+impl<'a, 'b, BodySet> UserAgentSupport<'b> for ReplaceStoredProcedureBuilder<'a, 'b, BodySet>
 where
     BodySet: ToAssign,
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
 {
-    type O = ReplaceStoredProcedureBuilder<'a, 'b, C, D, COLL, BodySet>;
+    type O = Self;
 
-    #[inline]
     fn with_user_agent(self, user_agent: &'b str) -> Self::O {
-        ReplaceStoredProcedureBuilder {
-            stored_procedure_client: self.stored_procedure_client,
-            p_body: PhantomData {},
-            body: self.body,
+        Self {
             user_agent: Some(user_agent),
-            activity_id: self.activity_id,
-            consistency_level: self.consistency_level,
+            ..self
         }
     }
 }
 
-impl<'a, 'b, C, D, COLL, BodySet> ActivityIdSupport<'b>
-    for ReplaceStoredProcedureBuilder<'a, 'b, C, D, COLL, BodySet>
+impl<'a, 'b, BodySet> ActivityIdSupport<'b> for ReplaceStoredProcedureBuilder<'a, 'b, BodySet>
 where
     BodySet: ToAssign,
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
 {
-    type O = ReplaceStoredProcedureBuilder<'a, 'b, C, D, COLL, BodySet>;
+    type O = Self;
 
-    #[inline]
     fn with_activity_id(self, activity_id: &'b str) -> Self::O {
-        ReplaceStoredProcedureBuilder {
-            stored_procedure_client: self.stored_procedure_client,
-            p_body: PhantomData {},
-            body: self.body,
-            user_agent: self.user_agent,
+        Self {
             activity_id: Some(activity_id),
-            consistency_level: self.consistency_level,
+            ..self
         }
     }
 }
 
-impl<'a, 'b, C, D, COLL, BodySet> ConsistencyLevelSupport<'b>
-    for ReplaceStoredProcedureBuilder<'a, 'b, C, D, COLL, BodySet>
+impl<'a, 'b, BodySet> ConsistencyLevelSupport<'b> for ReplaceStoredProcedureBuilder<'a, 'b, BodySet>
 where
     BodySet: ToAssign,
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
 {
-    type O = ReplaceStoredProcedureBuilder<'a, 'b, C, D, COLL, BodySet>;
+    type O = Self;
 
-    #[inline]
-    fn with_consistency_level(self, consistency_level: ConsistencyLevel<'b>) -> Self::O {
-        ReplaceStoredProcedureBuilder {
-            stored_procedure_client: self.stored_procedure_client,
-            p_body: PhantomData {},
-            body: self.body,
-            user_agent: self.user_agent,
-            activity_id: self.activity_id,
+    fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self::O {
+        Self {
             consistency_level: Some(consistency_level),
+            ..self
         }
     }
 }
 
 // methods callable only when every mandatory field has been filled
-impl<'a, 'b, C, D, COLL> ReplaceStoredProcedureBuilder<'a, 'b, C, D, COLL, Yes>
-where
-    C: CosmosClient,
-    D: DatabaseClient<C>,
-    COLL: CollectionClient<C, D>,
-{
-    pub async fn execute(&self) -> Result<ReplaceStoredProcedureResponse, AzureError> {
+impl<'a, 'b> ReplaceStoredProcedureBuilder<'a, 'b, Yes> {
+    pub async fn execute(&self) -> Result<ReplaceStoredProcedureResponse, CosmosError> {
         trace!("ReplaceStoredProcedureBuilder::execute called");
 
         let req = self
             .stored_procedure_client
-            .prepare_request_with_stored_procedure_name(hyper::Method::PUT);
+            .prepare_request_with_stored_procedure_name(http::Method::PUT);
 
         // add trait headers
         let req = UserAgentOption::add_header(self, req);
@@ -239,16 +162,13 @@ where
         };
 
         let request = serde_json::to_string(&request)?;
-        let request = req.body(hyper::Body::from(request))?;
+        let request = req.body(request.as_bytes())?;
 
-        let (headers, body) = check_status_extract_headers_and_body(
-            self.stored_procedure_client()
-                .hyper_client()
-                .request(request),
-            StatusCode::OK,
-        )
-        .await?;
-
-        Ok((&headers, &body as &[u8]).try_into()?)
+        Ok(self
+            .stored_procedure_client()
+            .http_client()
+            .execute_request_check_status(request, StatusCode::OK)
+            .await?
+            .try_into()?)
     }
 }

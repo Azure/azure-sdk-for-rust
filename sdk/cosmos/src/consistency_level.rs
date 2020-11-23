@@ -1,18 +1,17 @@
 use crate::responses::*;
 use serde::de::DeserializeOwned;
-use std::borrow::Cow;
 use std::convert::From;
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum ConsistencyLevel<'a> {
+pub enum ConsistencyLevel {
     Strong,
     Bounded,
-    Session(Cow<'a, str>),
+    Session(String),
     ConsistentPrefix,
     Eventual,
 }
 
-impl<'a> ConsistencyLevel<'a> {
+impl ConsistencyLevel {
     pub fn to_consistency_level_header(&self) -> &'static str {
         match self {
             Self::Strong => "Strong",
@@ -24,48 +23,48 @@ impl<'a> ConsistencyLevel<'a> {
     }
 }
 
-impl From<String> for ConsistencyLevel<'_> {
+impl From<String> for ConsistencyLevel {
     fn from(session_token: String) -> Self {
-        ConsistencyLevel::Session(Cow::from(session_token))
+        ConsistencyLevel::Session(session_token)
     }
 }
 
-impl<'a> From<&'a str> for ConsistencyLevel<'a> {
-    fn from(session_token: &'a str) -> Self {
-        ConsistencyLevel::Session(Cow::from(session_token))
+impl From<&str> for ConsistencyLevel {
+    fn from(session_token: &str) -> Self {
+        ConsistencyLevel::Session(session_token.to_owned())
     }
 }
 
-impl<'a> From<&'a String> for ConsistencyLevel<'a> {
-    fn from(session_token: &'a String) -> Self {
-        ConsistencyLevel::Session(Cow::from(session_token))
+impl From<&String> for ConsistencyLevel {
+    fn from(session_token: &String) -> Self {
+        ConsistencyLevel::Session(session_token.clone())
     }
 }
 
 macro_rules! implement_from {
-    ($response_type:ident) => {
-        impl<'a> From<&'a $response_type> for ConsistencyLevel<'a> {
-            fn from(a: &'a $response_type) -> Self {
-                ConsistencyLevel::Session(Cow::from(&a.session_token))
+    ($response_type:path) => {
+        impl From<&$response_type> for ConsistencyLevel {
+            fn from(a: &$response_type) -> Self {
+                ConsistencyLevel::Session(a.session_token.clone())
             }
         }
 
-        impl<'a> From<$response_type> for ConsistencyLevel<'a> {
+        impl From<$response_type> for ConsistencyLevel {
             fn from(a: $response_type) -> Self {
-                ConsistencyLevel::Session(Cow::from(a.session_token))
+                ConsistencyLevel::Session(a.session_token.clone())
             }
         }
     };
     ($response_type:ident, $generic:tt) => {
-        impl<'a, $generic> From<&'a $response_type<$generic>> for ConsistencyLevel<'a> {
-            fn from(a: &'a $response_type<$generic>) -> Self {
-                ConsistencyLevel::Session(Cow::from(&a.session_token))
+        impl<$generic> From<&$response_type<$generic>> for ConsistencyLevel {
+            fn from(a: &$response_type<$generic>) -> Self {
+                ConsistencyLevel::Session(a.session_token.clone())
             }
         }
 
-        impl<'a, $generic> From<$response_type<$generic>> for ConsistencyLevel<'a> {
+        impl<$generic> From<$response_type<$generic>> for ConsistencyLevel {
             fn from(a: $response_type<$generic>) -> Self {
-                ConsistencyLevel::Session(Cow::from(a.session_token))
+                ConsistencyLevel::Session(a.session_token.clone())
             }
         }
     };
@@ -94,24 +93,24 @@ implement_from!(QueryDocumentsResponse, T);
 implement_from!(QueryDocumentsResponseRaw, T);
 implement_from!(QueryDocumentsResponseDocuments, T);
 
-impl<'a, T> From<&'a GetDocumentResponse<T>> for ConsistencyLevel<'a> {
-    fn from(get_document_response: &'a GetDocumentResponse<T>) -> Self {
+impl<T> From<&GetDocumentResponse<T>> for ConsistencyLevel {
+    fn from(get_document_response: &GetDocumentResponse<T>) -> Self {
         match get_document_response {
             GetDocumentResponse::Found(response) => {
-                ConsistencyLevel::Session(Cow::from(&response.session_token))
+                ConsistencyLevel::Session(response.session_token.clone())
             }
             GetDocumentResponse::NotFound(response) => {
-                ConsistencyLevel::Session(Cow::from(&response.session_token))
+                ConsistencyLevel::Session(response.session_token.clone())
             }
         }
     }
 }
 
-impl<'a, T> From<&'a ExecuteStoredProcedureResponse<T>> for ConsistencyLevel<'a>
+impl<T> From<&ExecuteStoredProcedureResponse<T>> for ConsistencyLevel
 where
     T: DeserializeOwned,
 {
-    fn from(execute_stored_procedure_response: &'a ExecuteStoredProcedureResponse<T>) -> Self {
-        ConsistencyLevel::Session(Cow::from(&execute_stored_procedure_response.session_token))
+    fn from(execute_stored_procedure_response: &ExecuteStoredProcedureResponse<T>) -> Self {
+        ConsistencyLevel::Session(execute_stored_procedure_response.session_token.clone())
     }
 }

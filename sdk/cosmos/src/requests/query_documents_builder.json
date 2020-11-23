@@ -6,11 +6,10 @@
     "azure_core::prelude::*",
     "crate::responses::QueryDocumentsResponse",
     "crate::{ResourceType, Query}",
-    "azure_core::errors::{check_status_extract_headers_and_body, AzureError}",
     "azure_core::{No, ToAssign, Yes}",
     "chrono::{DateTime, Utc}",
     "futures::stream::{unfold, Stream}",
-    "hyper::StatusCode",
+    "http::StatusCode",
     "serde::de::DeserializeOwned",
     "std::convert::TryInto",
     "std::marker::PhantomData"
@@ -72,7 +71,7 @@
     },
     {
       "name": "consistency_level",
-      "field_type": "ConsistencyLevel<'b>",
+      "field_type": "ConsistencyLevel",
       "optional": true,
       "trait_get": "ConsistencyLevelOption<'b>",
       "trait_set": "ConsistencyLevelSupport<'b>",

@@ -3,10 +3,12 @@ extern crate serde_derive;
 // Using the prelude module of the Cosmos crate makes easier to use the Rust Azure SDK for Cosmos
 // DB.
 use azure_core::prelude::*;
+use azure_core::HttpClient;
 use azure_cosmos::prelude::*;
 use azure_cosmos::responses::GetDocumentResponse;
 use std::borrow::Cow;
 use std::error::Error;
+use std::sync::Arc;
 
 #[derive(Serialize, Deserialize, Debug)]
 struct MySampleStruct<'a> {
@@ -26,7 +28,7 @@ const COLLECTION: &str = "azuresdktc";
 // 3. Store an entry in collection *COLLECTION* of database *DATABASE*.
 // 4. Delete everything.
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn Error>> {
+async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // Let's get Cosmos account and master key from env variables.
     // This helps automated testing.
     let master_key =
@@ -40,11 +42,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     // Next we will create a Cosmos client. You need an authorization_token but you can later
     // change it if needed.
-    let client = ClientBuilder::new(&account, authorization_token)?;
+    let http_client: Arc<Box<dyn HttpClient>> = Arc::new(Box::new(reqwest::Client::new()));
+    let client = CosmosClient::new(http_client, account, authorization_token);
 
     // list_databases will give us the databases available in our account. If there is
     // an error (for example, the given key is not valid) you will receive a
-    // specific AzureError. In this example we will look for a specific database
+    // specific CosmosError. In this example we will look for a specific database
     // so we chain a filter operation.
     let db = client
         .list_databases()
@@ -73,7 +76,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // has many options (such as indexing and so on).
     let collection = {
         let collections = client
-            .with_database_client(&database.id)
+            .clone()
+            .into_database_client(database.id.clone())
             .list_collections()
             .execute()
             .await?;
@@ -110,7 +114,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
             // you can also use the predefined performance levels. For example:
             // `Offer::S2`.
             client
-                .with_database_client(&database.id)
+                .clone()
+                .into_database_client(database.id.clone())
                 .create_collection()
                 .with_collection_name(&COLLECTION)
                 .with_offer(Offer::Throughput(400))
@@ -138,8 +143,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // Notice how easy it is! :)
     // First we construct a "collection" specific client so we
     // do not need to specify it over and over.
-    let database_client = client.with_database_client(&database.id);
-    let collection_client = database_client.with_collection_client(&collection.id);
+    let database_client = client.clone().into_database_client(database.id.clone());
+    let collection_client = database_client.into_collection_client(collection.id);
 
     // The method create_document will return, upon success,
     // the document attributes.
@@ -168,7 +173,11 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // Now we get the same document by id.
     println!("getting document by id {}", &doc.document.id);
     let get_document_response = collection_client
-        .with_document_client(doc.document.id.as_ref(), (&doc.document.id).into())
+        .clone()
+        .into_document_client(
+            doc.document.id.clone().into_owned(),
+            (&doc.document.id).into(),
+        )
         .get_document()
         .execute::<MySampleStruct>()
         .await?;
@@ -199,8 +208,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     // We will perform some cleanup. First we delete the collection...
     client
-        .with_database_client(DATABASE)
-        .with_collection_client(COLLECTION)
+        .clone()
+        .into_database_client(DATABASE.to_owned())
+        .into_collection_client(COLLECTION.to_owned())
         .delete_collection()
         .execute()
         .await?;
@@ -208,7 +218,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     // And then we delete the database.
     client
-        .with_database_client(&database.id)
+        .into_database_client(database.id)
         .delete_database()
         .execute()
         .await?;

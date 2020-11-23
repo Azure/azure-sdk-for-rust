@@ -1,48 +1,24 @@
 use crate::prelude::*;
 use crate::responses::ListUsersResponse;
 use crate::ResourceType;
-use azure_core::errors::{check_status_extract_headers_and_body, AzureError};
 use azure_core::prelude::*;
 use futures::stream::{unfold, Stream};
-use hyper::StatusCode;
+use http::StatusCode;
 use std::convert::TryInto;
 
-#[derive(Debug)]
-pub struct ListUsersBuilder<'a, 'b, C>
-where
-    C: CosmosClient,
-{
-    database_client: &'a dyn DatabaseClient<C>,
+#[derive(Debug, Clone)]
+pub struct ListUsersBuilder<'a, 'b> {
+    database_client: &'a DatabaseClient,
     user_agent: Option<&'b str>,
     activity_id: Option<&'b str>,
-    consistency_level: Option<ConsistencyLevel<'b>>,
+    consistency_level: Option<ConsistencyLevel>,
     continuation: Option<&'b str>,
     max_item_count: i32,
 }
 
-impl<'a, 'b, C> Clone for ListUsersBuilder<'a, 'b, C>
-where
-    C: CosmosClient,
-{
-    fn clone(&self) -> Self {
+impl<'a, 'b> ListUsersBuilder<'a, 'b> {
+    pub(crate) fn new(database_client: &'a DatabaseClient) -> Self {
         Self {
-            database_client: self.database_client,
-            user_agent: self.user_agent,
-            activity_id: self.activity_id,
-            consistency_level: self.consistency_level.clone(),
-            continuation: self.continuation,
-            max_item_count: self.max_item_count,
-        }
-    }
-}
-
-impl<'a, 'b, C> ListUsersBuilder<'a, 'b, C>
-where
-    C: CosmosClient,
-{
-    #[inline]
-    pub(crate) fn new(database_client: &'a dyn DatabaseClient<C>) -> ListUsersBuilder<'a, 'b, C> {
-        ListUsersBuilder {
             database_client,
             user_agent: None,
             activity_id: None,
@@ -53,194 +29,123 @@ where
     }
 }
 
-impl<'a, 'b, C> DatabaseClientRequired<'a, C> for ListUsersBuilder<'a, 'b, C>
-where
-    C: CosmosClient,
-{
-    #[inline]
-    fn database_client(&self) -> &'a dyn DatabaseClient<C> {
+impl<'a, 'b> DatabaseClientRequired<'a> for ListUsersBuilder<'a, 'b> {
+    fn database_client(&self) -> &'a DatabaseClient {
         self.database_client
     }
 }
 
-//get mandatory no traits methods
-
-//set mandatory no traits methods
-impl<'a, 'b, C> UserAgentOption<'b> for ListUsersBuilder<'a, 'b, C>
-where
-    C: CosmosClient,
-{
-    #[inline]
+impl<'a, 'b> UserAgentOption<'b> for ListUsersBuilder<'a, 'b> {
     fn user_agent(&self) -> Option<&'b str> {
         self.user_agent
     }
 }
 
-impl<'a, 'b, C> ActivityIdOption<'b> for ListUsersBuilder<'a, 'b, C>
-where
-    C: CosmosClient,
-{
-    #[inline]
+impl<'a, 'b> ActivityIdOption<'b> for ListUsersBuilder<'a, 'b> {
     fn activity_id(&self) -> Option<&'b str> {
         self.activity_id
     }
 }
 
-impl<'a, 'b, C> ConsistencyLevelOption<'b> for ListUsersBuilder<'a, 'b, C>
-where
-    C: CosmosClient,
-{
-    #[inline]
-    fn consistency_level(&self) -> Option<ConsistencyLevel<'b>> {
+impl<'a, 'b> ConsistencyLevelOption<'b> for ListUsersBuilder<'a, 'b> {
+    fn consistency_level(&self) -> Option<ConsistencyLevel> {
         self.consistency_level.clone()
     }
 }
 
-impl<'a, 'b, C> ContinuationOption<'b> for ListUsersBuilder<'a, 'b, C>
-where
-    C: CosmosClient,
-{
-    #[inline]
+impl<'a, 'b> ContinuationOption<'b> for ListUsersBuilder<'a, 'b> {
     fn continuation(&self) -> Option<&'b str> {
         self.continuation
     }
 }
 
-impl<'a, 'b, C> MaxItemCountOption for ListUsersBuilder<'a, 'b, C>
-where
-    C: CosmosClient,
-{
-    #[inline]
+impl<'a, 'b> MaxItemCountOption for ListUsersBuilder<'a, 'b> {
     fn max_item_count(&self) -> i32 {
         self.max_item_count
     }
 }
 
-impl<'a, 'b, C> UserAgentSupport<'b> for ListUsersBuilder<'a, 'b, C>
-where
-    C: CosmosClient,
-{
-    type O = ListUsersBuilder<'a, 'b, C>;
+impl<'a, 'b> UserAgentSupport<'b> for ListUsersBuilder<'a, 'b> {
+    type O = Self;
 
-    #[inline]
     fn with_user_agent(self, user_agent: &'b str) -> Self::O {
-        ListUsersBuilder {
-            database_client: self.database_client,
+        Self {
             user_agent: Some(user_agent),
-            activity_id: self.activity_id,
-            consistency_level: self.consistency_level,
-            continuation: self.continuation,
-            max_item_count: self.max_item_count,
+            ..self
         }
     }
 }
 
-impl<'a, 'b, C> ActivityIdSupport<'b> for ListUsersBuilder<'a, 'b, C>
-where
-    C: CosmosClient,
-{
-    type O = ListUsersBuilder<'a, 'b, C>;
+impl<'a, 'b> ActivityIdSupport<'b> for ListUsersBuilder<'a, 'b> {
+    type O = Self;
 
-    #[inline]
     fn with_activity_id(self, activity_id: &'b str) -> Self::O {
-        ListUsersBuilder {
-            database_client: self.database_client,
-            user_agent: self.user_agent,
+        Self {
             activity_id: Some(activity_id),
-            consistency_level: self.consistency_level,
-            continuation: self.continuation,
-            max_item_count: self.max_item_count,
+            ..self
         }
     }
 }
 
-impl<'a, 'b, C> ConsistencyLevelSupport<'b> for ListUsersBuilder<'a, 'b, C>
-where
-    C: CosmosClient,
-{
-    type O = ListUsersBuilder<'a, 'b, C>;
+impl<'a, 'b> ConsistencyLevelSupport<'b> for ListUsersBuilder<'a, 'b> {
+    type O = Self;
 
-    #[inline]
-    fn with_consistency_level(self, consistency_level: ConsistencyLevel<'b>) -> Self::O {
-        ListUsersBuilder {
-            database_client: self.database_client,
-            user_agent: self.user_agent,
-            activity_id: self.activity_id,
+    fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self::O {
+        Self {
             consistency_level: Some(consistency_level),
-            continuation: self.continuation,
-            max_item_count: self.max_item_count,
+            ..self
         }
     }
 }
 
-impl<'a, 'b, C> ContinuationSupport<'b> for ListUsersBuilder<'a, 'b, C>
-where
-    C: CosmosClient,
-{
-    type O = ListUsersBuilder<'a, 'b, C>;
+impl<'a, 'b> ContinuationSupport<'b> for ListUsersBuilder<'a, 'b> {
+    type O = Self;
 
-    #[inline]
     fn with_continuation(self, continuation: &'b str) -> Self::O {
-        ListUsersBuilder {
-            database_client: self.database_client,
-            user_agent: self.user_agent,
-            activity_id: self.activity_id,
-            consistency_level: self.consistency_level,
+        Self {
             continuation: Some(continuation),
-            max_item_count: self.max_item_count,
+            ..self
         }
     }
 }
 
-impl<'a, 'b, C> MaxItemCountSupport for ListUsersBuilder<'a, 'b, C>
-where
-    C: CosmosClient,
-{
-    type O = ListUsersBuilder<'a, 'b, C>;
+impl<'a, 'b> MaxItemCountSupport for ListUsersBuilder<'a, 'b> {
+    type O = Self;
 
-    #[inline]
     fn with_max_item_count(self, max_item_count: i32) -> Self::O {
-        ListUsersBuilder {
-            database_client: self.database_client,
-            user_agent: self.user_agent,
-            activity_id: self.activity_id,
-            consistency_level: self.consistency_level,
-            continuation: self.continuation,
+        Self {
             max_item_count,
+            ..self
         }
     }
 }
 
 // methods callable regardless
-impl<'a, 'b, C> ListUsersBuilder<'a, 'b, C> where C: CosmosClient {}
+impl<'a, 'b> ListUsersBuilder<'a, 'b> {}
 
 // methods callable only when every mandatory field has been filled
-impl<'a, 'b, C> ListUsersBuilder<'a, 'b, C>
-where
-    C: CosmosClient,
-{
-    pub async fn execute(&self) -> Result<ListUsersResponse, AzureError> {
+impl<'a, 'b> ListUsersBuilder<'a, 'b> {
+    pub async fn execute(&self) -> Result<ListUsersResponse, CosmosError> {
         trace!("ListUsersBuilder::execute called");
 
         let req = self.database_client.cosmos_client().prepare_request(
             &format!("dbs/{}/users", self.database_client.database_name()),
-            hyper::Method::GET,
+            http::Method::GET,
             ResourceType::Users,
         );
 
-        let req = req.body(hyper::Body::empty())?;
+        let req = req.body(EMPTY_BODY.as_ref())?;
         debug!("\nreq == {:?}", req);
 
-        let (headers, body) = check_status_extract_headers_and_body(
-            self.database_client.hyper_client().request(req),
-            StatusCode::OK,
-        )
-        .await?;
-
-        Ok((&headers, &body as &[u8]).try_into()?)
+        Ok(self
+            .database_client
+            .http_client()
+            .execute_request_check_status(req, StatusCode::OK)
+            .await?
+            .try_into()?)
     }
 
-    pub fn stream(&self) -> impl Stream<Item = Result<ListUsersResponse, AzureError>> + '_ {
+    pub fn stream(&self) -> impl Stream<Item = Result<ListUsersResponse, CosmosError>> + '_ {
         #[derive(Debug, Clone, PartialEq)]
         enum States {
             Init,

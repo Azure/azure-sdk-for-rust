@@ -21,7 +21,7 @@ async fn permissions() {
         .await
         .unwrap();
 
-    let database_client = client.with_database_client(DATABASE_NAME);
+    let database_client = client.into_database_client(DATABASE_NAME);
 
     // create a new collection
     let indexing_policy = IndexingPolicy {
@@ -41,11 +41,11 @@ async fn permissions() {
         .await
         .unwrap();
 
-    let user_client = database_client.with_user_client(USER_NAME);
+    let user_client = database_client.into_user_client(USER_NAME);
     user_client.create_user().execute().await.unwrap();
 
     // create the RO permission
-    let permission_client = user_client.with_permission_client(PERMISSION);
+    let permission_client = user_client.into_permission_client(PERMISSION);
     let permission_mode = PermissionMode::Read(create_collection_response.clone().collection);
 
     let create_permission_response = permission_client
@@ -62,13 +62,13 @@ async fn permissions() {
         .permission_token
         .into();
     let new_client = client.with_auth_token(new_authorization_token);
-    let new_database_client = new_client.with_database_client(DATABASE_NAME);
-    let new_collection_client = new_database_client.with_collection_client(COLLECTION_NAME);
+    let new_database_client = new_client.into_database_client(DATABASE_NAME);
+    let new_collection_client = new_database_client.into_collection_client(COLLECTION_NAME);
 
     // let's list the collection content.
     // This must succeed.
     new_database_client
-        .with_collection_client(COLLECTION_NAME)
+        .into_collection_client(COLLECTION_NAME)
         .list_documents()
         .execute::<serde_json::Value>()
         .await
@@ -114,8 +114,8 @@ async fn permissions() {
         .permission_token
         .into();
     let new_client = client.with_auth_token(new_authorization_token);
-    let new_database_client = new_client.with_database_client(DATABASE_NAME);
-    let new_collection_client = new_database_client.with_collection_client(COLLECTION_NAME);
+    let new_database_client = new_client.into_database_client(DATABASE_NAME);
+    let new_collection_client = new_database_client.into_collection_client(COLLECTION_NAME);
 
     // now we have an "All" authorization_token
     // so the create_document should succeed!

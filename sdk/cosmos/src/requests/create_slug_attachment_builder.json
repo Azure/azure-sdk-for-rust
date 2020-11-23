@@ -3,11 +3,10 @@
   "derive": "Debug, Clone",
   "uses": [
     "crate::prelude::*",
-    "azure_core::errors::{check_status_extract_headers_and_body, AzureError}",
     "azure_core::prelude::*",
     "azure_core::{Yes, No, ToAssign}",
     "std::marker::PhantomData",
-    "hyper::StatusCode",
+    "http::StatusCode",
     "crate::responses::CreateSlugAttachmentResponse",
     "std::convert::TryInto"
   ],
@@ -73,7 +72,7 @@
     },
     {
       "name": "consistency_level",
-      "field_type": "ConsistencyLevel<'b>",
+      "field_type": "ConsistencyLevel",
       "optional": true,
       "trait_get": "ConsistencyLevelOption<'b>",
       "trait_set": "ConsistencyLevelSupport<'b>",

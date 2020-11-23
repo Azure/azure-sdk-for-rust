@@ -1,3 +1,4 @@
+use crate::CosmosError;
 use crate::{PermissionResource, PermissionToken};
 use azure_core::errors::{AzureError, UnexpectedValue};
 use serde::{Deserialize, Serialize};
@@ -75,26 +76,27 @@ pub(crate) struct CosmosPermission<'a> {
 }
 
 impl<'a> std::convert::TryFrom<&[u8]> for Permission<'a, Cow<'a, str>> {
-    type Error = AzureError;
+    type Error = CosmosError;
+
     fn try_from(slice: &[u8]) -> Result<Self, Self::Error> {
         let cosmos_permission: CosmosPermission<'_> = serde_json::from_slice(slice)?;
-        cosmos_permission.try_into()
+        Ok(cosmos_permission.try_into()?)
     }
 }
 
 impl<'a> std::convert::TryFrom<CosmosPermission<'a>> for Permission<'a, Cow<'a, str>> {
-    type Error = AzureError;
+    type Error = CosmosError;
+
     fn try_from(cosmos_permission: CosmosPermission<'a>) -> Result<Self, Self::Error> {
         let permission_mode: &str = &cosmos_permission.permission_mode;
         let permission_mode = match permission_mode {
             "All" => PermissionMode::All(cosmos_permission.resource.clone()),
             "Read" => PermissionMode::Read(cosmos_permission.resource.clone()),
             _ => {
-                return Err(UnexpectedValue::new_multiple(
+                return Err(Box::new(AzureError::from(UnexpectedValue::new_multiple(
                     vec!["All".to_owned(), "Read".to_owned()],
                     permission_mode.to_owned(),
-                )
-                .into())
+                ))))
             }
         };
 

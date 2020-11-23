@@ -21,7 +21,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .into_queue_service_client()
         .into_queue_name_client(&queue_name);
 
-    trace!("enumerating queues");
+    trace!("getting messages");
 
     let response = queue
         .get_messages()

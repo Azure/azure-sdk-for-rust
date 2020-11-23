@@ -37,52 +37,30 @@ pub(crate) fn resource_quotas_from_str(s: &str) -> Result<Vec<ResourceQuota>, fa
     for token in tokens.into_iter().filter(|token| !token.is_empty()) {
         debug!("processing token == {}", token);
 
-        if token.starts_with(DATABASES) {
-            v.push(ResourceQuota::Databases(str::parse(
-                &token[DATABASES.len()..],
-            )?));
-        } else if token.starts_with(STORED_PROCEDURES) {
-            v.push(ResourceQuota::StoredProcedures(str::parse(
-                &token[STORED_PROCEDURES.len()..],
-            )?));
-        } else if token.starts_with(COLLECTIONS) {
-            v.push(ResourceQuota::Collections(str::parse(
-                &token[COLLECTIONS.len()..],
-            )?));
-        } else if token.starts_with(DOCUMENT_SIZE) {
-            v.push(ResourceQuota::DocumentSize(str::parse(
-                &token[DOCUMENT_SIZE.len()..],
-            )?));
-        } else if token.starts_with(DOCUMENTS_SIZE) {
-            v.push(ResourceQuota::DocumentsSize(str::parse(
-                &token[DOCUMENTS_SIZE.len()..],
-            )?));
-        } else if token.starts_with(DOCUMENTS_COUNT) {
-            v.push(ResourceQuota::DocumentsCount(str::parse(
-                &token[DOCUMENTS_COUNT.len()..],
-            )?));
-        } else if token.starts_with(COLLECTION_SIZE) {
-            v.push(ResourceQuota::CollectionSize(str::parse(
-                &token[COLLECTION_SIZE.len()..],
-            )?));
-        } else if token.starts_with(USERS) {
-            v.push(ResourceQuota::Users(str::parse(&token[USERS.len()..])?));
-        } else if token.starts_with(PERMISSIONS) {
-            v.push(ResourceQuota::Permissions(str::parse(
-                &token[PERMISSIONS.len()..],
-            )?));
-        } else if token.starts_with(TRIGGERS) {
-            v.push(ResourceQuota::Triggers(str::parse(
-                &token[TRIGGERS.len()..],
-            )?));
-        } else if token.starts_with(FUNCTIONS) {
-            v.push(ResourceQuota::Functions(str::parse(
-                &token[FUNCTIONS.len()..],
-            )?));
-        } else if token.starts_with(CLIENT_ENCRYPTION_KEYS) {
-            v.push(ResourceQuota::ClientEncryptionKeys(str::parse(
-                &token[CLIENT_ENCRYPTION_KEYS.len()..],
-            )?));
+        if let Some(stripped) = token.strip_prefix(DATABASES) {
+            v.push(ResourceQuota::Databases(str::parse(stripped)?));
+        } else if let Some(stripped) = token.strip_prefix(STORED_PROCEDURES) {
+            v.push(ResourceQuota::StoredProcedures(str::parse(stripped)?));
+        } else if let Some(stripped) = token.strip_prefix(COLLECTIONS) {
+            v.push(ResourceQuota::Collections(str::parse(stripped)?));
+        } else if let Some(stripped) = token.strip_prefix(DOCUMENT_SIZE) {
+            v.push(ResourceQuota::DocumentSize(str::parse(stripped)?));
+        } else if let Some(stripped) = token.strip_prefix(DOCUMENTS_SIZE) {
+            v.push(ResourceQuota::DocumentsSize(str::parse(stripped)?));
+        } else if let Some(stripped) = token.strip_prefix(DOCUMENTS_COUNT) {
+            v.push(ResourceQuota::DocumentsCount(str::parse(stripped)?));
+        } else if let Some(stripped) = token.strip_prefix(COLLECTION_SIZE) {
+            v.push(ResourceQuota::CollectionSize(str::parse(stripped)?));
+        } else if let Some(stripped) = token.strip_prefix(USERS) {
+            v.push(ResourceQuota::Users(str::parse(stripped)?));
+        } else if let Some(stripped) = token.strip_prefix(PERMISSIONS) {
+            v.push(ResourceQuota::Permissions(str::parse(stripped)?));
+        } else if let Some(stripped) = token.strip_prefix(TRIGGERS) {
+            v.push(ResourceQuota::Triggers(str::parse(stripped)?));
+        } else if let Some(stripped) = token.strip_prefix(FUNCTIONS) {
+            v.push(ResourceQuota::Functions(str::parse(stripped)?));
+        } else if let Some(stripped) = token.strip_prefix(CLIENT_ENCRYPTION_KEYS) {
+            v.push(ResourceQuota::ClientEncryptionKeys(str::parse(stripped)?));
         } else {
             return Err(TokenParsingError::UnsupportedToken {
                 token: token.to_string(),

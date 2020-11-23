@@ -1,5 +1,4 @@
 use crate::PermissionToken;
-use base64;
 use std::fmt::{Debug, Error, Formatter};
 
 #[derive(PartialEq, Clone)]

@@ -19,8 +19,8 @@ async fn users() {
         .await
         .unwrap();
 
-    let database_client = client.with_database_client(DATABASE_NAME);
-    let user_client = database_client.with_user_client(USER_NAME);
+    let database_client = client.into_database_client(DATABASE_NAME);
+    let user_client = database_client.into_user_client(USER_NAME);
 
     let _create_user_response = user_client.create_user().execute().await.unwrap();
 
@@ -39,7 +39,7 @@ async fn users() {
         .await
         .unwrap();
 
-    let user_client = database_client.with_user_client(USER_NAME_REPLACED);
+    let user_client = database_client.into_user_client(USER_NAME_REPLACED);
 
     let _delete_user_response = user_client.delete_user().execute().await.unwrap();
 
@@ -48,7 +48,7 @@ async fn users() {
 
     // delete the database
     client
-        .with_database_client(DATABASE_NAME)
+        .into_database_client(DATABASE_NAME)
         .delete_database()
         .execute()
         .await

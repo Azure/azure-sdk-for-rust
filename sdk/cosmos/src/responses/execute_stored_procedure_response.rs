@@ -1,9 +1,9 @@
 use crate::from_headers::*;
-use azure_core::errors::AzureError;
+use crate::CosmosError;
 use azure_core::headers::session_token_from_headers;
 use azure_core::SessionToken;
 use chrono::{DateTime, Utc};
-use http::HeaderMap;
+use http::response::Response;
 use serde::de::DeserializeOwned;
 
 #[derive(Debug, Clone)]
@@ -34,14 +34,15 @@ where
     pub date: DateTime<Utc>,
 }
 
-impl<T> std::convert::TryFrom<(&HeaderMap, &[u8])> for ExecuteStoredProcedureResponse<T>
+impl<T> std::convert::TryFrom<Response<Vec<u8>>> for ExecuteStoredProcedureResponse<T>
 where
     T: DeserializeOwned,
 {
-    type Error = AzureError;
-    fn try_from(value: (&HeaderMap, &[u8])) -> Result<Self, Self::Error> {
-        let headers = value.0;
-        let body = value.1;
+    type Error = CosmosError;
+
+    fn try_from(response: Response<Vec<u8>>) -> Result<Self, Self::Error> {
+        let headers = response.headers();
+        let body = response.body();
 
         debug!("headers == {:#?}", headers);
         debug!("body == {:#?}", body);

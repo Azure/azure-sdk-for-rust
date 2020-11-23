@@ -1,12 +1,14 @@
+use azure_core::HttpClient;
 use azure_cosmos::prelude::*;
 use futures::stream::StreamExt;
 use serde_json::Value;
 use std::error::Error;
+use std::sync::Arc;
 
 // This example expects you to have created a collection
 // with partitionKey on "id".
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn Error>> {
+async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let database_name = std::env::args()
         .nth(1)
         .expect("please specify the database name as first command line parameter");
@@ -23,9 +25,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let authorization_token = AuthorizationToken::new_master(&master_key)?;
 
-    let client = ClientBuilder::new(&account, authorization_token)?;
-    let client = client.with_database_client(&database_name);
-    let client = client.with_collection_client(&collection_name);
+    // Next we will create a Cosmos client.
+    let http_client: Arc<Box<dyn HttpClient>> = Arc::new(Box::new(reqwest::Client::new()));
+    let client = CosmosClient::new(http_client, account.clone(), authorization_token);
+
+    let client = client.into_database_client(database_name);
+    let client = client.into_collection_client(collection_name);
 
     let mut documents = Vec::new();
 
@@ -63,7 +68,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
         );
 
         client
-            .with_document_client(id, partition_key)
+            .clone()
+            .into_document_client(id.clone(), partition_key)
             .delete_document()
             .execute()
             .await?;

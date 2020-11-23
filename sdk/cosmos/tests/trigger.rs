@@ -2,7 +2,6 @@
 use azure_cosmos::prelude::*;
 use azure_cosmos::trigger::*;
 use futures::stream::StreamExt;
-use std::error::Error;
 
 mod setup;
 
@@ -37,7 +36,7 @@ function updateMetadata() {
 }"#;
 
 #[tokio::test]
-async fn trigger() -> Result<(), Box<dyn Error>> {
+async fn trigger() -> Result<(), CosmosError> {
     const DATABASE_NAME: &str = "test-cosmos-db-trigger";
     const COLLECTION_NAME: &str = "test-udf";
     const TRIGGER_NAME: &str = "test";
@@ -52,7 +51,7 @@ async fn trigger() -> Result<(), Box<dyn Error>> {
         .await
         .unwrap();
 
-    let database_client = client.with_database_client(DATABASE_NAME);
+    let database_client = client.into_database_client(DATABASE_NAME);
 
     // create a temp collection
     let _create_collection_response = {
@@ -85,8 +84,8 @@ async fn trigger() -> Result<(), Box<dyn Error>> {
             .unwrap()
     };
 
-    let collection_client = database_client.with_collection_client(COLLECTION_NAME);
-    let trigger_client = collection_client.with_trigger_client(TRIGGER_NAME);
+    let collection_client = database_client.into_collection_client(COLLECTION_NAME);
+    let trigger_client = collection_client.into_trigger_client(TRIGGER_NAME);
 
     let ret = trigger_client
         .create_trigger()

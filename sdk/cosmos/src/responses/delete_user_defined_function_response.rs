@@ -1,9 +1,9 @@
 use crate::from_headers::*;
+use crate::CosmosError;
 use crate::ResourceQuota;
-use azure_core::errors::AzureError;
 use azure_core::headers::session_token_from_headers;
 use chrono::{DateTime, Utc};
-use http::HeaderMap;
+use http::response::Response;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct DeleteUserDefinedFunctionResponse {
@@ -33,14 +33,15 @@ pub struct DeleteUserDefinedFunctionResponse {
     pub date: DateTime<Utc>,
 }
 
-impl std::convert::TryFrom<(&HeaderMap, &[u8])> for DeleteUserDefinedFunctionResponse {
-    type Error = AzureError;
-    fn try_from(value: (&HeaderMap, &[u8])) -> Result<Self, Self::Error> {
-        let headers = value.0;
-        let _body = value.1;
+impl std::convert::TryFrom<Response<Vec<u8>>> for DeleteUserDefinedFunctionResponse {
+    type Error = CosmosError;
+
+    fn try_from(response: Response<Vec<u8>>) -> Result<Self, Self::Error> {
+        let headers = response.headers();
+        let body = response.body();
 
         debug!("{:#?}", headers);
-        debug!("{:#?}", std::str::from_utf8(_body));
+        debug!("{:#?}", std::str::from_utf8(body));
 
         Ok(Self {
             content_location: content_location_from_headers(headers)?.to_owned(),

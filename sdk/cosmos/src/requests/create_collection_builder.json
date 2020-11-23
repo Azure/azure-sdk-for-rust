@@ -8,9 +8,8 @@
     "crate::collection::CollectionName",
     "crate::responses::CreateCollectionResponse",
     "crate::{ResourceType, Offer}",
-    "azure_core::errors::{check_status_extract_headers_and_body, AzureError}",
     "azure_core::{No, ToAssign, Yes}",
-    "hyper::StatusCode",
+    "http::StatusCode",
     "std::convert::TryInto",
     "std::marker::PhantomData"
   ],
@@ -78,7 +77,7 @@
     },
     {
       "name": "consistency_level",
-      "field_type": "ConsistencyLevel<'a>",
+      "field_type": "ConsistencyLevel",
       "optional": true,
       "trait_get": "ConsistencyLevelOption<'a>",
       "trait_set": "ConsistencyLevelSupport<'a>",
