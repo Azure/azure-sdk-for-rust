@@ -1,7 +1,8 @@
 use super::*;
-use crate::requests;
-use crate::{ReadonlyString, ResourceType};
-use azure_core::{HttpClient, No};
+use crate::collection::{CollectionName, IndexingPolicy, PartitionKey};
+use crate::{requests, Offer, ReadonlyString, ResourceType};
+
+use azure_core::HttpClient;
 
 #[derive(Debug, Clone)]
 pub struct DatabaseClient {
@@ -44,8 +45,20 @@ impl DatabaseClient {
         requests::DeleteDatabaseBuilder::new(self)
     }
 
-    pub fn create_collection(&self) -> requests::CreateCollectionBuilder<'_, No, No, No, No> {
-        requests::CreateCollectionBuilder::new(self)
+    pub fn create_collection<'a>(
+        &'a self,
+        offer: Offer,
+        collection_name: &'a dyn CollectionName,
+        indexing_policy: &'a IndexingPolicy,
+        partition_key: &'a PartitionKey,
+    ) -> requests::CreateCollectionBuilder<'a> {
+        requests::CreateCollectionBuilder::new(
+            self,
+            offer,
+            collection_name,
+            indexing_policy,
+            partition_key,
+        )
     }
 
     pub fn list_users(&self) -> requests::ListUsersBuilder<'_, '_> {
