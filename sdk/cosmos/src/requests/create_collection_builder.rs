@@ -39,6 +39,89 @@ impl<'a> CreateCollectionBuilder<'a> {
             consistency_level: None,
         }
     }
+
+    pub fn with_offer(self, offer: Offer) -> Self {
+        Self { offer, ..self }
+    }
+
+    pub fn with_collection_name(self, collection_name: &'a dyn CollectionName) -> Self {
+        Self {
+            collection_name,
+            ..self
+        }
+    }
+
+    pub fn with_indexing_policy(self, indexing_policy: &'a IndexingPolicy) -> Self {
+        Self {
+            indexing_policy,
+            ..self
+        }
+    }
+
+    pub fn with_partition_key(self, partition_key: &'a PartitionKey) -> Self {
+        Self {
+            partition_key,
+            ..self
+        }
+    }
+
+    pub fn with_user_agent(self, user_agent: &'a str) -> Self {
+        Self {
+            user_agent: Some(user_agent),
+            ..self
+        }
+    }
+
+    pub fn with_activity_id(self, activity_id: &'a str) -> Self {
+        Self {
+            activity_id: Some(activity_id),
+            ..self
+        }
+    }
+
+    pub fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self {
+        Self {
+            consistency_level: Some(consistency_level),
+            ..self
+        }
+    }
+
+    pub async fn execute(&self) -> Result<CreateCollectionResponse, CosmosError> {
+        trace!("CreateCollectionBuilder::execute called");
+
+        let mut req = self.database_client.cosmos_client().prepare_request(
+            &format!("dbs/{}/colls", self.database_client.database_name()),
+            http::Method::POST,
+            ResourceType::Collections,
+        );
+
+        req = req.header(http::header::CONTENT_TYPE, "application/json");
+
+        // add trait headers
+        let req = OfferRequired::add_header(self, req);
+        let req = UserAgentOption::add_header(self, req);
+        let req = ActivityIdOption::add_header(self, req);
+        let req = ConsistencyLevelOption::add_header(self, req);
+
+        let mut collection = Collection::new(
+            self.collection_name().name(),
+            self.indexing_policy().to_owned(),
+        );
+        collection.parition_key = self.partition_key().to_owned();
+
+        let body = serde_json::to_string(&collection)?;
+        debug!("body == {}", body);
+
+        let req = req.body(body.as_bytes())?;
+        debug!("\nreq == {:?}", req);
+
+        Ok(self
+            .database_client
+            .http_client()
+            .execute_request_check_status(req, StatusCode::CREATED)
+            .await?
+            .try_into()?)
+    }
 }
 
 impl<'a> DatabaseClientRequired<'a> for CreateCollectionBuilder<'a> {
@@ -86,118 +169,5 @@ impl<'a> ActivityIdOption<'a> for CreateCollectionBuilder<'a> {
 impl<'a> ConsistencyLevelOption<'a> for CreateCollectionBuilder<'a> {
     fn consistency_level(&self) -> Option<ConsistencyLevel> {
         self.consistency_level.clone()
-    }
-}
-
-impl<'a> OfferSupport for CreateCollectionBuilder<'a> {
-    type O = Self;
-
-    fn with_offer(self, offer: Offer) -> Self::O {
-        Self { offer, ..self }
-    }
-}
-
-impl<'a> CollectionNameSupport<'a> for CreateCollectionBuilder<'a> {
-    type O = Self;
-
-    fn with_collection_name(self, collection_name: &'a dyn CollectionName) -> Self::O {
-        Self {
-            collection_name,
-            ..self
-        }
-    }
-}
-
-impl<'a> IndexingPolicySupport<'a> for CreateCollectionBuilder<'a> {
-    type O = Self;
-
-    fn with_indexing_policy(self, indexing_policy: &'a IndexingPolicy) -> Self::O {
-        Self {
-            indexing_policy,
-            ..self
-        }
-    }
-}
-
-impl<'a> PartitionKeySupport<'a> for CreateCollectionBuilder<'a> {
-    type O = Self;
-
-    fn with_partition_key(self, partition_key: &'a PartitionKey) -> Self::O {
-        Self {
-            partition_key,
-            ..self
-        }
-    }
-}
-
-impl<'a> UserAgentSupport<'a> for CreateCollectionBuilder<'a> {
-    type O = Self;
-
-    fn with_user_agent(self, user_agent: &'a str) -> Self::O {
-        Self {
-            user_agent: Some(user_agent),
-            ..self
-        }
-    }
-}
-
-impl<'a> ActivityIdSupport<'a> for CreateCollectionBuilder<'a> {
-    type O = Self;
-
-    fn with_activity_id(self, activity_id: &'a str) -> Self::O {
-        Self {
-            activity_id: Some(activity_id),
-            ..self
-        }
-    }
-}
-
-impl<'a> ConsistencyLevelSupport<'a> for CreateCollectionBuilder<'a> {
-    type O = Self;
-
-    fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self::O {
-        Self {
-            consistency_level: Some(consistency_level),
-            ..self
-        }
-    }
-}
-
-impl<'a> CreateCollectionBuilder<'a> {
-    pub async fn execute(&self) -> Result<CreateCollectionResponse, CosmosError> {
-        trace!("CreateCollectionBuilder::execute called");
-
-        let mut req = self.database_client.cosmos_client().prepare_request(
-            &format!("dbs/{}/colls", self.database_client.database_name()),
-            http::Method::POST,
-            ResourceType::Collections,
-        );
-
-        req = req.header(http::header::CONTENT_TYPE, "application/json");
-
-        // add trait headers
-        let req = OfferRequired::add_header(self, req);
-        let req = UserAgentOption::add_header(self, req);
-        let req = ActivityIdOption::add_header(self, req);
-        let req = ConsistencyLevelOption::add_header(self, req);
-
-        let mut collection = Collection::new(
-            self.collection_name().name(),
-            self.indexing_policy().to_owned(),
-        );
-        collection.parition_key = self.partition_key().to_owned();
-
-        let body = serde_json::to_string(&collection)?;
-        debug!("body == {}", body);
-
-        let req = req.body(body.as_bytes())?;
-        debug!("\nreq == {:?}", req);
-
-        Ok(self
-            .database_client
-            .http_client()
-            .execute_request_check_status(req, StatusCode::CREATED)
-            .await?
-            .try_into()?)
     }
 }

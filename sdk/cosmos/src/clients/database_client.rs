@@ -45,6 +45,9 @@ impl DatabaseClient {
         requests::DeleteDatabaseBuilder::new(self)
     }
 
+    /// Create a collection.
+    ///
+    /// *TODO*: document parameters
     pub fn create_collection<'a>(
         &'a self,
         offer: Offer,
