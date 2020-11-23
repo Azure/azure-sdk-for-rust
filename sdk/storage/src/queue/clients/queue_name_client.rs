@@ -76,6 +76,10 @@ where
         requests::GetMessagesBuilder::new(self)
     }
 
+    fn peek_messages(&self) -> requests::PeekMessagesBuilder<'_, Self::StorageClient> {
+        requests::PeekMessagesBuilder::new(self)
+    }
+
     fn delete_message(&self) -> requests::DeleteMessageBuilder<'_, Self::StorageClient, No> {
         requests::DeleteMessageBuilder::new(self)
     }

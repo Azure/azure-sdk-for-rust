@@ -34,7 +34,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
     println!("{:?}", response.continuation_token);
 
     while let Some(continuation_token) = response.continuation_token {
-        println!("we have more data!");
+        println!(
+            "we have more data. continuation_token == {:#?}",
+            continuation_token
+        );
 
         response = table_client.continue_execution(continuation_token).await?;
         println!("{:?}", response.entities);
