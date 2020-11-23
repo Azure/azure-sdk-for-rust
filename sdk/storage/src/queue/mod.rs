@@ -119,6 +119,7 @@ pub trait QueueNameService: HasStorageClient {
 
     fn put_message(&self) -> requests::PutMessageBuilder<'_, '_, Self::StorageClient, No>;
     fn get_messages(&self) -> requests::GetMessagesBuilder<'_, Self::StorageClient>;
+    fn peek_messages(&self) -> requests::PeekMessagesBuilder<'_, Self::StorageClient>;
     fn delete_message(&self) -> requests::DeleteMessageBuilder<'_, Self::StorageClient, No>;
 }
 
