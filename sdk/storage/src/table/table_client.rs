@@ -4,12 +4,10 @@ use crate::core::{
     client, get_default_json_mime, get_json_mime_fullmetadata, get_json_mime_nometadata,
     ConnectionString, ServiceType,
 };
+use crate::PerformRequestResponse;
 use azure_core::errors::{check_status_extract_body, AzureError};
 use http::request::Builder;
-use hyper::{
-    client::ResponseFuture,
-    header::{self, HeaderValue},
-};
+use hyper::header::{self, HeaderValue};
 use hyper::{Method, StatusCode};
 
 const TABLE_TABLES: &str = "TABLES";
@@ -86,13 +84,15 @@ where
     C: Client,
 {
     pub async fn list_tables(&self) -> Result<Vec<String>, AzureError> {
-        let (_, future_response) = self.request_with_default_header(
-            TABLE_TABLES,
-            &Method::GET,
-            None,
-            MetadataDetail::None,
-            &|req| req,
-        )?;
+        let future_response = self
+            .request_with_default_header(
+                TABLE_TABLES,
+                &Method::GET,
+                None,
+                MetadataDetail::None,
+                &|req| req,
+            )?
+            .response_future;
         let body = check_status_extract_body(future_response, StatusCode::OK).await?;
         let entities = serde_json::from_str::<TableDataCollection>(&body)?;
         // todo: shall we use the continuation or query result always fits into a single page
@@ -107,13 +107,15 @@ where
         })
         .unwrap();
         log::debug!("body == {}", body);
-        let (_, future_response) = self.request_with_default_header(
-            TABLE_TABLES,
-            &Method::POST,
-            Some(body),
-            MetadataDetail::None,
-            &|req| req,
-        )?;
+        let future_response = self
+            .request_with_default_header(
+                TABLE_TABLES,
+                &Method::POST,
+                Some(body),
+                MetadataDetail::None,
+                &|req| req,
+            )?
+            .response_future;
 
         check_status_extract_body(future_response, StatusCode::CREATED).await?;
         Ok(())
@@ -130,7 +132,7 @@ where
         request_str: Option<&str>,
         metadata: MetadataDetail,
         http_header_adder: &dyn Fn(Builder) -> Builder,
-    ) -> Result<(url::Url, ResponseFuture), AzureError> {
+    ) -> Result<PerformRequestResponse, AzureError> {
         self.request(segment, method, request_str, &|mut request| {
             request = match metadata {
                 MetadataDetail::Full => request.header(
@@ -163,7 +165,7 @@ where
         method: &Method,
         request_str: Option<&str>,
         http_header_adder: &dyn Fn(Builder) -> Builder,
-    ) -> Result<(url::Url, ResponseFuture), AzureError> {
+    ) -> Result<PerformRequestResponse, AzureError> {
         log::trace!("{:?} {}", method, segment);
         if let Some(body) = request_str {
             log::trace!("Request: {}", body);

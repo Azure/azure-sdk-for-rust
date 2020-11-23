@@ -483,7 +483,7 @@ where
 
         trace!("uri == {:?}", uri);
 
-        let (_, future_response) = self.client().perform_request(
+        let perform_request_response = self.client().perform_request(
             &uri,
             &Method::PUT,
             &|mut request| {
@@ -498,7 +498,7 @@ where
         )?;
 
         let (headers, _body) =
-            check_status_extract_headers_and_body(future_response, StatusCode::CREATED).await?;
+            check_status_extract_headers_and_body(perform_request_response.response_future, StatusCode::CREATED).await?;
         PutBlockResponse::from_headers(&headers)
     }
 }

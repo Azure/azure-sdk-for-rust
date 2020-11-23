@@ -188,7 +188,7 @@ where
 
         debug!("uri == {}", uri);
 
-        let (_, future_response) = self.queue_name_service.storage_client().perform_request(
+        let perform_request_response = self.queue_name_service.storage_client().perform_request(
             &uri,
             &http::Method::GET,
             &|mut request| {
@@ -199,7 +199,7 @@ where
         )?;
 
         let (headers, body) =
-            check_status_extract_headers_and_body(future_response, StatusCode::OK).await?;
+            check_status_extract_headers_and_body(perform_request_response.response_future, StatusCode::OK).await?;
 
         (&headers, &body as &[u8]).try_into()
     }

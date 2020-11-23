@@ -1,4 +1,5 @@
 use crate::IPRange;
+use crate::PerformRequestResponse;
 use crate::{ClientEndpoint, HyperClientEndpoint};
 use azure_core::errors::AzureError;
 use azure_core::headers;
@@ -500,7 +501,7 @@ pub fn perform_request<HCE: HyperClientEndpoint>(
     http_header_adder: &dyn Fn(Builder) -> Builder,
     request_body: Option<&[u8]>,
     service_type: ServiceType,
-) -> Result<(url::Url, hyper::client::ResponseFuture), AzureError> {
+) -> Result<PerformRequestResponse, AzureError> {
     let dt = chrono::Utc::now();
     let time = format!("{}", dt.format("%a, %d %h %Y %T GMT"));
 
@@ -550,7 +551,7 @@ pub fn perform_request<HCE: HyperClientEndpoint>(
             .insert(header::AUTHORIZATION, format_header_value(auth)?);
     }
 
-    Ok((url, hyper_client_endpoint.hyper_client().request(request)))
+    Ok((url, hyper_client_endpoint.hyper_client().request(request)).into())
 }
 
 #[inline]

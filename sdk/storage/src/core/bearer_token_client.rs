@@ -1,5 +1,6 @@
 use super::prelude::*;
 use super::rest_client::{AZURE_VERSION, HEADER_DATE, HEADER_VERSION};
+use crate::PerformRequestResponse;
 use azure_core::errors::AzureError;
 use azure_core::util::{format_header_value, RequestBuilderExt};
 use http::request::Builder;
@@ -47,7 +48,7 @@ impl<'a> BearerTokenClient<'a> {
         method: &Method,
         http_header_adder: &dyn Fn(Builder) -> Builder,
         request_body: Option<&[u8]>,
-    ) -> Result<(url::Url, hyper::client::ResponseFuture), AzureError> {
+    ) -> Result<PerformRequestResponse, AzureError> {
         let dt = chrono::Utc::now();
         let time = format!("{}", dt.format("%a, %d %h %Y %T GMT"));
 
@@ -82,7 +83,7 @@ impl<'a> BearerTokenClient<'a> {
             format_header_value(format!("Bearer {}", self.bearer_token))?,
         );
 
-        Ok((uri, self.hc.request(request)))
+        Ok((uri, self.hc.request(request)).into())
     }
 }
 
@@ -114,7 +115,7 @@ impl<'a> Client for BearerTokenClient<'a> {
         method: &Method,
         http_header_adder: &dyn Fn(Builder) -> Builder,
         request_body: Option<&[u8]>,
-    ) -> Result<(url::Url, hyper::client::ResponseFuture), AzureError> {
+    ) -> Result<PerformRequestResponse, AzureError> {
         self.perform_request_internal(uri, method, http_header_adder, request_body)
     }
 
@@ -125,7 +126,7 @@ impl<'a> Client for BearerTokenClient<'a> {
         method: &Method,
         http_header_adder: &dyn Fn(Builder) -> Builder,
         request_body: Option<&[u8]>,
-    ) -> Result<(url::Url, hyper::client::ResponseFuture), AzureError> {
+    ) -> Result<PerformRequestResponse, AzureError> {
         self.perform_request_internal(segment, method, http_header_adder, request_body)
     }
 }

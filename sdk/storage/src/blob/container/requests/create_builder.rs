@@ -263,7 +263,7 @@ where
             uri = format!("{}&{}", uri, nm);
         }
 
-        let (_, future_response) = self.client().perform_request(
+        let perform_request_response = self.client().perform_request(
             &uri,
             &Method::PUT,
             &|mut request| {
@@ -275,7 +275,11 @@ where
             Some(&[]),
         )?;
 
-        check_status_extract_body(future_response, StatusCode::CREATED).await?;
+        check_status_extract_body(
+            perform_request_response.response_future,
+            StatusCode::CREATED,
+        )
+        .await?;
         Ok(())
     }
 }

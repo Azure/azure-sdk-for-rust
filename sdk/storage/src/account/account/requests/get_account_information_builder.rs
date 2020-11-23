@@ -44,11 +44,11 @@ where
         );
         trace!("uri == {:?}", uri);
 
-        let (_, future_response) =
+        let perform_request_response =
             self.client()
                 .perform_request(&uri, &Method::GET, &|request| request, None)?;
         let (headers, _) =
-            check_status_extract_headers_and_body(future_response, StatusCode::OK).await?;
+            check_status_extract_headers_and_body(perform_request_response.response_future, StatusCode::OK).await?;
         GetAccountInformationResponse::from_headers(&headers)
     }
 }

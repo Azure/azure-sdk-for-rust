@@ -365,7 +365,7 @@ where
             uri = format!("{}&{}", uri, nm);
         }
 
-        let (_, future_response) = self.client().perform_request(
+        let perform_request_response = self.client().perform_request(
             &uri,
             &Method::PUT,
             &|mut request| {
@@ -379,7 +379,7 @@ where
         )?;
 
         let (headers, _body) =
-            check_status_extract_headers_and_body(future_response, StatusCode::OK).await?;
+            check_status_extract_headers_and_body(perform_request_response.response_future, StatusCode::OK).await?;
         ChangeBlobLeaseResponse::from_headers(&headers)
     }
 }

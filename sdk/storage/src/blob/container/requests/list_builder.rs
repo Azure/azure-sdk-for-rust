@@ -258,7 +258,7 @@ where
 
         debug!("generated uri = {}", uri);
 
-        let (_, future_response) = self.client().perform_request(
+        let perform_request_response = self.client().perform_request(
             &uri,
             &Method::GET,
             &|request| ClientRequestIdOption::add_header(&self, request),
@@ -266,7 +266,7 @@ where
         )?;
 
         let (headers, body) =
-            check_status_extract_headers_and_body(future_response, StatusCode::OK).await?;
+            check_status_extract_headers_and_body(perform_request_response.response_future, StatusCode::OK).await?;
         let body = std::str::from_utf8(&body)?;
         let incomplete_vector = incomplete_vector_from_container_response(&body)?;
         let request_id = request_id_from_headers(&headers)?;

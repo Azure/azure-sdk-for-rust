@@ -324,7 +324,7 @@ where
             uri = format!("{}&{}", uri, nm);
         }
 
-        let (_, future_response) = self.client().perform_request(
+        let perform_request_response = self.client().perform_request(
             &uri,
             &Method::DELETE,
             &|mut request| {
@@ -336,7 +336,7 @@ where
         )?;
 
         let (headers, _body) =
-            check_status_extract_headers_and_body(future_response, StatusCode::ACCEPTED).await?;
+            check_status_extract_headers_and_body(perform_request_response.response_future, StatusCode::ACCEPTED).await?;
         DeleteBlobResponse::from_headers(&headers)
     }
 }

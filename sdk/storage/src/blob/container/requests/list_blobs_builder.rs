@@ -574,13 +574,15 @@ where
 
         trace!("list blob uri = {}", uri);
 
-        let (_, future_response) =
+        let perform_request_response =
             self.client()
                 .perform_request(&uri, &Method::GET, &|request| request, None)?;
 
-        let (headers, body_as_str) =
-            check_status_extract_headers_and_body_as_string(future_response, StatusCode::OK)
-                .await?;
+        let (headers, body_as_str) = check_status_extract_headers_and_body_as_string(
+            perform_request_response.response_future,
+            StatusCode::OK,
+        )
+        .await?;
         ListBlobsResponse::from_response(&container_name, &headers, &body_as_str)
     }
 }

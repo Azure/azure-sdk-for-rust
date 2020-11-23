@@ -163,7 +163,7 @@ where
 
         debug!("uri == {}", uri);
 
-        let (_, future_response) = self.queue_name_service.storage_client().perform_request(
+        let perform_request_response = self.queue_name_service.storage_client().perform_request(
             &uri,
             &http::Method::DELETE,
             &|mut request| {
@@ -174,7 +174,7 @@ where
         )?;
 
         let (headers, _) =
-            check_status_extract_headers_and_body(future_response, StatusCode::NO_CONTENT).await?;
+            check_status_extract_headers_and_body(perform_request_response.response_future, StatusCode::NO_CONTENT).await?;
 
         (&headers).try_into()
     }

@@ -8,6 +8,7 @@ mod container_sas_builder;
 mod hyper_client_endpoint;
 mod into_azure_path;
 pub mod key_client;
+mod perform_request_response;
 pub mod prelude;
 mod rest_client;
 pub mod shared_access_signature;
@@ -26,6 +27,7 @@ pub use client::Client;
 pub use client_endpoint::ClientEndpoint;
 use http::HeaderMap;
 pub use hyper_client_endpoint::HyperClientEndpoint;
+pub use perform_request_response::PerformRequestResponse;
 
 pub trait ClientRequired<'a, C>
 where

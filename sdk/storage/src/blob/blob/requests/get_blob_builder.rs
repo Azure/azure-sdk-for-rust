@@ -357,7 +357,7 @@ where
 
         trace!("uri == {:?}", uri);
 
-        let (_, future_response) = self.client().perform_request(
+        let perform_request_response = self.client().perform_request(
             &uri,
             &Method::GET,
             &|mut request| {
@@ -381,7 +381,7 @@ where
         };
 
         let (headers, body) =
-            check_status_extract_headers_and_body(future_response, expected_status_code).await?;
+            check_status_extract_headers_and_body(perform_request_response.response_future, expected_status_code).await?;
         let blob = Blob::from_headers(&blob_name, &container_name, snapshot_time, &headers)?;
         GetBlobResponse::from_response(&headers, blob, &body)
     }
