@@ -1,4 +1,4 @@
-use crate::Collection;
+use crate::collection::Collection;
 use crate::Document;
 use crate::Resource;
 use crate::User;
