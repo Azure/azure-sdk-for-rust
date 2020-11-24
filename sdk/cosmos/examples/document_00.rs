@@ -60,14 +60,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // If the requested database is not found we create it.
     let database = match db {
         Some(db) => db,
-        None => {
-            client
-                .create_database()
-                .with_database_name(&DATABASE)
-                .execute()
-                .await?
-                .database
-        }
+        None => client.create_database(&DATABASE).execute().await?.database,
     };
     println!("database == {:?}", database);
 

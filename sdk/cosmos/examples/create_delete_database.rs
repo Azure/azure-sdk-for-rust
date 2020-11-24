@@ -39,11 +39,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let list_databases_response = client.list_databases().execute().await?;
     println!("list_databases_response = {:#?}", list_databases_response);
 
-    let db = client
-        .create_database()
-        .with_database_name(&database_name)
-        .execute()
-        .await?;
+    let db = client.create_database(&database_name).execute().await?;
     println!("created database = {:#?}", db);
 
     // create collection!

@@ -2,153 +2,61 @@ use crate::prelude::*;
 use crate::responses::CreateDatabaseResponse;
 use crate::ResourceType;
 use azure_core::prelude::*;
-use azure_core::{No, ToAssign, Yes};
 use http::StatusCode;
 use std::convert::TryInto;
-use std::marker::PhantomData;
 
 #[derive(Debug, Clone)]
-pub struct CreateDatabaseBuilder<'a, DatabaseNameSet>
-where
-    DatabaseNameSet: ToAssign,
-{
+pub struct CreateDatabaseBuilder<'a> {
     cosmos_client: &'a CosmosClient,
-    p_database_name: PhantomData<DatabaseNameSet>,
-    database_name: Option<&'a dyn DatabaseName>,
+    database_name: &'a dyn DatabaseName,
     user_agent: Option<&'a str>,
     activity_id: Option<&'a str>,
     consistency_level: Option<ConsistencyLevel>,
 }
 
-impl<'a> CreateDatabaseBuilder<'a, No> {
-    pub(crate) fn new(cosmos_client: &'a CosmosClient) -> Self {
+impl<'a> CreateDatabaseBuilder<'a> {
+    pub(crate) fn new(
+        cosmos_client: &'a CosmosClient,
+        database_name: &'a dyn DatabaseName,
+    ) -> Self {
         Self {
             cosmos_client,
-            p_database_name: PhantomData,
-            database_name: None,
+            database_name,
             user_agent: None,
             activity_id: None,
             consistency_level: None,
         }
     }
-}
 
-impl<'a, DatabaseNameSet> CosmosClientRequired<'a> for CreateDatabaseBuilder<'a, DatabaseNameSet>
-where
-    DatabaseNameSet: ToAssign,
-{
-    fn cosmos_client(&self) -> &'a CosmosClient {
-        self.cosmos_client
-    }
-}
-
-//get mandatory no traits methods
-
-//set mandatory no traits methods
-impl<'a> DatabaseNameRequired<'a> for CreateDatabaseBuilder<'a, Yes> {
-    fn database_name(&self) -> &'a dyn DatabaseName {
-        self.database_name.unwrap()
-    }
-}
-
-impl<'a, DatabaseNameSet> UserAgentOption<'a> for CreateDatabaseBuilder<'a, DatabaseNameSet>
-where
-    DatabaseNameSet: ToAssign,
-{
-    fn user_agent(&self) -> Option<&'a str> {
-        self.user_agent
-    }
-}
-
-impl<'a, DatabaseNameSet> ActivityIdOption<'a> for CreateDatabaseBuilder<'a, DatabaseNameSet>
-where
-    DatabaseNameSet: ToAssign,
-{
-    fn activity_id(&self) -> Option<&'a str> {
-        self.activity_id
-    }
-}
-
-impl<'a, DatabaseNameSet> ConsistencyLevelOption<'a> for CreateDatabaseBuilder<'a, DatabaseNameSet>
-where
-    DatabaseNameSet: ToAssign,
-{
-    fn consistency_level(&self) -> Option<ConsistencyLevel> {
-        self.consistency_level.clone()
-    }
-}
-
-impl<'a> DatabaseNameSupport<'a> for CreateDatabaseBuilder<'a, No> {
-    type O = CreateDatabaseBuilder<'a, Yes>;
-
-    fn with_database_name(self, database_name: &'a dyn DatabaseName) -> Self::O {
-        CreateDatabaseBuilder {
-            cosmos_client: self.cosmos_client,
-            p_database_name: PhantomData {},
-            database_name: Some(database_name),
-            user_agent: self.user_agent,
-            activity_id: self.activity_id,
-            consistency_level: self.consistency_level,
+    pub fn with_database_name(self, database_name: &'a dyn DatabaseName) -> Self {
+        Self {
+            database_name,
+            ..self
         }
     }
-}
 
-impl<'a, DatabaseNameSet> UserAgentSupport<'a> for CreateDatabaseBuilder<'a, DatabaseNameSet>
-where
-    DatabaseNameSet: ToAssign,
-{
-    type O = CreateDatabaseBuilder<'a, DatabaseNameSet>;
-
-    fn with_user_agent(self, user_agent: &'a str) -> Self::O {
-        CreateDatabaseBuilder {
-            cosmos_client: self.cosmos_client,
-            p_database_name: PhantomData {},
-            database_name: self.database_name,
+    pub fn with_user_agent(self, user_agent: &'a str) -> Self {
+        Self {
             user_agent: Some(user_agent),
-            activity_id: self.activity_id,
-            consistency_level: self.consistency_level,
+            ..self
         }
     }
-}
 
-impl<'a, DatabaseNameSet> ActivityIdSupport<'a> for CreateDatabaseBuilder<'a, DatabaseNameSet>
-where
-    DatabaseNameSet: ToAssign,
-{
-    type O = CreateDatabaseBuilder<'a, DatabaseNameSet>;
-
-    fn with_activity_id(self, activity_id: &'a str) -> Self::O {
-        CreateDatabaseBuilder {
-            cosmos_client: self.cosmos_client,
-            p_database_name: PhantomData {},
-            database_name: self.database_name,
-            user_agent: self.user_agent,
+    pub fn with_activity_id(self, activity_id: &'a str) -> Self {
+        Self {
             activity_id: Some(activity_id),
-            consistency_level: self.consistency_level,
+            ..self
         }
     }
-}
 
-impl<'a, DatabaseNameSet> ConsistencyLevelSupport<'a> for CreateDatabaseBuilder<'a, DatabaseNameSet>
-where
-    DatabaseNameSet: ToAssign,
-{
-    type O = CreateDatabaseBuilder<'a, DatabaseNameSet>;
-
-    fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self::O {
-        CreateDatabaseBuilder {
-            cosmos_client: self.cosmos_client,
-            p_database_name: PhantomData {},
-            database_name: self.database_name,
-            user_agent: self.user_agent,
-            activity_id: self.activity_id,
+    pub fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self {
+        Self {
             consistency_level: Some(consistency_level),
+            ..self
         }
     }
-}
 
-// methods callable only when every mandatory field has been filled
-impl<'a> CreateDatabaseBuilder<'a, Yes> {
+    // methods callable only when every mandatory field has been filled
     pub async fn execute(&self) -> Result<CreateDatabaseResponse, CosmosError> {
         trace!("CreateDatabaseBuilder::execute called");
 
@@ -181,5 +89,35 @@ impl<'a> CreateDatabaseBuilder<'a, Yes> {
             .execute_request_check_status(request, StatusCode::CREATED)
             .await?
             .try_into()?)
+    }
+}
+
+impl<'a> CosmosClientRequired<'a> for CreateDatabaseBuilder<'a> {
+    fn cosmos_client(&self) -> &'a CosmosClient {
+        self.cosmos_client
+    }
+}
+
+impl<'a> DatabaseNameRequired<'a> for CreateDatabaseBuilder<'a> {
+    fn database_name(&self) -> &'a dyn DatabaseName {
+        self.database_name
+    }
+}
+
+impl<'a> UserAgentOption<'a> for CreateDatabaseBuilder<'a> {
+    fn user_agent(&self) -> Option<&'a str> {
+        self.user_agent
+    }
+}
+
+impl<'a> ActivityIdOption<'a> for CreateDatabaseBuilder<'a> {
+    fn activity_id(&self) -> Option<&'a str> {
+        self.activity_id
+    }
+}
+
+impl<'a> ConsistencyLevelOption<'a> for CreateDatabaseBuilder<'a> {
+    fn consistency_level(&self) -> Option<ConsistencyLevel> {
+        self.consistency_level.clone()
     }
 }
