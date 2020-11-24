@@ -350,8 +350,11 @@ where
             None,
         )?;
 
-        let (headers, body) =
-            check_status_extract_headers_and_body(perform_request_response.response_future, StatusCode::OK).await?;
+        let (headers, body) = check_status_extract_headers_and_body(
+            perform_request_response.response_future,
+            StatusCode::OK,
+        )
+        .await?;
         GetBlockListResponse::from_response(&headers, &body)
     }
 }

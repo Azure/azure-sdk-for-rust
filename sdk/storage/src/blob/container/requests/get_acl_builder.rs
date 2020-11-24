@@ -201,8 +201,11 @@ where
             None,
         )?;
 
-        let (headers, body) =
-            check_status_extract_headers_and_body(perform_request_response.response_future, StatusCode::OK).await?;
+        let (headers, body) = check_status_extract_headers_and_body(
+            perform_request_response.response_future,
+            StatusCode::OK,
+        )
+        .await?;
         // todo: parse SAS policies
         GetACLResponse::from_response(&body, &headers)
     }

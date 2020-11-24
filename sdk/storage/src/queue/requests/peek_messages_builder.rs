@@ -157,8 +157,11 @@ where
             Some(&[]),
         )?;
 
-        let (headers, body) =
-            check_status_extract_headers_and_body(perform_request_response.response_future, StatusCode::OK).await?;
+        let (headers, body) = check_status_extract_headers_and_body(
+            perform_request_response.response_future,
+            StatusCode::OK,
+        )
+        .await?;
 
         (&headers, &body as &[u8]).try_into()
     }

@@ -224,8 +224,11 @@ where
             Some(&[]),
         )?;
 
-        let (headers, _body) =
-            check_status_extract_headers_and_body(perform_request_response.response_future, StatusCode::OK).await?;
+        let (headers, _body) = check_status_extract_headers_and_body(
+            perform_request_response.response_future,
+            StatusCode::OK,
+        )
+        .await?;
         ReleaseLeaseResponse::from_headers(&headers)
     }
 }

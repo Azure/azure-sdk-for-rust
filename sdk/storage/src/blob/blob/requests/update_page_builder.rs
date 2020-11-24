@@ -657,8 +657,11 @@ where
             Some(b),
         )?;
 
-        let (headers, _body) =
-            check_status_extract_headers_and_body(perform_request_response.response_future, StatusCode::CREATED).await?;
+        let (headers, _body) = check_status_extract_headers_and_body(
+            perform_request_response.response_future,
+            StatusCode::CREATED,
+        )
+        .await?;
         UpdatePageResponse::from_headers(&headers)
     }
 }

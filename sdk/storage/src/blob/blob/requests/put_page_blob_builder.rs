@@ -801,8 +801,11 @@ where
             None,
         )?;
 
-        let (headers, _body) =
-            check_status_extract_headers_and_body(perform_request_response.response_future, StatusCode::CREATED).await?;
+        let (headers, _body) = check_status_extract_headers_and_body(
+            perform_request_response.response_future,
+            StatusCode::CREATED,
+        )
+        .await?;
         PutBlobResponse::from_headers(&headers)
     }
 }

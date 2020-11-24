@@ -380,8 +380,11 @@ where
             StatusCode::OK
         };
 
-        let (headers, body) =
-            check_status_extract_headers_and_body(perform_request_response.response_future, expected_status_code).await?;
+        let (headers, body) = check_status_extract_headers_and_body(
+            perform_request_response.response_future,
+            expected_status_code,
+        )
+        .await?;
         let blob = Blob::from_headers(&blob_name, &container_name, snapshot_time, &headers)?;
         GetBlobResponse::from_response(&headers, blob, &body)
     }

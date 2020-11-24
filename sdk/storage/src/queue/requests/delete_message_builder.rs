@@ -173,8 +173,11 @@ where
             Some(&[]),
         )?;
 
-        let (headers, _) =
-            check_status_extract_headers_and_body(perform_request_response.response_future, StatusCode::NO_CONTENT).await?;
+        let (headers, _) = check_status_extract_headers_and_body(
+            perform_request_response.response_future,
+            StatusCode::NO_CONTENT,
+        )
+        .await?;
 
         (&headers).try_into()
     }
