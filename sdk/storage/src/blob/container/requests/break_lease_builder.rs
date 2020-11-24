@@ -1,6 +1,6 @@
 use crate::container::responses::BreakLeaseResponse;
 use crate::core::prelude::*;
-use azure_core::errors::{check_status_extract_headers_and_body, AzureError};
+use azure_core::errors::AzureError;
 use azure_core::headers::LEASE_ACTION;
 use azure_core::lease::LeaseId;
 use azure_core::prelude::*;
@@ -231,24 +231,22 @@ where
             uri = format!("{}&{}", uri, nm);
         }
 
-        let perform_request_response = self.client().perform_request(
-            &uri,
-            &Method::PUT,
-            &|mut request| {
-                request = ClientRequestIdOption::add_header(&self, request);
-                request = LeaseIdOption::add_header(&self, request);
-                request = request.header(LEASE_ACTION, "break");
-                request = LeaseBreakPeriodOption::add_header(&self, request);
-                request
-            },
-            Some(&[]),
-        )?;
-
-        let (headers, _body) = check_status_extract_headers_and_body(
-            perform_request_response.response_future,
-            StatusCode::ACCEPTED,
-        )
-        .await?;
+        let (headers, _) = self
+            .client()
+            .perform_request(
+                &uri,
+                &Method::PUT,
+                &|mut request| {
+                    request = ClientRequestIdOption::add_header(&self, request);
+                    request = LeaseIdOption::add_header(&self, request);
+                    request = request.header(LEASE_ACTION, "break");
+                    request = LeaseBreakPeriodOption::add_header(&self, request);
+                    request
+                },
+                Some(&[]),
+            )?
+            .check_status_extract_headers_and_body(StatusCode::ACCEPTED)
+            .await?;
         BreakLeaseResponse::from_headers(&headers)
     }
 }

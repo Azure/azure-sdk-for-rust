@@ -3,7 +3,7 @@ use crate::blob::blob::responses::GetBlockListResponse;
 use crate::blob::blob::{BlockListType, BlockListTypeRequired, BlockListTypeSupport};
 use crate::core::client::Client;
 use crate::core::ClientRequired;
-use azure_core::errors::{check_status_extract_headers_and_body, AzureError};
+use azure_core::errors::AzureError;
 use azure_core::lease::LeaseId;
 use azure_core::prelude::*;
 use azure_core::{No, ToAssign, Yes};
@@ -350,11 +350,9 @@ where
             None,
         )?;
 
-        let (headers, body) = check_status_extract_headers_and_body(
-            perform_request_response.response_future,
-            StatusCode::OK,
-        )
-        .await?;
+        let (headers, body) = perform_request_response
+            .check_status_extract_headers_and_body(StatusCode::OK)
+            .await?;
         GetBlockListResponse::from_response(&headers, &body)
     }
 }

@@ -1,7 +1,7 @@
 use crate::core::prelude::*;
 use crate::queue::prelude::*;
 use crate::queue::responses::*;
-use azure_core::errors::{check_status_extract_headers_and_body, AzureError};
+use azure_core::errors::AzureError;
 use azure_core::prelude::*;
 use hyper::StatusCode;
 use std::convert::TryInto;
@@ -270,11 +270,9 @@ where
             Some(&[]),
         )?;
 
-        let (headers, body) = check_status_extract_headers_and_body(
-            perform_request_response.response_future,
-            StatusCode::OK,
-        )
-        .await?;
+        let (headers, body) = perform_request_response
+            .check_status_extract_headers_and_body(StatusCode::OK)
+            .await?;
 
         (&headers, &body as &[u8]).try_into()
     }

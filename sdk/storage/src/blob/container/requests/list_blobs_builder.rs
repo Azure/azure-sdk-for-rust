@@ -1,7 +1,7 @@
 use crate::blob::blob::responses::ListBlobsResponse;
 use crate::blob::container::generate_container_uri;
 use crate::core::prelude::*;
-use azure_core::errors::{check_status_extract_headers_and_body_as_string, AzureError};
+use azure_core::errors::AzureError;
 use azure_core::prelude::*;
 use azure_core::{No, ToAssign, Yes};
 use futures::stream::{unfold, Stream};
@@ -578,12 +578,10 @@ where
             self.client()
                 .perform_request(&uri, &Method::GET, &|request| request, None)?;
 
-        let (headers, body_as_str) = check_status_extract_headers_and_body_as_string(
-            perform_request_response.response_future,
-            StatusCode::OK,
-        )
-        .await?;
-        ListBlobsResponse::from_response(&container_name, &headers, &body_as_str)
+        let (headers, body) = perform_request_response
+            .check_status_extract_headers_and_body(StatusCode::OK)
+            .await?;
+        ListBlobsResponse::from_response(&container_name, &headers, &std::str::from_utf8(&body)?)
     }
 }
 

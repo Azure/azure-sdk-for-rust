@@ -3,9 +3,7 @@ use crate::ContinuationToken;
 use crate::{
     entity_path, get_batch_mime, Batch, MetadataDetail, PaginatedResponse, TableClient, TableEntity,
 };
-use azure_core::errors::{
-    check_status_extract_body, check_status_extract_headers_and_body, AzureError,
-};
+use azure_core::errors::{check_status_extract_body, AzureError};
 use futures::stream::Stream;
 use hyper::{header, Method, StatusCode};
 use serde::{de::DeserializeOwned, Serialize};
@@ -58,28 +56,25 @@ where
         T: DeserializeOwned,
     {
         let path = &entity_path(&self.table_name, partition_key, row_key);
-        let future_response = self
-            .client
-            .request_with_default_header(
-                path,
-                &Method::GET,
-                None,
-                MetadataDetail::None, // etag is provided through header, no extra meta info is required
-                &|mut request| {
-                    if let Some(etag) = etag {
-                        request = request.header(header::IF_MATCH, etag);
-                    }
-                    request
-                },
-            )?
-            .response_future;
-        let (headers, body) =
-            match check_status_extract_headers_and_body(future_response, StatusCode::OK).await {
-                Err(AzureError::UnexpectedHTTPResult(e)) if e.status_code() == 404 => {
-                    return Ok(None)
+        let future_response = self.client.request_with_default_header(
+            path,
+            &Method::GET,
+            None,
+            MetadataDetail::None, // etag is provided through header, no extra meta info is required
+            &|mut request| {
+                if let Some(etag) = etag {
+                    request = request.header(header::IF_MATCH, etag);
                 }
-                x => x,
-            }?;
+                request
+            },
+        )?;
+        let (headers, body) = match future_response
+            .check_status_extract_headers_and_body(StatusCode::OK)
+            .await
+        {
+            Err(AzureError::UnexpectedHTTPResult(e)) if e.status_code() == 404 => return Ok(None),
+            x => x,
+        }?;
         let entity = TableEntity::try_from((&headers, &body as &[u8]))?;
         Ok(Some(entity))
     }
@@ -104,19 +99,17 @@ where
         };
         let obj_ser = serde_json::to_string(&entity)?.to_owned();
 
-        let future_response = self
-            .client
-            .request_with_default_header(
-                &self.table_name,
-                &Method::POST,
-                Some(&obj_ser),
-                MetadataDetail::None,
-                &|req| req,
-            )?
-            .response_future;
+        let future_response = self.client.request_with_default_header(
+            &self.table_name,
+            &Method::POST,
+            Some(&obj_ser),
+            MetadataDetail::None,
+            &|req| req,
+        )?;
 
-        let (headers, body) =
-            check_status_extract_headers_and_body(future_response, StatusCode::CREATED).await?;
+        let (headers, body) = future_response
+            .check_status_extract_headers_and_body(StatusCode::CREATED)
+            .await?;
         let entity = TableEntity::try_from((&headers, &body as &[u8]))?;
         Ok(entity)
     }
@@ -153,18 +146,16 @@ where
         };
         let obj_ser = serde_json::to_string(&entity)?.to_owned();
         let path = &entity_path(&self.table_name, &entity.partition_key, &entity.row_key);
-        let future_response = self
-            .client
-            .request_with_default_header(
-                &path,
-                &Method::PUT,
-                Some(&obj_ser),
-                MetadataDetail::None,
-                &|req| req,
-            )?
-            .response_future;
-        let (headers, _body) =
-            check_status_extract_headers_and_body(future_response, StatusCode::NO_CONTENT).await?;
+        let future_response = self.client.request_with_default_header(
+            &path,
+            &Method::PUT,
+            Some(&obj_ser),
+            MetadataDetail::None,
+            &|req| req,
+        )?;
+        let (headers, _body) = future_response
+            .check_status_extract_headers_and_body(StatusCode::NO_CONTENT)
+            .await?;
 
         // only header values are returned in the response, thus timestamp cannot be extracted without
         // an explicit query
@@ -199,23 +190,21 @@ where
         let obj_ser = serde_json::to_string(&entity)?.to_owned();
         let path = &entity_path(&self.table_name, &entity.partition_key, &entity.row_key);
         let etag = entity.etag;
-        let future_response = self
-            .client
-            .request_with_default_header(
-                path,
-                &Method::PUT,
-                Some(&obj_ser),
-                MetadataDetail::None,
-                &|mut request| {
-                    if let Some(etag) = &etag {
-                        request = request.header(header::IF_MATCH, etag);
-                    }
-                    request
-                },
-            )?
-            .response_future;
-        let (headers, _body) =
-            check_status_extract_headers_and_body(future_response, StatusCode::NO_CONTENT).await?;
+        let future_response = self.client.request_with_default_header(
+            path,
+            &Method::PUT,
+            Some(&obj_ser),
+            MetadataDetail::None,
+            &|mut request| {
+                if let Some(etag) = &etag {
+                    request = request.header(header::IF_MATCH, etag);
+                }
+                request
+            },
+        )?;
+        let (headers, _body) = future_response
+            .check_status_extract_headers_and_body(StatusCode::NO_CONTENT)
+            .await?;
 
         // only header values are returned in the response, thus timestamp cannot be extracted without
         // an explicit query
@@ -300,13 +289,13 @@ where
             &|req| req,
         )?;
 
-        let (headers, body) = check_status_extract_headers_and_body(
-            perform_request_response.response_future,
-            StatusCode::OK,
-        )
-        .await?;
+        let url = perform_request_response.url.clone();
 
-        Ok((perform_request_response.url, &headers, &body).try_into()?)
+        let (headers, body) = perform_request_response
+            .check_status_extract_headers_and_body(StatusCode::OK)
+            .await?;
+
+        Ok((url, &headers, &body).try_into()?)
     }
 
     pub async fn continue_execution<T>(
@@ -323,19 +312,17 @@ where
 
         let path = &continuation_token.new_url[Position::BeforePath..][1..];
 
-        let future_response = self
-            .client
-            .request_with_default_header(
-                path,
-                &Method::GET,
-                None,
-                MetadataDetail::Full, // etag is provided through metadata only
-                &|req| req,
-            )?
-            .response_future;
+        let future_response = self.client.request_with_default_header(
+            path,
+            &Method::GET,
+            None,
+            MetadataDetail::Full, // etag is provided through metadata only
+            &|req| req,
+        )?;
 
-        let (headers, body) =
-            check_status_extract_headers_and_body(future_response, StatusCode::OK).await?;
+        let (headers, body) = future_response
+            .check_status_extract_headers_and_body(StatusCode::OK)
+            .await?;
 
         Ok((continuation_token, &headers, &body).try_into()?)
     }

@@ -1,7 +1,7 @@
 use crate::blob::blob::responses::GetBlobPropertiesResponse;
 use crate::blob::blob::{generate_blob_uri, Blob};
 use crate::core::prelude::*;
-use azure_core::errors::{check_status_extract_headers_and_body, AzureError};
+use azure_core::errors::AzureError;
 use azure_core::lease::LeaseId;
 use azure_core::prelude::*;
 use azure_core::{No, ToAssign, Yes};
@@ -311,22 +311,20 @@ where
 
         trace!("uri == {:?}", uri);
 
-        let perform_request_response = self.client().perform_request(
-            &uri,
-            &Method::HEAD,
-            &|mut request| {
-                request = ClientRequestIdOption::add_header(&self, request);
-                request = LeaseIdOption::add_header(&self, request);
-                request
-            },
-            None,
-        )?;
-
-        let (headers, _) = check_status_extract_headers_and_body(
-            perform_request_response.response_future,
-            StatusCode::OK,
-        )
-        .await?;
+        let (headers, _) = self
+            .client()
+            .perform_request(
+                &uri,
+                &Method::HEAD,
+                &|mut request| {
+                    request = ClientRequestIdOption::add_header(&self, request);
+                    request = LeaseIdOption::add_header(&self, request);
+                    request
+                },
+                None,
+            )?
+            .check_status_extract_headers_and_body(StatusCode::OK)
+            .await?;
         let blob = Blob::from_headers(&blob_name, &container_name, snapshot_time, &headers)?;
         GetBlobPropertiesResponse::from_response(&headers, blob)
     }

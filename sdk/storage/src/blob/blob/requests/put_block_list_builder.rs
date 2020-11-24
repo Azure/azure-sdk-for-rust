@@ -4,7 +4,7 @@ use crate::blob::blob::BlockList;
 use crate::blob::blob::{BlockListRequired, BlockListSupport};
 use crate::core::prelude::*;
 use azure_core::add_content_md5_header;
-use azure_core::errors::{check_status_extract_headers_and_body, AzureError};
+use azure_core::errors::AzureError;
 use azure_core::lease::LeaseId;
 use azure_core::prelude::*;
 use azure_core::{No, ToAssign, Yes};
@@ -701,29 +701,27 @@ where
             hash
         };
 
-        let perform_request_response = self.client().perform_request(
-            &uri,
-            &Method::PUT,
-            &|mut request| {
-                request = ContentTypeOption::add_header(&self, request);
-                request = ContentEncodingOption::add_header(&self, request);
-                request = ContentLanguageOption::add_header(&self, request);
-                request = add_content_md5_header(&md5[..], request);
-                request = CacheControlOption::add_header(&self, request);
-                request = ContentDispositionOption::add_header(&self, request);
-                request = MetadataOption::add_header(&self, request);
-                request = LeaseIdOption::add_header(&self, request);
-                request = ClientRequestIdOption::add_header(&self, request);
-                request
-            },
-            Some(body_bytes),
-        )?;
-
-        let (headers, _body) = check_status_extract_headers_and_body(
-            perform_request_response.response_future,
-            StatusCode::CREATED,
-        )
-        .await?;
+        let (headers, _) = self
+            .client()
+            .perform_request(
+                &uri,
+                &Method::PUT,
+                &|mut request| {
+                    request = ContentTypeOption::add_header(&self, request);
+                    request = ContentEncodingOption::add_header(&self, request);
+                    request = ContentLanguageOption::add_header(&self, request);
+                    request = add_content_md5_header(&md5[..], request);
+                    request = CacheControlOption::add_header(&self, request);
+                    request = ContentDispositionOption::add_header(&self, request);
+                    request = MetadataOption::add_header(&self, request);
+                    request = LeaseIdOption::add_header(&self, request);
+                    request = ClientRequestIdOption::add_header(&self, request);
+                    request
+                },
+                Some(body_bytes),
+            )?
+            .check_status_extract_headers_and_body(StatusCode::CREATED)
+            .await?;
         PutBlockListResponse::from_headers(&headers)
     }
 }

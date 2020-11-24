@@ -1,5 +1,5 @@
 use crate::core::prelude::*;
-use azure_core::errors::{check_status_extract_headers_and_body, AzureError};
+use azure_core::errors::AzureError;
 use azure_core::lease::LeaseId;
 use azure_core::prelude::*;
 use azure_core::{No, ToAssign, Yes};
@@ -189,22 +189,19 @@ where
             uri = format!("{}&{}", uri, nm);
         }
 
-        let perform_request_response = self.client().perform_request(
-            &uri,
-            &Method::DELETE,
-            &|mut request| {
-                request = ClientRequestIdOption::add_header(&self, request);
-                request = LeaseIdOption::add_header(&self, request);
-                request
-            },
-            Some(&[]),
-        )?;
-
-        check_status_extract_headers_and_body(
-            perform_request_response.response_future,
-            StatusCode::ACCEPTED,
-        )
-        .await?;
+        self.client()
+            .perform_request(
+                &uri,
+                &Method::DELETE,
+                &|mut request| {
+                    request = ClientRequestIdOption::add_header(&self, request);
+                    request = LeaseIdOption::add_header(&self, request);
+                    request
+                },
+                Some(&[]),
+            )?
+            .check_status_extract_headers_and_body(StatusCode::ACCEPTED)
+            .await?;
         Ok(())
     }
 }

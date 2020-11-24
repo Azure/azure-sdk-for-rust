@@ -19,7 +19,7 @@ impl ContinuationToken {
         let mut partition_key_replaced = false;
         let mut row_key_replaced = false;
 
-        let v: Vec<(_, _)> = previous_url
+        let query_pairs_without_old_continuation_token: Vec<(_, _)> = previous_url
             .query_pairs()
             // filter_map allows us to strip the QUERY_PARAM_NEXTROWKEY
             // if next_row_key is empty.
@@ -40,7 +40,10 @@ impl ContinuationToken {
             .collect();
 
         let mut new_url = previous_url.clone();
-        new_url.query_pairs_mut().clear().extend_pairs(v);
+        new_url
+            .query_pairs_mut()
+            .clear()
+            .extend_pairs(query_pairs_without_old_continuation_token);
         if !partition_key_replaced {
             new_url
                 .query_pairs_mut()
@@ -63,6 +66,7 @@ impl ContinuationToken {
     pub fn previous_url(&self) -> &Url {
         &self.previous_url
     }
+
     pub fn new_url(&self) -> &Url {
         &self.new_url
     }

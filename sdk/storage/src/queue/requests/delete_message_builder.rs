@@ -2,10 +2,7 @@ use crate::core::prelude::*;
 use crate::queue::prelude::*;
 use crate::responses::*;
 use azure_core::prelude::*;
-use azure_core::{
-    errors::{check_status_extract_headers_and_body, AzureError},
-    No, ToAssign, Yes,
-};
+use azure_core::{errors::AzureError, No, ToAssign, Yes};
 use hyper::StatusCode;
 use percent_encoding::{utf8_percent_encode, NON_ALPHANUMERIC};
 use std::{convert::TryInto, marker::PhantomData};
@@ -173,11 +170,9 @@ where
             Some(&[]),
         )?;
 
-        let (headers, _) = check_status_extract_headers_and_body(
-            perform_request_response.response_future,
-            StatusCode::NO_CONTENT,
-        )
-        .await?;
+        let (headers, _) = perform_request_response
+            .check_status_extract_headers_and_body(StatusCode::NO_CONTENT)
+            .await?;
 
         (&headers).try_into()
     }

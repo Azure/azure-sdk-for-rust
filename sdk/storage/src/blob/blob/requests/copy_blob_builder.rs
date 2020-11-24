@@ -2,7 +2,7 @@ use crate::blob::blob::generate_blob_uri;
 use crate::blob::blob::responses::CopyBlobResponse;
 use crate::core::prelude::*;
 use crate::{RehydratePriority, RehydratePriorityOption, RehydratePrioritySupport};
-use azure_core::errors::{check_status_extract_headers_and_body, AzureError};
+use azure_core::errors::AzureError;
 use azure_core::lease::LeaseId;
 use azure_core::prelude::*;
 use azure_core::{No, ToAssign, Yes};
@@ -787,32 +787,30 @@ where
 
         trace!("uri == {:?}", uri);
 
-        let perform_request_response = self.client().perform_request(
-            &uri,
-            &Method::PUT,
-            &|mut request| {
-                request = SourceUrlRequired::add_header(&self, request);
-                request = MetadataOption::add_header(&self, request);
-                request = IfSinceConditionOption::add_header(&self, request);
-                request = IfSourceSinceConditionOption::add_header(&self, request);
-                request = IfMatchConditionOption::add_header(&self, request);
-                request = IfSourceMatchConditionOption::add_header(&self, request);
-                request = LeaseIdOption::add_header(&self, request);
-                request = SourceLeaseIdOption::add_header(&self, request);
-                request = AccessTierOption::add_header(&self, request);
-                request = RehydratePriorityOption::add_header(&self, request);
-                request = ClientRequestIdOption::add_header(&self, request);
+        let (headers, _) = self
+            .client()
+            .perform_request(
+                &uri,
+                &Method::PUT,
+                &|mut request| {
+                    request = SourceUrlRequired::add_header(&self, request);
+                    request = MetadataOption::add_header(&self, request);
+                    request = IfSinceConditionOption::add_header(&self, request);
+                    request = IfSourceSinceConditionOption::add_header(&self, request);
+                    request = IfMatchConditionOption::add_header(&self, request);
+                    request = IfSourceMatchConditionOption::add_header(&self, request);
+                    request = LeaseIdOption::add_header(&self, request);
+                    request = SourceLeaseIdOption::add_header(&self, request);
+                    request = AccessTierOption::add_header(&self, request);
+                    request = RehydratePriorityOption::add_header(&self, request);
+                    request = ClientRequestIdOption::add_header(&self, request);
 
-                request
-            },
-            None,
-        )?;
-
-        let (headers, _body) = check_status_extract_headers_and_body(
-            perform_request_response.response_future,
-            StatusCode::ACCEPTED,
-        )
-        .await?;
+                    request
+                },
+                None,
+            )?
+            .check_status_extract_headers_and_body(StatusCode::ACCEPTED)
+            .await?;
 
         (&headers).try_into()
     }

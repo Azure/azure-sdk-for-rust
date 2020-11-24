@@ -1,6 +1,6 @@
 use crate::queue::*;
 use crate::responses::*;
-use azure_core::errors::{check_status_extract_headers_and_body, AzureError};
+use azure_core::errors::AzureError;
 use azure_core::prelude::*;
 use azure_core::{No, ToAssign, Yes};
 use hyper::StatusCode;
@@ -260,11 +260,9 @@ where
             Some(message.as_bytes()),
         )?;
 
-        let (headers, body) = check_status_extract_headers_and_body(
-            perform_request_response.response_future,
-            StatusCode::CREATED,
-        )
-        .await?;
+        let (headers, body) = perform_request_response
+            .check_status_extract_headers_and_body(StatusCode::CREATED)
+            .await?;
 
         (&headers, &body as &[u8]).try_into()
     }
