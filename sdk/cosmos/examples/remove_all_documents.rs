@@ -23,7 +23,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         std::env::var("COSMOS_MASTER_KEY").expect("Set env variable COSMOS_MASTER_KEY first!");
     let account = std::env::var("COSMOS_ACCOUNT").expect("Set env variable COSMOS_ACCOUNT first!");
 
-    let authorization_token = AuthorizationToken::new_master(&master_key)?;
+    let authorization_token = AuthorizationToken::primary_from_base64(&master_key)?;
 
     // Next we will create a Cosmos client.
     let http_client: Arc<Box<dyn HttpClient>> = Arc::new(Box::new(reqwest::Client::new()));

@@ -8,7 +8,7 @@ pub fn initialize() -> Result<CosmosClient, CosmosError> {
     let key =
         std::env::var("COSMOS_MASTER_KEY").expect("Set env variable COSMOS_MASTER_KEY first!");
 
-    let authorization_token = AuthorizationToken::new_master(&key)?;
+    let authorization_token = AuthorizationToken::primary_from_base64(&key)?;
     let client = {
         let http_client: Arc<Box<dyn HttpClient>> = Arc::new(Box::new(reqwest::Client::new()));
         CosmosClient::new(http_client, account, authorization_token)

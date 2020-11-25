@@ -25,7 +25,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .nth(4)
         .expect("please specify the user name as fourth command line parameter");
 
-    let authorization_token = AuthorizationToken::new_master(&master_key)?;
+    let authorization_token = AuthorizationToken::primary_from_base64(&master_key)?;
 
     let http_client: Arc<Box<dyn HttpClient>> = Arc::new(Box::new(reqwest::Client::new()));
     let client = CosmosClient::new(http_client, account.clone(), authorization_token);

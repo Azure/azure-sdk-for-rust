@@ -16,7 +16,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .nth(1)
         .expect("Please provide the database name as first parameter");
 
-    let authorization_token = AuthorizationToken::new_master(&master_key)?;
+    let authorization_token = AuthorizationToken::primary_from_base64(&master_key)?;
 
     // use reqwest
     let http_client: Arc<Box<dyn HttpClient>> = Arc::new(Box::new(reqwest::Client::new()));
@@ -28,7 +28,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     println!("from reqwest == {:?}", response);
 
     // use hyper
-    let authorization_token = AuthorizationToken::new_master(&master_key)?;
+    let authorization_token = AuthorizationToken::primary_from_base64(&master_key)?;
 
     let http_client: Box<dyn HttpClient> =
         Box::new(hyper::Client::builder().build(HttpsConnector::new()));

@@ -1,32 +1,41 @@
 use crate::PermissionToken;
-use std::fmt::{Debug, Error, Formatter};
+use std::fmt;
 
+/// Authorization tokens for accessing Cosmos.
+///
+/// Learn more about the different types of tokens [here](https://docs.microsoft.com/en-us/azure/cosmos-db/secure-access-to-data).
 #[derive(PartialEq, Clone)]
 pub enum AuthorizationToken {
-    Master(Vec<u8>),
+    Primary(Vec<u8>),
     Resource(String),
 }
 
 impl AuthorizationToken {
-    pub fn new_master(base64_encoded: &str) -> Result<AuthorizationToken, base64::DecodeError> {
-        let key = base64::decode(&base64_encoded)?;
-        Ok(AuthorizationToken::Master(key))
+    /// Create a primary `AuthorizationToken` from base64 encoded data
+    ///
+    /// The token is *not* verified to be valid.
+    pub fn primary_from_base64(
+        base64_encoded: &str,
+    ) -> Result<AuthorizationToken, base64::DecodeError> {
+        let key = base64::decode(base64_encoded)?;
+        Ok(AuthorizationToken::Primary(key))
     }
 
+    /// Create a resource `AuthorizationToken` for the given resource.
     pub fn new_resource(resource: String) -> AuthorizationToken {
         AuthorizationToken::Resource(resource)
     }
 }
 
-impl Debug for AuthorizationToken {
-    //! We provide a custom implementation to hide the key value.
-    fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
+impl fmt::Debug for AuthorizationToken {
+    // We provide a custom implementation to hide the key value.
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
             f,
-            "{}",
+            "AuthorizationToken::{}(***hidden***)",
             match self {
-                AuthorizationToken::Master(_) => "AuthorizationToken::Master(***hidden***)",
-                AuthorizationToken::Resource(_) => "AuthorizationToken::Resource(***hidden***)",
+                AuthorizationToken::Primary(_) => "Master",
+                AuthorizationToken::Resource(_) => "Resource",
             }
         )
     }
