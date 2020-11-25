@@ -10,7 +10,7 @@ pub enum TokenParsingError {
         display = "string has unsufficient number of tokens. Required {}, found {}. String: \"{}\"",
         required, found, s
     )]
-    UnsufficientTokens {
+    InsufficientTokens {
         s: String,
         required: u32,
         found: u32,
@@ -38,33 +38,28 @@ pub enum ConversionToDocumentError {
     RawElementFound {},
 }
 
-#[inline]
 pub(crate) fn item_or_error<'a>(
     s: &'a str,
     tokens: &[&'a str],
     token: &'a str,
 ) -> Result<&'a str, TokenParsingError> {
-    let tokens = tokens
-        .iter()
-        .filter(|t| t.starts_with(token))
-        .collect::<Vec<_>>();
+    let mut tokens = tokens.iter().filter(|t| t.starts_with(token));
 
-    if tokens.is_empty() {
-        return Err(TokenParsingError::MissingToken {
+    match tokens.next() {
+        Some(t) => {
+            if tokens.next().is_some() {
+                return Err(TokenParsingError::ReplicatedToken {
+                    s: s.to_owned(),
+                    token: token.to_owned(),
+                    occurrencies: 2 + tokens.count() as u32,
+                });
+            }
+            // we checked for < 1 and > 1 so this is == 1
+            Ok(&t[token.len()..])
+        }
+        None => Err(TokenParsingError::MissingToken {
             s: s.to_owned(),
             missing_token: token.to_owned(),
-        });
+        }),
     }
-
-    if tokens.len() > 1 {
-        return Err(TokenParsingError::ReplicatedToken {
-            s: s.to_owned(),
-            token: token.to_owned(),
-            occurrencies: tokens.len() as u32,
-        });
-    }
-
-    // we checked for < 1 and > 1 so this is == 1
-    // Unwrap is safe.
-    Ok(&tokens.first().unwrap()[token.len()..])
 }

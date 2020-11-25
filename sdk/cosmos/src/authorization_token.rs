@@ -47,6 +47,6 @@ impl std::convert::From<PermissionToken> for AuthorizationToken {
             "Converting permission_token into AuthorizationToken: {:#?}",
             permission_token
         );
-        Self::new_resource(permission_token.signature)
+        permission_token.token
     }
 }

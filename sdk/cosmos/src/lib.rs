@@ -50,7 +50,7 @@ pub use indexing_directive::IndexingDirective;
 pub use offer::Offer;
 pub use partition_key_range::PartitionKeyRange;
 pub use partition_keys::PartitionKeys;
-pub use permission::{Permission, PermissionMode, PermissionName};
+pub use permission::{Permission, PermissionMode};
 pub use permission_resource::PermissionResource;
 pub use permission_token::PermissionToken;
 pub use query::{Param, ParamDef, Query};

@@ -1,27 +1,30 @@
-use crate::errors::{item_or_error, TokenParsingError};
+use crate::errors::{self, TokenParsingError};
+use crate::AuthorizationToken;
 
 const PERMISSION_TYPE_PREFIX: &str = "type=";
 const VERSION_PREFIX: &str = "ver=";
 const SIGNATURE_PREFIX: &str = "sig=";
 
+/// The token field of a [`Permissions`](crate::Permissions) object.
+///
+/// This field is a url encoded string with the type of permission, the signature, and the version (currently only 1.0)
+/// This type is a wrapper around AuthorizationToken.
 #[derive(Debug, Clone, PartialEq)]
 pub struct PermissionToken {
-    pub permission_type: String,
-    pub version: String,
-    pub signature: String,
+    pub(crate) token: AuthorizationToken,
 }
 
 impl std::fmt::Display for PermissionToken {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        use std::borrow::Cow;
+        let (permission_type, signature) = match &self.token {
+            AuthorizationToken::Resource(s) => ("resource", Cow::Borrowed(s)),
+            AuthorizationToken::Primary(s) => ("master", Cow::Owned(base64::encode(s))),
+        };
         write!(
             f,
-            "{}{}&{}{}&{}{}",
-            PERMISSION_TYPE_PREFIX,
-            &self.permission_type,
-            VERSION_PREFIX,
-            &self.version,
-            SIGNATURE_PREFIX,
-            &self.signature
+            "{}{}&{}1.0&{}{}",
+            PERMISSION_TYPE_PREFIX, permission_type, VERSION_PREFIX, SIGNATURE_PREFIX, signature
         )
     }
 }
@@ -34,19 +37,31 @@ impl std::convert::TryFrom<&str> for PermissionToken {
         let tokens: Vec<&str> = s.split('&').collect();
 
         if tokens.len() < 3 {
-            return Err(TokenParsingError::UnsufficientTokens {
+            return Err(TokenParsingError::InsufficientTokens {
                 s: s.to_owned(),
                 required: 3,
                 found: tokens.len() as u32,
             }
             .into());
         }
+        let version = errors::item_or_error(s, &tokens, VERSION_PREFIX)?;
+        if version != "1.0" {
+            return Err(failure::err_msg("Wrong version number 1.0"));
+        }
 
-        Ok(Self {
-            permission_type: item_or_error(s, &tokens, PERMISSION_TYPE_PREFIX)?.to_owned(),
-            version: item_or_error(s, &tokens, VERSION_PREFIX)?.to_owned(),
-            signature: item_or_error(s, &tokens, SIGNATURE_PREFIX)?.to_owned(),
-        })
+        let permission_type = errors::item_or_error(s, &tokens, PERMISSION_TYPE_PREFIX)?;
+        let signature = errors::item_or_error(s, &tokens, SIGNATURE_PREFIX)?.to_owned();
+        let token = match permission_type {
+            "master" => AuthorizationToken::Primary(base64::decode(signature)?),
+            "resource" => AuthorizationToken::Resource(signature),
+            _ => {
+                return Err(failure::format_err!(
+                    "Unrecognized error permission type {}",
+                    permission_type
+                ))
+            }
+        };
+        Ok(Self { token })
     }
 }
 
@@ -60,7 +75,9 @@ mod tests {
     #[test]
     fn parse_permission_token() {
         let permission_token: PermissionToken = PERMISSION.try_into().unwrap();
-        assert_eq!(permission_token.version, "1");
-        assert_eq!(permission_token.permission_type, "resource");
+        assert!(matches!(
+            permission_token.token,
+            AuthorizationToken::Resource(_)
+        ));
     }
 }
