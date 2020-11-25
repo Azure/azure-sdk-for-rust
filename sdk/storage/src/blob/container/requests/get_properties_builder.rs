@@ -1,6 +1,6 @@
 use crate::container::responses::GetPropertiesResponse;
 use crate::core::prelude::*;
-use azure_core::errors::{check_status_extract_headers_and_body, AzureError};
+use azure_core::errors::AzureError;
 use azure_core::lease::LeaseId;
 use azure_core::prelude::*;
 use azure_core::{No, ToAssign, Yes};
@@ -193,7 +193,7 @@ where
             uri = format!("{}&{}", uri, nm);
         }
 
-        let future_response = self.client().perform_request(
+        let perform_request_response = self.client().perform_request(
             &uri,
             &Method::HEAD,
             &|mut request| {
@@ -204,8 +204,9 @@ where
             None,
         )?;
 
-        let (headers, _) =
-            check_status_extract_headers_and_body(future_response, StatusCode::OK).await?;
+        let (headers, _) = perform_request_response
+            .check_status_extract_headers_and_body(StatusCode::OK)
+            .await?;
         GetPropertiesResponse::from_response(self.container_name().to_owned(), &headers)
     }
 }

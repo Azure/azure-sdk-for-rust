@@ -1,7 +1,7 @@
 use crate::blob::blob::generate_blob_uri;
 use crate::blob::blob::responses::ReleaseBlobLeaseResponse;
 use crate::core::prelude::*;
-use azure_core::errors::{check_status_extract_headers_and_body, AzureError};
+use azure_core::errors::AzureError;
 use azure_core::headers::LEASE_ACTION;
 use azure_core::lease::LeaseId;
 use azure_core::prelude::*;
@@ -276,7 +276,7 @@ where
             uri = format!("{}&{}", uri, nm);
         }
 
-        let future_response = self.client().perform_request(
+        let perform_request_response = self.client().perform_request(
             &uri,
             &Method::PUT,
             &|mut request| {
@@ -288,8 +288,9 @@ where
             None,
         )?;
 
-        let (headers, _body) =
-            check_status_extract_headers_and_body(future_response, StatusCode::OK).await?;
+        let (headers, _body) = perform_request_response
+            .check_status_extract_headers_and_body(StatusCode::OK)
+            .await?;
         ReleaseBlobLeaseResponse::from_headers(&headers)
     }
 }

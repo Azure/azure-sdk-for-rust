@@ -1,7 +1,7 @@
 use crate::blob::blob::generate_blob_uri;
 use crate::blob::blob::responses::CopyBlobFromUrlResponse;
 use crate::core::prelude::*;
-use azure_core::errors::{check_status_extract_headers_and_body, AzureError};
+use azure_core::errors::AzureError;
 use azure_core::lease::LeaseId;
 use azure_core::prelude::*;
 use azure_core::{No, ToAssign, Yes};
@@ -913,32 +913,33 @@ where
 
         trace!("uri == {:?}", uri);
 
-        let future_response = self.client().perform_request(
-            &uri,
-            &Method::PUT,
-            &|mut request| {
-                request = SourceUrlRequired::add_header(&self, request);
-                request = IsSynchronousOption::add_header(&self, request);
-                request = SourceContentMD5Option::add_header(&self, request);
-                request = ContentTypeOption::add_header(&self, request);
-                request = ContentEncodingOption::add_header(&self, request);
-                request = ContentLanguageOption::add_header(&self, request);
-                request = CacheControlOption::add_header(&self, request);
-                request = ContentDispositionOption::add_header(&self, request);
-                request = MetadataOption::add_header(&self, request);
-                // According to the docs this is not needed. We'll keep it here
-                // in case the docs are wrong.
-                //request = request.header(BLOB_TYPE, "BlockBlob");
-                request = IfSinceConditionOption::add_header(&self, request);
-                request = IfMatchConditionOption::add_header(&self, request);
-                request = ClientRequestIdOption::add_header(&self, request);
-                request
-            },
-            None,
-        )?;
-
-        let (headers, _body) =
-            check_status_extract_headers_and_body(future_response, StatusCode::ACCEPTED).await?;
+        let (headers, _) = self
+            .client()
+            .perform_request(
+                &uri,
+                &Method::PUT,
+                &|mut request| {
+                    request = SourceUrlRequired::add_header(&self, request);
+                    request = IsSynchronousOption::add_header(&self, request);
+                    request = SourceContentMD5Option::add_header(&self, request);
+                    request = ContentTypeOption::add_header(&self, request);
+                    request = ContentEncodingOption::add_header(&self, request);
+                    request = ContentLanguageOption::add_header(&self, request);
+                    request = CacheControlOption::add_header(&self, request);
+                    request = ContentDispositionOption::add_header(&self, request);
+                    request = MetadataOption::add_header(&self, request);
+                    // According to the docs this is not needed. We'll keep it here
+                    // in case the docs are wrong.
+                    //request = request.header(BLOB_TYPE, "BlockBlob");
+                    request = IfSinceConditionOption::add_header(&self, request);
+                    request = IfMatchConditionOption::add_header(&self, request);
+                    request = ClientRequestIdOption::add_header(&self, request);
+                    request
+                },
+                None,
+            )?
+            .check_status_extract_headers_and_body(StatusCode::ACCEPTED)
+            .await?;
         (&headers).try_into()
     }
 }

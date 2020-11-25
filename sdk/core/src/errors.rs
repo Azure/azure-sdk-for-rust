@@ -206,6 +206,9 @@ quick_error! {
         HeadersNotFound(headers: Vec<String>) {
             display("At least one of these headers must be present: {:?}", headers)
         }
+        UrlQueryParameterNotFound(expected_parameter: String, url: url::Url) {
+            display("The expected query parameter {} was not found in the provided Url: {:?}", expected_parameter, url)
+        }
         ResponseParsingError(err: TraversingError){
             from()
             display("Traversing error: {}", err)
@@ -345,33 +348,6 @@ pub async fn extract_status_headers_and_body(
     let body = body::to_bytes(body).await?;
 
     Ok((status, headers, body))
-}
-
-#[inline]
-pub async fn check_status_extract_headers_and_body(
-    resp: hyper::client::ResponseFuture,
-    expected_status_code: hyper::StatusCode,
-) -> Result<(hyper::HeaderMap, body::Bytes), AzureError> {
-    let (status, headers, body) = extract_status_headers_and_body(resp).await?;
-    if status == expected_status_code {
-        Ok((headers, body))
-    } else {
-        Err(AzureError::UnexpectedHTTPResult(UnexpectedHTTPResult::new(
-            expected_status_code,
-            status,
-            str::from_utf8(&body)?,
-        )))
-    }
-}
-
-#[inline]
-pub async fn check_status_extract_headers_and_body_as_string(
-    resp: hyper::client::ResponseFuture,
-    expected_status_code: hyper::StatusCode,
-) -> Result<(hyper::HeaderMap, String), AzureError> {
-    let (headers, body) = check_status_extract_headers_and_body(resp, expected_status_code).await?;
-    let body = str::from_utf8(&body)?.to_owned();
-    Ok((headers, body))
 }
 
 #[inline]

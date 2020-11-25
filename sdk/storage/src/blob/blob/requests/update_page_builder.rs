@@ -3,7 +3,7 @@ use crate::blob::blob::responses::UpdatePageResponse;
 use crate::core::prelude::*;
 use crate::core::ClientRequired;
 use azure_core::ba512_range::BA512Range;
-use azure_core::errors::{check_status_extract_headers_and_body, AzureError};
+use azure_core::errors::AzureError;
 use azure_core::headers::PAGE_WRITE;
 use azure_core::lease::LeaseId;
 use azure_core::prelude::*;
@@ -640,25 +640,26 @@ where
         trace!("upper == {}", upper);
         let b = &self.body()[0..upper];
 
-        let future_response = self.client().perform_request(
-            &uri,
-            &Method::PUT,
-            &|mut request| {
-                request = BA512RangeRequired::add_header(&self, request);
-                request = ContentMD5Option::add_header(&self, request);
-                request = request.header(PAGE_WRITE, "update");
-                request = LeaseIdOption::add_header(&self, request);
-                request = SequenceNumberConditionOption::add_header(&self, request);
-                request = IfSinceConditionOption::add_header(&self, request);
-                request = IfMatchConditionOption::add_header(&self, request);
-                request = ClientRequestIdOption::add_header(&self, request);
-                request
-            },
-            Some(b),
-        )?;
-
-        let (headers, _body) =
-            check_status_extract_headers_and_body(future_response, StatusCode::CREATED).await?;
+        let (headers, _) = self
+            .client()
+            .perform_request(
+                &uri,
+                &Method::PUT,
+                &|mut request| {
+                    request = BA512RangeRequired::add_header(&self, request);
+                    request = ContentMD5Option::add_header(&self, request);
+                    request = request.header(PAGE_WRITE, "update");
+                    request = LeaseIdOption::add_header(&self, request);
+                    request = SequenceNumberConditionOption::add_header(&self, request);
+                    request = IfSinceConditionOption::add_header(&self, request);
+                    request = IfMatchConditionOption::add_header(&self, request);
+                    request = ClientRequestIdOption::add_header(&self, request);
+                    request
+                },
+                Some(b),
+            )?
+            .check_status_extract_headers_and_body(StatusCode::CREATED)
+            .await?;
         UpdatePageResponse::from_headers(&headers)
     }
 }

@@ -1,7 +1,7 @@
 use crate::blob::blob::generate_blob_uri;
 use crate::blob::blob::responses::ClearPageResponse;
 use crate::core::prelude::*;
-use azure_core::errors::{check_status_extract_headers_and_body, AzureError};
+use azure_core::errors::AzureError;
 use azure_core::headers::PAGE_WRITE;
 use azure_core::lease::LeaseId;
 use azure_core::prelude::*;
@@ -486,24 +486,25 @@ where
 
         trace!("uri == {:?}", uri);
 
-        let future_response = self.client().perform_request(
-            &uri,
-            &Method::PUT,
-            &|mut request| {
-                request = BA512RangeRequired::add_header(&self, request);
-                request = request.header(PAGE_WRITE, "clear");
-                request = LeaseIdOption::add_header(&self, request);
-                request = SequenceNumberConditionOption::add_header(&self, request);
-                request = IfSinceConditionOption::add_header(&self, request);
-                request = IfMatchConditionOption::add_header(&self, request);
-                request = ClientRequestIdOption::add_header(&self, request);
-                request
-            },
-            None,
-        )?;
-
-        let (headers, _body) =
-            check_status_extract_headers_and_body(future_response, StatusCode::CREATED).await?;
+        let (headers, _) = self
+            .client()
+            .perform_request(
+                &uri,
+                &Method::PUT,
+                &|mut request| {
+                    request = BA512RangeRequired::add_header(&self, request);
+                    request = request.header(PAGE_WRITE, "clear");
+                    request = LeaseIdOption::add_header(&self, request);
+                    request = SequenceNumberConditionOption::add_header(&self, request);
+                    request = IfSinceConditionOption::add_header(&self, request);
+                    request = IfMatchConditionOption::add_header(&self, request);
+                    request = ClientRequestIdOption::add_header(&self, request);
+                    request
+                },
+                None,
+            )?
+            .check_status_extract_headers_and_body(StatusCode::CREATED)
+            .await?;
         ClearPageResponse::from_headers(&headers)
     }
 }

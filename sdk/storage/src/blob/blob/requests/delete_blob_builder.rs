@@ -1,7 +1,7 @@
 use crate::blob::blob::generate_blob_uri;
 use crate::blob::blob::responses::DeleteBlobResponse;
 use crate::core::prelude::*;
-use azure_core::errors::{check_status_extract_headers_and_body, AzureError};
+use azure_core::errors::AzureError;
 use azure_core::lease::LeaseId;
 use azure_core::prelude::*;
 use azure_core::{DeleteSnapshotsMethod, No, ToAssign, Yes};
@@ -325,19 +325,21 @@ where
 
         trace!("delete_blob uri == {:?}", uri);
 
-        let future_response = self.client().perform_request(
-            &uri,
-            &Method::DELETE,
-            &|mut request| {
-                request = DeleteSnapshotsMethodRequired::add_header(&self, request);
-                request = LeaseIdOption::add_header(&self, request);
-                request = ClientRequestIdOption::add_header(&self, request);
-                request
-            },
-            None,
-        )?;
-        let (headers, _body) =
-            check_status_extract_headers_and_body(future_response, StatusCode::ACCEPTED).await?;
+        let (headers, _) = self
+            .client()
+            .perform_request(
+                &uri,
+                &Method::DELETE,
+                &|mut request| {
+                    request = DeleteSnapshotsMethodRequired::add_header(&self, request);
+                    request = LeaseIdOption::add_header(&self, request);
+                    request = ClientRequestIdOption::add_header(&self, request);
+                    request
+                },
+                None,
+            )?
+            .check_status_extract_headers_and_body(StatusCode::ACCEPTED)
+            .await?;
         DeleteBlobResponse::from_headers(&headers)
     }
 }

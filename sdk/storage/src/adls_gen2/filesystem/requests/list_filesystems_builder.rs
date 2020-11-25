@@ -208,7 +208,7 @@ where
             uri = format!("{}&{}", uri, nm);
         }
 
-        let future_response = self.client().perform_request(
+        let perform_request_response = self.client().perform_request(
             &uri,
             &Method::GET,
             &|mut request| {
@@ -218,9 +218,11 @@ where
             Some(&[]),
         )?;
 
-        let (headers, body) =
-            check_status_extract_headers_and_body_as_string(future_response, StatusCode::OK)
-                .await?;
+        let (headers, body) = check_status_extract_headers_and_body_as_string(
+            perform_request_response.response_future,
+            StatusCode::OK,
+        )
+        .await?;
         ListFilesystemsResponse::from_response(&headers, &body)
     }
 }

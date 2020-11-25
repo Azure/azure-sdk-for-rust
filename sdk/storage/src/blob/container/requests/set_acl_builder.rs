@@ -4,7 +4,7 @@ use crate::blob::prelude::{
 };
 use crate::container::public_access_from_header;
 use crate::core::prelude::*;
-use azure_core::errors::{check_status_extract_headers_and_body, AzureError};
+use azure_core::errors::AzureError;
 use azure_core::lease::LeaseId;
 use azure_core::prelude::*;
 use azure_core::{No, StoredAccessPolicyList, ToAssign, Yes};
@@ -312,7 +312,7 @@ where
             None
         };
 
-        let future_response = self.client().perform_request(
+        let perform_request_response = self.client().perform_request(
             &uri,
             &Method::PUT,
             &|mut request| {
@@ -327,8 +327,9 @@ where
             },
         )?;
 
-        let (headers, _body) =
-            check_status_extract_headers_and_body(future_response, StatusCode::OK).await?;
+        let (headers, _body) = perform_request_response
+            .check_status_extract_headers_and_body(StatusCode::OK)
+            .await?;
 
         public_access_from_header(&headers)
     }

@@ -1,14 +1,15 @@
 use crate::core::Client;
+use crate::ContinuationToken;
 use crate::{
-    entity_path, get_batch_mime, Batch, Continuation, MetadataDetail, TableClient, TableEntity,
+    entity_path, get_batch_mime, Batch, MetadataDetail, PaginatedResponse, TableClient, TableEntity,
 };
-use azure_core::errors::{
-    check_status_extract_body, check_status_extract_headers_and_body, AzureError,
-};
+use azure_core::errors::{check_status_extract_body, AzureError};
 use futures::stream::Stream;
 use hyper::{header, Method, StatusCode};
 use serde::{de::DeserializeOwned, Serialize};
 use std::convert::TryFrom;
+use std::convert::TryInto;
+use url::Position;
 
 /// Represents a table in the Microsoft Azure Table service.
 #[derive(Clone)]
@@ -67,13 +68,13 @@ where
                 request
             },
         )?;
-        let (headers, body) =
-            match check_status_extract_headers_and_body(future_response, StatusCode::OK).await {
-                Err(AzureError::UnexpectedHTTPResult(e)) if e.status_code() == 404 => {
-                    return Ok(None)
-                }
-                x => x,
-            }?;
+        let (headers, body) = match future_response
+            .check_status_extract_headers_and_body(StatusCode::OK)
+            .await
+        {
+            Err(AzureError::UnexpectedHTTPResult(e)) if e.status_code() == 404 => return Ok(None),
+            x => x,
+        }?;
         let entity = TableEntity::try_from((&headers, &body as &[u8]))?;
         Ok(Some(entity))
     }
@@ -106,8 +107,9 @@ where
             &|req| req,
         )?;
 
-        let (headers, body) =
-            check_status_extract_headers_and_body(future_response, StatusCode::CREATED).await?;
+        let (headers, body) = future_response
+            .check_status_extract_headers_and_body(StatusCode::CREATED)
+            .await?;
         let entity = TableEntity::try_from((&headers, &body as &[u8]))?;
         Ok(entity)
     }
@@ -151,8 +153,9 @@ where
             MetadataDetail::None,
             &|req| req,
         )?;
-        let (headers, _body) =
-            check_status_extract_headers_and_body(future_response, StatusCode::NO_CONTENT).await?;
+        let (headers, _body) = future_response
+            .check_status_extract_headers_and_body(StatusCode::NO_CONTENT)
+            .await?;
 
         // only header values are returned in the response, thus timestamp cannot be extracted without
         // an explicit query
@@ -199,8 +202,9 @@ where
                 request
             },
         )?;
-        let (headers, _body) =
-            check_status_extract_headers_and_body(future_response, StatusCode::NO_CONTENT).await?;
+        let (headers, _body) = future_response
+            .check_status_extract_headers_and_body(StatusCode::NO_CONTENT)
+            .await?;
 
         // only header values are returned in the response, thus timestamp cannot be extracted without
         // an explicit query
@@ -222,18 +226,17 @@ where
     ) -> Result<(), AzureError> {
         let path = &entity_path(&self.table_name, partition_key, row_key);
 
-        let etag = match etag {
-            Some(ref etag) => etag,
-            None => "*",
-        };
-
-        let future_response = self.client.request_with_default_header(
-            path,
-            &Method::DELETE,
-            None,
-            MetadataDetail::None,
-            &|request| request.header(header::IF_MATCH, etag),
-        )?;
+        let etag = etag.unwrap_or("*");
+        let future_response = self
+            .client
+            .request_with_default_header(
+                path,
+                &Method::DELETE,
+                None,
+                MetadataDetail::None,
+                &|request| request.header(header::IF_MATCH, etag),
+            )?
+            .response_future;
 
         check_status_extract_body(future_response, StatusCode::NO_CONTENT).await?;
         Ok(())
@@ -248,36 +251,37 @@ where
         .await
     }
 
-    pub async fn execute_query<T>(
+    pub async fn begin_get_all<T>(&self) -> Result<PaginatedResponse<T>, AzureError>
+    where
+        T: DeserializeOwned,
+    {
+        log::debug!("begin_get_all()");
+        self.begin_get_request(None).await
+    }
+
+    pub async fn begin_query<T>(&self, query: &str) -> Result<PaginatedResponse<T>, AzureError>
+    where
+        T: DeserializeOwned,
+    {
+        log::debug!("begin_query(query = {:?})", query);
+        self.begin_get_request(Some(query)).await
+    }
+
+    async fn begin_get_request<T>(
         &self,
         query: Option<&str>,
-        continuation: &mut Continuation,
-    ) -> Result<Option<Vec<TableEntity<T>>>, AzureError>
+    ) -> Result<PaginatedResponse<T>, AzureError>
     where
-        T: DeserializeOwned + Serialize,
+        T: DeserializeOwned,
     {
-        log::debug!(
-            "query_entities(query = {:?}, continuation = {:?})",
-            query,
-            continuation
-        );
-        if continuation.fused {
-            return Ok(None);
-        }
+        log::debug!("begin_get_request(query = {:?})", query);
 
         let mut path = self.table_name.to_owned();
-        path.push_str("?");
-        if let Some(clause) = query {
-            path.push_str(clause);
-        }
-        if let Some(ref cont) = continuation.next {
-            path.push_str("&NextPartitionKey=");
-            path.push_str(&cont.partition_key);
-            path.push_str("&NextRowKey=");
-            path.push_str(&cont.row_key);
+        if let Some(query) = query {
+            path.push_str(&format!("?{}", query));
         }
 
-        let future_response = self.client.request_with_default_header(
+        let perform_request_response = self.client.request_with_default_header(
             path.as_str(),
             &Method::GET,
             None,
@@ -285,43 +289,123 @@ where
             &|req| req,
         )?;
 
-        let (headers, body) =
-            check_status_extract_headers_and_body(future_response, StatusCode::OK).await?;
+        let url = perform_request_response.url.clone();
 
-        log::trace!("body == {:?}", std::str::from_utf8(&body));
-        let entities = serde_json::from_slice::<EntityCollection<T>>(&body)?;
-        *continuation = Continuation::try_from(&headers)?;
-        Ok(Some(entities.value))
+        let (headers, body) = perform_request_response
+            .check_status_extract_headers_and_body(StatusCode::OK)
+            .await?;
+
+        Ok((url, &headers, &body).try_into()?)
+    }
+
+    pub async fn continue_execution<T>(
+        &self,
+        continuation_token: ContinuationToken,
+    ) -> Result<PaginatedResponse<T>, AzureError>
+    where
+        T: DeserializeOwned,
+    {
+        log::debug!(
+            "continue_execution(continuation_token = {:?})",
+            continuation_token
+        );
+
+        let path = &continuation_token.new_url[Position::BeforePath..][1..];
+
+        let future_response = self.client.request_with_default_header(
+            path,
+            &Method::GET,
+            None,
+            MetadataDetail::Full, // etag is provided through metadata only
+            &|req| req,
+        )?;
+
+        let (headers, body) = future_response
+            .check_status_extract_headers_and_body(StatusCode::OK)
+            .await?;
+
+        Ok((continuation_token, &headers, &body).try_into()?)
+    }
+
+    pub fn stream_get_all<'a, T>(
+        &'a self,
+    ) -> impl Stream<Item = Result<PaginatedResponse<T>, AzureError>> + 'a
+    where
+        T: Serialize + DeserializeOwned + 'a,
+    {
+        futures::stream::unfold(
+            Some(States::Init),
+            move |state: Option<States>| async move {
+                log::debug!("state == {:?}", state);
+                let response = match state {
+                    Some(States::Init) => self.begin_get_all().await,
+                    Some(States::Continuation(continuation_token)) => {
+                        self.continue_execution(continuation_token).await
+                    }
+                    None => return None,
+                };
+
+                let response = match response {
+                    Ok(response) => response,
+                    Err(err) => return Some((Err(err), None)),
+                };
+
+                let continuation_token = response
+                    .continuation_token
+                    .clone()
+                    .map(States::Continuation);
+
+                Some((Ok(response), continuation_token))
+            },
+        )
     }
 
     pub fn stream_query<'a, T>(
         &'a self,
-        query: Option<&'a str>,
-    ) -> impl Stream<Item = Result<Vec<TableEntity<T>>, AzureError>> + 'a
+        query: &'a str,
+    ) -> impl Stream<Item = Result<PaginatedResponse<T>, AzureError>> + 'a
     where
         T: Serialize + DeserializeOwned + 'a,
     {
-        futures::stream::unfold(Continuation::start(), move |mut cont| async move {
-            log::debug!("cont == {:?}", cont);
-            match self.execute_query::<T>(query, &mut cont).await {
-                Ok(Some(segment)) => Some((Ok(segment), cont)),
-                Ok(None) => None,
-                Err(err) => Some((Err(err), cont)),
-            }
-        })
+        futures::stream::unfold(
+            Some(States::Init),
+            move |state: Option<States>| async move {
+                log::debug!("state == {:?}", state);
+                let response = match state {
+                    Some(States::Init) => self.begin_query(query).await,
+                    Some(States::Continuation(continuation_token)) => {
+                        self.continue_execution(continuation_token).await
+                    }
+                    None => return None,
+                };
+
+                let response = match response {
+                    Ok(response) => response,
+                    Err(err) => return Some((Err(err), None)),
+                };
+
+                let continuation_token = response
+                    .continuation_token
+                    .clone()
+                    .map(States::Continuation);
+
+                Some((Ok(response), continuation_token))
+            },
+        )
     }
 
     pub async fn execute_batch(&self, batch: Batch) -> Result<(), AzureError> {
         let payload = batch.into_payload(self.client.get_uri_prefix().as_str(), &self.table_name);
 
-        let future_response =
-            self.client
-                .request("$batch", &Method::POST, Some(&payload), &|request| {
-                    request.header(
-                        header::CONTENT_TYPE,
-                        header::HeaderValue::from_static(get_batch_mime()),
-                    )
-                })?;
+        let future_response = self
+            .client
+            .request("$batch", &Method::POST, Some(&payload), &|request| {
+                request.header(
+                    header::CONTENT_TYPE,
+                    header::HeaderValue::from_static(get_batch_mime()),
+                )
+            })?
+            .response_future;
         check_status_extract_body(future_response, StatusCode::ACCEPTED).await?;
         // TODO deal with body response, handle batch failure.
         // let ref body = get_response_body(&mut response)?;
@@ -330,7 +414,8 @@ where
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-struct EntityCollection<T> {
-    value: Vec<TableEntity<T>>,
+#[derive(Debug, Clone)]
+enum States {
+    Init,
+    Continuation(ContinuationToken),
 }

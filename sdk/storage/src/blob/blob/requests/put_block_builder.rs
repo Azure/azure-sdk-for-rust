@@ -1,7 +1,7 @@
 use crate::blob::blob::generate_blob_uri;
 use crate::blob::blob::responses::PutBlockResponse;
 use crate::core::prelude::*;
-use azure_core::errors::{check_status_extract_headers_and_body, AzureError};
+use azure_core::errors::AzureError;
 use azure_core::lease::LeaseId;
 use azure_core::prelude::*;
 use azure_core::{No, ToAssign, Yes};
@@ -455,20 +455,21 @@ where
 
         trace!("uri == {:?}", uri);
 
-        let future_response = self.client().perform_request(
-            &uri,
-            &Method::PUT,
-            &|mut request| {
-                request = ContentMD5Option::add_header(&self, request);
-                request = LeaseIdOption::add_header(&self, request);
-                request = ClientRequestIdOption::add_header(&self, request);
-                request
-            },
-            Some(self.body()),
-        )?;
-
-        let (headers, _body) =
-            check_status_extract_headers_and_body(future_response, StatusCode::CREATED).await?;
+        let (headers, _) = self
+            .client()
+            .perform_request(
+                &uri,
+                &Method::PUT,
+                &|mut request| {
+                    request = ContentMD5Option::add_header(&self, request);
+                    request = LeaseIdOption::add_header(&self, request);
+                    request = ClientRequestIdOption::add_header(&self, request);
+                    request
+                },
+                Some(self.body()),
+            )?
+            .check_status_extract_headers_and_body(StatusCode::CREATED)
+            .await?;
         PutBlockResponse::from_headers(&headers)
     }
 }

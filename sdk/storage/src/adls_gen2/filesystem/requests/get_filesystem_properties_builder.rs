@@ -159,7 +159,7 @@ where
             uri = format!("{}&{}", uri, nm);
         }
 
-        let future_response = self.client().perform_request(
+        let perform_request_response = self.client().perform_request(
             &uri,
             &Method::HEAD,
             &|mut request| {
@@ -169,8 +169,11 @@ where
             Some(&[]),
         )?;
 
-        let (headers, _body) =
-            check_status_extract_headers_and_body(future_response, StatusCode::OK).await?;
+        let (headers, _body) = check_status_extract_headers_and_body(
+            perform_request_response.response_future,
+            StatusCode::OK,
+        )
+        .await?;
         GetFilesystemPropertiesResponse::from_headers(&headers)
     }
 }

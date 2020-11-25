@@ -40,11 +40,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let mut count: u32 = 0;
 
-    let mut stream = Box::pin(from_table.stream_query::<MyEntity>(None));
+    let mut stream = Box::pin(from_table.stream_get_all::<MyEntity>());
 
-    while let Some(Ok(entities)) = stream.next().await {
-        println!("segemnt len: {}", entities.len());
-        for entity in entities {
+    while let Some(query_result) = stream.next().await {
+        let query_result = query_result?;
+        println!("segemnt len: {}", query_result.entities.len());
+        for entity in query_result.entities {
             count += 1;
             println!("before {:?}", entity);
             let entity = to_table.insert_entity(entity).await?;

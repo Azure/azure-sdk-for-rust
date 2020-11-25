@@ -1,5 +1,11 @@
-use azure_storage::table::TableClient;
+use azure_storage::table::*;
+use serde::Deserialize;
 use std::error::Error;
+
+#[derive(Debug, Clone, Deserialize)]
+struct MyEntity {
+    my_value: String,
+}
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
@@ -16,5 +22,27 @@ async fn main() -> Result<(), Box<dyn Error>> {
     for ref table in tables {
         println!("{}", table);
     }
+
+    let table_client = CloudTable::new(client, "example");
+
+    let response = table_client.begin_get_all::<MyEntity>().await?;
+    println!("{:?}", response.entities);
+    println!("{:?}", response.continuation_token);
+
+    let mut response = table_client.begin_query::<MyEntity>("$top=2").await?;
+    println!("{:?}", response.entities);
+    println!("{:?}", response.continuation_token);
+
+    while let Some(continuation_token) = response.continuation_token {
+        println!(
+            "we have more data. continuation_token == {:#?}",
+            continuation_token
+        );
+
+        response = table_client.continue_execution(continuation_token).await?;
+        println!("{:?}", response.entities);
+        println!("{:?}", response.continuation_token);
+    }
+
     Ok(())
 }

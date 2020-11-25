@@ -1,7 +1,7 @@
 use crate::container::incomplete_vector_from_container_response;
 use crate::container::responses::ListContainersResponse;
 use crate::core::prelude::*;
-use azure_core::errors::{check_status_extract_headers_and_body, AzureError};
+use azure_core::errors::AzureError;
 use azure_core::headers::request_id_from_headers;
 use azure_core::prelude::*;
 use hyper::{Method, StatusCode};
@@ -258,15 +258,16 @@ where
 
         debug!("generated uri = {}", uri);
 
-        let future_response = self.client().perform_request(
+        let perform_request_response = self.client().perform_request(
             &uri,
             &Method::GET,
             &|request| ClientRequestIdOption::add_header(&self, request),
             None,
         )?;
 
-        let (headers, body) =
-            check_status_extract_headers_and_body(future_response, StatusCode::OK).await?;
+        let (headers, body) = perform_request_response
+            .check_status_extract_headers_and_body(StatusCode::OK)
+            .await?;
         let body = std::str::from_utf8(&body)?;
         let incomplete_vector = incomplete_vector_from_container_response(&body)?;
         let request_id = request_id_from_headers(&headers)?;

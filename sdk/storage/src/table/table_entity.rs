@@ -4,7 +4,6 @@ use chrono::{DateTime, Utc};
 use http::header;
 use http::HeaderMap;
 use serde::de::DeserializeOwned;
-use serde_json;
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct NoData {}
@@ -49,51 +48,5 @@ where
         }
 
         Ok(entity)
-    }
-}
-
-#[derive(Debug, Clone)]
-pub(crate) struct ContinuationCursor {
-    pub(crate) partition_key: String,
-    pub(crate) row_key: String,
-}
-
-#[derive(Debug, Clone)]
-pub struct Continuation {
-    pub(crate) fused: bool,
-    pub(crate) next: Option<ContinuationCursor>,
-}
-
-impl Continuation {
-    pub fn start() -> Self {
-        Continuation {
-            fused: false,
-            next: None,
-        }
-    }
-}
-
-impl std::convert::TryFrom<&HeaderMap> for Continuation {
-    type Error = AzureError;
-
-    fn try_from(headers: &HeaderMap) -> Result<Self, Self::Error> {
-        const HEADER_NEXTPARTITIONKEY: &str = "x-ms-continuation-NextPartitionKey";
-        const HEADER_NEXTROWKEY: &str = "x-ms-continuation-NextRowKey";
-
-        if headers.contains_key(HEADER_NEXTPARTITIONKEY) && headers.contains_key(HEADER_NEXTROWKEY)
-        {
-            Ok(Continuation {
-                fused: false,
-                next: Some(ContinuationCursor {
-                    partition_key: headers[HEADER_NEXTPARTITIONKEY].to_str()?.to_string(),
-                    row_key: headers[HEADER_NEXTROWKEY].to_str()?.to_string(),
-                }),
-            })
-        } else {
-            Ok(Continuation {
-                fused: true,
-                next: None,
-            })
-        }
     }
 }

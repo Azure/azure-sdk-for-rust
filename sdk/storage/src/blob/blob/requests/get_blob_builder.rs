@@ -1,7 +1,7 @@
 use crate::blob::blob::responses::GetBlobResponse;
 use crate::blob::blob::{generate_blob_uri, Blob};
 use crate::core::prelude::*;
-use azure_core::errors::{check_status_extract_headers_and_body, AzureError};
+use azure_core::errors::AzureError;
 use azure_core::headers::RANGE_GET_CONTENT_MD5;
 use azure_core::lease::LeaseId;
 use azure_core::prelude::*;
@@ -357,7 +357,7 @@ where
 
         trace!("uri == {:?}", uri);
 
-        let future_response = self.client().perform_request(
+        let perform_request_response = self.client().perform_request(
             &uri,
             &Method::GET,
             &|mut request| {
@@ -380,8 +380,9 @@ where
             StatusCode::OK
         };
 
-        let (headers, body) =
-            check_status_extract_headers_and_body(future_response, expected_status_code).await?;
+        let (headers, body) = perform_request_response
+            .check_status_extract_headers_and_body(expected_status_code)
+            .await?;
         let blob = Blob::from_headers(&blob_name, &container_name, snapshot_time, &headers)?;
         GetBlobResponse::from_response(&headers, blob, &body)
     }

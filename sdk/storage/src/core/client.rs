@@ -2,6 +2,7 @@ use crate::core::bearer_token_client::BearerTokenClient;
 use crate::core::key_client::get_sas_token_parms;
 use crate::core::rest_client::ServiceType;
 use crate::core::{ConnectionString, KeyClient};
+use crate::PerformRequestResponse;
 use azure_core::errors::AzureError;
 use http::request::Builder;
 use hyper::{self, Method};
@@ -34,7 +35,7 @@ pub trait Client: std::fmt::Debug + Send + Sync {
         method: &Method,
         http_header_adder: &dyn Fn(Builder) -> Builder,
         request_body: Option<&[u8]>,
-    ) -> Result<hyper::client::ResponseFuture, AzureError>;
+    ) -> Result<PerformRequestResponse, AzureError>;
 
     fn perform_table_request(
         &self,
@@ -42,7 +43,7 @@ pub trait Client: std::fmt::Debug + Send + Sync {
         method: &Method,
         http_header_adder: &dyn Fn(Builder) -> Builder,
         request_str: Option<&[u8]>,
-    ) -> Result<hyper::client::ResponseFuture, AzureError>;
+    ) -> Result<PerformRequestResponse, AzureError>;
 }
 
 impl<C> Client for Box<C>
@@ -68,7 +69,7 @@ where
         method: &Method,
         http_header_adder: &dyn Fn(Builder) -> Builder,
         request_body: Option<&[u8]>,
-    ) -> Result<hyper::client::ResponseFuture, AzureError> {
+    ) -> Result<PerformRequestResponse, AzureError> {
         self.as_ref()
             .perform_request(uri, method, http_header_adder, request_body)
     }
@@ -79,7 +80,7 @@ where
         method: &Method,
         http_header_adder: &dyn Fn(Builder) -> Builder,
         request_str: Option<&[u8]>,
-    ) -> Result<hyper::client::ResponseFuture, AzureError> {
+    ) -> Result<PerformRequestResponse, AzureError> {
         self.as_ref()
             .perform_table_request(segment, method, http_header_adder, request_str)
     }
@@ -108,7 +109,7 @@ where
         method: &Method,
         http_header_adder: &dyn Fn(Builder) -> Builder,
         request_body: Option<&[u8]>,
-    ) -> Result<hyper::client::ResponseFuture, AzureError> {
+    ) -> Result<PerformRequestResponse, AzureError> {
         self.as_ref()
             .perform_request(uri, method, http_header_adder, request_body)
     }
@@ -119,7 +120,7 @@ where
         method: &Method,
         http_header_adder: &dyn Fn(Builder) -> Builder,
         request_str: Option<&[u8]>,
-    ) -> Result<hyper::client::ResponseFuture, AzureError> {
+    ) -> Result<PerformRequestResponse, AzureError> {
         self.as_ref()
             .perform_table_request(segment, method, http_header_adder, request_str)
     }
