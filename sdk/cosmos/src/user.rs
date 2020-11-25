@@ -1,25 +1,3 @@
-pub trait UserName: std::fmt::Debug {
-    fn id(&self) -> &str;
-}
-
-impl UserName for User {
-    fn id(&self) -> &str {
-        &self.id
-    }
-}
-
-impl UserName for String {
-    fn id(&self) -> &str {
-        &self
-    }
-}
-
-impl UserName for &str {
-    fn id(&self) -> &str {
-        self
-    }
-}
-
 #[derive(Serialize, Deserialize, Clone, Debug, PartialOrd, PartialEq)]
 pub struct User {
     pub id: String,

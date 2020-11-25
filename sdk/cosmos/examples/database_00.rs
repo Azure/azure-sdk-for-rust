@@ -38,7 +38,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
             println!("collection == {:?}", collection);
             let collection_client = database.clone().into_collection_client(collection.id);
 
-            if collection_client.collection_name().name() == "democ" {
+            if collection_client.collection_name() == "democ" {
                 println!("democ!");
 
                 let data = r#"

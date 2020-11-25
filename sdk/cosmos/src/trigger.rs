@@ -25,19 +25,3 @@ pub struct Trigger {
     pub trigger_type: TriggerType,
     pub body: String,
 }
-
-pub trait TriggerName: std::fmt::Debug {
-    fn name(&self) -> &str;
-}
-
-impl TriggerName for &str {
-    fn name(&self) -> &str {
-        self
-    }
-}
-
-impl TriggerName for String {
-    fn name(&self) -> &str {
-        self.as_ref()
-    }
-}

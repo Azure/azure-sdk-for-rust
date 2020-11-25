@@ -14,7 +14,7 @@ where
 {
     cosmos_client: &'a CosmosClient,
     p_database_name: PhantomData<DatabaseNameSet>,
-    database_name: Option<&'a dyn DatabaseName>,
+    database_name: Option<&'a str>,
     user_agent: Option<&'a str>,
     activity_id: Option<&'a str>,
     consistency_level: Option<ConsistencyLevel>,
@@ -46,7 +46,7 @@ where
 
 //set mandatory no traits methods
 impl<'a> DatabaseNameRequired<'a> for CreateDatabaseBuilder<'a, Yes> {
-    fn database_name(&self) -> &'a dyn DatabaseName {
+    fn database_name(&self) -> &'a str {
         self.database_name.unwrap()
     }
 }
@@ -81,7 +81,7 @@ where
 impl<'a> DatabaseNameSupport<'a> for CreateDatabaseBuilder<'a, No> {
     type O = CreateDatabaseBuilder<'a, Yes>;
 
-    fn with_database_name(self, database_name: &'a dyn DatabaseName) -> Self::O {
+    fn with_database_name(self, database_name: &'a str) -> Self::O {
         CreateDatabaseBuilder {
             cosmos_client: self.cosmos_client,
             p_database_name: PhantomData {},
@@ -158,7 +158,7 @@ impl<'a> CreateDatabaseBuilder<'a, Yes> {
         }
 
         let req = serde_json::to_string(&CreateDatabaseRequest {
-            id: self.database_name().name(),
+            id: self.database_name(),
         })?;
 
         let request = self.cosmos_client().prepare_request(

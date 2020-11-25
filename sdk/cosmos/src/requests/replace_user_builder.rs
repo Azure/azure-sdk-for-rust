@@ -13,7 +13,7 @@ where
 {
     user_client: &'a UserClient,
     p_user_name: PhantomData<UserNameSet>,
-    user_name: Option<&'a dyn UserName>,
+    user_name: Option<&'a str>,
     user_agent: Option<&'b str>,
     activity_id: Option<&'b str>,
     consistency_level: Option<ConsistencyLevel>,
@@ -42,7 +42,7 @@ where
 }
 
 impl<'a, 'b> UserNameRequired<'a> for ReplaceUserBuilder<'a, 'b, Yes> {
-    fn user_name(&self) -> &'a dyn UserName {
+    fn user_name(&self) -> &'a str {
         self.user_name.unwrap()
     }
 }
@@ -77,7 +77,7 @@ where
 impl<'a, 'b> UserNameSupport<'a> for ReplaceUserBuilder<'a, 'b, No> {
     type O = ReplaceUserBuilder<'a, 'b, Yes>;
 
-    fn with_user_name(self, user_name: &'a dyn UserName) -> Self::O {
+    fn with_user_name(self, user_name: &'a str) -> Self::O {
         ReplaceUserBuilder {
             user_client: self.user_client,
             p_user_name: PhantomData {},
@@ -149,7 +149,7 @@ impl<'a, 'b> ReplaceUserBuilder<'a, 'b, Yes> {
             id: &'x str,
         }
         let request_body = RequestBody {
-            id: self.user_name().id(),
+            id: self.user_name(),
         };
         let request_body = serde_json::to_string(&request_body)?;
 

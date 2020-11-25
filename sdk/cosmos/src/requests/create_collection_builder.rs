@@ -1,4 +1,3 @@
-use crate::collection::CollectionName;
 use crate::collection::{Collection, IndexingPolicy, PartitionKey};
 use crate::prelude::*;
 use crate::responses::CreateCollectionResponse;
@@ -28,7 +27,7 @@ pub struct CreateCollectionBuilder<
     p_indexing_policy: PhantomData<IndexingPolicySet>,
     p_partition_key: PhantomData<PartitionKeySet>,
     offer: Option<Offer>,
-    collection_name: Option<&'a dyn CollectionName>,
+    collection_name: Option<&'a str>,
     indexing_policy: Option<&'a IndexingPolicy>,
     partition_key: Option<&'a PartitionKey>,
     user_agent: Option<&'a str>,
@@ -90,7 +89,7 @@ where
     IndexingPolicySet: ToAssign,
     PartitionKeySet: ToAssign,
 {
-    fn collection_name(&self) -> &'a dyn CollectionName {
+    fn collection_name(&self) -> &'a str {
         self.collection_name.unwrap()
     }
 }
@@ -195,7 +194,7 @@ where
 {
     type O = CreateCollectionBuilder<'a, OfferSet, Yes, IndexingPolicySet, PartitionKeySet>;
 
-    fn with_collection_name(self, collection_name: &'a dyn CollectionName) -> Self::O {
+    fn with_collection_name(self, collection_name: &'a str) -> Self::O {
         CreateCollectionBuilder {
             database_client: self.database_client,
             p_offer: PhantomData {},
@@ -370,10 +369,8 @@ impl<'a> CreateCollectionBuilder<'a, Yes, Yes, Yes, Yes> {
         let req = ActivityIdOption::add_header(self, req);
         let req = ConsistencyLevelOption::add_header(self, req);
 
-        let mut collection = Collection::new(
-            self.collection_name().name(),
-            self.indexing_policy().to_owned(),
-        );
+        let mut collection =
+            Collection::new(self.collection_name(), self.indexing_policy().to_owned());
         collection.parition_key = self.partition_key().to_owned();
 
         let body = serde_json::to_string(&collection)?;

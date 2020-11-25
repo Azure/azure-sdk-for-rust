@@ -5,28 +5,6 @@ use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
 use std::convert::TryInto;
 
-pub trait PermissionName: std::fmt::Debug {
-    fn name(&self) -> &str;
-}
-
-impl<'a, T> PermissionName for Permission<'a, T>
-where
-    T: PermissionResource + Clone + std::fmt::Debug,
-{
-    fn name(&self) -> &str {
-        &self.id
-    }
-}
-
-impl<R> PermissionName for R
-where
-    R: AsRef<str> + std::fmt::Debug,
-{
-    fn name(&self) -> &str {
-        self.as_ref()
-    }
-}
-
 #[derive(Debug, Clone, PartialEq)]
 pub enum PermissionMode<T>
 where

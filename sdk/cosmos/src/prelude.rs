@@ -5,7 +5,6 @@ pub use crate::clients::{
 pub use crate::collection::{
     Collection, DataType, IncludedPath, IncludedPathIndex, IndexingMode, IndexingPolicy, KeyKind,
 };
-pub use crate::database::DatabaseName;
 pub use crate::document::Document;
 pub use crate::query::Query;
 pub use crate::responses::{QueryDocumentsResponse, QueryDocumentsResponseRaw, QueryResult};
@@ -28,6 +27,6 @@ pub use crate::{
     StoredProcedureNameRequired, StoredProcedureNameSupport, TriggerBodyRequired,
     TriggerBodySupport, TriggerClientRequired, TriggerOperationRequired, TriggerOperationSupport,
     TriggerTypeRequired, TriggerTypeSupport, UserClientRequired, UserDefinedFunctionBodyRequired,
-    UserDefinedFunctionBodySupport, UserDefinedFunctionClientRequired, UserName, UserNameRequired,
+    UserDefinedFunctionBodySupport, UserDefinedFunctionClientRequired, UserNameRequired,
     UserNameSupport,
 };

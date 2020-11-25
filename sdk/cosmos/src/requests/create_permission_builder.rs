@@ -119,7 +119,7 @@ impl<'a, 'b> CreatePermissionBuilder<'a, 'b> {
             &format!(
                 "dbs/{}/users/{}/permissions",
                 self.permission_client.database_client().database_name(),
-                self.permission_client.user_client().user_name().id(),
+                self.permission_client.user_client().user_name()
             ),
             http::Method::POST,
             ResourceType::Permissions,

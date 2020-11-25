@@ -43,28 +43,26 @@ pub use self::attachment::Attachment;
 pub use self::authorization_token::*;
 use self::collection::IndexingPolicy;
 pub use self::consistency_level::ConsistencyLevel;
-pub use self::database::{Database, DatabaseName};
-pub use self::document::{Document, DocumentName};
+pub use self::database::Database;
+pub use self::document::Document;
 pub use self::document_attributes::DocumentAttributes;
 pub use self::indexing_directive::IndexingDirective;
 pub use self::offer::Offer;
 pub use self::partition_key_range::PartitionKeyRange;
-pub use self::permission::{Permission, PermissionMode, PermissionName};
+pub use self::permission::{Permission, PermissionMode};
 pub use self::permission_resource::PermissionResource;
 pub use self::permission_token::PermissionToken;
 pub use self::query::{Param, ParamDef, Query};
 pub use self::requests::*;
 pub use self::resource::Resource;
 pub use self::resource_quota::ResourceQuota;
-pub use self::trigger::{Trigger, TriggerName};
+pub use self::trigger::Trigger;
 use crate::clients::*;
 use crate::collection::Collection;
-use crate::collection::CollectionName;
 use crate::headers::*;
 pub use crate::partition_keys::PartitionKeys;
 use crate::stored_procedure::Parameters;
-pub use crate::user::{User, UserName};
-pub use crate::user_defined_function::UserDefinedFunctionName;
+pub use crate::user::User;
 use http::request::Builder;
 
 type ReadonlyString = std::borrow::Cow<'static, str>;
@@ -466,12 +464,12 @@ pub trait OfferSupport {
 }
 
 pub trait CollectionNameRequired<'a> {
-    fn collection_name(&self) -> &'a dyn CollectionName;
+    fn collection_name(&self) -> &'a str;
 }
 
 pub trait CollectionNameSupport<'a> {
     type O;
-    fn with_collection_name(self, collection_name: &'a dyn CollectionName) -> Self::O;
+    fn with_collection_name(self, collection_name: &'a str) -> Self::O;
 }
 
 pub trait CollectionRequired<'a> {
@@ -511,19 +509,19 @@ pub trait QuerySupport<'a> {
 }
 
 pub trait DatabaseNameRequired<'a> {
-    fn database_name(&'a self) -> &'a dyn DatabaseName;
+    fn database_name(&'a self) -> &'a str;
 }
 
 pub trait DatabaseNameSupport<'a> {
     type O;
-    fn with_database_name(self, database_name: &'a dyn DatabaseName) -> Self::O;
+    fn with_database_name(self, database_name: &'a str) -> Self::O;
 }
 
 pub trait UserNameRequired<'a> {
-    fn user_name(&self) -> &'a dyn UserName;
+    fn user_name(&self) -> &'a str;
 }
 
 pub trait UserNameSupport<'a> {
     type O;
-    fn with_user_name(self, user_name: &'a dyn UserName) -> Self::O;
+    fn with_user_name(self, user_name: &'a str) -> Self::O;
 }

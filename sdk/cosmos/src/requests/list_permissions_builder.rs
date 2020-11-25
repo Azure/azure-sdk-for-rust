@@ -129,7 +129,7 @@ impl<'a, 'b> ListPermissionsBuilder<'a, 'b> {
             &format!(
                 "dbs/{}/users/{}/permissions",
                 self.user_client.database_client().database_name(),
-                self.user_client.user_name().id(),
+                self.user_client.user_name(),
             ),
             http::Method::GET,
             ResourceType::Permissions,
