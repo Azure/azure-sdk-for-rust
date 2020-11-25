@@ -1,6 +1,5 @@
 use crate::from_headers::*;
-use crate::permission::Permission;
-use crate::CosmosError;
+use crate::{CosmosError, Permission};
 use azure_core::headers::{etag_from_headers, session_token_from_headers};
 use http::response::Response;
 
