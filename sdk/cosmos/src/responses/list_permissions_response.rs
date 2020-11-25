@@ -1,14 +1,11 @@
 use crate::from_headers::*;
-use crate::permission::CosmosPermission;
-use crate::CosmosError;
-use crate::Permission;
+use crate::{CosmosError, Permission};
 use azure_core::headers::{continuation_token_from_headers_optional, session_token_from_headers};
 use http::response::Response;
-use std::borrow::Cow;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct ListPermissionsResponse<'a> {
-    pub permissions: Vec<Permission<'a, Cow<'a, str>>>,
+    pub permissions: Vec<Permission<'a>>,
     pub charge: f64,
     pub activity_id: uuid::Uuid,
     pub session_token: String,
@@ -31,7 +28,7 @@ impl<'a> std::convert::TryFrom<Response<Vec<u8>>> for ListPermissionsResponse<'a
         struct Response<'b> {
             _rid: String,
             #[serde(rename = "Permissions")]
-            permissions: Vec<CosmosPermission<'b>>,
+            permissions: Vec<Permission<'b>>,
             _count: u32,
         }
 
@@ -41,11 +38,7 @@ impl<'a> std::convert::TryFrom<Response<Vec<u8>>> for ListPermissionsResponse<'a
 
         // now convert every Cosmos REST API permission
         // into the SDK struct
-        let permissions = response
-            .permissions
-            .into_iter()
-            .map(Permission::try_from)
-            .collect::<Result<Vec<Permission<'_, Cow<'_, str>>>, CosmosError>>()?;
+        let permissions = response.permissions;
 
         Ok(Self {
             permissions,

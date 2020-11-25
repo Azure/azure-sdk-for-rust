@@ -56,7 +56,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     // create the first permission!
     let permission_client = user_client.clone().into_permission_client("matrix");
-    let permission_mode = PermissionMode::Read(get_collection_response.collection);
+    let permission_mode = PermissionMode::Read((&get_collection_response.collection.id).into());
 
     let create_permission_response = permission_client
         .create_permission()
@@ -71,7 +71,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     // create the second permission!
     let permission_client = user_client.clone().into_permission_client("neo".to_owned());
-    let permission_mode = PermissionMode::All(get_collection2_response.collection);
+    let permission_mode = PermissionMode::All((&get_collection2_response.collection.id).into());
 
     let create_permission2_response = permission_client
         .create_permission()
@@ -106,6 +106,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     println!("get_permission_response == {:#?}", get_permission_response);
 
     let get_permission_response = get_permission_response.unwrap();
+    let permission_mode = &get_permission_response.permission.permission_mode;
 
     // renew permission extending its validity for 60 seconds more.
     let replace_permission_response = permission_client
@@ -114,7 +115,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .with_consistency_level(ConsistencyLevel::from(
             &get_permission_response.session_token,
         ))
-        .execute_with_permission(&get_permission_response.permission.permission_mode)
+        .execute_with_permission(permission_mode)
         .await?;
     println!(
         "replace_permission_response == {:#?}",

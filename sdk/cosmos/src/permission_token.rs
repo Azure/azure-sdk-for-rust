@@ -9,9 +9,19 @@ const SIGNATURE_PREFIX: &str = "sig=";
 ///
 /// This field is a url encoded string with the type of permission, the signature, and the version (currently only 1.0)
 /// This type is a wrapper around AuthorizationToken.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[serde(try_from = "String")]
 pub struct PermissionToken {
     pub(crate) token: AuthorizationToken,
+}
+
+impl serde::Serialize for PermissionToken {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        serializer.collect_str(self)
+    }
 }
 
 impl std::fmt::Display for PermissionToken {
@@ -26,6 +36,13 @@ impl std::fmt::Display for PermissionToken {
             "{}{}&{}1.0&{}{}",
             PERMISSION_TYPE_PREFIX, permission_type, VERSION_PREFIX, SIGNATURE_PREFIX, signature
         )
+    }
+}
+
+impl std::convert::TryFrom<String> for PermissionToken {
+    type Error = failure::Error;
+    fn try_from(s: String) -> Result<Self, Self::Error> {
+        Self::try_from(s.as_str())
     }
 }
 
@@ -46,7 +63,10 @@ impl std::convert::TryFrom<&str> for PermissionToken {
         }
         let version = errors::item_or_error(s, &tokens, VERSION_PREFIX)?;
         if version != "1.0" {
-            return Err(failure::err_msg("Wrong version number 1.0"));
+            return Err(failure::format_err!(
+                "unrecognized version number: {}",
+                version
+            ));
         }
 
         let permission_type = errors::item_or_error(s, &tokens, PERMISSION_TYPE_PREFIX)?;
@@ -65,12 +85,18 @@ impl std::convert::TryFrom<&str> for PermissionToken {
     }
 }
 
+impl std::convert::From<AuthorizationToken> for PermissionToken {
+    fn from(token: AuthorizationToken) -> Self {
+        Self { token }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use std::convert::TryInto;
 
-    const PERMISSION: &str = r#"type=resource&ver=1&sig=m32/00W65F8ADb3psljJ0g==;v0kQGihedau1pVGGQmuPgzlEcfsYDWSdfn2kyjDc1qF1aZfPHXzIS/BFMcuZQRUr6C5c5PgiyCSwhiAgZMJne2DorfMbE/GUHmxBLjOnykLARqwn3zpZpz9b2axWtL8+qQFX81nocdEDvBVzFuobyul6QimbmeZ7D6D1K4qJT9feuJkIBfczeAp/sKaSupXEgB3qyih0rej5N6Wv14Gufohh1QTlCRIzK3FqQv4xjcY={"#;
+    const PERMISSION: &str = r#"type=resource&ver=1.0&sig=m32/00W65F8ADb3psljJ0g==;v0kQGihedau1pVGGQmuPgzlEcfsYDWSdfn2kyjDc1qF1aZfPHXzIS/BFMcuZQRUr6C5c5PgiyCSwhiAgZMJne2DorfMbE/GUHmxBLjOnykLARqwn3zpZpz9b2axWtL8+qQFX81nocdEDvBVzFuobyul6QimbmeZ7D6D1K4qJT9feuJkIBfczeAp/sKaSupXEgB3qyih0rej5N6Wv14Gufohh1QTlCRIzK3FqQv4xjcY={"#;
 
     #[test]
     fn parse_permission_token() {
