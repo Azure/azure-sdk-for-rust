@@ -40,7 +40,7 @@ async fn users() {
         .unwrap();
 
     let list_users_response = database_client.list_users().execute().await.unwrap();
-    assert_eq!(list_users_response.users.len(), 0);
+    assert_eq!(list_users_response.users.len(), 1);
 
     let user_client = database_client.into_user_client(USER_NAME_REPLACED);
 
