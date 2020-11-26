@@ -42,9 +42,12 @@ async fn users() {
     let list_users_response = database_client.list_users().execute().await.unwrap();
     assert_eq!(list_users_response.users.len(), 1);
 
-    let user_client = database_client.into_user_client(USER_NAME_REPLACED);
+    let user_client = database_client.clone().into_user_client(USER_NAME_REPLACED);
 
     let _delete_user_response = user_client.delete_user().execute().await.unwrap();
+
+    let list_users_response = database_client.list_users().execute().await.unwrap();
+    assert_eq!(list_users_response.users.len(), 0);
 
     // delete the database
     client
