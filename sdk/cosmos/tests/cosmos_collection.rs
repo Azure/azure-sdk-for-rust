@@ -2,7 +2,7 @@
 mod setup;
 
 use azure_cosmos::prelude::*;
-use azure_cosmos::resources::collection::ExcludedPath;
+use azure_cosmos::resources::collection::*;
 
 #[tokio::test]
 async fn create_and_delete_collection() {

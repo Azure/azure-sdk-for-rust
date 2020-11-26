@@ -39,20 +39,20 @@ async fn attachment() -> Result<(), CosmosError> {
 
     // create a temp collection
     let _create_collection_response = {
-        let indexes = IncludedPathIndex {
-            kind: KeyKind::Hash,
-            data_type: DataType::String,
+        let indexes = collection::IncludedPathIndex {
+            kind: collection::KeyKind::Hash,
+            data_type: collection::DataType::String,
             precision: Some(3),
         };
 
-        let ip = IncludedPath {
+        let ip = collection::IncludedPath {
             path: "/*".to_owned(),
             indexes: Some(vec![indexes]),
         };
 
-        let ip = IndexingPolicy {
+        let ip = collection::IndexingPolicy {
             automatic: true,
-            indexing_mode: IndexingMode::Consistent,
+            indexing_mode: collection::IndexingMode::Consistent,
             included_paths: vec![ip],
             excluded_paths: vec![],
         };

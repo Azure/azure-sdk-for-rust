@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 use azure_core::prelude::*;
 use azure_core::HttpClient;
 use azure_cosmos::prelude::*;
+use azure_cosmos::resources::collection::*;
 use azure_cosmos::responses::GetDocumentResponse;
 use std::borrow::Cow;
 use std::error::Error;

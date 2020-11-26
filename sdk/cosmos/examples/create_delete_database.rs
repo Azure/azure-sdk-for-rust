@@ -1,5 +1,6 @@
 use azure_core::HttpClient;
 use azure_cosmos::prelude::*;
+use azure_cosmos::resources::collection::*;
 use futures::stream::StreamExt;
 use std::error::Error;
 use std::sync::Arc;
@@ -24,7 +25,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // errors, plus Azure specific ones. For example if a REST call returns the
     // unexpected result (ie NotFound instead of Ok) we return an Err telling
     // you that.
-    let authorization_token = AuthorizationToken::primary_from_base64(&master_key)?;
+    let authorization_token = permission::AuthorizationToken::primary_from_base64(&master_key)?;
 
     // Once we have an authorization token you can create a client instance. You can change the
     // authorization token at later time if you need, for example, to escalate the privileges for a

@@ -6,6 +6,7 @@ mod setup;
 use azure_core::prelude::*;
 use azure_cosmos::prelude::*;
 use azure_cosmos::responses::GetDocumentResponse;
+use collection::*;
 
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 struct MyDocument {
