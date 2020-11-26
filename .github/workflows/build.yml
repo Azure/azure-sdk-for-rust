@@ -42,7 +42,7 @@ jobs:
         for PROJ in ${PROJECTS[@]}
         do
           echo "Checking e2e tests for $PROJ"
-          cargo check --tests --features test_e2e --manifest-path $PROJ/Cargo.toml || exit 1
+          cargo check --tests --features test_e2e --manifest-path sdk/$PROJ/Cargo.toml || exit 1
         done
 
     - name: display free disk space
