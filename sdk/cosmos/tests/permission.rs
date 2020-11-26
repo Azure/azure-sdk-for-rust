@@ -70,7 +70,7 @@ async fn permissions() {
         .create_permission()
         .with_expiry_seconds(18000) // 5 hours, max!
         .execute_with_permission(&PermissionMode::All(
-            (&create_collection_response.collection.id).into(),
+            (&create_collection_response.collection._self).into(),
         ))
         .await
         .unwrap();
@@ -79,7 +79,7 @@ async fn permissions() {
         .create_permission()
         .with_expiry_seconds(18000) // 5 hours, max!
         .execute_with_permission(&PermissionMode::Read(
-            (&create_collection_response.collection.id).into(),
+            (&create_collection_response.collection._self).into(),
         ))
         .await
         .unwrap();

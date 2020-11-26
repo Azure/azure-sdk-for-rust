@@ -5,7 +5,7 @@ use azure_cosmos::PermissionMode;
 mod setup;
 
 #[tokio::test]
-async fn permissions() {
+async fn permission_token_usage() {
     const DATABASE_NAME: &str = "cosmos-test-db-permusage";
     const COLLECTION_NAME: &str = "cosmos-test-db-permusage";
     const USER_NAME: &str = "someone@cool.net";
@@ -46,7 +46,8 @@ async fn permissions() {
 
     // create the RO permission
     let permission_client = user_client.into_permission_client(PERMISSION);
-    let permission_mode = PermissionMode::Read((&create_collection_response.collection.id).into());
+    let permission_mode =
+        PermissionMode::Read((&create_collection_response.collection._self).into());
 
     let create_permission_response = permission_client
         .create_permission()
@@ -103,7 +104,8 @@ async fn permissions() {
         .unwrap();
 
     // All includes read and write.
-    let permission_mode = PermissionMode::All((&create_collection_response.collection.id).into());
+    let permission_mode =
+        PermissionMode::All((&create_collection_response.collection._self).into());
     let create_permission_response = permission_client
         .create_permission()
         .with_expiry_seconds(18000) // 5 hours, max!
