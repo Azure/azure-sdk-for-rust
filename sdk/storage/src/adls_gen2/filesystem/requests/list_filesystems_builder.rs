@@ -1,6 +1,6 @@
 use crate::core::prelude::*;
 use crate::filesystem::responses::ListFilesystemsResponse;
-use azure_core::errors::{check_status_extract_headers_and_body_as_string, AzureError};
+use azure_core::errors::AzureError;
 use azure_core::prelude::*;
 use futures::stream::{unfold, Stream};
 use hyper::{Method, StatusCode};
@@ -218,12 +218,11 @@ where
             Some(&[]),
         )?;
 
-        let (headers, body) = check_status_extract_headers_and_body_as_string(
-            perform_request_response.response_future,
-            StatusCode::OK,
-        )
-        .await?;
-        ListFilesystemsResponse::from_response(&headers, &body)
+        let (headers, body) = perform_request_response
+            .check_status_extract_headers_and_body(StatusCode::OK)
+            .await?;
+        let body = String::from_utf8_lossy(body.as_ref());
+        ListFilesystemsResponse::from_response(&headers, body.as_ref())
     }
 }
 

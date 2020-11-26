@@ -23,7 +23,7 @@ pub use crate::{
     ParametersSupport, PartitionKeyOption, PartitionKeyRequired, PartitionKeySupport,
     PartitionKeys, PartitionKeysOption, PartitionKeysRequired, PartitionKeysSupport,
     PartitionRangeIdOption, PartitionRangeIdSupport, PermissionClientRequired,
-    QueryCrossPartitionOption, QueryCrossPartitionSupport, QueryRequired, QuerySupport,
+    QueryCrossPartitionOption, QueryCrossPartitionSupport, QueryRequired, QuerySupport, Resource,
     StoredProcedureBodyRequired, StoredProcedureBodySupport, StoredProcedureClientRequired,
     StoredProcedureNameRequired, StoredProcedureNameSupport, TriggerBodyRequired,
     TriggerBodySupport, TriggerClientRequired, TriggerOperationRequired, TriggerOperationSupport,

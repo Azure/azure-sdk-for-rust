@@ -68,7 +68,7 @@ impl CosmosClient {
     pub fn new_emulator(http_client: Arc<Box<dyn HttpClient>>, address: &str, port: u16) -> Self {
         //Account name: localhost:<port>
         //Account key: C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==
-        let auth_token = AuthorizationToken::new_master(
+        let auth_token = AuthorizationToken::primary_from_base64(
             "C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==",
         ).unwrap();
         let uri = format!("https://{}:{}", address, port);
@@ -163,12 +163,13 @@ fn generate_authorization(
     let str_unencoded = format!(
         "type={}&ver={}&sig={}",
         match auth_token {
-            AuthorizationToken::Master(_) => "master",
+            AuthorizationToken::Primary(_) => "master",
             AuthorizationToken::Resource(_) => "resource",
         },
         VERSION,
         match auth_token {
-            AuthorizationToken::Master(key) => Cow::Owned(encode_str_to_sign(&string_to_sign, key)),
+            AuthorizationToken::Primary(key) =>
+                Cow::Owned(encode_str_to_sign(&string_to_sign, key)),
             AuthorizationToken::Resource(key) => Cow::Borrowed(key),
         },
     );
@@ -332,7 +333,7 @@ mon, 01 jan 1900 01:00:00 gmt
         let time = time.with_timezone(&chrono::Utc);
         let time = format!("{}", time.format(TIME_FORMAT));
 
-        let auth_token = AuthorizationToken::new_master(
+        let auth_token = AuthorizationToken::primary_from_base64(
             "8F8xXXOptJxkblM1DBXW7a6NMI5oE8NnwPGYBmwxLCKfejOK7B7yhcCHMGvN3PBrlMLIOeol1Hv9RCdzAZR5sg==",
         )
         .unwrap();
@@ -357,7 +358,7 @@ mon, 01 jan 1900 01:00:00 gmt
         let time = time.with_timezone(&chrono::Utc);
         let time = format!("{}", time.format(TIME_FORMAT));
 
-        let auth_token = AuthorizationToken::new_master(
+        let auth_token = AuthorizationToken::primary_from_base64(
             "dsZQi3KtZmCv1ljt3VNWNm7sQUF1y5rJfC6kv5JiwvW0EndXdDku/dkKBp8/ufDToSxL",
         )
         .unwrap();

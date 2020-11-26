@@ -65,9 +65,12 @@ async fn user_defined_function00() -> Result<(), CosmosError> {
             .unwrap()
     };
 
-    let collection_client = database_client.into_collection_client(COLLECTION_NAME);
-    let user_defined_function_client =
-        collection_client.with_user_defined_function_client(USER_DEFINED_FUNCTION_NAME);
+    let collection_client = database_client
+        .clone()
+        .into_collection_client(COLLECTION_NAME);
+    let user_defined_function_client = collection_client
+        .clone()
+        .into_user_defined_function_client(USER_DEFINED_FUNCTION_NAME);
 
     let ret = user_defined_function_client
         .create_user_defined_function()

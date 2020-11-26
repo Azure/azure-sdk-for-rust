@@ -3,12 +3,11 @@ use crate::CosmosError;
 use crate::Permission;
 use azure_core::headers::{etag_from_headers, session_token_from_headers};
 use http::response::Response;
-use std::borrow::Cow;
 use std::convert::TryInto;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct ReplacePermissionResponse<'a> {
-    pub permission: Permission<'a, Cow<'a, str>>,
+    pub permission: Permission<'a>,
     pub charge: f64,
     pub activity_id: uuid::Uuid,
     pub etag: String,

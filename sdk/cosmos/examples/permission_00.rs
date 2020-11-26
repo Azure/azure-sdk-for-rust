@@ -1,6 +1,5 @@
 use azure_core::HttpClient;
 use azure_cosmos::prelude::*;
-use azure_cosmos::PermissionMode;
 use std::error::Error;
 use std::sync::Arc;
 
@@ -25,7 +24,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .nth(4)
         .expect("please specify the user name as fourth command line parameter");
 
-    let authorization_token = AuthorizationToken::new_master(&master_key)?;
+    let authorization_token = AuthorizationToken::primary_from_base64(&master_key)?;
 
     let http_client: Arc<Box<dyn HttpClient>> = Arc::new(Box::new(reqwest::Client::new()));
     let client = CosmosClient::new(http_client, account.clone(), authorization_token);
@@ -56,7 +55,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     // create the first permission!
     let permission_client = user_client.clone().into_permission_client("matrix");
-    let permission_mode = PermissionMode::Read(get_collection_response.collection);
+    let permission_mode = get_collection_response.collection.read_permission();
 
     let create_permission_response = permission_client
         .create_permission()
@@ -71,7 +70,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     // create the second permission!
     let permission_client = user_client.clone().into_permission_client("neo".to_owned());
-    let permission_mode = PermissionMode::All(get_collection2_response.collection);
+    let permission_mode = get_collection2_response.collection.all_permission();
 
     let create_permission2_response = permission_client
         .create_permission()
@@ -106,6 +105,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     println!("get_permission_response == {:#?}", get_permission_response);
 
     let get_permission_response = get_permission_response.unwrap();
+    let permission_mode = &get_permission_response.permission.permission_mode;
 
     // renew permission extending its validity for 60 seconds more.
     let replace_permission_response = permission_client
@@ -114,7 +114,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .with_consistency_level(ConsistencyLevel::from(
             &get_permission_response.session_token,
         ))
-        .execute_with_permission(&get_permission_response.permission.permission_mode)
+        .execute_with_permission(permission_mode)
         .await?;
     println!(
         "replace_permission_response == {:#?}",

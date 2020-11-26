@@ -1,14 +1,11 @@
 use crate::from_headers::*;
-use crate::permission::CosmosPermission;
-use crate::CosmosError;
-use crate::Permission;
+use crate::{CosmosError, Permission};
 use azure_core::headers::{etag_from_headers, session_token_from_headers};
 use http::response::Response;
-use std::borrow::Cow;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct GetPermissionResponse<'a> {
-    pub permission: Permission<'a, Cow<'a, str>>,
+    pub permission: Permission<'a>,
     pub charge: f64,
     pub etag: String,
     pub activity_id: uuid::Uuid,
@@ -28,7 +25,7 @@ impl<'a> std::convert::TryFrom<Response<Vec<u8>>> for GetPermissionResponse<'a> 
         debug!("body == {:#?}", std::str::from_utf8(body)?);
 
         // first get the Cosmos REST API permission
-        let cosmos_permission: CosmosPermission<'_> = serde_json::from_slice(body)?;
+        let cosmos_permission: Permission<'_> = serde_json::from_slice(body)?;
         debug!("cosmos_permission== {:#?}", cosmos_permission);
 
         // now convert into the SDK struct

@@ -46,7 +46,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // constrained. This SDK supports both.
     // Please check the Azure documentation for details or the examples folder
     // on how to create and use token-based permissions.
-    let authorization_token = AuthorizationToken::new_master(&master_key)?;
+    let authorization_token = AuthorizationToken::primary_from_base64(&master_key)?;
 
     // Next we will create a Cosmos client.
     let http_client: Arc<Box<dyn HttpClient>> = Arc::new(Box::new(reqwest::Client::new()));

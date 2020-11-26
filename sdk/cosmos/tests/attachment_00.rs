@@ -69,7 +69,9 @@ async fn attachment() -> Result<(), CosmosError> {
             .unwrap()
     };
 
-    let collection_client = database_client.into_collection_client(COLLECTION_NAME);
+    let collection_client = database_client
+        .clone()
+        .into_collection_client(COLLECTION_NAME);
 
     let id = format!("unique_id{}", 100);
 
@@ -90,7 +92,7 @@ async fn attachment() -> Result<(), CosmosError> {
 
     let mut partition_keys = PartitionKeys::new();
     partition_keys.push(doc.document.id)?;
-    let document_client = collection_client.into_document_client(&id, partition_keys);
+    let document_client = collection_client.into_document_client(id, partition_keys);
 
     // list attachments, there must be none.
     let ret = document_client
@@ -101,7 +103,7 @@ async fn attachment() -> Result<(), CosmosError> {
     assert_eq!(0, ret.attachments.len());
 
     // create reference attachment
-    let attachment_client = document_client.with_attachment_client("reference");
+    let attachment_client = document_client.clone().into_attachment_client("reference");
     let resp = attachment_client
         .create_reference()
         .with_consistency_level((&ret).into())
@@ -111,7 +113,6 @@ async fn attachment() -> Result<(), CosmosError> {
         .await?;
 
     // replace reference attachment
-    let attachment_client = document_client.with_attachment_client("reference");
     let resp = attachment_client
         .replace_reference()
         .with_consistency_level((&resp).into())
@@ -121,7 +122,7 @@ async fn attachment() -> Result<(), CosmosError> {
         .await?;
 
     // create slug attachment
-    let attachment_client = document_client.with_attachment_client("slug");
+    let attachment_client = document_client.clone().into_attachment_client("slug");
     let resp = attachment_client
         .create_slug()
         .with_consistency_level((&resp).into())
@@ -140,7 +141,8 @@ async fn attachment() -> Result<(), CosmosError> {
 
     // get reference attachment, it must have the updated media link
     let reference_attachment = document_client
-        .with_attachment_client("reference")
+        .clone()
+        .into_attachment_client("reference")
         .get()
         .with_consistency_level((&ret).into())
         .execute()
@@ -153,7 +155,8 @@ async fn attachment() -> Result<(), CosmosError> {
     // get slug attachment, it must have the text/plain content type
     println!("getting slug attachment");
     let slug_attachment = document_client
-        .with_attachment_client("slug")
+        .clone()
+        .into_attachment_client("slug")
         .get()
         .with_consistency_level((&reference_attachment).into())
         .execute()

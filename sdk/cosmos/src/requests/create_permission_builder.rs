@@ -1,7 +1,6 @@
 use crate::prelude::*;
 use crate::responses::CreatePermissionResponse;
-use crate::ResourceType;
-use crate::{PermissionMode, PermissionResource};
+use crate::{PermissionMode, ResourceType};
 use azure_core::prelude::*;
 use http::StatusCode;
 use std::convert::TryInto;
@@ -106,13 +105,10 @@ impl<'a, 'b> ConsistencyLevelSupport<'b> for CreatePermissionBuilder<'a, 'b> {
 
 // methods callable only when every mandatory field has been filled
 impl<'a, 'b> CreatePermissionBuilder<'a, 'b> {
-    pub async fn execute_with_permission<R>(
+    pub async fn execute_with_permission(
         &self,
-        permission_mode: &PermissionMode<R>,
-    ) -> Result<CreatePermissionResponse<'a>, CosmosError>
-    where
-        R: PermissionResource,
-    {
+        permission_mode: &PermissionMode<'a>,
+    ) -> Result<CreatePermissionResponse<'a>, CosmosError> {
         trace!("CreatePermissionBuilder::execute called");
 
         let request = self.permission_client.cosmos_client().prepare_request(
@@ -137,14 +133,12 @@ impl<'a, 'b> CreatePermissionBuilder<'a, 'b> {
             #[serde(rename = "permissionMode")]
             permission_mode: &'x str,
             resource: &'x str,
-        }
-
-        let (permission_mode, resource) = permission_mode.to_elements();
+        };
 
         let request_body = RequestBody {
             id: self.permission_client.permission_name(),
-            permission_mode,
-            resource: resource.uri(),
+            permission_mode: permission_mode.kind(),
+            resource: permission_mode.resource(),
         };
         let request_body = serde_json::to_string(&request_body)?;
 
