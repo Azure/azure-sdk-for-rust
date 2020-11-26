@@ -244,20 +244,12 @@ pub trait TriggerTypeSupport {
     fn with_trigger_type(self, a: trigger::TriggerType) -> Self::O;
 }
 
-pub(crate) fn add_partition_keys_header(
-    partition_keys: &PartitionKeys,
-    builder: Builder,
-) -> Builder {
-    let serialized = partition_keys.to_json();
-    builder.header(headers::HEADER_DOCUMENTDB_PARTITIONKEY, serialized)
-}
-
 pub trait PartitionKeysRequired<'a> {
     fn partition_keys(&self) -> &'a PartitionKeys;
 
     #[must_use]
     fn add_header(&self, builder: Builder) -> Builder {
-        add_partition_keys_header(self.partition_keys(), builder)
+        crate::add_partition_keys_header(self.partition_keys(), builder)
     }
 }
 

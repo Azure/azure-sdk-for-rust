@@ -1,6 +1,5 @@
 use crate::prelude::*;
 use crate::responses::GetDocumentResponse;
-use crate::DocumentClientRequired;
 use azure_core::modify_conditions::IfMatchCondition;
 use azure_core::prelude::*;
 use azure_core::{IfMatchConditionOption, IfMatchConditionSupport};

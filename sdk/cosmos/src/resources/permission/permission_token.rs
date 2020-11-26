@@ -5,7 +5,7 @@ const PERMISSION_TYPE_PREFIX: &str = "type=";
 const VERSION_PREFIX: &str = "ver=";
 const SIGNATURE_PREFIX: &str = "sig=";
 
-/// The token field of a [`Permissions`](crate::Permissions) object.
+/// The token field of a [`Permission`](super::Permission) object.
 ///
 /// This field is a url encoded string with the type of permission, the signature, and the version (currently only 1.0)
 /// This type is a wrapper around AuthorizationToken.

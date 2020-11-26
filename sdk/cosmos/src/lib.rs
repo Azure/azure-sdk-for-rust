@@ -35,10 +35,19 @@ pub use partition_keys::PartitionKeys;
 pub use query::{Param, ParamDef, Query};
 pub use requests::*;
 pub use resource_quota::ResourceQuota;
-pub use traits::*;
+
+use http::request::Builder;
 
 type ReadonlyString = std::borrow::Cow<'static, str>;
 pub type CosmosError = Box<dyn std::error::Error + Sync + Send>;
+
+pub(crate) fn add_partition_keys_header(
+    partition_keys: &PartitionKeys,
+    builder: Builder,
+) -> Builder {
+    let serialized = partition_keys.to_json();
+    builder.header(headers::HEADER_DOCUMENTDB_PARTITIONKEY, serialized)
+}
 
 #[allow(dead_code)]
 #[derive(Debug, Clone, Copy)]
