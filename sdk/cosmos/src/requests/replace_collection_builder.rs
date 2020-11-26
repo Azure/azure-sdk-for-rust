@@ -1,6 +1,5 @@
-use crate::collection::IndexingPolicy;
-use crate::collection::PartitionKey;
 use crate::prelude::*;
+use crate::resources::collection::{IndexingPolicy, PartitionKey};
 use crate::responses::CreateCollectionResponse;
 use azure_core::prelude::*;
 use azure_core::{No, ToAssign, Yes};
@@ -214,7 +213,7 @@ impl<'a, 'b> ReplaceCollectionBuilder<'a, 'b, Yes, Yes> {
             #[serde(rename = "indexingPolicy")]
             indexing_policy: &'k IndexingPolicy,
             #[serde(rename = "partitionKey")]
-            partition_key: &'k crate::collection::PartitionKey,
+            partition_key: &'k PartitionKey,
         };
 
         let request = Request {

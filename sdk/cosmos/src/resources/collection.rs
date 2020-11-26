@@ -1,3 +1,5 @@
+use super::Resource;
+
 #[derive(Serialize, Deserialize, Clone, Debug, PartialOrd, PartialEq)]
 pub enum KeyKind {
     Hash,
@@ -158,5 +160,17 @@ impl CollectionName for &str {
 impl CollectionName for String {
     fn name(&self) -> &str {
         self.as_ref()
+    }
+}
+
+impl Resource for Collection {
+    fn uri(&self) -> &str {
+        &self._self
+    }
+}
+
+impl Resource for &Collection {
+    fn uri(&self) -> &str {
+        &self._self
     }
 }

@@ -4,11 +4,10 @@ use azure_core::HttpClient;
 use azure_cosmos::prelude::*;
 use azure_cosmos::responses::GetDocumentResponse;
 use futures::stream::StreamExt;
+use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
 use std::error::Error;
 use std::sync::Arc;
-#[macro_use]
-extern crate serde_derive;
 
 // Now we create a sample struct. The Cow trick
 // allows us to use the same struct for serializing

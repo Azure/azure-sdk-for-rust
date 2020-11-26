@@ -1,6 +1,6 @@
 use crate::from_headers::*;
+use crate::resources::Document;
 use crate::CosmosError;
-use crate::Document;
 use crate::ResourceQuota;
 use azure_core::headers::{etag_from_headers, session_token_from_headers};
 use azure_core::SessionToken;

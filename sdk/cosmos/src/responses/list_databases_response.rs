@@ -1,5 +1,5 @@
-use crate::database::Database;
 use crate::from_headers::*;
+use crate::resources::Database;
 use crate::CosmosError;
 use crate::ResourceQuota;
 use azure_core::headers::{continuation_token_from_headers_optional, session_token_from_headers};

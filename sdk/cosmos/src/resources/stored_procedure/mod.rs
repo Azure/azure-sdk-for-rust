@@ -1,9 +1,11 @@
-mod user_defined_function_name;
+mod stored_procedure_name;
 
-pub use self::user_defined_function_name::UserDefinedFunctionName;
+pub use stored_procedure_name::StoredProcedureName;
+
+pub type Parameters = crate::to_json_vector::ToJsonVector;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct UserDefinedFunction {
+pub struct StoredProcedure {
     pub id: String,
     #[serde(rename = "_rid")]
     pub rid: String,
@@ -16,7 +18,7 @@ pub struct UserDefinedFunction {
     pub body: String,
 }
 
-impl UserDefinedFunctionName for UserDefinedFunction {
+impl StoredProcedureName for StoredProcedure {
     fn name(&self) -> &str {
         &self.id
     }

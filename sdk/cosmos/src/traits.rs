@@ -1,9 +1,7 @@
 use crate::clients::*;
-use crate::collection::*;
-use crate::{
-    collection, headers, stored_procedure, trigger, ConsistencyLevel, DatabaseName,
-    IndexingDirective, Offer, PartitionKeys, Query, UserName,
-};
+use crate::resources::collection::*;
+use crate::resources::{collection, database, stored_procedure, trigger, user};
+use crate::{headers, ConsistencyLevel, IndexingDirective, Offer, PartitionKeys, Query};
 use http::request::Builder;
 
 pub trait CosmosClientRequired<'a> {
@@ -447,19 +445,19 @@ pub trait QuerySupport<'a> {
 }
 
 pub trait DatabaseNameRequired<'a> {
-    fn database_name(&'a self) -> &'a dyn DatabaseName;
+    fn database_name(&'a self) -> &'a dyn database::DatabaseName;
 }
 
 pub trait DatabaseNameSupport<'a> {
     type O;
-    fn with_database_name(self, database_name: &'a dyn DatabaseName) -> Self::O;
+    fn with_database_name(self, database_name: &'a dyn database::DatabaseName) -> Self::O;
 }
 
 pub trait UserNameRequired<'a> {
-    fn user_name(&self) -> &'a dyn UserName;
+    fn user_name(&self) -> &'a dyn user::UserName;
 }
 
 pub trait UserNameSupport<'a> {
     type O;
-    fn with_user_name(self, user_name: &'a dyn UserName) -> Self::O;
+    fn with_user_name(self, user_name: &'a dyn user::UserName) -> Self::O;
 }

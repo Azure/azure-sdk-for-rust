@@ -1,5 +1,5 @@
+use super::AuthorizationToken;
 use crate::errors::{self, TokenParsingError};
-use crate::AuthorizationToken;
 
 const PERMISSION_TYPE_PREFIX: &str = "type=";
 const VERSION_PREFIX: &str = "ver=";

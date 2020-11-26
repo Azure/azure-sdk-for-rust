@@ -2,10 +2,9 @@ use azure_core::HttpClient;
 use azure_cosmos::prelude::*;
 use azure_cosmos::responses::QueryDocumentsResponse;
 use azure_cosmos::Query;
+use serde::{Deserialize, Serialize};
 use std::error::Error;
 use std::sync::Arc;
-#[macro_use]
-extern crate serde_derive;
 
 #[derive(Serialize, Deserialize, Debug)]
 struct MySampleStructOwned {

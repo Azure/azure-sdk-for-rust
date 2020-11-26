@@ -1,6 +1,6 @@
 use crate::from_headers::*;
-use crate::CosmosError;
-use crate::{Attachment, ResourceQuota};
+use crate::resources::Attachment;
+use crate::{CosmosError, ResourceQuota};
 use azure_core::headers::{etag_from_headers, session_token_from_headers};
 use azure_core::SessionToken;
 use chrono::{DateTime, Utc};

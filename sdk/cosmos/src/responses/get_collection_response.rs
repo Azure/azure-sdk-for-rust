@@ -1,5 +1,5 @@
-use crate::collection::Collection;
 use crate::from_headers::*;
+use crate::resources::Collection;
 use crate::CosmosError;
 use azure_core::headers::{etag_from_headers, session_token_from_headers};
 use chrono::{DateTime, Utc};

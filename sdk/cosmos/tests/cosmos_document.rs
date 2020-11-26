@@ -1,13 +1,11 @@
 #![cfg(all(test, feature = "test_e2e"))]
-#[macro_use]
-extern crate serde_derive;
+use serde::{Deserialize, Serialize};
+
+mod setup;
+
 use azure_core::prelude::*;
-use azure_cosmos::collection::*;
 use azure_cosmos::prelude::*;
 use azure_cosmos::responses::GetDocumentResponse;
-use azure_cosmos::Offer;
-use azure_cosmos::Query;
-mod setup;
 
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 struct MyDocument {

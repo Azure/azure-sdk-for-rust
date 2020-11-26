@@ -1,6 +1,6 @@
 use crate::prelude::*;
+use crate::resources::stored_procedure::Parameters;
 use crate::responses::ExecuteStoredProcedureResponse;
-use crate::stored_procedure::Parameters;
 use azure_core::prelude::*;
 use http::StatusCode;
 use serde::de::DeserializeOwned;

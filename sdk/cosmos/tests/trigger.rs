@@ -1,6 +1,6 @@
 #![cfg(all(test, feature = "test_e2e"))]
 use azure_cosmos::prelude::*;
-use azure_cosmos::trigger::*;
+use azure_cosmos::resources::trigger::*;
 use futures::stream::StreamExt;
 
 mod setup;

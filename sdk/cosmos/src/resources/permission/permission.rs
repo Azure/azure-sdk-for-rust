@@ -1,4 +1,6 @@
-use crate::{CosmosError, PermissionToken, Resource};
+use super::PermissionToken;
+use crate::{resources::Resource, CosmosError};
+
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
 
@@ -95,6 +97,7 @@ impl<'a> std::convert::TryFrom<&[u8]> for Permission<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::resources::permission::AuthorizationToken;
 
     const PERMISSION_JSON: &str = r#"{  
     "id": "a_permission",  
@@ -113,7 +116,7 @@ mod tests {
 
         assert_eq!(
             permission.permission_token,
-            crate::AuthorizationToken::Resource("ocPyc9QQFybITu1EqzX0kg==;w+WR1aWafB3+yZq5JSoBwgz78XDlU+k9Xiqvc+Q7TlAl1P4h4t721Cn5cjhZ9h3TSd2/MJLy+wG+YkhDL9UlGkVv05RZGy2fMaLGdeQkWc7TShkc/M2boPc3GXq2yiERKl5CN4AZWSOcrFhOFuuTOqF4ZdBlflmNudaakodr/8qTip0i+a7moz1Jkc5+9iLAsDFyqTR1sirp7kAVNFbiqPdYTjNkvZUHF3nYYmRskOg=;".to_owned()).into()
+            AuthorizationToken::Resource("ocPyc9QQFybITu1EqzX0kg==;w+WR1aWafB3+yZq5JSoBwgz78XDlU+k9Xiqvc+Q7TlAl1P4h4t721Cn5cjhZ9h3TSd2/MJLy+wG+YkhDL9UlGkVv05RZGy2fMaLGdeQkWc7TShkc/M2boPc3GXq2yiERKl5CN4AZWSOcrFhOFuuTOqF4ZdBlflmNudaakodr/8qTip0i+a7moz1Jkc5+9iLAsDFyqTR1sirp7kAVNFbiqPdYTjNkvZUHF3nYYmRskOg=;".to_owned()).into()
         );
         assert_eq!(
             permission.permission_mode,

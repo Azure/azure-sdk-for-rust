@@ -7,7 +7,7 @@ use azure_core::HttpClient;
 ///     response.setBody("Hello, " + personToGreet);
 /// }
 use azure_cosmos::prelude::*;
-use azure_cosmos::stored_procedure::Parameters;
+use azure_cosmos::resources::stored_procedure::Parameters;
 use std::error::Error;
 use std::sync::Arc;
 

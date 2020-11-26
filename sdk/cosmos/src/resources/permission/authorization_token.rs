@@ -1,4 +1,4 @@
-use crate::PermissionToken;
+use super::PermissionToken;
 use std::fmt;
 
 /// Authorization tokens for accessing Cosmos.

@@ -1,9 +1,8 @@
 #![cfg(all(test, feature = "test_e2e"))]
 use azure_core::prelude::*;
 use azure_cosmos::prelude::*;
+use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
-#[macro_use]
-extern crate serde_derive;
 
 mod setup;
 

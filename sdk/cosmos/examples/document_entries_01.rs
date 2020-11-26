@@ -1,10 +1,9 @@
 use azure_core::HttpClient;
 use azure_cosmos::prelude::*;
+use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
 use std::error::Error;
 use std::sync::Arc;
-#[macro_use]
-extern crate serde_derive;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 struct MySampleStruct<'a> {

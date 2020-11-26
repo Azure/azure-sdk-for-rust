@@ -1,5 +1,5 @@
 use crate::from_headers::*;
-use crate::stored_procedure::StoredProcedure;
+use crate::resources::StoredProcedure;
 use crate::CosmosError;
 use crate::ResourceQuota;
 use azure_core::headers::{etag_from_headers, session_token_from_headers};

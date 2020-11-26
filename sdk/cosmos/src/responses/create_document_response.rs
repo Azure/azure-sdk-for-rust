@@ -1,7 +1,6 @@
-use crate::document_attributes::DocumentAttributes;
 use crate::from_headers::*;
-use crate::CosmosError;
-use crate::ResourceQuota;
+use crate::resources::document::DocumentAttributes;
+use crate::{CosmosError, ResourceQuota};
 use azure_core::headers::{etag_from_headers, session_token_from_headers};
 use chrono::{DateTime, Utc};
 use http::response::Response;
@@ -11,7 +10,6 @@ use http::StatusCode;
 pub struct CreateDocumentResponse {
     pub document_attributes: DocumentAttributes,
     pub is_update: bool,
-
     pub last_state_change: DateTime<Utc>,
     pub etag: String,
     pub resource_quota: Vec<ResourceQuota>,

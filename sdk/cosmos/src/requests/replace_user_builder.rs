@@ -1,4 +1,5 @@
 use crate::prelude::*;
+use crate::resources::user::UserName;
 use crate::responses::CreateUserResponse;
 use azure_core::prelude::*;
 use azure_core::{No, ToAssign, Yes};

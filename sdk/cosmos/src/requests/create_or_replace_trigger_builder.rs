@@ -1,6 +1,6 @@
 use crate::prelude::*;
+use crate::resources::trigger::*;
 use crate::responses::CreateTriggerResponse;
-use crate::trigger::*;
 use azure_core::prelude::*;
 use azure_core::{No, ToAssign, Yes};
 use http::StatusCode;

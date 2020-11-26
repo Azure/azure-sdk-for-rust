@@ -1,6 +1,6 @@
 use azure_core::HttpClient;
 use azure_cosmos::prelude::*;
-use azure_cosmos::trigger::*;
+use azure_cosmos::resources::trigger::{TriggerOperation, TriggerType};
 use futures::stream::StreamExt;
 use std::error::Error;
 use std::sync::Arc;

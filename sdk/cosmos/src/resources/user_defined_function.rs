@@ -1,11 +1,5 @@
-mod parameters;
-mod stored_procedure_name;
-
-pub use self::parameters::Parameters;
-pub use self::stored_procedure_name::StoredProcedureName;
-
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct StoredProcedure {
+pub struct UserDefinedFunction {
     pub id: String,
     #[serde(rename = "_rid")]
     pub rid: String,
@@ -16,10 +10,4 @@ pub struct StoredProcedure {
     #[serde(rename = "_etag")]
     pub etag: String,
     pub body: String,
-}
-
-impl StoredProcedureName for StoredProcedure {
-    fn name(&self) -> &str {
-        &self.id
-    }
 }
