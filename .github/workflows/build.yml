@@ -36,6 +36,15 @@ jobs:
     - name: services tests
       run: cargo build --manifest-path services/Cargo.toml --all 
 
+    - name: e2e tests build
+      run: |
+        PROJECTS=(core  cosmos  identity  service_bus  storage)
+        for PROJ in ${PROJECTS[@]}
+        do
+          echo "Checking e2e tests for $PROJ"
+          cargo check --tests --features test_e2e --manifest-path $PROJ/Cargo.toml || exit 1
+        done
+
     - name: display free disk space
       run: df -h /
       if: ${{ always() }}

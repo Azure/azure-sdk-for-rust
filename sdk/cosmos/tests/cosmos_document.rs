@@ -50,7 +50,9 @@ async fn create_and_delete_document() {
         .await
         .unwrap();
 
-    let collection_client = database_client.into_collection_client(COLLECTION_NAME);
+    let collection_client = database_client
+        .clone()
+        .into_collection_client(COLLECTION_NAME);
 
     // create a new document
     let document_data = Document::new(MyDocument {
@@ -74,7 +76,9 @@ async fn create_and_delete_document() {
 
     // try to get the contents of the previously created document
     let partition_keys = DOCUMENT_NAME.into();
-    let document_client = collection_client.into_document_client(DOCUMENT_NAME, partition_keys);
+    let document_client = collection_client
+        .clone()
+        .into_document_client(DOCUMENT_NAME, partition_keys);
 
     let document_after_get = document_client
         .get_document()
@@ -136,7 +140,9 @@ async fn query_documents() {
         .await
         .unwrap();
 
-    let collection_client = database_client.into_collection_client(COLLECTION_NAME);
+    let collection_client = database_client
+        .clone()
+        .into_collection_client(COLLECTION_NAME);
 
     // create a new document
     let document_data = Document::new(MyDocument {
@@ -211,7 +217,9 @@ async fn replace_document() {
         .await
         .unwrap();
 
-    let collection_client = database_client.into_collection_client(COLLECTION_NAME);
+    let collection_client = database_client
+        .clone()
+        .into_collection_client(COLLECTION_NAME);
 
     // create a new document
     let mut document_data = Document::new(MyDocument {

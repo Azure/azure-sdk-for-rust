@@ -3,7 +3,7 @@ use crate::filesystem::responses::SetFilesystemPropertiesResponse;
 use crate::filesystem::{
     FilesystemRequired, FilesystemSupport, PropertiesOption, PropertiesSupport,
 };
-use azure_core::errors::{check_status_extract_headers_and_body, AzureError};
+use azure_core::errors::AzureError;
 use azure_core::prelude::*;
 use azure_core::{
     ClientRequestIdOption, ClientRequestIdSupport, IfSinceConditionOption, IfSinceConditionSupport,
@@ -255,11 +255,9 @@ where
             Some(&[]),
         )?;
 
-        let (headers, _body) = check_status_extract_headers_and_body(
-            perform_request_response.response_future,
-            StatusCode::OK,
-        )
-        .await?;
+        let (headers, _body) = perform_request_response
+            .check_status_extract_headers_and_body(StatusCode::OK)
+            .await?;
         SetFilesystemPropertiesResponse::from_headers(&headers)
     }
 }

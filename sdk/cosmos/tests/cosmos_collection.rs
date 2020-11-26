@@ -40,7 +40,9 @@ async fn create_and_delete_collection() {
     assert!(collections.collections.len() == 1);
 
     // try to get the previously created collection
-    let collection_client = database_client.into_collection_client(COLLECTION_NAME);
+    let collection_client = database_client
+        .clone()
+        .into_collection_client(COLLECTION_NAME);
 
     let collection_after_get = collection_client.get_collection().execute().await.unwrap();
     assert!(collection.collection.rid == collection_after_get.collection.rid);
@@ -96,8 +98,6 @@ async fn replace_collection() {
         .await
         .unwrap();
 
-    let collection_client = database_client.into_collection_client(COLLECTION_NAME);
-
     let collections = database_client.list_collections().execute().await.unwrap();
     assert_eq!(collections.collections.len(), 1);
     assert_eq!(
@@ -127,6 +127,10 @@ async fn replace_collection() {
     new_ip
         .excluded_paths
         .push("/\"excludeme\"/?".to_owned().into());
+
+    let collection_client = database_client
+        .clone()
+        .into_collection_client(COLLECTION_NAME);
 
     let _replace_collection_reponse = collection_client
         .replace_collection()
