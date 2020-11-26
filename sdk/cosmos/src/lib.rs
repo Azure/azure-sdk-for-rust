@@ -10,20 +10,21 @@ extern crate failure;
 extern crate azure_core;
 
 pub mod clients;
+pub mod from_headers;
+pub mod prelude;
+pub mod resources;
+pub mod responses;
+
 mod consistency_level;
 mod errors;
-pub(crate) mod from_headers;
 mod headers;
 mod indexing_directive;
-pub mod offer;
+mod offer;
 mod partition_key_range;
 mod partition_keys;
-pub mod prelude;
 mod query;
 mod requests;
 mod resource_quota;
-pub mod resources;
-pub mod responses;
 mod to_json_vector;
 mod traits;
 
@@ -33,7 +34,6 @@ pub use offer::Offer;
 pub use partition_key_range::PartitionKeyRange;
 pub use partition_keys::PartitionKeys;
 pub use query::{Param, ParamDef, Query};
-pub use requests::*;
 pub use resource_quota::ResourceQuota;
 
 use http::request::Builder;
@@ -49,7 +49,6 @@ pub(crate) fn add_partition_keys_header(
     builder.header(headers::HEADER_DOCUMENTDB_PARTITIONKEY, serialized)
 }
 
-#[allow(dead_code)]
 #[derive(Debug, Clone, Copy)]
 pub enum ResourceType {
     Databases,
