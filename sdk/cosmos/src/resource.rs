@@ -1,25 +1,16 @@
 use crate::collection::Collection;
-use crate::{Database, Document, User};
+use crate::{Database, Document, PermissionMode, User};
 
+/// A Cosmos resource such as databases, documents, collections, users, etc.
 pub trait Resource {
     fn uri(&self) -> &str;
-}
 
-impl Resource for String {
-    fn uri(&self) -> &str {
-        &self
+    fn read_permission(&self) -> PermissionMode<'_> {
+        PermissionMode::read(self)
     }
-}
 
-impl Resource for &str {
-    fn uri(&self) -> &str {
-        self
-    }
-}
-
-impl<'a> Resource for std::borrow::Cow<'a, str> {
-    fn uri(&self) -> &str {
-        &self
+    fn all_permission(&self) -> PermissionMode<'_> {
+        PermissionMode::all(self)
     }
 }
 

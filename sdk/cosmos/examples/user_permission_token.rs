@@ -1,6 +1,5 @@
 use azure_core::HttpClient;
 use azure_cosmos::prelude::*;
-use azure_cosmos::PermissionMode;
 use std::error::Error;
 use std::sync::Arc;
 
@@ -53,7 +52,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // create the first permission!
     let permission_client = user_client.clone().into_permission_client("matrix");
 
-    let permission_mode = PermissionMode::Read((&get_collection_response.collection.id).into());
+    let permission_mode = get_collection_response.collection.read_permission();
 
     let create_permission_response = permission_client
         .create_permission()
@@ -129,7 +128,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     permission_client.delete_permission().execute().await?;
 
     // All includes read and write.
-    let permission_mode = PermissionMode::All((&get_collection_response.collection.id).into());
+    let permission_mode = get_collection_response.collection.all_permission();
     let create_permission_response = permission_client
         .create_permission()
         .with_expiry_seconds(18000) // 5 hours, max!

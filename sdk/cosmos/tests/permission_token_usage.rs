@@ -1,6 +1,5 @@
 #![cfg(all(test, feature = "test_e2e"))]
 use azure_cosmos::prelude::*;
-use azure_cosmos::PermissionMode;
 
 mod setup;
 
@@ -46,8 +45,7 @@ async fn permission_token_usage() {
 
     // create the RO permission
     let permission_client = user_client.into_permission_client(PERMISSION);
-    let permission_mode =
-        PermissionMode::Read((&create_collection_response.collection._self).into());
+    let permission_mode = create_collection_response.collection.read_permission();
 
     let create_permission_response = permission_client
         .create_permission()
@@ -104,8 +102,7 @@ async fn permission_token_usage() {
         .unwrap();
 
     // All includes read and write.
-    let permission_mode =
-        PermissionMode::All((&create_collection_response.collection._self).into());
+    let permission_mode = create_collection_response.collection.all_permission();
     let create_permission_response = permission_client
         .create_permission()
         .with_expiry_seconds(18000) // 5 hours, max!

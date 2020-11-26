@@ -1,6 +1,5 @@
 use azure_core::HttpClient;
 use azure_cosmos::prelude::*;
-use azure_cosmos::PermissionMode;
 use std::error::Error;
 use std::sync::Arc;
 
@@ -56,7 +55,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     // create the first permission!
     let permission_client = user_client.clone().into_permission_client("matrix");
-    let permission_mode = PermissionMode::Read((&get_collection_response.collection.id).into());
+    let permission_mode = get_collection_response.collection.read_permission();
 
     let create_permission_response = permission_client
         .create_permission()
@@ -71,7 +70,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     // create the second permission!
     let permission_client = user_client.clone().into_permission_client("neo".to_owned());
-    let permission_mode = PermissionMode::All((&get_collection2_response.collection.id).into());
+    let permission_mode = get_collection2_response.collection.all_permission();
 
     let create_permission2_response = permission_client
         .create_permission()

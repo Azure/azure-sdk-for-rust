@@ -1,6 +1,5 @@
 #![cfg(all(test, feature = "test_e2e"))]
 use azure_cosmos::prelude::*;
-use azure_cosmos::PermissionMode;
 
 mod setup;
 
@@ -69,18 +68,14 @@ async fn permissions() {
     let _create_permission_user1_response = permission_client_user1
         .create_permission()
         .with_expiry_seconds(18000) // 5 hours, max!
-        .execute_with_permission(&PermissionMode::All(
-            (&create_collection_response.collection._self).into(),
-        ))
+        .execute_with_permission(&create_collection_response.collection.all_permission())
         .await
         .unwrap();
 
     let _create_permission_user2_response = permission_client_user2
         .create_permission()
         .with_expiry_seconds(18000) // 5 hours, max!
-        .execute_with_permission(&PermissionMode::Read(
-            (&create_collection_response.collection._self).into(),
-        ))
+        .execute_with_permission(&create_collection_response.collection.read_permission())
         .await
         .unwrap();
 

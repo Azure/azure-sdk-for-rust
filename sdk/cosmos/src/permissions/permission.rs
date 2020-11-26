@@ -1,31 +1,73 @@
-use crate::{CosmosError, PermissionToken};
+use crate::{CosmosError, PermissionToken, Resource};
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
 
+/// The permission model.
+
+/// A permission has an authorization token associated with a user for authorized
+/// access to a specific resource. It is used to manage access to collections, documents,
+/// attachments, stored procedures, triggers, and user-defined functions for a particular user.
+/// You can learn more about permissions [here](https://docs.microsoft.com/en-us/rest/api/cosmos-db/permissions).
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Permission<'a> {
+    ///  The unique name that identifies the permission.
     pub id: Cow<'a, str>,
     #[serde(flatten)]
+    /// The access mode on the resource for the user
+    ///
+    /// Represented as both "permissionMode" and "resource" in the JSON representation.
     pub permission_mode: PermissionMode<'a>,
     #[serde(rename = "_rid")]
-    pub rid: Cow<'a, str>,
+    rid: Cow<'a, str>,
+    /// The last updated timestamp of the resource.
+    ///
+    /// Represented as "_ts" in the JSON representation.
     #[serde(rename = "_ts")]
-    pub ts: u64,
-    pub _self: Cow<'a, str>,
+    pub timestamp: u64,
+    /// The unique addressable URI for the resource.
+    ///
+    /// Represented as "_self" in the JSON representation.
+    #[serde(rename = "_self")]
+    pub uri: Cow<'a, str>,
+    /// The resource etag required for optimistic concurrency control.
+    ///
+    /// Represented as "_etag" in the JSON representation.
     #[serde(rename = "_etag")]
     pub etag: Cow<'a, str>,
+    /// The resource token for the particular resource and user.
+    ///
+    /// Represented as "_token" in the JSON representation.
     #[serde(rename = "_token")]
     pub permission_token: PermissionToken,
 }
 
 #[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
 #[serde(tag = "permissionMode", content = "resource")]
+/// The access mode on the resource for the user along with the full
+/// addressable path of the resource associated with the permission
+///
+/// Constructing a `PermissionMode` manually is error prone. Use one of the constructor methods
+/// (i.e., [`PermissionMode::read`] or [`PermissionMode::all`]) or get a permission directly
+/// from a resource (e.g., `Collection::read_permission`).
 pub enum PermissionMode<'a> {
+    /// read, write, and delete access
     All(Cow<'a, str>),
+    /// read access only
     Read(Cow<'a, str>),
 }
 
 impl<'a> PermissionMode<'a> {
+    /// Read permission for a given resource
+    pub fn read<T: Resource + ?Sized + 'a>(resource: &'a T) -> Self {
+        PermissionMode::Read(Cow::Borrowed(resource.uri()))
+    }
+
+    /// Read, write, and delete permissions for a given resource
+    pub fn all<T: Resource + ?Sized + 'a>(resource: &'a T) -> Self {
+        PermissionMode::All(Cow::Borrowed(resource.uri()))
+    }
+
+    /// The kind of permission mode as a string. Either "All" or "Read".
     pub fn kind(&self) -> &str {
         match self {
             Self::All(_) => "All",
@@ -33,6 +75,7 @@ impl<'a> PermissionMode<'a> {
         }
     }
 
+    /// The full addressable path of the resource associated with the permission
     pub fn resource(&self) -> &str {
         match self {
             Self::All(s) => s.as_ref(),
