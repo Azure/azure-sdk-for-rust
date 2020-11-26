@@ -1,7 +1,7 @@
 use crate::prelude::*;
 use crate::responses::ListAttachmentsResponse;
 use crate::DocumentClientRequired;
-use crate::{DocumentClient, ResourceType};
+use crate::ResourceType;
 use azure_core::prelude::*;
 use futures::stream::{unfold, Stream};
 use http::StatusCode;

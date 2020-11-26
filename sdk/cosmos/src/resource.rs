@@ -1,7 +1,5 @@
-use crate::Collection;
-use crate::Database;
-use crate::Document;
-use crate::User;
+use crate::collection::Collection;
+use crate::{Database, Document, User};
 
 pub trait Resource {
     fn uri(&self) -> &str;
