@@ -13,7 +13,7 @@ pub struct CreateQueueBuilder<'a, C>
 where
     C: Client + Clone,
 {
-    queue_service: &'a QueueServiceClient<'a, C>,
+    queue_service: &'a QueueServiceClient<C>,
     queue_name: &'a str,
     timeout: Option<u64>,
     metadata: Option<&'a HashMap<&'a str, &'a str>>,
@@ -26,7 +26,7 @@ where
 {
     #[inline]
     pub(crate) fn new(
-        queue_service: &'a QueueServiceClient<'a, C>,
+        queue_service: &'a QueueServiceClient<C>,
         queue_name: &'a str,
     ) -> CreateQueueBuilder<'a, C> {
         CreateQueueBuilder {
@@ -125,7 +125,7 @@ impl<'a, C> CreateQueueBuilder<'a, C>
 where
     C: Client + Clone,
 {
-    pub fn queue_service(&self) -> &'a QueueServiceClient<'a, C> {
+    pub fn queue_service(&self) -> &'a QueueServiceClient<C> {
         self.queue_service
     }
 

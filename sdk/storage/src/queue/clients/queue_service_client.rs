@@ -1,59 +1,60 @@
 use crate::core::Client;
+use crate::queue::clients::QueueNameClient;
 use crate::requests;
 use crate::HasStorageClient;
-use std::borrow::Cow;
 use std::fmt::Debug;
 
 #[derive(Debug, Clone)]
-pub struct QueueServiceClient<'a, C>
+pub struct QueueServiceClient<C>
 where
     C: Client + Clone,
 {
-    pub storage_client: Cow<'a, C>,
+    pub storage_client: C,
 }
 
-impl<'a, C> HasStorageClient for QueueServiceClient<'a, C>
+impl<C> HasStorageClient for QueueServiceClient<C>
 where
     C: Client + Clone,
 {
     type StorageClient = C;
 
     fn storage_client(&self) -> &C {
-        self.storage_client.as_ref()
+        &self.storage_client
     }
 }
 
-impl<'a, C> QueueServiceClient<'a, C>
+impl<C> QueueServiceClient<C>
 where
     C: Client + Clone,
 {
-    pub fn list_queues(&self) -> requests::ListQueuesBuilder<'_, '_, C> {
+    pub fn new(storage_client: C) -> Self {
+        Self { storage_client }
+    }
+
+    pub fn list_queues(&self) -> requests::ListQueuesBuilder<'_, C> {
         crate::requests::ListQueuesBuilder::new(self)
     }
 
-    pub fn create_queue(&'a self, queue_name: &'a str) -> requests::CreateQueueBuilder<'a, C> {
+    pub fn create_queue<'a>(&'a self, queue_name: &'a str) -> requests::CreateQueueBuilder<'a, C> {
         crate::requests::CreateQueueBuilder::new(self, queue_name)
     }
-}
 
-impl<'a, C> From<&'a C> for QueueServiceClient<'a, C>
-where
-    C: Client + Clone,
-{
-    fn from(storage_client: &'a C) -> Self {
-        Self {
-            storage_client: Cow::Borrowed(storage_client),
+    pub fn into_queue_name_client<QN>(self, queue_name: QN) -> QueueNameClient<C>
+    where
+        QN: Into<String>,
+    {
+        QueueNameClient {
+            queue_service_client: self,
+            queue_name: queue_name.into(),
         }
     }
 }
 
-impl<C> From<C> for QueueServiceClient<'static, C>
+impl<C> From<C> for QueueServiceClient<C>
 where
     C: Client + Clone,
 {
     fn from(storage_client: C) -> Self {
-        Self {
-            storage_client: Cow::Owned(storage_client),
-        }
+        Self::new(storage_client)
     }
 }

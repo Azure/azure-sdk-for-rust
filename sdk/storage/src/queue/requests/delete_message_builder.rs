@@ -1,5 +1,7 @@
 use crate::core::prelude::*;
+use crate::queue::clients::QueueNameClient;
 use crate::queue::prelude::*;
+use crate::queue::HasStorageClient;
 use crate::responses::*;
 use azure_core::prelude::*;
 use azure_core::{errors::AzureError, No, ToAssign, Yes};
@@ -11,9 +13,9 @@ use std::{convert::TryInto, marker::PhantomData};
 pub struct DeleteMessageBuilder<'a, C, PutReceiptSet>
 where
     PutReceiptSet: ToAssign,
-    C: Client,
+    C: Client + Clone,
 {
-    queue_name_service: &'a dyn QueueNameService<StorageClient = C>,
+    queue_name_client: &'a QueueNameClient<C>,
     p_pop_receipt: PhantomData<PutReceiptSet>,
     pop_receipt: Option<Box<dyn PopReceipt>>,
     timeout: Option<u64>,
@@ -22,14 +24,14 @@ where
 
 impl<'a, C> DeleteMessageBuilder<'a, C, No>
 where
-    C: Client,
+    C: Client + Clone,
 {
     #[inline]
     pub(crate) fn new(
-        queue_name_service: &'a dyn QueueNameService<StorageClient = C>,
+        queue_name_client: &'a QueueNameClient<C>,
     ) -> DeleteMessageBuilder<'a, C, No> {
         DeleteMessageBuilder {
-            queue_name_service,
+            queue_name_client,
             p_pop_receipt: PhantomData {},
             pop_receipt: None,
             timeout: None,
@@ -41,7 +43,7 @@ where
 //set mandatory no traits methods
 impl<'a, C> PopReceiptRequired for DeleteMessageBuilder<'a, C, Yes>
 where
-    C: Client,
+    C: Client + Clone,
 {
     #[inline]
     fn pop_receipt(&self) -> &dyn PopReceipt {
@@ -52,7 +54,7 @@ where
 impl<'a, C, PutReceiptSet> TimeoutOption for DeleteMessageBuilder<'a, C, PutReceiptSet>
 where
     PutReceiptSet: ToAssign,
-    C: Client,
+    C: Client + Clone,
 {
     #[inline]
     fn timeout(&self) -> Option<u64> {
@@ -63,7 +65,7 @@ where
 impl<'a, C, PutReceiptSet> ClientRequestIdOption<'a> for DeleteMessageBuilder<'a, C, PutReceiptSet>
 where
     PutReceiptSet: ToAssign,
-    C: Client,
+    C: Client + Clone,
 {
     #[inline]
     fn client_request_id(&self) -> Option<&'a str> {
@@ -73,14 +75,14 @@ where
 
 impl<'a, C> PopReceiptSupport for DeleteMessageBuilder<'a, C, No>
 where
-    C: Client,
+    C: Client + Clone,
 {
     type O = DeleteMessageBuilder<'a, C, Yes>;
 
     #[inline]
     fn with_pop_receipt(self, pop_receipt: Box<dyn PopReceipt>) -> Self::O {
         DeleteMessageBuilder {
-            queue_name_service: self.queue_name_service,
+            queue_name_client: self.queue_name_client,
             p_pop_receipt: PhantomData {},
             pop_receipt: Some(pop_receipt),
             timeout: self.timeout,
@@ -92,14 +94,14 @@ where
 impl<'a, C, PutReceiptSet> TimeoutSupport for DeleteMessageBuilder<'a, C, PutReceiptSet>
 where
     PutReceiptSet: ToAssign,
-    C: Client,
+    C: Client + Clone,
 {
     type O = DeleteMessageBuilder<'a, C, PutReceiptSet>;
 
     #[inline]
     fn with_timeout(self, timeout: u64) -> Self::O {
         DeleteMessageBuilder {
-            queue_name_service: self.queue_name_service,
+            queue_name_client: self.queue_name_client,
             p_pop_receipt: PhantomData {},
             pop_receipt: self.pop_receipt,
             timeout: Some(timeout),
@@ -111,14 +113,14 @@ where
 impl<'a, C, PutReceiptSet> ClientRequestIdSupport<'a> for DeleteMessageBuilder<'a, C, PutReceiptSet>
 where
     PutReceiptSet: ToAssign,
-    C: Client,
+    C: Client + Clone,
 {
     type O = DeleteMessageBuilder<'a, C, PutReceiptSet>;
 
     #[inline]
     fn with_client_request_id(self, client_request_id: &'a str) -> Self::O {
         DeleteMessageBuilder {
-            queue_name_service: self.queue_name_service,
+            queue_name_client: self.queue_name_client,
             p_pop_receipt: PhantomData {},
             pop_receipt: self.pop_receipt,
             timeout: self.timeout,
@@ -131,25 +133,25 @@ where
 impl<'a, C, PutReceiptSet> DeleteMessageBuilder<'a, C, PutReceiptSet>
 where
     PutReceiptSet: ToAssign,
-    C: Client,
+    C: Client + Clone,
 {
-    pub fn queue_name_service(&self) -> &'a dyn QueueNameService<StorageClient = C> {
-        self.queue_name_service
+    pub fn queue_name_client(&self) -> &'a QueueNameClient<C> {
+        self.queue_name_client
     }
 }
 
 // methods callable only when every mandatory field has been filled
 impl<'a, C> DeleteMessageBuilder<'a, C, Yes>
 where
-    C: Client,
+    C: Client + Clone,
 {
     pub async fn execute(self) -> Result<DeleteMessageResponse, AzureError> {
         let pop_receipt = self.pop_receipt();
 
         let mut uri = format!(
             "{}/{}/messages/{}?popreceipt={}",
-            self.queue_name_service.storage_client().queue_uri(),
-            self.queue_name_service.queue_name(),
+            self.queue_name_client.storage_client().queue_uri(),
+            self.queue_name_client.queue_name(),
             pop_receipt.message_id(),
             utf8_percent_encode(pop_receipt.pop_receipt(), NON_ALPHANUMERIC)
         );
@@ -160,7 +162,7 @@ where
 
         debug!("uri == {}", uri);
 
-        let perform_request_response = self.queue_name_service.storage_client().perform_request(
+        let perform_request_response = self.queue_name_client.storage_client().perform_request(
             &uri,
             &http::Method::DELETE,
             &|mut request| {

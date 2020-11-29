@@ -1,7 +1,6 @@
 pub use crate::{
-    IntoQueueNameClient, IntoQueueServiceClient, MessageBodyRequired, MessageBodySupport,
-    MessageTTLRequired, MessageTTLSupport, NumberOfMessagesOption, NumberOfMessagesSupport,
-    PopReceiptRequired, PopReceiptSupport, QueueNameService, QueueService, QueueServiceClient,
-    VisibilityTimeoutOption, VisibilityTimeoutRequired, VisibilityTimeoutSupport,
-    WithQueueNameClient, WithQueueServiceClient,
+    MessageBodyRequired, MessageBodySupport, MessageTTLRequired, MessageTTLSupport,
+    NumberOfMessagesOption, NumberOfMessagesSupport, PopReceiptRequired, PopReceiptSupport,
+    QueueNameClient, QueueServiceClient, VisibilityTimeoutOption, VisibilityTimeoutRequired,
+    VisibilityTimeoutSupport,
 };

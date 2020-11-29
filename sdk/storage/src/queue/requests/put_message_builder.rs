@@ -13,9 +13,9 @@ use std::time::Duration;
 pub struct PutMessageBuilder<'a, 'b, C, MessageBodySet>
 where
     MessageBodySet: ToAssign,
-    C: Client,
+    C: Client + Clone,
 {
-    queue_name_service: &'a dyn QueueNameService<StorageClient = C>,
+    queue_name_client: &'a QueueNameClient<C>,
     p_message_body: PhantomData<MessageBodySet>,
     message_body: Option<Cow<'b, str>>,
     visibility_timeout: Option<Duration>,
@@ -26,14 +26,14 @@ where
 
 impl<'a, 'b, C> PutMessageBuilder<'a, 'b, C, No>
 where
-    C: Client,
+    C: Client + Clone,
 {
     #[inline]
     pub(crate) fn new(
-        queue_name_service: &'a dyn QueueNameService<StorageClient = C>,
+        queue_name_client: &'a QueueNameClient<C>,
     ) -> PutMessageBuilder<'a, 'b, C, No> {
         PutMessageBuilder {
-            queue_name_service,
+            queue_name_client,
             p_message_body: PhantomData {},
             message_body: None,
             visibility_timeout: None,
@@ -47,7 +47,7 @@ where
 //set mandatory no traits methods
 impl<'a, 'b, C> MessageBodyRequired for PutMessageBuilder<'a, 'b, C, Yes>
 where
-    C: Client,
+    C: Client + Clone,
 {
     #[inline]
     fn message_body(&self) -> &str {
@@ -59,7 +59,7 @@ impl<'a, 'b, C, MessageBodySet> VisibilityTimeoutOption
     for PutMessageBuilder<'a, 'b, C, MessageBodySet>
 where
     MessageBodySet: ToAssign,
-    C: Client,
+    C: Client + Clone,
 {
     #[inline]
     fn visibility_timeout(&self) -> Option<Duration> {
@@ -70,7 +70,7 @@ where
 impl<'a, 'b, C, MessageBodySet> MessageTTLRequired for PutMessageBuilder<'a, 'b, C, MessageBodySet>
 where
     MessageBodySet: ToAssign,
-    C: Client,
+    C: Client + Clone,
 {
     #[inline]
     fn message_ttl_seconds(&self) -> u64 {
@@ -81,7 +81,7 @@ where
 impl<'a, 'b, C, MessageBodySet> TimeoutOption for PutMessageBuilder<'a, 'b, C, MessageBodySet>
 where
     MessageBodySet: ToAssign,
-    C: Client,
+    C: Client + Clone,
 {
     #[inline]
     fn timeout(&self) -> Option<u64> {
@@ -93,7 +93,7 @@ impl<'a, 'b, C, MessageBodySet> ClientRequestIdOption<'a>
     for PutMessageBuilder<'a, 'b, C, MessageBodySet>
 where
     MessageBodySet: ToAssign,
-    C: Client,
+    C: Client + Clone,
 {
     #[inline]
     fn client_request_id(&self) -> Option<&'a str> {
@@ -103,14 +103,14 @@ where
 
 impl<'a, 'b, C> MessageBodySupport<'b> for PutMessageBuilder<'a, 'b, C, No>
 where
-    C: Client,
+    C: Client + Clone,
 {
     type O = PutMessageBuilder<'a, 'b, C, Yes>;
 
     #[inline]
     fn with_message_body<BODY: Into<Cow<'b, str>>>(self, message_body: BODY) -> Self::O {
         PutMessageBuilder {
-            queue_name_service: self.queue_name_service,
+            queue_name_client: self.queue_name_client,
             p_message_body: PhantomData {},
             message_body: Some(message_body.into()),
             visibility_timeout: self.visibility_timeout,
@@ -125,14 +125,14 @@ impl<'a, 'b, C, MessageBodySet> VisibilityTimeoutSupport
     for PutMessageBuilder<'a, 'b, C, MessageBodySet>
 where
     MessageBodySet: ToAssign,
-    C: Client,
+    C: Client + Clone,
 {
     type O = PutMessageBuilder<'a, 'b, C, MessageBodySet>;
 
     #[inline]
     fn with_visibility_timeout(self, visibility_timeout: Duration) -> Self::O {
         PutMessageBuilder {
-            queue_name_service: self.queue_name_service,
+            queue_name_client: self.queue_name_client,
             p_message_body: PhantomData {},
             message_body: self.message_body,
             visibility_timeout: Some(visibility_timeout),
@@ -146,14 +146,14 @@ where
 impl<'a, 'b, C, MessageBodySet> MessageTTLSupport for PutMessageBuilder<'a, 'b, C, MessageBodySet>
 where
     MessageBodySet: ToAssign,
-    C: Client,
+    C: Client + Clone,
 {
     type O = PutMessageBuilder<'a, 'b, C, MessageBodySet>;
 
     #[inline]
     fn with_message_ttl_seconds(self, message_ttl_seconds: u64) -> Self::O {
         PutMessageBuilder {
-            queue_name_service: self.queue_name_service,
+            queue_name_client: self.queue_name_client,
             p_message_body: PhantomData {},
             message_body: self.message_body,
             visibility_timeout: self.visibility_timeout,
@@ -167,14 +167,14 @@ where
 impl<'a, 'b, C, MessageBodySet> TimeoutSupport for PutMessageBuilder<'a, 'b, C, MessageBodySet>
 where
     MessageBodySet: ToAssign,
-    C: Client,
+    C: Client + Clone,
 {
     type O = PutMessageBuilder<'a, 'b, C, MessageBodySet>;
 
     #[inline]
     fn with_timeout(self, timeout: u64) -> Self::O {
         PutMessageBuilder {
-            queue_name_service: self.queue_name_service,
+            queue_name_client: self.queue_name_client,
             p_message_body: PhantomData {},
             message_body: self.message_body,
             visibility_timeout: self.visibility_timeout,
@@ -189,14 +189,14 @@ impl<'a, 'b, C, MessageBodySet> ClientRequestIdSupport<'a>
     for PutMessageBuilder<'a, 'b, C, MessageBodySet>
 where
     MessageBodySet: ToAssign,
-    C: Client,
+    C: Client + Clone,
 {
     type O = PutMessageBuilder<'a, 'b, C, MessageBodySet>;
 
     #[inline]
     fn with_client_request_id(self, client_request_id: &'a str) -> Self::O {
         PutMessageBuilder {
-            queue_name_service: self.queue_name_service,
+            queue_name_client: self.queue_name_client,
             p_message_body: PhantomData {},
             message_body: self.message_body,
             visibility_timeout: self.visibility_timeout,
@@ -211,23 +211,23 @@ where
 impl<'a, 'b, C, MessageBodySet> PutMessageBuilder<'a, 'b, C, MessageBodySet>
 where
     MessageBodySet: ToAssign,
-    C: Client,
+    C: Client + Clone,
 {
-    pub fn queue_name_service(&self) -> &'a dyn QueueNameService<StorageClient = C> {
-        self.queue_name_service
+    pub fn queue_name_client(&self) -> &'a QueueNameClient<C> {
+        self.queue_name_client
     }
 }
 
 // methods callable only when every mandatory field has been filled
 impl<'a, 'b, C> PutMessageBuilder<'a, 'b, C, Yes>
 where
-    C: Client,
+    C: Client + Clone,
 {
     pub async fn execute(self) -> Result<PutMessageResponse, AzureError> {
         let mut uri = format!(
             "{}/{}/messages",
-            self.queue_name_service.storage_client().queue_uri(),
-            self.queue_name_service.queue_name()
+            self.queue_name_client.storage_client().queue_uri(),
+            self.queue_name_client.queue_name()
         );
 
         uri = format!("{}?{}", uri, MessageTTLRequired::to_uri_parameter(&self));
@@ -250,7 +250,7 @@ where
 
         debug!("message about to be posted == {}", message);
 
-        let perform_request_response = self.queue_name_service.storage_client().perform_request(
+        let perform_request_response = self.queue_name_client.storage_client().perform_request(
             &uri,
             &http::Method::POST,
             &|mut request| {

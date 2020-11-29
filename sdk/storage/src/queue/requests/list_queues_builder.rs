@@ -8,27 +8,25 @@ use hyper::StatusCode;
 use std::convert::TryInto;
 
 #[derive(Debug, Clone)]
-pub struct ListQueuesBuilder<'a, 'b, C>
+pub struct ListQueuesBuilder<'a, C>
 where
     C: Client + Clone,
 {
-    queue_service: &'a QueueServiceClient<'a, C>,
-    prefix: Option<&'b str>,
-    next_marker: Option<&'b str>,
+    queue_service: &'a QueueServiceClient<C>,
+    prefix: Option<&'a str>,
+    next_marker: Option<&'a str>,
     max_results: Option<u32>,
     include_metadata: bool,
     timeout: Option<u64>,
     client_request_id: Option<&'a str>,
 }
 
-impl<'a, 'b, C> ListQueuesBuilder<'a, 'b, C>
+impl<'a, C> ListQueuesBuilder<'a, C>
 where
     C: Client + Clone,
 {
     #[inline]
-    pub(crate) fn new(
-        queue_service: &'a QueueServiceClient<'a, C>,
-    ) -> ListQueuesBuilder<'a, 'b, C> {
+    pub(crate) fn new(queue_service: &'a QueueServiceClient<C>) -> ListQueuesBuilder<'a, C> {
         ListQueuesBuilder {
             queue_service,
             prefix: None,
@@ -42,27 +40,27 @@ where
 }
 
 //set mandatory no traits methods
-impl<'a, 'b, C> PrefixOption<'b> for ListQueuesBuilder<'a, 'b, C>
+impl<'a, C> PrefixOption<'a> for ListQueuesBuilder<'a, C>
 where
     C: Client + Clone,
 {
     #[inline]
-    fn prefix(&self) -> Option<&'b str> {
+    fn prefix(&self) -> Option<&'a str> {
         self.prefix
     }
 }
 
-impl<'a, 'b, C> NextMarkerOption<'b> for ListQueuesBuilder<'a, 'b, C>
+impl<'a, C> NextMarkerOption<'a> for ListQueuesBuilder<'a, C>
 where
     C: Client + Clone,
 {
     #[inline]
-    fn next_marker(&self) -> Option<&'b str> {
+    fn next_marker(&self) -> Option<&'a str> {
         self.next_marker
     }
 }
 
-impl<'a, 'b, C> MaxResultsOption for ListQueuesBuilder<'a, 'b, C>
+impl<'a, C> MaxResultsOption for ListQueuesBuilder<'a, C>
 where
     C: Client + Clone,
 {
@@ -72,7 +70,7 @@ where
     }
 }
 
-impl<'a, 'b, C> IncludeMetadataOption for ListQueuesBuilder<'a, 'b, C>
+impl<'a, C> IncludeMetadataOption for ListQueuesBuilder<'a, C>
 where
     C: Client + Clone,
 {
@@ -82,7 +80,7 @@ where
     }
 }
 
-impl<'a, 'b, C> TimeoutOption for ListQueuesBuilder<'a, 'b, C>
+impl<'a, C> TimeoutOption for ListQueuesBuilder<'a, C>
 where
     C: Client + Clone,
 {
@@ -92,7 +90,7 @@ where
     }
 }
 
-impl<'a, 'b, C> ClientRequestIdOption<'a> for ListQueuesBuilder<'a, 'b, C>
+impl<'a, C> ClientRequestIdOption<'a> for ListQueuesBuilder<'a, C>
 where
     C: Client + Clone,
 {
@@ -102,14 +100,14 @@ where
     }
 }
 
-impl<'a, 'b, C> PrefixSupport<'b> for ListQueuesBuilder<'a, 'b, C>
+impl<'a, C> PrefixSupport<'a> for ListQueuesBuilder<'a, C>
 where
     C: Client + Clone,
 {
-    type O = ListQueuesBuilder<'a, 'b, C>;
+    type O = ListQueuesBuilder<'a, C>;
 
     #[inline]
-    fn with_prefix(self, prefix: &'b str) -> Self::O {
+    fn with_prefix(self, prefix: &'a str) -> Self::O {
         ListQueuesBuilder {
             queue_service: self.queue_service,
             prefix: Some(prefix),
@@ -122,14 +120,14 @@ where
     }
 }
 
-impl<'a, 'b, C> NextMarkerSupport<'b> for ListQueuesBuilder<'a, 'b, C>
+impl<'a, C> NextMarkerSupport<'a> for ListQueuesBuilder<'a, C>
 where
     C: Client + Clone,
 {
-    type O = ListQueuesBuilder<'a, 'b, C>;
+    type O = ListQueuesBuilder<'a, C>;
 
     #[inline]
-    fn with_next_marker(self, next_marker: &'b str) -> Self::O {
+    fn with_next_marker(self, next_marker: &'a str) -> Self::O {
         ListQueuesBuilder {
             queue_service: self.queue_service,
             prefix: self.prefix,
@@ -142,11 +140,11 @@ where
     }
 }
 
-impl<'a, 'b, C> MaxResultsSupport for ListQueuesBuilder<'a, 'b, C>
+impl<'a, C> MaxResultsSupport for ListQueuesBuilder<'a, C>
 where
     C: Client + Clone,
 {
-    type O = ListQueuesBuilder<'a, 'b, C>;
+    type O = ListQueuesBuilder<'a, C>;
 
     #[inline]
     fn with_max_results(self, max_results: u32) -> Self::O {
@@ -162,11 +160,11 @@ where
     }
 }
 
-impl<'a, 'b, C> IncludeMetadataSupport for ListQueuesBuilder<'a, 'b, C>
+impl<'a, C> IncludeMetadataSupport for ListQueuesBuilder<'a, C>
 where
     C: Client + Clone,
 {
-    type O = ListQueuesBuilder<'a, 'b, C>;
+    type O = ListQueuesBuilder<'a, C>;
 
     #[inline]
     fn with_include_metadata(self) -> Self::O {
@@ -182,11 +180,11 @@ where
     }
 }
 
-impl<'a, 'b, C> TimeoutSupport for ListQueuesBuilder<'a, 'b, C>
+impl<'a, C> TimeoutSupport for ListQueuesBuilder<'a, C>
 where
     C: Client + Clone,
 {
-    type O = ListQueuesBuilder<'a, 'b, C>;
+    type O = ListQueuesBuilder<'a, C>;
 
     #[inline]
     fn with_timeout(self, timeout: u64) -> Self::O {
@@ -202,11 +200,11 @@ where
     }
 }
 
-impl<'a, 'b, C> ClientRequestIdSupport<'a> for ListQueuesBuilder<'a, 'b, C>
+impl<'a, C> ClientRequestIdSupport<'a> for ListQueuesBuilder<'a, C>
 where
     C: Client + Clone,
 {
-    type O = ListQueuesBuilder<'a, 'b, C>;
+    type O = ListQueuesBuilder<'a, C>;
 
     #[inline]
     fn with_client_request_id(self, client_request_id: &'a str) -> Self::O {
@@ -223,17 +221,17 @@ where
 }
 
 // methods callable regardless
-impl<'a, 'b, C> ListQueuesBuilder<'a, 'b, C>
+impl<'a, C> ListQueuesBuilder<'a, C>
 where
     C: Client + Clone,
 {
-    pub fn queue_service(&self) -> &'a QueueServiceClient<'a, C> {
+    pub fn queue_service(&self) -> &'a QueueServiceClient<C> {
         self.queue_service
     }
 }
 
 // methods callable only when every mandatory field has been filled
-impl<'a, 'b, C> ListQueuesBuilder<'a, 'b, C>
+impl<'a, C> ListQueuesBuilder<'a, C>
 where
     C: Client + Clone,
 {
