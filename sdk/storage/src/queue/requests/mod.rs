@@ -12,3 +12,5 @@ mod clear_messages_builder;
 pub use clear_messages_builder::ClearMessagesBuilder;
 mod create_queue_builder;
 pub use create_queue_builder::CreateQueueBuilder;
+mod delete_queue_builder;
+pub use delete_queue_builder::DeleteQueueBuilder;

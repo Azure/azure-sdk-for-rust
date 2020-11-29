@@ -13,3 +13,5 @@ mod clear_messages_response;
 pub use clear_messages_response::ClearMessagesResponse;
 mod create_queue_response;
 pub use create_queue_response::CreateQueueResponse;
+mod delete_queue_response;
+pub use delete_queue_response::DeleteQueueResponse;

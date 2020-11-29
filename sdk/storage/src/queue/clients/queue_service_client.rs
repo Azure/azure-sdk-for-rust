@@ -35,10 +35,6 @@ where
         crate::requests::ListQueuesBuilder::new(self)
     }
 
-    pub fn create_queue<'a>(&'a self, queue_name: &'a str) -> requests::CreateQueueBuilder<'a, C> {
-        crate::requests::CreateQueueBuilder::new(self, queue_name)
-    }
-
     pub fn into_queue_name_client<QN>(self, queue_name: QN) -> QueueNameClient<C>
     where
         QN: Into<String>,

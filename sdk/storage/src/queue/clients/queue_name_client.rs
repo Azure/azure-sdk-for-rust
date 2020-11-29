@@ -33,6 +33,14 @@ where
         self.queue_name.as_ref()
     }
 
+    pub fn create_queue(&self) -> requests::CreateQueueBuilder<'_, C> {
+        crate::requests::CreateQueueBuilder::new(self)
+    }
+
+    pub fn delete_queue(&self) -> requests::DeleteQueueBuilder<'_, C> {
+        crate::requests::DeleteQueueBuilder::new(self)
+    }
+
     pub fn put_message(&self) -> requests::PutMessageBuilder<'_, '_, C, No> {
         requests::PutMessageBuilder::new(self)
     }
