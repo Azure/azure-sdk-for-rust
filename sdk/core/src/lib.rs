@@ -138,6 +138,13 @@ pub trait TimeoutOption {
             None
         }
     }
+
+    fn append_pair(&self, url: &mut url::Url) {
+        if let Some(timeout) = self.timeout() {
+            url.query_pairs_mut()
+                .append_pair("timeout", &format!("{}", timeout));
+        }
+    }
 }
 
 pub trait ClientRequestIdSupport<'a> {

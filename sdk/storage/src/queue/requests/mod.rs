@@ -8,3 +8,5 @@ mod delete_message_builder;
 pub use delete_message_builder::DeleteMessageBuilder;
 mod peek_messages_builder;
 pub use peek_messages_builder::PeekMessagesBuilder;
+mod clear_messages_builder;
+pub use clear_messages_builder::ClearMessagesBuilder;

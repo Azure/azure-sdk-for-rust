@@ -9,3 +9,5 @@ pub use peek_messages_response::PeekMessagesResponse;
 mod delete_message_response;
 pub use delete_message_response::DeleteMessageResponse;
 pub use delete_message_response::PopReceipt;
+mod clear_messages_response;
+pub use clear_messages_response::ClearMessagesResponse;

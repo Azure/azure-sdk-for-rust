@@ -83,4 +83,8 @@ where
     fn delete_message(&self) -> requests::DeleteMessageBuilder<'_, Self::StorageClient, No> {
         requests::DeleteMessageBuilder::new(self)
     }
+
+    fn clear_messages(&self) -> requests::ClearMessagesBuilder<'_, Self::StorageClient> {
+        requests::ClearMessagesBuilder::new(self)
+    }
 }
