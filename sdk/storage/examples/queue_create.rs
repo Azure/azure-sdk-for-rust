@@ -18,7 +18,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .nth(1)
         .expect("Please pass the queue name as first parameter");
 
-    let queue_client: QueueServiceClient<_> = client::with_access_key(&account, &master_key).into();
+    let queue_name_client = QueueServiceClient::new(client::with_access_key(&account, &master_key))
+        .into_queue_name_client(&queue_name);
 
     trace!("creating queue");
 
@@ -27,12 +28,19 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let mut hm = HashMap::new();
     hm.insert("source", "azure-sdk-for-rust");
 
-    let response = queue_client
-        .create_queue(&queue_name)
+    let response = queue_name_client
+        .create_queue()
         .with_metadata(&hm)
         .execute()
         .await?;
+    println!("response == {:#?}", response);
 
+    // now let's delete it
+    let response = queue_name_client
+        .delete_queue()
+        .with_client_request_id("myclientid")
+        .execute()
+        .await?;
     println!("response == {:#?}", response);
 
     Ok(())

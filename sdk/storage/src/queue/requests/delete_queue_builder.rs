@@ -104,7 +104,7 @@ where
 
         let perform_request_response = self.queue_name_client.storage_client().perform_request(
             url.as_str(),
-            &http::Method::PUT,
+            &http::Method::DELETE,
             &|mut request| {
                 request = ClientRequestIdOption::add_header(&self, request);
                 request
