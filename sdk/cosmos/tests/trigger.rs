@@ -1,6 +1,5 @@
 #![cfg(all(test, feature = "test_e2e"))]
 use azure_cosmos::prelude::*;
-use azure_cosmos::trigger::*;
 use futures::stream::StreamExt;
 
 mod setup;
@@ -55,20 +54,20 @@ async fn trigger() -> Result<(), CosmosError> {
 
     // create a temp collection
     let _create_collection_response = {
-        let indexes = IncludedPathIndex {
-            kind: KeyKind::Hash,
-            data_type: DataType::String,
+        let indexes = collection::IncludedPathIndex {
+            kind: collection::KeyKind::Hash,
+            data_type: collection::DataType::String,
             precision: Some(3),
         };
 
-        let ip = IncludedPath {
+        let ip = collection::IncludedPath {
             path: "/*".to_owned(),
             indexes: Some(vec![indexes]),
         };
 
-        let ip = IndexingPolicy {
+        let ip = collection::IndexingPolicy {
             automatic: true,
-            indexing_mode: IndexingMode::Consistent,
+            indexing_mode: collection::IndexingMode::Consistent,
             included_paths: vec![ip],
             excluded_paths: vec![],
         };
@@ -91,8 +90,8 @@ async fn trigger() -> Result<(), CosmosError> {
 
     let ret = trigger_client
         .create_trigger()
-        .with_trigger_type(TriggerType::Post)
-        .with_trigger_operation(TriggerOperation::All)
+        .with_trigger_type(trigger::TriggerType::Post)
+        .with_trigger_operation(trigger::TriggerOperation::All)
         .with_body(&"something")
         .execute()
         .await?;
@@ -100,8 +99,8 @@ async fn trigger() -> Result<(), CosmosError> {
     let ret = trigger_client
         .replace_trigger()
         .with_consistency_level(ret.into())
-        .with_trigger_type(TriggerType::Post)
-        .with_trigger_operation(TriggerOperation::All)
+        .with_trigger_type(trigger::TriggerType::Post)
+        .with_trigger_operation(trigger::TriggerOperation::All)
         .with_body(&TRIGGER_BODY)
         .execute()
         .await?;

@@ -1,6 +1,5 @@
 use crate::prelude::*;
 use crate::responses::GetCollectionResponse;
-use crate::CollectionClientRequired;
 use azure_core::prelude::*;
 use http::StatusCode;
 use std::convert::TryInto;

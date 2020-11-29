@@ -41,10 +41,7 @@ impl ToJsonVector {
 
     #[allow(dead_code)]
     pub(crate) fn last_serialized_string(&self) -> Option<&str> {
-        match self.last_serialized_string.as_ref() {
-            Some(last_serialized_str) => Some(last_serialized_str),
-            None => None,
-        }
+        self.last_serialized_string.as_ref().map(String::as_str)
     }
 }
 

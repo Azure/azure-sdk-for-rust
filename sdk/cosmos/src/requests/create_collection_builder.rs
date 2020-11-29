@@ -1,8 +1,7 @@
-use crate::collection::CollectionName;
-use crate::collection::{Collection, IndexingPolicy, PartitionKey};
 use crate::prelude::*;
+use crate::resources::collection::{Collection, CollectionName, IndexingPolicy, PartitionKey};
 use crate::responses::CreateCollectionResponse;
-use crate::{Offer, ResourceType};
+use crate::ResourceType;
 use azure_core::prelude::*;
 use azure_core::{No, ToAssign, Yes};
 use http::StatusCode;

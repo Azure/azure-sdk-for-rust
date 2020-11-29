@@ -1,3 +1,5 @@
+use super::Resource;
+
 #[derive(Serialize, Clone, PartialEq, PartialOrd, Deserialize, Debug)]
 pub struct Database {
     pub id: String,
@@ -31,5 +33,17 @@ where
 {
     fn name(&self) -> &str {
         self.as_ref()
+    }
+}
+
+impl Resource for Database {
+    fn uri(&self) -> &str {
+        &self._self
+    }
+}
+
+impl Resource for &Database {
+    fn uri(&self) -> &str {
+        &self._self
     }
 }

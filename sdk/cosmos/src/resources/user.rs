@@ -1,24 +1,4 @@
-pub trait UserName: std::fmt::Debug {
-    fn id(&self) -> &str;
-}
-
-impl UserName for User {
-    fn id(&self) -> &str {
-        &self.id
-    }
-}
-
-impl UserName for String {
-    fn id(&self) -> &str {
-        &self
-    }
-}
-
-impl UserName for &str {
-    fn id(&self) -> &str {
-        self
-    }
-}
+use super::Resource;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialOrd, PartialEq)]
 pub struct User {
@@ -44,5 +24,39 @@ impl std::convert::TryFrom<&[u8]> for User {
     type Error = serde_json::Error;
     fn try_from(body: &[u8]) -> Result<Self, Self::Error> {
         serde_json::from_slice(body)
+    }
+}
+
+impl Resource for User {
+    fn uri(&self) -> &str {
+        &self._self
+    }
+}
+
+impl Resource for &User {
+    fn uri(&self) -> &str {
+        &self._self
+    }
+}
+
+pub trait UserName: std::fmt::Debug {
+    fn id(&self) -> &str;
+}
+
+impl UserName for User {
+    fn id(&self) -> &str {
+        &self.id
+    }
+}
+
+impl UserName for String {
+    fn id(&self) -> &str {
+        &self
+    }
+}
+
+impl UserName for &str {
+    fn id(&self) -> &str {
+        self
     }
 }

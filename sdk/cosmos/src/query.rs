@@ -30,13 +30,6 @@ impl<'a> Param<'a> {
         }
     }
 
-    //pub fn new_ref(name: &'a str, value: &'a Value) -> Self {
-    //    Self {
-    //        name,
-    //        value: Cow::Borrowed(value),
-    //    }
-    //}
-
     pub fn name(&self) -> &'a str {
         self.name
     }
@@ -57,13 +50,6 @@ impl<'a> ParamDef<'a> {
             value: value.into(),
         }
     }
-
-    //pub fn value_ref(&self, value: &'a Value) -> Param<'a> {
-    //    Param {
-    //        name: self.name,
-    //        value: Cow::Borrowed(value),
-    //    }
-    //}
 }
 
 impl<'a> Query<'a> {

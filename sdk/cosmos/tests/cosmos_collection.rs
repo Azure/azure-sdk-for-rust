@@ -1,8 +1,8 @@
 #![cfg(all(test, feature = "test_e2e"))]
-use azure_cosmos::collection::*;
-use azure_cosmos::prelude::*;
-use azure_cosmos::Offer;
 mod setup;
+
+use azure_cosmos::prelude::*;
+use azure_cosmos::resources::collection::*;
 
 #[tokio::test]
 async fn create_and_delete_collection() {

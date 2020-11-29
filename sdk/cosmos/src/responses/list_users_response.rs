@@ -1,6 +1,6 @@
 use crate::from_headers::*;
+use crate::resources::User;
 use crate::CosmosError;
-use crate::User;
 use azure_core::headers::{continuation_token_from_headers_optional, session_token_from_headers};
 use azure_core::SessionToken;
 use http::response::Response;

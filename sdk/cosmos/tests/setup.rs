@@ -1,6 +1,5 @@
 use azure_core::HttpClient;
 use azure_cosmos::prelude::*;
-use azure_cosmos::AuthorizationToken;
 use std::sync::Arc;
 
 pub fn initialize() -> Result<CosmosClient, CosmosError> {

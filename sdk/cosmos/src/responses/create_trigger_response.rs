@@ -1,5 +1,5 @@
 use crate::from_headers::*;
-use crate::trigger::Trigger;
+use crate::resources::Trigger;
 use crate::CosmosError;
 use crate::ResourceQuota;
 use azure_core::headers::{etag_from_headers, session_token_from_headers};

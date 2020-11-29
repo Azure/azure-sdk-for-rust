@@ -1,7 +1,8 @@
 use super::DatabaseClient;
 use crate::headers::*;
-use crate::requests;
-use crate::{AuthorizationToken, ReadonlyString, ResourceType};
+use crate::resources::permission::AuthorizationToken;
+use crate::{requests, ReadonlyString, ResourceType};
+
 use azure_core::{HttpClient, No};
 use http::request::Builder as RequestBuilder;
 use http::{header, HeaderValue};
@@ -101,7 +102,7 @@ impl CosmosClient {
             uri
         );
 
-        http::request::Builder::new()
+        RequestBuilder::new()
             .method(http_method)
             .uri(uri)
             .header(HEADER_DATE, time)

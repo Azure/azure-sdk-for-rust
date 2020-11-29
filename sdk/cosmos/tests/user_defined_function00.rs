@@ -1,5 +1,7 @@
 #![cfg(all(test, feature = "test_e2e"))]
 use azure_cosmos::prelude::*;
+use azure_cosmos::responses::QueryDocumentsResponseRaw;
+use collection::*;
 use futures::stream::StreamExt;
 
 mod setup;

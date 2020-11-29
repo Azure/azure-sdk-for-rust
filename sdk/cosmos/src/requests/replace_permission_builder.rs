@@ -1,6 +1,6 @@
 use crate::prelude::*;
+use crate::resources::permission::PermissionMode;
 use crate::responses::ReplacePermissionResponse;
-use crate::PermissionMode;
 use azure_core::prelude::*;
 use http::StatusCode;
 use std::convert::TryInto;
