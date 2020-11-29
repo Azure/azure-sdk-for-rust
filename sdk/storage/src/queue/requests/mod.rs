@@ -10,3 +10,5 @@ mod peek_messages_builder;
 pub use peek_messages_builder::PeekMessagesBuilder;
 mod clear_messages_builder;
 pub use clear_messages_builder::ClearMessagesBuilder;
+mod create_queue_builder;
+pub use create_queue_builder::CreateQueueBuilder;

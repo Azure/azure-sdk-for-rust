@@ -11,3 +11,5 @@ pub use delete_message_response::DeleteMessageResponse;
 pub use delete_message_response::PopReceipt;
 mod clear_messages_response;
 pub use clear_messages_response::ClearMessagesResponse;
+mod create_queue_response;
+pub use create_queue_response::CreateQueueResponse;

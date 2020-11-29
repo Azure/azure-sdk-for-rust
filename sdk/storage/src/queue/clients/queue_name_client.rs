@@ -83,8 +83,13 @@ where
     fn delete_message(&self) -> requests::DeleteMessageBuilder<'_, Self::StorageClient, No> {
         requests::DeleteMessageBuilder::new(self)
     }
+}
 
-    fn clear_messages(&self) -> requests::ClearMessagesBuilder<'_, Self::StorageClient> {
+impl<'a, 'b, C> QueueNameClient<'a, 'b, C>
+where
+    C: Client + Clone,
+{
+    pub fn clear_messages(&self) -> requests::ClearMessagesBuilder<'_, C> {
         requests::ClearMessagesBuilder::new(self)
     }
 }

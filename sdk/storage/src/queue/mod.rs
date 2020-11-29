@@ -97,7 +97,7 @@ pub trait HasStorageClient: Debug + Send + Sync {
     fn storage_client(&self) -> &Self::StorageClient;
 }
 
-pub trait QueueService: HasStorageClient + Sync {
+pub trait QueueService: HasStorageClient + Send + Sync {
     fn list_queues(&self) -> requests::ListQueuesBuilder<'_, '_, Self::StorageClient>;
 }
 
@@ -121,7 +121,6 @@ pub trait QueueNameService: HasStorageClient {
     fn get_messages(&self) -> requests::GetMessagesBuilder<'_, Self::StorageClient>;
     fn peek_messages(&self) -> requests::PeekMessagesBuilder<'_, Self::StorageClient>;
     fn delete_message(&self) -> requests::DeleteMessageBuilder<'_, Self::StorageClient, No>;
-    fn clear_messages(&self) -> requests::ClearMessagesBuilder<'_, Self::StorageClient>;
 }
 
 pub trait WithQueueNameClient<'a, 'b>: Debug + Send + Sync {

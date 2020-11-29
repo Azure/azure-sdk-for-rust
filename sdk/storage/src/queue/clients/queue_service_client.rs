@@ -57,3 +57,12 @@ where
         crate::requests::ListQueuesBuilder::new(self)
     }
 }
+
+impl<'a, C> QueueServiceClient<'a, C>
+where
+    C: Client + Clone,
+{
+    pub fn create_queue(&'a self, queue_name: &'a str) -> requests::CreateQueueBuilder<'a, C> {
+        crate::requests::CreateQueueBuilder::new(self, queue_name)
+    }
+}
