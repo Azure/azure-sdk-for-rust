@@ -176,6 +176,10 @@ pub fn from_connection_string(connection_string: &str) -> Result<KeyClient, Azur
                 account_name: Some(account),
                 account_key: Some(_),
                 sas: Some(sas_token),
+                blob_endpoint,
+                table_endpoint,
+                queue_endpoint,
+                file_endpoint,
                 ..
             } => {
                 log::warn!("Both account key and SAS defined in connection string. Using only the provided SAS.");
@@ -184,39 +188,47 @@ pub fn from_connection_string(connection_string: &str) -> Result<KeyClient, Azur
                     String::new(),
                     Some(get_sas_token_parms(sas_token)),
                     client,
-                    format!("https://{}.blob.core.windows.net", account),
-                    format!("https://{}.table.core.windows.net", account),
-                    format!("https://{}.queue.core.windows.net", account),
-                    format!("https://{}.dfs.core.windows.net", account),
+                    get_endpoint_uri(blob_endpoint, account, "blob"),
+                    get_endpoint_uri(table_endpoint, account, "table"),
+                    get_endpoint_uri(queue_endpoint, account,  "queue"),
+                    get_endpoint_uri(file_endpoint, account,  "dfs"),
                 ))
             }
             ConnectionString {
                 account_name: Some(account),
                 sas: Some(sas_token),
+                blob_endpoint,
+                table_endpoint,
+                queue_endpoint,
+                file_endpoint,
                 ..
             } => Ok(KeyClient ::new(
                 account.to_owned(),
                 String::new(),
                 Some(get_sas_token_parms(sas_token)),
                 client,
-                format!("https://{}.blob.core.windows.net", account),
-                format!("https://{}.table.core.windows.net", account),
-                format!("https://{}.queue.core.windows.net", account),
-                format!("https://{}.dfs.core.windows.net", account),
+                get_endpoint_uri(blob_endpoint, account, "blob"),
+                get_endpoint_uri(table_endpoint, account, "table"),
+                get_endpoint_uri(queue_endpoint, account,  "queue"),
+                get_endpoint_uri(file_endpoint, account,  "dfs"),
             )),
             ConnectionString {
                 account_name: Some(account),
                 account_key: Some(key),
+                blob_endpoint,
+                table_endpoint,
+                queue_endpoint,
+                file_endpoint,
                 ..
             } => Ok(KeyClient::new(
                 account.to_owned(),
                 key.to_owned(),
                 None,
                 client,
-                format!("https://{}.blob.core.windows.net", account),
-                format!("https://{}.table.core.windows.net", account),
-                format!("https://{}.queue.core.windows.net", account),
-                format!("https://{}.dfs.core.windows.net", account),
+                get_endpoint_uri(blob_endpoint, account, "blob"),
+                get_endpoint_uri(table_endpoint, account, "table"),
+                get_endpoint_uri(queue_endpoint, account,  "queue"),
+                get_endpoint_uri(file_endpoint, account,  "dfs"),
             )),
             _ => {
                 Err(AzureError::GenericErrorWithText(
@@ -260,4 +272,11 @@ pub fn with_emulator(blob_storage_url: &Url, table_storage_url: &Url) -> KeyClie
         queue_uri,
         filesystem_uri,
     )
+}
+
+fn get_endpoint_uri(url: Option<&str>, account: &str, endpoint_type: &str) -> String {
+    match url {
+        Some(value) => value.to_string(),
+        None => format!("https://{}.{}.core.windows.net", account, endpoint_type),
+    }
 }
