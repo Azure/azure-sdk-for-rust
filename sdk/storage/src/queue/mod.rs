@@ -5,7 +5,6 @@ pub mod responses;
 
 use crate::core::Client;
 use crate::responses::PopReceipt;
-use azure_core::No;
 pub use clients::*;
 use std::borrow::Cow;
 use std::fmt::Debug;
@@ -97,9 +96,7 @@ pub trait HasStorageClient: Debug + Send + Sync {
     fn storage_client(&self) -> &Self::StorageClient;
 }
 
-pub trait QueueService: HasStorageClient + Send + Sync {
-    fn list_queues(&self) -> requests::ListQueuesBuilder<'_, '_, Self::StorageClient>;
-}
+pub trait QueueService: HasStorageClient + Send + Sync {}
 
 pub trait WithQueueServiceClient<'a>: Debug + Send + Sync {
     type QueueServiceClient: QueueService;
@@ -116,11 +113,6 @@ pub trait IntoQueueServiceClient: Debug + Send + Sync {
 //*************
 pub trait QueueNameService: HasStorageClient {
     fn queue_name(&self) -> &str;
-
-    fn put_message(&self) -> requests::PutMessageBuilder<'_, '_, Self::StorageClient, No>;
-    fn get_messages(&self) -> requests::GetMessagesBuilder<'_, Self::StorageClient>;
-    fn peek_messages(&self) -> requests::PeekMessagesBuilder<'_, Self::StorageClient>;
-    fn delete_message(&self) -> requests::DeleteMessageBuilder<'_, Self::StorageClient, No>;
 }
 
 pub trait WithQueueNameClient<'a, 'b>: Debug + Send + Sync {

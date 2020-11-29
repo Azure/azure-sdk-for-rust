@@ -1,6 +1,7 @@
 use crate::core::prelude::*;
-use crate::queue::prelude::*;
+use crate::queue::clients::QueueServiceClient;
 use crate::queue::responses::*;
+use crate::queue::HasStorageClient;
 use azure_core::errors::AzureError;
 use azure_core::prelude::*;
 use hyper::StatusCode;
@@ -9,9 +10,9 @@ use std::convert::TryInto;
 #[derive(Debug, Clone)]
 pub struct ListQueuesBuilder<'a, 'b, C>
 where
-    C: Client,
+    C: Client + Clone,
 {
-    queue_service: &'a dyn QueueService<StorageClient = C>,
+    queue_service: &'a QueueServiceClient<'a, C>,
     prefix: Option<&'b str>,
     next_marker: Option<&'b str>,
     max_results: Option<u32>,
@@ -22,11 +23,11 @@ where
 
 impl<'a, 'b, C> ListQueuesBuilder<'a, 'b, C>
 where
-    C: Client,
+    C: Client + Clone,
 {
     #[inline]
     pub(crate) fn new(
-        queue_service: &'a dyn QueueService<StorageClient = C>,
+        queue_service: &'a QueueServiceClient<'a, C>,
     ) -> ListQueuesBuilder<'a, 'b, C> {
         ListQueuesBuilder {
             queue_service,
@@ -43,7 +44,7 @@ where
 //set mandatory no traits methods
 impl<'a, 'b, C> PrefixOption<'b> for ListQueuesBuilder<'a, 'b, C>
 where
-    C: Client,
+    C: Client + Clone,
 {
     #[inline]
     fn prefix(&self) -> Option<&'b str> {
@@ -53,7 +54,7 @@ where
 
 impl<'a, 'b, C> NextMarkerOption<'b> for ListQueuesBuilder<'a, 'b, C>
 where
-    C: Client,
+    C: Client + Clone,
 {
     #[inline]
     fn next_marker(&self) -> Option<&'b str> {
@@ -63,7 +64,7 @@ where
 
 impl<'a, 'b, C> MaxResultsOption for ListQueuesBuilder<'a, 'b, C>
 where
-    C: Client,
+    C: Client + Clone,
 {
     #[inline]
     fn max_results(&self) -> Option<u32> {
@@ -73,7 +74,7 @@ where
 
 impl<'a, 'b, C> IncludeMetadataOption for ListQueuesBuilder<'a, 'b, C>
 where
-    C: Client,
+    C: Client + Clone,
 {
     #[inline]
     fn include_metadata(&self) -> bool {
@@ -83,7 +84,7 @@ where
 
 impl<'a, 'b, C> TimeoutOption for ListQueuesBuilder<'a, 'b, C>
 where
-    C: Client,
+    C: Client + Clone,
 {
     #[inline]
     fn timeout(&self) -> Option<u64> {
@@ -93,7 +94,7 @@ where
 
 impl<'a, 'b, C> ClientRequestIdOption<'a> for ListQueuesBuilder<'a, 'b, C>
 where
-    C: Client,
+    C: Client + Clone,
 {
     #[inline]
     fn client_request_id(&self) -> Option<&'a str> {
@@ -103,7 +104,7 @@ where
 
 impl<'a, 'b, C> PrefixSupport<'b> for ListQueuesBuilder<'a, 'b, C>
 where
-    C: Client,
+    C: Client + Clone,
 {
     type O = ListQueuesBuilder<'a, 'b, C>;
 
@@ -123,7 +124,7 @@ where
 
 impl<'a, 'b, C> NextMarkerSupport<'b> for ListQueuesBuilder<'a, 'b, C>
 where
-    C: Client,
+    C: Client + Clone,
 {
     type O = ListQueuesBuilder<'a, 'b, C>;
 
@@ -143,7 +144,7 @@ where
 
 impl<'a, 'b, C> MaxResultsSupport for ListQueuesBuilder<'a, 'b, C>
 where
-    C: Client,
+    C: Client + Clone,
 {
     type O = ListQueuesBuilder<'a, 'b, C>;
 
@@ -163,7 +164,7 @@ where
 
 impl<'a, 'b, C> IncludeMetadataSupport for ListQueuesBuilder<'a, 'b, C>
 where
-    C: Client,
+    C: Client + Clone,
 {
     type O = ListQueuesBuilder<'a, 'b, C>;
 
@@ -183,7 +184,7 @@ where
 
 impl<'a, 'b, C> TimeoutSupport for ListQueuesBuilder<'a, 'b, C>
 where
-    C: Client,
+    C: Client + Clone,
 {
     type O = ListQueuesBuilder<'a, 'b, C>;
 
@@ -203,7 +204,7 @@ where
 
 impl<'a, 'b, C> ClientRequestIdSupport<'a> for ListQueuesBuilder<'a, 'b, C>
 where
-    C: Client,
+    C: Client + Clone,
 {
     type O = ListQueuesBuilder<'a, 'b, C>;
 
@@ -224,9 +225,9 @@ where
 // methods callable regardless
 impl<'a, 'b, C> ListQueuesBuilder<'a, 'b, C>
 where
-    C: Client,
+    C: Client + Clone,
 {
-    pub fn queue_service(&self) -> &'a dyn QueueService<StorageClient = C> {
+    pub fn queue_service(&self) -> &'a QueueServiceClient<'a, C> {
         self.queue_service
     }
 }
@@ -234,7 +235,7 @@ where
 // methods callable only when every mandatory field has been filled
 impl<'a, 'b, C> ListQueuesBuilder<'a, 'b, C>
 where
-    C: Client,
+    C: Client + Clone,
 {
     pub async fn execute(self) -> Result<ListQueuesResponse, AzureError> {
         let mut uri = format!(

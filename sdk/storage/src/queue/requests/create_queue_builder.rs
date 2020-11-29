@@ -1,6 +1,7 @@
 use crate::core::prelude::*;
-use crate::queue::prelude::*;
+use crate::queue::clients::QueueServiceClient;
 use crate::queue::responses::*;
+use crate::queue::HasStorageClient;
 use azure_core::errors::AzureError;
 use azure_core::prelude::*;
 use hyper::StatusCode;
@@ -10,9 +11,9 @@ use std::convert::TryInto;
 #[derive(Debug, Clone)]
 pub struct CreateQueueBuilder<'a, C>
 where
-    C: Client,
+    C: Client + Clone,
 {
-    queue_service: &'a dyn QueueService<StorageClient = C>,
+    queue_service: &'a QueueServiceClient<'a, C>,
     queue_name: &'a str,
     timeout: Option<u64>,
     metadata: Option<&'a HashMap<&'a str, &'a str>>,
@@ -21,11 +22,11 @@ where
 
 impl<'a, C> CreateQueueBuilder<'a, C>
 where
-    C: Client,
+    C: Client + Clone,
 {
     #[inline]
     pub(crate) fn new(
-        queue_service: &'a dyn QueueService<StorageClient = C>,
+        queue_service: &'a QueueServiceClient<'a, C>,
         queue_name: &'a str,
     ) -> CreateQueueBuilder<'a, C> {
         CreateQueueBuilder {
@@ -40,7 +41,7 @@ where
 
 impl<'a, C> TimeoutOption for CreateQueueBuilder<'a, C>
 where
-    C: Client,
+    C: Client + Clone,
 {
     #[inline]
     fn timeout(&self) -> Option<u64> {
@@ -50,7 +51,7 @@ where
 
 impl<'a, C> ClientRequestIdOption<'a> for CreateQueueBuilder<'a, C>
 where
-    C: Client,
+    C: Client + Clone,
 {
     #[inline]
     fn client_request_id(&self) -> Option<&'a str> {
@@ -60,7 +61,7 @@ where
 
 impl<'a, C> MetadataOption<'a> for CreateQueueBuilder<'a, C>
 where
-    C: Client,
+    C: Client + Clone,
 {
     fn metadata(&self) -> Option<&'a HashMap<&'a str, &'a str>> {
         self.metadata
@@ -69,7 +70,7 @@ where
 
 impl<'a, C> TimeoutSupport for CreateQueueBuilder<'a, C>
 where
-    C: Client,
+    C: Client + Clone,
 {
     type O = Self;
 
@@ -87,7 +88,7 @@ where
 
 impl<'a, C> ClientRequestIdSupport<'a> for CreateQueueBuilder<'a, C>
 where
-    C: Client,
+    C: Client + Clone,
 {
     type O = Self;
 
@@ -105,7 +106,7 @@ where
 
 impl<'a, C> MetadataSupport<'a> for CreateQueueBuilder<'a, C>
 where
-    C: Client,
+    C: Client + Clone,
 {
     type O = Self;
 
@@ -122,9 +123,9 @@ where
 
 impl<'a, C> CreateQueueBuilder<'a, C>
 where
-    C: Client,
+    C: Client + Clone,
 {
-    pub fn queue_service(&self) -> &'a dyn QueueService<StorageClient = C> {
+    pub fn queue_service(&self) -> &'a QueueServiceClient<'a, C> {
         self.queue_service
     }
 

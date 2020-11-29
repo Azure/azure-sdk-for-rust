@@ -67,28 +67,28 @@ where
     fn queue_name(&self) -> &str {
         self.queue_name.as_ref()
     }
-
-    fn put_message(&self) -> requests::PutMessageBuilder<'_, '_, Self::StorageClient, No> {
-        requests::PutMessageBuilder::new(self)
-    }
-
-    fn get_messages(&self) -> requests::GetMessagesBuilder<'_, Self::StorageClient> {
-        requests::GetMessagesBuilder::new(self)
-    }
-
-    fn peek_messages(&self) -> requests::PeekMessagesBuilder<'_, Self::StorageClient> {
-        requests::PeekMessagesBuilder::new(self)
-    }
-
-    fn delete_message(&self) -> requests::DeleteMessageBuilder<'_, Self::StorageClient, No> {
-        requests::DeleteMessageBuilder::new(self)
-    }
 }
 
 impl<'a, 'b, C> QueueNameClient<'a, 'b, C>
 where
     C: Client + Clone,
 {
+    pub fn put_message(&self) -> requests::PutMessageBuilder<'_, '_, C, No> {
+        requests::PutMessageBuilder::new(self)
+    }
+
+    pub fn get_messages(&self) -> requests::GetMessagesBuilder<'_, C> {
+        requests::GetMessagesBuilder::new(self)
+    }
+
+    pub fn peek_messages(&self) -> requests::PeekMessagesBuilder<'_, C> {
+        requests::PeekMessagesBuilder::new(self)
+    }
+
+    pub fn delete_message(&self) -> requests::DeleteMessageBuilder<'_, C, No> {
+        requests::DeleteMessageBuilder::new(self)
+    }
+
     pub fn clear_messages(&self) -> requests::ClearMessagesBuilder<'_, C> {
         requests::ClearMessagesBuilder::new(self)
     }
