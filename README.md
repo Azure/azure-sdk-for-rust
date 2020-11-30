@@ -2,6 +2,13 @@
 
 This repository is for the development of the *unofficial* Azure SDK for Rust. Users of the SDK may wish to learn more about this crate on [crates.io](https://crates.io/crates/azure_sdk_for_rust).
 
+## Status
+
+🚨🚨🚨**WARNING**: This project is currently under very active development.🚨🚨🚨
+
+This projects' crates have yet to released to crates.io so in order to use them you will need to specify them as git dependencies. You should be aware that large, breaking changes can happen at any time, and thus it's not yet recommended to use these crates in any serious capacity yet. 
+
+Additionally, this project is the logical successor to the previous Azure SDK crates found under [github.com/MindFlavor/AzureSDKForRust](https://github.com/MindFlavor/AzureSDKForRust). The crates have been renamed, so those older crates should be considered fully deprecated.
 
 ## Project Structure
 
