@@ -1,6 +1,6 @@
 use crate::prelude::*;
+use crate::resources::ResourceType;
 use crate::responses::ReplaceDocumentResponse;
-use crate::ResourceType;
 use azure_core::prelude::*;
 use azure_core::{No, ToAssign, Yes};
 use chrono::{DateTime, Utc};

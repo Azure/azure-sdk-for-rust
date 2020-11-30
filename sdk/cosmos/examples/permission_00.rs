@@ -85,8 +85,8 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let list_permissions_response = user_client
         .list_permissions()
-        .with_consistency_level(ConsistencyLevel::from(
-            &create_permission2_response.session_token,
+        .with_consistency_level(ConsistencyLevel::Session(
+            create_permission2_response.session_token,
         ))
         .execute()
         .await?;
@@ -97,8 +97,8 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let get_permission_response = permission_client
         .get_permission()
-        .with_consistency_level(ConsistencyLevel::from(
-            &list_permissions_response.session_token,
+        .with_consistency_level(ConsistencyLevel::Session(
+            list_permissions_response.session_token,
         ))
         .execute()
         .await?;
@@ -111,8 +111,8 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let replace_permission_response = permission_client
         .replace_permission()
         .with_expiry_seconds(60)
-        .with_consistency_level(ConsistencyLevel::from(
-            &get_permission_response.session_token,
+        .with_consistency_level(ConsistencyLevel::Session(
+            get_permission_response.session_token,
         ))
         .execute_with_permission(permission_mode)
         .await?;
@@ -123,8 +123,8 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let delete_permission_response = permission_client
         .delete_permission()
-        .with_consistency_level(ConsistencyLevel::from(
-            &replace_permission_response.session_token,
+        .with_consistency_level(ConsistencyLevel::Session(
+            replace_permission_response.session_token,
         ))
         .execute()
         .await?;
@@ -135,8 +135,8 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let delete_user_response = user_client
         .delete_user()
-        .with_consistency_level(ConsistencyLevel::from(
-            &delete_permission_response.session_token,
+        .with_consistency_level(ConsistencyLevel::Session(
+            delete_permission_response.session_token,
         ))
         .execute()
         .await?;

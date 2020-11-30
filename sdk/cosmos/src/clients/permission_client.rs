@@ -1,7 +1,9 @@
 use super::*;
-use crate::{requests, ReadonlyString, ResourceType};
+use crate::resources::ResourceType;
+use crate::{requests, ReadonlyString};
 use azure_core::HttpClient;
 
+/// A client for Cosmos permission resources.
 #[derive(Debug, Clone)]
 pub struct PermissionClient {
     user_client: UserClient,

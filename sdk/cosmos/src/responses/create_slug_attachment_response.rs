@@ -1,4 +1,4 @@
-use crate::from_headers::*;
+use crate::headers::from_headers::*;
 use crate::resources::Attachment;
 use crate::{CosmosError, ResourceQuota};
 use azure_core::headers::{etag_from_headers, session_token_from_headers};

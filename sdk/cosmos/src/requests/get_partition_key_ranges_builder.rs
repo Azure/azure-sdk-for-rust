@@ -1,6 +1,6 @@
 use crate::prelude::*;
+use crate::resources::ResourceType;
 use crate::responses::GetPartitionKeyRangesResponse;
-use crate::ResourceType;
 use azure_core::prelude::*;
 use chrono::{DateTime, Utc};
 use http::StatusCode;

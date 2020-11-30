@@ -1,6 +1,7 @@
 use crate::headers::*;
 use crate::resource_quota::resource_quotas_from_str;
-use crate::{IndexingDirective, ResourceQuota};
+use crate::resources::document::IndexingDirective;
+use crate::ResourceQuota;
 use azure_core::errors::AzureError;
 use chrono::{DateTime, Utc};
 use http::HeaderMap;
@@ -12,14 +13,6 @@ pub(crate) fn request_charge_from_headers(headers: &HeaderMap) -> Result<f64, Az
         .to_str()?
         .parse()?)
 }
-
-//pub(crate) fn request_item_count_from_headers(headers: &HeaderMap) -> Result<u32, AzureError> {
-//    Ok(headers
-//        .get(HEADER_ITEM_COUNT)
-//        .ok_or_else(|| AzureError::HeaderNotFound(HEADER_ITEM_COUNT.to_owned()))?
-//        .to_str()?
-//        .parse()?)
-//}
 
 pub(crate) fn item_count_from_headers(headers: &HeaderMap) -> Result<u32, AzureError> {
     Ok(headers
@@ -149,16 +142,6 @@ pub(crate) fn collection_partition_index_from_headers(
         .to_str()?
         .parse()?)
 }
-
-//pub(crate) fn indexing_directive_from_headers(
-//    headers: &HeaderMap,
-//) -> Result<IndexingDirective, AzureError> {
-//    Ok(headers
-//        .get(HEADER_INDEXING_DIRECTIVE)
-//        .ok_or_else(|| AzureError::HeaderNotFound(HEADER_INDEXING_DIRECTIVE.to_owned()))?
-//        .to_str()?
-//        .parse()?)
-//}
 
 pub(crate) fn indexing_directive_from_headers_optional(
     headers: &HeaderMap,

@@ -1,18 +1,25 @@
 use crate::responses::*;
 use serde::de::DeserializeOwned;
-use std::convert::From;
 
+/// The consistency guarantee provided by Cosmos.
+///
+/// You can learn more about consistency levels in Cosmos [here](https://docs.microsoft.com/en-us/azure/cosmos-db/consistency-levels).
 #[derive(Debug, Clone, PartialEq)]
 pub enum ConsistencyLevel {
+    /// A linearizability guarantee
     Strong,
+    /// Reads are guaranteed to honor the consistent-prefix guarantee
     Bounded,
+    /// Within a single client session reads are guaranteed to honor the consistent-prefix, monotonic reads, monotonic writes, read-your-writes, and write-follows-reads guarantees.
     Session(String),
+    /// Updates that are returned contain some prefix of all the updates, with no gaps.
     ConsistentPrefix,
+    /// No ordering guarantee for reads
     Eventual,
 }
 
 impl ConsistencyLevel {
-    pub fn to_consistency_level_header(&self) -> &'static str {
+    pub(crate) fn to_consistency_level_header(&self) -> &'static str {
         match self {
             Self::Strong => "Strong",
             Self::Bounded => "Bounded",
@@ -20,24 +27,6 @@ impl ConsistencyLevel {
             Self::ConsistentPrefix => "Prefix", //this is guessed since it's missing here: https://docs.microsoft.com/en-us/rest/api/cosmos-db/common-cosmosdb-rest-request-headers
             Self::Eventual => "Eventual",
         }
-    }
-}
-
-impl From<String> for ConsistencyLevel {
-    fn from(session_token: String) -> Self {
-        ConsistencyLevel::Session(session_token)
-    }
-}
-
-impl From<&str> for ConsistencyLevel {
-    fn from(session_token: &str) -> Self {
-        ConsistencyLevel::Session(session_token.to_owned())
-    }
-}
-
-impl From<&String> for ConsistencyLevel {
-    fn from(session_token: &String) -> Self {
-        ConsistencyLevel::Session(session_token.clone())
     }
 }
 

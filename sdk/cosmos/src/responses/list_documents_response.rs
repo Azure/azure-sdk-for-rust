@@ -1,4 +1,4 @@
-use crate::from_headers::*;
+use crate::headers::from_headers::*;
 use crate::resources::document::{Document, DocumentAttributes};
 use crate::{CosmosError, ResourceQuota};
 

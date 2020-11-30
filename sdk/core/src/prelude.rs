@@ -12,7 +12,7 @@ pub use crate::{
     ContentLengthOption, ContentLengthRequired, ContentLengthSupport, ContentMD5Option,
     ContentMD5Support, ContentTypeOption, ContentTypeRequired, ContentTypeSupport,
     ContinuationOption, ContinuationSupport, DeleteSnapshotsMethod, DeleteSnapshotsMethodSupport,
-    DelimiterOption, DelimiterSupport, IfMatchConditionOption, IfMatchConditionSupport,
+    DelimiterOption, DelimiterSupport, HttpClient, IfMatchConditionOption, IfMatchConditionSupport,
     IfModifiedSinceOption, IfModifiedSinceSupport, IfSinceConditionOption, IfSinceConditionSupport,
     IfSourceMatchConditionOption, IfSourceMatchConditionSupport, IfSourceSinceConditionOption,
     IfSourceSinceConditionSupport, IncludeCopyOption, IncludeCopySupport, IncludeDeletedOption,

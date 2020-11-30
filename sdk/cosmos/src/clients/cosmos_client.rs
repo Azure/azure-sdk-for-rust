@@ -1,7 +1,8 @@
 use super::DatabaseClient;
 use crate::headers::*;
 use crate::resources::permission::AuthorizationToken;
-use crate::{requests, ReadonlyString, ResourceType};
+use crate::resources::ResourceType;
+use crate::{requests, ReadonlyString};
 
 use azure_core::{HttpClient, No};
 use http::request::Builder as RequestBuilder;
@@ -17,6 +18,7 @@ const AZURE_VERSION: &str = "2018-12-31";
 const VERSION: &str = "1.0";
 const TIME_FORMAT: &str = "%a, %d %h %Y %T GMT";
 
+/// A plain Cosmos client.
 #[derive(Debug, Clone)]
 pub struct CosmosClient {
     http_client: Arc<Box<dyn HttpClient>>,
@@ -118,7 +120,7 @@ impl CosmosClient {
         requests::ListDatabasesBuilder::new(self)
     }
 
-    pub fn prepare_request(
+    pub(crate) fn prepare_request(
         &self,
         uri_path: &str,
         http_method: http::Method,
@@ -301,7 +303,6 @@ impl CloudLocation {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::*;
 
     #[test]
     fn string_to_sign_00() {

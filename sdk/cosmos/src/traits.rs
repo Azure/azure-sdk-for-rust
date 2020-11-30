@@ -1,7 +1,8 @@
 use crate::clients::*;
-use crate::resources::collection::*;
-use crate::resources::{collection, database, stored_procedure, trigger, user};
-use crate::{headers, ConsistencyLevel, IndexingDirective, Offer, PartitionKeys, Query};
+use crate::resources::*;
+use crate::{headers, ConsistencyLevel, PartitionKeys};
+use collection::*;
+use document::{IndexingDirective, Query};
 use http::request::Builder;
 
 pub trait CosmosClientRequired<'a> {
@@ -249,7 +250,7 @@ pub trait PartitionKeysRequired<'a> {
 
     #[must_use]
     fn add_header(&self, builder: Builder) -> Builder {
-        crate::add_partition_keys_header(self.partition_keys(), builder)
+        headers::add_partition_keys_header(self.partition_keys(), builder)
     }
 }
 

@@ -1,4 +1,4 @@
-use crate::from_headers::*;
+use crate::headers::from_headers::*;
 use crate::CosmosError;
 use azure_core::headers::session_token_from_headers;
 use http::response::Response;

@@ -38,11 +38,6 @@ impl ToJsonVector {
     pub(crate) fn to_json(&self) -> String {
         format!("{}]", self.serialized_string)
     }
-
-    #[allow(dead_code)]
-    pub(crate) fn last_serialized_string(&self) -> Option<&str> {
-        self.last_serialized_string.as_ref().map(String::as_str)
-    }
 }
 
 impl std::default::Default for ToJsonVector {

@@ -1,8 +1,9 @@
 use super::*;
-use crate::requests;
-use crate::{ReadonlyString, ResourceType};
+use crate::resources::ResourceType;
+use crate::{requests, ReadonlyString};
 use azure_core::{HttpClient, No};
 
+/// A client for Cosmos trigger resources.
 #[derive(Debug, Clone)]
 pub struct TriggerClient {
     collection_client: CollectionClient,

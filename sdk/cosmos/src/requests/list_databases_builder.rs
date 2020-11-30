@@ -1,6 +1,6 @@
 use crate::prelude::*;
+use crate::resources::ResourceType;
 use crate::responses::ListDatabasesResponse;
-use crate::ResourceType;
 use azure_core::prelude::*;
 use futures::stream::{unfold, Stream};
 use http::StatusCode;

@@ -1,6 +1,12 @@
+//! Utilities for interacting with [`Document`]s.
+
 mod document_attributes;
+mod indexing_directive;
+mod query;
 
 pub use document_attributes::DocumentAttributes;
+pub use indexing_directive::IndexingDirective;
+pub use query::Query;
 
 use super::Resource;
 use crate::CosmosError;
@@ -8,6 +14,9 @@ use crate::CosmosError;
 use http::header::HeaderMap;
 use serde::de::DeserializeOwned;
 
+/// User-defined content in JSON format.
+///
+/// You can learn more about Documents [here](https://docs.microsoft.com/en-us/rest/api/cosmos-db/documents).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Document<T> {
     #[serde(flatten)]

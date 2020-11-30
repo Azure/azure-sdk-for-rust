@@ -1,6 +1,7 @@
 use crate::prelude::*;
+use crate::resources::document::Query;
+use crate::resources::ResourceType;
 use crate::responses::QueryDocumentsResponse;
-use crate::{Query, ResourceType};
 use azure_core::prelude::*;
 use azure_core::{No, ToAssign, Yes};
 use chrono::{DateTime, Utc};

@@ -1,6 +1,6 @@
 use crate::prelude::*;
+use crate::resources::ResourceType;
 use crate::responses::CreateDatabaseResponse;
-use crate::ResourceType;
 use azure_core::prelude::*;
 use azure_core::{No, ToAssign, Yes};
 use http::StatusCode;

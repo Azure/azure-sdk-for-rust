@@ -1,5 +1,10 @@
+//! Utilities for interacting with [`User`]s.
+
 use super::Resource;
 
+/// A logical namespace for scoping permissions on resources.
+///
+/// You can learn more about users [here](https://docs.microsoft.com/en-us/rest/api/cosmos-db/users).
 #[derive(Serialize, Deserialize, Clone, Debug, PartialOrd, PartialEq)]
 pub struct User {
     pub id: String,

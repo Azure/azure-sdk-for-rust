@@ -1,10 +1,14 @@
 use azure_core::enumerations::ParsingError;
 use std::fmt;
 
+/// Whether the resource should be included in the index.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum IndexingDirective {
+    /// Follow the default indexing policy for the collection.
     Default,
+    /// Add the resource to the index.
     Include,
+    /// Omit the resource to the index.
     Exclude,
 }
 
@@ -31,10 +35,8 @@ impl std::str::FromStr for IndexingDirective {
     }
 }
 
-// TODO: Remove this code smell
 impl fmt::Display for IndexingDirective {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let s: &'static str = self.into();
-        write!(f, "{}", s)
+        write!(f, "{:?}", self)
     }
 }

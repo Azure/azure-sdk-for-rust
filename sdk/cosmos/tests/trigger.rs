@@ -114,7 +114,7 @@ async fn trigger() -> Result<(), CosmosError> {
     let mut stream = Box::pin(stream.stream());
     while let Some(ret) = stream.next().await {
         let ret = ret.unwrap();
-        last_session_token = Some(ret.session_token.into());
+        last_session_token = Some(ConsistencyLevel::Session(ret.session_token));
     }
 
     let _ret = trigger_client

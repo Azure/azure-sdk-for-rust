@@ -1,6 +1,7 @@
-use crate::from_headers::*;
+use crate::headers::from_headers::*;
+use crate::resources::document::IndexingDirective;
 use crate::resources::Attachment;
-use crate::{CosmosError, IndexingDirective, ResourceQuota};
+use crate::{CosmosError, ResourceQuota};
 use azure_core::headers::{
     content_type_from_headers, etag_from_headers, session_token_from_headers,
 };
