@@ -1,7 +1,8 @@
 use super::DatabaseClient;
 use crate::headers::*;
 use crate::resources::permission::AuthorizationToken;
-use crate::{requests, ReadonlyString, ResourceType};
+use crate::resources::ResourceType;
+use crate::{requests, ReadonlyString};
 
 use azure_core::{HttpClient, No};
 use http::request::Builder as RequestBuilder;
@@ -118,7 +119,7 @@ impl CosmosClient {
         requests::ListDatabasesBuilder::new(self)
     }
 
-    pub fn prepare_request(
+    pub(crate) fn prepare_request(
         &self,
         uri_path: &str,
         http_method: http::Method,
@@ -301,7 +302,6 @@ impl CloudLocation {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::*;
 
     #[test]
     fn string_to_sign_00() {

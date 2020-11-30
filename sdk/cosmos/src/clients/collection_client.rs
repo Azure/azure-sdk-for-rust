@@ -1,7 +1,8 @@
 use super::{DatabaseClient, UserDefinedFunctionClient};
 use crate::clients::*;
 use crate::requests;
-use crate::{PartitionKeys, ReadonlyString, ResourceType};
+use crate::resources::ResourceType;
+use crate::{PartitionKeys, ReadonlyString};
 use azure_core::{HttpClient, No};
 
 #[derive(Debug, Clone)]

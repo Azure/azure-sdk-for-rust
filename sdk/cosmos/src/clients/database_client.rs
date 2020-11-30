@@ -1,6 +1,7 @@
 use super::*;
 use crate::requests;
-use crate::{ReadonlyString, ResourceType};
+use crate::resources::ResourceType;
+use crate::ReadonlyString;
 use azure_core::{HttpClient, No};
 
 #[derive(Debug, Clone)]

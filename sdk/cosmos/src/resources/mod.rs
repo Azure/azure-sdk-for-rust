@@ -32,3 +32,17 @@ pub trait Resource {
         PermissionMode::all(self)
     }
 }
+
+#[derive(Debug, Clone, Copy)]
+pub(crate) enum ResourceType {
+    Databases,
+    Collections,
+    Documents,
+    StoredProcedures,
+    Users,
+    Permissions,
+    Attachments,
+    PartitionKeyRanges,
+    UserDefinedFunctions,
+    Triggers,
+}

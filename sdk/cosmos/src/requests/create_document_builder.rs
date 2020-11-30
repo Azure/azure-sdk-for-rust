@@ -1,6 +1,6 @@
 use crate::prelude::*;
+use crate::resources::ResourceType;
 use crate::responses::CreateDocumentResponse;
-use crate::ResourceType;
 use azure_core::errors::UnexpectedHTTPResult;
 use azure_core::prelude::*;
 use azure_core::{No, ToAssign, Yes};
