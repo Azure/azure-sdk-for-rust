@@ -3,37 +3,35 @@ use crate::queue::clients::QueueNameClient;
 use crate::queue::prelude::*;
 use crate::queue::HasStorageClient;
 use crate::responses::*;
+use azure_core::errors::AzureError;
 use azure_core::prelude::*;
-use azure_core::{errors::AzureError, No, ToAssign, Yes};
 use hyper::StatusCode;
 use percent_encoding::{utf8_percent_encode, NON_ALPHANUMERIC};
-use std::{convert::TryInto, marker::PhantomData};
+use std::convert::TryInto;
 
 #[derive(Debug)]
-pub struct DeleteMessageBuilder<'a, C, PutReceiptSet>
+pub struct DeleteMessageBuilder<'a, C>
 where
-    PutReceiptSet: ToAssign,
     C: Client + Clone,
 {
     queue_name_client: &'a QueueNameClient<C>,
-    p_pop_receipt: PhantomData<PutReceiptSet>,
-    pop_receipt: Option<Box<dyn PopReceipt>>,
+    pop_receipt: Box<dyn PopReceipt>,
     timeout: Option<u64>,
     client_request_id: Option<&'a str>,
 }
 
-impl<'a, C> DeleteMessageBuilder<'a, C, No>
+impl<'a, C> DeleteMessageBuilder<'a, C>
 where
     C: Client + Clone,
 {
     #[inline]
     pub(crate) fn new(
         queue_name_client: &'a QueueNameClient<C>,
-    ) -> DeleteMessageBuilder<'a, C, No> {
+        pop_receipt: Box<dyn PopReceipt>,
+    ) -> DeleteMessageBuilder<'a, C> {
         DeleteMessageBuilder {
             queue_name_client,
-            p_pop_receipt: PhantomData {},
-            pop_receipt: None,
+            pop_receipt,
             timeout: None,
             client_request_id: None,
         }
@@ -41,19 +39,18 @@ where
 }
 
 //set mandatory no traits methods
-impl<'a, C> PopReceiptRequired for DeleteMessageBuilder<'a, C, Yes>
+impl<'a, C> PopReceiptRequired for DeleteMessageBuilder<'a, C>
 where
     C: Client + Clone,
 {
     #[inline]
     fn pop_receipt(&self) -> &dyn PopReceipt {
-        self.pop_receipt.as_deref().unwrap()
+        self.pop_receipt.as_ref()
     }
 }
 
-impl<'a, C, PutReceiptSet> TimeoutOption for DeleteMessageBuilder<'a, C, PutReceiptSet>
+impl<'a, C> TimeoutOption for DeleteMessageBuilder<'a, C>
 where
-    PutReceiptSet: ToAssign,
     C: Client + Clone,
 {
     #[inline]
@@ -62,9 +59,8 @@ where
     }
 }
 
-impl<'a, C, PutReceiptSet> ClientRequestIdOption<'a> for DeleteMessageBuilder<'a, C, PutReceiptSet>
+impl<'a, C> ClientRequestIdOption<'a> for DeleteMessageBuilder<'a, C>
 where
-    PutReceiptSet: ToAssign,
     C: Client + Clone,
 {
     #[inline]
@@ -73,36 +69,16 @@ where
     }
 }
 
-impl<'a, C> PopReceiptSupport for DeleteMessageBuilder<'a, C, No>
+impl<'a, C> TimeoutSupport for DeleteMessageBuilder<'a, C>
 where
     C: Client + Clone,
 {
-    type O = DeleteMessageBuilder<'a, C, Yes>;
-
-    #[inline]
-    fn with_pop_receipt(self, pop_receipt: Box<dyn PopReceipt>) -> Self::O {
-        DeleteMessageBuilder {
-            queue_name_client: self.queue_name_client,
-            p_pop_receipt: PhantomData {},
-            pop_receipt: Some(pop_receipt),
-            timeout: self.timeout,
-            client_request_id: self.client_request_id,
-        }
-    }
-}
-
-impl<'a, C, PutReceiptSet> TimeoutSupport for DeleteMessageBuilder<'a, C, PutReceiptSet>
-where
-    PutReceiptSet: ToAssign,
-    C: Client + Clone,
-{
-    type O = DeleteMessageBuilder<'a, C, PutReceiptSet>;
+    type O = DeleteMessageBuilder<'a, C>;
 
     #[inline]
     fn with_timeout(self, timeout: u64) -> Self::O {
         DeleteMessageBuilder {
             queue_name_client: self.queue_name_client,
-            p_pop_receipt: PhantomData {},
             pop_receipt: self.pop_receipt,
             timeout: Some(timeout),
             client_request_id: self.client_request_id,
@@ -110,18 +86,16 @@ where
     }
 }
 
-impl<'a, C, PutReceiptSet> ClientRequestIdSupport<'a> for DeleteMessageBuilder<'a, C, PutReceiptSet>
+impl<'a, C> ClientRequestIdSupport<'a> for DeleteMessageBuilder<'a, C>
 where
-    PutReceiptSet: ToAssign,
     C: Client + Clone,
 {
-    type O = DeleteMessageBuilder<'a, C, PutReceiptSet>;
+    type O = DeleteMessageBuilder<'a, C>;
 
     #[inline]
     fn with_client_request_id(self, client_request_id: &'a str) -> Self::O {
         DeleteMessageBuilder {
             queue_name_client: self.queue_name_client,
-            p_pop_receipt: PhantomData {},
             pop_receipt: self.pop_receipt,
             timeout: self.timeout,
             client_request_id: Some(client_request_id),
@@ -130,9 +104,8 @@ where
 }
 
 // methods callable regardless
-impl<'a, C, PutReceiptSet> DeleteMessageBuilder<'a, C, PutReceiptSet>
+impl<'a, C> DeleteMessageBuilder<'a, C>
 where
-    PutReceiptSet: ToAssign,
     C: Client + Clone,
 {
     pub fn queue_name_client(&self) -> &'a QueueNameClient<C> {
@@ -141,7 +114,7 @@ where
 }
 
 // methods callable only when every mandatory field has been filled
-impl<'a, C> DeleteMessageBuilder<'a, C, Yes>
+impl<'a, C> DeleteMessageBuilder<'a, C>
 where
     C: Client + Clone,
 {

@@ -1,8 +1,9 @@
 use crate::core::Client;
 use crate::queue::clients::QueueServiceClient;
+use crate::queue::PopReceipt;
 use crate::requests;
 use crate::HasStorageClient;
-use azure_core::No;
+use std::borrow::Cow;
 use std::fmt::Debug;
 
 #[derive(Debug, Clone)]
@@ -41,8 +42,11 @@ where
         crate::requests::DeleteQueueBuilder::new(self)
     }
 
-    pub fn put_message(&self) -> requests::PutMessageBuilder<'_, '_, C, No> {
-        requests::PutMessageBuilder::new(self)
+    pub fn put_message<'a, MB>(&'a self, message_body: MB) -> requests::PutMessageBuilder<'a, C>
+    where
+        MB: Into<Cow<'a, str>>,
+    {
+        requests::PutMessageBuilder::new(self, message_body)
     }
 
     pub fn get_messages(&self) -> requests::GetMessagesBuilder<'_, C> {
@@ -53,8 +57,11 @@ where
         requests::PeekMessagesBuilder::new(self)
     }
 
-    pub fn delete_message(&self) -> requests::DeleteMessageBuilder<'_, C, No> {
-        requests::DeleteMessageBuilder::new(self)
+    pub fn delete_message(
+        &self,
+        pop_receipt: Box<dyn PopReceipt>,
+    ) -> requests::DeleteMessageBuilder<'_, C> {
+        requests::DeleteMessageBuilder::new(self, pop_receipt)
     }
 
     pub fn clear_messages(&self) -> requests::ClearMessagesBuilder<'_, C> {
