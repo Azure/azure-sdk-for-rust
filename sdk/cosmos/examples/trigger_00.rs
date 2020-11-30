@@ -92,7 +92,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
             "List loop received {} items. Object:\n{:#?}",
             ret.item_count, ret
         );
-        last_session_token = Some(ret.session_token.into());
+        last_session_token = Some(ConsistencyLevel::Session(ret.session_token));
     }
 
     let ret = trigger_client

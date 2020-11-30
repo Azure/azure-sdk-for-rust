@@ -84,7 +84,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // wow that was easy and fast, wasnt'it? :)
     println!("Done!");
 
-    let session_token = ConsistencyLevel::from(session_token.unwrap());
+    let session_token = ConsistencyLevel::Session(session_token.unwrap());
 
     // TASK 2
     {
@@ -131,7 +131,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         });
 
     // TASK 4
-    let session_token = ConsistencyLevel::from(query_documents_response.session_token.clone());
+    let session_token = ConsistencyLevel::Session(query_documents_response.session_token);
     for ref document in query_documents_response.results {
         // From our query above we are sure to receive a Document.
         println!(
