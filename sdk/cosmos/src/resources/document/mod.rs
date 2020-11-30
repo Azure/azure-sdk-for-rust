@@ -1,6 +1,8 @@
 mod document_attributes;
+mod indexing_directive;
 
 pub use document_attributes::DocumentAttributes;
+pub use indexing_directive::IndexingDirective;
 
 use super::Resource;
 use crate::CosmosError;
