@@ -1,3 +1,16 @@
+//! The cosmos prelude.
+//!
+//! The prelude re-exports most commonly used items from this crate.
+//!
+//! # Examples
+//!
+//! Import the prelude with:
+//!
+//! ```
+//! # #[allow(unused_imports)]
+//! use async_std::prelude::*;
+//! ```
+
 pub use crate::{ConsistencyLevel, CosmosError, IndexingDirective, Offer, PartitionKeys, Query};
 
 pub use crate::clients::*;
