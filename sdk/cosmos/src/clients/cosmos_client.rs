@@ -18,6 +18,7 @@ const AZURE_VERSION: &str = "2018-12-31";
 const VERSION: &str = "1.0";
 const TIME_FORMAT: &str = "%a, %d %h %Y %T GMT";
 
+/// A plain Cosmos client.
 #[derive(Debug, Clone)]
 pub struct CosmosClient {
     http_client: Arc<Box<dyn HttpClient>>,

@@ -5,6 +5,7 @@ use crate::resources::ResourceType;
 use crate::{PartitionKeys, ReadonlyString};
 use azure_core::{HttpClient, No};
 
+/// A client for Cosmos collection resources.
 #[derive(Debug, Clone)]
 pub struct CollectionClient {
     database_client: DatabaseClient,

@@ -3,6 +3,7 @@ use crate::resources::ResourceType;
 use crate::{requests, PartitionKeys, ReadonlyString};
 use azure_core::HttpClient;
 
+/// A client for Cosmos document resources.
 #[derive(Debug, Clone)]
 pub struct DocumentClient {
     collection_client: CollectionClient,

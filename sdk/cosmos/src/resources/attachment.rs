@@ -1,4 +1,4 @@
-/// Attachments are special documents that contain references and associated metadata with an external blob or media file.
+/// Special documents that contain references and associated metadata to an external blob or media file.
 ///
 /// You can find more information about attachments in Cosmos [here](https://docs.microsoft.com/en-us/rest/api/cosmos-db/attachments)
 #[derive(Debug, Clone, PartialEq, Deserialize)]

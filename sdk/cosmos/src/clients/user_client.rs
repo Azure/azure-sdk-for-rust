@@ -3,6 +3,7 @@ use crate::resources::ResourceType;
 use crate::{requests, ReadonlyString};
 use azure_core::{HttpClient, No};
 
+/// A client for Cosmos user resources.
 #[derive(Debug, Clone)]
 pub struct UserClient {
     database_client: DatabaseClient,

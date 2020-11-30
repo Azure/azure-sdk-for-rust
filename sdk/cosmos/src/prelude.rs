@@ -8,7 +8,7 @@
 //!
 //! ```
 //! # #[allow(unused_imports)]
-//! use async_std::prelude::*;
+//! use azure_cosmos::prelude::*;
 //! ```
 
 pub use crate::{ConsistencyLevel, CosmosError, IndexingDirective, Offer, PartitionKeys, Query};

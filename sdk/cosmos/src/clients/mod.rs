@@ -1,3 +1,25 @@
+//! Clients for interacting with Cosmos resources.
+//!
+//! Each resource has its own client, meaning if you want to interact with Attachments, for example,
+//! you need to use the [`AttachmentClient`].
+//!
+//! # Example
+//!
+//! ```no_run
+//! use azure_cosmos::prelude::*;
+//! use azure_core::HttpClient;
+//! use std::sync::Arc;
+//!
+//! let account = todo!("Get Cosmos account name from the Azure Portal");
+//! let authorization_token = todo!("Get Cosmos authorization token from the Azure Portal");
+//! let database_name: String = todo!("Think of some database name");
+//!
+//! // Create an http client, then a `CosmosClient`, and then a `DatabaseClient`
+//! let http_client: Arc<Box<dyn HttpClient>> = Arc::new(Box::new(reqwest::Client::new()));
+//! let client = CosmosClient::new(http_client, account, authorization_token);
+//! let client = client.into_database_client(database_name);
+//! ```
+
 mod attachment_client;
 mod collection_client;
 mod cosmos_client;

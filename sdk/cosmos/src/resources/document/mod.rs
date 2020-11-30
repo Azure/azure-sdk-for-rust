@@ -8,6 +8,9 @@ use crate::CosmosError;
 use http::header::HeaderMap;
 use serde::de::DeserializeOwned;
 
+/// User-defined content in JSON format.
+///
+/// You can learn more about Documents [here](https://docs.microsoft.com/en-us/rest/api/cosmos-db/documents).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Document<T> {
     #[serde(flatten)]

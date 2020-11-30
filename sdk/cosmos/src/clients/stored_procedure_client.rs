@@ -3,6 +3,7 @@ use crate::resources::ResourceType;
 use crate::{requests, ReadonlyString};
 use azure_core::{HttpClient, No};
 
+/// A client for Cosmos stored procedure resources.
 #[derive(Debug, Clone)]
 pub struct StoredProcedureClient {
     collection_client: CollectionClient,

@@ -1,4 +1,89 @@
+//! Utilities for interacting with [`Collection`]s.
+
 use super::Resource;
+
+/// A container of JSON documents and associated JavaScript application logic.
+///
+/// You can learn more about Collections [here](https://docs.microsoft.com/en-us/rest/api/cosmos-db/collections).
+#[derive(Serialize, Deserialize, Clone, Debug, PartialOrd, PartialEq)]
+pub struct Collection {
+    pub id: String,
+    #[serde(rename = "indexingPolicy")]
+    pub indexing_policy: IndexingPolicy,
+    #[serde(rename = "partitionKey")]
+    pub parition_key: PartitionKey,
+    #[serde(rename = "_rid")]
+    pub rid: String,
+    #[serde(rename = "_ts")]
+    pub ts: u64,
+    #[serde(rename = "_self")]
+    pub _self: String,
+    #[serde(rename = "_etag")]
+    pub etag: String,
+    #[serde(rename = "_docs")]
+    pub docs: String,
+    #[serde(rename = "_sprocs")]
+    pub sprocs: String,
+    #[serde(rename = "_triggers")]
+    pub triggers: String,
+    #[serde(rename = "_udfs")]
+    pub udfs: String,
+    #[serde(rename = "_conflicts")]
+    pub conflicts: String,
+}
+
+impl Collection {
+    pub fn new(id: &str, indexing_policy: IndexingPolicy) -> Collection {
+        Collection {
+            id: id.to_owned(),
+            indexing_policy,
+            parition_key: PartitionKey::default(),
+            rid: "".to_owned(),
+            ts: 0,
+            _self: "".to_owned(),
+            etag: "".to_owned(),
+            docs: "".to_owned(),
+            sprocs: "".to_owned(),
+            triggers: "".to_owned(),
+            udfs: "".to_owned(),
+            conflicts: "".to_owned(),
+        }
+    }
+}
+
+pub trait CollectionName: std::fmt::Debug {
+    fn name(&self) -> &str;
+}
+
+impl CollectionName for Collection {
+    fn name(&self) -> &str {
+        &self.id
+    }
+}
+
+impl CollectionName for &str {
+    fn name(&self) -> &str {
+        self
+    }
+}
+
+impl CollectionName for String {
+    fn name(&self) -> &str {
+        self.as_ref()
+    }
+}
+
+impl Resource for Collection {
+    fn uri(&self) -> &str {
+        &self._self
+    }
+}
+
+impl Resource for &Collection {
+    fn uri(&self) -> &str {
+        &self._self
+    }
+}
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialOrd, PartialEq)]
 pub enum KeyKind {
@@ -93,84 +178,4 @@ pub struct IndexingPolicy {
     pub included_paths: Vec<IncludedPath>,
     #[serde(rename = "excludedPaths")]
     pub excluded_paths: Vec<ExcludedPath>,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialOrd, PartialEq)]
-pub struct Collection {
-    pub id: String,
-    #[serde(rename = "indexingPolicy")]
-    pub indexing_policy: IndexingPolicy,
-    #[serde(rename = "partitionKey")]
-    pub parition_key: PartitionKey,
-    #[serde(rename = "_rid")]
-    pub rid: String,
-    #[serde(rename = "_ts")]
-    pub ts: u64,
-    #[serde(rename = "_self")]
-    pub _self: String,
-    #[serde(rename = "_etag")]
-    pub etag: String,
-    #[serde(rename = "_docs")]
-    pub docs: String,
-    #[serde(rename = "_sprocs")]
-    pub sprocs: String,
-    #[serde(rename = "_triggers")]
-    pub triggers: String,
-    #[serde(rename = "_udfs")]
-    pub udfs: String,
-    #[serde(rename = "_conflicts")]
-    pub conflicts: String,
-}
-
-impl Collection {
-    pub fn new(id: &str, indexing_policy: IndexingPolicy) -> Collection {
-        Collection {
-            id: id.to_owned(),
-            indexing_policy,
-            parition_key: PartitionKey::default(),
-            rid: "".to_owned(),
-            ts: 0,
-            _self: "".to_owned(),
-            etag: "".to_owned(),
-            docs: "".to_owned(),
-            sprocs: "".to_owned(),
-            triggers: "".to_owned(),
-            udfs: "".to_owned(),
-            conflicts: "".to_owned(),
-        }
-    }
-}
-
-pub trait CollectionName: std::fmt::Debug {
-    fn name(&self) -> &str;
-}
-
-impl CollectionName for Collection {
-    fn name(&self) -> &str {
-        &self.id
-    }
-}
-
-impl CollectionName for &str {
-    fn name(&self) -> &str {
-        self
-    }
-}
-
-impl CollectionName for String {
-    fn name(&self) -> &str {
-        self.as_ref()
-    }
-}
-
-impl Resource for Collection {
-    fn uri(&self) -> &str {
-        &self._self
-    }
-}
-
-impl Resource for &Collection {
-    fn uri(&self) -> &str {
-        &self._self
-    }
 }

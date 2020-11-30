@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
 
 /// The permission model.
-
+///
 /// A permission has an authorization token associated with a user for authorized
 /// access to a specific resource. It is used to manage access to collections, documents,
 /// attachments, stored procedures, triggers, and user-defined functions for a particular user.
