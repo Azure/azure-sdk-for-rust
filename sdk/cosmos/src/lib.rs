@@ -109,7 +109,6 @@ mod consistency_level;
 mod errors;
 mod headers;
 mod indexing_directive;
-mod offer;
 mod partition_key_range;
 mod partition_keys;
 mod query;
@@ -119,7 +118,6 @@ mod traits;
 
 pub use consistency_level::ConsistencyLevel;
 pub use indexing_directive::IndexingDirective;
-pub use offer::Offer;
 pub use partition_key_range::PartitionKeyRange;
 pub use partition_keys::PartitionKeys;
 pub use query::{Param, ParamDef, Query};

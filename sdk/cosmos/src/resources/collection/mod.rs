@@ -1,5 +1,9 @@
 //! Utilities for interacting with [`Collection`]s.
 
+mod offer;
+
+pub use offer::Offer;
+
 use super::Resource;
 
 /// A container of JSON documents and associated JavaScript application logic.

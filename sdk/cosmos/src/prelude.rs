@@ -11,9 +11,12 @@
 //! use azure_cosmos::prelude::*;
 //! ```
 
-pub use crate::{ConsistencyLevel, CosmosError, IndexingDirective, Offer, PartitionKeys, Query};
+pub use crate::{ConsistencyLevel, CosmosError, IndexingDirective, PartitionKeys, Query};
 
 pub use crate::clients::*;
+
+// Resources
+pub use crate::resources::collection::Offer;
 pub use crate::resources::*;
 
 // Traits

@@ -31,10 +31,8 @@ impl std::str::FromStr for IndexingDirective {
     }
 }
 
-// TODO: Remove this code smell
 impl fmt::Display for IndexingDirective {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let s: &'static str = self.into();
-        write!(f, "{}", s)
+        write!(f, "{:?}", self)
     }
 }
