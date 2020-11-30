@@ -1,5 +1,5 @@
 use crate::errors::ConversionToDocumentError;
-use crate::from_headers::*;
+use crate::headers::from_headers::*;
 use crate::resources::document::DocumentAttributes;
 use crate::{CosmosError, ResourceQuota};
 use azure_core::headers::{continuation_token_from_headers_optional, session_token_from_headers};

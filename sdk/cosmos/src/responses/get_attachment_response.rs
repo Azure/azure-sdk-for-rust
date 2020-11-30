@@ -1,4 +1,4 @@
-use crate::from_headers::*;
+use crate::headers::from_headers::*;
 use crate::resources::Attachment;
 use crate::{CosmosError, IndexingDirective, ResourceQuota};
 use azure_core::headers::{

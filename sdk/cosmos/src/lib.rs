@@ -10,7 +10,6 @@ extern crate failure;
 extern crate azure_core;
 
 pub mod clients;
-pub mod from_headers;
 pub mod prelude;
 pub mod resources;
 pub mod responses;

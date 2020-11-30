@@ -1,4 +1,4 @@
-use crate::from_headers::*;
+use crate::headers::from_headers::*;
 use crate::CosmosError;
 use crate::PartitionKeyRange;
 use azure_core::headers::session_token_from_headers;

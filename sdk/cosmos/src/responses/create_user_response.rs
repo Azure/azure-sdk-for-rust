@@ -1,4 +1,4 @@
-use crate::from_headers::*;
+use crate::headers::from_headers::*;
 use crate::resources::User;
 use crate::CosmosError;
 use azure_core::headers::{etag_from_headers, session_token_from_headers};

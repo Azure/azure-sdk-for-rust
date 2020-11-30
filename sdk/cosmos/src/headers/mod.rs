@@ -1,3 +1,5 @@
+pub(crate) mod from_headers;
+
 pub(crate) const HEADER_VERSION: &str = "x-ms-version"; // Cow[str]
 pub(crate) const HEADER_DATE: &str = "x-ms-date"; // [String]
 pub(crate) const HEADER_DOCUMENTDB_IS_UPSERT: &str = "x-ms-documentdb-is-upsert"; // [bool]
