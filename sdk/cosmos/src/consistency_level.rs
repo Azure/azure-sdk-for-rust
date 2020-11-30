@@ -2,6 +2,9 @@ use crate::responses::*;
 use serde::de::DeserializeOwned;
 use std::convert::From;
 
+/// The consistency guarantee provided by Cosmos.
+///
+/// You can learn more about consistency levels in Cosmos [here](https://docs.microsoft.com/en-us/azure/cosmos-db/consistency-levels).
 #[derive(Debug, Clone, PartialEq)]
 pub enum ConsistencyLevel {
     Strong,
