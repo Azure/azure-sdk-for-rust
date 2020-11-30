@@ -25,12 +25,7 @@ impl<'a> std::convert::TryFrom<Response<Vec<u8>>> for GetPermissionResponse<'a> 
         debug!("headers == {:#?}", headers);
         debug!("body == {:#?}", std::str::from_utf8(body)?);
 
-        // first get the Cosmos REST API permission
-        let cosmos_permission: Permission<'_> = serde_json::from_slice(body)?;
-        debug!("cosmos_permission== {:#?}", cosmos_permission);
-
-        // now convert into the SDK struct
-        let permission = Permission::try_from(cosmos_permission)?;
+        let permission: Permission<'_> = serde_json::from_slice(body)?;
 
         Ok(Self {
             permission,
