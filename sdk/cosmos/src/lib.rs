@@ -117,5 +117,7 @@ pub use consistency_level::ConsistencyLevel;
 pub use partition_keys::PartitionKeys;
 pub use resource_quota::ResourceQuota;
 
-type ReadonlyString = std::borrow::Cow<'static, str>;
+/// A general error having to do with Cosmos.
 pub type CosmosError = Box<dyn std::error::Error + Sync + Send>;
+
+type ReadonlyString = std::borrow::Cow<'static, str>;

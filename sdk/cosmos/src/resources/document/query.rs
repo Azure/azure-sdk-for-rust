@@ -1,10 +1,8 @@
 use serde_json::Value;
 
-// this modification was necessary because of this bug:
-// [https://github.com/rust-lang/rust/issues/63033](https://github.com/rust-lang/rust/issues/63033).
-// When the bug is resolved we can revert to the original Query from
-// commit:
-// [https://github.com/azure/azure-sdk-for-rust/commit/1b6cb32b3478b0afc50c4460100c21f785720b17](https://github.com/azure/azure-sdk-for-rust/commit/1b6cb32b3478b0afc50c4460100c21f785720b17)
+/// A SQL Query
+///
+/// You can learn more about how SQL queries work in Cosmos [here](https://docs.microsoft.com/en-us/azure/cosmos-db/sql-query-getting-started).
 #[derive(Debug, Serialize)]
 pub struct Query<'a> {
     query: &'a str,

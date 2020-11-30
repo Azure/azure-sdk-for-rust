@@ -1,3 +1,5 @@
+//! Utilities for interacting with [`Document`]s.
+
 mod document_attributes;
 mod indexing_directive;
 mod query;

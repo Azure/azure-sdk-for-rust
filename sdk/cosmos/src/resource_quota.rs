@@ -1,5 +1,9 @@
 use crate::errors::TokenParsingError;
 
+/// A resource quota for the given resource kind
+///
+/// A collection of this type is often returned in responses allowing you to
+/// know how much of a given resource you can use.
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub enum ResourceQuota {
     Databases(u64),
@@ -29,6 +33,7 @@ const TRIGGERS: &str = "triggers=";
 const FUNCTIONS: &str = "functions=";
 const CLIENT_ENCRYPTION_KEYS: &str = "clientEncryptionKeys=";
 
+/// Parse a collection of [`ResourceQuota`] from a string
 pub(crate) fn resource_quotas_from_str(s: &str) -> Result<Vec<ResourceQuota>, failure::Error> {
     debug!("resource_quotas_from_str(\"{}\") called", s);
     let tokens: Vec<&str> = s.split(';').collect();

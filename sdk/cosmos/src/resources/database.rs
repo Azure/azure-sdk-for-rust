@@ -1,3 +1,5 @@
+//! Utilities for interacting with [`Database`]s.
+
 use super::Resource;
 
 /// A logical namespace for collections, users, and permissions.

@@ -1,10 +1,14 @@
 use azure_core::enumerations::ParsingError;
 use std::fmt;
 
+/// Whether the resource should be included in the index.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum IndexingDirective {
+    /// Follow the default indexing policy for the collection.
     Default,
+    /// Add the resource to the index.
     Include,
+    /// Omit the resource to the index.
     Exclude,
 }
 
