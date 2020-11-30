@@ -109,14 +109,12 @@ mod consistency_level;
 mod errors;
 mod headers;
 mod partition_keys;
-mod query;
 mod resource_quota;
 mod to_json_vector;
 mod traits;
 
 pub use consistency_level::ConsistencyLevel;
 pub use partition_keys::PartitionKeys;
-pub use query::{Param, ParamDef, Query};
 pub use resource_quota::ResourceQuota;
 
 type ReadonlyString = std::borrow::Cow<'static, str>;

@@ -1,8 +1,8 @@
 use crate::clients::*;
 use crate::resources::*;
-use crate::{headers, ConsistencyLevel, PartitionKeys, Query};
+use crate::{headers, ConsistencyLevel, PartitionKeys};
 use collection::*;
-use document::IndexingDirective;
+use document::{IndexingDirective, Query};
 use http::request::Builder;
 
 pub trait CosmosClientRequired<'a> {
