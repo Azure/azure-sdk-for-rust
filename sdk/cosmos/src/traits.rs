@@ -393,12 +393,12 @@ pub trait OfferSupport {
 }
 
 pub trait CollectionNameRequired<'a> {
-    fn collection_name(&self) -> &'a dyn CollectionName;
+    fn collection_name(&self) -> &'a str;
 }
 
 pub trait CollectionNameSupport<'a> {
     type O;
-    fn with_collection_name(self, collection_name: &'a dyn CollectionName) -> Self::O;
+    fn with_collection_name(self, collection_name: &'a str) -> Self::O;
 }
 
 pub trait CollectionRequired<'a> {
@@ -438,19 +438,19 @@ pub trait QuerySupport<'a> {
 }
 
 pub trait DatabaseNameRequired<'a> {
-    fn database_name(&'a self) -> &'a dyn database::DatabaseName;
+    fn database_name(&'a self) -> &'a str;
 }
 
 pub trait DatabaseNameSupport<'a> {
     type O;
-    fn with_database_name(self, database_name: &'a dyn database::DatabaseName) -> Self::O;
+    fn with_database_name(self, database_name: &'a str) -> Self::O;
 }
 
 pub trait UserNameRequired<'a> {
-    fn user_name(&self) -> &'a dyn user::UserName;
+    fn user_name(&self) -> &'a str;
 }
 
 pub trait UserNameSupport<'a> {
     type O;
-    fn with_user_name(self, user_name: &'a dyn user::UserName) -> Self::O;
+    fn with_user_name(self, user_name: &'a str) -> Self::O;
 }

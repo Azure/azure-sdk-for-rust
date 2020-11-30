@@ -125,7 +125,7 @@ impl<'a> ListCollectionsBuilder<'a> {
     pub async fn execute(&self) -> Result<ListCollectionsResponse, CosmosError> {
         trace!("ListCollectionsBuilder::execute called");
         let request = self.database_client.cosmos_client().prepare_request(
-            &format!("dbs/{}/colls", self.database_client.database_name().name()),
+            &format!("dbs/{}/colls", self.database_client.database_name()),
             http::Method::GET,
             ResourceType::Collections,
         );

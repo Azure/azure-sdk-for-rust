@@ -2,14 +2,15 @@
 //!
 //! You can learn about the Cosmos DB resource model [here](https://docs.microsoft.com/en-us/azure/cosmos-db/account-databases-containers-items).
 
-mod attachment;
 pub mod collection;
-pub mod database;
 pub mod document;
 pub mod permission;
 pub mod stored_procedure;
 pub mod trigger;
-pub mod user;
+
+mod attachment;
+mod database;
+mod user;
 mod user_defined_function;
 
 #[doc(inline)]

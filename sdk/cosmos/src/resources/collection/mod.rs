@@ -42,38 +42,16 @@ impl Collection {
             id: id.to_owned(),
             indexing_policy,
             parition_key: PartitionKey::default(),
-            rid: "".to_owned(),
+            rid: String::new(),
             ts: 0,
-            _self: "".to_owned(),
-            etag: "".to_owned(),
-            docs: "".to_owned(),
-            sprocs: "".to_owned(),
-            triggers: "".to_owned(),
-            udfs: "".to_owned(),
-            conflicts: "".to_owned(),
+            _self: String::new(),
+            etag: String::new(),
+            docs: String::new(),
+            sprocs: String::new(),
+            triggers: String::new(),
+            udfs: String::new(),
+            conflicts: String::new(),
         }
-    }
-}
-
-pub trait CollectionName: std::fmt::Debug {
-    fn name(&self) -> &str;
-}
-
-impl CollectionName for Collection {
-    fn name(&self) -> &str {
-        &self.id
-    }
-}
-
-impl CollectionName for &str {
-    fn name(&self) -> &str {
-        self
-    }
-}
-
-impl CollectionName for String {
-    fn name(&self) -> &str {
-        self.as_ref()
     }
 }
 
@@ -106,16 +84,14 @@ pub enum DataType {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialOrd, PartialEq)]
+#[serde(rename_all = "lowercase")]
 pub enum IndexingMode {
-    #[serde(rename = "consistent")]
     Consistent,
-    #[serde(rename = "lazy")]
     Lazy,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialOrd, PartialEq)]
 pub struct IncludedPath {
-    #[serde(rename = "path")]
     pub path: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "indexes")]
@@ -126,16 +102,13 @@ pub struct IncludedPath {
 pub struct IncludedPathIndex {
     #[serde(rename = "dataType")]
     pub data_type: DataType,
-    #[serde(rename = "precision")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub precision: Option<i8>,
-    #[serde(rename = "kind")]
     pub kind: KeyKind,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialOrd, PartialEq)]
 pub struct ExcludedPath {
-    #[serde(rename = "path")]
     pub path: String,
 }
 

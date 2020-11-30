@@ -22,22 +22,10 @@ pub struct Database {
     pub users: String,
 }
 
-pub trait DatabaseName: std::fmt::Debug {
-    fn name(&self) -> &str;
-}
-
-impl DatabaseName for Database {
-    fn name(&self) -> &str {
+impl Database {
+    /// The name of the database
+    pub fn name(&self) -> &str {
         &self.id
-    }
-}
-
-impl<R> DatabaseName for R
-where
-    R: AsRef<str> + std::fmt::Debug,
-{
-    fn name(&self) -> &str {
-        self.as_ref()
     }
 }
 

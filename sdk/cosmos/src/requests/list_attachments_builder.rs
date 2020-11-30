@@ -164,7 +164,7 @@ impl<'a, 'b> ListAttachmentsBuilder<'a, 'b> {
                 "dbs/{}/colls/{}/docs/{}/attachments",
                 self.document_client.database_client().database_name(),
                 self.document_client.collection_client().collection_name(),
-                self.document_client.document_name().name()
+                self.document_client.document_name()
             ),
             http::Method::GET,
             ResourceType::Attachments,
