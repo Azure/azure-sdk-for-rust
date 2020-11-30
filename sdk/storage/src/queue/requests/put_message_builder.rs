@@ -177,21 +177,17 @@ where
     }
 
     pub async fn execute(self) -> Result<PutMessageResponse, AzureError> {
-        let mut uri = format!(
+        let mut url = url::Url::parse(&format!(
             "{}/{}/messages",
             self.queue_name_client.storage_client().queue_uri(),
             self.queue_name_client.queue_name()
-        );
+        ))?;
 
-        uri = format!("{}?{}", uri, MessageTTLRequired::to_uri_parameter(&self));
-        if let Some(nm) = VisibilityTimeoutOption::to_uri_parameter(&self) {
-            uri = format!("{}&{}", uri, nm);
-        }
-        if let Some(nm) = TimeoutOption::to_uri_parameter(&self) {
-            uri = format!("{}&{}", uri, nm);
-        }
+        MessageTTLRequired::append_pair(&self, &mut url);
+        VisibilityTimeoutOption::append_pair(&self, &mut url);
+        TimeoutOption::append_pair(&self, &mut url);
 
-        debug!("uri == {}", uri);
+        debug!("url == {:?}", url);
 
         // since the format is fixed we just decorate the message with the tags.
         // This could be made optional in the future and/or more
@@ -204,7 +200,7 @@ where
         debug!("message about to be posted == {}", message);
 
         let perform_request_response = self.queue_name_client.storage_client().perform_request(
-            &uri,
+            url.as_str(),
             &http::Method::POST,
             &|mut request| {
                 request = ClientRequestIdOption::add_header(&self, request);

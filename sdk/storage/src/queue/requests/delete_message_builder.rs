@@ -6,7 +6,6 @@ use crate::responses::*;
 use azure_core::errors::AzureError;
 use azure_core::prelude::*;
 use hyper::StatusCode;
-use percent_encoding::{utf8_percent_encode, NON_ALPHANUMERIC};
 use std::convert::TryInto;
 
 #[derive(Debug)]
@@ -121,22 +120,22 @@ where
     pub async fn execute(self) -> Result<DeleteMessageResponse, AzureError> {
         let pop_receipt = self.pop_receipt();
 
-        let mut uri = format!(
-            "{}/{}/messages/{}?popreceipt={}",
+        let mut url = url::Url::parse(&format!(
+            "{}/{}/messages/{}",
             self.queue_name_client.storage_client().queue_uri(),
             self.queue_name_client.queue_name(),
-            pop_receipt.message_id(),
-            utf8_percent_encode(pop_receipt.pop_receipt(), NON_ALPHANUMERIC)
-        );
+            pop_receipt.message_id()
+        ))?;
 
-        if let Some(nm) = TimeoutOption::to_uri_parameter(&self) {
-            uri = format!("{}{}{}", uri, '&', nm);
-        }
+        url.query_pairs_mut()
+            .append_pair("popreceipt", pop_receipt.pop_receipt());
 
-        debug!("uri == {}", uri);
+        TimeoutOption::append_pair(&self, &mut url);
+
+        debug!("url == {}", url);
 
         let perform_request_response = self.queue_name_client.storage_client().perform_request(
-            &uri,
+            url.as_str(),
             &http::Method::DELETE,
             &|mut request| {
                 request = ClientRequestIdOption::add_header(&self, request);

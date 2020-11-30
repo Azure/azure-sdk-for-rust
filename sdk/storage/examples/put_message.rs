@@ -23,9 +23,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let response = client
         .into_queue_name_client(&queue_name)
-        .put_message()
+        .put_message(format!("Azure SDK for Rust rocks! {}", chrono::Utc::now()))
         .with_client_request_id("optional correlation token")
-        .with_message_body(&format!("Azure SDK for Rust rocks! {}", chrono::Utc::now()))
         .execute()
         .await?;
 

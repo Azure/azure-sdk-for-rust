@@ -436,6 +436,12 @@ pub trait NextMarkerOption<'a> {
             None
         }
     }
+
+    fn append_pair(&self, url: &mut url::Url) {
+        if let Some(next_marker) = self.next_marker() {
+            url.query_pairs_mut().append_pair("marker", next_marker);
+        }
+    }
 }
 
 pub trait SnapshotSupport {
@@ -495,6 +501,13 @@ pub trait MaxResultsOption {
             None
         }
     }
+
+    fn append_pair(&self, url: &mut url::Url) {
+        if let Some(max_results) = self.max_results() {
+            url.query_pairs_mut()
+                .append_pair("maxresults", &format!("{}", max_results));
+        }
+    }
 }
 
 pub trait IncludeSnapshotsSupport {
@@ -528,6 +541,12 @@ pub trait IncludeMetadataOption {
             Some("include=metadata")
         } else {
             None
+        }
+    }
+
+    fn append_pair(&self, url: &mut url::Url) {
+        if self.include_metadata() {
+            url.query_pairs_mut().append_pair("include", "metadata");
         }
     }
 }
@@ -618,6 +637,12 @@ pub trait PrefixOption<'a> {
             Some(format!("prefix={}", nm))
         } else {
             None
+        }
+    }
+
+    fn append_pair(&self, url: &mut url::Url) {
+        if let Some(prefix) = self.prefix() {
+            url.query_pairs_mut().append_pair("prefix", prefix);
         }
     }
 }

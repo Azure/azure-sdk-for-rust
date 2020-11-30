@@ -132,23 +132,20 @@ where
     C: Client + Clone,
 {
     pub async fn execute(self) -> Result<PeekMessagesResponse, AzureError> {
-        let mut uri = format!(
-            "{}/{}/messages?peekonly=true",
+        let mut url = url::Url::parse(&format!(
+            "{}/{}/messages",
             self.queue_name_client.storage_client().queue_uri(),
             self.queue_name_client.queue_name()
-        );
+        ))?;
 
-        if let Some(nm) = TimeoutOption::to_uri_parameter(&self) {
-            uri = format!("{}{}{}", uri, '&', nm);
-        }
-        if let Some(nm) = NumberOfMessagesOption::to_uri_parameter(&self) {
-            uri = format!("{}{}{}", uri, '&', nm);
-        }
+        url.query_pairs_mut().append_pair("peekonly", "true");
+        TimeoutOption::append_pair(&self, &mut url);
+        NumberOfMessagesOption::append_pair(&self, &mut url);
 
-        debug!("uri == {}", uri);
+        debug!("url == {}", url);
 
         let perform_request_response = self.queue_name_client.storage_client().perform_request(
-            &uri,
+            url.as_str(),
             &http::Method::GET,
             &|mut request| {
                 request = ClientRequestIdOption::add_header(&self, request);

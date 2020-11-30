@@ -236,31 +236,20 @@ where
     C: Client + Clone,
 {
     pub async fn execute(self) -> Result<ListQueuesResponse, AzureError> {
-        let mut uri = format!(
-            "{}?comp=list",
-            self.queue_service.storage_client().queue_uri()
-        );
+        let mut url = url::Url::parse(self.queue_service.storage_client().queue_uri())?;
 
-        if let Some(nm) = IncludeMetadataOption::to_uri_parameter(&self) {
-            uri = format!("{}&{}", uri, nm);
-        }
-        if let Some(nm) = TimeoutOption::to_uri_parameter(&self) {
-            uri = format!("{}&{}", uri, nm);
-        }
-        if let Some(nm) = MaxResultsOption::to_uri_parameter(&self) {
-            uri = format!("{}&{}", uri, nm);
-        }
-        if let Some(nm) = NextMarkerOption::to_uri_parameter(&self) {
-            uri = format!("{}&{}", uri, nm);
-        }
-        if let Some(nm) = PrefixOption::to_uri_parameter(&self) {
-            uri = format!("{}&{}", uri, nm);
-        }
+        url.query_pairs_mut().append_pair("comp", "list");
 
-        debug!("uri == {}", uri);
+        IncludeMetadataOption::append_pair(&self, &mut url);
+        TimeoutOption::append_pair(&self, &mut url);
+        MaxResultsOption::append_pair(&self, &mut url);
+        NextMarkerOption::append_pair(&self, &mut url);
+        PrefixOption::append_pair(&self, &mut url);
+
+        debug!("url == {}", url);
 
         let perform_request_response = self.queue_service.storage_client().perform_request(
-            &uri,
+            url.as_str(),
             &http::Method::GET,
             &|mut request| {
                 request = ClientRequestIdOption::add_header(&self, request);

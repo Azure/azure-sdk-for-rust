@@ -37,11 +37,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         for message in get_response.messages {
             trace!("deleting message {}", message.message_id);
 
-            let delete_response = queue
-                .delete_message()
-                .with_pop_receipt(message.into())
-                .execute()
-                .await?;
+            let delete_response = queue.delete_message(message.into()).execute().await?;
 
             println!("delete_response == {:#?}", delete_response);
         }

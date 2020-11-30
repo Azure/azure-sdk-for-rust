@@ -166,30 +166,20 @@ where
     C: Client + Clone,
 {
     pub async fn execute(self) -> Result<GetMessagesResponse, AzureError> {
-        let mut uri = format!(
+        let mut url = url::Url::parse(&format!(
             "{}/{}/messages",
             self.queue_name_client.storage_client().queue_uri(),
             self.queue_name_client.queue_name()
-        );
+        ))?;
 
-        let mut concatenation_char = '?';
+        VisibilityTimeoutOption::append_pair(&self, &mut url);
+        TimeoutOption::append_pair(&self, &mut url);
+        NumberOfMessagesOption::append_pair(&self, &mut url);
 
-        if let Some(nm) = VisibilityTimeoutOption::to_uri_parameter(&self) {
-            uri = format!("{}{}{}", uri, concatenation_char, nm);
-            concatenation_char = '&';
-        }
-        if let Some(nm) = TimeoutOption::to_uri_parameter(&self) {
-            uri = format!("{}{}{}", uri, concatenation_char, nm);
-            concatenation_char = '&';
-        }
-        if let Some(nm) = NumberOfMessagesOption::to_uri_parameter(&self) {
-            uri = format!("{}{}{}", uri, concatenation_char, nm);
-        }
-
-        debug!("uri == {}", uri);
+        debug!("url == {}", url);
 
         let perform_request_response = self.queue_name_client.storage_client().perform_request(
-            &uri,
+            url.as_str(),
             &http::Method::GET,
             &|mut request| {
                 request = ClientRequestIdOption::add_header(&self, request);
