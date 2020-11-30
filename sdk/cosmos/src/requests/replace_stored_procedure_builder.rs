@@ -32,8 +32,7 @@ impl<'a, 'b> ReplaceStoredProcedureBuilder<'a, 'b, No> {
     }
 }
 
-impl<'a, 'b, BodySet> StoredProcedureClientRequired<'a>
-    for ReplaceStoredProcedureBuilder<'a, 'b, BodySet>
+impl<'a, 'b, BodySet> ReplaceStoredProcedureBuilder<'a, 'b, BodySet>
 where
     BodySet: ToAssign,
 {
@@ -42,9 +41,6 @@ where
     }
 }
 
-//get mandatory no traits methods
-
-//set mandatory no traits methods
 impl<'a, 'b> StoredProcedureBodyRequired<'b> for ReplaceStoredProcedureBuilder<'a, 'b, Yes> {
     fn body(&self) -> &'b str {
         self.body.unwrap()

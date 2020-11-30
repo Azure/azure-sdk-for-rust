@@ -23,7 +23,7 @@ impl<'a, 'b> DeleteUserDefinedFunctionBuilder<'a, 'b> {
     }
 }
 
-impl<'a, 'b> UserDefinedFunctionClientRequired<'a> for DeleteUserDefinedFunctionBuilder<'a, 'b> {
+impl<'a, 'b> DeleteUserDefinedFunctionBuilder<'a, 'b> {
     fn user_defined_function_client(&self) -> &'a UserDefinedFunctionClient {
         self.user_defined_function_client
     }

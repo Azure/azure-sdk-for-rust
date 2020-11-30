@@ -23,8 +23,8 @@ impl<'a, 'b> DeletePermissionsBuilder<'a, 'b> {
     }
 }
 
-impl<'a, 'b> PermissionClientRequired<'a> for DeletePermissionsBuilder<'a, 'b> {
-    fn permission_client(&self) -> &'a PermissionClient {
+impl<'a, 'b> DeletePermissionsBuilder<'a, 'b> {
+    pub fn permission_client(&self) -> &'a PermissionClient {
         self.permission_client
     }
 }

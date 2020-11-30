@@ -36,20 +36,17 @@ impl<'a, 'b> CreateReferenceAttachmentBuilder<'a, 'b, No, No> {
     }
 }
 
-impl<'a, 'b, ContentTypeSet, MediaSet> AttachmentClientRequired<'a>
-    for CreateReferenceAttachmentBuilder<'a, 'b, ContentTypeSet, MediaSet>
+impl<'a, 'b, ContentTypeSet, MediaSet>
+    CreateReferenceAttachmentBuilder<'a, 'b, ContentTypeSet, MediaSet>
 where
     ContentTypeSet: ToAssign,
     MediaSet: ToAssign,
 {
-    fn attachment_client(&self) -> &'a AttachmentClient {
+    pub fn attachment_client(&self) -> &'a AttachmentClient {
         self.attachment_client
     }
 }
 
-//get mandatory no traits methods
-
-//set mandatory no traits methods
 impl<'a, 'b, MediaSet> ContentTypeRequired<'b>
     for CreateReferenceAttachmentBuilder<'a, 'b, Yes, MediaSet>
 where

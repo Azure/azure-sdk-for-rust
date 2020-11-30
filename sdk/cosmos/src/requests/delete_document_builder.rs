@@ -32,8 +32,8 @@ impl<'a> DeleteDocumentBuilder<'a> {
     }
 }
 
-impl<'a> DocumentClientRequired<'a> for DeleteDocumentBuilder<'a> {
-    fn document_client(&self) -> &'a DocumentClient {
+impl<'a> DeleteDocumentBuilder<'a> {
+    pub fn document_client(&self) -> &'a DocumentClient {
         self.document_client
     }
 }

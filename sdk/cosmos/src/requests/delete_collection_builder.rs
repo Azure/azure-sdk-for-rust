@@ -23,8 +23,8 @@ impl<'a> DeleteCollectionBuilder<'a> {
     }
 }
 
-impl<'a> CollectionClientRequired<'a> for DeleteCollectionBuilder<'a> {
-    fn collection_client(&self) -> &'a CollectionClient {
+impl<'a> DeleteCollectionBuilder<'a> {
+    pub fn collection_client(&self) -> &'a CollectionClient {
         self.collection_client
     }
 }

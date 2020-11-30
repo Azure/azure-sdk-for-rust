@@ -38,13 +38,13 @@ impl<'a, 'b> ReplaceReferenceAttachmentBuilder<'a, 'b, No, No> {
     }
 }
 
-impl<'a, 'b, ContentTypeSet, MediaSet> AttachmentClientRequired<'a>
-    for ReplaceReferenceAttachmentBuilder<'a, 'b, ContentTypeSet, MediaSet>
+impl<'a, 'b, ContentTypeSet, MediaSet>
+    ReplaceReferenceAttachmentBuilder<'a, 'b, ContentTypeSet, MediaSet>
 where
     ContentTypeSet: ToAssign,
     MediaSet: ToAssign,
 {
-    fn attachment_client(&self) -> &'a AttachmentClient {
+    pub fn attachment_client(&self) -> &'a AttachmentClient {
         self.attachment_client
     }
 }

@@ -23,8 +23,8 @@ impl<'a> DeleteDatabaseBuilder<'a> {
     }
 }
 
-impl<'a> DatabaseClientRequired<'a> for DeleteDatabaseBuilder<'a> {
-    fn database_client(&self) -> &'a DatabaseClient {
+impl<'a> DeleteDatabaseBuilder<'a> {
+    pub fn database_client(&self) -> &'a DatabaseClient {
         self.database_client
     }
 }

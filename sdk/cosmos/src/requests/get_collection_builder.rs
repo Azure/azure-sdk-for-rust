@@ -23,8 +23,8 @@ impl<'a> GetCollectionBuilder<'a> {
     }
 }
 
-impl<'a> CollectionClientRequired<'a> for GetCollectionBuilder<'a> {
-    fn collection_client(&self) -> &'a CollectionClient {
+impl<'a> GetCollectionBuilder<'a> {
+    pub fn collection_client(&self) -> &'a CollectionClient {
         self.collection_client
     }
 }

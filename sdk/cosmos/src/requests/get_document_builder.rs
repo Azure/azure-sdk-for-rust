@@ -31,8 +31,8 @@ impl<'a, 'b> GetDocumentBuilder<'a, 'b> {
     }
 }
 
-impl<'a, 'b> DocumentClientRequired<'a> for GetDocumentBuilder<'a, 'b> {
-    fn document_client(&self) -> &'a DocumentClient {
+impl<'a, 'b> GetDocumentBuilder<'a, 'b> {
+    pub fn document_client(&self) -> &'a DocumentClient {
         self.document_client
     }
 }

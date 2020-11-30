@@ -38,13 +38,13 @@ impl<'a, 'b> ReplaceCollectionBuilder<'a, 'b, No, No> {
     }
 }
 
-impl<'a, 'b, PartitionKeysSet, IndexingPolicySet> CollectionClientRequired<'a>
-    for ReplaceCollectionBuilder<'a, 'b, PartitionKeysSet, IndexingPolicySet>
+impl<'a, 'b, PartitionKeysSet, IndexingPolicySet>
+    ReplaceCollectionBuilder<'a, 'b, PartitionKeysSet, IndexingPolicySet>
 where
     PartitionKeysSet: ToAssign,
     IndexingPolicySet: ToAssign,
 {
-    fn collection_client(&self) -> &'a CollectionClient {
+    pub fn collection_client(&self) -> &'a CollectionClient {
         self.collection_client
     }
 }

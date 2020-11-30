@@ -29,8 +29,8 @@ impl<'a> ListDatabasesBuilder<'a> {
     }
 }
 
-impl<'a> CosmosClientRequired<'a> for ListDatabasesBuilder<'a> {
-    fn cosmos_client(&self) -> &'a CosmosClient {
+impl<'a> ListDatabasesBuilder<'a> {
+    pub fn cosmos_client(&self) -> &'a CosmosClient {
         self.cosmos_client
     }
 }

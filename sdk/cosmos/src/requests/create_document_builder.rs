@@ -46,19 +46,15 @@ impl<'a, 'b> CreateDocumentBuilder<'a, 'b, No> {
     }
 }
 
-impl<'a, 'b, PartitionKeysSet> CollectionClientRequired<'a>
-    for CreateDocumentBuilder<'a, 'b, PartitionKeysSet>
+impl<'a, 'b, PartitionKeysSet> CreateDocumentBuilder<'a, 'b, PartitionKeysSet>
 where
     PartitionKeysSet: ToAssign,
 {
-    fn collection_client(&self) -> &'a CollectionClient {
+    pub fn collection_client(&self) -> &'a CollectionClient {
         self.collection_client
     }
 }
 
-//get mandatory no traits methods
-
-//set mandatory no traits methods
 impl<'a, 'b> PartitionKeysRequired<'b> for CreateDocumentBuilder<'a, 'b, Yes> {
     fn partition_keys(&self) -> &'b PartitionKeys {
         self.partition_keys.unwrap()

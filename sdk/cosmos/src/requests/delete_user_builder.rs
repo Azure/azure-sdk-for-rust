@@ -23,8 +23,8 @@ impl<'a, 'b> DeleteUserBuilder<'a, 'b> {
     }
 }
 
-impl<'a, 'b> UserClientRequired<'a> for DeleteUserBuilder<'a, 'b> {
-    fn user_client(&self) -> &'a UserClient {
+impl<'a, 'b> DeleteUserBuilder<'a, 'b> {
+    pub fn user_client(&self) -> &'a UserClient {
         self.user_client
     }
 }

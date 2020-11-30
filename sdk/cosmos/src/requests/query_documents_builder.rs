@@ -74,11 +74,11 @@ impl<'a, 'b> QueryDocumentsBuilder<'a, 'b, No> {
     }
 }
 
-impl<'a, 'b, QuerySet> CollectionClientRequired<'a> for QueryDocumentsBuilder<'a, 'b, QuerySet>
+impl<'a, 'b, QuerySet> QueryDocumentsBuilder<'a, 'b, QuerySet>
 where
     QuerySet: ToAssign,
 {
-    fn collection_client(&self) -> &'a CollectionClient {
+    pub fn collection_client(&self) -> &'a CollectionClient {
         self.collection_client
     }
 }

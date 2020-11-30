@@ -54,22 +54,19 @@ impl<'a> CreateCollectionBuilder<'a, No, No, No, No> {
     }
 }
 
-impl<'a, OfferSet, CollectionNameSet, IndexingPolicySet, PartitionKeySet> DatabaseClientRequired<'a>
-    for CreateCollectionBuilder<'a, OfferSet, CollectionNameSet, IndexingPolicySet, PartitionKeySet>
+impl<'a, OfferSet, CollectionNameSet, IndexingPolicySet, PartitionKeySet>
+    CreateCollectionBuilder<'a, OfferSet, CollectionNameSet, IndexingPolicySet, PartitionKeySet>
 where
     OfferSet: ToAssign,
     CollectionNameSet: ToAssign,
     IndexingPolicySet: ToAssign,
     PartitionKeySet: ToAssign,
 {
-    fn database_client(&self) -> &'a DatabaseClient {
+    pub fn database_client(&self) -> &'a DatabaseClient {
         self.database_client
     }
 }
 
-//get mandatory no traits methods
-
-//set mandatory no traits methods
 impl<'a, CollectionNameSet, IndexingPolicySet, PartitionKeySet> OfferRequired
     for CreateCollectionBuilder<'a, Yes, CollectionNameSet, IndexingPolicySet, PartitionKeySet>
 where

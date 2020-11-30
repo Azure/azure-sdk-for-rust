@@ -23,7 +23,7 @@ impl<'a, 'b> DeleteStoredProcedureBuilder<'a, 'b> {
     }
 }
 
-impl<'a, 'b> StoredProcedureClientRequired<'a> for DeleteStoredProcedureBuilder<'a, 'b> {
+impl<'a, 'b> DeleteStoredProcedureBuilder<'a, 'b> {
     fn stored_procedure_client(&self) -> &'a StoredProcedureClient {
         self.stored_procedure_client
     }

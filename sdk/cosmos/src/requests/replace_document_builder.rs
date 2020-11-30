@@ -48,21 +48,18 @@ impl<'a, 'b> ReplaceDocumentBuilder<'a, 'b, No, No> {
     }
 }
 
-impl<'a, 'b, PartitionKeysSet, DocumentIdSet> CollectionClientRequired<'a>
-    for ReplaceDocumentBuilder<'a, 'b, PartitionKeysSet, DocumentIdSet>
+impl<'a, 'b, PartitionKeysSet, DocumentIdSet>
+    ReplaceDocumentBuilder<'a, 'b, PartitionKeysSet, DocumentIdSet>
 where
     PartitionKeysSet: ToAssign,
     DocumentIdSet: ToAssign,
 {
     #[inline]
-    fn collection_client(&self) -> &'a CollectionClient {
+    pub fn collection_client(&self) -> &'a CollectionClient {
         self.collection_client
     }
 }
 
-//get mandatory no traits methods
-
-//set mandatory no traits methods
 impl<'a, 'b, DocumentIdSet> PartitionKeysRequired<'b>
     for ReplaceDocumentBuilder<'a, 'b, Yes, DocumentIdSet>
 where

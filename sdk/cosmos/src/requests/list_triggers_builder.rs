@@ -31,8 +31,8 @@ impl<'a, 'b> ListTriggersBuilder<'a, 'b> {
     }
 }
 
-impl<'a, 'b> CollectionClientRequired<'a> for ListTriggersBuilder<'a, 'b> {
-    fn collection_client(&self) -> &'a CollectionClient {
+impl<'a, 'b> ListTriggersBuilder<'a, 'b> {
+    pub fn collection_client(&self) -> &'a CollectionClient {
         self.collection_client
     }
 }

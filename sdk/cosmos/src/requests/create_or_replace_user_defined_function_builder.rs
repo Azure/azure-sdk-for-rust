@@ -37,8 +37,7 @@ impl<'a, 'b> CreateOrReplaceUserDefinedFunctionBuilder<'a, 'b, No> {
     }
 }
 
-impl<'a, 'b, BodySet> UserDefinedFunctionClientRequired<'a>
-    for CreateOrReplaceUserDefinedFunctionBuilder<'a, 'b, BodySet>
+impl<'a, 'b, BodySet> CreateOrReplaceUserDefinedFunctionBuilder<'a, 'b, BodySet>
 where
     BodySet: ToAssign,
 {

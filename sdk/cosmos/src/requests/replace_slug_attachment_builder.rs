@@ -39,13 +39,12 @@ impl<'a, 'b> ReplaceSlugAttachmentBuilder<'a, 'b, No, No> {
     }
 }
 
-impl<'a, 'b, BodySet, ContentTypeSet> AttachmentClientRequired<'a>
-    for ReplaceSlugAttachmentBuilder<'a, 'b, BodySet, ContentTypeSet>
+impl<'a, 'b, BodySet, ContentTypeSet> ReplaceSlugAttachmentBuilder<'a, 'b, BodySet, ContentTypeSet>
 where
     BodySet: ToAssign,
     ContentTypeSet: ToAssign,
 {
-    fn attachment_client(&self) -> &'a AttachmentClient {
+    pub fn attachment_client(&self) -> &'a AttachmentClient {
         self.attachment_client
     }
 }

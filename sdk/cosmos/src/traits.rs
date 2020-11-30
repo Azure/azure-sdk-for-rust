@@ -1,13 +1,8 @@
-use crate::clients::*;
 use crate::resources::*;
 use crate::{headers, ConsistencyLevel, PartitionKeys};
 use collection::*;
 use document::{IndexingDirective, Query};
 use http::request::Builder;
-
-pub trait CosmosClientRequired<'a> {
-    fn cosmos_client(&'a self) -> &'a CosmosClient;
-}
 
 pub trait DatabaseRequired<'a> {
     fn database(&self) -> &'a str;
@@ -321,37 +316,9 @@ pub trait ExpirySecondsSupport {
     fn with_expiry_seconds(self, expiry_seconds: u64) -> Self::O;
 }
 
-pub trait DatabaseClientRequired<'a> {
-    fn database_client(&self) -> &'a DatabaseClient;
-}
-
 pub trait DatabaseSupport<'a> {
     type O;
     fn with_database(self, database: &'a str) -> Self::O;
-}
-
-pub trait CollectionClientRequired<'a> {
-    fn collection_client(&self) -> &'a CollectionClient;
-}
-
-pub trait AttachmentClientRequired<'a> {
-    fn attachment_client(&self) -> &'a AttachmentClient;
-}
-
-pub trait StoredProcedureClientRequired<'a> {
-    fn stored_procedure_client(&self) -> &'a StoredProcedureClient;
-}
-
-pub trait UserDefinedFunctionClientRequired<'a> {
-    fn user_defined_function_client(&self) -> &'a UserDefinedFunctionClient;
-}
-
-pub trait TriggerClientRequired<'a> {
-    fn trigger_client(&'a self) -> &'a TriggerClient;
-}
-
-pub trait UserClientRequired<'a> {
-    fn user_client(&'a self) -> &'a UserClient;
 }
 
 pub trait StoredProcedureNameRequired<'a> {
@@ -361,14 +328,6 @@ pub trait StoredProcedureNameRequired<'a> {
 pub trait StoredProcedureNameSupport<'a> {
     type O;
     fn with_stored_procedure_name(self, stored_procedure_name: &'a str) -> Self::O;
-}
-
-pub trait DocumentClientRequired<'a> {
-    fn document_client(&'a self) -> &'a DocumentClient;
-}
-
-pub trait PermissionClientRequired<'a> {
-    fn permission_client(&self) -> &'a PermissionClient;
 }
 
 pub trait OfferRequired {

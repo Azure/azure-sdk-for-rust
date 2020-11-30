@@ -33,9 +33,9 @@ impl<'a, 'b> ListAttachmentsBuilder<'a, 'b> {
     }
 }
 
-impl<'a, 'b> DocumentClientRequired<'a> for ListAttachmentsBuilder<'a, 'b> {
+impl<'a, 'b> ListAttachmentsBuilder<'a, 'b> {
     #[inline]
-    fn document_client(&self) -> &'a DocumentClient {
+    pub fn document_client(&self) -> &'a DocumentClient {
         self.document_client
     }
 }

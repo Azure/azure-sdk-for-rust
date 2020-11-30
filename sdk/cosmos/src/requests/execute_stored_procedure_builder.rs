@@ -31,7 +31,7 @@ impl<'a, 'b> ExecuteStoredProcedureBuilder<'a, 'b> {
     }
 }
 
-impl<'a, 'b> StoredProcedureClientRequired<'a> for ExecuteStoredProcedureBuilder<'a, 'b> {
+impl<'a, 'b> ExecuteStoredProcedureBuilder<'a, 'b> {
     fn stored_procedure_client(&self) -> &'a StoredProcedureClient {
         self.stored_procedure_client
     }
