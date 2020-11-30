@@ -179,7 +179,7 @@ impl<'a, 'b> ListAttachmentsBuilder<'a, 'b> {
         req = MaxItemCountOption::add_header(self, req);
         req = AIMOption::add_header(self, req);
 
-        req = crate::add_partition_keys_header(self.document_client.partition_keys(), req);
+        req = crate::headers::add_partition_keys_header(self.document_client.partition_keys(), req);
 
         let req = req.body(EMPTY_BODY.as_ref())?;
 

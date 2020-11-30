@@ -234,7 +234,7 @@ impl<'a, 'b> CreateSlugAttachmentBuilder<'a, 'b, Yes, Yes> {
         req = ActivityIdOption::add_header(self, req);
         req = ConsistencyLevelOption::add_header(self, req);
 
-        req = crate::add_partition_keys_header(
+        req = crate::headers::add_partition_keys_header(
             self.attachment_client.document_client().partition_keys(),
             req,
         );

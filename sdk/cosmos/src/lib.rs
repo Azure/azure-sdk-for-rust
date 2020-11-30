@@ -121,13 +121,3 @@ pub use resource_quota::ResourceQuota;
 
 type ReadonlyString = std::borrow::Cow<'static, str>;
 pub type CosmosError = Box<dyn std::error::Error + Sync + Send>;
-
-use http::request::Builder;
-
-pub(crate) fn add_partition_keys_header(
-    partition_keys: &PartitionKeys,
-    builder: Builder,
-) -> Builder {
-    let serialized = partition_keys.to_json();
-    builder.header(headers::HEADER_DOCUMENTDB_PARTITIONKEY, serialized)
-}

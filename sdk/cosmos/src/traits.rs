@@ -250,7 +250,7 @@ pub trait PartitionKeysRequired<'a> {
 
     #[must_use]
     fn add_header(&self, builder: Builder) -> Builder {
-        crate::add_partition_keys_header(self.partition_keys(), builder)
+        headers::add_partition_keys_header(self.partition_keys(), builder)
     }
 }
 
