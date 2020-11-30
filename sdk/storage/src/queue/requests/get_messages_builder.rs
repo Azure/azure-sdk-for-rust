@@ -25,8 +25,7 @@ impl<'a, C> GetMessagesBuilder<'a, C>
 where
     C: Client + Clone,
 {
-    #[inline]
-    pub(crate) fn new(queue_name_client: &'a QueueNameClient<C>) -> GetMessagesBuilder<'a, C> {
+    pub(crate) fn new(queue_name_client: &'a QueueNameClient<C>) -> Self {
         GetMessagesBuilder {
             queue_name_client,
             number_of_messages: None,
@@ -42,7 +41,6 @@ impl<'a, C> NumberOfMessagesOption for GetMessagesBuilder<'a, C>
 where
     C: Client + Clone,
 {
-    #[inline]
     fn number_of_messages(&self) -> Option<u32> {
         self.number_of_messages
     }
@@ -52,7 +50,6 @@ impl<'a, C> VisibilityTimeoutOption for GetMessagesBuilder<'a, C>
 where
     C: Client + Clone,
 {
-    #[inline]
     fn visibility_timeout(&self) -> Option<Duration> {
         self.visibility_timeout
     }
@@ -62,7 +59,6 @@ impl<'a, C> TimeoutOption for GetMessagesBuilder<'a, C>
 where
     C: Client + Clone,
 {
-    #[inline]
     fn timeout(&self) -> Option<u64> {
         self.timeout
     }
@@ -72,7 +68,6 @@ impl<'a, C> ClientRequestIdOption<'a> for GetMessagesBuilder<'a, C>
 where
     C: Client + Clone,
 {
-    #[inline]
     fn client_request_id(&self) -> Option<&'a str> {
         self.client_request_id
     }
@@ -82,9 +77,8 @@ impl<'a, C> NumberOfMessagesSupport for GetMessagesBuilder<'a, C>
 where
     C: Client + Clone,
 {
-    type O = GetMessagesBuilder<'a, C>;
+    type O = Self;
 
-    #[inline]
     fn with_number_of_messages(self, number_of_messages: u32) -> Self::O {
         GetMessagesBuilder {
             queue_name_client: self.queue_name_client,
@@ -100,9 +94,8 @@ impl<'a, C> VisibilityTimeoutSupport for GetMessagesBuilder<'a, C>
 where
     C: Client + Clone,
 {
-    type O = GetMessagesBuilder<'a, C>;
+    type O = Self;
 
-    #[inline]
     fn with_visibility_timeout(self, visibility_timeout: Duration) -> Self::O {
         GetMessagesBuilder {
             queue_name_client: self.queue_name_client,
@@ -118,9 +111,8 @@ impl<'a, C> TimeoutSupport for GetMessagesBuilder<'a, C>
 where
     C: Client + Clone,
 {
-    type O = GetMessagesBuilder<'a, C>;
+    type O = Self;
 
-    #[inline]
     fn with_timeout(self, timeout: u64) -> Self::O {
         GetMessagesBuilder {
             queue_name_client: self.queue_name_client,
@@ -136,9 +128,8 @@ impl<'a, C> ClientRequestIdSupport<'a> for GetMessagesBuilder<'a, C>
 where
     C: Client + Clone,
 {
-    type O = GetMessagesBuilder<'a, C>;
+    type O = Self;
 
-    #[inline]
     fn with_client_request_id(self, client_request_id: &'a str) -> Self::O {
         GetMessagesBuilder {
             queue_name_client: self.queue_name_client,

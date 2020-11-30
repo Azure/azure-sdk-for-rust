@@ -22,8 +22,7 @@ impl<'a, C> ClearMessagesBuilder<'a, C>
 where
     C: Client + Clone,
 {
-    #[inline]
-    pub(crate) fn new(queue_name_client: &'a QueueNameClient<C>) -> ClearMessagesBuilder<'a, C> {
+    pub(crate) fn new(queue_name_client: &'a QueueNameClient<C>) -> Self {
         ClearMessagesBuilder {
             queue_name_client,
             timeout: None,
@@ -36,7 +35,6 @@ impl<'a, C> TimeoutOption for ClearMessagesBuilder<'a, C>
 where
     C: Client + Clone,
 {
-    #[inline]
     fn timeout(&self) -> Option<u64> {
         self.timeout
     }
@@ -46,7 +44,6 @@ impl<'a, C> ClientRequestIdOption<'a> for ClearMessagesBuilder<'a, C>
 where
     C: Client + Clone,
 {
-    #[inline]
     fn client_request_id(&self) -> Option<&'a str> {
         self.client_request_id
     }
@@ -56,9 +53,8 @@ impl<'a, C> TimeoutSupport for ClearMessagesBuilder<'a, C>
 where
     C: Client + Clone,
 {
-    type O = ClearMessagesBuilder<'a, C>;
+    type O = Self;
 
-    #[inline]
     fn with_timeout(self, timeout: u64) -> Self::O {
         ClearMessagesBuilder {
             queue_name_client: self.queue_name_client,
@@ -72,9 +68,8 @@ impl<'a, C> ClientRequestIdSupport<'a> for ClearMessagesBuilder<'a, C>
 where
     C: Client + Clone,
 {
-    type O = ClearMessagesBuilder<'a, C>;
+    type O = Self;
 
-    #[inline]
     fn with_client_request_id(self, client_request_id: &'a str) -> Self::O {
         ClearMessagesBuilder {
             queue_name_client: self.queue_name_client,

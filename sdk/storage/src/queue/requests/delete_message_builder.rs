@@ -23,11 +23,10 @@ impl<'a, C> DeleteMessageBuilder<'a, C>
 where
     C: Client + Clone,
 {
-    #[inline]
     pub(crate) fn new(
         queue_name_client: &'a QueueNameClient<C>,
         pop_receipt: Box<dyn PopReceipt>,
-    ) -> DeleteMessageBuilder<'a, C> {
+    ) -> Self {
         DeleteMessageBuilder {
             queue_name_client,
             pop_receipt,
@@ -42,7 +41,6 @@ impl<'a, C> PopReceiptRequired for DeleteMessageBuilder<'a, C>
 where
     C: Client + Clone,
 {
-    #[inline]
     fn pop_receipt(&self) -> &dyn PopReceipt {
         self.pop_receipt.as_ref()
     }
@@ -52,7 +50,6 @@ impl<'a, C> TimeoutOption for DeleteMessageBuilder<'a, C>
 where
     C: Client + Clone,
 {
-    #[inline]
     fn timeout(&self) -> Option<u64> {
         self.timeout
     }
@@ -62,7 +59,6 @@ impl<'a, C> ClientRequestIdOption<'a> for DeleteMessageBuilder<'a, C>
 where
     C: Client + Clone,
 {
-    #[inline]
     fn client_request_id(&self) -> Option<&'a str> {
         self.client_request_id
     }
@@ -72,9 +68,8 @@ impl<'a, C> TimeoutSupport for DeleteMessageBuilder<'a, C>
 where
     C: Client + Clone,
 {
-    type O = DeleteMessageBuilder<'a, C>;
+    type O = Self;
 
-    #[inline]
     fn with_timeout(self, timeout: u64) -> Self::O {
         DeleteMessageBuilder {
             queue_name_client: self.queue_name_client,
@@ -89,9 +84,8 @@ impl<'a, C> ClientRequestIdSupport<'a> for DeleteMessageBuilder<'a, C>
 where
     C: Client + Clone,
 {
-    type O = DeleteMessageBuilder<'a, C>;
+    type O = Self;
 
-    #[inline]
     fn with_client_request_id(self, client_request_id: &'a str) -> Self::O {
         DeleteMessageBuilder {
             queue_name_client: self.queue_name_client,

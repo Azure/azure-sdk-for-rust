@@ -23,8 +23,7 @@ impl<'a, C> PeekMessagesBuilder<'a, C>
 where
     C: Client + Clone,
 {
-    #[inline]
-    pub(crate) fn new(queue_name_client: &'a QueueNameClient<C>) -> PeekMessagesBuilder<'a, C> {
+    pub(crate) fn new(queue_name_client: &'a QueueNameClient<C>) -> Self {
         PeekMessagesBuilder {
             queue_name_client,
             number_of_messages: None,
@@ -39,7 +38,6 @@ impl<'a, C> NumberOfMessagesOption for PeekMessagesBuilder<'a, C>
 where
     C: Client + Clone,
 {
-    #[inline]
     fn number_of_messages(&self) -> Option<u32> {
         self.number_of_messages
     }
@@ -49,7 +47,6 @@ impl<'a, C> TimeoutOption for PeekMessagesBuilder<'a, C>
 where
     C: Client + Clone,
 {
-    #[inline]
     fn timeout(&self) -> Option<u64> {
         self.timeout
     }
@@ -59,7 +56,6 @@ impl<'a, C> ClientRequestIdOption<'a> for PeekMessagesBuilder<'a, C>
 where
     C: Client + Clone,
 {
-    #[inline]
     fn client_request_id(&self) -> Option<&'a str> {
         self.client_request_id
     }
@@ -69,9 +65,8 @@ impl<'a, C> NumberOfMessagesSupport for PeekMessagesBuilder<'a, C>
 where
     C: Client + Clone,
 {
-    type O = PeekMessagesBuilder<'a, C>;
+    type O = Self;
 
-    #[inline]
     fn with_number_of_messages(self, number_of_messages: u32) -> Self::O {
         PeekMessagesBuilder {
             queue_name_client: self.queue_name_client,
@@ -86,9 +81,8 @@ impl<'a, C> TimeoutSupport for PeekMessagesBuilder<'a, C>
 where
     C: Client + Clone,
 {
-    type O = PeekMessagesBuilder<'a, C>;
+    type O = Self;
 
-    #[inline]
     fn with_timeout(self, timeout: u64) -> Self::O {
         PeekMessagesBuilder {
             queue_name_client: self.queue_name_client,
@@ -103,9 +97,8 @@ impl<'a, C> ClientRequestIdSupport<'a> for PeekMessagesBuilder<'a, C>
 where
     C: Client + Clone,
 {
-    type O = PeekMessagesBuilder<'a, C>;
+    type O = Self;
 
-    #[inline]
     fn with_client_request_id(self, client_request_id: &'a str) -> Self::O {
         PeekMessagesBuilder {
             queue_name_client: self.queue_name_client,

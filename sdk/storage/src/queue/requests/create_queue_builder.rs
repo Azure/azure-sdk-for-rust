@@ -23,8 +23,7 @@ impl<'a, C> CreateQueueBuilder<'a, C>
 where
     C: Client + Clone,
 {
-    #[inline]
-    pub(crate) fn new(queue_name_client: &'a QueueNameClient<C>) -> CreateQueueBuilder<'a, C> {
+    pub(crate) fn new(queue_name_client: &'a QueueNameClient<C>) -> Self {
         CreateQueueBuilder {
             queue_name_client,
             timeout: None,
@@ -38,7 +37,6 @@ impl<'a, C> TimeoutOption for CreateQueueBuilder<'a, C>
 where
     C: Client + Clone,
 {
-    #[inline]
     fn timeout(&self) -> Option<u64> {
         self.timeout
     }
@@ -48,7 +46,6 @@ impl<'a, C> ClientRequestIdOption<'a> for CreateQueueBuilder<'a, C>
 where
     C: Client + Clone,
 {
-    #[inline]
     fn client_request_id(&self) -> Option<&'a str> {
         self.client_request_id
     }
@@ -69,7 +66,6 @@ where
 {
     type O = Self;
 
-    #[inline]
     fn with_timeout(self, timeout: u64) -> Self::O {
         CreateQueueBuilder {
             queue_name_client: self.queue_name_client,
@@ -86,7 +82,6 @@ where
 {
     type O = Self;
 
-    #[inline]
     fn with_client_request_id(self, client_request_id: &'a str) -> Self::O {
         CreateQueueBuilder {
             queue_name_client: self.queue_name_client,

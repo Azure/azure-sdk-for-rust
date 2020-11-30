@@ -24,11 +24,10 @@ impl<'a, C> PutMessageBuilder<'a, C>
 where
     C: Client + Clone,
 {
-    #[inline]
     pub(crate) fn new<MB: Into<Cow<'a, str>>>(
         queue_name_client: &'a QueueNameClient<C>,
         message_body: MB,
-    ) -> PutMessageBuilder<'a, C> {
+    ) -> Self {
         PutMessageBuilder {
             queue_name_client,
             message_body: message_body.into(),
@@ -45,7 +44,6 @@ impl<'a, C> MessageBodyRequired for PutMessageBuilder<'a, C>
 where
     C: Client + Clone,
 {
-    #[inline]
     fn message_body(&self) -> &str {
         self.message_body.as_ref()
     }
@@ -55,7 +53,6 @@ impl<'a, C> VisibilityTimeoutOption for PutMessageBuilder<'a, C>
 where
     C: Client + Clone,
 {
-    #[inline]
     fn visibility_timeout(&self) -> Option<Duration> {
         self.visibility_timeout
     }
@@ -65,7 +62,6 @@ impl<'a, C> MessageTTLRequired for PutMessageBuilder<'a, C>
 where
     C: Client + Clone,
 {
-    #[inline]
     fn message_ttl_seconds(&self) -> u64 {
         self.message_ttl_seconds
     }
@@ -75,7 +71,6 @@ impl<'a, C> TimeoutOption for PutMessageBuilder<'a, C>
 where
     C: Client + Clone,
 {
-    #[inline]
     fn timeout(&self) -> Option<u64> {
         self.timeout
     }
@@ -85,7 +80,6 @@ impl<'a, C> ClientRequestIdOption<'a> for PutMessageBuilder<'a, C>
 where
     C: Client + Clone,
 {
-    #[inline]
     fn client_request_id(&self) -> Option<&'a str> {
         self.client_request_id
     }
@@ -95,9 +89,8 @@ impl<'a, C> VisibilityTimeoutSupport for PutMessageBuilder<'a, C>
 where
     C: Client + Clone,
 {
-    type O = PutMessageBuilder<'a, C>;
+    type O = Self;
 
-    #[inline]
     fn with_visibility_timeout(self, visibility_timeout: Duration) -> Self::O {
         PutMessageBuilder {
             queue_name_client: self.queue_name_client,
@@ -114,9 +107,8 @@ impl<'a, C> MessageTTLSupport for PutMessageBuilder<'a, C>
 where
     C: Client + Clone,
 {
-    type O = PutMessageBuilder<'a, C>;
+    type O = Self;
 
-    #[inline]
     fn with_message_ttl_seconds(self, message_ttl_seconds: u64) -> Self::O {
         PutMessageBuilder {
             queue_name_client: self.queue_name_client,
@@ -133,9 +125,8 @@ impl<'a, C> TimeoutSupport for PutMessageBuilder<'a, C>
 where
     C: Client + Clone,
 {
-    type O = PutMessageBuilder<'a, C>;
+    type O = Self;
 
-    #[inline]
     fn with_timeout(self, timeout: u64) -> Self::O {
         PutMessageBuilder {
             queue_name_client: self.queue_name_client,
@@ -152,9 +143,8 @@ impl<'a, C> ClientRequestIdSupport<'a> for PutMessageBuilder<'a, C>
 where
     C: Client + Clone,
 {
-    type O = PutMessageBuilder<'a, C>;
+    type O = Self;
 
-    #[inline]
     fn with_client_request_id(self, client_request_id: &'a str) -> Self::O {
         PutMessageBuilder {
             queue_name_client: self.queue_name_client,
