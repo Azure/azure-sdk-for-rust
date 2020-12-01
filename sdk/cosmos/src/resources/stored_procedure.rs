@@ -19,23 +19,9 @@ pub struct StoredProcedure {
     pub body: String,
 }
 
-impl StoredProcedureName for StoredProcedure {
-    fn name(&self) -> &str {
+impl StoredProcedure {
+    /// The name of the stored procedure
+    pub fn name(&self) -> &str {
         &self.id
-    }
-}
-pub trait StoredProcedureName: std::fmt::Debug {
-    fn name(&self) -> &str;
-}
-
-impl StoredProcedureName for &str {
-    fn name(&self) -> &str {
-        self
-    }
-}
-
-impl StoredProcedureName for String {
-    fn name(&self) -> &str {
-        self.as_ref()
     }
 }

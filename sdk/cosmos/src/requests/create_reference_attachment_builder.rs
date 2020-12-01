@@ -217,7 +217,7 @@ impl<'a, 'b> CreateReferenceAttachmentBuilder<'a, 'b, Yes, Yes> {
         }
 
         let request = serde_json::to_string(&_Request {
-            id: self.attachment_client.attachment_name().name(),
+            id: self.attachment_client.attachment_name(),
             content_type: ContentTypeRequired::content_type(self),
             media: self.media(),
         })?;

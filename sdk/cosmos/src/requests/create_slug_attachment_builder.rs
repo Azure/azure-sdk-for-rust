@@ -237,7 +237,7 @@ impl<'a, 'b> CreateSlugAttachmentBuilder<'a, 'b, Yes, Yes> {
 
         req = ContentTypeRequired::add_header(self, req);
 
-        req = req.header("Slug", self.attachment_client.attachment_name().name());
+        req = req.header("Slug", self.attachment_client.attachment_name());
         req = req.header(http::header::CONTENT_LENGTH, self.body().len());
 
         let req = req.body(self.body())?;

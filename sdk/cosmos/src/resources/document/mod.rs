@@ -60,25 +60,3 @@ impl<T> Resource for &Document<T> {
         self.document_attributes._self()
     }
 }
-
-pub trait DocumentName: std::fmt::Debug {
-    fn name(&self) -> &str;
-}
-
-impl DocumentName for &str {
-    fn name(&self) -> &str {
-        self
-    }
-}
-
-impl DocumentName for String {
-    fn name(&self) -> &str {
-        self.as_ref()
-    }
-}
-
-impl DocumentName for std::borrow::Cow<'_, str> {
-    fn name(&self) -> &str {
-        self.as_ref()
-    }
-}
