@@ -1,6 +1,6 @@
 use crate::prelude::*;
 use crate::responses::CreateUserDefinedFunctionResponse;
-use azure_core::prelude::*;
+use azure_core::{prelude::*, UserAgent};
 use azure_core::{No, ToAssign, Yes};
 use http::StatusCode;
 use std::convert::TryInto;
@@ -15,7 +15,7 @@ where
     is_create: bool,
     p_body: PhantomData<BodySet>,
     body: Option<&'b str>,
-    user_agent: Option<&'b str>,
+    user_agent: Option<UserAgent<'b>>,
     activity_id: Option<&'b str>,
     consistency_level: Option<ConsistencyLevel>,
 }
@@ -55,12 +55,11 @@ impl<'a, 'b> UserDefinedFunctionBodyRequired<'b>
     }
 }
 
-impl<'a, 'b, BodySet> UserAgentOption<'b>
-    for CreateOrReplaceUserDefinedFunctionBuilder<'a, 'b, BodySet>
+impl<'a, 'b, BodySet> CreateOrReplaceUserDefinedFunctionBuilder<'a, 'b, BodySet>
 where
     BodySet: ToAssign,
 {
-    fn user_agent(&self) -> Option<&'b str> {
+    fn user_agent(&self) -> Option<UserAgent<'b>> {
         self.user_agent
     }
 }
@@ -112,7 +111,7 @@ where
 
     fn with_user_agent(self, user_agent: &'b str) -> Self::O {
         Self {
-            user_agent: Some(user_agent),
+            user_agent: Some(UserAgent::new(user_agent)),
             ..self
         }
     }
@@ -167,7 +166,7 @@ impl<'a, 'b> CreateOrReplaceUserDefinedFunctionBuilder<'a, 'b, Yes> {
         };
 
         // add trait headers
-        let req = UserAgentOption::add_header(self, req);
+        let req = crate::headers::add_header(self.user_agent(), req);
         let req = ActivityIdOption::add_header(self, req);
         let req = ConsistencyLevelOption::add_header(self, req);
 

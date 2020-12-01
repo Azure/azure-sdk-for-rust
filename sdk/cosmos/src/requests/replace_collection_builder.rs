@@ -18,7 +18,7 @@ where
     p_indexing_policy: PhantomData<IndexingPolicySet>,
     partition_key: Option<&'a PartitionKey>,
     indexing_policy: Option<&'a IndexingPolicy>,
-    user_agent: Option<&'b str>,
+    user_agent: Option<azure_core::UserAgent<'b>>,
     activity_id: Option<&'b str>,
     consistency_level: Option<ConsistencyLevel>,
 }
@@ -69,13 +69,13 @@ where
     }
 }
 
-impl<'a, 'b, PartitionKeysSet, IndexingPolicySet> UserAgentOption<'b>
-    for ReplaceCollectionBuilder<'a, 'b, PartitionKeysSet, IndexingPolicySet>
+impl<'a, 'b, PartitionKeysSet, IndexingPolicySet>
+    ReplaceCollectionBuilder<'a, 'b, PartitionKeysSet, IndexingPolicySet>
 where
     PartitionKeysSet: ToAssign,
     IndexingPolicySet: ToAssign,
 {
-    fn user_agent(&self) -> Option<&'b str> {
+    fn user_agent(&self) -> Option<azure_core::UserAgent<'b>> {
         self.user_agent
     }
 }
@@ -154,7 +154,7 @@ where
 
     fn with_user_agent(self, user_agent: &'b str) -> Self::O {
         Self {
-            user_agent: Some(user_agent),
+            user_agent: Some(azure_core::UserAgent::new(user_agent)),
             ..self
         }
     }
@@ -201,7 +201,7 @@ impl<'a, 'b> ReplaceCollectionBuilder<'a, 'b, Yes, Yes> {
             .collection_client
             .prepare_request_with_collection_name(http::Method::PUT);
 
-        let req = UserAgentOption::add_header(self, req);
+        let req = crate::headers::add_header(self.user_agent(), req);
         let req = ActivityIdOption::add_header(self, req);
         let req = ConsistencyLevelOption::add_header(self, req);
 

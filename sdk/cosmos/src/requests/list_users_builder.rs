@@ -9,7 +9,7 @@ use std::convert::TryInto;
 #[derive(Debug, Clone)]
 pub struct ListUsersBuilder<'a, 'b> {
     database_client: &'a DatabaseClient,
-    user_agent: Option<&'b str>,
+    user_agent: Option<azure_core::UserAgent<'b>>,
     activity_id: Option<&'b str>,
     consistency_level: Option<ConsistencyLevel>,
     continuation: Option<&'b str>,
@@ -33,10 +33,8 @@ impl<'a, 'b> ListUsersBuilder<'a, 'b> {
     pub fn database_client(&self) -> &'a DatabaseClient {
         self.database_client
     }
-}
 
-impl<'a, 'b> UserAgentOption<'b> for ListUsersBuilder<'a, 'b> {
-    fn user_agent(&self) -> Option<&'b str> {
+    fn user_agent(&self) -> Option<azure_core::UserAgent<'b>> {
         self.user_agent
     }
 }
@@ -70,7 +68,7 @@ impl<'a, 'b> UserAgentSupport<'b> for ListUsersBuilder<'a, 'b> {
 
     fn with_user_agent(self, user_agent: &'b str) -> Self::O {
         Self {
-            user_agent: Some(user_agent),
+            user_agent: Some(azure_core::UserAgent::new(user_agent)),
             ..self
         }
     }

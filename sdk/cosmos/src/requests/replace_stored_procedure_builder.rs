@@ -14,7 +14,7 @@ where
     stored_procedure_client: &'a StoredProcedureClient,
     p_body: PhantomData<BodySet>,
     body: Option<&'b str>,
-    user_agent: Option<&'b str>,
+    user_agent: Option<azure_core::UserAgent<'b>>,
     activity_id: Option<&'b str>,
     consistency_level: Option<ConsistencyLevel>,
 }
@@ -47,11 +47,11 @@ impl<'a, 'b> StoredProcedureBodyRequired<'b> for ReplaceStoredProcedureBuilder<'
     }
 }
 
-impl<'a, 'b, BodySet> UserAgentOption<'b> for ReplaceStoredProcedureBuilder<'a, 'b, BodySet>
+impl<'a, 'b, BodySet> ReplaceStoredProcedureBuilder<'a, 'b, BodySet>
 where
     BodySet: ToAssign,
 {
-    fn user_agent(&self) -> Option<&'b str> {
+    fn user_agent(&self) -> Option<azure_core::UserAgent<'b>> {
         self.user_agent
     }
 }
@@ -97,7 +97,7 @@ where
 
     fn with_user_agent(self, user_agent: &'b str) -> Self::O {
         Self {
-            user_agent: Some(user_agent),
+            user_agent: Some(azure_core::UserAgent::new(user_agent)),
             ..self
         }
     }
@@ -141,7 +141,7 @@ impl<'a, 'b> ReplaceStoredProcedureBuilder<'a, 'b, Yes> {
             .prepare_request_with_stored_procedure_name(http::Method::PUT);
 
         // add trait headers
-        let req = UserAgentOption::add_header(self, req);
+        let req = crate::headers::add_header(self.user_agent(), req);
         let req = ActivityIdOption::add_header(self, req);
         let req = ConsistencyLevelOption::add_header(self, req);
 

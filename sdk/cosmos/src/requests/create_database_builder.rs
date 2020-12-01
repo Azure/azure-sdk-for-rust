@@ -15,7 +15,7 @@ where
     cosmos_client: &'a CosmosClient,
     p_database_name: PhantomData<DatabaseNameSet>,
     database_name: Option<&'a str>,
-    user_agent: Option<&'a str>,
+    user_agent: Option<azure_core::UserAgent<'a>>,
     activity_id: Option<&'a str>,
     consistency_level: Option<ConsistencyLevel>,
 }
@@ -48,11 +48,11 @@ impl<'a> DatabaseNameRequired<'a> for CreateDatabaseBuilder<'a, Yes> {
     }
 }
 
-impl<'a, DatabaseNameSet> UserAgentOption<'a> for CreateDatabaseBuilder<'a, DatabaseNameSet>
+impl<'a, DatabaseNameSet> CreateDatabaseBuilder<'a, DatabaseNameSet>
 where
     DatabaseNameSet: ToAssign,
 {
-    fn user_agent(&self) -> Option<&'a str> {
+    fn user_agent(&self) -> Option<azure_core::UserAgent<'a>> {
         self.user_agent
     }
 }
@@ -101,7 +101,7 @@ where
             cosmos_client: self.cosmos_client,
             p_database_name: PhantomData {},
             database_name: self.database_name,
-            user_agent: Some(user_agent),
+            user_agent: Some(azure_core::UserAgent::new(user_agent)),
             activity_id: self.activity_id,
             consistency_level: self.consistency_level,
         }
@@ -164,7 +164,7 @@ impl<'a> CreateDatabaseBuilder<'a, Yes> {
             ResourceType::Databases,
         );
 
-        let request = UserAgentOption::add_header(self, request);
+        let request = crate::headers::add_header(self.user_agent(), request);
         let request = ActivityIdOption::add_header(self, request);
         let request = ConsistencyLevelOption::add_header(self, request);
 

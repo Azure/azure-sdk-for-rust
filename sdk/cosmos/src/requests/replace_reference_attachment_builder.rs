@@ -17,7 +17,7 @@ where
     content_type: Option<&'b str>,
     if_match_condition: Option<IfMatchCondition<'b>>,
     media: Option<&'b str>,
-    user_agent: Option<&'b str>,
+    user_agent: Option<azure_core::UserAgent<'b>>,
     activity_id: Option<&'b str>,
     consistency_level: Option<ConsistencyLevel>,
 }
@@ -80,13 +80,13 @@ where
     }
 }
 
-impl<'a, 'b, ContentTypeSet, MediaSet> UserAgentOption<'b>
-    for ReplaceReferenceAttachmentBuilder<'a, 'b, ContentTypeSet, MediaSet>
+impl<'a, 'b, ContentTypeSet, MediaSet>
+    ReplaceReferenceAttachmentBuilder<'a, 'b, ContentTypeSet, MediaSet>
 where
     ContentTypeSet: ToAssign,
     MediaSet: ToAssign,
 {
-    fn user_agent(&self) -> Option<&'b str> {
+    fn user_agent(&self) -> Option<azure_core::UserAgent<'b>> {
         self.user_agent
     }
 }
@@ -183,7 +183,7 @@ where
 
     fn with_user_agent(self, user_agent: &'b str) -> Self::O {
         Self {
-            user_agent: Some(user_agent),
+            user_agent: Some(azure_core::UserAgent::new(user_agent)),
             ..self
         }
     }
@@ -232,7 +232,7 @@ impl<'a, 'b> ReplaceReferenceAttachmentBuilder<'a, 'b, Yes, Yes> {
 
         // add trait headers
         req = IfMatchConditionOption::add_header(self, req);
-        req = UserAgentOption::add_header(self, req);
+        req = crate::headers::add_header(self.user_agent(), req);
         req = ActivityIdOption::add_header(self, req);
         req = ConsistencyLevelOption::add_header(self, req);
 

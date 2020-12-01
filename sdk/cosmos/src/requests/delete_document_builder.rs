@@ -12,7 +12,7 @@ pub struct DeleteDocumentBuilder<'a> {
     document_client: &'a DocumentClient,
     if_match_condition: Option<IfMatchCondition<'a>>,
     if_modified_since: Option<&'a DateTime<Utc>>,
-    user_agent: Option<&'a str>,
+    user_agent: Option<azure_core::UserAgent<'a>>,
     activity_id: Option<&'a str>,
     consistency_level: Option<ConsistencyLevel>,
     allow_tentative_writes: bool,
@@ -50,8 +50,8 @@ impl<'a> IfModifiedSinceOption<'a> for DeleteDocumentBuilder<'a> {
     }
 }
 
-impl<'a> UserAgentOption<'a> for DeleteDocumentBuilder<'a> {
-    fn user_agent(&self) -> Option<&'a str> {
+impl<'a> DeleteDocumentBuilder<'a> {
+    fn user_agent(&self) -> Option<azure_core::UserAgent<'a>> {
         self.user_agent
     }
 }
@@ -101,7 +101,7 @@ impl<'a> UserAgentSupport<'a> for DeleteDocumentBuilder<'a> {
 
     fn with_user_agent(self, user_agent: &'a str) -> Self::O {
         Self {
-            user_agent: Some(user_agent),
+            user_agent: Some(azure_core::UserAgent::new(user_agent)),
             ..self
         }
     }
@@ -152,7 +152,7 @@ impl<'a> DeleteDocumentBuilder<'a> {
         // add trait headers
         req = IfMatchConditionOption::add_header(self, req);
         req = IfModifiedSinceOption::add_header(self, req);
-        req = UserAgentOption::add_header(self, req);
+        req = crate::headers::add_header(self.user_agent(), req);
         req = ActivityIdOption::add_header(self, req);
         req = ConsistencyLevelOption::add_header(self, req);
         req = AllowTentativeWritesOption::add_header(self, req);

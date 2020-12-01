@@ -7,7 +7,7 @@ use std::convert::TryInto;
 #[derive(Debug, Clone)]
 pub struct DeleteCollectionBuilder<'a> {
     collection_client: &'a CollectionClient,
-    user_agent: Option<&'a str>,
+    user_agent: Option<azure_core::UserAgent<'a>>,
     activity_id: Option<&'a str>,
     consistency_level: Option<ConsistencyLevel>,
 }
@@ -29,8 +29,8 @@ impl<'a> DeleteCollectionBuilder<'a> {
     }
 }
 
-impl<'a> UserAgentOption<'a> for DeleteCollectionBuilder<'a> {
-    fn user_agent(&self) -> Option<&'a str> {
+impl<'a> DeleteCollectionBuilder<'a> {
+    fn user_agent(&self) -> Option<azure_core::UserAgent<'a>> {
         self.user_agent
     }
 }
@@ -52,7 +52,7 @@ impl<'a> UserAgentSupport<'a> for DeleteCollectionBuilder<'a> {
 
     fn with_user_agent(self, user_agent: &'a str) -> Self::O {
         Self {
-            user_agent: Some(user_agent),
+            user_agent: Some(azure_core::UserAgent::new(user_agent)),
             ..self
         }
     }
@@ -89,7 +89,7 @@ impl<'a> DeleteCollectionBuilder<'a> {
             .collection_client()
             .prepare_request_with_collection_name(http::Method::DELETE);
 
-        let request = UserAgentOption::add_header(self, request);
+        let request = crate::headers::add_header(self.user_agent(), request);
         let request = ActivityIdOption::add_header(self, request);
         let request = ConsistencyLevelOption::add_header(self, request);
 

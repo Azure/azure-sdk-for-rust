@@ -13,7 +13,7 @@ pub struct GetDocumentBuilder<'a, 'b> {
     document_client: &'a DocumentClient,
     if_match_condition: Option<IfMatchCondition<'b>>,
     if_modified_since: Option<&'b DateTime<Utc>>,
-    user_agent: Option<&'b str>,
+    user_agent: Option<azure_core::UserAgent<'b>>,
     activity_id: Option<&'b str>,
     consistency_level: Option<ConsistencyLevel>,
 }
@@ -49,8 +49,8 @@ impl<'a, 'b> IfModifiedSinceOption<'b> for GetDocumentBuilder<'a, 'b> {
     }
 }
 
-impl<'a, 'b> UserAgentOption<'b> for GetDocumentBuilder<'a, 'b> {
-    fn user_agent(&self) -> Option<&'b str> {
+impl<'a, 'b> GetDocumentBuilder<'a, 'b> {
+    fn user_agent(&self) -> Option<azure_core::UserAgent<'b>> {
         self.user_agent
     }
 }
@@ -94,7 +94,7 @@ impl<'a, 'b> UserAgentSupport<'b> for GetDocumentBuilder<'a, 'b> {
 
     fn with_user_agent(self, user_agent: &'b str) -> Self::O {
         Self {
-            user_agent: Some(user_agent),
+            user_agent: Some(azure_core::UserAgent::new(user_agent)),
             ..self
         }
     }
@@ -135,7 +135,7 @@ impl<'a, 'b> GetDocumentBuilder<'a, 'b> {
         // add trait headers
         req = IfMatchConditionOption::add_header(self, req);
         req = IfModifiedSinceOption::add_header(self, req);
-        req = UserAgentOption::add_header(self, req);
+        req = crate::headers::add_header(self.user_agent(), req);
         req = ActivityIdOption::add_header(self, req);
         req = ConsistencyLevelOption::add_header(self, req);
 

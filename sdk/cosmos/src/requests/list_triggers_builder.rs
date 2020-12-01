@@ -10,7 +10,7 @@ use std::convert::TryInto;
 pub struct ListTriggersBuilder<'a, 'b> {
     collection_client: &'a CollectionClient,
     if_match_condition: Option<IfMatchCondition<'b>>,
-    user_agent: Option<&'b str>,
+    user_agent: Option<azure_core::UserAgent<'b>>,
     activity_id: Option<&'b str>,
     consistency_level: Option<ConsistencyLevel>,
     continuation: Option<&'b str>,
@@ -43,8 +43,8 @@ impl<'a, 'b> IfMatchConditionOption<'b> for ListTriggersBuilder<'a, 'b> {
     }
 }
 
-impl<'a, 'b> UserAgentOption<'b> for ListTriggersBuilder<'a, 'b> {
-    fn user_agent(&self) -> Option<&'b str> {
+impl<'a, 'b> ListTriggersBuilder<'a, 'b> {
+    fn user_agent(&self) -> Option<azure_core::UserAgent<'b>> {
         self.user_agent
     }
 }
@@ -89,7 +89,7 @@ impl<'a, 'b> UserAgentSupport<'b> for ListTriggersBuilder<'a, 'b> {
 
     fn with_user_agent(self, user_agent: &'b str) -> Self::O {
         Self {
-            user_agent: Some(user_agent),
+            user_agent: Some(azure_core::UserAgent::new(user_agent)),
             ..self
         }
     }
@@ -156,7 +156,7 @@ impl<'a, 'b> ListTriggersBuilder<'a, 'b> {
 
         // add trait headers
         let request = IfMatchConditionOption::add_header(self, request);
-        let request = UserAgentOption::add_header(self, request);
+        let request = crate::headers::add_header(self.user_agent(), request);
         let request = ActivityIdOption::add_header(self, request);
         let request = ConsistencyLevelOption::add_header(self, request);
         let request = ContinuationOption::add_header(self, request);

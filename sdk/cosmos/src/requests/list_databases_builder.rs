@@ -9,7 +9,7 @@ use std::convert::TryInto;
 #[derive(Debug, Clone)]
 pub struct ListDatabasesBuilder<'a> {
     cosmos_client: &'a CosmosClient,
-    user_agent: Option<&'a str>,
+    user_agent: Option<azure_core::UserAgent<'a>>,
     activity_id: Option<&'a str>,
     consistency_level: Option<ConsistencyLevel>,
     continuation: Option<&'a str>,
@@ -35,8 +35,8 @@ impl<'a> ListDatabasesBuilder<'a> {
     }
 }
 
-impl<'a> UserAgentOption<'a> for ListDatabasesBuilder<'a> {
-    fn user_agent(&self) -> Option<&'a str> {
+impl<'a> ListDatabasesBuilder<'a> {
+    fn user_agent(&self) -> Option<azure_core::UserAgent<'a>> {
         self.user_agent
     }
 }
@@ -70,7 +70,7 @@ impl<'a> UserAgentSupport<'a> for ListDatabasesBuilder<'a> {
 
     fn with_user_agent(self, user_agent: &'a str) -> Self::O {
         Self {
-            user_agent: Some(user_agent),
+            user_agent: Some(azure_core::UserAgent::new(user_agent)),
             ..self
         }
     }
@@ -129,7 +129,7 @@ impl<'a> ListDatabasesBuilder<'a> {
             self.cosmos_client
                 .prepare_request("dbs", http::Method::GET, ResourceType::Databases);
 
-        let request = UserAgentOption::add_header(self, request);
+        let request = crate::headers::add_header(self.user_agent(), request);
         let request = ActivityIdOption::add_header(self, request);
         let request = ConsistencyLevelOption::add_header(self, request);
         let request = ContinuationOption::add_header(self, request);

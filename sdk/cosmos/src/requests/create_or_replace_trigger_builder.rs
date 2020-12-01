@@ -22,7 +22,7 @@ where
     trigger_operation: TriggerOperation,
     trigger_type: TriggerType,
     body: Option<&'a str>,
-    user_agent: Option<&'a str>,
+    user_agent: Option<azure_core::UserAgent<'a>>,
     activity_id: Option<&'a str>,
     consistency_level: Option<ConsistencyLevel>,
 }
@@ -91,14 +91,14 @@ where
     }
 }
 
-impl<'a, TriggerOperationSet, TriggerTypeSet, BodySet> UserAgentOption<'a>
-    for CreateOrReplaceTriggerBuilder<'a, TriggerOperationSet, TriggerTypeSet, BodySet>
+impl<'a, TriggerOperationSet, TriggerTypeSet, BodySet>
+    CreateOrReplaceTriggerBuilder<'a, TriggerOperationSet, TriggerTypeSet, BodySet>
 where
     TriggerOperationSet: ToAssign,
     TriggerTypeSet: ToAssign,
     BodySet: ToAssign,
 {
-    fn user_agent(&self) -> Option<&'a str> {
+    fn user_agent(&self) -> Option<azure_core::UserAgent<'a>> {
         self.user_agent
     }
 }
@@ -213,7 +213,7 @@ where
 
     fn with_user_agent(self, user_agent: &'a str) -> Self::O {
         Self {
-            user_agent: Some(user_agent),
+            user_agent: Some(azure_core::UserAgent::new(user_agent)),
             ..self
         }
     }
@@ -279,7 +279,7 @@ impl<'a> CreateOrReplaceTriggerBuilder<'a, Yes, Yes, Yes> {
         };
 
         // add trait headers
-        let req = UserAgentOption::add_header(self, req);
+        let req = crate::headers::add_header(self.user_agent(), req);
         let req = ActivityIdOption::add_header(self, req);
         let req = ConsistencyLevelOption::add_header(self, req);
 
