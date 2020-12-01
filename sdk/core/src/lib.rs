@@ -335,18 +335,6 @@ impl<'a> AddAsHeader for UserAgent<'a> {
     }
 }
 
-pub trait UserAgentOption<'a> {
-    fn user_agent(&self) -> Option<&'a str>;
-
-    #[must_use]
-    fn add_header(&self, mut builder: Builder) -> Builder {
-        if let Some(user_agent) = self.user_agent() {
-            builder = builder.header(USER_AGENT, user_agent);
-        }
-        builder
-    }
-}
-
 pub trait ActivityIdSupport<'a> {
     type O;
     fn with_activity_id(self, activity_id: &'a str) -> Self::O;
@@ -364,18 +352,6 @@ impl<'a> ActivityId<'a> {
 impl<'a> AddAsHeader for ActivityId<'a> {
     fn add_as_header(&self, builder: Builder) -> Builder {
         builder.header(ACTIVITY_ID, self.0)
-    }
-}
-
-pub trait ActivityIdOption<'a> {
-    fn activity_id(&self) -> Option<&'a str>;
-
-    #[must_use]
-    fn add_header(&self, mut builder: Builder) -> Builder {
-        if let Some(activity_id) = self.activity_id() {
-            builder = builder.header(ACTIVITY_ID, activity_id);
-        }
-        builder
     }
 }
 

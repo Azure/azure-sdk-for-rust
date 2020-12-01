@@ -119,30 +119,6 @@ pub trait ConsistencyLevelSupport<'a> {
     fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self::O;
 }
 
-pub trait ConsistencyLevelOption<'a> {
-    fn consistency_level(&self) -> Option<ConsistencyLevel>;
-
-    #[must_use]
-    fn add_header(&self, builder: Builder) -> Builder {
-        if let Some(consistency_level) = self.consistency_level() {
-            let builder = builder.header(
-                headers::HEADER_CONSISTENCY_LEVEL,
-                consistency_level.to_consistency_level_header(),
-            );
-
-            // if we have a Session consistency level we make sure to pass
-            // the x-ms-session-token header too.
-            if let ConsistencyLevel::Session(session_token) = consistency_level {
-                builder.header(headers::HEADER_SESSION_TOKEN, session_token)
-            } else {
-                builder
-            }
-        } else {
-            builder
-        }
-    }
-}
-
 pub trait PartitionRangeIdSupport<'a> {
     type O;
     fn with_partition_range_id(self, partition_range_id: &'a str) -> Self::O;
@@ -328,16 +304,6 @@ pub trait StoredProcedureNameRequired<'a> {
 pub trait StoredProcedureNameSupport<'a> {
     type O;
     fn with_stored_procedure_name(self, stored_procedure_name: &'a str) -> Self::O;
-}
-
-pub trait OfferRequired {
-    fn offer(&self) -> Offer;
-
-    #[must_use]
-    fn add_header(&self, builder: Builder) -> Builder {
-        use azure_core::AddAsHeader;
-        self.offer().add_as_header(builder)
-    }
 }
 
 pub trait OfferSupport {
