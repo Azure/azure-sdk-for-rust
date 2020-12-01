@@ -502,7 +502,7 @@ pub trait MaxResultsOption {
         }
     }
 
-    fn append_pair(&self, url: &mut url::Url) {
+    fn append_to_url(&self, url: &mut url::Url) {
         if let Some(max_results) = self.max_results() {
             url.query_pairs_mut()
                 .append_pair("maxresults", &format!("{}", max_results));
