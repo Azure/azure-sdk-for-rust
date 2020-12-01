@@ -1,9 +1,10 @@
+use crate::headers;
 use crate::prelude::*;
 use crate::resources::collection::{Collection, IndexingPolicy, PartitionKey};
 use crate::resources::ResourceType;
 use crate::responses::CreateCollectionResponse;
 use azure_core::prelude::*;
-use azure_core::{No, ToAssign, Yes};
+use azure_core::{ActivityId, No, ToAssign, UserAgent, Yes};
 use http::StatusCode;
 use std::convert::TryInto;
 use std::marker::PhantomData;
@@ -30,8 +31,8 @@ pub struct CreateCollectionBuilder<
     collection_name: Option<&'a str>,
     indexing_policy: Option<&'a IndexingPolicy>,
     partition_key: Option<&'a PartitionKey>,
-    user_agent: Option<&'a str>,
-    activity_id: Option<&'a str>,
+    user_agent: Option<UserAgent<'a>>,
+    activity_id: Option<ActivityId<'a>>,
     consistency_level: Option<ConsistencyLevel>,
 }
 
@@ -67,8 +68,8 @@ where
     }
 }
 
-impl<'a, CollectionNameSet, IndexingPolicySet, PartitionKeySet> OfferRequired
-    for CreateCollectionBuilder<'a, Yes, CollectionNameSet, IndexingPolicySet, PartitionKeySet>
+impl<'a, CollectionNameSet, IndexingPolicySet, PartitionKeySet>
+    CreateCollectionBuilder<'a, Yes, CollectionNameSet, IndexingPolicySet, PartitionKeySet>
 where
     CollectionNameSet: ToAssign,
     IndexingPolicySet: ToAssign,
@@ -115,40 +116,22 @@ where
     }
 }
 
-impl<'a, OfferSet, CollectionNameSet, IndexingPolicySet, PartitionKeySet> UserAgentOption<'a>
-    for CreateCollectionBuilder<'a, OfferSet, CollectionNameSet, IndexingPolicySet, PartitionKeySet>
+impl<'a, OfferSet, CollectionNameSet, IndexingPolicySet, PartitionKeySet>
+    CreateCollectionBuilder<'a, OfferSet, CollectionNameSet, IndexingPolicySet, PartitionKeySet>
 where
     OfferSet: ToAssign,
     CollectionNameSet: ToAssign,
     IndexingPolicySet: ToAssign,
     PartitionKeySet: ToAssign,
 {
-    fn user_agent(&self) -> Option<&'a str> {
+    fn user_agent(&self) -> Option<UserAgent<'a>> {
         self.user_agent
     }
-}
 
-impl<'a, OfferSet, CollectionNameSet, IndexingPolicySet, PartitionKeySet> ActivityIdOption<'a>
-    for CreateCollectionBuilder<'a, OfferSet, CollectionNameSet, IndexingPolicySet, PartitionKeySet>
-where
-    OfferSet: ToAssign,
-    CollectionNameSet: ToAssign,
-    IndexingPolicySet: ToAssign,
-    PartitionKeySet: ToAssign,
-{
-    fn activity_id(&self) -> Option<&'a str> {
+    fn activity_id(&self) -> Option<ActivityId<'a>> {
         self.activity_id
     }
-}
 
-impl<'a, OfferSet, CollectionNameSet, IndexingPolicySet, PartitionKeySet> ConsistencyLevelOption<'a>
-    for CreateCollectionBuilder<'a, OfferSet, CollectionNameSet, IndexingPolicySet, PartitionKeySet>
-where
-    OfferSet: ToAssign,
-    CollectionNameSet: ToAssign,
-    IndexingPolicySet: ToAssign,
-    PartitionKeySet: ToAssign,
-{
     fn consistency_level(&self) -> Option<ConsistencyLevel> {
         self.consistency_level.clone()
     }
@@ -281,7 +264,7 @@ where
 
     fn with_user_agent(self, user_agent: &'a str) -> Self::O {
         Self {
-            user_agent: Some(user_agent),
+            user_agent: Some(UserAgent(user_agent)),
             ..self
         }
     }
@@ -305,7 +288,7 @@ where
 
     fn with_activity_id(self, activity_id: &'a str) -> Self::O {
         Self {
-            activity_id: Some(activity_id),
+            activity_id: Some(ActivityId(activity_id)),
             ..self
         }
     }
@@ -361,10 +344,10 @@ impl<'a> CreateCollectionBuilder<'a, Yes, Yes, Yes, Yes> {
         req = req.header(http::header::CONTENT_TYPE, "application/json");
 
         // add trait headers
-        let req = OfferRequired::add_header(self, req);
-        let req = UserAgentOption::add_header(self, req);
-        let req = ActivityIdOption::add_header(self, req);
-        let req = ConsistencyLevelOption::add_header(self, req);
+        let req = headers::add_header(Some(self.offer()), req);
+        let req = headers::add_header(self.user_agent(), req);
+        let req = headers::add_header(self.activity_id(), req);
+        let req = headers::add_header(self.consistency_level(), req);
 
         let mut collection =
             Collection::new(self.collection_name(), self.indexing_policy().to_owned());

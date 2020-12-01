@@ -44,10 +44,7 @@ pub enum IfMatchCondition<'a> {
 
 impl<'a> IfMatchCondition<'a> {
     pub(crate) fn add_header(&self, builder: Builder) -> Builder {
-        match self {
-            IfMatchCondition::Match(etag) => builder.header(IF_MATCH, *etag),
-            IfMatchCondition::NotMatch(etag) => builder.header(IF_NONE_MATCH, *etag),
-        }
+        <Self as crate::AddAsHeader>::add_as_header(self, builder)
     }
     pub(crate) fn add_source_header(&self, builder: Builder) -> Builder {
         match self {
@@ -57,6 +54,14 @@ impl<'a> IfMatchCondition<'a> {
     }
 }
 
+impl<'a> crate::AddAsHeader for IfMatchCondition<'a> {
+    fn add_as_header(&self, builder: Builder) -> Builder {
+        match self {
+            IfMatchCondition::Match(etag) => builder.header(IF_MATCH, *etag),
+            IfMatchCondition::NotMatch(etag) => builder.header(IF_NONE_MATCH, *etag),
+        }
+    }
+}
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum SequenceNumberCondition {
     Less(u64),

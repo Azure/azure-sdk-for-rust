@@ -320,6 +320,15 @@ pub trait UserAgentSupport<'a> {
     fn with_user_agent(self, user_agent: &'a str) -> Self::O;
 }
 
+#[derive(Debug, Clone, Copy)]
+pub struct UserAgent<'a>(pub &'a str);
+
+impl<'a> AddAsHeader for UserAgent<'a> {
+    fn add_as_header(&self, builder: Builder) -> Builder {
+        builder.header(USER_AGENT, self.0)
+    }
+}
+
 pub trait UserAgentOption<'a> {
     fn user_agent(&self) -> Option<&'a str>;
 
@@ -335,6 +344,15 @@ pub trait UserAgentOption<'a> {
 pub trait ActivityIdSupport<'a> {
     type O;
     fn with_activity_id(self, activity_id: &'a str) -> Self::O;
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct ActivityId<'a>(pub &'a str);
+
+impl<'a> AddAsHeader for ActivityId<'a> {
+    fn add_as_header(&self, builder: Builder) -> Builder {
+        builder.header(ACTIVITY_ID, self.0)
+    }
 }
 
 pub trait ActivityIdOption<'a> {
@@ -1026,4 +1044,8 @@ pub trait BlobNameSupport<'a> {
 
 pub trait BlobNameRequired<'a> {
     fn blob_name(&self) -> &'a str;
+}
+
+pub trait AddAsHeader {
+    fn add_as_header(&self, builder: Builder) -> Builder;
 }

@@ -335,14 +335,8 @@ pub trait OfferRequired {
 
     #[must_use]
     fn add_header(&self, builder: Builder) -> Builder {
-        match self.offer() {
-            Offer::Throughput(throughput) => {
-                builder.header(headers::HEADER_OFFER_THROUGHPUT, throughput)
-            }
-            Offer::S1 => builder.header(headers::HEADER_OFFER_TYPE, "S1"),
-            Offer::S2 => builder.header(headers::HEADER_OFFER_TYPE, "S2"),
-            Offer::S3 => builder.header(headers::HEADER_OFFER_TYPE, "S3"),
-        }
+        use azure_core::AddAsHeader;
+        self.offer().add_as_header(builder)
     }
 }
 
