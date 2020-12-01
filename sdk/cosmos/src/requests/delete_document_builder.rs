@@ -2,7 +2,7 @@ use crate::prelude::*;
 use crate::responses::DeleteDocumentResponse;
 use azure_core::modify_conditions::IfMatchCondition;
 use azure_core::prelude::*;
-use azure_core::{IfMatchConditionOption, IfMatchConditionSupport};
+use azure_core::IfMatchConditionSupport;
 use chrono::{DateTime, Utc};
 use http::StatusCode;
 use std::convert::TryInto;

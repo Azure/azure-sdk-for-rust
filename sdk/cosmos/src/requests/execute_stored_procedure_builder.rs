@@ -37,7 +37,7 @@ impl<'a, 'b> ExecuteStoredProcedureBuilder<'a, 'b> {
     }
 }
 
-impl<'a, 'b> ParametersOption<'b> for ExecuteStoredProcedureBuilder<'a, 'b> {
+impl<'a, 'b> ExecuteStoredProcedureBuilder<'a, 'b> {
     fn parameters(&self) -> Option<&'b Parameters> {
         self.parameters
     }
@@ -160,7 +160,11 @@ impl<'a, 'b> ExecuteStoredProcedureBuilder<'a, 'b> {
 
         let request = request.header(http::header::CONTENT_TYPE, "application/json");
 
-        let body = ParametersOption::generate_body(self);
+        let body = if let Some(parameters) = self.parameters() {
+            parameters.to_json()
+        } else {
+            String::from("[]")
+        };
 
         let request = request.body(body.as_bytes())?;
 

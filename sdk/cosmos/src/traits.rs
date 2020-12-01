@@ -4,10 +4,6 @@ use collection::*;
 use document::{IndexingDirective, Query};
 use http::request::Builder;
 
-pub trait DatabaseRequired<'a> {
-    fn database(&self) -> &'a str;
-}
-
 pub trait QueryCrossPartitionSupport {
     type O;
     fn with_query_cross_partition(self, query_cross_partition: bool) -> Self::O;
@@ -31,18 +27,6 @@ pub trait ParallelizeCrossPartitionQuerySupport {
         self,
         parallelize_cross_partition_query: bool,
     ) -> Self::O;
-}
-
-pub trait ParametersOption<'a> {
-    fn parameters(&self) -> Option<&'a stored_procedure::Parameters>;
-
-    fn generate_body(&self) -> String {
-        if let Some(parameters) = self.parameters() {
-            parameters.to_json()
-        } else {
-            String::from("[]")
-        }
-    }
 }
 
 pub trait ParametersSupport<'a> {
