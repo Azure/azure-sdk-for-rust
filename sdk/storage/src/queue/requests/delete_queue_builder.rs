@@ -1,5 +1,5 @@
 use crate::core::prelude::*;
-use crate::queue::clients::QueueNameClient;
+use crate::queue::clients::QueueClient;
 use crate::queue::responses::*;
 use crate::queue::HasStorageClient;
 use azure_core::errors::AzureError;
@@ -12,7 +12,7 @@ pub struct DeleteQueueBuilder<'a, C>
 where
     C: Client + Clone,
 {
-    queue_name_client: &'a QueueNameClient<C>,
+    queue_client: &'a QueueClient<C>,
     timeout: Option<u64>,
     client_request_id: Option<&'a str>,
 }
@@ -21,9 +21,9 @@ impl<'a, C> DeleteQueueBuilder<'a, C>
 where
     C: Client + Clone,
 {
-    pub(crate) fn new(queue_name_client: &'a QueueNameClient<C>) -> Self {
+    pub(crate) fn new(queue_client: &'a QueueClient<C>) -> Self {
         DeleteQueueBuilder {
-            queue_name_client,
+            queue_client,
             timeout: None,
             client_request_id: None,
         }
@@ -56,7 +56,7 @@ where
 
     fn with_timeout(self, timeout: u64) -> Self::O {
         DeleteQueueBuilder {
-            queue_name_client: self.queue_name_client,
+            queue_client: self.queue_client,
             timeout: Some(timeout),
             client_request_id: self.client_request_id,
         }
@@ -71,7 +71,7 @@ where
 
     fn with_client_request_id(self, client_request_id: &'a str) -> Self::O {
         DeleteQueueBuilder {
-            queue_name_client: self.queue_name_client,
+            queue_client: self.queue_client,
             timeout: self.timeout,
             client_request_id: Some(client_request_id),
         }
@@ -82,22 +82,22 @@ impl<'a, C> DeleteQueueBuilder<'a, C>
 where
     C: Client + Clone,
 {
-    pub fn queue_name_client(&self) -> &'a QueueNameClient<C> {
-        self.queue_name_client
+    pub fn queue_client(&self) -> &'a QueueClient<C> {
+        self.queue_client
     }
 
     pub async fn execute(self) -> Result<DeleteQueueResponse, AzureError> {
         let mut url = url::Url::parse(&format!(
             "{}/{}",
-            self.queue_name_client.storage_client().queue_uri(),
-            self.queue_name_client.queue_name(),
+            self.queue_client.storage_client().queue_uri(),
+            self.queue_client.queue_name(),
         ))?;
 
         TimeoutOption::append_pair(&self, &mut url);
 
         debug!("uri == {}", url);
 
-        let perform_request_response = self.queue_name_client.storage_client().perform_request(
+        let perform_request_response = self.queue_client.storage_client().perform_request(
             url.as_str(),
             &http::Method::DELETE,
             &|mut request| {

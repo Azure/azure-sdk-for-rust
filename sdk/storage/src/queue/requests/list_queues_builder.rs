@@ -1,5 +1,5 @@
 use crate::core::prelude::*;
-use crate::queue::clients::QueueServiceClient;
+use crate::queue::clients::QueueAccountClient;
 use crate::queue::responses::*;
 use crate::queue::HasStorageClient;
 use azure_core::errors::AzureError;
@@ -12,7 +12,7 @@ pub struct ListQueuesBuilder<'a, C>
 where
     C: Client + Clone,
 {
-    queue_service: &'a QueueServiceClient<C>,
+    queue_service: &'a QueueAccountClient<C>,
     prefix: Option<&'a str>,
     next_marker: Option<&'a str>,
     max_results: Option<u32>,
@@ -25,7 +25,7 @@ impl<'a, C> ListQueuesBuilder<'a, C>
 where
     C: Client + Clone,
 {
-    pub(crate) fn new(queue_service: &'a QueueServiceClient<C>) -> Self {
+    pub(crate) fn new(queue_service: &'a QueueAccountClient<C>) -> Self {
         ListQueuesBuilder {
             queue_service,
             prefix: None,
@@ -212,7 +212,7 @@ impl<'a, C> ListQueuesBuilder<'a, C>
 where
     C: Client + Clone,
 {
-    pub fn queue_service(&self) -> &'a QueueServiceClient<C> {
+    pub fn queue_service(&self) -> &'a QueueAccountClient<C> {
         self.queue_service
     }
 }

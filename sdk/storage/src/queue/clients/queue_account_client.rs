@@ -1,18 +1,18 @@
 use crate::core::Client;
-use crate::queue::clients::QueueNameClient;
+use crate::queue::clients::QueueClient;
 use crate::requests;
 use crate::HasStorageClient;
 use std::fmt::Debug;
 
 #[derive(Debug, Clone)]
-pub struct QueueServiceClient<C>
+pub struct QueueAccountClient<C>
 where
     C: Client + Clone,
 {
-    pub storage_client: C,
+    storage_client: C,
 }
 
-impl<C> HasStorageClient for QueueServiceClient<C>
+impl<C> HasStorageClient for QueueAccountClient<C>
 where
     C: Client + Clone,
 {
@@ -23,7 +23,7 @@ where
     }
 }
 
-impl<C> QueueServiceClient<C>
+impl<C> QueueAccountClient<C>
 where
     C: Client + Clone,
 {
@@ -35,18 +35,15 @@ where
         crate::requests::ListQueuesBuilder::new(self)
     }
 
-    pub fn into_queue_name_client<QN>(self, queue_name: QN) -> QueueNameClient<C>
+    pub fn into_queue_client<QN>(self, queue_name: QN) -> QueueClient<C>
     where
         QN: Into<String>,
     {
-        QueueNameClient {
-            queue_service_client: self,
-            queue_name: queue_name.into(),
-        }
+        QueueClient::new(self, queue_name.into())
     }
 }
 
-impl<C> From<C> for QueueServiceClient<C>
+impl<C> From<C> for QueueAccountClient<C>
 where
     C: Client + Clone,
 {

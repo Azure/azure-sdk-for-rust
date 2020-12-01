@@ -1,5 +1,5 @@
 use crate::core::prelude::*;
-use crate::queue::clients::QueueNameClient;
+use crate::queue::clients::QueueClient;
 use crate::queue::prelude::*;
 use crate::queue::HasStorageClient;
 use crate::responses::*;
@@ -13,7 +13,7 @@ pub struct DeleteMessageBuilder<'a, C>
 where
     C: Client + Clone,
 {
-    queue_name_client: &'a QueueNameClient<C>,
+    queue_client: &'a QueueClient<C>,
     pop_receipt: Box<dyn PopReceipt>,
     timeout: Option<u64>,
     client_request_id: Option<&'a str>,
@@ -24,11 +24,11 @@ where
     C: Client + Clone,
 {
     pub(crate) fn new(
-        queue_name_client: &'a QueueNameClient<C>,
+        queue_client: &'a QueueClient<C>,
         pop_receipt: Box<dyn PopReceipt>,
     ) -> Self {
         DeleteMessageBuilder {
-            queue_name_client,
+            queue_client,
             pop_receipt,
             timeout: None,
             client_request_id: None,
@@ -72,7 +72,7 @@ where
 
     fn with_timeout(self, timeout: u64) -> Self::O {
         DeleteMessageBuilder {
-            queue_name_client: self.queue_name_client,
+            queue_client: self.queue_client,
             pop_receipt: self.pop_receipt,
             timeout: Some(timeout),
             client_request_id: self.client_request_id,
@@ -88,7 +88,7 @@ where
 
     fn with_client_request_id(self, client_request_id: &'a str) -> Self::O {
         DeleteMessageBuilder {
-            queue_name_client: self.queue_name_client,
+            queue_client: self.queue_client,
             pop_receipt: self.pop_receipt,
             timeout: self.timeout,
             client_request_id: Some(client_request_id),
@@ -101,8 +101,8 @@ impl<'a, C> DeleteMessageBuilder<'a, C>
 where
     C: Client + Clone,
 {
-    pub fn queue_name_client(&self) -> &'a QueueNameClient<C> {
-        self.queue_name_client
+    pub fn queue_client(&self) -> &'a QueueClient<C> {
+        self.queue_client
     }
 }
 
@@ -116,8 +116,8 @@ where
 
         let mut url = url::Url::parse(&format!(
             "{}/{}/messages/{}",
-            self.queue_name_client.storage_client().queue_uri(),
-            self.queue_name_client.queue_name(),
+            self.queue_client.storage_client().queue_uri(),
+            self.queue_client.queue_name(),
             pop_receipt.message_id()
         ))?;
 
@@ -128,7 +128,7 @@ where
 
         debug!("url == {}", url);
 
-        let perform_request_response = self.queue_name_client.storage_client().perform_request(
+        let perform_request_response = self.queue_client.storage_client().perform_request(
             url.as_str(),
             &http::Method::DELETE,
             &|mut request| {

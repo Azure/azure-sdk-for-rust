@@ -14,7 +14,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let master_key =
         std::env::var("STORAGE_MASTER_KEY").expect("Set env variable STORAGE_MASTER_KEY first!");
 
-    let client: QueueServiceClient<_> = client::with_access_key(&account, &master_key).into();
+    let client: QueueAccountClient<_> = client::with_access_key(&account, &master_key).into();
 
     trace!("enumerating queues");
 

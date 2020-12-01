@@ -17,12 +17,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .nth(1)
         .expect("Please pass the queue name as first parameter");
 
-    let client: QueueServiceClient<_> = client::with_access_key(&account, &master_key).into();
+    let client: QueueAccountClient<_> = client::with_access_key(&account, &master_key).into();
 
     trace!("putting message");
 
     let response = client
-        .into_queue_name_client(&queue_name)
+        .into_queue_client(&queue_name)
         .put_message(format!("Azure SDK for Rust rocks! {}", chrono::Utc::now()))
         .with_client_request_id("optional correlation token")
         .execute()

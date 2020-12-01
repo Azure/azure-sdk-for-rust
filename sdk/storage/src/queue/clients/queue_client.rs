@@ -1,5 +1,5 @@
 use crate::core::Client;
-use crate::queue::clients::QueueServiceClient;
+use crate::queue::clients::QueueAccountClient;
 use crate::queue::PopReceipt;
 use crate::requests;
 use crate::HasStorageClient;
@@ -7,31 +7,42 @@ use std::borrow::Cow;
 use std::fmt::Debug;
 
 #[derive(Debug, Clone)]
-pub struct QueueNameClient<C>
+pub struct QueueClient<C>
 where
     C: Client + Clone,
 {
-    pub queue_service_client: QueueServiceClient<C>,
-    pub queue_name: String,
+    queue_account_client: QueueAccountClient<C>,
+    queue_name: String,
 }
 
-impl<C> HasStorageClient for QueueNameClient<C>
+impl<C> HasStorageClient for QueueClient<C>
 where
     C: Client + Clone,
 {
     type StorageClient = C;
 
     fn storage_client(&self) -> &C {
-        self.queue_service_client.storage_client()
+        self.queue_account_client.storage_client()
     }
 }
 
-impl<C> QueueNameClient<C>
+impl<C> QueueClient<C>
 where
     C: Client + Clone,
 {
+    pub(crate) fn new(queue_account_client: QueueAccountClient<C>, queue_name: String) -> Self {
+        Self {
+            queue_account_client,
+            queue_name,
+        }
+    }
+
     pub fn queue_name(&self) -> &str {
         self.queue_name.as_ref()
+    }
+
+    pub fn queue_account_client(&self) -> &QueueAccountClient<C> {
+        &self.queue_account_client
     }
 
     pub fn create_queue(&self) -> requests::CreateQueueBuilder<'_, C> {

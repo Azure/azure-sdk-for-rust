@@ -12,7 +12,7 @@ pub struct PutMessageBuilder<'a, C>
 where
     C: Client + Clone,
 {
-    queue_name_client: &'a QueueNameClient<C>,
+    queue_client: &'a QueueClient<C>,
     message_body: Cow<'a, str>,
     visibility_timeout: Option<Duration>,
     message_ttl_seconds: u64,
@@ -25,11 +25,11 @@ where
     C: Client + Clone,
 {
     pub(crate) fn new<MB: Into<Cow<'a, str>>>(
-        queue_name_client: &'a QueueNameClient<C>,
+        queue_client: &'a QueueClient<C>,
         message_body: MB,
     ) -> Self {
         PutMessageBuilder {
-            queue_name_client,
+            queue_client,
             message_body: message_body.into(),
             visibility_timeout: None,
             message_ttl_seconds: 25200,
@@ -93,7 +93,7 @@ where
 
     fn with_visibility_timeout(self, visibility_timeout: Duration) -> Self::O {
         PutMessageBuilder {
-            queue_name_client: self.queue_name_client,
+            queue_client: self.queue_client,
             message_body: self.message_body,
             visibility_timeout: Some(visibility_timeout),
             message_ttl_seconds: self.message_ttl_seconds,
@@ -111,7 +111,7 @@ where
 
     fn with_message_ttl_seconds(self, message_ttl_seconds: u64) -> Self::O {
         PutMessageBuilder {
-            queue_name_client: self.queue_name_client,
+            queue_client: self.queue_client,
             message_body: self.message_body,
             visibility_timeout: self.visibility_timeout,
             message_ttl_seconds,
@@ -129,7 +129,7 @@ where
 
     fn with_timeout(self, timeout: u64) -> Self::O {
         PutMessageBuilder {
-            queue_name_client: self.queue_name_client,
+            queue_client: self.queue_client,
             message_body: self.message_body,
             visibility_timeout: self.visibility_timeout,
             message_ttl_seconds: self.message_ttl_seconds,
@@ -147,7 +147,7 @@ where
 
     fn with_client_request_id(self, client_request_id: &'a str) -> Self::O {
         PutMessageBuilder {
-            queue_name_client: self.queue_name_client,
+            queue_client: self.queue_client,
             message_body: self.message_body,
             visibility_timeout: self.visibility_timeout,
             message_ttl_seconds: self.message_ttl_seconds,
@@ -162,15 +162,15 @@ impl<'a, C> PutMessageBuilder<'a, C>
 where
     C: Client + Clone,
 {
-    pub fn queue_name_client(&self) -> &'a QueueNameClient<C> {
-        self.queue_name_client
+    pub fn queue_client(&self) -> &'a QueueClient<C> {
+        self.queue_client
     }
 
     pub async fn execute(self) -> Result<PutMessageResponse, AzureError> {
         let mut url = url::Url::parse(&format!(
             "{}/{}/messages",
-            self.queue_name_client.storage_client().queue_uri(),
-            self.queue_name_client.queue_name()
+            self.queue_client.storage_client().queue_uri(),
+            self.queue_client.queue_name()
         ))?;
 
         MessageTTLRequired::append_pair(&self, &mut url);
@@ -189,7 +189,7 @@ where
 
         debug!("message about to be posted == {}", message);
 
-        let perform_request_response = self.queue_name_client.storage_client().perform_request(
+        let perform_request_response = self.queue_client.storage_client().perform_request(
             url.as_str(),
             &http::Method::POST,
             &|mut request| {

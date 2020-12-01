@@ -1,5 +1,5 @@
 use crate::core::prelude::*;
-use crate::queue::clients::QueueNameClient;
+use crate::queue::clients::QueueClient;
 use crate::queue::prelude::*;
 use crate::queue::HasStorageClient;
 use crate::responses::*;
@@ -14,7 +14,7 @@ pub struct GetMessagesBuilder<'a, C>
 where
     C: Client + Clone,
 {
-    queue_name_client: &'a QueueNameClient<C>,
+    queue_client: &'a QueueClient<C>,
     number_of_messages: Option<u32>,
     visibility_timeout: Option<Duration>,
     timeout: Option<u64>,
@@ -25,9 +25,9 @@ impl<'a, C> GetMessagesBuilder<'a, C>
 where
     C: Client + Clone,
 {
-    pub(crate) fn new(queue_name_client: &'a QueueNameClient<C>) -> Self {
+    pub(crate) fn new(queue_client: &'a QueueClient<C>) -> Self {
         GetMessagesBuilder {
-            queue_name_client,
+            queue_client,
             number_of_messages: None,
             visibility_timeout: None,
             timeout: None,
@@ -81,7 +81,7 @@ where
 
     fn with_number_of_messages(self, number_of_messages: u32) -> Self::O {
         GetMessagesBuilder {
-            queue_name_client: self.queue_name_client,
+            queue_client: self.queue_client,
             number_of_messages: Some(number_of_messages),
             visibility_timeout: self.visibility_timeout,
             timeout: self.timeout,
@@ -98,7 +98,7 @@ where
 
     fn with_visibility_timeout(self, visibility_timeout: Duration) -> Self::O {
         GetMessagesBuilder {
-            queue_name_client: self.queue_name_client,
+            queue_client: self.queue_client,
             number_of_messages: self.number_of_messages,
             visibility_timeout: Some(visibility_timeout),
             timeout: self.timeout,
@@ -115,7 +115,7 @@ where
 
     fn with_timeout(self, timeout: u64) -> Self::O {
         GetMessagesBuilder {
-            queue_name_client: self.queue_name_client,
+            queue_client: self.queue_client,
             number_of_messages: self.number_of_messages,
             visibility_timeout: self.visibility_timeout,
             timeout: Some(timeout),
@@ -132,7 +132,7 @@ where
 
     fn with_client_request_id(self, client_request_id: &'a str) -> Self::O {
         GetMessagesBuilder {
-            queue_name_client: self.queue_name_client,
+            queue_client: self.queue_client,
             number_of_messages: self.number_of_messages,
             visibility_timeout: self.visibility_timeout,
             timeout: self.timeout,
@@ -146,8 +146,8 @@ impl<'a, C> GetMessagesBuilder<'a, C>
 where
     C: Client + Clone,
 {
-    pub fn queue_name_client(&self) -> &'a QueueNameClient<C> {
-        self.queue_name_client
+    pub fn queue_client(&self) -> &'a QueueClient<C> {
+        self.queue_client
     }
 }
 
@@ -159,8 +159,8 @@ where
     pub async fn execute(self) -> Result<GetMessagesResponse, AzureError> {
         let mut url = url::Url::parse(&format!(
             "{}/{}/messages",
-            self.queue_name_client.storage_client().queue_uri(),
-            self.queue_name_client.queue_name()
+            self.queue_client.storage_client().queue_uri(),
+            self.queue_client.queue_name()
         ))?;
 
         VisibilityTimeoutOption::append_pair(&self, &mut url);
@@ -169,7 +169,7 @@ where
 
         debug!("url == {}", url);
 
-        let perform_request_response = self.queue_name_client.storage_client().perform_request(
+        let perform_request_response = self.queue_client.storage_client().perform_request(
             url.as_str(),
             &http::Method::GET,
             &|mut request| {
