@@ -54,7 +54,7 @@ where
     }
 }
 
-impl<'a> DatabaseNameRequired<'a> for CreateDatabaseBuilder<'a, Yes> {
+impl<'a> CreateDatabaseBuilder<'a, Yes> {
     fn database_name(&self) -> &'a str {
         self.database_name.unwrap()
     }

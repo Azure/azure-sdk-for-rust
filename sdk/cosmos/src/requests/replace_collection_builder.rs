@@ -49,8 +49,7 @@ where
     }
 }
 
-impl<'a, 'b, IndexingPolicySet> PartitionKeyRequired<'a>
-    for ReplaceCollectionBuilder<'a, 'b, Yes, IndexingPolicySet>
+impl<'a, 'b, IndexingPolicySet> ReplaceCollectionBuilder<'a, 'b, Yes, IndexingPolicySet>
 where
     IndexingPolicySet: ToAssign,
 {

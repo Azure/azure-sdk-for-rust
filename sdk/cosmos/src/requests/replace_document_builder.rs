@@ -69,8 +69,7 @@ where
     }
 }
 
-impl<'a, 'b, PartitionKeysSet> DocumentIdRequired<'b>
-    for ReplaceDocumentBuilder<'a, 'b, PartitionKeysSet, Yes>
+impl<'a, 'b, PartitionKeysSet> ReplaceDocumentBuilder<'a, 'b, PartitionKeysSet, Yes>
 where
     PartitionKeysSet: ToAssign,
 {

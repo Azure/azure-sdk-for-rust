@@ -52,7 +52,7 @@ where
     }
 }
 
-impl<'a, 'b> UserNameRequired<'a> for ReplaceUserBuilder<'a, 'b, Yes> {
+impl<'a, 'b> ReplaceUserBuilder<'a, 'b, Yes> {
     fn user_name(&self) -> &'a str {
         self.user_name.unwrap()
     }

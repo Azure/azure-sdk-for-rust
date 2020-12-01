@@ -90,8 +90,8 @@ where
     }
 }
 
-impl<'a, TriggerOperationSet, TriggerTypeSet> TriggerBodyRequired<'a>
-    for CreateOrReplaceTriggerBuilder<'a, TriggerOperationSet, TriggerTypeSet, Yes>
+impl<'a, TriggerOperationSet, TriggerTypeSet>
+    CreateOrReplaceTriggerBuilder<'a, TriggerOperationSet, TriggerTypeSet, Yes>
 where
     TriggerOperationSet: ToAssign,
     TriggerTypeSet: ToAssign,

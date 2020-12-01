@@ -166,10 +166,6 @@ pub trait PartitionKeySupport<'a> {
     fn with_partition_key(self, partition_key: &'a collection::PartitionKey) -> Self::O;
 }
 
-pub trait PartitionKeyRequired<'a> {
-    fn partition_key(&self) -> &'a collection::PartitionKey;
-}
-
 pub trait PartitionKeysSupport<'a> {
     type O;
     fn with_partition_keys(self, partition_keys: &'a PartitionKeys) -> Self::O;
@@ -200,26 +196,14 @@ pub trait MediaSupport<'a> {
     fn with_media(self, media: &'a str) -> Self::O;
 }
 
-pub trait StoredProcedureBodyRequired<'a> {
-    fn body(&self) -> &'a str;
-}
-
 pub trait StoredProcedureBodySupport<'a> {
     type O;
     fn with_body(self, body: &'a str) -> Self::O;
 }
 
-pub trait UserDefinedFunctionBodyRequired<'a> {
-    fn body(&self) -> &'a str;
-}
-
 pub trait UserDefinedFunctionBodySupport<'a> {
     type O;
     fn with_body(self, body: &'a str) -> Self::O;
-}
-
-pub trait TriggerBodyRequired<'a> {
-    fn body(&self) -> &'a str;
 }
 
 pub trait TriggerBodySupport<'a> {
@@ -249,10 +233,6 @@ pub trait DatabaseSupport<'a> {
     fn with_database(self, database: &'a str) -> Self::O;
 }
 
-pub trait StoredProcedureNameRequired<'a> {
-    fn stored_procedure_name(&self) -> &'a str;
-}
-
 pub trait StoredProcedureNameSupport<'a> {
     type O;
     fn with_stored_procedure_name(self, stored_procedure_name: &'a str) -> Self::O;
@@ -261,10 +241,6 @@ pub trait StoredProcedureNameSupport<'a> {
 pub trait OfferSupport {
     type O;
     fn with_offer(self, offer: Offer) -> Self::O;
-}
-
-pub trait CollectionNameRequired<'a> {
-    fn collection_name(&self) -> &'a str;
 }
 
 pub trait CollectionNameSupport<'a> {
@@ -282,10 +258,6 @@ pub trait IndexingPolicySupport<'a> {
     fn with_indexing_policy(self, offer: &'a IndexingPolicy) -> Self::O;
 }
 
-pub trait DocumentIdRequired<'a> {
-    fn document_id(&self) -> &'a str;
-}
-
 pub trait DocumentIdSupport<'a> {
     type O;
     fn with_document_id(self, document_id: &'a str) -> Self::O;
@@ -296,17 +268,9 @@ pub trait QuerySupport<'a> {
     fn with_query(self, query: &'a Query<'a>) -> Self::O;
 }
 
-pub trait DatabaseNameRequired<'a> {
-    fn database_name(&'a self) -> &'a str;
-}
-
 pub trait DatabaseNameSupport<'a> {
     type O;
     fn with_database_name(self, database_name: &'a str) -> Self::O;
-}
-
-pub trait UserNameRequired<'a> {
-    fn user_name(&self) -> &'a str;
 }
 
 pub trait UserNameSupport<'a> {

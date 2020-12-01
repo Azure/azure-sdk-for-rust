@@ -114,9 +114,6 @@ impl<'a, 'b> MaxItemCountSupport for ListUsersBuilder<'a, 'b> {
     }
 }
 
-// methods callable regardless
-impl<'a, 'b> ListUsersBuilder<'a, 'b> {}
-
 // methods callable only when every mandatory field has been filled
 impl<'a, 'b> ListUsersBuilder<'a, 'b> {
     pub async fn execute(&self) -> Result<ListUsersResponse, CosmosError> {

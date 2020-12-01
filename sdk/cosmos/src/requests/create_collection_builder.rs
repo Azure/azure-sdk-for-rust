@@ -108,8 +108,8 @@ where
     }
 }
 
-impl<'a, OfferSet, CollectionNameSet, IndexingPolicySet> PartitionKeyRequired<'a>
-    for CreateCollectionBuilder<'a, OfferSet, CollectionNameSet, IndexingPolicySet, Yes>
+impl<'a, OfferSet, CollectionNameSet, IndexingPolicySet>
+    CreateCollectionBuilder<'a, OfferSet, CollectionNameSet, IndexingPolicySet, Yes>
 where
     OfferSet: ToAssign,
     CollectionNameSet: ToAssign,

@@ -41,7 +41,7 @@ where
     }
 }
 
-impl<'a, 'b> StoredProcedureBodyRequired<'b> for ReplaceStoredProcedureBuilder<'a, 'b, Yes> {
+impl<'a, 'b> ReplaceStoredProcedureBuilder<'a, 'b, Yes> {
     fn body(&self) -> &'b str {
         self.body.unwrap()
     }

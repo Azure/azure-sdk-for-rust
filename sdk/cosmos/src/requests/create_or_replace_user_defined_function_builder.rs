@@ -46,10 +46,7 @@ where
     }
 }
 
-//set mandatory no traits methods
-impl<'a, 'b> UserDefinedFunctionBodyRequired<'b>
-    for CreateOrReplaceUserDefinedFunctionBuilder<'a, 'b, Yes>
-{
+impl<'a, 'b> CreateOrReplaceUserDefinedFunctionBuilder<'a, 'b, Yes> {
     fn body(&self) -> &'b str {
         self.body.unwrap()
     }
