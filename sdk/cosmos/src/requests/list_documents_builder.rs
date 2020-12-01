@@ -42,7 +42,7 @@ impl<'a, 'b> ListDocumentsBuilder<'a, 'b> {
     }
 }
 
-impl<'a, 'b> IfMatchConditionOption<'b> for ListDocumentsBuilder<'a, 'b> {
+impl<'a, 'b> ListDocumentsBuilder<'a, 'b> {
     fn if_match_condition(&self) -> Option<IfMatchCondition<'b>> {
         self.if_match_condition
     }
@@ -200,7 +200,7 @@ impl<'a, 'b> ListDocumentsBuilder<'a, 'b> {
         );
 
         // add trait headers
-        let req = IfMatchConditionOption::add_header(self, req);
+        let req = crate::headers::add_header(self.if_match_condition(), req);
         let req = crate::headers::add_header(self.user_agent(), req);
         let req = crate::headers::add_header(self.activity_id(), req);
         let req = crate::headers::add_header(self.consistency_level(), req);

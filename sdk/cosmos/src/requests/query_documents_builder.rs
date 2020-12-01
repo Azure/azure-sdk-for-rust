@@ -89,7 +89,7 @@ impl<'a, 'b> QueryRequired<'b> for QueryDocumentsBuilder<'a, 'b, Yes> {
     }
 }
 
-impl<'a, 'b, QuerySet> IfMatchConditionOption<'b> for QueryDocumentsBuilder<'a, 'b, QuerySet>
+impl<'a, 'b, QuerySet> QueryDocumentsBuilder<'a, 'b, QuerySet>
 where
     QuerySet: ToAssign,
 {
@@ -369,7 +369,7 @@ impl<'a, 'b> QueryDocumentsBuilder<'a, 'b, Yes> {
         let req = req.header(http::header::CONTENT_TYPE, "application/query+json");
 
         // add trait headers
-        let req = IfMatchConditionOption::add_header(self, req);
+        let req = crate::headers::add_header(self.if_match_condition(), req);
         let req = IfModifiedSinceOption::add_header(self, req);
         let req = crate::headers::add_header(self.user_agent(), req);
         let req = crate::headers::add_header(self.activity_id(), req);

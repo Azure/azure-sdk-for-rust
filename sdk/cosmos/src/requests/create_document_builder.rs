@@ -80,8 +80,7 @@ where
     }
 }
 
-impl<'a, 'b, PartitionKeysSet> IfMatchConditionOption<'b>
-    for CreateDocumentBuilder<'a, 'b, PartitionKeysSet>
+impl<'a, 'b, PartitionKeysSet> CreateDocumentBuilder<'a, 'b, PartitionKeysSet>
 where
     PartitionKeysSet: ToAssign,
 {
@@ -299,7 +298,7 @@ impl<'a, 'b> CreateDocumentBuilder<'a, 'b, Yes> {
         );
 
         // add trait headers
-        req = IfMatchConditionOption::add_header(self, req);
+        req = crate::headers::add_header(self.if_match_condition(), req);
         req = IfModifiedSinceOption::add_header(self, req);
         req = crate::headers::add_header(self.user_agent(), req);
         req = crate::headers::add_header(self.activity_id(), req);

@@ -91,8 +91,8 @@ where
     }
 }
 
-impl<'a, 'b, PartitionKeysSet, DocumentIdSet> IfMatchConditionOption<'b>
-    for ReplaceDocumentBuilder<'a, 'b, PartitionKeysSet, DocumentIdSet>
+impl<'a, 'b, PartitionKeysSet, DocumentIdSet>
+    ReplaceDocumentBuilder<'a, 'b, PartitionKeysSet, DocumentIdSet>
 where
     PartitionKeysSet: ToAssign,
     DocumentIdSet: ToAssign,
@@ -343,7 +343,7 @@ impl<'a, 'b> ReplaceDocumentBuilder<'a, 'b, Yes, Yes> {
 
         // add trait headers
         let req = IndexingDirectiveOption::add_header(self, req);
-        let req = IfMatchConditionOption::add_header(self, req);
+        let req = crate::headers::add_header(self.if_match_condition(), req);
         let req = IfModifiedSinceOption::add_header(self, req);
         let req = crate::headers::add_header(self.user_agent(), req);
         let req = crate::headers::add_header(self.activity_id(), req);

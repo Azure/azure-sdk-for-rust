@@ -38,7 +38,7 @@ impl<'a> DeleteDocumentBuilder<'a> {
     }
 }
 
-impl<'a> IfMatchConditionOption<'a> for DeleteDocumentBuilder<'a> {
+impl<'a> DeleteDocumentBuilder<'a> {
     fn if_match_condition(&self) -> Option<IfMatchCondition<'a>> {
         self.if_match_condition
     }
@@ -150,7 +150,7 @@ impl<'a> DeleteDocumentBuilder<'a> {
             .prepare_request_with_document_name(http::Method::DELETE);
 
         // add trait headers
-        req = IfMatchConditionOption::add_header(self, req);
+        req = crate::headers::add_header(self.if_match_condition(), req);
         req = IfModifiedSinceOption::add_header(self, req);
         req = crate::headers::add_header(self.user_agent(), req);
         req = crate::headers::add_header(self.activity_id(), req);

@@ -35,7 +35,7 @@ impl<'a, 'b> GetPartitionKeyRangesBuilder<'a, 'b> {
     }
 }
 
-impl<'a, 'b> IfMatchConditionOption<'b> for GetPartitionKeyRangesBuilder<'a, 'b> {
+impl<'a, 'b> GetPartitionKeyRangesBuilder<'a, 'b> {
     fn if_match_condition(&self) -> Option<IfMatchCondition<'b>> {
         self.if_match_condition
     }
@@ -136,7 +136,7 @@ impl<'a, 'b> GetPartitionKeyRangesBuilder<'a, 'b> {
         );
 
         let request = request.header(http::header::CONTENT_LENGTH, "0");
-        let request = IfMatchConditionOption::add_header(self, request);
+        let request = crate::headers::add_header(self.if_match_condition(), request);
         let request = IfModifiedSinceOption::add_header(self, request);
         let request = crate::headers::add_header(self.user_agent(), request);
         let request = crate::headers::add_header(self.activity_id(), request);

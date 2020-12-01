@@ -68,8 +68,7 @@ where
     }
 }
 
-impl<'a, 'b, BodySet, ContentTypeSet> IfMatchConditionOption<'b>
-    for CreateSlugAttachmentBuilder<'a, 'b, BodySet, ContentTypeSet>
+impl<'a, 'b, BodySet, ContentTypeSet> CreateSlugAttachmentBuilder<'a, 'b, BodySet, ContentTypeSet>
 where
     BodySet: ToAssign,
     ContentTypeSet: ToAssign,
@@ -222,7 +221,7 @@ impl<'a, 'b> CreateSlugAttachmentBuilder<'a, 'b, Yes, Yes> {
         let mut req = self.attachment_client.prepare_request(http::Method::POST);
 
         // add trait headers
-        req = IfMatchConditionOption::add_header(self, req);
+        req = crate::headers::add_header(self.if_match_condition(), req);
         req = crate::headers::add_header(self.user_agent(), req);
         req = crate::headers::add_header(self.activity_id(), req);
         req = crate::headers::add_header(self.consistency_level(), req);

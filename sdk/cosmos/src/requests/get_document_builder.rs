@@ -37,7 +37,7 @@ impl<'a, 'b> GetDocumentBuilder<'a, 'b> {
     }
 }
 
-impl<'a, 'b> IfMatchConditionOption<'b> for GetDocumentBuilder<'a, 'b> {
+impl<'a, 'b> GetDocumentBuilder<'a, 'b> {
     fn if_match_condition(&self) -> Option<IfMatchCondition<'b>> {
         self.if_match_condition
     }
@@ -133,7 +133,7 @@ impl<'a, 'b> GetDocumentBuilder<'a, 'b> {
             .prepare_request_with_document_name(http::Method::GET);
 
         // add trait headers
-        req = IfMatchConditionOption::add_header(self, req);
+        req = crate::headers::add_header(self.if_match_condition(), req);
         req = IfModifiedSinceOption::add_header(self, req);
         req = crate::headers::add_header(self.user_agent(), req);
         req = crate::headers::add_header(self.activity_id(), req);

@@ -40,7 +40,7 @@ impl<'a, 'b> ListAttachmentsBuilder<'a, 'b> {
     }
 }
 
-impl<'a, 'b> IfMatchConditionOption<'b> for ListAttachmentsBuilder<'a, 'b> {
+impl<'a, 'b> ListAttachmentsBuilder<'a, 'b> {
     fn if_match_condition(&self) -> Option<IfMatchCondition<'b>> {
         self.if_match_condition
     }
@@ -171,7 +171,7 @@ impl<'a, 'b> ListAttachmentsBuilder<'a, 'b> {
         );
 
         // add trait headers
-        req = IfMatchConditionOption::add_header(self, req);
+        req = crate::headers::add_header(self.if_match_condition(), req);
         req = crate::headers::add_header(self.user_agent(), req);
         req = crate::headers::add_header(self.activity_id(), req);
         req = crate::headers::add_header(self.consistency_level(), req);

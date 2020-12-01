@@ -37,7 +37,7 @@ impl<'a, 'b> ListTriggersBuilder<'a, 'b> {
     }
 }
 
-impl<'a, 'b> IfMatchConditionOption<'b> for ListTriggersBuilder<'a, 'b> {
+impl<'a, 'b> ListTriggersBuilder<'a, 'b> {
     fn if_match_condition(&self) -> Option<IfMatchCondition<'b>> {
         self.if_match_condition
     }
@@ -155,7 +155,7 @@ impl<'a, 'b> ListTriggersBuilder<'a, 'b> {
         );
 
         // add trait headers
-        let request = IfMatchConditionOption::add_header(self, request);
+        let request = crate::headers::add_header(self.if_match_condition(), request);
         let request = crate::headers::add_header(self.user_agent(), request);
         let request = crate::headers::add_header(self.activity_id(), request);
         let request = crate::headers::add_header(self.consistency_level(), request);

@@ -162,6 +162,20 @@ pub trait IndexingDirectiveOption {
     }
 }
 
+impl azure_core::AddAsHeader for IndexingDirective {
+    fn add_as_header(&self, builder: Builder) -> Builder {
+        match self {
+            IndexingDirective::Default => builder,
+            IndexingDirective::Exclude => {
+                builder.header(headers::HEADER_INDEXING_DIRECTIVE, "Exclude")
+            }
+            IndexingDirective::Include => {
+                builder.header(headers::HEADER_INDEXING_DIRECTIVE, "Include")
+            }
+        }
+    }
+}
+
 pub trait MaxItemCountSupport {
     type O;
     fn with_max_item_count(self, max_item_count: i32) -> Self::O;
