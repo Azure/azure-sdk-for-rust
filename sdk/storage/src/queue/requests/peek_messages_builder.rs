@@ -132,8 +132,8 @@ where
         ))?;
 
         url.query_pairs_mut().append_pair("peekonly", "true");
-        TimeoutOption::append_pair(&self, &mut url);
-        NumberOfMessagesOption::append_pair(&self, &mut url);
+        TimeoutOption::append_to_url(&self, &mut url);
+        NumberOfMessagesOption::append_to_url(&self, &mut url);
 
         debug!("url == {}", url);
 

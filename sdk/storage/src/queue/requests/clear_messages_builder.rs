@@ -94,7 +94,7 @@ where
             self.queue_client.queue_name(),
         ))?;
 
-        TimeoutOption::append_pair(&self, &mut url);
+        TimeoutOption::append_to_url(&self, &mut url);
         debug!("url == {}", url);
 
         let perform_request_response = self.queue_client.storage_client().perform_request(

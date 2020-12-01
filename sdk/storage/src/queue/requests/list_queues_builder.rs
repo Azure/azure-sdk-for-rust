@@ -227,11 +227,11 @@ where
 
         url.query_pairs_mut().append_pair("comp", "list");
 
-        IncludeMetadataOption::append_pair(&self, &mut url);
-        TimeoutOption::append_pair(&self, &mut url);
-        MaxResultsOption::append_pair(&self, &mut url);
-        NextMarkerOption::append_pair(&self, &mut url);
-        PrefixOption::append_pair(&self, &mut url);
+        IncludeMetadataOption::append_to_url(&self, &mut url);
+        TimeoutOption::append_to_url(&self, &mut url);
+        MaxResultsOption::append_to_url(&self, &mut url);
+        NextMarkerOption::append_to_url(&self, &mut url);
+        PrefixOption::append_to_url(&self, &mut url);
 
         debug!("url == {}", url);
 

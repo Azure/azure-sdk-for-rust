@@ -24,7 +24,7 @@ pub trait VisibilityTimeoutOption {
             .map(|visibility_timeout| format!("visibilitytimeout={}", visibility_timeout.as_secs()))
     }
 
-    fn append_pair(&self, url: &mut url::Url) {
+    fn append_to_url(&self, url: &mut url::Url) {
         if let Some(visibility_timeout) = self.visibility_timeout() {
             url.query_pairs_mut().append_pair(
                 "visibilitytimeout",
@@ -54,7 +54,7 @@ pub trait MessageTTLRequired {
         format!("messagettl={}", self.message_ttl_seconds())
     }
 
-    fn append_pair(&self, url: &mut url::Url) {
+    fn append_to_url(&self, url: &mut url::Url) {
         url.query_pairs_mut()
             .append_pair("messagettl", &format!("{}", self.message_ttl_seconds()));
     }
@@ -73,7 +73,7 @@ pub trait NumberOfMessagesOption {
             .map(|number_of_messages| format!("numofmessages={}", number_of_messages))
     }
 
-    fn append_pair(&self, url: &mut url::Url) {
+    fn append_to_url(&self, url: &mut url::Url) {
         if let Some(number_of_messages) = self.number_of_messages() {
             url.query_pairs_mut()
                 .append_pair("numofmessages", &format!("{}", number_of_messages));

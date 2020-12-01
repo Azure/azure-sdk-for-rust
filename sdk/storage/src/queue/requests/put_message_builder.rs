@@ -173,9 +173,9 @@ where
             self.queue_client.queue_name()
         ))?;
 
-        MessageTTLRequired::append_pair(&self, &mut url);
-        VisibilityTimeoutOption::append_pair(&self, &mut url);
-        TimeoutOption::append_pair(&self, &mut url);
+        MessageTTLRequired::append_to_url(&self, &mut url);
+        VisibilityTimeoutOption::append_to_url(&self, &mut url);
+        TimeoutOption::append_to_url(&self, &mut url);
 
         debug!("url == {:?}", url);
 

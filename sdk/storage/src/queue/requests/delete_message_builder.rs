@@ -23,10 +23,7 @@ impl<'a, C> DeleteMessageBuilder<'a, C>
 where
     C: Client + Clone,
 {
-    pub(crate) fn new(
-        queue_client: &'a QueueClient<C>,
-        pop_receipt: Box<dyn PopReceipt>,
-    ) -> Self {
+    pub(crate) fn new(queue_client: &'a QueueClient<C>, pop_receipt: Box<dyn PopReceipt>) -> Self {
         DeleteMessageBuilder {
             queue_client,
             pop_receipt,
@@ -124,7 +121,7 @@ where
         url.query_pairs_mut()
             .append_pair("popreceipt", pop_receipt.pop_receipt());
 
-        TimeoutOption::append_pair(&self, &mut url);
+        TimeoutOption::append_to_url(&self, &mut url);
 
         debug!("url == {}", url);
 

@@ -163,9 +163,9 @@ where
             self.queue_client.queue_name()
         ))?;
 
-        VisibilityTimeoutOption::append_pair(&self, &mut url);
-        TimeoutOption::append_pair(&self, &mut url);
-        NumberOfMessagesOption::append_pair(&self, &mut url);
+        VisibilityTimeoutOption::append_to_url(&self, &mut url);
+        TimeoutOption::append_to_url(&self, &mut url);
+        NumberOfMessagesOption::append_to_url(&self, &mut url);
 
         debug!("url == {}", url);
 

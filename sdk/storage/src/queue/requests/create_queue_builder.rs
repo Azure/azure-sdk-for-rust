@@ -123,7 +123,7 @@ where
             self.queue_client.queue_name(),
         ))?;
 
-        TimeoutOption::append_pair(&self, &mut url);
+        TimeoutOption::append_to_url(&self, &mut url);
 
         debug!("uri == {}", url);
 

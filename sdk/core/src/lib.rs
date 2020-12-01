@@ -139,7 +139,7 @@ pub trait TimeoutOption {
         }
     }
 
-    fn append_pair(&self, url: &mut url::Url) {
+    fn append_to_url(&self, url: &mut url::Url) {
         if let Some(timeout) = self.timeout() {
             url.query_pairs_mut()
                 .append_pair("timeout", &format!("{}", timeout));
@@ -437,7 +437,7 @@ pub trait NextMarkerOption<'a> {
         }
     }
 
-    fn append_pair(&self, url: &mut url::Url) {
+    fn append_to_url(&self, url: &mut url::Url) {
         if let Some(next_marker) = self.next_marker() {
             url.query_pairs_mut().append_pair("marker", next_marker);
         }
@@ -544,7 +544,7 @@ pub trait IncludeMetadataOption {
         }
     }
 
-    fn append_pair(&self, url: &mut url::Url) {
+    fn append_to_url(&self, url: &mut url::Url) {
         if self.include_metadata() {
             url.query_pairs_mut().append_pair("include", "metadata");
         }
@@ -640,7 +640,7 @@ pub trait PrefixOption<'a> {
         }
     }
 
-    fn append_pair(&self, url: &mut url::Url) {
+    fn append_to_url(&self, url: &mut url::Url) {
         if let Some(prefix) = self.prefix() {
             url.query_pairs_mut().append_pair("prefix", prefix);
         }
