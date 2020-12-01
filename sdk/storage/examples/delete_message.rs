@@ -17,9 +17,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .nth(1)
         .expect("Please pass the queue name as first parameter");
 
-    let queue = client::with_access_key(&account, &master_key)
-        .into_queue_service_client()
-        .into_queue_name_client(&queue_name);
+    let queue: QueueAccountClient<_> = client::with_access_key(&account, &master_key).into();
+    let queue = queue.into_queue_client(&queue_name);
 
     trace!("getting messages");
 
@@ -38,11 +37,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         for message in get_response.messages {
             trace!("deleting message {}", message.message_id);
 
-            let delete_response = queue
-                .delete_message()
-                .with_pop_receipt(message.into())
-                .execute()
-                .await?;
+            let delete_response = queue.delete_message(message.into()).execute().await?;
 
             println!("delete_response == {:#?}", delete_response);
         }

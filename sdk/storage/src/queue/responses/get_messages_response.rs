@@ -59,7 +59,7 @@ impl std::convert::TryFrom<(&HeaderMap, &[u8])> for GetMessagesResponse {
         debug!("response == {:?}", response);
 
         let mut messages = Vec::new();
-        for message in response.messages.unwrap_or(Vec::new()).into_iter() {
+        for message in response.messages.unwrap_or_default().into_iter() {
             messages.push(Message {
                 message_id: message.message_id,
                 insertion_time: utc_date_from_rfc2822(&message.insertion_time)?,

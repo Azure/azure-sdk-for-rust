@@ -64,7 +64,7 @@ impl std::convert::TryFrom<(&HeaderMap, &[u8])> for ListQueuesResponse {
         // we use None as Rust dictates to identify
         // lack of value.
         if let Some(next_marker) = &response.next_marker {
-            if next_marker == "" {
+            if next_marker.is_empty() {
                 response.next_marker = None;
             }
         }

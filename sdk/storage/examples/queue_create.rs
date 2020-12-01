@@ -1,9 +1,10 @@
 #[macro_use]
 extern crate log;
+use azure_core::prelude::*;
 use azure_storage::core::prelude::*;
 use azure_storage::queue::prelude::*;
+use std::collections::HashMap;
 use std::error::Error;
-use std::time::Duration;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
@@ -17,18 +18,29 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .nth(1)
         .expect("Please pass the queue name as first parameter");
 
-    let queue = QueueAccountClient::new(client::with_access_key(&account, &master_key))
+    let queue_client = QueueAccountClient::new(client::with_access_key(&account, &master_key))
         .into_queue_client(&queue_name);
 
-    trace!("getting messages");
+    trace!("creating queue");
 
-    let response = queue
-        .get_messages()
-        .with_number_of_messages(2)
-        .with_visibility_timeout(Duration::from_secs(5)) // the message will become visible again after 5 secs
+    // this step is optional but here we show
+    // how to add metadata to a new queue.
+    let mut hm = HashMap::new();
+    hm.insert("source", "azure-sdk-for-rust");
+
+    let response = queue_client
+        .create_queue()
+        .with_metadata(&hm)
         .execute()
         .await?;
+    println!("response == {:#?}", response);
 
+    // now let's delete it
+    let response = queue_client
+        .delete_queue()
+        .with_client_request_id("myclientid")
+        .execute()
+        .await?;
     println!("response == {:#?}", response);
 
     Ok(())

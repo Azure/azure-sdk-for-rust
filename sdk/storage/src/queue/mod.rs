@@ -5,7 +5,6 @@ pub mod responses;
 
 use crate::core::Client;
 use crate::responses::PopReceipt;
-use azure_core::No;
 pub use clients::*;
 use std::borrow::Cow;
 use std::fmt::Debug;
@@ -23,6 +22,15 @@ pub trait VisibilityTimeoutOption {
     fn to_uri_parameter(&self) -> Option<String> {
         self.visibility_timeout()
             .map(|visibility_timeout| format!("visibilitytimeout={}", visibility_timeout.as_secs()))
+    }
+
+    fn append_to_url(&self, url: &mut url::Url) {
+        if let Some(visibility_timeout) = self.visibility_timeout() {
+            url.query_pairs_mut().append_pair(
+                "visibilitytimeout",
+                &format!("{}", visibility_timeout.as_secs()),
+            );
+        }
     }
 }
 
@@ -45,6 +53,11 @@ pub trait MessageTTLRequired {
     fn to_uri_parameter(&self) -> String {
         format!("messagettl={}", self.message_ttl_seconds())
     }
+
+    fn append_to_url(&self, url: &mut url::Url) {
+        url.query_pairs_mut()
+            .append_pair("messagettl", &format!("{}", self.message_ttl_seconds()));
+    }
 }
 
 pub trait NumberOfMessagesSupport {
@@ -58,6 +71,13 @@ pub trait NumberOfMessagesOption {
     fn to_uri_parameter(&self) -> Option<String> {
         self.number_of_messages()
             .map(|number_of_messages| format!("numofmessages={}", number_of_messages))
+    }
+
+    fn append_to_url(&self, url: &mut url::Url) {
+        if let Some(number_of_messages) = self.number_of_messages() {
+            url.query_pairs_mut()
+                .append_pair("numofmessages", &format!("{}", number_of_messages));
+        }
     }
 }
 
@@ -76,7 +96,7 @@ pub trait MessageBodySupport<'b> {
 }
 
 pub trait MessageBodyRequired {
-    fn message_body<'b>(&self) -> &str;
+    fn message_body(&self) -> &str;
 }
 
 /// Sets both the message id and the pop receipt for deleting a message as per Azure specification.
@@ -95,46 +115,4 @@ pub trait PopReceiptRequired {
 pub trait HasStorageClient: Debug + Send + Sync {
     type StorageClient: Client;
     fn storage_client(&self) -> &Self::StorageClient;
-}
-
-pub trait QueueService: HasStorageClient + Sync {
-    fn list_queues(&self) -> requests::ListQueuesBuilder<'_, '_, Self::StorageClient>;
-}
-
-pub trait WithQueueServiceClient<'a>: Debug + Send + Sync {
-    type QueueServiceClient: QueueService;
-
-    fn with_queue_service_client(&'a self) -> Self::QueueServiceClient;
-}
-
-pub trait IntoQueueServiceClient: Debug + Send + Sync {
-    type QueueServiceClient: QueueService;
-
-    fn into_queue_service_client(self) -> Self::QueueServiceClient;
-}
-
-//*************
-pub trait QueueNameService: HasStorageClient {
-    fn queue_name(&self) -> &str;
-
-    fn put_message(&self) -> requests::PutMessageBuilder<'_, '_, Self::StorageClient, No>;
-    fn get_messages(&self) -> requests::GetMessagesBuilder<'_, Self::StorageClient>;
-    fn peek_messages(&self) -> requests::PeekMessagesBuilder<'_, Self::StorageClient>;
-    fn delete_message(&self) -> requests::DeleteMessageBuilder<'_, Self::StorageClient, No>;
-}
-
-pub trait WithQueueNameClient<'a, 'b>: Debug + Send + Sync {
-    type QueueNameClient: QueueNameService;
-
-    fn with_queue_name_client<NAME>(&'a self, queue_name: NAME) -> Self::QueueNameClient
-    where
-        NAME: Into<Cow<'b, str>>;
-}
-
-pub trait IntoQueueNameClient<'b>: Debug + Send + Sync {
-    type QueueNameClient: QueueNameService;
-
-    fn into_queue_name_client<NAME>(self, queue_name: NAME) -> Self::QueueNameClient
-    where
-        NAME: Into<Cow<'b, str>>;
 }

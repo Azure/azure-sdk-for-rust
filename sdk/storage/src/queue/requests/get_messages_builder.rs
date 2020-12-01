@@ -1,5 +1,7 @@
 use crate::core::prelude::*;
+use crate::queue::clients::QueueClient;
 use crate::queue::prelude::*;
+use crate::queue::HasStorageClient;
 use crate::responses::*;
 use azure_core::errors::AzureError;
 use azure_core::prelude::*;
@@ -10,9 +12,9 @@ use std::time::Duration;
 #[derive(Debug, Clone)]
 pub struct GetMessagesBuilder<'a, C>
 where
-    C: Client,
+    C: Client + Clone,
 {
-    queue_name_service: &'a dyn QueueNameService<StorageClient = C>,
+    queue_client: &'a QueueClient<C>,
     number_of_messages: Option<u32>,
     visibility_timeout: Option<Duration>,
     timeout: Option<u64>,
@@ -21,14 +23,11 @@ where
 
 impl<'a, C> GetMessagesBuilder<'a, C>
 where
-    C: Client,
+    C: Client + Clone,
 {
-    #[inline]
-    pub(crate) fn new(
-        queue_name_service: &'a dyn QueueNameService<StorageClient = C>,
-    ) -> GetMessagesBuilder<'a, C> {
+    pub(crate) fn new(queue_client: &'a QueueClient<C>) -> Self {
         GetMessagesBuilder {
-            queue_name_service,
+            queue_client,
             number_of_messages: None,
             visibility_timeout: None,
             timeout: None,
@@ -40,9 +39,8 @@ where
 //set mandatory no traits methods
 impl<'a, C> NumberOfMessagesOption for GetMessagesBuilder<'a, C>
 where
-    C: Client,
+    C: Client + Clone,
 {
-    #[inline]
     fn number_of_messages(&self) -> Option<u32> {
         self.number_of_messages
     }
@@ -50,9 +48,8 @@ where
 
 impl<'a, C> VisibilityTimeoutOption for GetMessagesBuilder<'a, C>
 where
-    C: Client,
+    C: Client + Clone,
 {
-    #[inline]
     fn visibility_timeout(&self) -> Option<Duration> {
         self.visibility_timeout
     }
@@ -60,9 +57,8 @@ where
 
 impl<'a, C> TimeoutOption for GetMessagesBuilder<'a, C>
 where
-    C: Client,
+    C: Client + Clone,
 {
-    #[inline]
     fn timeout(&self) -> Option<u64> {
         self.timeout
     }
@@ -70,9 +66,8 @@ where
 
 impl<'a, C> ClientRequestIdOption<'a> for GetMessagesBuilder<'a, C>
 where
-    C: Client,
+    C: Client + Clone,
 {
-    #[inline]
     fn client_request_id(&self) -> Option<&'a str> {
         self.client_request_id
     }
@@ -80,14 +75,13 @@ where
 
 impl<'a, C> NumberOfMessagesSupport for GetMessagesBuilder<'a, C>
 where
-    C: Client,
+    C: Client + Clone,
 {
-    type O = GetMessagesBuilder<'a, C>;
+    type O = Self;
 
-    #[inline]
     fn with_number_of_messages(self, number_of_messages: u32) -> Self::O {
         GetMessagesBuilder {
-            queue_name_service: self.queue_name_service,
+            queue_client: self.queue_client,
             number_of_messages: Some(number_of_messages),
             visibility_timeout: self.visibility_timeout,
             timeout: self.timeout,
@@ -98,14 +92,13 @@ where
 
 impl<'a, C> VisibilityTimeoutSupport for GetMessagesBuilder<'a, C>
 where
-    C: Client,
+    C: Client + Clone,
 {
-    type O = GetMessagesBuilder<'a, C>;
+    type O = Self;
 
-    #[inline]
     fn with_visibility_timeout(self, visibility_timeout: Duration) -> Self::O {
         GetMessagesBuilder {
-            queue_name_service: self.queue_name_service,
+            queue_client: self.queue_client,
             number_of_messages: self.number_of_messages,
             visibility_timeout: Some(visibility_timeout),
             timeout: self.timeout,
@@ -116,14 +109,13 @@ where
 
 impl<'a, C> TimeoutSupport for GetMessagesBuilder<'a, C>
 where
-    C: Client,
+    C: Client + Clone,
 {
-    type O = GetMessagesBuilder<'a, C>;
+    type O = Self;
 
-    #[inline]
     fn with_timeout(self, timeout: u64) -> Self::O {
         GetMessagesBuilder {
-            queue_name_service: self.queue_name_service,
+            queue_client: self.queue_client,
             number_of_messages: self.number_of_messages,
             visibility_timeout: self.visibility_timeout,
             timeout: Some(timeout),
@@ -134,14 +126,13 @@ where
 
 impl<'a, C> ClientRequestIdSupport<'a> for GetMessagesBuilder<'a, C>
 where
-    C: Client,
+    C: Client + Clone,
 {
-    type O = GetMessagesBuilder<'a, C>;
+    type O = Self;
 
-    #[inline]
     fn with_client_request_id(self, client_request_id: &'a str) -> Self::O {
         GetMessagesBuilder {
-            queue_name_service: self.queue_name_service,
+            queue_client: self.queue_client,
             number_of_messages: self.number_of_messages,
             visibility_timeout: self.visibility_timeout,
             timeout: self.timeout,
@@ -153,43 +144,33 @@ where
 // methods callable regardless
 impl<'a, C> GetMessagesBuilder<'a, C>
 where
-    C: Client,
+    C: Client + Clone,
 {
-    pub fn queue_name_service(&self) -> &'a dyn QueueNameService<StorageClient = C> {
-        self.queue_name_service
+    pub fn queue_client(&self) -> &'a QueueClient<C> {
+        self.queue_client
     }
 }
 
 // methods callable only when every mandatory field has been filled
 impl<'a, C> GetMessagesBuilder<'a, C>
 where
-    C: Client,
+    C: Client + Clone,
 {
     pub async fn execute(self) -> Result<GetMessagesResponse, AzureError> {
-        let mut uri = format!(
+        let mut url = url::Url::parse(&format!(
             "{}/{}/messages",
-            self.queue_name_service.storage_client().queue_uri(),
-            self.queue_name_service.queue_name()
-        );
+            self.queue_client.storage_client().queue_uri(),
+            self.queue_client.queue_name()
+        ))?;
 
-        let mut concatenation_char = '?';
+        VisibilityTimeoutOption::append_to_url(&self, &mut url);
+        TimeoutOption::append_to_url(&self, &mut url);
+        NumberOfMessagesOption::append_to_url(&self, &mut url);
 
-        if let Some(nm) = VisibilityTimeoutOption::to_uri_parameter(&self) {
-            uri = format!("{}{}{}", uri, concatenation_char, nm);
-            concatenation_char = '&';
-        }
-        if let Some(nm) = TimeoutOption::to_uri_parameter(&self) {
-            uri = format!("{}{}{}", uri, concatenation_char, nm);
-            concatenation_char = '&';
-        }
-        if let Some(nm) = NumberOfMessagesOption::to_uri_parameter(&self) {
-            uri = format!("{}{}{}", uri, concatenation_char, nm);
-        }
+        debug!("url == {}", url);
 
-        debug!("uri == {}", uri);
-
-        let perform_request_response = self.queue_name_service.storage_client().perform_request(
-            &uri,
+        let perform_request_response = self.queue_client.storage_client().perform_request(
+            url.as_str(),
             &http::Method::GET,
             &|mut request| {
                 request = ClientRequestIdOption::add_header(&self, request);

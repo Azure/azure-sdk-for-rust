@@ -16,9 +16,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .nth(1)
         .expect("Please pass the queue name as first parameter");
 
-    let queue = client::with_access_key(&account, &master_key)
-        .into_queue_service_client()
-        .into_queue_name_client(&queue_name);
+    let queue = QueueAccountClient::new(client::with_access_key(&account, &master_key))
+        .into_queue_client(queue_name);
+
+    println!("{:#?}", queue);
 
     trace!("peeking messages");
 
