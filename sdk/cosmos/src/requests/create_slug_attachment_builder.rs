@@ -39,20 +39,16 @@ impl<'a, 'b> CreateSlugAttachmentBuilder<'a, 'b, No, No> {
     }
 }
 
-impl<'a, 'b, BodySet, ContentTypeSet> AttachmentClientRequired<'a>
-    for CreateSlugAttachmentBuilder<'a, 'b, BodySet, ContentTypeSet>
+impl<'a, 'b, BodySet, ContentTypeSet> CreateSlugAttachmentBuilder<'a, 'b, BodySet, ContentTypeSet>
 where
     BodySet: ToAssign,
     ContentTypeSet: ToAssign,
 {
-    fn attachment_client(&self) -> &'a AttachmentClient {
+    pub fn attachment_client(&self) -> &'a AttachmentClient {
         self.attachment_client
     }
 }
 
-//get mandatory no traits methods
-
-//set mandatory no traits methods
 impl<'a, 'b, ContentTypeSet> BodyRequired<'b>
     for CreateSlugAttachmentBuilder<'a, 'b, Yes, ContentTypeSet>
 where

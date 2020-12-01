@@ -31,8 +31,8 @@ impl<'a, 'b> ListUserDefinedFunctionsBuilder<'a, 'b> {
     }
 }
 
-impl<'a, 'b> CollectionClientRequired<'a> for ListUserDefinedFunctionsBuilder<'a, 'b> {
-    fn collection_client(&self) -> &'a CollectionClient {
+impl<'a, 'b> ListUserDefinedFunctionsBuilder<'a, 'b> {
+    pub fn collection_client(&self) -> &'a CollectionClient {
         self.collection_client
     }
 }

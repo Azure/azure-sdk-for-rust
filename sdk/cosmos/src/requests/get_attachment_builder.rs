@@ -24,8 +24,8 @@ impl<'a, 'b> GetAttachmentBuilder<'a, 'b> {
     }
 }
 
-impl<'a, 'b> AttachmentClientRequired<'a> for GetAttachmentBuilder<'a, 'b> {
-    fn attachment_client(&self) -> &'a AttachmentClient {
+impl<'a, 'b> GetAttachmentBuilder<'a, 'b> {
+    pub fn attachment_client(&self) -> &'a AttachmentClient {
         self.attachment_client
     }
 }

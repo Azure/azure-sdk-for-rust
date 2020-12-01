@@ -27,15 +27,12 @@ impl<'a, 'b> CreatePermissionBuilder<'a, 'b> {
     }
 }
 
-impl<'a, 'b> PermissionClientRequired<'a> for CreatePermissionBuilder<'a, 'b> {
-    fn permission_client(&self) -> &'a PermissionClient {
+impl<'a, 'b> CreatePermissionBuilder<'a, 'b> {
+    pub fn permission_client(&self) -> &'a PermissionClient {
         self.permission_client
     }
 }
 
-//get mandatory no traits methods
-
-//set mandatory no traits methods
 impl<'a, 'b> ExpirySecondsOption for CreatePermissionBuilder<'a, 'b> {
     fn expiry_seconds(&self) -> u64 {
         self.expiry_seconds

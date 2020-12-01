@@ -29,8 +29,8 @@ impl<'a, 'b> ListPermissionsBuilder<'a, 'b> {
     }
 }
 
-impl<'a, 'b> UserClientRequired<'a> for ListPermissionsBuilder<'a, 'b> {
-    fn user_client(&self) -> &'a UserClient {
+impl<'a, 'b> ListPermissionsBuilder<'a, 'b> {
+    pub fn user_client(&self) -> &'a UserClient {
         self.user_client
     }
 }

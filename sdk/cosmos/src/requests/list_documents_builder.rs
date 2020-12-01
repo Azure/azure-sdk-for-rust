@@ -36,8 +36,8 @@ impl<'a, 'b> ListDocumentsBuilder<'a, 'b> {
     }
 }
 
-impl<'a, 'b> CollectionClientRequired<'a> for ListDocumentsBuilder<'a, 'b> {
-    fn collection_client(&self) -> &'a CollectionClient {
+impl<'a, 'b> ListDocumentsBuilder<'a, 'b> {
+    pub fn collection_client(&self) -> &'a CollectionClient {
         self.collection_client
     }
 }

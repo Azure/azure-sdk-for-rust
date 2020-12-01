@@ -45,8 +45,8 @@ impl<'a> CreateOrReplaceTriggerBuilder<'a, No, No, No> {
     }
 }
 
-impl<'a, TriggerOperationSet, TriggerTypeSet, BodySet> TriggerClientRequired<'a>
-    for CreateOrReplaceTriggerBuilder<'a, TriggerOperationSet, TriggerTypeSet, BodySet>
+impl<'a, TriggerOperationSet, TriggerTypeSet, BodySet>
+    CreateOrReplaceTriggerBuilder<'a, TriggerOperationSet, TriggerTypeSet, BodySet>
 where
     TriggerOperationSet: ToAssign,
     TriggerTypeSet: ToAssign,

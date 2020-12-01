@@ -29,8 +29,8 @@ impl<'a> ListCollectionsBuilder<'a> {
     }
 }
 
-impl<'a> DatabaseClientRequired<'a> for ListCollectionsBuilder<'a> {
-    fn database_client(&self) -> &'a DatabaseClient {
+impl<'a> ListCollectionsBuilder<'a> {
+    pub fn database_client(&self) -> &'a DatabaseClient {
         self.database_client
     }
 }

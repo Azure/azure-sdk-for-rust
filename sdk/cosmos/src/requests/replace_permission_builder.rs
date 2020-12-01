@@ -26,8 +26,8 @@ impl<'a, 'b> ReplacePermissionBuilder<'a, 'b> {
     }
 }
 
-impl<'a, 'b> PermissionClientRequired<'a> for ReplacePermissionBuilder<'a, 'b> {
-    fn permission_client(&self) -> &'a PermissionClient {
+impl<'a, 'b> ReplacePermissionBuilder<'a, 'b> {
+    pub fn permission_client(&self) -> &'a PermissionClient {
         self.permission_client
     }
 }

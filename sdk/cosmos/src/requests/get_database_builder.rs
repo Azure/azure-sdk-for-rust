@@ -22,15 +22,12 @@ impl<'a, 'b> GetDatabaseBuilder<'a, 'b> {
     }
 }
 
-impl<'a, 'b> DatabaseClientRequired<'a> for GetDatabaseBuilder<'a, 'b> {
-    fn database_client(&self) -> &'a DatabaseClient {
+impl<'a, 'b> GetDatabaseBuilder<'a, 'b> {
+    pub fn database_client(&self) -> &'a DatabaseClient {
         self.database_client
     }
 }
 
-//get mandatory no traits methods
-
-//set mandatory no traits methods
 impl<'a, 'b> UserAgentOption<'b> for GetDatabaseBuilder<'a, 'b> {
     fn user_agent(&self) -> Option<&'b str> {
         self.user_agent

@@ -32,8 +32,7 @@ impl<'a, 'b> CreateStoredProcedureBuilder<'a, 'b, No> {
     }
 }
 
-impl<'a, 'b, BodySet> StoredProcedureClientRequired<'a>
-    for CreateStoredProcedureBuilder<'a, 'b, BodySet>
+impl<'a, 'b, BodySet> CreateStoredProcedureBuilder<'a, 'b, BodySet>
 where
     BodySet: ToAssign,
 {

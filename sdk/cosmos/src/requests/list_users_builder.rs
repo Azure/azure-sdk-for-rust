@@ -29,8 +29,8 @@ impl<'a, 'b> ListUsersBuilder<'a, 'b> {
     }
 }
 
-impl<'a, 'b> DatabaseClientRequired<'a> for ListUsersBuilder<'a, 'b> {
-    fn database_client(&self) -> &'a DatabaseClient {
+impl<'a, 'b> ListUsersBuilder<'a, 'b> {
+    pub fn database_client(&self) -> &'a DatabaseClient {
         self.database_client
     }
 }

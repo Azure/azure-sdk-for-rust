@@ -29,8 +29,8 @@ impl<'a, 'b> ListStoredProceduresBuilder<'a, 'b> {
     }
 }
 
-impl<'a, 'b> CollectionClientRequired<'a> for ListStoredProceduresBuilder<'a, 'b> {
-    fn collection_client(&self) -> &'a CollectionClient {
+impl<'a, 'b> ListStoredProceduresBuilder<'a, 'b> {
+    pub fn collection_client(&self) -> &'a CollectionClient {
         self.collection_client
     }
 }

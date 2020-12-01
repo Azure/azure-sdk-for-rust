@@ -23,8 +23,8 @@ impl<'a, 'b> GetPermissionBuilder<'a, 'b> {
     }
 }
 
-impl<'a, 'b> PermissionClientRequired<'a> for GetPermissionBuilder<'a, 'b> {
-    fn permission_client(&self) -> &'a PermissionClient {
+impl<'a, 'b> GetPermissionBuilder<'a, 'b> {
+    pub fn permission_client(&self) -> &'a PermissionClient {
         self.permission_client
     }
 }

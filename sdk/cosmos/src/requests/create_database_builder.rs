@@ -33,18 +33,15 @@ impl<'a> CreateDatabaseBuilder<'a, No> {
     }
 }
 
-impl<'a, DatabaseNameSet> CosmosClientRequired<'a> for CreateDatabaseBuilder<'a, DatabaseNameSet>
+impl<'a, DatabaseNameSet> CreateDatabaseBuilder<'a, DatabaseNameSet>
 where
     DatabaseNameSet: ToAssign,
 {
-    fn cosmos_client(&self) -> &'a CosmosClient {
+    pub fn cosmos_client(&self) -> &'a CosmosClient {
         self.cosmos_client
     }
 }
 
-//get mandatory no traits methods
-
-//set mandatory no traits methods
 impl<'a> DatabaseNameRequired<'a> for CreateDatabaseBuilder<'a, Yes> {
     fn database_name(&self) -> &'a dyn DatabaseName {
         self.database_name.unwrap()

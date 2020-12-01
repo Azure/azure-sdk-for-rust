@@ -23,8 +23,8 @@ impl<'a, 'b> GetUserBuilder<'a, 'b> {
     }
 }
 
-impl<'a, 'b> UserClientRequired<'a> for GetUserBuilder<'a, 'b> {
-    fn user_client(&self) -> &'a UserClient {
+impl<'a, 'b> GetUserBuilder<'a, 'b> {
+    pub fn user_client(&self) -> &'a UserClient {
         self.user_client
     }
 }

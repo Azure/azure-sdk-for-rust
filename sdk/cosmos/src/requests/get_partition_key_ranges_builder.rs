@@ -29,8 +29,8 @@ impl<'a, 'b> GetPartitionKeyRangesBuilder<'a, 'b> {
     }
 }
 
-impl<'a, 'b> CollectionClientRequired<'a> for GetPartitionKeyRangesBuilder<'a, 'b> {
-    fn collection_client(&self) -> &'a CollectionClient {
+impl<'a, 'b> GetPartitionKeyRangesBuilder<'a, 'b> {
+    pub fn collection_client(&self) -> &'a CollectionClient {
         self.collection_client
     }
 }

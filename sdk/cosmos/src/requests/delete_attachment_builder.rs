@@ -24,8 +24,8 @@ impl<'a, 'b> DeleteAttachmentBuilder<'a, 'b> {
     }
 }
 
-impl<'a, 'b> AttachmentClientRequired<'a> for DeleteAttachmentBuilder<'a, 'b> {
-    fn attachment_client(&self) -> &'a AttachmentClient {
+impl<'a, 'b> DeleteAttachmentBuilder<'a, 'b> {
+    pub fn attachment_client(&self) -> &'a AttachmentClient {
         self.attachment_client
     }
 }

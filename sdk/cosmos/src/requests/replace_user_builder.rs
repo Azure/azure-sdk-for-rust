@@ -33,11 +33,11 @@ impl<'a, 'b> ReplaceUserBuilder<'a, 'b, No> {
     }
 }
 
-impl<'a, 'b, UserNameSet> UserClientRequired<'a> for ReplaceUserBuilder<'a, 'b, UserNameSet>
+impl<'a, 'b, UserNameSet> ReplaceUserBuilder<'a, 'b, UserNameSet>
 where
     UserNameSet: ToAssign,
 {
-    fn user_client(&self) -> &'a UserClient {
+    pub fn user_client(&self) -> &'a UserClient {
         self.user_client
     }
 }

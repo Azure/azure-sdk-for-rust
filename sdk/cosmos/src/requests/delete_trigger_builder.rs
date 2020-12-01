@@ -23,7 +23,7 @@ impl<'a, 'b> DeleteTriggerBuilder<'a, 'b> {
     }
 }
 
-impl<'a, 'b> TriggerClientRequired<'a> for DeleteTriggerBuilder<'a, 'b> {
+impl<'a, 'b> DeleteTriggerBuilder<'a, 'b> {
     fn trigger_client(&self) -> &'a TriggerClient {
         self.trigger_client
     }
