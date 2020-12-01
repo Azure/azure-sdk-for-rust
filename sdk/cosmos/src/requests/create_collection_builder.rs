@@ -66,6 +66,22 @@ where
     pub fn database_client(&self) -> &'a DatabaseClient {
         self.database_client
     }
+
+    fn collection_name(&self) -> &'a str {
+        self.collection_name.unwrap()
+    }
+
+    fn user_agent(&self) -> Option<UserAgent<'a>> {
+        self.user_agent
+    }
+
+    fn activity_id(&self) -> Option<ActivityId<'a>> {
+        self.activity_id
+    }
+
+    fn consistency_level(&self) -> Option<ConsistencyLevel> {
+        self.consistency_level.clone()
+    }
 }
 
 impl<'a, CollectionNameSet, IndexingPolicySet, PartitionKeySet>
@@ -77,18 +93,6 @@ where
 {
     fn offer(&self) -> Offer {
         self.offer.unwrap()
-    }
-}
-
-impl<'a, OfferSet, IndexingPolicySet, PartitionKeySet> CollectionNameRequired<'a>
-    for CreateCollectionBuilder<'a, OfferSet, Yes, IndexingPolicySet, PartitionKeySet>
-where
-    OfferSet: ToAssign,
-    IndexingPolicySet: ToAssign,
-    PartitionKeySet: ToAssign,
-{
-    fn collection_name(&self) -> &'a str {
-        self.collection_name.unwrap()
     }
 }
 
@@ -113,27 +117,6 @@ where
 {
     fn partition_key(&self) -> &'a PartitionKey {
         self.partition_key.unwrap()
-    }
-}
-
-impl<'a, OfferSet, CollectionNameSet, IndexingPolicySet, PartitionKeySet>
-    CreateCollectionBuilder<'a, OfferSet, CollectionNameSet, IndexingPolicySet, PartitionKeySet>
-where
-    OfferSet: ToAssign,
-    CollectionNameSet: ToAssign,
-    IndexingPolicySet: ToAssign,
-    PartitionKeySet: ToAssign,
-{
-    fn user_agent(&self) -> Option<UserAgent<'a>> {
-        self.user_agent
-    }
-
-    fn activity_id(&self) -> Option<ActivityId<'a>> {
-        self.activity_id
-    }
-
-    fn consistency_level(&self) -> Option<ConsistencyLevel> {
-        self.consistency_level.clone()
     }
 }
 
@@ -264,7 +247,7 @@ where
 
     fn with_user_agent(self, user_agent: &'a str) -> Self::O {
         Self {
-            user_agent: Some(UserAgent(user_agent)),
+            user_agent: Some(UserAgent::new(user_agent)),
             ..self
         }
     }
@@ -288,7 +271,7 @@ where
 
     fn with_activity_id(self, activity_id: &'a str) -> Self::O {
         Self {
-            activity_id: Some(ActivityId(activity_id)),
+            activity_id: Some(ActivityId::new(activity_id)),
             ..self
         }
     }

@@ -321,7 +321,13 @@ pub trait UserAgentSupport<'a> {
 }
 
 #[derive(Debug, Clone, Copy)]
-pub struct UserAgent<'a>(pub &'a str);
+pub struct UserAgent<'a>(&'a str);
+
+impl<'a> UserAgent<'a> {
+    pub fn new(agent: &'a str) -> Self {
+        Self(agent)
+    }
+}
 
 impl<'a> AddAsHeader for UserAgent<'a> {
     fn add_as_header(&self, builder: Builder) -> Builder {
@@ -347,7 +353,13 @@ pub trait ActivityIdSupport<'a> {
 }
 
 #[derive(Debug, Clone, Copy)]
-pub struct ActivityId<'a>(pub &'a str);
+pub struct ActivityId<'a>(&'a str);
+
+impl<'a> ActivityId<'a> {
+    pub fn new(id: &'a str) -> Self {
+        Self(id)
+    }
+}
 
 impl<'a> AddAsHeader for ActivityId<'a> {
     fn add_as_header(&self, builder: Builder) -> Builder {
