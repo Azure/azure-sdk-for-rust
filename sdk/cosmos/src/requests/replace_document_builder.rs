@@ -60,8 +60,7 @@ where
     }
 }
 
-impl<'a, 'b, DocumentIdSet> PartitionKeysRequired<'b>
-    for ReplaceDocumentBuilder<'a, 'b, Yes, DocumentIdSet>
+impl<'a, 'b, DocumentIdSet> ReplaceDocumentBuilder<'a, 'b, Yes, DocumentIdSet>
 where
     DocumentIdSet: ToAssign,
 {
@@ -348,7 +347,7 @@ impl<'a, 'b> ReplaceDocumentBuilder<'a, 'b, Yes, Yes> {
         let req = crate::headers::add_header(self.user_agent(), req);
         let req = crate::headers::add_header(self.activity_id(), req);
         let req = crate::headers::add_header(self.consistency_level(), req);
-        let req = PartitionKeysRequired::add_header(self, req);
+        let req = crate::headers::add_header(Some(self.partition_keys()), req);
         let req = AllowTentativeWritesOption::add_header(self, req);
 
         let serialized = serde_json::to_string(document)?;

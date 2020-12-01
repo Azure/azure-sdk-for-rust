@@ -55,7 +55,7 @@ where
     }
 }
 
-impl<'a, 'b> PartitionKeysRequired<'b> for CreateDocumentBuilder<'a, 'b, Yes> {
+impl<'a, 'b> CreateDocumentBuilder<'a, 'b, Yes> {
     fn partition_keys(&self) -> &'b PartitionKeys {
         self.partition_keys.unwrap()
     }
@@ -302,7 +302,7 @@ impl<'a, 'b> CreateDocumentBuilder<'a, 'b, Yes> {
         req = crate::headers::add_header(self.user_agent(), req);
         req = crate::headers::add_header(self.activity_id(), req);
         req = crate::headers::add_header(self.consistency_level(), req);
-        req = PartitionKeysRequired::add_header(self, req);
+        req = crate::headers::add_header(Some(self.partition_keys()), req);
         req = IsUpsertOption::add_header(self, req);
         req = crate::headers::add_header(Some(self.indexing_directive()), req);
         req = AllowTentativeWritesOption::add_header(self, req);

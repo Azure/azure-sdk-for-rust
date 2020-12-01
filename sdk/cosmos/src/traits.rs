@@ -145,23 +145,6 @@ pub trait IndexingDirectiveSupport {
     fn with_indexing_directive(self, indexing_directive: IndexingDirective) -> Self::O;
 }
 
-pub trait IndexingDirectiveOption {
-    fn indexing_directive(&self) -> IndexingDirective;
-
-    #[must_use]
-    fn add_header(&self, builder: Builder) -> Builder {
-        match self.indexing_directive() {
-            IndexingDirective::Default => builder, // nothing to do
-            IndexingDirective::Exclude => {
-                builder.header(headers::HEADER_INDEXING_DIRECTIVE, "Exclude")
-            }
-            IndexingDirective::Include => {
-                builder.header(headers::HEADER_INDEXING_DIRECTIVE, "Include")
-            }
-        }
-    }
-}
-
 impl azure_core::AddAsHeader for IndexingDirective {
     fn add_as_header(&self, builder: Builder) -> Builder {
         match self {
@@ -230,12 +213,9 @@ pub trait TriggerTypeSupport {
     fn with_trigger_type(self, a: trigger::TriggerType) -> Self::O;
 }
 
-pub trait PartitionKeysRequired<'a> {
-    fn partition_keys(&self) -> &'a PartitionKeys;
-
-    #[must_use]
-    fn add_header(&self, builder: Builder) -> Builder {
-        headers::add_partition_keys_header(self.partition_keys(), builder)
+impl azure_core::AddAsHeader for &'_ PartitionKeys {
+    fn add_as_header(&self, builder: Builder) -> Builder {
+        headers::add_partition_keys_header(self, builder)
     }
 }
 
