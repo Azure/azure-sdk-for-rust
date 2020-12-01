@@ -115,8 +115,8 @@ where
     }
 }
 
-impl<'a, TriggerOperationSet, TriggerTypeSet, BodySet> ConsistencyLevelOption<'a>
-    for CreateOrReplaceTriggerBuilder<'a, TriggerOperationSet, TriggerTypeSet, BodySet>
+impl<'a, TriggerOperationSet, TriggerTypeSet, BodySet>
+    CreateOrReplaceTriggerBuilder<'a, TriggerOperationSet, TriggerTypeSet, BodySet>
 where
     TriggerOperationSet: ToAssign,
     TriggerTypeSet: ToAssign,
@@ -281,7 +281,7 @@ impl<'a> CreateOrReplaceTriggerBuilder<'a, Yes, Yes, Yes> {
         // add trait headers
         let req = crate::headers::add_header(self.user_agent(), req);
         let req = crate::headers::add_header(self.activity_id(), req);
-        let req = ConsistencyLevelOption::add_header(self, req);
+        let req = crate::headers::add_header(self.consistency_level(), req);
 
         let req = req.header(http::header::CONTENT_TYPE, "application/json");
 

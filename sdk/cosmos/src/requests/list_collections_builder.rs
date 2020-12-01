@@ -47,7 +47,7 @@ impl<'a> ListCollectionsBuilder<'a> {
     }
 }
 
-impl<'a> ConsistencyLevelOption<'a> for ListCollectionsBuilder<'a> {
+impl<'a> ListCollectionsBuilder<'a> {
     fn consistency_level(&self) -> Option<ConsistencyLevel> {
         self.consistency_level.clone()
     }
@@ -132,7 +132,7 @@ impl<'a> ListCollectionsBuilder<'a> {
 
         let request = crate::headers::add_header(self.user_agent(), request);
         let request = crate::headers::add_header(self.activity_id(), request);
-        let request = ConsistencyLevelOption::add_header(self, request);
+        let request = crate::headers::add_header(self.consistency_level(), request);
         let request = ContinuationOption::add_header(self, request);
         let request = MaxItemCountOption::add_header(self, request);
 

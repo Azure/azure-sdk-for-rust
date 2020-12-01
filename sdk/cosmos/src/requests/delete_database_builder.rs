@@ -41,7 +41,7 @@ impl<'a> DeleteDatabaseBuilder<'a> {
     }
 }
 
-impl<'a> ConsistencyLevelOption<'a> for DeleteDatabaseBuilder<'a> {
+impl<'a> DeleteDatabaseBuilder<'a> {
     fn consistency_level(&self) -> Option<ConsistencyLevel> {
         self.consistency_level.clone()
     }
@@ -91,7 +91,7 @@ impl<'a> DeleteDatabaseBuilder<'a> {
 
         let request = crate::headers::add_header(self.user_agent(), request);
         let request = crate::headers::add_header(self.activity_id(), request);
-        let request = ConsistencyLevelOption::add_header(self, request);
+        let request = crate::headers::add_header(self.consistency_level(), request);
 
         let request = request.body(EMPTY_BODY.as_ref())?;
 

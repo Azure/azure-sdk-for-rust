@@ -41,7 +41,7 @@ impl<'a, 'b> DeletePermissionsBuilder<'a, 'b> {
     }
 }
 
-impl<'a, 'b> ConsistencyLevelOption<'b> for DeletePermissionsBuilder<'a, 'b> {
+impl<'a, 'b> DeletePermissionsBuilder<'a, 'b> {
     fn consistency_level(&self) -> Option<ConsistencyLevel> {
         self.consistency_level.clone()
     }
@@ -91,7 +91,7 @@ impl<'a, 'b> DeletePermissionsBuilder<'a, 'b> {
 
         let request = crate::headers::add_header(self.user_agent(), request);
         let request = crate::headers::add_header(self.activity_id(), request);
-        let request = ConsistencyLevelOption::add_header(self, request);
+        let request = crate::headers::add_header(self.consistency_level(), request);
 
         let request = request.body(EMPTY_BODY.as_ref())?;
         debug!("\nrequest == {:#?}", request);

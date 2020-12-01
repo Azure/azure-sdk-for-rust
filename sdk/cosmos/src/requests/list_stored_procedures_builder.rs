@@ -47,7 +47,7 @@ impl<'a, 'b> ListStoredProceduresBuilder<'a, 'b> {
     }
 }
 
-impl<'a, 'b> ConsistencyLevelOption<'b> for ListStoredProceduresBuilder<'a, 'b> {
+impl<'a, 'b> ListStoredProceduresBuilder<'a, 'b> {
     fn consistency_level(&self) -> Option<ConsistencyLevel> {
         self.consistency_level.clone()
     }
@@ -138,7 +138,7 @@ impl<'a, 'b> ListStoredProceduresBuilder<'a, 'b> {
         // add trait headers
         let request = crate::headers::add_header(self.user_agent(), request);
         let request = crate::headers::add_header(self.activity_id(), request);
-        let request = ConsistencyLevelOption::add_header(self, request);
+        let request = crate::headers::add_header(self.consistency_level(), request);
         let request = ContinuationOption::add_header(self, request);
         let request = MaxItemCountOption::add_header(self, request);
 

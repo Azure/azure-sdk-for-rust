@@ -89,8 +89,8 @@ where
     }
 }
 
-impl<'a, 'b, ContentTypeSet, MediaSet> ConsistencyLevelOption<'b>
-    for CreateReferenceAttachmentBuilder<'a, 'b, ContentTypeSet, MediaSet>
+impl<'a, 'b, ContentTypeSet, MediaSet>
+    CreateReferenceAttachmentBuilder<'a, 'b, ContentTypeSet, MediaSet>
 where
     ContentTypeSet: ToAssign,
     MediaSet: ToAssign,
@@ -200,7 +200,7 @@ impl<'a, 'b> CreateReferenceAttachmentBuilder<'a, 'b, Yes, Yes> {
         // add trait headers
         req = crate::headers::add_header(self.user_agent(), req);
         req = crate::headers::add_header(self.activity_id(), req);
-        req = ConsistencyLevelOption::add_header(self, req);
+        req = crate::headers::add_header(self.consistency_level(), req);
 
         req = crate::headers::add_partition_keys_header(
             self.attachment_client.document_client().partition_keys(),

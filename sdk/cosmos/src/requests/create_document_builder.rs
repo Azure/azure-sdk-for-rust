@@ -118,8 +118,7 @@ where
     }
 }
 
-impl<'a, 'b, PartitionKeysSet> ConsistencyLevelOption<'b>
-    for CreateDocumentBuilder<'a, 'b, PartitionKeysSet>
+impl<'a, 'b, PartitionKeysSet> CreateDocumentBuilder<'a, 'b, PartitionKeysSet>
 where
     PartitionKeysSet: ToAssign,
 {
@@ -304,7 +303,7 @@ impl<'a, 'b> CreateDocumentBuilder<'a, 'b, Yes> {
         req = IfModifiedSinceOption::add_header(self, req);
         req = crate::headers::add_header(self.user_agent(), req);
         req = crate::headers::add_header(self.activity_id(), req);
-        req = ConsistencyLevelOption::add_header(self, req);
+        req = crate::headers::add_header(self.consistency_level(), req);
         req = PartitionKeysRequired::add_header(self, req);
         req = IsUpsertOption::add_header(self, req);
         req = IndexingDirectiveOption::add_header(self, req);

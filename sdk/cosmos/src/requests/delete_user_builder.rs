@@ -41,7 +41,7 @@ impl<'a, 'b> DeleteUserBuilder<'a, 'b> {
     }
 }
 
-impl<'a, 'b> ConsistencyLevelOption<'b> for DeleteUserBuilder<'a, 'b> {
+impl<'a, 'b> DeleteUserBuilder<'a, 'b> {
     fn consistency_level(&self) -> Option<ConsistencyLevel> {
         self.consistency_level.clone()
     }
@@ -91,7 +91,7 @@ impl<'a, 'b> DeleteUserBuilder<'a, 'b> {
 
         let req = crate::headers::add_header(self.user_agent(), req);
         let req = crate::headers::add_header(self.activity_id(), req);
-        let req = ConsistencyLevelOption::add_header(self, req);
+        let req = crate::headers::add_header(self.consistency_level(), req);
 
         let req = req.body(EMPTY_BODY.as_ref())?;
         debug!("\nreq == {:?}", req);

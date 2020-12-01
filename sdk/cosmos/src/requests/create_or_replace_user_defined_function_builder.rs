@@ -73,8 +73,7 @@ where
     }
 }
 
-impl<'a, 'b, BodySet> ConsistencyLevelOption<'b>
-    for CreateOrReplaceUserDefinedFunctionBuilder<'a, 'b, BodySet>
+impl<'a, 'b, BodySet> CreateOrReplaceUserDefinedFunctionBuilder<'a, 'b, BodySet>
 where
     BodySet: ToAssign,
 {
@@ -167,7 +166,7 @@ impl<'a, 'b> CreateOrReplaceUserDefinedFunctionBuilder<'a, 'b, Yes> {
         // add trait headers
         let req = crate::headers::add_header(self.user_agent(), req);
         let req = crate::headers::add_header(self.activity_id(), req);
-        let req = ConsistencyLevelOption::add_header(self, req);
+        let req = crate::headers::add_header(self.consistency_level(), req);
 
         let req = req.header(http::header::CONTENT_TYPE, "application/json");
 

@@ -125,7 +125,7 @@ where
     }
 }
 
-impl<'a, 'b, QuerySet> ConsistencyLevelOption<'b> for QueryDocumentsBuilder<'a, 'b, QuerySet>
+impl<'a, 'b, QuerySet> QueryDocumentsBuilder<'a, 'b, QuerySet>
 where
     QuerySet: ToAssign,
 {
@@ -373,7 +373,7 @@ impl<'a, 'b> QueryDocumentsBuilder<'a, 'b, Yes> {
         let req = IfModifiedSinceOption::add_header(self, req);
         let req = crate::headers::add_header(self.user_agent(), req);
         let req = crate::headers::add_header(self.activity_id(), req);
-        let req = ConsistencyLevelOption::add_header(self, req);
+        let req = crate::headers::add_header(self.consistency_level(), req);
         let req = ContinuationOption::add_header(self, req);
         let req = MaxItemCountOption::add_header(self, req);
         let req = PartitionKeysOption::add_header(self, req);

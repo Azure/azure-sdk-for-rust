@@ -41,7 +41,7 @@ impl<'a, 'b> CreateUserBuilder<'a, 'b> {
     }
 }
 
-impl<'a, 'b> ConsistencyLevelOption<'b> for CreateUserBuilder<'a, 'b> {
+impl<'a, 'b> CreateUserBuilder<'a, 'b> {
     fn consistency_level(&self) -> Option<ConsistencyLevel> {
         self.consistency_level.clone()
     }
@@ -89,7 +89,7 @@ impl<'a, 'b> CreateUserBuilder<'a, 'b> {
 
         let req = crate::headers::add_header(self.user_agent(), req);
         let req = crate::headers::add_header(self.activity_id(), req);
-        let req = ConsistencyLevelOption::add_header(self, req);
+        let req = crate::headers::add_header(self.consistency_level(), req);
 
         let req = req.header(http::header::CONTENT_TYPE, "application/json");
 

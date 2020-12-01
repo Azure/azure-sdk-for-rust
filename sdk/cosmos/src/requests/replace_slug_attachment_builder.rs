@@ -99,8 +99,7 @@ where
     }
 }
 
-impl<'a, 'b, BodySet, ContentTypeSet> ConsistencyLevelOption<'b>
-    for ReplaceSlugAttachmentBuilder<'a, 'b, BodySet, ContentTypeSet>
+impl<'a, 'b, BodySet, ContentTypeSet> ReplaceSlugAttachmentBuilder<'a, 'b, BodySet, ContentTypeSet>
 where
     BodySet: ToAssign,
     ContentTypeSet: ToAssign,
@@ -226,7 +225,7 @@ impl<'a, 'b> ReplaceSlugAttachmentBuilder<'a, 'b, Yes, Yes> {
         req = IfMatchConditionOption::add_header(self, req);
         req = crate::headers::add_header(self.user_agent(), req);
         req = crate::headers::add_header(self.activity_id(), req);
-        req = ConsistencyLevelOption::add_header(self, req);
+        req = crate::headers::add_header(self.consistency_level(), req);
 
         req = crate::headers::add_partition_keys_header(
             self.attachment_client.document_client().partition_keys(),

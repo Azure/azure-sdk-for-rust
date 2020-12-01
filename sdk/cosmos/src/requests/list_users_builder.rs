@@ -45,7 +45,7 @@ impl<'a, 'b> ListUsersBuilder<'a, 'b> {
     }
 }
 
-impl<'a, 'b> ConsistencyLevelOption<'b> for ListUsersBuilder<'a, 'b> {
+impl<'a, 'b> ListUsersBuilder<'a, 'b> {
     fn consistency_level(&self) -> Option<ConsistencyLevel> {
         self.consistency_level.clone()
     }

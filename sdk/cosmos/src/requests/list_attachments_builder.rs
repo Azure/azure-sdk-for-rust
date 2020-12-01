@@ -58,7 +58,7 @@ impl<'a, 'b> ListAttachmentsBuilder<'a, 'b> {
     }
 }
 
-impl<'a, 'b> ConsistencyLevelOption<'b> for ListAttachmentsBuilder<'a, 'b> {
+impl<'a, 'b> ListAttachmentsBuilder<'a, 'b> {
     fn consistency_level(&self) -> Option<ConsistencyLevel> {
         self.consistency_level.clone()
     }
@@ -174,7 +174,7 @@ impl<'a, 'b> ListAttachmentsBuilder<'a, 'b> {
         req = IfMatchConditionOption::add_header(self, req);
         req = crate::headers::add_header(self.user_agent(), req);
         req = crate::headers::add_header(self.activity_id(), req);
-        req = ConsistencyLevelOption::add_header(self, req);
+        req = crate::headers::add_header(self.consistency_level(), req);
         req = ContinuationOption::add_header(self, req);
         req = MaxItemCountOption::add_header(self, req);
         req = AIMOption::add_header(self, req);

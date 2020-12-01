@@ -65,7 +65,7 @@ where
     }
 }
 
-impl<'a, 'b, UserNameSet> ConsistencyLevelOption<'b> for ReplaceUserBuilder<'a, 'b, UserNameSet>
+impl<'a, 'b, UserNameSet> ReplaceUserBuilder<'a, 'b, UserNameSet>
 where
     UserNameSet: ToAssign,
 {
@@ -142,7 +142,7 @@ impl<'a, 'b> ReplaceUserBuilder<'a, 'b, Yes> {
 
         let req = crate::headers::add_header(self.user_agent(), req);
         let req = crate::headers::add_header(self.activity_id(), req);
-        let req = ConsistencyLevelOption::add_header(self, req);
+        let req = crate::headers::add_header(self.consistency_level(), req);
 
         #[derive(Serialize, Deserialize)]
         struct RequestBody<'x> {

@@ -91,8 +91,8 @@ where
     }
 }
 
-impl<'a, 'b, PartitionKeysSet, IndexingPolicySet> ConsistencyLevelOption<'b>
-    for ReplaceCollectionBuilder<'a, 'b, PartitionKeysSet, IndexingPolicySet>
+impl<'a, 'b, PartitionKeysSet, IndexingPolicySet>
+    ReplaceCollectionBuilder<'a, 'b, PartitionKeysSet, IndexingPolicySet>
 where
     PartitionKeysSet: ToAssign,
     IndexingPolicySet: ToAssign,
@@ -203,7 +203,7 @@ impl<'a, 'b> ReplaceCollectionBuilder<'a, 'b, Yes, Yes> {
 
         let req = crate::headers::add_header(self.user_agent(), req);
         let req = crate::headers::add_header(self.activity_id(), req);
-        let req = ConsistencyLevelOption::add_header(self, req);
+        let req = crate::headers::add_header(self.consistency_level(), req);
 
         let req = req.header(http::header::CONTENT_TYPE, "application/json");
 

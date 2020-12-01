@@ -40,38 +40,23 @@ where
     pub fn cosmos_client(&self) -> &'a CosmosClient {
         self.cosmos_client
     }
+
+    fn user_agent(&self) -> Option<azure_core::UserAgent<'a>> {
+        self.user_agent
+    }
+
+    fn activity_id(&self) -> Option<azure_core::ActivityId<'a>> {
+        self.activity_id
+    }
+
+    fn consistency_level(&self) -> Option<ConsistencyLevel> {
+        self.consistency_level.clone()
+    }
 }
 
 impl<'a> DatabaseNameRequired<'a> for CreateDatabaseBuilder<'a, Yes> {
     fn database_name(&self) -> &'a str {
         self.database_name.unwrap()
-    }
-}
-
-impl<'a, DatabaseNameSet> CreateDatabaseBuilder<'a, DatabaseNameSet>
-where
-    DatabaseNameSet: ToAssign,
-{
-    fn user_agent(&self) -> Option<azure_core::UserAgent<'a>> {
-        self.user_agent
-    }
-}
-
-impl<'a, DatabaseNameSet> CreateDatabaseBuilder<'a, DatabaseNameSet>
-where
-    DatabaseNameSet: ToAssign,
-{
-    fn activity_id(&self) -> Option<azure_core::ActivityId<'a>> {
-        self.activity_id
-    }
-}
-
-impl<'a, DatabaseNameSet> ConsistencyLevelOption<'a> for CreateDatabaseBuilder<'a, DatabaseNameSet>
-where
-    DatabaseNameSet: ToAssign,
-{
-    fn consistency_level(&self) -> Option<ConsistencyLevel> {
-        self.consistency_level.clone()
     }
 }
 
@@ -166,7 +151,7 @@ impl<'a> CreateDatabaseBuilder<'a, Yes> {
 
         let request = crate::headers::add_header(self.user_agent(), request);
         let request = crate::headers::add_header(self.activity_id(), request);
-        let request = ConsistencyLevelOption::add_header(self, request);
+        let request = crate::headers::add_header(self.consistency_level(), request);
 
         let request = request.body(req.as_bytes())?; // todo: set content-length here and elsewhere without builders
 

@@ -135,8 +135,8 @@ where
     }
 }
 
-impl<'a, 'b, PartitionKeysSet, DocumentIdSet> ConsistencyLevelOption<'b>
-    for ReplaceDocumentBuilder<'a, 'b, PartitionKeysSet, DocumentIdSet>
+impl<'a, 'b, PartitionKeysSet, DocumentIdSet>
+    ReplaceDocumentBuilder<'a, 'b, PartitionKeysSet, DocumentIdSet>
 where
     PartitionKeysSet: ToAssign,
     DocumentIdSet: ToAssign,
@@ -347,7 +347,7 @@ impl<'a, 'b> ReplaceDocumentBuilder<'a, 'b, Yes, Yes> {
         let req = IfModifiedSinceOption::add_header(self, req);
         let req = crate::headers::add_header(self.user_agent(), req);
         let req = crate::headers::add_header(self.activity_id(), req);
-        let req = ConsistencyLevelOption::add_header(self, req);
+        let req = crate::headers::add_header(self.consistency_level(), req);
         let req = PartitionKeysRequired::add_header(self, req);
         let req = AllowTentativeWritesOption::add_header(self, req);
 

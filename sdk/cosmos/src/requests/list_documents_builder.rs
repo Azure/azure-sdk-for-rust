@@ -60,7 +60,7 @@ impl<'a, 'b> ListDocumentsBuilder<'a, 'b> {
     }
 }
 
-impl<'a, 'b> ConsistencyLevelOption<'b> for ListDocumentsBuilder<'a, 'b> {
+impl<'a, 'b> ListDocumentsBuilder<'a, 'b> {
     fn consistency_level(&self) -> Option<ConsistencyLevel> {
         self.consistency_level.clone()
     }
@@ -203,7 +203,7 @@ impl<'a, 'b> ListDocumentsBuilder<'a, 'b> {
         let req = IfMatchConditionOption::add_header(self, req);
         let req = crate::headers::add_header(self.user_agent(), req);
         let req = crate::headers::add_header(self.activity_id(), req);
-        let req = ConsistencyLevelOption::add_header(self, req);
+        let req = crate::headers::add_header(self.consistency_level(), req);
         let req = ContinuationOption::add_header(self, req);
         let req = MaxItemCountOption::add_header(self, req);
         let req = AIMOption::add_header(self, req);

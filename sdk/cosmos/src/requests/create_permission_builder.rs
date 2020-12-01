@@ -51,7 +51,7 @@ impl<'a, 'b> CreatePermissionBuilder<'a, 'b> {
     }
 }
 
-impl<'a, 'b> ConsistencyLevelOption<'b> for CreatePermissionBuilder<'a, 'b> {
+impl<'a, 'b> CreatePermissionBuilder<'a, 'b> {
     fn consistency_level(&self) -> Option<ConsistencyLevel> {
         self.consistency_level.clone()
     }
@@ -121,7 +121,7 @@ impl<'a, 'b> CreatePermissionBuilder<'a, 'b> {
 
         let request = crate::headers::add_header(self.user_agent(), request);
         let request = crate::headers::add_header(self.activity_id(), request);
-        let request = ConsistencyLevelOption::add_header(self, request);
+        let request = crate::headers::add_header(self.consistency_level(), request);
 
         let request = request.header(http::header::CONTENT_TYPE, "application/json");
 

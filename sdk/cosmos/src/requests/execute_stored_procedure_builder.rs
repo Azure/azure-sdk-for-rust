@@ -55,7 +55,7 @@ impl<'a, 'b> ExecuteStoredProcedureBuilder<'a, 'b> {
     }
 }
 
-impl<'a, 'b> ConsistencyLevelOption<'b> for ExecuteStoredProcedureBuilder<'a, 'b> {
+impl<'a, 'b> ExecuteStoredProcedureBuilder<'a, 'b> {
     fn consistency_level(&self) -> Option<ConsistencyLevel> {
         self.consistency_level.clone()
     }
@@ -154,7 +154,7 @@ impl<'a, 'b> ExecuteStoredProcedureBuilder<'a, 'b> {
         // add trait headers
         let request = crate::headers::add_header(self.user_agent(), request);
         let request = crate::headers::add_header(self.activity_id(), request);
-        let request = ConsistencyLevelOption::add_header(self, request);
+        let request = crate::headers::add_header(self.consistency_level(), request);
         let request = AllowTentativeWritesOption::add_header(self, request);
         let request = PartitionKeysOption::add_header(self, request);
 

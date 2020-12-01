@@ -61,7 +61,7 @@ impl<'a, 'b> GetDocumentBuilder<'a, 'b> {
     }
 }
 
-impl<'a, 'b> ConsistencyLevelOption<'b> for GetDocumentBuilder<'a, 'b> {
+impl<'a, 'b> GetDocumentBuilder<'a, 'b> {
     fn consistency_level(&self) -> Option<ConsistencyLevel> {
         self.consistency_level.clone()
     }
@@ -137,7 +137,7 @@ impl<'a, 'b> GetDocumentBuilder<'a, 'b> {
         req = IfModifiedSinceOption::add_header(self, req);
         req = crate::headers::add_header(self.user_agent(), req);
         req = crate::headers::add_header(self.activity_id(), req);
-        req = ConsistencyLevelOption::add_header(self, req);
+        req = crate::headers::add_header(self.consistency_level(), req);
 
         req = crate::headers::add_partition_keys_header(self.document_client.partition_keys(), req);
 
