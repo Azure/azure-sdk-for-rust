@@ -1,4 +1,4 @@
-mod queue_client;
 mod queue_account_client;
-pub use queue_client::QueueClient;
+mod queue_client;
 pub use queue_account_client::QueueAccountClient;
+pub use queue_client::QueueClient;
