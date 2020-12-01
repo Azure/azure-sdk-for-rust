@@ -22,7 +22,7 @@ where
     if_match_condition: Option<IfMatchCondition<'b>>,
     if_modified_since: Option<&'b DateTime<Utc>>,
     user_agent: Option<azure_core::UserAgent<'b>>,
-    activity_id: Option<&'b str>,
+    activity_id: Option<azure_core::ActivityId<'b>>,
     consistency_level: Option<ConsistencyLevel>,
     continuation: Option<&'b str>,
     max_item_count: i32,
@@ -116,11 +116,11 @@ where
     }
 }
 
-impl<'a, 'b, QuerySet> ActivityIdOption<'b> for QueryDocumentsBuilder<'a, 'b, QuerySet>
+impl<'a, 'b, QuerySet> QueryDocumentsBuilder<'a, 'b, QuerySet>
 where
     QuerySet: ToAssign,
 {
-    fn activity_id(&self) -> Option<&'b str> {
+    fn activity_id(&self) -> Option<azure_core::ActivityId<'b>> {
         self.activity_id
     }
 }
@@ -252,7 +252,7 @@ where
 
     fn with_activity_id(self, activity_id: &'b str) -> Self::O {
         Self {
-            activity_id: Some(activity_id),
+            activity_id: Some(azure_core::ActivityId::new(activity_id)),
             ..self
         }
     }
@@ -372,7 +372,7 @@ impl<'a, 'b> QueryDocumentsBuilder<'a, 'b, Yes> {
         let req = IfMatchConditionOption::add_header(self, req);
         let req = IfModifiedSinceOption::add_header(self, req);
         let req = crate::headers::add_header(self.user_agent(), req);
-        let req = ActivityIdOption::add_header(self, req);
+        let req = crate::headers::add_header(self.activity_id(), req);
         let req = ConsistencyLevelOption::add_header(self, req);
         let req = ContinuationOption::add_header(self, req);
         let req = MaxItemCountOption::add_header(self, req);

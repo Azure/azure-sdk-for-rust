@@ -10,7 +10,7 @@ use std::convert::TryInto;
 pub struct ListUsersBuilder<'a, 'b> {
     database_client: &'a DatabaseClient,
     user_agent: Option<azure_core::UserAgent<'b>>,
-    activity_id: Option<&'b str>,
+    activity_id: Option<azure_core::ActivityId<'b>>,
     consistency_level: Option<ConsistencyLevel>,
     continuation: Option<&'b str>,
     max_item_count: i32,
@@ -39,8 +39,8 @@ impl<'a, 'b> ListUsersBuilder<'a, 'b> {
     }
 }
 
-impl<'a, 'b> ActivityIdOption<'b> for ListUsersBuilder<'a, 'b> {
-    fn activity_id(&self) -> Option<&'b str> {
+impl<'a, 'b> ListUsersBuilder<'a, 'b> {
+    fn activity_id(&self) -> Option<azure_core::ActivityId<'b>> {
         self.activity_id
     }
 }
@@ -79,7 +79,7 @@ impl<'a, 'b> ActivityIdSupport<'b> for ListUsersBuilder<'a, 'b> {
 
     fn with_activity_id(self, activity_id: &'b str) -> Self::O {
         Self {
-            activity_id: Some(activity_id),
+            activity_id: Some(azure_core::ActivityId::new(activity_id)),
             ..self
         }
     }

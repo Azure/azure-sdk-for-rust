@@ -11,7 +11,7 @@ pub struct ListTriggersBuilder<'a, 'b> {
     collection_client: &'a CollectionClient,
     if_match_condition: Option<IfMatchCondition<'b>>,
     user_agent: Option<azure_core::UserAgent<'b>>,
-    activity_id: Option<&'b str>,
+    activity_id: Option<azure_core::ActivityId<'b>>,
     consistency_level: Option<ConsistencyLevel>,
     continuation: Option<&'b str>,
     max_item_count: i32,
@@ -49,8 +49,8 @@ impl<'a, 'b> ListTriggersBuilder<'a, 'b> {
     }
 }
 
-impl<'a, 'b> ActivityIdOption<'b> for ListTriggersBuilder<'a, 'b> {
-    fn activity_id(&self) -> Option<&'b str> {
+impl<'a, 'b> ListTriggersBuilder<'a, 'b> {
+    fn activity_id(&self) -> Option<azure_core::ActivityId<'b>> {
         self.activity_id
     }
 }
@@ -100,7 +100,7 @@ impl<'a, 'b> ActivityIdSupport<'b> for ListTriggersBuilder<'a, 'b> {
 
     fn with_activity_id(self, activity_id: &'b str) -> Self::O {
         Self {
-            activity_id: Some(activity_id),
+            activity_id: Some(azure_core::ActivityId::new(activity_id)),
             ..self
         }
     }
@@ -157,7 +157,7 @@ impl<'a, 'b> ListTriggersBuilder<'a, 'b> {
         // add trait headers
         let request = IfMatchConditionOption::add_header(self, request);
         let request = crate::headers::add_header(self.user_agent(), request);
-        let request = ActivityIdOption::add_header(self, request);
+        let request = crate::headers::add_header(self.activity_id(), request);
         let request = ConsistencyLevelOption::add_header(self, request);
         let request = ContinuationOption::add_header(self, request);
         let request = MaxItemCountOption::add_header(self, request);

@@ -15,7 +15,7 @@ where
     p_user_name: PhantomData<UserNameSet>,
     user_name: Option<&'a str>,
     user_agent: Option<azure_core::UserAgent<'b>>,
-    activity_id: Option<&'b str>,
+    activity_id: Option<azure_core::ActivityId<'b>>,
     consistency_level: Option<ConsistencyLevel>,
 }
 
@@ -56,11 +56,11 @@ where
     }
 }
 
-impl<'a, 'b, UserNameSet> ActivityIdOption<'b> for ReplaceUserBuilder<'a, 'b, UserNameSet>
+impl<'a, 'b, UserNameSet> ReplaceUserBuilder<'a, 'b, UserNameSet>
 where
     UserNameSet: ToAssign,
 {
-    fn activity_id(&self) -> Option<&'b str> {
+    fn activity_id(&self) -> Option<azure_core::ActivityId<'b>> {
         self.activity_id
     }
 }
@@ -111,7 +111,7 @@ where
 
     fn with_activity_id(self, activity_id: &'b str) -> Self::O {
         Self {
-            activity_id: Some(activity_id),
+            activity_id: Some(azure_core::ActivityId::new(activity_id)),
             ..self
         }
     }
@@ -141,7 +141,7 @@ impl<'a, 'b> ReplaceUserBuilder<'a, 'b, Yes> {
             .prepare_request_with_user_name(http::Method::PUT);
 
         let req = crate::headers::add_header(self.user_agent(), req);
-        let req = ActivityIdOption::add_header(self, req);
+        let req = crate::headers::add_header(self.activity_id(), req);
         let req = ConsistencyLevelOption::add_header(self, req);
 
         #[derive(Serialize, Deserialize)]

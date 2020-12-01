@@ -12,7 +12,7 @@ pub struct GetPartitionKeyRangesBuilder<'a, 'b> {
     if_match_condition: Option<IfMatchCondition<'b>>,
     if_modified_since: Option<&'b DateTime<Utc>>,
     user_agent: Option<azure_core::UserAgent<'b>>,
-    activity_id: Option<&'b str>,
+    activity_id: Option<azure_core::ActivityId<'b>>,
     consistency_level: Option<ConsistencyLevel>,
 }
 
@@ -53,8 +53,8 @@ impl<'a, 'b> GetPartitionKeyRangesBuilder<'a, 'b> {
     }
 }
 
-impl<'a, 'b> ActivityIdOption<'b> for GetPartitionKeyRangesBuilder<'a, 'b> {
-    fn activity_id(&self) -> Option<&'b str> {
+impl<'a, 'b> GetPartitionKeyRangesBuilder<'a, 'b> {
+    fn activity_id(&self) -> Option<azure_core::ActivityId<'b>> {
         self.activity_id
     }
 }
@@ -103,7 +103,7 @@ impl<'a, 'b> ActivityIdSupport<'b> for GetPartitionKeyRangesBuilder<'a, 'b> {
 
     fn with_activity_id(self, activity_id: &'b str) -> Self::O {
         Self {
-            activity_id: Some(activity_id),
+            activity_id: Some(azure_core::ActivityId::new(activity_id)),
             ..self
         }
     }
@@ -139,7 +139,7 @@ impl<'a, 'b> GetPartitionKeyRangesBuilder<'a, 'b> {
         let request = IfMatchConditionOption::add_header(self, request);
         let request = IfModifiedSinceOption::add_header(self, request);
         let request = crate::headers::add_header(self.user_agent(), request);
-        let request = ActivityIdOption::add_header(self, request);
+        let request = crate::headers::add_header(self.activity_id(), request);
         let request = ConsistencyLevelOption::add_header(self, request);
 
         let request = request.body(EMPTY_BODY.as_ref())?;

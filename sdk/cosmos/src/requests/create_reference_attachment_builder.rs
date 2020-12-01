@@ -17,7 +17,7 @@ where
     content_type: Option<&'b str>,
     media: Option<&'b str>,
     user_agent: Option<azure_core::UserAgent<'b>>,
-    activity_id: Option<&'b str>,
+    activity_id: Option<azure_core::ActivityId<'b>>,
     consistency_level: Option<ConsistencyLevel>,
 }
 
@@ -78,13 +78,13 @@ where
     }
 }
 
-impl<'a, 'b, ContentTypeSet, MediaSet> ActivityIdOption<'b>
-    for CreateReferenceAttachmentBuilder<'a, 'b, ContentTypeSet, MediaSet>
+impl<'a, 'b, ContentTypeSet, MediaSet>
+    CreateReferenceAttachmentBuilder<'a, 'b, ContentTypeSet, MediaSet>
 where
     ContentTypeSet: ToAssign,
     MediaSet: ToAssign,
 {
-    fn activity_id(&self) -> Option<&'b str> {
+    fn activity_id(&self) -> Option<azure_core::ActivityId<'b>> {
         self.activity_id
     }
 }
@@ -168,7 +168,7 @@ where
 
     fn with_activity_id(self, activity_id: &'b str) -> Self::O {
         Self {
-            activity_id: Some(activity_id),
+            activity_id: Some(azure_core::ActivityId::new(activity_id)),
             ..self
         }
     }
@@ -199,7 +199,7 @@ impl<'a, 'b> CreateReferenceAttachmentBuilder<'a, 'b, Yes, Yes> {
 
         // add trait headers
         req = crate::headers::add_header(self.user_agent(), req);
-        req = ActivityIdOption::add_header(self, req);
+        req = crate::headers::add_header(self.activity_id(), req);
         req = ConsistencyLevelOption::add_header(self, req);
 
         req = crate::headers::add_partition_keys_header(

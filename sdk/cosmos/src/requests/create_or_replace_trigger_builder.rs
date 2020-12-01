@@ -23,7 +23,7 @@ where
     trigger_type: TriggerType,
     body: Option<&'a str>,
     user_agent: Option<azure_core::UserAgent<'a>>,
-    activity_id: Option<&'a str>,
+    activity_id: Option<azure_core::ActivityId<'a>>,
     consistency_level: Option<ConsistencyLevel>,
 }
 
@@ -103,14 +103,14 @@ where
     }
 }
 
-impl<'a, TriggerOperationSet, TriggerTypeSet, BodySet> ActivityIdOption<'a>
-    for CreateOrReplaceTriggerBuilder<'a, TriggerOperationSet, TriggerTypeSet, BodySet>
+impl<'a, TriggerOperationSet, TriggerTypeSet, BodySet>
+    CreateOrReplaceTriggerBuilder<'a, TriggerOperationSet, TriggerTypeSet, BodySet>
 where
     TriggerOperationSet: ToAssign,
     TriggerTypeSet: ToAssign,
     BodySet: ToAssign,
 {
-    fn activity_id(&self) -> Option<&'a str> {
+    fn activity_id(&self) -> Option<azure_core::ActivityId<'a>> {
         self.activity_id
     }
 }
@@ -230,7 +230,7 @@ where
 
     fn with_activity_id(self, activity_id: &'a str) -> Self::O {
         Self {
-            activity_id: Some(activity_id),
+            activity_id: Some(azure_core::ActivityId::new(activity_id)),
             ..self
         }
     }
@@ -280,7 +280,7 @@ impl<'a> CreateOrReplaceTriggerBuilder<'a, Yes, Yes, Yes> {
 
         // add trait headers
         let req = crate::headers::add_header(self.user_agent(), req);
-        let req = ActivityIdOption::add_header(self, req);
+        let req = crate::headers::add_header(self.activity_id(), req);
         let req = ConsistencyLevelOption::add_header(self, req);
 
         let req = req.header(http::header::CONTENT_TYPE, "application/json");

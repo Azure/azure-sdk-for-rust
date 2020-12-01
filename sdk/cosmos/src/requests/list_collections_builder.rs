@@ -10,7 +10,7 @@ use std::convert::TryInto;
 pub struct ListCollectionsBuilder<'a> {
     database_client: &'a DatabaseClient,
     user_agent: Option<azure_core::UserAgent<'a>>,
-    activity_id: Option<&'a str>,
+    activity_id: Option<azure_core::ActivityId<'a>>,
     consistency_level: Option<ConsistencyLevel>,
     continuation: Option<&'a str>,
     max_item_count: i32,
@@ -41,8 +41,8 @@ impl<'a> ListCollectionsBuilder<'a> {
     }
 }
 
-impl<'a> ActivityIdOption<'a> for ListCollectionsBuilder<'a> {
-    fn activity_id(&self) -> Option<&'a str> {
+impl<'a> ListCollectionsBuilder<'a> {
+    fn activity_id(&self) -> Option<azure_core::ActivityId<'a>> {
         self.activity_id
     }
 }
@@ -81,7 +81,7 @@ impl<'a> ActivityIdSupport<'a> for ListCollectionsBuilder<'a> {
 
     fn with_activity_id(self, activity_id: &'a str) -> Self::O {
         Self {
-            activity_id: Some(activity_id),
+            activity_id: Some(azure_core::ActivityId::new(activity_id)),
             ..self
         }
     }
@@ -131,7 +131,7 @@ impl<'a> ListCollectionsBuilder<'a> {
         );
 
         let request = crate::headers::add_header(self.user_agent(), request);
-        let request = ActivityIdOption::add_header(self, request);
+        let request = crate::headers::add_header(self.activity_id(), request);
         let request = ConsistencyLevelOption::add_header(self, request);
         let request = ContinuationOption::add_header(self, request);
         let request = MaxItemCountOption::add_header(self, request);

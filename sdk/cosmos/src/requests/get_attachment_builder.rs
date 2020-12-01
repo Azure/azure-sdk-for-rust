@@ -8,7 +8,7 @@ pub struct GetAttachmentBuilder<'a, 'b> {
     attachment_client: &'a AttachmentClient,
     if_match_condition: Option<IfMatchCondition<'b>>,
     user_agent: Option<azure_core::UserAgent<'b>>,
-    activity_id: Option<&'b str>,
+    activity_id: Option<azure_core::ActivityId<'b>>,
     consistency_level: Option<ConsistencyLevel>,
 }
 
@@ -42,8 +42,8 @@ impl<'a, 'b> GetAttachmentBuilder<'a, 'b> {
     }
 }
 
-impl<'a, 'b> ActivityIdOption<'b> for GetAttachmentBuilder<'a, 'b> {
-    fn activity_id(&self) -> Option<&'b str> {
+impl<'a, 'b> GetAttachmentBuilder<'a, 'b> {
+    fn activity_id(&self) -> Option<azure_core::ActivityId<'b>> {
         self.activity_id
     }
 }
@@ -81,7 +81,7 @@ impl<'a, 'b> ActivityIdSupport<'b> for GetAttachmentBuilder<'a, 'b> {
 
     fn with_activity_id(self, activity_id: &'b str) -> Self::O {
         Self {
-            activity_id: Some(activity_id),
+            activity_id: Some(azure_core::ActivityId::new(activity_id)),
             ..self
         }
     }
@@ -108,7 +108,7 @@ impl<'a, 'b> GetAttachmentBuilder<'a, 'b> {
         // add trait headers
         req = IfMatchConditionOption::add_header(self, req);
         req = crate::headers::add_header(self.user_agent(), req);
-        req = ActivityIdOption::add_header(self, req);
+        req = crate::headers::add_header(self.activity_id(), req);
         req = ConsistencyLevelOption::add_header(self, req);
 
         req = crate::headers::add_partition_keys_header(

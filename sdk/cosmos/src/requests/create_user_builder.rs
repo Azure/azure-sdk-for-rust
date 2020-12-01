@@ -8,7 +8,7 @@ use std::convert::TryInto;
 pub struct CreateUserBuilder<'a, 'b> {
     user_client: &'a UserClient,
     user_agent: Option<azure_core::UserAgent<'b>>,
-    activity_id: Option<&'b str>,
+    activity_id: Option<azure_core::ActivityId<'b>>,
     consistency_level: Option<ConsistencyLevel>,
 }
 
@@ -35,8 +35,8 @@ impl<'a, 'b> CreateUserBuilder<'a, 'b> {
     }
 }
 
-impl<'a, 'b> ActivityIdOption<'b> for CreateUserBuilder<'a, 'b> {
-    fn activity_id(&self) -> Option<&'b str> {
+impl<'a, 'b> CreateUserBuilder<'a, 'b> {
+    fn activity_id(&self) -> Option<azure_core::ActivityId<'b>> {
         self.activity_id
     }
 }
@@ -63,7 +63,7 @@ impl<'a, 'b> ActivityIdSupport<'b> for CreateUserBuilder<'a, 'b> {
 
     fn with_activity_id(self, activity_id: &'b str) -> Self::O {
         Self {
-            activity_id: Some(activity_id),
+            activity_id: Some(azure_core::ActivityId::new(activity_id)),
             ..self
         }
     }
@@ -88,7 +88,7 @@ impl<'a, 'b> CreateUserBuilder<'a, 'b> {
         let req = self.user_client.prepare_request(http::Method::POST);
 
         let req = crate::headers::add_header(self.user_agent(), req);
-        let req = ActivityIdOption::add_header(self, req);
+        let req = crate::headers::add_header(self.activity_id(), req);
         let req = ConsistencyLevelOption::add_header(self, req);
 
         let req = req.header(http::header::CONTENT_TYPE, "application/json");

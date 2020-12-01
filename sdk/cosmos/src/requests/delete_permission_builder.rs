@@ -8,7 +8,7 @@ use std::convert::TryInto;
 pub struct DeletePermissionsBuilder<'a, 'b> {
     permission_client: &'a PermissionClient,
     user_agent: Option<azure_core::UserAgent<'b>>,
-    activity_id: Option<&'b str>,
+    activity_id: Option<azure_core::ActivityId<'b>>,
     consistency_level: Option<ConsistencyLevel>,
 }
 
@@ -35,8 +35,8 @@ impl<'a, 'b> DeletePermissionsBuilder<'a, 'b> {
     }
 }
 
-impl<'a, 'b> ActivityIdOption<'b> for DeletePermissionsBuilder<'a, 'b> {
-    fn activity_id(&self) -> Option<&'b str> {
+impl<'a, 'b> DeletePermissionsBuilder<'a, 'b> {
+    fn activity_id(&self) -> Option<azure_core::ActivityId<'b>> {
         self.activity_id
     }
 }
@@ -63,7 +63,7 @@ impl<'a, 'b> ActivityIdSupport<'b> for DeletePermissionsBuilder<'a, 'b> {
 
     fn with_activity_id(self, activity_id: &'b str) -> Self::O {
         Self {
-            activity_id: Some(activity_id),
+            activity_id: Some(azure_core::ActivityId::new(activity_id)),
             ..self
         }
     }
@@ -90,7 +90,7 @@ impl<'a, 'b> DeletePermissionsBuilder<'a, 'b> {
             .prepare_request_with_permission_name(http::Method::DELETE);
 
         let request = crate::headers::add_header(self.user_agent(), request);
-        let request = ActivityIdOption::add_header(self, request);
+        let request = crate::headers::add_header(self.activity_id(), request);
         let request = ConsistencyLevelOption::add_header(self, request);
 
         let request = request.body(EMPTY_BODY.as_ref())?;
