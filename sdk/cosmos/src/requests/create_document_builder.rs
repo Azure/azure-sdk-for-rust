@@ -70,8 +70,7 @@ where
     }
 }
 
-impl<'a, 'b, PartitionKeysSet> IndexingDirectiveOption
-    for CreateDocumentBuilder<'a, 'b, PartitionKeysSet>
+impl<'a, 'b, PartitionKeysSet> CreateDocumentBuilder<'a, 'b, PartitionKeysSet>
 where
     PartitionKeysSet: ToAssign,
 {
@@ -305,7 +304,7 @@ impl<'a, 'b> CreateDocumentBuilder<'a, 'b, Yes> {
         req = crate::headers::add_header(self.consistency_level(), req);
         req = PartitionKeysRequired::add_header(self, req);
         req = IsUpsertOption::add_header(self, req);
-        req = IndexingDirectiveOption::add_header(self, req);
+        req = crate::headers::add_header(Some(self.indexing_directive()), req);
         req = AllowTentativeWritesOption::add_header(self, req);
 
         let serialized = serde_json::to_string(document)?;
