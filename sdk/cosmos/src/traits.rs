@@ -175,17 +175,9 @@ pub trait PartitionKeysSupport<'a> {
     fn with_partition_keys(self, partition_keys: &'a PartitionKeys) -> Self::O;
 }
 
-pub trait TriggerOperationRequired {
-    fn trigger_operation(&self) -> trigger::TriggerOperation;
-}
-
 pub trait TriggerOperationSupport {
     type O;
     fn with_trigger_operation(self, a: trigger::TriggerOperation) -> Self::O;
-}
-
-pub trait TriggerTypeRequired {
-    fn trigger_type(&self) -> trigger::TriggerType;
 }
 
 pub trait TriggerTypeSupport {
@@ -280,17 +272,9 @@ pub trait CollectionNameSupport<'a> {
     fn with_collection_name(self, collection_name: &'a str) -> Self::O;
 }
 
-pub trait CollectionRequired<'a> {
-    fn collection(&self) -> &'a Collection;
-}
-
 pub trait CollectionSupport<'a> {
     type O;
     fn with_collection(self, collection: &'a Collection) -> Self::O;
-}
-
-pub trait IndexingPolicyRequired<'a> {
-    fn indexing_policy(&self) -> &'a IndexingPolicy;
 }
 
 pub trait IndexingPolicySupport<'a> {

@@ -96,8 +96,8 @@ where
     }
 }
 
-impl<'a, OfferSet, CollectionNameSet, PartitionKeySet> IndexingPolicyRequired<'a>
-    for CreateCollectionBuilder<'a, OfferSet, CollectionNameSet, Yes, PartitionKeySet>
+impl<'a, OfferSet, CollectionNameSet, PartitionKeySet>
+    CreateCollectionBuilder<'a, OfferSet, CollectionNameSet, Yes, PartitionKeySet>
 where
     OfferSet: ToAssign,
     CollectionNameSet: ToAssign,
