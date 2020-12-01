@@ -53,6 +53,10 @@ impl<'a, 'b> ExecuteStoredProcedureBuilder<'a, 'b> {
     fn activity_id(&self) -> Option<azure_core::ActivityId<'b>> {
         self.activity_id
     }
+
+    fn partition_keys(&self) -> Option<&'b PartitionKeys> {
+        self.partition_keys
+    }
 }
 
 impl<'a, 'b> ExecuteStoredProcedureBuilder<'a, 'b> {
@@ -64,12 +68,6 @@ impl<'a, 'b> ExecuteStoredProcedureBuilder<'a, 'b> {
 impl<'a, 'b> AllowTentativeWritesOption for ExecuteStoredProcedureBuilder<'a, 'b> {
     fn allow_tentative_writes(&self) -> bool {
         self.allow_tentative_writes
-    }
-}
-
-impl<'a, 'b> PartitionKeysOption<'b> for ExecuteStoredProcedureBuilder<'a, 'b> {
-    fn partition_keys(&self) -> Option<&'b PartitionKeys> {
-        self.partition_keys
     }
 }
 
@@ -156,7 +154,7 @@ impl<'a, 'b> ExecuteStoredProcedureBuilder<'a, 'b> {
         let request = crate::headers::add_header(self.activity_id(), request);
         let request = crate::headers::add_header(self.consistency_level(), request);
         let request = AllowTentativeWritesOption::add_header(self, request);
-        let request = PartitionKeysOption::add_header(self, request);
+        let request = crate::headers::add_header(self.partition_keys(), request);
 
         let request = request.header(http::header::CONTENT_TYPE, "application/json");
 

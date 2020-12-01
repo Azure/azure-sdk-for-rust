@@ -55,11 +55,21 @@ where
     fn trigger_client(&self) -> &'a TriggerClient {
         self.trigger_client
     }
+
+    fn consistency_level(&self) -> Option<ConsistencyLevel> {
+        self.consistency_level.clone()
+    }
+
+    fn user_agent(&self) -> Option<azure_core::UserAgent<'a>> {
+        self.user_agent
+    }
+
+    fn activity_id(&self) -> Option<azure_core::ActivityId<'a>> {
+        self.activity_id
+    }
 }
 
-//set mandatory no traits methods
-impl<'a, TriggerTypeSet, BodySet> TriggerOperationRequired
-    for CreateOrReplaceTriggerBuilder<'a, Yes, TriggerTypeSet, BodySet>
+impl<'a, TriggerTypeSet, BodySet> CreateOrReplaceTriggerBuilder<'a, Yes, TriggerTypeSet, BodySet>
 where
     TriggerTypeSet: ToAssign,
     BodySet: ToAssign,
@@ -69,8 +79,8 @@ where
     }
 }
 
-impl<'a, TriggerOperationSet, BodySet> TriggerTypeRequired
-    for CreateOrReplaceTriggerBuilder<'a, TriggerOperationSet, Yes, BodySet>
+impl<'a, TriggerOperationSet, BodySet>
+    CreateOrReplaceTriggerBuilder<'a, TriggerOperationSet, Yes, BodySet>
 where
     TriggerOperationSet: ToAssign,
     BodySet: ToAssign,
@@ -88,42 +98,6 @@ where
 {
     fn body(&self) -> &'a str {
         self.body.unwrap()
-    }
-}
-
-impl<'a, TriggerOperationSet, TriggerTypeSet, BodySet>
-    CreateOrReplaceTriggerBuilder<'a, TriggerOperationSet, TriggerTypeSet, BodySet>
-where
-    TriggerOperationSet: ToAssign,
-    TriggerTypeSet: ToAssign,
-    BodySet: ToAssign,
-{
-    fn user_agent(&self) -> Option<azure_core::UserAgent<'a>> {
-        self.user_agent
-    }
-}
-
-impl<'a, TriggerOperationSet, TriggerTypeSet, BodySet>
-    CreateOrReplaceTriggerBuilder<'a, TriggerOperationSet, TriggerTypeSet, BodySet>
-where
-    TriggerOperationSet: ToAssign,
-    TriggerTypeSet: ToAssign,
-    BodySet: ToAssign,
-{
-    fn activity_id(&self) -> Option<azure_core::ActivityId<'a>> {
-        self.activity_id
-    }
-}
-
-impl<'a, TriggerOperationSet, TriggerTypeSet, BodySet>
-    CreateOrReplaceTriggerBuilder<'a, TriggerOperationSet, TriggerTypeSet, BodySet>
-where
-    TriggerOperationSet: ToAssign,
-    TriggerTypeSet: ToAssign,
-    BodySet: ToAssign,
-{
-    fn consistency_level(&self) -> Option<ConsistencyLevel> {
-        self.consistency_level.clone()
     }
 }
 

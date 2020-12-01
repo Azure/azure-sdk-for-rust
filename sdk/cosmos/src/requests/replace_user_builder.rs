@@ -39,38 +39,22 @@ where
     pub fn user_client(&self) -> &'a UserClient {
         self.user_client
     }
+
+    fn user_agent(&self) -> Option<azure_core::UserAgent<'b>> {
+        self.user_agent
+    }
+
+    fn activity_id(&self) -> Option<azure_core::ActivityId<'b>> {
+        self.activity_id
+    }
+    fn consistency_level(&self) -> Option<ConsistencyLevel> {
+        self.consistency_level.clone()
+    }
 }
 
 impl<'a, 'b> UserNameRequired<'a> for ReplaceUserBuilder<'a, 'b, Yes> {
     fn user_name(&self) -> &'a str {
         self.user_name.unwrap()
-    }
-}
-
-impl<'a, 'b, UserNameSet> ReplaceUserBuilder<'a, 'b, UserNameSet>
-where
-    UserNameSet: ToAssign,
-{
-    fn user_agent(&self) -> Option<azure_core::UserAgent<'b>> {
-        self.user_agent
-    }
-}
-
-impl<'a, 'b, UserNameSet> ReplaceUserBuilder<'a, 'b, UserNameSet>
-where
-    UserNameSet: ToAssign,
-{
-    fn activity_id(&self) -> Option<azure_core::ActivityId<'b>> {
-        self.activity_id
-    }
-}
-
-impl<'a, 'b, UserNameSet> ReplaceUserBuilder<'a, 'b, UserNameSet>
-where
-    UserNameSet: ToAssign,
-{
-    fn consistency_level(&self) -> Option<ConsistencyLevel> {
-        self.consistency_level.clone()
     }
 }
 

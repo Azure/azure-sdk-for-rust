@@ -83,7 +83,7 @@ where
     }
 }
 
-impl<'a, 'b> QueryRequired<'b> for QueryDocumentsBuilder<'a, 'b, Yes> {
+impl<'a, 'b> QueryDocumentsBuilder<'a, 'b, Yes> {
     fn query(&self) -> &'b Query<'b> {
         self.query.unwrap()
     }
@@ -96,39 +96,15 @@ where
     fn if_match_condition(&self) -> Option<IfMatchCondition<'b>> {
         self.if_match_condition
     }
-}
 
-impl<'a, 'b, QuerySet> IfModifiedSinceOption<'b> for QueryDocumentsBuilder<'a, 'b, QuerySet>
-where
-    QuerySet: ToAssign,
-{
-    fn if_modified_since(&self) -> Option<&'b DateTime<Utc>> {
-        self.if_modified_since
-    }
-}
-
-impl<'a, 'b, QuerySet> QueryDocumentsBuilder<'a, 'b, QuerySet>
-where
-    QuerySet: ToAssign,
-{
     fn user_agent(&self) -> Option<azure_core::UserAgent<'b>> {
         self.user_agent
     }
-}
 
-impl<'a, 'b, QuerySet> QueryDocumentsBuilder<'a, 'b, QuerySet>
-where
-    QuerySet: ToAssign,
-{
     fn activity_id(&self) -> Option<azure_core::ActivityId<'b>> {
         self.activity_id
     }
-}
 
-impl<'a, 'b, QuerySet> QueryDocumentsBuilder<'a, 'b, QuerySet>
-where
-    QuerySet: ToAssign,
-{
     fn consistency_level(&self) -> Option<ConsistencyLevel> {
         self.consistency_level.clone()
     }
@@ -143,6 +119,15 @@ where
     }
 }
 
+impl<'a, 'b, QuerySet> IfModifiedSinceOption<'b> for QueryDocumentsBuilder<'a, 'b, QuerySet>
+where
+    QuerySet: ToAssign,
+{
+    fn if_modified_since(&self) -> Option<&'b DateTime<Utc>> {
+        self.if_modified_since
+    }
+}
+
 impl<'a, 'b, QuerySet> MaxItemCountOption for QueryDocumentsBuilder<'a, 'b, QuerySet>
 where
     QuerySet: ToAssign,
@@ -152,7 +137,7 @@ where
     }
 }
 
-impl<'a, 'b, QuerySet> PartitionKeysOption<'b> for QueryDocumentsBuilder<'a, 'b, QuerySet>
+impl<'a, 'b, QuerySet> QueryDocumentsBuilder<'a, 'b, QuerySet>
 where
     QuerySet: ToAssign,
 {
@@ -376,7 +361,7 @@ impl<'a, 'b> QueryDocumentsBuilder<'a, 'b, Yes> {
         let req = crate::headers::add_header(self.consistency_level(), req);
         let req = ContinuationOption::add_header(self, req);
         let req = MaxItemCountOption::add_header(self, req);
-        let req = PartitionKeysOption::add_header(self, req);
+        let req = crate::headers::add_header(self.partition_keys(), req);
         let req = QueryCrossPartitionOption::add_header(self, req);
 
         let body = serde_json::to_string(self.query())?;

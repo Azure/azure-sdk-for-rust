@@ -166,10 +166,6 @@ pub trait PartitionKeySupport<'a> {
     fn with_partition_key(self, partition_key: &'a collection::PartitionKey) -> Self::O;
 }
 
-pub trait PartitionKeyOption<'a> {
-    fn partition_key(&self) -> Option<&'a collection::PartitionKey>;
-}
-
 pub trait PartitionKeyRequired<'a> {
     fn partition_key(&self) -> &'a collection::PartitionKey;
 }
@@ -200,20 +196,6 @@ pub trait TriggerTypeSupport {
 impl azure_core::AddAsHeader for &'_ PartitionKeys {
     fn add_as_header(&self, builder: Builder) -> Builder {
         headers::add_partition_keys_header(self, builder)
-    }
-}
-
-pub trait PartitionKeysOption<'a> {
-    fn partition_keys(&self) -> Option<&'a PartitionKeys>;
-
-    #[must_use]
-    fn add_header(&self, builder: Builder) -> Builder {
-        if let Some(partition_keys) = self.partition_keys() {
-            let serialized = partition_keys.to_json();
-            builder.header(headers::HEADER_DOCUMENTDB_PARTITIONKEY, serialized)
-        } else {
-            builder
-        }
     }
 }
 
@@ -323,10 +305,6 @@ pub trait DocumentIdRequired<'a> {
 pub trait DocumentIdSupport<'a> {
     type O;
     fn with_document_id(self, document_id: &'a str) -> Self::O;
-}
-
-pub trait QueryRequired<'a> {
-    fn query(&self) -> &'a Query<'a>;
 }
 
 pub trait QuerySupport<'a> {
