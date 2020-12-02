@@ -26,9 +26,9 @@ impl<'a, 'b> ReplaceCollectionBuilder<'a, 'b, No, No> {
     pub(crate) fn new(collection_client: &'a CollectionClient) -> Self {
         Self {
             collection_client,
-            p_partition_key: PhantomData {},
+            p_partition_key: PhantomData,
             partition_key: None,
-            p_indexing_policy: PhantomData {},
+            p_indexing_policy: PhantomData,
             indexing_policy: None,
             user_agent: None,
             activity_id: None,
@@ -158,8 +158,8 @@ where
     ) -> ReplaceCollectionBuilder<'a, 'b, Yes, IndexingPolicySet> {
         ReplaceCollectionBuilder {
             collection_client: self.collection_client,
-            p_partition_key: PhantomData {},
-            p_indexing_policy: PhantomData {},
+            p_partition_key: PhantomData,
+            p_indexing_policy: PhantomData,
             partition_key: Some(partition_key),
             indexing_policy: self.indexing_policy,
             user_agent: self.user_agent,
@@ -179,8 +179,8 @@ where
     ) -> ReplaceCollectionBuilder<'a, 'b, PartitionKeysSet, Yes> {
         ReplaceCollectionBuilder {
             collection_client: self.collection_client,
-            p_partition_key: PhantomData {},
-            p_indexing_policy: PhantomData {},
+            p_partition_key: PhantomData,
+            p_indexing_policy: PhantomData,
             partition_key: self.partition_key,
             indexing_policy: Some(indexing_policy),
             user_agent: self.user_agent,

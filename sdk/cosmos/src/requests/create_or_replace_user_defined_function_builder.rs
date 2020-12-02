@@ -32,7 +32,7 @@ impl<'a, 'b> CreateOrReplaceUserDefinedFunctionBuilder<'a, 'b, No> {
             user_agent: None,
             activity_id: None,
             consistency_level: None,
-            p_body: PhantomData {},
+            p_body: PhantomData,
         }
     }
 }
@@ -97,7 +97,7 @@ impl<'a, 'b> CreateOrReplaceUserDefinedFunctionBuilder<'a, 'b, No> {
             user_agent: self.user_agent,
             activity_id: self.activity_id,
             consistency_level: self.consistency_level,
-            p_body: PhantomData {},
+            p_body: PhantomData,
         }
     }
 }

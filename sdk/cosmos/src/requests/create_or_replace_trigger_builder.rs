@@ -31,11 +31,11 @@ impl<'a> CreateOrReplaceTriggerBuilder<'a, No, No, No> {
         Self {
             trigger_client,
             is_create,
-            p_trigger_operation: PhantomData {},
+            p_trigger_operation: PhantomData,
             trigger_operation: TriggerOperation::All,
-            p_trigger_type: PhantomData {},
+            p_trigger_type: PhantomData,
             trigger_type: TriggerType::Pre,
-            p_body: PhantomData {},
+            p_body: PhantomData,
             body: None,
             user_agent: None,
             activity_id: None,
@@ -142,9 +142,9 @@ where
             user_agent: self.user_agent,
             activity_id: self.activity_id,
             consistency_level: self.consistency_level,
-            p_trigger_operation: PhantomData {},
-            p_trigger_type: PhantomData {},
-            p_body: PhantomData {},
+            p_trigger_operation: PhantomData,
+            p_trigger_type: PhantomData,
+            p_body: PhantomData,
         }
     }
 }
@@ -168,9 +168,9 @@ where
             user_agent: self.user_agent,
             activity_id: self.activity_id,
             consistency_level: self.consistency_level,
-            p_trigger_operation: PhantomData {},
-            p_trigger_type: PhantomData {},
-            p_body: PhantomData {},
+            p_trigger_operation: PhantomData,
+            p_trigger_type: PhantomData,
+            p_body: PhantomData,
         }
     }
 }
@@ -194,9 +194,9 @@ where
             user_agent: self.user_agent,
             activity_id: self.activity_id,
             consistency_level: self.consistency_level,
-            p_trigger_operation: PhantomData {},
-            p_trigger_type: PhantomData {},
-            p_body: PhantomData {},
+            p_trigger_operation: PhantomData,
+            p_trigger_type: PhantomData,
+            p_body: PhantomData,
         }
     }
 }

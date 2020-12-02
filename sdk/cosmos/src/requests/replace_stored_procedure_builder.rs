@@ -22,7 +22,7 @@ impl<'a, 'b> ReplaceStoredProcedureBuilder<'a, 'b, No> {
     pub(crate) fn new(stored_procedure_client: &'a StoredProcedureClient) -> Self {
         Self {
             stored_procedure_client,
-            p_body: PhantomData {},
+            p_body: PhantomData,
             body: None,
             user_agent: None,
             activity_id: None,
@@ -120,7 +120,7 @@ impl<'a, 'b> ReplaceStoredProcedureBuilder<'a, 'b, No> {
     pub fn with_body(self, body: &'b str) -> ReplaceStoredProcedureBuilder<'a, 'b, Yes> {
         ReplaceStoredProcedureBuilder {
             stored_procedure_client: self.stored_procedure_client,
-            p_body: PhantomData {},
+            p_body: PhantomData,
             body: Some(body),
             user_agent: self.user_agent,
             activity_id: self.activity_id,

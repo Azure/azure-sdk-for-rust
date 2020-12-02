@@ -86,7 +86,7 @@ impl<'a> CreateDatabaseBuilder<'a, No> {
             user_agent: self.user_agent,
             activity_id: self.activity_id,
             consistency_level: self.consistency_level,
-            p_database_name: PhantomData {},
+            p_database_name: PhantomData,
         }
     }
 }

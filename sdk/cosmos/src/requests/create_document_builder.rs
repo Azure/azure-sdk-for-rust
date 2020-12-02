@@ -41,7 +41,7 @@ impl<'a, 'b> CreateDocumentBuilder<'a, 'b, No> {
             activity_id: None,
             consistency_level: None,
             allow_tentative_writes: TenativeWritesAllowance::Deny,
-            p_partition_keys: PhantomData {},
+            p_partition_keys: PhantomData,
         }
     }
 }
@@ -177,7 +177,7 @@ impl<'a, 'b> CreateDocumentBuilder<'a, 'b, No> {
             activity_id: self.activity_id,
             consistency_level: self.consistency_level,
             allow_tentative_writes: self.allow_tentative_writes,
-            p_partition_keys: PhantomData {},
+            p_partition_keys: PhantomData,
         }
     }
 }

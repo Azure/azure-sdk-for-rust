@@ -22,7 +22,7 @@ impl<'a, 'b> ReplaceUserBuilder<'a, 'b, No> {
     pub(crate) fn new(user_client: &'a UserClient) -> ReplaceUserBuilder<'a, 'b, No> {
         Self {
             user_client,
-            p_user_name: PhantomData {},
+            p_user_name: PhantomData,
             user_name: None,
             user_agent: None,
             activity_id: None,
@@ -124,7 +124,7 @@ impl<'a, 'b> ReplaceUserBuilder<'a, 'b, No> {
             user_agent: self.user_agent,
             activity_id: self.activity_id,
             consistency_level: self.consistency_level,
-            p_user_name: PhantomData {},
+            p_user_name: PhantomData,
         }
     }
 }

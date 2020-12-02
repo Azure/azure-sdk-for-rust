@@ -33,8 +33,8 @@ impl<'a, 'b> CreateSlugAttachmentBuilder<'a, 'b, No, No> {
             user_agent: None,
             activity_id: None,
             consistency_level: None,
-            p_content_type: PhantomData {},
-            p_body: PhantomData {},
+            p_content_type: PhantomData,
+            p_body: PhantomData,
         }
     }
 }
@@ -112,8 +112,8 @@ where
     ) -> CreateSlugAttachmentBuilder<'a, 'b, Yes, ContentTypeSet> {
         CreateSlugAttachmentBuilder {
             attachment_client: self.attachment_client,
-            p_body: PhantomData {},
-            p_content_type: PhantomData {},
+            p_body: PhantomData,
+            p_content_type: PhantomData,
             body: Some(body),
             content_type: self.content_type,
             if_match_condition: self.if_match_condition,
@@ -134,8 +134,8 @@ where
     ) -> CreateSlugAttachmentBuilder<'a, 'b, BodySet, Yes> {
         CreateSlugAttachmentBuilder {
             attachment_client: self.attachment_client,
-            p_body: PhantomData {},
-            p_content_type: PhantomData {},
+            p_body: PhantomData,
+            p_content_type: PhantomData,
             body: self.body,
             content_type: Some(ContentType::new(content_type)),
             if_match_condition: self.if_match_condition,

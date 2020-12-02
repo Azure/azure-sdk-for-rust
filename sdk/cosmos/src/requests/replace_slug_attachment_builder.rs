@@ -27,9 +27,9 @@ impl<'a, 'b> ReplaceSlugAttachmentBuilder<'a, 'b, No, No> {
     pub(crate) fn new(attachment_client: &'a AttachmentClient) -> Self {
         Self {
             attachment_client,
-            p_body: PhantomData {},
+            p_body: PhantomData,
             body: None,
-            p_content_type: PhantomData {},
+            p_content_type: PhantomData,
             content_type: None,
             if_match_condition: None,
             user_agent: None,
@@ -155,8 +155,8 @@ where
     ) -> ReplaceSlugAttachmentBuilder<'a, 'b, Yes, ContentTypeSet> {
         ReplaceSlugAttachmentBuilder {
             attachment_client: self.attachment_client,
-            p_body: PhantomData {},
-            p_content_type: PhantomData {},
+            p_body: PhantomData,
+            p_content_type: PhantomData,
             body: Some(body),
             content_type: self.content_type,
             if_match_condition: self.if_match_condition,
@@ -177,8 +177,8 @@ where
     ) -> ReplaceSlugAttachmentBuilder<'a, 'b, BodySet, Yes> {
         ReplaceSlugAttachmentBuilder {
             attachment_client: self.attachment_client,
-            p_body: PhantomData {},
-            p_content_type: PhantomData {},
+            p_body: PhantomData,
+            p_content_type: PhantomData,
             body: self.body,
 
             content_type: Some(ContentType::new(content_type)),

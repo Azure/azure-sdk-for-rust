@@ -35,7 +35,7 @@ impl<'a, 'b> QueryDocumentsBuilder<'a, 'b, No> {
     pub(crate) fn new(collection_client: &'a CollectionClient) -> Self {
         Self {
             collection_client,
-            p_query: PhantomData {},
+            p_query: PhantomData,
             query: None,
             if_match_condition: None,
             if_modified_since: None,
@@ -302,7 +302,7 @@ impl<'a, 'b> QueryDocumentsBuilder<'a, 'b, No> {
             partition_keys: self.partition_keys,
             query_cross_partition: self.query_cross_partition,
             parallelize_cross_partition_query: self.parallelize_cross_partition_query,
-            p_query: PhantomData {},
+            p_query: PhantomData,
         }
     }
 }

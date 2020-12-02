@@ -25,9 +25,9 @@ impl<'a, 'b> CreateReferenceAttachmentBuilder<'a, 'b, No, No> {
     pub(crate) fn new(attachment_client: &'a AttachmentClient) -> Self {
         Self {
             attachment_client,
-            p_content_type: PhantomData {},
+            p_content_type: PhantomData,
             content_type: None,
-            p_media: PhantomData {},
+            p_media: PhantomData,
             media: None,
             user_agent: None,
             activity_id: None,
@@ -107,8 +107,8 @@ where
     ) -> CreateReferenceAttachmentBuilder<'a, 'b, Yes, MediaSet> {
         CreateReferenceAttachmentBuilder {
             attachment_client: self.attachment_client,
-            p_content_type: PhantomData {},
-            p_media: PhantomData {},
+            p_content_type: PhantomData,
+            p_media: PhantomData,
             content_type: Some(ContentType::new(content_type)),
             media: self.media,
             user_agent: self.user_agent,
@@ -133,8 +133,8 @@ where
             user_agent: self.user_agent,
             activity_id: self.activity_id,
             consistency_level: self.consistency_level,
-            p_content_type: PhantomData {},
-            p_media: PhantomData {},
+            p_content_type: PhantomData,
+            p_media: PhantomData,
         }
     }
 }

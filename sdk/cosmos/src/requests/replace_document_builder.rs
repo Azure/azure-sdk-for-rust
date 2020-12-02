@@ -228,8 +228,8 @@ where
             activity_id: self.activity_id,
             consistency_level: self.consistency_level,
             allow_tentative_writes: self.allow_tentative_writes,
-            p_partition_keys: PhantomData {},
-            p_document_id: PhantomData {},
+            p_partition_keys: PhantomData,
+            p_document_id: PhantomData,
         }
     }
 }
@@ -244,8 +244,8 @@ where
     ) -> ReplaceDocumentBuilder<'a, 'b, PartitionKeysSet, Yes> {
         ReplaceDocumentBuilder {
             collection_client: self.collection_client,
-            p_partition_keys: PhantomData {},
-            p_document_id: PhantomData {},
+            p_partition_keys: PhantomData,
+            p_document_id: PhantomData,
             partition_keys: self.partition_keys,
             document_id: Some(document_id),
             indexing_directive: self.indexing_directive,
