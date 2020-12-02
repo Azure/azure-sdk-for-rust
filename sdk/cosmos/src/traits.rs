@@ -1,7 +1,6 @@
 use crate::resources::*;
 use crate::{headers, ConsistencyLevel, PartitionKeys};
-use collection::*;
-use document::{IndexingDirective, Query};
+use document::IndexingDirective;
 use http::request::Builder;
 
 pub trait QueryCrossPartitionSupport {
@@ -226,54 +225,4 @@ pub trait ExpirySecondsOption {
 pub trait ExpirySecondsSupport {
     type O;
     fn with_expiry_seconds(self, expiry_seconds: u64) -> Self::O;
-}
-
-pub trait DatabaseSupport<'a> {
-    type O;
-    fn with_database(self, database: &'a str) -> Self::O;
-}
-
-pub trait StoredProcedureNameSupport<'a> {
-    type O;
-    fn with_stored_procedure_name(self, stored_procedure_name: &'a str) -> Self::O;
-}
-
-pub trait OfferSupport {
-    type O;
-    fn with_offer(self, offer: Offer) -> Self::O;
-}
-
-pub trait CollectionNameSupport<'a> {
-    type O;
-    fn with_collection_name(self, collection_name: &'a str) -> Self::O;
-}
-
-pub trait CollectionSupport<'a> {
-    type O;
-    fn with_collection(self, collection: &'a Collection) -> Self::O;
-}
-
-pub trait IndexingPolicySupport<'a> {
-    type O;
-    fn with_indexing_policy(self, offer: &'a IndexingPolicy) -> Self::O;
-}
-
-pub trait DocumentIdSupport<'a> {
-    type O;
-    fn with_document_id(self, document_id: &'a str) -> Self::O;
-}
-
-pub trait QuerySupport<'a> {
-    type O;
-    fn with_query(self, query: &'a Query<'a>) -> Self::O;
-}
-
-pub trait DatabaseNameSupport<'a> {
-    type O;
-    fn with_database_name(self, database_name: &'a str) -> Self::O;
-}
-
-pub trait UserNameSupport<'a> {
-    type O;
-    fn with_user_name(self, user_name: &'a str) -> Self::O;
 }

@@ -57,17 +57,15 @@ impl<'a, 'b> ReplaceUserBuilder<'a, 'b, Yes> {
     }
 }
 
-impl<'a, 'b> UserNameSupport<'a> for ReplaceUserBuilder<'a, 'b, No> {
-    type O = ReplaceUserBuilder<'a, 'b, Yes>;
-
-    fn with_user_name(self, user_name: &'a str) -> Self::O {
+impl<'a, 'b> ReplaceUserBuilder<'a, 'b, No> {
+    pub fn with_user_name(self, user_name: &'a str) -> ReplaceUserBuilder<'a, 'b, Yes> {
         ReplaceUserBuilder {
-            user_client: self.user_client,
-            p_user_name: PhantomData {},
             user_name: Some(user_name),
+            user_client: self.user_client,
             user_agent: self.user_agent,
             activity_id: self.activity_id,
             consistency_level: self.consistency_level,
+            p_user_name: PhantomData {},
         }
     }
 }
@@ -96,7 +94,7 @@ where
     }
 }
 
-impl<'a, 'b, UserNameSet>  ReplaceUserBuilder<'a, 'b, UserNameSet>
+impl<'a, 'b, UserNameSet> ReplaceUserBuilder<'a, 'b, UserNameSet>
 where
     UserNameSet: ToAssign,
 {

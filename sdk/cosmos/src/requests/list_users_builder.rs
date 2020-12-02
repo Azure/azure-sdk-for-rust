@@ -33,18 +33,6 @@ impl<'a, 'b> ListUsersBuilder<'a, 'b> {
     pub fn database_client(&self) -> &'a DatabaseClient {
         self.database_client
     }
-
-    fn user_agent(&self) -> Option<azure_core::UserAgent<'b>> {
-        self.user_agent
-    }
-
-    fn activity_id(&self) -> Option<azure_core::ActivityId<'b>> {
-        self.activity_id
-    }
-
-    fn consistency_level(&self) -> Option<ConsistencyLevel> {
-        self.consistency_level.clone()
-    }
 }
 
 impl<'a, 'b> ContinuationOption<'b> for ListUsersBuilder<'a, 'b> {
@@ -77,7 +65,7 @@ impl<'a, 'b> ListUsersBuilder<'a, 'b> {
     }
 }
 
-impl<'a, 'b>  ListUsersBuilder<'a, 'b> {
+impl<'a, 'b> ListUsersBuilder<'a, 'b> {
     pub fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self {
         Self {
             consistency_level: Some(consistency_level),

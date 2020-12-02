@@ -165,14 +165,11 @@ where
     }
 }
 
-impl<'a, 'b> QuerySupport<'b> for QueryDocumentsBuilder<'a, 'b, No> {
-    type O = QueryDocumentsBuilder<'a, 'b, Yes>;
-
-    fn with_query(self, query: &'b Query<'b>) -> Self::O {
+impl<'a, 'b> QueryDocumentsBuilder<'a, 'b, No> {
+    pub fn with_query(self, query: &'b Query<'b>) -> QueryDocumentsBuilder<'a, 'b, Yes> {
         QueryDocumentsBuilder {
-            collection_client: self.collection_client,
-            p_query: PhantomData {},
             query: Some(query),
+            collection_client: self.collection_client,
             if_match_condition: self.if_match_condition,
             if_modified_since: self.if_modified_since,
             user_agent: self.user_agent,
@@ -183,6 +180,7 @@ impl<'a, 'b> QuerySupport<'b> for QueryDocumentsBuilder<'a, 'b, No> {
             partition_keys: self.partition_keys,
             query_cross_partition: self.query_cross_partition,
             parallelize_cross_partition_query: self.parallelize_cross_partition_query,
+            p_query: PhantomData {},
         }
     }
 }

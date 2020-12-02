@@ -180,14 +180,14 @@ where
     }
 }
 
-impl<'a, 'b, PartitionKeysSet> DocumentIdSupport<'b>
-    for ReplaceDocumentBuilder<'a, 'b, PartitionKeysSet, No>
+impl<'a, 'b, PartitionKeysSet> ReplaceDocumentBuilder<'a, 'b, PartitionKeysSet, No>
 where
     PartitionKeysSet: ToAssign,
 {
-    type O = ReplaceDocumentBuilder<'a, 'b, PartitionKeysSet, Yes>;
-
-    fn with_document_id(self, document_id: &'b str) -> Self::O {
+    pub fn with_document_id(
+        self,
+        document_id: &'b str,
+    ) -> ReplaceDocumentBuilder<'a, 'b, PartitionKeysSet, Yes> {
         ReplaceDocumentBuilder {
             collection_client: self.collection_client,
             p_partition_keys: PhantomData {},

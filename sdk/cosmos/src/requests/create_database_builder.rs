@@ -59,17 +59,15 @@ impl<'a> CreateDatabaseBuilder<'a, Yes> {
     }
 }
 
-impl<'a> DatabaseNameSupport<'a> for CreateDatabaseBuilder<'a, No> {
-    type O = CreateDatabaseBuilder<'a, Yes>;
-
-    fn with_database_name(self, database_name: &'a str) -> Self::O {
+impl<'a> CreateDatabaseBuilder<'a, No> {
+    pub fn with_database_name(self, database_name: &'a str) -> CreateDatabaseBuilder<'a, Yes> {
         CreateDatabaseBuilder {
-            cosmos_client: self.cosmos_client,
-            p_database_name: PhantomData {},
             database_name: Some(database_name),
+            cosmos_client: self.cosmos_client,
             user_agent: self.user_agent,
             activity_id: self.activity_id,
             consistency_level: self.consistency_level,
+            p_database_name: PhantomData {},
         }
     }
 }

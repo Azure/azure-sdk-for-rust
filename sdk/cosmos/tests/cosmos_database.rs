@@ -1,5 +1,4 @@
 #![cfg(all(test, feature = "test_e2e"))]
-use azure_cosmos::prelude::*;
 
 mod setup;
 

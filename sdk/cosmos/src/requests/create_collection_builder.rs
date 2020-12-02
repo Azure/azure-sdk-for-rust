@@ -156,29 +156,30 @@ where
     }
 }
 
-impl<'a, OfferSet, IndexingPolicySet, PartitionKeySet> CollectionNameSupport<'a>
-    for CreateCollectionBuilder<'a, OfferSet, No, IndexingPolicySet, PartitionKeySet>
+impl<'a, OfferSet, IndexingPolicySet, PartitionKeySet>
+    CreateCollectionBuilder<'a, OfferSet, No, IndexingPolicySet, PartitionKeySet>
 where
     OfferSet: ToAssign,
     IndexingPolicySet: ToAssign,
     PartitionKeySet: ToAssign,
 {
-    type O = CreateCollectionBuilder<'a, OfferSet, Yes, IndexingPolicySet, PartitionKeySet>;
-
-    fn with_collection_name(self, collection_name: &'a str) -> Self::O {
+    pub fn with_collection_name(
+        self,
+        collection_name: &'a str,
+    ) -> CreateCollectionBuilder<'a, OfferSet, Yes, IndexingPolicySet, PartitionKeySet> {
         CreateCollectionBuilder {
-            database_client: self.database_client,
-            p_offer: PhantomData {},
-            p_collection_name: PhantomData {},
-            p_indexing_policy: PhantomData {},
-            p_partition_key: PhantomData {},
-            offer: self.offer,
             collection_name: Some(collection_name),
+            database_client: self.database_client,
+            offer: self.offer,
             indexing_policy: self.indexing_policy,
             partition_key: self.partition_key,
             user_agent: self.user_agent,
             activity_id: self.activity_id,
             consistency_level: self.consistency_level,
+            p_offer: PhantomData {},
+            p_collection_name: PhantomData {},
+            p_indexing_policy: PhantomData {},
+            p_partition_key: PhantomData {},
         }
     }
 }
