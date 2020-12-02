@@ -1,7 +1,5 @@
 use serde::{Deserialize, Serialize};
-// Using the prelude module of the Cosmos crate makes easier to use the Rust Azure SDK for Cosmos
-// DB.
-use azure_core::prelude::*;
+// Using the prelude module of the Cosmos crate makes easier to use the Rust Azure SDK for Cosmos.
 use azure_core::HttpClient;
 use azure_cosmos::prelude::*;
 use futures::stream::StreamExt;

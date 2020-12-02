@@ -28,6 +28,8 @@ impl<'a, 'b> ReplacePermissionBuilder<'a, 'b> {
         self.permission_client
     }
 
+    // TODO: Use this in request
+    #[allow(unused)]
     fn expiry_seconds(&self) -> ExpirySeconds {
         self.expiry_seconds
     }

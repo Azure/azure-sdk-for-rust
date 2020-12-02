@@ -32,6 +32,8 @@ impl<'a, 'b> ListUsersBuilder<'a, 'b> {
         self.database_client
     }
 
+    // TODO: Use this in request
+    #[allow(unused)]
     fn max_item_count(&self) -> MaxItemCount {
         self.max_item_count
     }

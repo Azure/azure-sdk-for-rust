@@ -87,6 +87,8 @@ where
         self.query_cross_partition
     }
 
+    // TODO: Use this in request
+    #[allow(unused)]
     fn parallelize_cross_partition_query(&self) -> ParallelizeCrossPartition {
         self.parallelize_cross_partition_query
     }
