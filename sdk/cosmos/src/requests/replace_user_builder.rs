@@ -49,55 +49,21 @@ where
     fn consistency_level(&self) -> Option<ConsistencyLevel> {
         self.consistency_level.clone()
     }
-}
 
-impl<'a, 'b> ReplaceUserBuilder<'a, 'b, Yes> {
-    fn user_name(&self) -> &'a str {
-        self.user_name.unwrap()
-    }
-}
-
-impl<'a, 'b> ReplaceUserBuilder<'a, 'b, No> {
-    pub fn with_user_name(self, user_name: &'a str) -> ReplaceUserBuilder<'a, 'b, Yes> {
-        ReplaceUserBuilder {
-            user_name: Some(user_name),
-            user_client: self.user_client,
-            user_agent: self.user_agent,
-            activity_id: self.activity_id,
-            consistency_level: self.consistency_level,
-            p_user_name: PhantomData {},
-        }
-    }
-}
-
-impl<'a, 'b, UserNameSet> ReplaceUserBuilder<'a, 'b, UserNameSet>
-where
-    UserNameSet: ToAssign,
-{
     pub fn with_user_agent(self, user_agent: &'b str) -> Self {
         Self {
             user_agent: Some(azure_core::UserAgent::new(user_agent)),
             ..self
         }
     }
-}
 
-impl<'a, 'b, UserNameSet> ReplaceUserBuilder<'a, 'b, UserNameSet>
-where
-    UserNameSet: ToAssign,
-{
     pub fn with_activity_id(self, activity_id: &'b str) -> Self {
         Self {
             activity_id: Some(azure_core::ActivityId::new(activity_id)),
             ..self
         }
     }
-}
 
-impl<'a, 'b, UserNameSet> ReplaceUserBuilder<'a, 'b, UserNameSet>
-where
-    UserNameSet: ToAssign,
-{
     pub fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self {
         Self {
             consistency_level: Some(consistency_level),
@@ -106,7 +72,6 @@ where
     }
 }
 
-// methods callable only when every mandatory field has been filled
 impl<'a, 'b> ReplaceUserBuilder<'a, 'b, Yes> {
     pub async fn execute(&self) -> Result<Option<CreateUserResponse>, CosmosError> {
         trace!("ReplaceUserBuilder::execute called");
@@ -141,6 +106,25 @@ impl<'a, 'b> ReplaceUserBuilder<'a, 'b, Yes> {
             StatusCode::NOT_FOUND => Ok(None),
             StatusCode::OK => Ok(Some(response.try_into()?)),
             _ => unreachable!(),
+        }
+    }
+}
+
+impl<'a, 'b> ReplaceUserBuilder<'a, 'b, Yes> {
+    fn user_name(&self) -> &'a str {
+        self.user_name.unwrap()
+    }
+}
+
+impl<'a, 'b> ReplaceUserBuilder<'a, 'b, No> {
+    pub fn with_user_name(self, user_name: &'a str) -> ReplaceUserBuilder<'a, 'b, Yes> {
+        ReplaceUserBuilder {
+            user_name: Some(user_name),
+            user_client: self.user_client,
+            user_agent: self.user_agent,
+            activity_id: self.activity_id,
+            consistency_level: self.consistency_level,
+            p_user_name: PhantomData {},
         }
     }
 }

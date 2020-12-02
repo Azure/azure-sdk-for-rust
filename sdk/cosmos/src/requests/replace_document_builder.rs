@@ -46,6 +46,10 @@ impl<'a, 'b> ReplaceDocumentBuilder<'a, 'b, No, No> {
             allow_tentative_writes: TenativeWritesAllowance::Deny,
         }
     }
+
+    pub fn collection_client(&self) -> &'a CollectionClient {
+        self.collection_client
+    }
 }
 
 impl<'a, 'b, PartitionKeysSet, DocumentIdSet>
@@ -54,9 +58,136 @@ where
     PartitionKeysSet: ToAssign,
     DocumentIdSet: ToAssign,
 {
-    #[inline]
-    pub fn collection_client(&self) -> &'a CollectionClient {
-        self.collection_client
+    fn indexing_directive(&self) -> IndexingDirective {
+        self.indexing_directive
+    }
+
+    fn if_match_condition(&self) -> Option<IfMatchCondition<'b>> {
+        self.if_match_condition
+    }
+
+    fn user_agent(&self) -> Option<azure_core::UserAgent<'b>> {
+        self.user_agent
+    }
+
+    fn activity_id(&self) -> Option<azure_core::ActivityId<'b>> {
+        self.activity_id
+    }
+
+    fn consistency_level(&self) -> Option<ConsistencyLevel> {
+        self.consistency_level.clone()
+    }
+
+    fn allow_tentative_writes(&self) -> TenativeWritesAllowance {
+        self.allow_tentative_writes
+    }
+
+    pub fn with_indexing_directive(self, indexing_directive: IndexingDirective) -> Self {
+        Self {
+            indexing_directive,
+            ..self
+        }
+    }
+
+    pub fn with_if_match_condition(self, if_match_condition: IfMatchCondition<'b>) -> Self {
+        Self {
+            if_match_condition: Some(if_match_condition),
+            ..self
+        }
+    }
+
+    pub fn with_if_modified_since(self, if_modified_since: &'b DateTime<Utc>) -> Self {
+        Self {
+            if_modified_since: Some(if_modified_since),
+            ..self
+        }
+    }
+
+    pub fn with_user_agent(self, user_agent: &'b str) -> Self {
+        Self {
+            user_agent: Some(azure_core::UserAgent::new(user_agent)),
+            ..self
+        }
+    }
+
+    pub fn with_activity_id(self, activity_id: &'b str) -> Self {
+        Self {
+            activity_id: Some(azure_core::ActivityId::new(activity_id)),
+            ..self
+        }
+    }
+
+    pub fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self {
+        Self {
+            consistency_level: Some(consistency_level),
+            ..self
+        }
+    }
+
+    pub fn with_allow_tentative_writes(
+        self,
+        allow_tentative_writes: TenativeWritesAllowance,
+    ) -> Self {
+        Self {
+            allow_tentative_writes,
+            ..self
+        }
+    }
+}
+
+impl<'a, 'b> ReplaceDocumentBuilder<'a, 'b, Yes, Yes> {
+    pub async fn execute_with_document<T>(
+        &self,
+        document: &T,
+    ) -> Result<ReplaceDocumentResponse, CosmosError>
+    where
+        T: Serialize,
+    {
+        trace!("ReplaceDocumentBuilder::execute() called");
+
+        let req = self.collection_client.cosmos_client().prepare_request(
+            &format!(
+                "dbs/{}/colls/{}/docs/{}",
+                self.collection_client.database_client().database_name(),
+                self.collection_client.collection_name(),
+                self.document_id()
+            ),
+            http::Method::PUT,
+            ResourceType::Documents,
+        );
+
+        // add trait headers
+        let req = crate::headers::add_header(Some(self.indexing_directive()), req);
+        let req = crate::headers::add_header(self.if_match_condition(), req);
+        let req = IfModifiedSinceOption::add_header(self, req);
+        let req = crate::headers::add_header(self.user_agent(), req);
+        let req = crate::headers::add_header(self.activity_id(), req);
+        let req = crate::headers::add_header(self.consistency_level(), req);
+        let req = crate::headers::add_header(Some(self.partition_keys()), req);
+        let req = crate::headers::add_header(Some(self.allow_tentative_writes()), req);
+
+        let serialized = serde_json::to_string(document)?;
+
+        let req = req.body(serialized.as_bytes())?;
+        debug!("request == {:#?}", req);
+
+        Ok(self
+            .collection_client
+            .http_client()
+            .execute_request_check_status(req, StatusCode::OK)
+            .await?
+            .try_into()?)
+    }
+}
+
+impl<'a, 'b, PartitionKeysSet, DocumentIdSet> IfModifiedSinceOption<'b>
+    for ReplaceDocumentBuilder<'a, 'b, PartitionKeysSet, DocumentIdSet>
+where
+    PartitionKeysSet: ToAssign,
+    DocumentIdSet: ToAssign,
+{
+    fn if_modified_since(&self) -> Option<&'b DateTime<Utc>> {
+        self.if_modified_since
     }
 }
 
@@ -75,83 +206,6 @@ where
 {
     fn document_id(&self) -> &'b str {
         self.document_id.unwrap()
-    }
-}
-
-impl<'a, 'b, PartitionKeysSet, DocumentIdSet>
-    ReplaceDocumentBuilder<'a, 'b, PartitionKeysSet, DocumentIdSet>
-where
-    PartitionKeysSet: ToAssign,
-    DocumentIdSet: ToAssign,
-{
-    fn indexing_directive(&self) -> IndexingDirective {
-        self.indexing_directive
-    }
-}
-
-impl<'a, 'b, PartitionKeysSet, DocumentIdSet>
-    ReplaceDocumentBuilder<'a, 'b, PartitionKeysSet, DocumentIdSet>
-where
-    PartitionKeysSet: ToAssign,
-    DocumentIdSet: ToAssign,
-{
-    fn if_match_condition(&self) -> Option<IfMatchCondition<'b>> {
-        self.if_match_condition
-    }
-}
-
-impl<'a, 'b, PartitionKeysSet, DocumentIdSet> IfModifiedSinceOption<'b>
-    for ReplaceDocumentBuilder<'a, 'b, PartitionKeysSet, DocumentIdSet>
-where
-    PartitionKeysSet: ToAssign,
-    DocumentIdSet: ToAssign,
-{
-    fn if_modified_since(&self) -> Option<&'b DateTime<Utc>> {
-        self.if_modified_since
-    }
-}
-
-impl<'a, 'b, PartitionKeysSet, DocumentIdSet>
-    ReplaceDocumentBuilder<'a, 'b, PartitionKeysSet, DocumentIdSet>
-where
-    PartitionKeysSet: ToAssign,
-    DocumentIdSet: ToAssign,
-{
-    fn user_agent(&self) -> Option<azure_core::UserAgent<'b>> {
-        self.user_agent
-    }
-}
-
-impl<'a, 'b, PartitionKeysSet, DocumentIdSet>
-    ReplaceDocumentBuilder<'a, 'b, PartitionKeysSet, DocumentIdSet>
-where
-    PartitionKeysSet: ToAssign,
-    DocumentIdSet: ToAssign,
-{
-    fn activity_id(&self) -> Option<azure_core::ActivityId<'b>> {
-        self.activity_id
-    }
-}
-
-impl<'a, 'b, PartitionKeysSet, DocumentIdSet>
-    ReplaceDocumentBuilder<'a, 'b, PartitionKeysSet, DocumentIdSet>
-where
-    PartitionKeysSet: ToAssign,
-    DocumentIdSet: ToAssign,
-{
-    fn consistency_level(&self) -> Option<ConsistencyLevel> {
-        self.consistency_level.clone()
-    }
-}
-
-impl<'a, 'b, PartitionKeysSet, DocumentIdSet>
-    ReplaceDocumentBuilder<'a, 'b, PartitionKeysSet, DocumentIdSet>
-where
-    PartitionKeysSet: ToAssign,
-    DocumentIdSet: ToAssign,
-{
-    fn allow_tentative_writes(&self) -> TenativeWritesAllowance {
-        self.allow_tentative_writes
     }
 }
 
@@ -202,152 +256,5 @@ where
             consistency_level: self.consistency_level,
             allow_tentative_writes: self.allow_tentative_writes,
         }
-    }
-}
-
-impl<'a, 'b, PartitionKeysSet, DocumentIdSet>
-    ReplaceDocumentBuilder<'a, 'b, PartitionKeysSet, DocumentIdSet>
-where
-    PartitionKeysSet: ToAssign,
-    DocumentIdSet: ToAssign,
-{
-    pub fn with_indexing_directive(self, indexing_directive: IndexingDirective) -> Self {
-        Self {
-            indexing_directive,
-            ..self
-        }
-    }
-}
-
-impl<'a, 'b, PartitionKeysSet, DocumentIdSet>
-    ReplaceDocumentBuilder<'a, 'b, PartitionKeysSet, DocumentIdSet>
-where
-    PartitionKeysSet: ToAssign,
-    DocumentIdSet: ToAssign,
-{
-    pub fn with_if_match_condition(self, if_match_condition: IfMatchCondition<'b>) -> Self {
-        Self {
-            if_match_condition: Some(if_match_condition),
-            ..self
-        }
-    }
-}
-
-impl<'a, 'b, PartitionKeysSet, DocumentIdSet>
-    ReplaceDocumentBuilder<'a, 'b, PartitionKeysSet, DocumentIdSet>
-where
-    PartitionKeysSet: ToAssign,
-    DocumentIdSet: ToAssign,
-{
-    pub fn with_if_modified_since(self, if_modified_since: &'b DateTime<Utc>) -> Self {
-        Self {
-            if_modified_since: Some(if_modified_since),
-            ..self
-        }
-    }
-}
-
-impl<'a, 'b, PartitionKeysSet, DocumentIdSet>
-    ReplaceDocumentBuilder<'a, 'b, PartitionKeysSet, DocumentIdSet>
-where
-    PartitionKeysSet: ToAssign,
-    DocumentIdSet: ToAssign,
-{
-    pub fn with_user_agent(self, user_agent: &'b str) -> Self {
-        Self {
-            user_agent: Some(azure_core::UserAgent::new(user_agent)),
-            ..self
-        }
-    }
-}
-
-impl<'a, 'b, PartitionKeysSet, DocumentIdSet>
-    ReplaceDocumentBuilder<'a, 'b, PartitionKeysSet, DocumentIdSet>
-where
-    PartitionKeysSet: ToAssign,
-    DocumentIdSet: ToAssign,
-{
-    pub fn with_activity_id(self, activity_id: &'b str) -> Self {
-        Self {
-            activity_id: Some(azure_core::ActivityId::new(activity_id)),
-            ..self
-        }
-    }
-}
-
-impl<'a, 'b, PartitionKeysSet, DocumentIdSet>
-    ReplaceDocumentBuilder<'a, 'b, PartitionKeysSet, DocumentIdSet>
-where
-    PartitionKeysSet: ToAssign,
-    DocumentIdSet: ToAssign,
-{
-    pub fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self {
-        Self {
-            consistency_level: Some(consistency_level),
-            ..self
-        }
-    }
-}
-
-impl<'a, 'b, PartitionKeysSet, DocumentIdSet>
-    ReplaceDocumentBuilder<'a, 'b, PartitionKeysSet, DocumentIdSet>
-where
-    PartitionKeysSet: ToAssign,
-    DocumentIdSet: ToAssign,
-{
-    pub fn with_allow_tentative_writes(
-        self,
-        allow_tentative_writes: TenativeWritesAllowance,
-    ) -> Self {
-        Self {
-            allow_tentative_writes,
-            ..self
-        }
-    }
-}
-
-// methods callable only when every mandatory field has been filled
-impl<'a, 'b> ReplaceDocumentBuilder<'a, 'b, Yes, Yes> {
-    pub async fn execute_with_document<T>(
-        &self,
-        document: &T,
-    ) -> Result<ReplaceDocumentResponse, CosmosError>
-    where
-        T: Serialize,
-    {
-        trace!("ReplaceDocumentBuilder::execute() called");
-
-        let req = self.collection_client.cosmos_client().prepare_request(
-            &format!(
-                "dbs/{}/colls/{}/docs/{}",
-                self.collection_client.database_client().database_name(),
-                self.collection_client.collection_name(),
-                self.document_id()
-            ),
-            http::Method::PUT,
-            ResourceType::Documents,
-        );
-
-        // add trait headers
-        let req = crate::headers::add_header(Some(self.indexing_directive()), req);
-        let req = crate::headers::add_header(self.if_match_condition(), req);
-        let req = IfModifiedSinceOption::add_header(self, req);
-        let req = crate::headers::add_header(self.user_agent(), req);
-        let req = crate::headers::add_header(self.activity_id(), req);
-        let req = crate::headers::add_header(self.consistency_level(), req);
-        let req = crate::headers::add_header(Some(self.partition_keys()), req);
-        let req = crate::headers::add_header(Some(self.allow_tentative_writes()), req);
-
-        let serialized = serde_json::to_string(document)?;
-
-        let req = req.body(serialized.as_bytes())?;
-        debug!("request == {:#?}", req);
-
-        Ok(self
-            .collection_client
-            .http_client()
-            .execute_request_check_status(req, StatusCode::OK)
-            .await?
-            .try_into()?)
     }
 }

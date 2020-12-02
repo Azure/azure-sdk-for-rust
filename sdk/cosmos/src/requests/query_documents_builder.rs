@@ -11,7 +11,7 @@ use serde::de::DeserializeOwned;
 use std::convert::TryInto;
 use std::marker::PhantomData;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct QueryDocumentsBuilder<'a, 'b, QuerySet>
 where
     QuerySet: ToAssign,
@@ -29,29 +29,6 @@ where
     partition_keys: Option<&'b PartitionKeys>,
     query_cross_partition: QueryCrossPartition,
     parallelize_cross_partition_query: ParallelizeCrossPartition,
-}
-
-impl<'a, 'b, QuerySet> Clone for QueryDocumentsBuilder<'a, 'b, QuerySet>
-where
-    QuerySet: ToAssign,
-{
-    fn clone(&self) -> Self {
-        Self {
-            collection_client: self.collection_client,
-            p_query: PhantomData {},
-            query: self.query,
-            if_match_condition: self.if_match_condition,
-            if_modified_since: self.if_modified_since,
-            user_agent: self.user_agent,
-            activity_id: self.activity_id,
-            consistency_level: self.consistency_level.clone(),
-            continuation: self.continuation,
-            max_item_count: self.max_item_count,
-            partition_keys: self.partition_keys,
-            query_cross_partition: self.query_cross_partition,
-            parallelize_cross_partition_query: self.parallelize_cross_partition_query,
-        }
-    }
 }
 
 impl<'a, 'b> QueryDocumentsBuilder<'a, 'b, No> {
@@ -81,18 +58,7 @@ where
     pub fn collection_client(&self) -> &'a CollectionClient {
         self.collection_client
     }
-}
 
-impl<'a, 'b> QueryDocumentsBuilder<'a, 'b, Yes> {
-    fn query(&self) -> &'b Query<'b> {
-        self.query.unwrap()
-    }
-}
-
-impl<'a, 'b, QuerySet> QueryDocumentsBuilder<'a, 'b, QuerySet>
-where
-    QuerySet: ToAssign,
-{
     fn if_match_condition(&self) -> Option<IfMatchCondition<'b>> {
         self.if_match_condition
     }
@@ -108,182 +74,79 @@ where
     fn consistency_level(&self) -> Option<ConsistencyLevel> {
         self.consistency_level.clone()
     }
-}
 
-impl<'a, 'b, QuerySet> ContinuationOption<'b> for QueryDocumentsBuilder<'a, 'b, QuerySet>
-where
-    QuerySet: ToAssign,
-{
-    fn continuation(&self) -> Option<&'b str> {
-        self.continuation
-    }
-}
-
-impl<'a, 'b, QuerySet> IfModifiedSinceOption<'b> for QueryDocumentsBuilder<'a, 'b, QuerySet>
-where
-    QuerySet: ToAssign,
-{
-    fn if_modified_since(&self) -> Option<&'b DateTime<Utc>> {
-        self.if_modified_since
-    }
-}
-
-impl<'a, 'b, QuerySet> QueryDocumentsBuilder<'a, 'b, QuerySet>
-where
-    QuerySet: ToAssign,
-{
     fn max_item_count(&self) -> MaxItemCount {
         self.max_item_count
     }
-}
 
-impl<'a, 'b, QuerySet> QueryDocumentsBuilder<'a, 'b, QuerySet>
-where
-    QuerySet: ToAssign,
-{
     fn partition_keys(&self) -> Option<&'b PartitionKeys> {
         self.partition_keys
     }
-}
 
-impl<'a, 'b, QuerySet> QueryDocumentsBuilder<'a, 'b, QuerySet>
-where
-    QuerySet: ToAssign,
-{
     fn query_cross_partition(&self) -> QueryCrossPartition {
         self.query_cross_partition
     }
-}
 
-impl<'a, 'b, QuerySet> QueryDocumentsBuilder<'a, 'b, QuerySet>
-where
-    QuerySet: ToAssign,
-{
     fn parallelize_cross_partition_query(&self) -> ParallelizeCrossPartition {
         self.parallelize_cross_partition_query
     }
-}
 
-impl<'a, 'b> QueryDocumentsBuilder<'a, 'b, No> {
-    pub fn with_query(self, query: &'b Query<'b>) -> QueryDocumentsBuilder<'a, 'b, Yes> {
-        QueryDocumentsBuilder {
-            query: Some(query),
-            collection_client: self.collection_client,
-            if_match_condition: self.if_match_condition,
-            if_modified_since: self.if_modified_since,
-            user_agent: self.user_agent,
-            activity_id: self.activity_id,
-            consistency_level: self.consistency_level,
-            continuation: self.continuation,
-            max_item_count: self.max_item_count,
-            partition_keys: self.partition_keys,
-            query_cross_partition: self.query_cross_partition,
-            parallelize_cross_partition_query: self.parallelize_cross_partition_query,
-            p_query: PhantomData {},
-        }
-    }
-}
-
-impl<'a, 'b, QuerySet> QueryDocumentsBuilder<'a, 'b, QuerySet>
-where
-    QuerySet: ToAssign,
-{
     pub fn with_if_match_condition(self, if_match_condition: IfMatchCondition<'b>) -> Self {
         Self {
             if_match_condition: Some(if_match_condition),
             ..self
         }
     }
-}
 
-impl<'a, 'b, QuerySet> QueryDocumentsBuilder<'a, 'b, QuerySet>
-where
-    QuerySet: ToAssign,
-{
     pub fn with_if_modified_since(self, if_modified_since: &'b DateTime<Utc>) -> Self {
         Self {
             if_modified_since: Some(if_modified_since),
             ..self
         }
     }
-}
 
-impl<'a, 'b, QuerySet> QueryDocumentsBuilder<'a, 'b, QuerySet>
-where
-    QuerySet: ToAssign,
-{
     pub fn with_user_agent(self, user_agent: &'b str) -> Self {
         Self {
             user_agent: Some(azure_core::UserAgent::new(user_agent)),
             ..self
         }
     }
-}
 
-impl<'a, 'b, QuerySet> QueryDocumentsBuilder<'a, 'b, QuerySet>
-where
-    QuerySet: ToAssign,
-{
     pub fn with_activity_id(self, activity_id: &'b str) -> Self {
         Self {
             activity_id: Some(azure_core::ActivityId::new(activity_id)),
             ..self
         }
     }
-}
 
-impl<'a, 'b, QuerySet> QueryDocumentsBuilder<'a, 'b, QuerySet>
-where
-    QuerySet: ToAssign,
-{
     pub fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self {
         Self {
             consistency_level: Some(consistency_level),
             ..self
         }
     }
-}
 
-impl<'a, 'b, QuerySet> QueryDocumentsBuilder<'a, 'b, QuerySet>
-where
-    QuerySet: ToAssign,
-{
     pub fn with_continuation(self, continuation: &'b str) -> Self {
         Self {
             continuation: Some(continuation),
             ..self
         }
     }
-}
 
-impl<'a, 'b, QuerySet> QueryDocumentsBuilder<'a, 'b, QuerySet>
-where
-    QuerySet: ToAssign,
-{
     pub fn with_max_item_count(self, max_item_count: i32) -> Self {
         Self {
             max_item_count: MaxItemCount::new(max_item_count),
             ..self
         }
     }
-}
 
-impl<'a, 'b, QuerySet> QueryDocumentsBuilder<'a, 'b, QuerySet>
-where
-    QuerySet: ToAssign,
-{
     pub fn with_partition_keys(self, partition_keys: &'b PartitionKeys) -> Self {
         Self {
             partition_keys: Some(partition_keys),
             ..self
         }
     }
-}
 
-impl<'a, 'b, QuerySet> QueryDocumentsBuilder<'a, 'b, QuerySet>
-where
-    QuerySet: ToAssign,
-{
     pub fn with_query_cross_partition(self, query_cross_partition: bool) -> Self {
         Self {
             query_cross_partition: if query_cross_partition {
@@ -294,12 +157,7 @@ where
             ..self
         }
     }
-}
 
-impl<'a, 'b, QuerySet> QueryDocumentsBuilder<'a, 'b, QuerySet>
-where
-    QuerySet: ToAssign,
-{
     pub fn with_parallelize_cross_partition_query(
         self,
         parallelize_cross_partition_query: bool,
@@ -315,7 +173,6 @@ where
     }
 }
 
-// methods callable only when every mandatory field has been filled
 impl<'a, 'b> QueryDocumentsBuilder<'a, 'b, Yes> {
     pub async fn execute<T>(&self) -> Result<QueryDocumentsResponse<T>, CosmosError>
     where
@@ -402,5 +259,48 @@ impl<'a, 'b> QueryDocumentsBuilder<'a, 'b, Yes> {
                 Some((Ok(response), continuation_token))
             },
         )
+    }
+}
+
+impl<'a, 'b, QuerySet> ContinuationOption<'b> for QueryDocumentsBuilder<'a, 'b, QuerySet>
+where
+    QuerySet: ToAssign,
+{
+    fn continuation(&self) -> Option<&'b str> {
+        self.continuation
+    }
+}
+
+impl<'a, 'b, QuerySet> IfModifiedSinceOption<'b> for QueryDocumentsBuilder<'a, 'b, QuerySet>
+where
+    QuerySet: ToAssign,
+{
+    fn if_modified_since(&self) -> Option<&'b DateTime<Utc>> {
+        self.if_modified_since
+    }
+}
+
+impl<'a, 'b> QueryDocumentsBuilder<'a, 'b, Yes> {
+    fn query(&self) -> &'b Query<'b> {
+        self.query.unwrap()
+    }
+}
+impl<'a, 'b> QueryDocumentsBuilder<'a, 'b, No> {
+    pub fn with_query(self, query: &'b Query<'b>) -> QueryDocumentsBuilder<'a, 'b, Yes> {
+        QueryDocumentsBuilder {
+            query: Some(query),
+            collection_client: self.collection_client,
+            if_match_condition: self.if_match_condition,
+            if_modified_since: self.if_modified_since,
+            user_agent: self.user_agent,
+            activity_id: self.activity_id,
+            consistency_level: self.consistency_level,
+            continuation: self.continuation,
+            max_item_count: self.max_item_count,
+            partition_keys: self.partition_keys,
+            query_cross_partition: self.query_cross_partition,
+            parallelize_cross_partition_query: self.parallelize_cross_partition_query,
+            p_query: PhantomData {},
+        }
     }
 }

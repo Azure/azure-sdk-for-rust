@@ -38,82 +38,33 @@ where
     fn stored_procedure_client(&self) -> &'a StoredProcedureClient {
         self.stored_procedure_client
     }
-}
 
-impl<'a, 'b> ReplaceStoredProcedureBuilder<'a, 'b, Yes> {
-    fn body(&self) -> &'b str {
-        self.body.unwrap()
-    }
-}
-
-impl<'a, 'b, BodySet> ReplaceStoredProcedureBuilder<'a, 'b, BodySet>
-where
-    BodySet: ToAssign,
-{
     fn user_agent(&self) -> Option<azure_core::UserAgent<'b>> {
         self.user_agent
     }
-}
 
-impl<'a, 'b, BodySet> ReplaceStoredProcedureBuilder<'a, 'b, BodySet>
-where
-    BodySet: ToAssign,
-{
     fn activity_id(&self) -> Option<azure_core::ActivityId<'b>> {
         self.activity_id
     }
-}
 
-impl<'a, 'b, BodySet> ReplaceStoredProcedureBuilder<'a, 'b, BodySet>
-where
-    BodySet: ToAssign,
-{
     fn consistency_level(&self) -> Option<ConsistencyLevel> {
         self.consistency_level.clone()
     }
-}
 
-impl<'a, 'b> ReplaceStoredProcedureBuilder<'a, 'b, No> {
-    pub fn with_body(self, body: &'b str) -> ReplaceStoredProcedureBuilder<'a, 'b, Yes> {
-        ReplaceStoredProcedureBuilder {
-            stored_procedure_client: self.stored_procedure_client,
-            p_body: PhantomData {},
-            body: Some(body),
-            user_agent: self.user_agent,
-            activity_id: self.activity_id,
-            consistency_level: self.consistency_level,
-        }
-    }
-}
-
-impl<'a, 'b, BodySet> ReplaceStoredProcedureBuilder<'a, 'b, BodySet>
-where
-    BodySet: ToAssign,
-{
     pub fn with_user_agent(self, user_agent: &'b str) -> Self {
         Self {
             user_agent: Some(azure_core::UserAgent::new(user_agent)),
             ..self
         }
     }
-}
 
-impl<'a, 'b, BodySet> ReplaceStoredProcedureBuilder<'a, 'b, BodySet>
-where
-    BodySet: ToAssign,
-{
     pub fn with_activity_id(self, activity_id: &'b str) -> Self {
         Self {
             activity_id: Some(azure_core::ActivityId::new(activity_id)),
             ..self
         }
     }
-}
 
-impl<'a, 'b, BodySet> ReplaceStoredProcedureBuilder<'a, 'b, BodySet>
-where
-    BodySet: ToAssign,
-{
     pub fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self {
         Self {
             consistency_level: Some(consistency_level),
@@ -122,7 +73,6 @@ where
     }
 }
 
-// methods callable only when every mandatory field has been filled
 impl<'a, 'b> ReplaceStoredProcedureBuilder<'a, 'b, Yes> {
     pub async fn execute(&self) -> Result<ReplaceStoredProcedureResponse, CosmosError> {
         trace!("ReplaceStoredProcedureBuilder::execute called");
@@ -157,5 +107,24 @@ impl<'a, 'b> ReplaceStoredProcedureBuilder<'a, 'b, Yes> {
             .execute_request_check_status(request, StatusCode::OK)
             .await?
             .try_into()?)
+    }
+}
+
+impl<'a, 'b> ReplaceStoredProcedureBuilder<'a, 'b, Yes> {
+    fn body(&self) -> &'b str {
+        self.body.unwrap()
+    }
+}
+
+impl<'a, 'b> ReplaceStoredProcedureBuilder<'a, 'b, No> {
+    pub fn with_body(self, body: &'b str) -> ReplaceStoredProcedureBuilder<'a, 'b, Yes> {
+        ReplaceStoredProcedureBuilder {
+            stored_procedure_client: self.stored_procedure_client,
+            p_body: PhantomData {},
+            body: Some(body),
+            user_agent: self.user_agent,
+            activity_id: self.activity_id,
+            consistency_level: self.consistency_level,
+        }
     }
 }

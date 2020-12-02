@@ -27,91 +27,62 @@ impl<'a, 'b> ListPermissionsBuilder<'a, 'b> {
             max_item_count: MaxItemCount::new(-1),
         }
     }
-}
 
-impl<'a, 'b> ListPermissionsBuilder<'a, 'b> {
     pub fn user_client(&self) -> &'a UserClient {
         self.user_client
     }
-}
 
-impl<'a, 'b> ListPermissionsBuilder<'a, 'b> {
     fn user_agent(&self) -> Option<azure_core::UserAgent<'b>> {
         self.user_agent
     }
-}
 
-impl<'a, 'b> ListPermissionsBuilder<'a, 'b> {
     fn activity_id(&self) -> Option<azure_core::ActivityId<'b>> {
         self.activity_id
     }
-}
 
-impl<'a, 'b> ListPermissionsBuilder<'a, 'b> {
     fn consistency_level(&self) -> Option<ConsistencyLevel> {
         self.consistency_level.clone()
     }
-}
 
-impl<'a, 'b> ContinuationOption<'b> for ListPermissionsBuilder<'a, 'b> {
-    fn continuation(&self) -> Option<&'b str> {
-        self.continuation
-    }
-}
-
-impl<'a, 'b> ListPermissionsBuilder<'a, 'b> {
     fn max_item_count(&self) -> MaxItemCount {
         self.max_item_count
     }
-}
 
-impl<'a, 'b> ListPermissionsBuilder<'a, 'b> {
     pub fn with_user_agent(self, user_agent: &'b str) -> Self {
         Self {
             user_agent: Some(azure_core::UserAgent::new(user_agent)),
             ..self
         }
     }
-}
 
-impl<'a, 'b> ListPermissionsBuilder<'a, 'b> {
     pub fn with_activity_id(self, activity_id: &'b str) -> Self {
         Self {
             activity_id: Some(azure_core::ActivityId::new(activity_id)),
             ..self
         }
     }
-}
 
-impl<'a, 'b> ListPermissionsBuilder<'a, 'b> {
     pub fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self {
         Self {
             consistency_level: Some(consistency_level),
             ..self
         }
     }
-}
 
-impl<'a, 'b> ListPermissionsBuilder<'a, 'b> {
     pub fn with_continuation(self, continuation: &'b str) -> Self {
         Self {
             continuation: Some(continuation),
             ..self
         }
     }
-}
 
-impl<'a, 'b> ListPermissionsBuilder<'a, 'b> {
     pub fn with_max_item_count(self, max_item_count: i32) -> Self {
         Self {
             max_item_count: MaxItemCount::new(max_item_count),
             ..self
         }
     }
-}
 
-// methods callable only when every mandatory field has been filled
-impl<'a, 'b> ListPermissionsBuilder<'a, 'b> {
     pub async fn execute(&self) -> Result<ListPermissionsResponse<'a>, CosmosError> {
         trace!("ListPermissionsBuilder::execute called");
 
@@ -183,5 +154,11 @@ impl<'a, 'b> ListPermissionsBuilder<'a, 'b> {
                 }
             },
         )
+    }
+}
+
+impl<'a, 'b> ContinuationOption<'b> for ListPermissionsBuilder<'a, 'b> {
+    fn continuation(&self) -> Option<&'b str> {
+        self.continuation
     }
 }
