@@ -51,6 +51,30 @@ where
     TriggerTypeSet: ToAssign,
     BodySet: ToAssign,
 {
+    pub fn with_user_agent(self, user_agent: &'a str) -> Self {
+        Self {
+            user_agent: Some(azure_core::UserAgent::new(user_agent)),
+            ..self
+        }
+    }
+
+    pub fn with_activity_id(self, activity_id: &'a str) -> Self {
+        Self {
+            activity_id: Some(azure_core::ActivityId::new(activity_id)),
+            ..self
+        }
+    }
+
+    pub fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self {
+        Self {
+            consistency_level: Some(consistency_level),
+            ..self
+        }
+    }
+
+    fn is_create(&self) -> bool {
+        self.is_create
+    }
     fn trigger_client(&self) -> &'a TriggerClient {
         self.trigger_client
     }
@@ -177,65 +201,6 @@ where
     }
 }
 
-impl<'a, TriggerOperationSet, TriggerTypeSet, BodySet>
-    CreateOrReplaceTriggerBuilder<'a, TriggerOperationSet, TriggerTypeSet, BodySet>
-where
-    TriggerOperationSet: ToAssign,
-    TriggerTypeSet: ToAssign,
-    BodySet: ToAssign,
-{
-    pub fn with_user_agent(self, user_agent: &'a str) -> Self {
-        Self {
-            user_agent: Some(azure_core::UserAgent::new(user_agent)),
-            ..self
-        }
-    }
-}
-
-impl<'a, TriggerOperationSet, TriggerTypeSet, BodySet>
-    CreateOrReplaceTriggerBuilder<'a, TriggerOperationSet, TriggerTypeSet, BodySet>
-where
-    TriggerOperationSet: ToAssign,
-    TriggerTypeSet: ToAssign,
-    BodySet: ToAssign,
-{
-    pub fn with_activity_id(self, activity_id: &'a str) -> Self {
-        Self {
-            activity_id: Some(azure_core::ActivityId::new(activity_id)),
-            ..self
-        }
-    }
-}
-
-impl<'a, TriggerOperationSet, TriggerTypeSet, BodySet>
-    CreateOrReplaceTriggerBuilder<'a, TriggerOperationSet, TriggerTypeSet, BodySet>
-where
-    TriggerOperationSet: ToAssign,
-    TriggerTypeSet: ToAssign,
-    BodySet: ToAssign,
-{
-    pub fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self {
-        Self {
-            consistency_level: Some(consistency_level),
-            ..self
-        }
-    }
-}
-
-// methods callable regardless
-impl<'a, TriggerOperationSet, TriggerTypeSet, BodySet>
-    CreateOrReplaceTriggerBuilder<'a, TriggerOperationSet, TriggerTypeSet, BodySet>
-where
-    TriggerOperationSet: ToAssign,
-    TriggerTypeSet: ToAssign,
-    BodySet: ToAssign,
-{
-    fn is_create(&self) -> bool {
-        self.is_create
-    }
-}
-
-// methods callable only when every mandatory field has been filled
 impl<'a> CreateOrReplaceTriggerBuilder<'a, Yes, Yes, Yes> {
     pub async fn execute(&self) -> Result<CreateTriggerResponse, CosmosError> {
         trace!("CreateOrReplaceTriggerBuilder::execute called");

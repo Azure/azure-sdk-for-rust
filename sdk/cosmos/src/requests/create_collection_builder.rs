@@ -22,10 +22,6 @@ pub struct CreateCollectionBuilder<
     PartitionKeySet: ToAssign,
 {
     database_client: &'a DatabaseClient,
-    p_offer: PhantomData<OfferSet>,
-    p_collection_name: PhantomData<CollectionNameSet>,
-    p_indexing_policy: PhantomData<IndexingPolicySet>,
-    p_partition_key: PhantomData<PartitionKeySet>,
     offer: Option<Offer>,
     collection_name: Option<&'a str>,
     indexing_policy: Option<&'a IndexingPolicy>,
@@ -33,23 +29,27 @@ pub struct CreateCollectionBuilder<
     user_agent: Option<UserAgent<'a>>,
     activity_id: Option<ActivityId<'a>>,
     consistency_level: Option<ConsistencyLevel>,
+    p_offer: PhantomData<OfferSet>,
+    p_collection_name: PhantomData<CollectionNameSet>,
+    p_indexing_policy: PhantomData<IndexingPolicySet>,
+    p_partition_key: PhantomData<PartitionKeySet>,
 }
 
 impl<'a> CreateCollectionBuilder<'a, No, No, No, No> {
     pub(crate) fn new(database_client: &'a DatabaseClient) -> Self {
         Self {
             database_client,
-            p_offer: PhantomData {},
             offer: None,
-            p_collection_name: PhantomData {},
             collection_name: None,
-            p_indexing_policy: PhantomData {},
             indexing_policy: None,
-            p_partition_key: PhantomData {},
             partition_key: None,
             user_agent: None,
             activity_id: None,
             consistency_level: None,
+            p_indexing_policy: PhantomData {},
+            p_collection_name: PhantomData {},
+            p_partition_key: PhantomData {},
+            p_offer: PhantomData {},
         }
     }
 }
@@ -76,6 +76,26 @@ where
 
     fn consistency_level(&self) -> Option<ConsistencyLevel> {
         self.consistency_level.clone()
+    }
+
+    pub fn with_user_agent(self, user_agent: &'a str) -> Self {
+        Self {
+            user_agent: Some(UserAgent::new(user_agent)),
+            ..self
+        }
+    }
+    pub fn with_activity_id(self, activity_id: &'a str) -> Self {
+        Self {
+            activity_id: Some(ActivityId::new(activity_id)),
+            ..self
+        }
+    }
+
+    pub fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self {
+        CreateCollectionBuilder {
+            consistency_level: Some(consistency_level),
+            ..self
+        }
     }
 }
 
@@ -240,55 +260,6 @@ where
     }
 }
 
-impl<'a, OfferSet, CollectionNameSet, IndexingPolicySet, PartitionKeySet>
-    CreateCollectionBuilder<'a, OfferSet, CollectionNameSet, IndexingPolicySet, PartitionKeySet>
-where
-    OfferSet: ToAssign,
-    CollectionNameSet: ToAssign,
-    IndexingPolicySet: ToAssign,
-    PartitionKeySet: ToAssign,
-{
-    pub fn with_user_agent(self, user_agent: &'a str) -> Self {
-        Self {
-            user_agent: Some(UserAgent::new(user_agent)),
-            ..self
-        }
-    }
-}
-
-impl<'a, OfferSet, CollectionNameSet, IndexingPolicySet, PartitionKeySet>
-    CreateCollectionBuilder<'a, OfferSet, CollectionNameSet, IndexingPolicySet, PartitionKeySet>
-where
-    OfferSet: ToAssign,
-    CollectionNameSet: ToAssign,
-    IndexingPolicySet: ToAssign,
-    PartitionKeySet: ToAssign,
-{
-    pub fn with_activity_id(self, activity_id: &'a str) -> Self {
-        Self {
-            activity_id: Some(ActivityId::new(activity_id)),
-            ..self
-        }
-    }
-}
-
-impl<'a, OfferSet, CollectionNameSet, IndexingPolicySet, PartitionKeySet>
-    CreateCollectionBuilder<'a, OfferSet, CollectionNameSet, IndexingPolicySet, PartitionKeySet>
-where
-    OfferSet: ToAssign,
-    CollectionNameSet: ToAssign,
-    IndexingPolicySet: ToAssign,
-    PartitionKeySet: ToAssign,
-{
-    pub fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self {
-        CreateCollectionBuilder {
-            consistency_level: Some(consistency_level),
-            ..self
-        }
-    }
-}
-
-// methods callable only when every mandatory field has been filled
 impl<'a> CreateCollectionBuilder<'a, Yes, Yes, Yes, Yes> {
     pub async fn execute(&self) -> Result<CreateCollectionResponse, CosmosError> {
         trace!("CreateCollectionBuilder::execute called");

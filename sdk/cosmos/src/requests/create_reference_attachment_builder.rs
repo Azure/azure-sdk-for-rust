@@ -45,6 +45,39 @@ where
     pub fn attachment_client(&self) -> &'a AttachmentClient {
         self.attachment_client
     }
+
+    pub fn with_user_agent(self, user_agent: &'b str) -> Self {
+        Self {
+            user_agent: Some(azure_core::UserAgent::new(user_agent)),
+            ..self
+        }
+    }
+
+    pub fn with_activity_id(self, activity_id: &'b str) -> Self {
+        Self {
+            activity_id: Some(azure_core::ActivityId::new(activity_id)),
+            ..self
+        }
+    }
+
+    pub fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self {
+        Self {
+            consistency_level: Some(consistency_level),
+            ..self
+        }
+    }
+
+    fn user_agent(&self) -> Option<azure_core::UserAgent<'b>> {
+        self.user_agent
+    }
+
+    fn activity_id(&self) -> Option<azure_core::ActivityId<'b>> {
+        self.activity_id
+    }
+
+    fn consistency_level(&self) -> Option<ConsistencyLevel> {
+        self.consistency_level.clone()
+    }
 }
 
 impl<'a, 'b, MediaSet> ContentTypeRequired<'b>
@@ -65,40 +98,6 @@ where
         self.media.unwrap()
     }
 }
-
-impl<'a, 'b, ContentTypeSet, MediaSet>
-    CreateReferenceAttachmentBuilder<'a, 'b, ContentTypeSet, MediaSet>
-where
-    ContentTypeSet: ToAssign,
-    MediaSet: ToAssign,
-{
-    fn user_agent(&self) -> Option<azure_core::UserAgent<'b>> {
-        self.user_agent
-    }
-}
-
-impl<'a, 'b, ContentTypeSet, MediaSet>
-    CreateReferenceAttachmentBuilder<'a, 'b, ContentTypeSet, MediaSet>
-where
-    ContentTypeSet: ToAssign,
-    MediaSet: ToAssign,
-{
-    fn activity_id(&self) -> Option<azure_core::ActivityId<'b>> {
-        self.activity_id
-    }
-}
-
-impl<'a, 'b, ContentTypeSet, MediaSet>
-    CreateReferenceAttachmentBuilder<'a, 'b, ContentTypeSet, MediaSet>
-where
-    ContentTypeSet: ToAssign,
-    MediaSet: ToAssign,
-{
-    fn consistency_level(&self) -> Option<ConsistencyLevel> {
-        self.consistency_level.clone()
-    }
-}
-
 impl<'a, 'b, MediaSet> ContentTypeSupport<'b>
     for CreateReferenceAttachmentBuilder<'a, 'b, No, MediaSet>
 where
@@ -141,49 +140,6 @@ where
     }
 }
 
-impl<'a, 'b, ContentTypeSet, MediaSet>
-    CreateReferenceAttachmentBuilder<'a, 'b, ContentTypeSet, MediaSet>
-where
-    ContentTypeSet: ToAssign,
-    MediaSet: ToAssign,
-{
-    pub fn with_user_agent(self, user_agent: &'b str) -> Self {
-        Self {
-            user_agent: Some(azure_core::UserAgent::new(user_agent)),
-            ..self
-        }
-    }
-}
-
-impl<'a, 'b, ContentTypeSet, MediaSet>
-    CreateReferenceAttachmentBuilder<'a, 'b, ContentTypeSet, MediaSet>
-where
-    ContentTypeSet: ToAssign,
-    MediaSet: ToAssign,
-{
-    pub fn with_activity_id(self, activity_id: &'b str) -> Self {
-        Self {
-            activity_id: Some(azure_core::ActivityId::new(activity_id)),
-            ..self
-        }
-    }
-}
-
-impl<'a, 'b, ContentTypeSet, MediaSet>
-    CreateReferenceAttachmentBuilder<'a, 'b, ContentTypeSet, MediaSet>
-where
-    ContentTypeSet: ToAssign,
-    MediaSet: ToAssign,
-{
-    pub fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self {
-        Self {
-            consistency_level: Some(consistency_level),
-            ..self
-        }
-    }
-}
-
-// methods callable only when every mandatory field has been filled
 impl<'a, 'b> CreateReferenceAttachmentBuilder<'a, 'b, Yes, Yes> {
     pub async fn execute(
         &self,

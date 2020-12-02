@@ -90,21 +90,11 @@ impl<'a, 'b> ListDocumentsBuilder<'a, 'b> {
     }
 }
 
-impl<'a, 'b> IfMatchConditionSupport<'b> for ListDocumentsBuilder<'a, 'b> {
-    type O = Self;
-
-    #[inline]
-    fn with_if_match_condition(self, if_match_condition: IfMatchCondition<'b>) -> Self::O {
-        ListDocumentsBuilder {
-            collection_client: self.collection_client,
+impl<'a, 'b> ListDocumentsBuilder<'a, 'b> {
+    pub fn with_if_match_condition(self, if_match_condition: IfMatchCondition<'b>) -> Self {
+        Self {
             if_match_condition: Some(if_match_condition),
-            user_agent: self.user_agent,
-            activity_id: self.activity_id,
-            consistency_level: self.consistency_level,
-            continuation: self.continuation,
-            max_item_count: self.max_item_count,
-            a_im: self.a_im,
-            partition_range_id: self.partition_range_id,
+            ..self
         }
     }
 }

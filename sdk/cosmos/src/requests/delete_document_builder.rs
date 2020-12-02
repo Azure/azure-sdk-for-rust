@@ -74,10 +74,8 @@ impl<'a> DeleteDocumentBuilder<'a> {
     }
 }
 
-impl<'a> IfMatchConditionSupport<'a> for DeleteDocumentBuilder<'a> {
-    type O = Self;
-
-    fn with_if_match_condition(self, if_match_condition: IfMatchCondition<'a>) -> Self::O {
+impl<'a> DeleteDocumentBuilder<'a> {
+    pub fn with_if_match_condition(self, if_match_condition: IfMatchCondition<'a>) -> Self {
         Self {
             if_match_condition: Some(if_match_condition),
             ..self

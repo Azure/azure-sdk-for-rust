@@ -184,13 +184,11 @@ impl<'a, 'b> QueryDocumentsBuilder<'a, 'b, No> {
     }
 }
 
-impl<'a, 'b, QuerySet> IfMatchConditionSupport<'b> for QueryDocumentsBuilder<'a, 'b, QuerySet>
+impl<'a, 'b, QuerySet> QueryDocumentsBuilder<'a, 'b, QuerySet>
 where
     QuerySet: ToAssign,
 {
-    type O = Self;
-
-    fn with_if_match_condition(self, if_match_condition: IfMatchCondition<'b>) -> Self::O {
+    pub fn with_if_match_condition(self, if_match_condition: IfMatchCondition<'b>) -> Self {
         Self {
             if_match_condition: Some(if_match_condition),
             ..self

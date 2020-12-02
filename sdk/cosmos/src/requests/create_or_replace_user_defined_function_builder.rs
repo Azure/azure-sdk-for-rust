@@ -13,11 +13,11 @@ where
 {
     user_defined_function_client: &'a UserDefinedFunctionClient,
     is_create: bool,
-    p_body: PhantomData<BodySet>,
     body: Option<&'b str>,
     user_agent: Option<UserAgent<'b>>,
     activity_id: Option<azure_core::ActivityId<'b>>,
     consistency_level: Option<ConsistencyLevel>,
+    p_body: PhantomData<BodySet>,
 }
 
 impl<'a, 'b> CreateOrReplaceUserDefinedFunctionBuilder<'a, 'b, No> {
@@ -28,11 +28,11 @@ impl<'a, 'b> CreateOrReplaceUserDefinedFunctionBuilder<'a, 'b, No> {
         Self {
             user_defined_function_client,
             is_create,
-            p_body: PhantomData {},
             body: None,
             user_agent: None,
             activity_id: None,
             consistency_level: None,
+            p_body: PhantomData {},
         }
     }
 }
@@ -41,41 +41,47 @@ impl<'a, 'b, BodySet> CreateOrReplaceUserDefinedFunctionBuilder<'a, 'b, BodySet>
 where
     BodySet: ToAssign,
 {
+    pub fn with_user_agent(self, user_agent: &'b str) -> Self {
+        Self {
+            user_agent: Some(UserAgent::new(user_agent)),
+            ..self
+        }
+    }
+
+    pub fn with_activity_id(self, activity_id: &'b str) -> Self {
+        Self {
+            activity_id: Some(azure_core::ActivityId::new(activity_id)),
+            ..self
+        }
+    }
+
+    pub fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self {
+        Self {
+            consistency_level: Some(consistency_level),
+            ..self
+        }
+    }
+
     fn user_defined_function_client(&self) -> &'a UserDefinedFunctionClient {
         self.user_defined_function_client
+    }
+
+    fn user_agent(&self) -> Option<UserAgent<'b>> {
+        self.user_agent
+    }
+
+    fn activity_id(&self) -> Option<azure_core::ActivityId<'b>> {
+        self.activity_id
+    }
+
+    fn consistency_level(&self) -> Option<ConsistencyLevel> {
+        self.consistency_level.clone()
     }
 }
 
 impl<'a, 'b> CreateOrReplaceUserDefinedFunctionBuilder<'a, 'b, Yes> {
     fn body(&self) -> &'b str {
         self.body.unwrap()
-    }
-}
-
-impl<'a, 'b, BodySet> CreateOrReplaceUserDefinedFunctionBuilder<'a, 'b, BodySet>
-where
-    BodySet: ToAssign,
-{
-    fn user_agent(&self) -> Option<UserAgent<'b>> {
-        self.user_agent
-    }
-}
-
-impl<'a, 'b, BodySet> CreateOrReplaceUserDefinedFunctionBuilder<'a, 'b, BodySet>
-where
-    BodySet: ToAssign,
-{
-    fn activity_id(&self) -> Option<azure_core::ActivityId<'b>> {
-        self.activity_id
-    }
-}
-
-impl<'a, 'b, BodySet> CreateOrReplaceUserDefinedFunctionBuilder<'a, 'b, BodySet>
-where
-    BodySet: ToAssign,
-{
-    fn consistency_level(&self) -> Option<ConsistencyLevel> {
-        self.consistency_level.clone()
     }
 }
 
@@ -96,43 +102,6 @@ impl<'a, 'b> CreateOrReplaceUserDefinedFunctionBuilder<'a, 'b, No> {
     }
 }
 
-impl<'a, 'b, BodySet> CreateOrReplaceUserDefinedFunctionBuilder<'a, 'b, BodySet>
-where
-    BodySet: ToAssign,
-{
-    pub fn with_user_agent(self, user_agent: &'b str) -> Self {
-        Self {
-            user_agent: Some(UserAgent::new(user_agent)),
-            ..self
-        }
-    }
-}
-
-impl<'a, 'b, BodySet> CreateOrReplaceUserDefinedFunctionBuilder<'a, 'b, BodySet>
-where
-    BodySet: ToAssign,
-{
-    pub fn with_activity_id(self, activity_id: &'b str) -> Self {
-        Self {
-            activity_id: Some(azure_core::ActivityId::new(activity_id)),
-            ..self
-        }
-    }
-}
-
-impl<'a, 'b, BodySet> CreateOrReplaceUserDefinedFunctionBuilder<'a, 'b, BodySet>
-where
-    BodySet: ToAssign,
-{
-    pub fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self {
-        Self {
-            consistency_level: Some(consistency_level),
-            ..self
-        }
-    }
-}
-
-// methods callable only when every mandatory field has been filled
 impl<'a, 'b> CreateOrReplaceUserDefinedFunctionBuilder<'a, 'b, Yes> {
     pub async fn execute(&self) -> Result<CreateUserDefinedFunctionResponse, CosmosError> {
         trace!("CreateOrReplaceUserDefinedFunctionBuilder::execute called");

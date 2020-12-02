@@ -12,22 +12,22 @@ where
     DatabaseNameSet: ToAssign,
 {
     cosmos_client: &'a CosmosClient,
-    p_database_name: PhantomData<DatabaseNameSet>,
     database_name: Option<&'a str>,
     user_agent: Option<azure_core::UserAgent<'a>>,
     activity_id: Option<azure_core::ActivityId<'a>>,
     consistency_level: Option<ConsistencyLevel>,
+    p_database_name: PhantomData<DatabaseNameSet>,
 }
 
 impl<'a> CreateDatabaseBuilder<'a, No> {
     pub(crate) fn new(cosmos_client: &'a CosmosClient) -> Self {
         Self {
             cosmos_client,
-            p_database_name: PhantomData,
             database_name: None,
             user_agent: None,
             activity_id: None,
             consistency_level: None,
+            p_database_name: PhantomData,
         }
     }
 }
@@ -51,6 +51,25 @@ where
     fn consistency_level(&self) -> Option<ConsistencyLevel> {
         self.consistency_level.clone()
     }
+
+    pub fn with_user_agent(self, user_agent: &'a str) -> Self {
+        Self {
+            user_agent: Some(azure_core::UserAgent::new(user_agent)),
+            ..self
+        }
+    }
+    pub fn with_activity_id(self, activity_id: &'a str) -> Self {
+        Self {
+            activity_id: Some(azure_core::ActivityId::new(activity_id)),
+            ..self
+        }
+    }
+    pub fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self {
+        Self {
+            consistency_level: Some(consistency_level),
+            ..self
+        }
+    }
 }
 
 impl<'a> CreateDatabaseBuilder<'a, Yes> {
@@ -72,43 +91,6 @@ impl<'a> CreateDatabaseBuilder<'a, No> {
     }
 }
 
-impl<'a, DatabaseNameSet> CreateDatabaseBuilder<'a, DatabaseNameSet>
-where
-    DatabaseNameSet: ToAssign,
-{
-    pub fn with_user_agent(self, user_agent: &'a str) -> Self {
-        Self {
-            user_agent: Some(azure_core::UserAgent::new(user_agent)),
-            ..self
-        }
-    }
-}
-
-impl<'a, DatabaseNameSet> CreateDatabaseBuilder<'a, DatabaseNameSet>
-where
-    DatabaseNameSet: ToAssign,
-{
-    pub fn with_activity_id(self, activity_id: &'a str) -> Self {
-        Self {
-            activity_id: Some(azure_core::ActivityId::new(activity_id)),
-            ..self
-        }
-    }
-}
-
-impl<'a, DatabaseNameSet> CreateDatabaseBuilder<'a, DatabaseNameSet>
-where
-    DatabaseNameSet: ToAssign,
-{
-    pub fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self {
-        Self {
-            consistency_level: Some(consistency_level),
-            ..self
-        }
-    }
-}
-
-// methods callable only when every mandatory field has been filled
 impl<'a> CreateDatabaseBuilder<'a, Yes> {
     pub async fn execute(&self) -> Result<CreateDatabaseResponse, CosmosError> {
         trace!("CreateDatabaseBuilder::execute called");

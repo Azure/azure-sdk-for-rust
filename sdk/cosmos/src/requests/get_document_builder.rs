@@ -67,10 +67,8 @@ impl<'a, 'b> GetDocumentBuilder<'a, 'b> {
     }
 }
 
-impl<'a, 'b> IfMatchConditionSupport<'b> for GetDocumentBuilder<'a, 'b> {
-    type O = Self;
-
-    fn with_if_match_condition(self, if_match_condition: IfMatchCondition<'b>) -> Self::O {
+impl<'a, 'b> GetDocumentBuilder<'a, 'b> {
+    pub fn with_if_match_condition(self, if_match_condition: IfMatchCondition<'b>) -> Self {
         Self {
             if_match_condition: Some(if_match_condition),
             ..self
