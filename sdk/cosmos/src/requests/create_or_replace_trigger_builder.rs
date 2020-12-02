@@ -100,77 +100,79 @@ where
     }
 }
 
-impl<'a, TriggerTypeSet, BodySet> TriggerOperationSupport
-    for CreateOrReplaceTriggerBuilder<'a, No, TriggerTypeSet, BodySet>
+impl<'a, TriggerTypeSet, BodySet> CreateOrReplaceTriggerBuilder<'a, No, TriggerTypeSet, BodySet>
 where
     TriggerTypeSet: ToAssign,
     BodySet: ToAssign,
 {
-    type O = CreateOrReplaceTriggerBuilder<'a, Yes, TriggerTypeSet, BodySet>;
-
-    fn with_trigger_operation(self, trigger_operation: TriggerOperation) -> Self::O {
+    pub fn with_trigger_operation(
+        self,
+        trigger_operation: TriggerOperation,
+    ) -> CreateOrReplaceTriggerBuilder<'a, Yes, TriggerTypeSet, BodySet> {
         CreateOrReplaceTriggerBuilder {
-            trigger_client: self.trigger_client,
-            is_create: self.is_create,
-            p_trigger_operation: PhantomData {},
-            p_trigger_type: PhantomData {},
-            p_body: PhantomData {},
             trigger_operation,
+            trigger_client: self.trigger_client,
+            is_create: self.is_create,
             trigger_type: self.trigger_type,
             body: self.body,
             user_agent: self.user_agent,
             activity_id: self.activity_id,
             consistency_level: self.consistency_level,
+            p_trigger_operation: PhantomData {},
+            p_trigger_type: PhantomData {},
+            p_body: PhantomData {},
         }
     }
 }
 
-impl<'a, TriggerOperationSet, BodySet> TriggerTypeSupport
-    for CreateOrReplaceTriggerBuilder<'a, TriggerOperationSet, No, BodySet>
+impl<'a, TriggerOperationSet, BodySet>
+    CreateOrReplaceTriggerBuilder<'a, TriggerOperationSet, No, BodySet>
 where
     TriggerOperationSet: ToAssign,
     BodySet: ToAssign,
 {
-    type O = CreateOrReplaceTriggerBuilder<'a, TriggerOperationSet, Yes, BodySet>;
-
-    fn with_trigger_type(self, trigger_type: TriggerType) -> Self::O {
+    pub fn with_trigger_type(
+        self,
+        trigger_type: TriggerType,
+    ) -> CreateOrReplaceTriggerBuilder<'a, TriggerOperationSet, Yes, BodySet> {
         CreateOrReplaceTriggerBuilder {
+            trigger_type,
             trigger_client: self.trigger_client,
             is_create: self.is_create,
-            p_trigger_operation: PhantomData {},
-            p_trigger_type: PhantomData {},
-            p_body: PhantomData {},
             trigger_operation: self.trigger_operation,
-            trigger_type,
             body: self.body,
             user_agent: self.user_agent,
             activity_id: self.activity_id,
             consistency_level: self.consistency_level,
+            p_trigger_operation: PhantomData {},
+            p_trigger_type: PhantomData {},
+            p_body: PhantomData {},
         }
     }
 }
 
-impl<'a, TriggerOperationSet, TriggerTypeSet> TriggerBodySupport<'a>
-    for CreateOrReplaceTriggerBuilder<'a, TriggerOperationSet, TriggerTypeSet, No>
+impl<'a, TriggerOperationSet, TriggerTypeSet>
+    CreateOrReplaceTriggerBuilder<'a, TriggerOperationSet, TriggerTypeSet, No>
 where
     TriggerOperationSet: ToAssign,
     TriggerTypeSet: ToAssign,
 {
-    type O = CreateOrReplaceTriggerBuilder<'a, TriggerOperationSet, TriggerTypeSet, Yes>;
-
-    fn with_body(self, body: &'a str) -> Self::O {
+    pub fn with_body(
+        self,
+        body: &'a str,
+    ) -> CreateOrReplaceTriggerBuilder<'a, TriggerOperationSet, TriggerTypeSet, Yes> {
         CreateOrReplaceTriggerBuilder {
+            body: Some(body),
             trigger_client: self.trigger_client,
             is_create: self.is_create,
-            p_trigger_operation: PhantomData {},
-            p_trigger_type: PhantomData {},
-            p_body: PhantomData {},
             trigger_operation: self.trigger_operation,
             trigger_type: self.trigger_type,
-            body: Some(body),
             user_agent: self.user_agent,
             activity_id: self.activity_id,
             consistency_level: self.consistency_level,
+            p_trigger_operation: PhantomData {},
+            p_trigger_type: PhantomData {},
+            p_body: PhantomData {},
         }
     }
 }

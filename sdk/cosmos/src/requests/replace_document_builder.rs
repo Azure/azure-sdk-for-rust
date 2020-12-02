@@ -155,19 +155,17 @@ where
     }
 }
 
-impl<'a, 'b, DocumentIdSet> PartitionKeysSupport<'b>
-    for ReplaceDocumentBuilder<'a, 'b, No, DocumentIdSet>
+impl<'a, 'b, DocumentIdSet> ReplaceDocumentBuilder<'a, 'b, No, DocumentIdSet>
 where
     DocumentIdSet: ToAssign,
 {
-    type O = ReplaceDocumentBuilder<'a, 'b, Yes, DocumentIdSet>;
-
-    fn with_partition_keys(self, partition_keys: &'b PartitionKeys) -> Self::O {
+    pub fn with_partition_keys(
+        self,
+        partition_keys: &'b PartitionKeys,
+    ) -> ReplaceDocumentBuilder<'a, 'b, Yes, DocumentIdSet> {
         ReplaceDocumentBuilder {
-            collection_client: self.collection_client,
-            p_partition_keys: PhantomData {},
-            p_document_id: PhantomData {},
             partition_keys: Some(partition_keys),
+            collection_client: self.collection_client,
             document_id: self.document_id,
             indexing_directive: self.indexing_directive,
             if_match_condition: self.if_match_condition,
@@ -176,6 +174,8 @@ where
             activity_id: self.activity_id,
             consistency_level: self.consistency_level,
             allow_tentative_writes: self.allow_tentative_writes,
+            p_partition_keys: PhantomData {},
+            p_document_id: PhantomData {},
         }
     }
 }
@@ -205,15 +205,13 @@ where
     }
 }
 
-impl<'a, 'b, PartitionKeysSet, DocumentIdSet> IndexingDirectiveSupport
-    for ReplaceDocumentBuilder<'a, 'b, PartitionKeysSet, DocumentIdSet>
+impl<'a, 'b, PartitionKeysSet, DocumentIdSet>
+    ReplaceDocumentBuilder<'a, 'b, PartitionKeysSet, DocumentIdSet>
 where
     PartitionKeysSet: ToAssign,
     DocumentIdSet: ToAssign,
 {
-    type O = Self;
-
-    fn with_indexing_directive(self, indexing_directive: IndexingDirective) -> Self::O {
+    pub fn with_indexing_directive(self, indexing_directive: IndexingDirective) -> Self {
         Self {
             indexing_directive,
             ..self

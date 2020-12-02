@@ -135,14 +135,14 @@ where
     }
 }
 
-impl<'a, 'b> PartitionKeysSupport<'b> for CreateDocumentBuilder<'a, 'b, No> {
-    type O = CreateDocumentBuilder<'a, 'b, Yes>;
-
-    fn with_partition_keys(self, partition_keys: &'b PartitionKeys) -> Self::O {
+impl<'a, 'b> CreateDocumentBuilder<'a, 'b, No> {
+    pub fn with_partition_keys(
+        self,
+        partition_keys: &'b PartitionKeys,
+    ) -> CreateDocumentBuilder<'a, 'b, Yes> {
         CreateDocumentBuilder {
-            collection_client: self.collection_client,
-            p_partition_keys: PhantomData {},
             partition_keys: Some(partition_keys),
+            collection_client: self.collection_client,
             is_upsert: self.is_upsert,
             indexing_directive: self.indexing_directive,
             if_match_condition: self.if_match_condition,
@@ -151,6 +151,7 @@ impl<'a, 'b> PartitionKeysSupport<'b> for CreateDocumentBuilder<'a, 'b, No> {
             activity_id: self.activity_id,
             consistency_level: self.consistency_level,
             allow_tentative_writes: self.allow_tentative_writes,
+            p_partition_keys: PhantomData {},
         }
     }
 }
@@ -166,14 +167,11 @@ where
     }
 }
 
-impl<'a, 'b, PartitionKeysSet> IndexingDirectiveSupport
-    for CreateDocumentBuilder<'a, 'b, PartitionKeysSet>
+impl<'a, 'b, PartitionKeysSet> CreateDocumentBuilder<'a, 'b, PartitionKeysSet>
 where
     PartitionKeysSet: ToAssign,
 {
-    type O = Self;
-
-    fn with_indexing_directive(self, indexing_directive: IndexingDirective) -> Self::O {
+    pub fn with_indexing_directive(self, indexing_directive: IndexingDirective) -> Self {
         Self {
             indexing_directive,
             ..self

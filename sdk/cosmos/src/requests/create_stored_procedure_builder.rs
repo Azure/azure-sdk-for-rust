@@ -58,10 +58,8 @@ impl<'a, 'b> CreateStoredProcedureBuilder<'a, 'b, Yes> {
     }
 }
 
-impl<'a, 'b> StoredProcedureBodySupport<'a> for CreateStoredProcedureBuilder<'a, 'b, No> {
-    type O = CreateStoredProcedureBuilder<'a, 'b, Yes>;
-
-    fn with_body(self, body: &'a str) -> Self::O {
+impl<'a, 'b> CreateStoredProcedureBuilder<'a, 'b, No> {
+    pub fn with_body(self, body: &'a str) -> CreateStoredProcedureBuilder<'a, 'b, Yes> {
         CreateStoredProcedureBuilder {
             stored_procedure_client: self.stored_procedure_client,
             p_body: PhantomData {},

@@ -79,20 +79,19 @@ where
     }
 }
 
-impl<'a, 'b> UserDefinedFunctionBodySupport<'b>
-    for CreateOrReplaceUserDefinedFunctionBuilder<'a, 'b, No>
-{
-    type O = CreateOrReplaceUserDefinedFunctionBuilder<'a, 'b, Yes>;
-
-    fn with_body(self, body: &'b str) -> Self::O {
+impl<'a, 'b> CreateOrReplaceUserDefinedFunctionBuilder<'a, 'b, No> {
+    pub fn with_body(
+        self,
+        body: &'b str,
+    ) -> CreateOrReplaceUserDefinedFunctionBuilder<'a, 'b, Yes> {
         CreateOrReplaceUserDefinedFunctionBuilder {
+            body: Some(body),
             user_defined_function_client: self.user_defined_function_client,
             is_create: self.is_create,
-            p_body: PhantomData {},
-            body: Some(body),
             user_agent: self.user_agent,
             activity_id: self.activity_id,
             consistency_level: self.consistency_level,
+            p_body: PhantomData {},
         }
     }
 }
@@ -121,7 +120,7 @@ where
     }
 }
 
-impl<'a, 'b, BodySet>  CreateOrReplaceUserDefinedFunctionBuilder<'a, 'b, BodySet>
+impl<'a, 'b, BodySet> CreateOrReplaceUserDefinedFunctionBuilder<'a, 'b, BodySet>
 where
     BodySet: ToAssign,
 {

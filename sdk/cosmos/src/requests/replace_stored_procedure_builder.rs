@@ -73,10 +73,8 @@ where
     }
 }
 
-impl<'a, 'b> StoredProcedureBodySupport<'b> for ReplaceStoredProcedureBuilder<'a, 'b, No> {
-    type O = ReplaceStoredProcedureBuilder<'a, 'b, Yes>;
-
-    fn with_body(self, body: &'b str) -> Self::O {
+impl<'a, 'b> ReplaceStoredProcedureBuilder<'a, 'b, No> {
+    pub fn with_body(self, body: &'b str) -> ReplaceStoredProcedureBuilder<'a, 'b, Yes> {
         ReplaceStoredProcedureBuilder {
             stored_procedure_client: self.stored_procedure_client,
             p_body: PhantomData {},
@@ -112,7 +110,7 @@ where
     }
 }
 
-impl<'a, 'b, BodySet>  ReplaceStoredProcedureBuilder<'a, 'b, BodySet>
+impl<'a, 'b, BodySet> ReplaceStoredProcedureBuilder<'a, 'b, BodySet>
 where
     BodySet: ToAssign,
 {

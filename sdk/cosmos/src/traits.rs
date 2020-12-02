@@ -1,5 +1,5 @@
 use crate::resources::*;
-use crate::{headers, ConsistencyLevel, PartitionKeys};
+use crate::{headers, PartitionKeys};
 use document::IndexingDirective;
 use http::request::Builder;
 
@@ -26,11 +26,6 @@ pub trait ParallelizeCrossPartitionQuerySupport {
         self,
         parallelize_cross_partition_query: bool,
     ) -> Self::O;
-}
-
-pub trait ParametersSupport<'a> {
-    type O;
-    fn with_parameters(self, parameters: &'a stored_procedure::Parameters) -> Self::O;
 }
 
 pub trait ParallelizeCrossPartitionQueryOption {
@@ -97,11 +92,6 @@ pub trait AllowTentativeWritesOption {
     }
 }
 
-pub trait ConsistencyLevelSupport<'a> {
-    type O;
-    fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self::O;
-}
-
 pub trait PartitionRangeIdSupport<'a> {
     type O;
     fn with_partition_range_id(self, partition_range_id: &'a str) -> Self::O;
@@ -121,11 +111,6 @@ pub trait PartitionRangeIdOption<'a> {
             builder
         }
     }
-}
-
-pub trait IndexingDirectiveSupport {
-    type O;
-    fn with_indexing_directive(self, indexing_directive: IndexingDirective) -> Self::O;
 }
 
 impl azure_core::AddAsHeader for IndexingDirective {
@@ -160,26 +145,6 @@ pub trait MaxItemCountOption {
     }
 }
 
-pub trait PartitionKeySupport<'a> {
-    type O;
-    fn with_partition_key(self, partition_key: &'a collection::PartitionKey) -> Self::O;
-}
-
-pub trait PartitionKeysSupport<'a> {
-    type O;
-    fn with_partition_keys(self, partition_keys: &'a PartitionKeys) -> Self::O;
-}
-
-pub trait TriggerOperationSupport {
-    type O;
-    fn with_trigger_operation(self, a: trigger::TriggerOperation) -> Self::O;
-}
-
-pub trait TriggerTypeSupport {
-    type O;
-    fn with_trigger_type(self, a: trigger::TriggerType) -> Self::O;
-}
-
 impl azure_core::AddAsHeader for &'_ PartitionKeys {
     fn add_as_header(&self, builder: Builder) -> Builder {
         headers::add_partition_keys_header(self, builder)
@@ -193,21 +158,6 @@ pub trait MediaRequired<'a> {
 pub trait MediaSupport<'a> {
     type O;
     fn with_media(self, media: &'a str) -> Self::O;
-}
-
-pub trait StoredProcedureBodySupport<'a> {
-    type O;
-    fn with_body(self, body: &'a str) -> Self::O;
-}
-
-pub trait UserDefinedFunctionBodySupport<'a> {
-    type O;
-    fn with_body(self, body: &'a str) -> Self::O;
-}
-
-pub trait TriggerBodySupport<'a> {
-    type O;
-    fn with_body(self, body: &'a str) -> Self::O;
 }
 
 pub trait ExpirySecondsOption {

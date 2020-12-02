@@ -62,10 +62,8 @@ impl<'a, 'b> AllowTentativeWritesOption for ExecuteStoredProcedureBuilder<'a, 'b
     }
 }
 
-impl<'a, 'b> ParametersSupport<'b> for ExecuteStoredProcedureBuilder<'a, 'b> {
-    type O = Self;
-
-    fn with_parameters(self, parameters: &'b Parameters) -> Self::O {
+impl<'a, 'b> ExecuteStoredProcedureBuilder<'a, 'b> {
+    pub fn with_parameters(self, parameters: &'b Parameters) -> Self {
         Self {
             parameters: Some(parameters),
             ..self
@@ -91,7 +89,7 @@ impl<'a, 'b> ExecuteStoredProcedureBuilder<'a, 'b> {
     }
 }
 
-impl<'a, 'b>  ExecuteStoredProcedureBuilder<'a, 'b> {
+impl<'a, 'b> ExecuteStoredProcedureBuilder<'a, 'b> {
     pub fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self {
         Self {
             consistency_level: Some(consistency_level),
@@ -111,10 +109,8 @@ impl<'a, 'b> AllowTentativeWritesSupport for ExecuteStoredProcedureBuilder<'a, '
     }
 }
 
-impl<'a, 'b> PartitionKeysSupport<'b> for ExecuteStoredProcedureBuilder<'a, 'b> {
-    type O = Self;
-
-    fn with_partition_keys(self, partition_keys: &'b PartitionKeys) -> Self::O {
+impl<'a, 'b> ExecuteStoredProcedureBuilder<'a, 'b> {
+    pub fn with_partition_keys(self, partition_keys: &'b PartitionKeys) -> Self {
         Self {
             partition_keys: Some(partition_keys),
             ..self

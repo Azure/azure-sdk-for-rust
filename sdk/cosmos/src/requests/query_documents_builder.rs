@@ -277,13 +277,11 @@ where
     }
 }
 
-impl<'a, 'b, QuerySet> PartitionKeysSupport<'b> for QueryDocumentsBuilder<'a, 'b, QuerySet>
+impl<'a, 'b, QuerySet> QueryDocumentsBuilder<'a, 'b, QuerySet>
 where
     QuerySet: ToAssign,
 {
-    type O = Self;
-
-    fn with_partition_keys(self, partition_keys: &'b PartitionKeys) -> Self::O {
+    pub fn with_partition_keys(self, partition_keys: &'b PartitionKeys) -> Self {
         Self {
             partition_keys: Some(partition_keys),
             ..self

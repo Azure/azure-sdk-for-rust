@@ -99,14 +99,14 @@ where
     }
 }
 
-impl<'a, 'b, IndexingPolicySet> PartitionKeySupport<'a>
-    for ReplaceCollectionBuilder<'a, 'b, No, IndexingPolicySet>
+impl<'a, 'b, IndexingPolicySet> ReplaceCollectionBuilder<'a, 'b, No, IndexingPolicySet>
 where
     IndexingPolicySet: ToAssign,
 {
-    type O = ReplaceCollectionBuilder<'a, 'b, Yes, IndexingPolicySet>;
-
-    fn with_partition_key(self, partition_key: &'a PartitionKey) -> Self::O {
+    pub fn with_partition_key(
+        self,
+        partition_key: &'a PartitionKey,
+    ) -> ReplaceCollectionBuilder<'a, 'b, Yes, IndexingPolicySet> {
         ReplaceCollectionBuilder {
             collection_client: self.collection_client,
             p_partition_key: PhantomData {},
