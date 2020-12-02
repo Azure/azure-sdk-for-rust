@@ -41,37 +41,38 @@ pub trait ParallelizeCrossPartitionQueryOption {
     }
 }
 
-pub trait IsUpsertSupport {
-    type O;
-    fn with_is_upsert(self, is_upsert: bool) -> Self::O;
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum IsUpsert {
+    Yes,
+    No,
 }
 
-pub trait IsUpsertOption {
-    fn is_upsert(&self) -> bool;
-
-    #[must_use]
-    fn add_header(&self, builder: Builder) -> Builder {
-        builder.header(
-            headers::HEADER_DOCUMENTDB_IS_UPSERT,
-            self.is_upsert().to_string(),
-        )
+impl IsUpsert {
+    fn as_bool_str(&self) -> &str {
+        match self {
+            Self::Yes => "true",
+            Self::No => "false",
+        }
     }
 }
 
-pub trait AIMSupport {
-    type O;
-    fn with_a_im(self, a_im: bool) -> Self::O;
+impl AddAsHeader for IsUpsert {
+    fn add_as_header(&self, builder: Builder) -> Builder {
+        builder.header(headers::HEADER_DOCUMENTDB_IS_UPSERT, self.as_bool_str())
+    }
 }
 
-pub trait AIMOption {
-    fn a_im(&self) -> bool;
+#[derive(Debug, Clone, Copy)]
+pub enum ChangeFeed {
+    Incremental,
+    None,
+}
 
-    #[must_use]
-    fn add_header(&self, builder: Builder) -> Builder {
-        if self.a_im() {
-            builder.header(headers::HEADER_A_IM, "Incremental feed")
-        } else {
-            builder
+impl AddAsHeader for ChangeFeed {
+    fn add_as_header(&self, builder: Builder) -> Builder {
+        match self {
+            Self::Incremental => builder.header(headers::HEADER_A_IM, "Incremental feed"),
+            Self::None => builder,
         }
     }
 }

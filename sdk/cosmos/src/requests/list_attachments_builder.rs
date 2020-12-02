@@ -15,7 +15,7 @@ pub struct ListAttachmentsBuilder<'a, 'b> {
     consistency_level: Option<ConsistencyLevel>,
     continuation: Option<&'b str>,
     max_item_count: MaxItemCount,
-    a_im: bool,
+    a_im: ChangeFeed,
 }
 
 impl<'a, 'b> ListAttachmentsBuilder<'a, 'b> {
@@ -28,7 +28,7 @@ impl<'a, 'b> ListAttachmentsBuilder<'a, 'b> {
             consistency_level: None,
             continuation: None,
             max_item_count: MaxItemCount::new(-1),
-            a_im: false,
+            a_im: ChangeFeed::None,
         }
     }
 }
@@ -76,8 +76,8 @@ impl<'a, 'b> ListAttachmentsBuilder<'a, 'b> {
     }
 }
 
-impl<'a, 'b> AIMOption for ListAttachmentsBuilder<'a, 'b> {
-    fn a_im(&self) -> bool {
+impl<'a, 'b> ListAttachmentsBuilder<'a, 'b> {
+    fn a_im(&self) -> ChangeFeed {
         self.a_im
     }
 }
@@ -140,10 +140,8 @@ impl<'a, 'b> ListAttachmentsBuilder<'a, 'b> {
     }
 }
 
-impl<'a, 'b> AIMSupport for ListAttachmentsBuilder<'a, 'b> {
-    type O = Self;
-
-    fn with_a_im(self, a_im: bool) -> Self::O {
+impl<'a, 'b> ListAttachmentsBuilder<'a, 'b> {
+    pub fn with_a_im(self, a_im: ChangeFeed) -> Self {
         Self { a_im, ..self }
     }
 }
@@ -169,7 +167,7 @@ impl<'a, 'b> ListAttachmentsBuilder<'a, 'b> {
         req = crate::headers::add_header(self.consistency_level(), req);
         req = ContinuationOption::add_header(self, req);
         req = crate::headers::add_header(Some(self.max_item_count()), req);
-        req = AIMOption::add_header(self, req);
+        req = crate::headers::add_header(Some(self.a_im()), req);
 
         req = crate::headers::add_partition_keys_header(self.document_client.partition_keys(), req);
 

@@ -18,7 +18,7 @@ where
     collection_client: &'a CollectionClient,
     p_partition_keys: PhantomData<PartitionKeysSet>,
     partition_keys: Option<&'b PartitionKeys>,
-    is_upsert: bool,
+    is_upsert: IsUpsert,
     indexing_directive: IndexingDirective,
     if_match_condition: Option<IfMatchCondition<'b>>,
     if_modified_since: Option<&'b DateTime<Utc>>,
@@ -34,7 +34,7 @@ impl<'a, 'b> CreateDocumentBuilder<'a, 'b, No> {
             collection_client,
             p_partition_keys: PhantomData {},
             partition_keys: None,
-            is_upsert: false,
+            is_upsert: IsUpsert::No,
             indexing_directive: IndexingDirective::Default,
             if_match_condition: None,
             if_modified_since: None,
@@ -61,11 +61,11 @@ impl<'a, 'b> CreateDocumentBuilder<'a, 'b, Yes> {
     }
 }
 
-impl<'a, 'b, PartitionKeysSet> IsUpsertOption for CreateDocumentBuilder<'a, 'b, PartitionKeysSet>
+impl<'a, 'b, PartitionKeysSet> CreateDocumentBuilder<'a, 'b, PartitionKeysSet>
 where
     PartitionKeysSet: ToAssign,
 {
-    fn is_upsert(&self) -> bool {
+    fn is_upsert(&self) -> IsUpsert {
         self.is_upsert
     }
 }
@@ -155,14 +155,19 @@ impl<'a, 'b> CreateDocumentBuilder<'a, 'b, No> {
     }
 }
 
-impl<'a, 'b, PartitionKeysSet> IsUpsertSupport for CreateDocumentBuilder<'a, 'b, PartitionKeysSet>
+impl<'a, 'b, PartitionKeysSet> CreateDocumentBuilder<'a, 'b, PartitionKeysSet>
 where
     PartitionKeysSet: ToAssign,
 {
-    type O = Self;
-
-    fn with_is_upsert(self, is_upsert: bool) -> Self::O {
-        Self { is_upsert, ..self }
+    pub fn with_is_upsert(self, is_upsert: bool) -> Self {
+        Self {
+            is_upsert: if is_upsert {
+                IsUpsert::Yes
+            } else {
+                IsUpsert::No
+            },
+            ..self
+        }
     }
 }
 
@@ -291,7 +296,7 @@ impl<'a, 'b> CreateDocumentBuilder<'a, 'b, Yes> {
         req = crate::headers::add_header(self.activity_id(), req);
         req = crate::headers::add_header(self.consistency_level(), req);
         req = crate::headers::add_header(Some(self.partition_keys()), req);
-        req = IsUpsertOption::add_header(self, req);
+        req = crate::headers::add_header(Some(self.is_upsert()), req);
         req = crate::headers::add_header(Some(self.indexing_directive()), req);
         req = crate::headers::add_header(Some(self.allow_tentative_writes()), req);
 
@@ -310,7 +315,7 @@ impl<'a, 'b> CreateDocumentBuilder<'a, 'b, Yes> {
 
         // expect CREATED is IsUpsert is off. Otherwise either
         // CREATED or OK means success.
-        if !self.is_upsert() && response.status() != StatusCode::CREATED {
+        if self.is_upsert() == IsUpsert::No && response.status() != StatusCode::CREATED {
             return Err(UnexpectedHTTPResult::new(
                 StatusCode::CREATED,
                 response.status(),

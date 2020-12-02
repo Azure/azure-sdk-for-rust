@@ -16,7 +16,7 @@ pub struct ListDocumentsBuilder<'a, 'b> {
     consistency_level: Option<ConsistencyLevel>,
     continuation: Option<&'b str>,
     max_item_count: MaxItemCount,
-    a_im: bool,
+    a_im: ChangeFeed,
     partition_range_id: Option<PartitionRangeId<'b>>,
 }
 
@@ -30,7 +30,7 @@ impl<'a, 'b> ListDocumentsBuilder<'a, 'b> {
             consistency_level: None,
             continuation: None,
             max_item_count: MaxItemCount::new(-1),
-            a_im: false,
+            a_im: ChangeFeed::None,
             partition_range_id: None,
         }
     }
@@ -78,8 +78,8 @@ impl<'a, 'b> ListDocumentsBuilder<'a, 'b> {
     }
 }
 
-impl<'a, 'b> AIMOption for ListDocumentsBuilder<'a, 'b> {
-    fn a_im(&self) -> bool {
+impl<'a, 'b> ListDocumentsBuilder<'a, 'b> {
+    fn a_im(&self) -> ChangeFeed {
         self.a_im
     }
 }
@@ -156,10 +156,8 @@ impl<'a, 'b> ListDocumentsBuilder<'a, 'b> {
     }
 }
 
-impl<'a, 'b> AIMSupport for ListDocumentsBuilder<'a, 'b> {
-    type O = Self;
-
-    fn with_a_im(self, a_im: bool) -> Self::O {
+impl<'a, 'b> ListDocumentsBuilder<'a, 'b> {
+    pub fn with_a_im(self, a_im: ChangeFeed) -> Self {
         Self { a_im, ..self }
     }
 }
@@ -196,7 +194,7 @@ impl<'a, 'b> ListDocumentsBuilder<'a, 'b> {
         let req = crate::headers::add_header(self.consistency_level(), req);
         let req = ContinuationOption::add_header(self, req);
         let req = crate::headers::add_header(Some(self.max_item_count()), req);
-        let req = AIMOption::add_header(self, req);
+        let req = crate::headers::add_header(Some(self.a_im()), req);
         let req = crate::headers::add_header(self.partition_range_id(), req);
 
         let req = req.body(EMPTY_BODY.as_ref())?;
