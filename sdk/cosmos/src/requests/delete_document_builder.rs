@@ -15,7 +15,7 @@ pub struct DeleteDocumentBuilder<'a> {
     user_agent: Option<azure_core::UserAgent<'a>>,
     activity_id: Option<azure_core::ActivityId<'a>>,
     consistency_level: Option<ConsistencyLevel>,
-    allow_tentative_writes: bool,
+    allow_tentative_writes: TenativeWritesAllowance,
 }
 
 impl<'a> DeleteDocumentBuilder<'a> {
@@ -27,7 +27,7 @@ impl<'a> DeleteDocumentBuilder<'a> {
             user_agent: None,
             activity_id: None,
             consistency_level: None,
-            allow_tentative_writes: false,
+            allow_tentative_writes: TenativeWritesAllowance::Deny,
         }
     }
 }
@@ -68,8 +68,8 @@ impl<'a> DeleteDocumentBuilder<'a> {
     }
 }
 
-impl<'a> AllowTentativeWritesOption for DeleteDocumentBuilder<'a> {
-    fn allow_tentative_writes(&self) -> bool {
+impl<'a> DeleteDocumentBuilder<'a> {
+    fn allow_tentative_writes(&self) -> TenativeWritesAllowance {
         self.allow_tentative_writes
     }
 }
@@ -114,7 +114,7 @@ impl<'a> DeleteDocumentBuilder<'a> {
     }
 }
 
-impl<'a>  DeleteDocumentBuilder<'a> {
+impl<'a> DeleteDocumentBuilder<'a> {
     pub fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self {
         Self {
             consistency_level: Some(consistency_level),
@@ -123,10 +123,11 @@ impl<'a>  DeleteDocumentBuilder<'a> {
     }
 }
 
-impl<'a> AllowTentativeWritesSupport for DeleteDocumentBuilder<'a> {
-    type O = Self;
-
-    fn with_allow_tentative_writes(self, allow_tentative_writes: bool) -> Self::O {
+impl<'a> DeleteDocumentBuilder<'a> {
+    pub fn with_allow_tentative_writes(
+        self,
+        allow_tentative_writes: TenativeWritesAllowance,
+    ) -> Self {
         Self {
             allow_tentative_writes,
             ..self
@@ -149,7 +150,7 @@ impl<'a> DeleteDocumentBuilder<'a> {
         req = crate::headers::add_header(self.user_agent(), req);
         req = crate::headers::add_header(self.activity_id(), req);
         req = crate::headers::add_header(self.consistency_level(), req);
-        req = AllowTentativeWritesOption::add_header(self, req);
+        req = crate::headers::add_header(Some(self.allow_tentative_writes()), req);
 
         req = crate::headers::add_partition_keys_header(self.document_client.partition_keys(), req);
 

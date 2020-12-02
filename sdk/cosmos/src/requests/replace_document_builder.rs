@@ -26,7 +26,7 @@ where
     user_agent: Option<azure_core::UserAgent<'b>>,
     activity_id: Option<azure_core::ActivityId<'b>>,
     consistency_level: Option<ConsistencyLevel>,
-    allow_tentative_writes: bool,
+    allow_tentative_writes: TenativeWritesAllowance,
 }
 
 impl<'a, 'b> ReplaceDocumentBuilder<'a, 'b, No, No> {
@@ -43,7 +43,7 @@ impl<'a, 'b> ReplaceDocumentBuilder<'a, 'b, No, No> {
             user_agent: None,
             activity_id: None,
             consistency_level: None,
-            allow_tentative_writes: false,
+            allow_tentative_writes: TenativeWritesAllowance::Deny,
         }
     }
 }
@@ -144,13 +144,13 @@ where
     }
 }
 
-impl<'a, 'b, PartitionKeysSet, DocumentIdSet> AllowTentativeWritesOption
-    for ReplaceDocumentBuilder<'a, 'b, PartitionKeysSet, DocumentIdSet>
+impl<'a, 'b, PartitionKeysSet, DocumentIdSet>
+    ReplaceDocumentBuilder<'a, 'b, PartitionKeysSet, DocumentIdSet>
 where
     PartitionKeysSet: ToAssign,
     DocumentIdSet: ToAssign,
 {
-    fn allow_tentative_writes(&self) -> bool {
+    fn allow_tentative_writes(&self) -> TenativeWritesAllowance {
         self.allow_tentative_writes
     }
 }
@@ -293,15 +293,16 @@ where
     }
 }
 
-impl<'a, 'b, PartitionKeysSet, DocumentIdSet> AllowTentativeWritesSupport
-    for ReplaceDocumentBuilder<'a, 'b, PartitionKeysSet, DocumentIdSet>
+impl<'a, 'b, PartitionKeysSet, DocumentIdSet>
+    ReplaceDocumentBuilder<'a, 'b, PartitionKeysSet, DocumentIdSet>
 where
     PartitionKeysSet: ToAssign,
     DocumentIdSet: ToAssign,
 {
-    type O = Self;
-
-    fn with_allow_tentative_writes(self, allow_tentative_writes: bool) -> Self::O {
+    pub fn with_allow_tentative_writes(
+        self,
+        allow_tentative_writes: TenativeWritesAllowance,
+    ) -> Self {
         Self {
             allow_tentative_writes,
             ..self
@@ -339,7 +340,7 @@ impl<'a, 'b> ReplaceDocumentBuilder<'a, 'b, Yes, Yes> {
         let req = crate::headers::add_header(self.activity_id(), req);
         let req = crate::headers::add_header(self.consistency_level(), req);
         let req = crate::headers::add_header(Some(self.partition_keys()), req);
-        let req = AllowTentativeWritesOption::add_header(self, req);
+        let req = crate::headers::add_header(Some(self.allow_tentative_writes()), req);
 
         let serialized = serde_json::to_string(document)?;
 

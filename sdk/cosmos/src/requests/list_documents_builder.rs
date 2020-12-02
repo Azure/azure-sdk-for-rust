@@ -17,7 +17,7 @@ pub struct ListDocumentsBuilder<'a, 'b> {
     continuation: Option<&'b str>,
     max_item_count: MaxItemCount,
     a_im: bool,
-    partition_range_id: Option<&'b str>,
+    partition_range_id: Option<PartitionRangeId<'b>>,
 }
 
 impl<'a, 'b> ListDocumentsBuilder<'a, 'b> {
@@ -84,8 +84,8 @@ impl<'a, 'b> AIMOption for ListDocumentsBuilder<'a, 'b> {
     }
 }
 
-impl<'a, 'b> PartitionRangeIdOption<'b> for ListDocumentsBuilder<'a, 'b> {
-    fn partition_range_id(&self) -> Option<&'b str> {
+impl<'a, 'b> ListDocumentsBuilder<'a, 'b> {
+    fn partition_range_id(&self) -> Option<PartitionRangeId<'b>> {
         self.partition_range_id
     }
 }
@@ -164,12 +164,10 @@ impl<'a, 'b> AIMSupport for ListDocumentsBuilder<'a, 'b> {
     }
 }
 
-impl<'a, 'b> PartitionRangeIdSupport<'b> for ListDocumentsBuilder<'a, 'b> {
-    type O = Self;
-
-    fn with_partition_range_id(self, partition_range_id: &'b str) -> Self::O {
+impl<'a, 'b> ListDocumentsBuilder<'a, 'b> {
+    pub fn with_partition_range_id(self, partition_range_id: &'b str) -> Self {
         Self {
-            partition_range_id: Some(partition_range_id),
+            partition_range_id: Some(PartitionRangeId::new(partition_range_id)),
             ..self
         }
     }
@@ -199,7 +197,7 @@ impl<'a, 'b> ListDocumentsBuilder<'a, 'b> {
         let req = ContinuationOption::add_header(self, req);
         let req = crate::headers::add_header(Some(self.max_item_count()), req);
         let req = AIMOption::add_header(self, req);
-        let req = PartitionRangeIdOption::add_header(self, req);
+        let req = crate::headers::add_header(self.partition_range_id(), req);
 
         let req = req.body(EMPTY_BODY.as_ref())?;
 

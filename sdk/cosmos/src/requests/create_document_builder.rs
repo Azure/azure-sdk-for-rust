@@ -25,7 +25,7 @@ where
     user_agent: Option<azure_core::UserAgent<'b>>,
     activity_id: Option<azure_core::ActivityId<'b>>,
     consistency_level: Option<ConsistencyLevel>,
-    allow_tentative_writes: bool,
+    allow_tentative_writes: TenativeWritesAllowance,
 }
 
 impl<'a, 'b> CreateDocumentBuilder<'a, 'b, No> {
@@ -41,7 +41,7 @@ impl<'a, 'b> CreateDocumentBuilder<'a, 'b, No> {
             user_agent: None,
             activity_id: None,
             consistency_level: None,
-            allow_tentative_writes: false,
+            allow_tentative_writes: TenativeWritesAllowance::Deny,
         }
     }
 }
@@ -125,12 +125,11 @@ where
     }
 }
 
-impl<'a, 'b, PartitionKeysSet> AllowTentativeWritesOption
-    for CreateDocumentBuilder<'a, 'b, PartitionKeysSet>
+impl<'a, 'b, PartitionKeysSet> CreateDocumentBuilder<'a, 'b, PartitionKeysSet>
 where
     PartitionKeysSet: ToAssign,
 {
-    fn allow_tentative_writes(&self) -> bool {
+    fn allow_tentative_writes(&self) -> TenativeWritesAllowance {
         self.allow_tentative_writes
     }
 }
@@ -245,14 +244,14 @@ where
     }
 }
 
-impl<'a, 'b, PartitionKeysSet> AllowTentativeWritesSupport
-    for CreateDocumentBuilder<'a, 'b, PartitionKeysSet>
+impl<'a, 'b, PartitionKeysSet> CreateDocumentBuilder<'a, 'b, PartitionKeysSet>
 where
     PartitionKeysSet: ToAssign,
 {
-    type O = Self;
-
-    fn with_allow_tentative_writes(self, allow_tentative_writes: bool) -> Self::O {
+    pub fn with_allow_tentative_writes(
+        self,
+        allow_tentative_writes: TenativeWritesAllowance,
+    ) -> Self {
         Self {
             allow_tentative_writes,
             ..self
@@ -294,7 +293,7 @@ impl<'a, 'b> CreateDocumentBuilder<'a, 'b, Yes> {
         req = crate::headers::add_header(Some(self.partition_keys()), req);
         req = IsUpsertOption::add_header(self, req);
         req = crate::headers::add_header(Some(self.indexing_directive()), req);
-        req = AllowTentativeWritesOption::add_header(self, req);
+        req = crate::headers::add_header(Some(self.allow_tentative_writes()), req);
 
         let serialized = serde_json::to_string(document)?;
         let req = req.body(serialized.as_bytes())?;

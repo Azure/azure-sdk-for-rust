@@ -76,41 +76,39 @@ pub trait AIMOption {
     }
 }
 
-pub trait AllowTentativeWritesSupport {
-    type O;
-    fn with_allow_tentative_writes(self, allow_tentative_writes: bool) -> Self::O;
+#[derive(Debug, Clone, Copy)]
+pub enum TenativeWritesAllowance {
+    Allow,
+    Deny,
 }
 
-pub trait AllowTentativeWritesOption {
-    fn allow_tentative_writes(&self) -> bool;
-
-    #[must_use]
-    fn add_header(&self, builder: Builder) -> Builder {
-        builder.header(
-            headers::HEADER_ALLOW_MULTIPLE_WRITES,
-            self.allow_tentative_writes().to_string(),
-        )
+impl TenativeWritesAllowance {
+    fn as_bool_str(&self) -> &str {
+        match self {
+            Self::Allow => "true",
+            Self::Deny => "false",
+        }
     }
 }
 
-pub trait PartitionRangeIdSupport<'a> {
-    type O;
-    fn with_partition_range_id(self, partition_range_id: &'a str) -> Self::O;
+impl AddAsHeader for TenativeWritesAllowance {
+    fn add_as_header(&self, builder: Builder) -> Builder {
+        builder.header(headers::HEADER_ALLOW_MULTIPLE_WRITES, self.as_bool_str())
+    }
 }
 
-pub trait PartitionRangeIdOption<'a> {
-    fn partition_range_id(&self) -> Option<&'a str>;
+#[derive(Debug, Clone, Copy)]
+pub struct PartitionRangeId<'a>(&'a str);
 
-    #[must_use]
-    fn add_header(&self, builder: Builder) -> Builder {
-        if let Some(partition_range_id) = self.partition_range_id() {
-            builder.header(
-                headers::HEADER_DOCUMENTDB_PARTITIONRANGEID,
-                partition_range_id,
-            )
-        } else {
-            builder
-        }
+impl<'a> PartitionRangeId<'a> {
+    pub fn new(id: &'a str) -> Self {
+        Self(id)
+    }
+}
+
+impl AddAsHeader for PartitionRangeId<'_> {
+    fn add_as_header(&self, builder: Builder) -> Builder {
+        builder.header(headers::HEADER_DOCUMENTDB_PARTITIONRANGEID, self.0)
     }
 }
 

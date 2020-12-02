@@ -12,7 +12,7 @@ pub struct ExecuteStoredProcedureBuilder<'a, 'b> {
     user_agent: Option<azure_core::UserAgent<'b>>,
     activity_id: Option<azure_core::ActivityId<'b>>,
     consistency_level: Option<ConsistencyLevel>,
-    allow_tentative_writes: bool,
+    allow_tentative_writes: TenativeWritesAllowance,
     partition_keys: Option<&'b PartitionKeys>,
 }
 
@@ -24,7 +24,7 @@ impl<'a, 'b> ExecuteStoredProcedureBuilder<'a, 'b> {
             user_agent: None,
             activity_id: None,
             consistency_level: None,
-            allow_tentative_writes: false,
+            allow_tentative_writes: TenativeWritesAllowance::Deny,
             partition_keys: None,
         }
     }
@@ -56,8 +56,8 @@ impl<'a, 'b> ExecuteStoredProcedureBuilder<'a, 'b> {
     }
 }
 
-impl<'a, 'b> AllowTentativeWritesOption for ExecuteStoredProcedureBuilder<'a, 'b> {
-    fn allow_tentative_writes(&self) -> bool {
+impl<'a, 'b> ExecuteStoredProcedureBuilder<'a, 'b> {
+    fn allow_tentative_writes(&self) -> TenativeWritesAllowance {
         self.allow_tentative_writes
     }
 }
@@ -98,10 +98,11 @@ impl<'a, 'b> ExecuteStoredProcedureBuilder<'a, 'b> {
     }
 }
 
-impl<'a, 'b> AllowTentativeWritesSupport for ExecuteStoredProcedureBuilder<'a, 'b> {
-    type O = Self;
-
-    fn with_allow_tentative_writes(self, allow_tentative_writes: bool) -> Self::O {
+impl<'a, 'b> ExecuteStoredProcedureBuilder<'a, 'b> {
+    pub fn with_allow_tentative_writes(
+        self,
+        allow_tentative_writes: TenativeWritesAllowance,
+    ) -> Self {
         Self {
             allow_tentative_writes,
             ..self
@@ -134,7 +135,7 @@ impl<'a, 'b> ExecuteStoredProcedureBuilder<'a, 'b> {
         let request = crate::headers::add_header(self.user_agent(), request);
         let request = crate::headers::add_header(self.activity_id(), request);
         let request = crate::headers::add_header(self.consistency_level(), request);
-        let request = AllowTentativeWritesOption::add_header(self, request);
+        let request = crate::headers::add_header(Some(self.allow_tentative_writes()), request);
         let request = crate::headers::add_header(self.partition_keys(), request);
 
         let request = request.header(http::header::CONTENT_TYPE, "application/json");
