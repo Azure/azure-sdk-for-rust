@@ -1,5 +1,5 @@
 use crate::prelude::*;
-use crate::resources::permission::PermissionMode;
+use crate::resources::permission::{ExpirySeconds, PermissionMode};
 use crate::resources::ResourceType;
 use crate::responses::CreatePermissionResponse;
 use http::StatusCode;

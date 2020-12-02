@@ -12,18 +12,15 @@
 //! ```
 
 #[doc(inline)]
-pub use crate::{ConsistencyLevel, CosmosError, PartitionKeys};
+pub use crate::{ConsistencyLevel, CosmosError, MaxItemCount, PartitionKeys};
 
 #[doc(inline)]
 pub use crate::clients::*;
 
 // Resources
 pub use crate::resources::collection::Offer;
-pub use crate::resources::document::{IndexingDirective, Query};
+pub use crate::resources::document::*;
 #[doc(inline)]
 pub use crate::resources::*;
-
-// Traits
-pub use crate::traits::*;
 
 pub use permission::AuthorizationToken;

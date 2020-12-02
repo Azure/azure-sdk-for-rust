@@ -1,5 +1,5 @@
 use crate::prelude::*;
-use crate::resources::permission::PermissionMode;
+use crate::resources::permission::{ExpirySeconds, PermissionMode};
 use crate::responses::ReplacePermissionResponse;
 use http::StatusCode;
 use std::convert::TryInto;
