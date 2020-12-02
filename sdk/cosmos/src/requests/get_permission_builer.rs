@@ -21,61 +21,44 @@ impl<'a, 'b> GetPermissionBuilder<'a, 'b> {
             consistency_level: None,
         }
     }
-}
 
-impl<'a, 'b> GetPermissionBuilder<'a, 'b> {
     pub fn permission_client(&self) -> &'a PermissionClient {
         self.permission_client
     }
-}
 
-impl<'a, 'b> GetPermissionBuilder<'a, 'b> {
     fn user_agent(&self) -> Option<azure_core::UserAgent<'b>> {
         self.user_agent
     }
-}
 
-impl<'a, 'b> GetPermissionBuilder<'a, 'b> {
     fn activity_id(&self) -> Option<azure_core::ActivityId<'b>> {
         self.activity_id
     }
-}
 
-impl<'a, 'b> GetPermissionBuilder<'a, 'b> {
     fn consistency_level(&self) -> Option<ConsistencyLevel> {
         self.consistency_level.clone()
     }
-}
 
-impl<'a, 'b> GetPermissionBuilder<'a, 'b> {
     pub fn with_user_agent(self, user_agent: &'b str) -> Self {
         Self {
             user_agent: Some(azure_core::UserAgent::new(user_agent)),
             ..self
         }
     }
-}
 
-impl<'a, 'b> GetPermissionBuilder<'a, 'b> {
     pub fn with_activity_id(self, activity_id: &'b str) -> Self {
         Self {
             activity_id: Some(azure_core::ActivityId::new(activity_id)),
             ..self
         }
     }
-}
 
-impl<'a, 'b> GetPermissionBuilder<'a, 'b> {
     pub fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self {
         Self {
             consistency_level: Some(consistency_level),
             ..self
         }
     }
-}
 
-// methods callable only when every mandatory field has been filled
-impl<'a, 'b> GetPermissionBuilder<'a, 'b> {
     pub async fn execute(&self) -> Result<Option<GetPermissionResponse<'a>>, CosmosError> {
         trace!("GetPermissionBuilder::execute called");
 

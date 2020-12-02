@@ -27,93 +27,62 @@ impl<'a> ListCollectionsBuilder<'a> {
             continuation: None,
         }
     }
-}
 
-impl<'a> ListCollectionsBuilder<'a> {
     pub fn database_client(&self) -> &'a DatabaseClient {
         self.database_client
     }
-}
 
-impl<'a> ListCollectionsBuilder<'a> {
     fn user_agent(&self) -> Option<azure_core::UserAgent<'a>> {
         self.user_agent
     }
-}
 
-impl<'a> ListCollectionsBuilder<'a> {
     fn activity_id(&self) -> Option<azure_core::ActivityId<'a>> {
         self.activity_id
     }
-}
 
-impl<'a> ListCollectionsBuilder<'a> {
     fn consistency_level(&self) -> Option<ConsistencyLevel> {
         self.consistency_level.clone()
     }
-}
 
-impl<'a> ContinuationOption<'a> for ListCollectionsBuilder<'a> {
-    fn continuation(&self) -> Option<&'a str> {
-        self.continuation
-    }
-}
-
-impl<'a> ListCollectionsBuilder<'a> {
     fn max_item_count(&self) -> MaxItemCount {
         self.max_item_count
     }
-}
 
-impl<'a> ListCollectionsBuilder<'a> {
     pub fn with_user_agent(self, user_agent: &'a str) -> Self {
         Self {
             user_agent: Some(azure_core::UserAgent::new(user_agent)),
             ..self
         }
     }
-}
 
-impl<'a> ListCollectionsBuilder<'a> {
     pub fn with_activity_id(self, activity_id: &'a str) -> Self {
         Self {
             activity_id: Some(azure_core::ActivityId::new(activity_id)),
             ..self
         }
     }
-}
 
-impl<'a> ListCollectionsBuilder<'a> {
     pub fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self {
         Self {
             consistency_level: Some(consistency_level),
             ..self
         }
     }
-}
 
-impl<'a> ContinuationSupport<'a> for ListCollectionsBuilder<'a> {
-    type O = Self;
-
-    fn with_continuation(self, continuation: &'a str) -> Self::O {
+    pub fn with_continuation(self, continuation: &'a str) -> Self {
         Self {
             continuation: Some(continuation),
             ..self
         }
     }
-}
 
-impl<'a> ListCollectionsBuilder<'a> {
     pub fn with_max_item_count(self, max_item_count: i32) -> Self {
         Self {
             max_item_count: MaxItemCount::new(max_item_count),
             ..self
         }
     }
-}
 
-// methods callable only when every mandatory field has been filled
-impl<'a> ListCollectionsBuilder<'a> {
     pub async fn execute(&self) -> Result<ListCollectionsResponse, CosmosError> {
         trace!("ListCollectionsBuilder::execute called");
         let request = self.database_client.cosmos_client().prepare_request(
@@ -179,5 +148,11 @@ impl<'a> ListCollectionsBuilder<'a> {
                 }
             },
         )
+    }
+}
+
+impl<'a> ContinuationOption<'a> for ListCollectionsBuilder<'a> {
+    fn continuation(&self) -> Option<&'a str> {
+        self.continuation
     }
 }

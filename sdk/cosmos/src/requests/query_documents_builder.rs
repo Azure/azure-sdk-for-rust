@@ -244,13 +244,11 @@ where
     }
 }
 
-impl<'a, 'b, QuerySet> ContinuationSupport<'b> for QueryDocumentsBuilder<'a, 'b, QuerySet>
+impl<'a, 'b, QuerySet> QueryDocumentsBuilder<'a, 'b, QuerySet>
 where
     QuerySet: ToAssign,
 {
-    type O = Self;
-
-    fn with_continuation(self, continuation: &'b str) -> Self::O {
+    pub fn with_continuation(self, continuation: &'b str) -> Self {
         Self {
             continuation: Some(continuation),
             ..self

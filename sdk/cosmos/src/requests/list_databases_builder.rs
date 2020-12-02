@@ -92,10 +92,8 @@ impl<'a> ListDatabasesBuilder<'a> {
     }
 }
 
-impl<'a> ContinuationSupport<'a> for ListDatabasesBuilder<'a> {
-    type O = Self;
-
-    fn with_continuation(self, continuation: &'a str) -> Self::O {
+impl<'a> ListDatabasesBuilder<'a> {
+    pub fn with_continuation(self, continuation: &'a str) -> Self {
         Self {
             continuation: Some(continuation),
             ..self

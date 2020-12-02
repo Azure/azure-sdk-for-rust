@@ -92,10 +92,8 @@ impl<'a, 'b> ListStoredProceduresBuilder<'a, 'b> {
     }
 }
 
-impl<'a, 'b> ContinuationSupport<'b> for ListStoredProceduresBuilder<'a, 'b> {
-    type O = Self;
-
-    fn with_continuation(self, continuation: &'b str) -> Self::O {
+impl<'a, 'b> ListStoredProceduresBuilder<'a, 'b> {
+    pub fn with_continuation(self, continuation: &'b str) -> Self {
         Self {
             continuation: Some(continuation),
             ..self

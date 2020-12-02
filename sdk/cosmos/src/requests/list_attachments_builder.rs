@@ -31,121 +31,81 @@ impl<'a, 'b> ListAttachmentsBuilder<'a, 'b> {
             a_im: ChangeFeed::None,
         }
     }
-}
 
-impl<'a, 'b> ListAttachmentsBuilder<'a, 'b> {
-    #[inline]
     pub fn document_client(&self) -> &'a DocumentClient {
         self.document_client
     }
-}
 
-impl<'a, 'b> ListAttachmentsBuilder<'a, 'b> {
     fn if_match_condition(&self) -> Option<IfMatchCondition<'b>> {
         self.if_match_condition
     }
-}
 
-impl<'a, 'b> ListAttachmentsBuilder<'a, 'b> {
     fn user_agent(&self) -> Option<azure_core::UserAgent<'b>> {
         self.user_agent
     }
-}
 
-impl<'a, 'b> ListAttachmentsBuilder<'a, 'b> {
     fn activity_id(&self) -> Option<azure_core::ActivityId<'b>> {
         self.activity_id
     }
-}
 
-impl<'a, 'b> ListAttachmentsBuilder<'a, 'b> {
     fn consistency_level(&self) -> Option<ConsistencyLevel> {
         self.consistency_level.clone()
     }
-}
 
-impl<'a, 'b> ContinuationOption<'b> for ListAttachmentsBuilder<'a, 'b> {
-    fn continuation(&self) -> Option<&'b str> {
-        self.continuation
-    }
-}
-
-impl<'a, 'b> ListAttachmentsBuilder<'a, 'b> {
     fn max_item_count(&self) -> MaxItemCount {
         self.max_item_count
     }
-}
 
-impl<'a, 'b> ListAttachmentsBuilder<'a, 'b> {
     fn a_im(&self) -> ChangeFeed {
         self.a_im
     }
-}
 
-impl<'a, 'b> ListAttachmentsBuilder<'a, 'b> {
     pub fn with_if_match_condition(self, if_match_condition: IfMatchCondition<'b>) -> Self {
         Self {
             if_match_condition: Some(if_match_condition),
             ..self
         }
     }
-}
 
-impl<'a, 'b> ListAttachmentsBuilder<'a, 'b> {
     pub fn with_user_agent(self, user_agent: &'b str) -> Self {
         Self {
             user_agent: Some(azure_core::UserAgent::new(user_agent)),
             ..self
         }
     }
-}
 
-impl<'a, 'b> ListAttachmentsBuilder<'a, 'b> {
     pub fn with_activity_id(self, activity_id: &'b str) -> Self {
         Self {
             activity_id: Some(azure_core::ActivityId::new(activity_id)),
             ..self
         }
     }
-}
 
-impl<'a, 'b> ListAttachmentsBuilder<'a, 'b> {
     pub fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self {
         Self {
             consistency_level: Some(consistency_level),
             ..self
         }
     }
-}
 
-impl<'a, 'b> ContinuationSupport<'b> for ListAttachmentsBuilder<'a, 'b> {
-    type O = Self;
-
-    fn with_continuation(self, continuation: &'b str) -> Self::O {
+    pub fn with_continuation(self, continuation: &'b str) -> Self {
         Self {
             continuation: Some(continuation),
             ..self
         }
     }
-}
 
-impl<'a, 'b> ListAttachmentsBuilder<'a, 'b> {
     pub fn with_max_item_count(self, max_item_count: i32) -> Self {
         Self {
             max_item_count: MaxItemCount::new(max_item_count),
             ..self
         }
     }
-}
 
-impl<'a, 'b> ListAttachmentsBuilder<'a, 'b> {
     pub fn with_a_im(self, a_im: ChangeFeed) -> Self {
         Self { a_im, ..self }
     }
-}
 
-// methods callable only when every mandatory field has been filled
-impl<'a, 'b> ListAttachmentsBuilder<'a, 'b> {
     pub async fn execute(&self) -> Result<ListAttachmentsResponse, CosmosError> {
         let mut req = self.document_client.cosmos_client().prepare_request(
             &format!(
@@ -218,5 +178,11 @@ impl<'a, 'b> ListAttachmentsBuilder<'a, 'b> {
                 }
             },
         )
+    }
+}
+
+impl<'a, 'b> ContinuationOption<'b> for ListAttachmentsBuilder<'a, 'b> {
+    fn continuation(&self) -> Option<&'b str> {
+        self.continuation
     }
 }

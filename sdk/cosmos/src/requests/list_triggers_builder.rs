@@ -109,10 +109,8 @@ impl<'a, 'b> ListTriggersBuilder<'a, 'b> {
     }
 }
 
-impl<'a, 'b> ContinuationSupport<'b> for ListTriggersBuilder<'a, 'b> {
-    type O = Self;
-
-    fn with_continuation(self, continuation: &'b str) -> Self::O {
+impl<'a, 'b> ListTriggersBuilder<'a, 'b> {
+    pub fn with_continuation(self, continuation: &'b str) -> Self {
         Self {
             continuation: Some(continuation),
             ..self

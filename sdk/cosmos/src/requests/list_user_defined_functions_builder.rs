@@ -109,10 +109,8 @@ impl<'a, 'b> ListUserDefinedFunctionsBuilder<'a, 'b> {
     }
 }
 
-impl<'a, 'b> ContinuationSupport<'b> for ListUserDefinedFunctionsBuilder<'a, 'b> {
-    type O = Self;
-
-    fn with_continuation(self, continuation: &'b str) -> Self::O {
+impl<'a, 'b> ListUserDefinedFunctionsBuilder<'a, 'b> {
+    pub fn with_continuation(self, continuation: &'b str) -> Self {
         Self {
             continuation: Some(continuation),
             ..self
