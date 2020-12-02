@@ -1,6 +1,5 @@
 use crate::prelude::*;
 use crate::responses::CreateStoredProcedureResponse;
-use azure_core::prelude::*;
 use azure_core::{No, ToAssign, Yes};
 use http::StatusCode;
 use std::convert::TryInto;
@@ -14,8 +13,8 @@ where
     stored_procedure_client: &'a StoredProcedureClient,
     p_body: PhantomData<BodySet>,
     body: Option<&'a str>,
-    user_agent: Option<&'b str>,
-    activity_id: Option<&'b str>,
+    user_agent: Option<azure_core::UserAgent<'b>>,
+    activity_id: Option<azure_core::ActivityId<'b>>,
     consistency_level: Option<ConsistencyLevel>,
 }
 
@@ -36,97 +35,59 @@ impl<'a, 'b, BodySet> CreateStoredProcedureBuilder<'a, 'b, BodySet>
 where
     BodySet: ToAssign,
 {
+    pub fn with_user_agent(self, user_agent: &'b str) -> Self {
+        Self {
+            user_agent: Some(azure_core::UserAgent::new(user_agent)),
+            ..self
+        }
+    }
+
+    pub fn with_activity_id(self, activity_id: &'b str) -> Self {
+        Self {
+            activity_id: Some(azure_core::ActivityId::new(activity_id)),
+            ..self
+        }
+    }
+
+    pub fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self {
+        Self {
+            consistency_level: Some(consistency_level),
+            ..self
+        }
+    }
+
     fn stored_procedure_client(&self) -> &'a StoredProcedureClient {
         self.stored_procedure_client
     }
-}
 
-impl<'a, 'b> StoredProcedureBodyRequired<'a> for CreateStoredProcedureBuilder<'a, 'b, Yes> {
-    fn body(&self) -> &'a str {
-        self.body.unwrap()
-    }
-}
-
-impl<'a, 'b, BodySet> UserAgentOption<'b> for CreateStoredProcedureBuilder<'a, 'b, BodySet>
-where
-    BodySet: ToAssign,
-{
-    fn user_agent(&self) -> Option<&'b str> {
+    fn user_agent(&self) -> Option<azure_core::UserAgent<'b>> {
         self.user_agent
     }
-}
 
-impl<'a, 'b, BodySet> ActivityIdOption<'b> for CreateStoredProcedureBuilder<'a, 'b, BodySet>
-where
-    BodySet: ToAssign,
-{
-    fn activity_id(&self) -> Option<&'b str> {
+    fn activity_id(&self) -> Option<azure_core::ActivityId<'b>> {
         self.activity_id
     }
-}
 
-impl<'a, 'b, BodySet> ConsistencyLevelOption<'b> for CreateStoredProcedureBuilder<'a, 'b, BodySet>
-where
-    BodySet: ToAssign,
-{
     fn consistency_level(&self) -> Option<ConsistencyLevel> {
         self.consistency_level.clone()
     }
 }
 
-impl<'a, 'b> StoredProcedureBodySupport<'a> for CreateStoredProcedureBuilder<'a, 'b, No> {
-    type O = CreateStoredProcedureBuilder<'a, 'b, Yes>;
+impl<'a, 'b> CreateStoredProcedureBuilder<'a, 'b, Yes> {
+    fn body(&self) -> &'a str {
+        self.body.unwrap()
+    }
+}
 
-    fn with_body(self, body: &'a str) -> Self::O {
+impl<'a, 'b> CreateStoredProcedureBuilder<'a, 'b, No> {
+    pub fn with_body(self, body: &'a str) -> CreateStoredProcedureBuilder<'a, 'b, Yes> {
         CreateStoredProcedureBuilder {
-            stored_procedure_client: self.stored_procedure_client,
-            p_body: PhantomData {},
             body: Some(body),
+            stored_procedure_client: self.stored_procedure_client,
             user_agent: self.user_agent,
             activity_id: self.activity_id,
             consistency_level: self.consistency_level,
-        }
-    }
-}
-
-impl<'a, 'b, BodySet> UserAgentSupport<'b> for CreateStoredProcedureBuilder<'a, 'b, BodySet>
-where
-    BodySet: ToAssign,
-{
-    type O = Self;
-
-    fn with_user_agent(self, user_agent: &'b str) -> Self::O {
-        Self {
-            user_agent: Some(user_agent),
-            ..self
-        }
-    }
-}
-
-impl<'a, 'b, BodySet> ActivityIdSupport<'b> for CreateStoredProcedureBuilder<'a, 'b, BodySet>
-where
-    BodySet: ToAssign,
-{
-    type O = Self;
-
-    fn with_activity_id(self, activity_id: &'b str) -> Self::O {
-        Self {
-            activity_id: Some(activity_id),
-            ..self
-        }
-    }
-}
-
-impl<'a, 'b, BodySet> ConsistencyLevelSupport<'b> for CreateStoredProcedureBuilder<'a, 'b, BodySet>
-where
-    BodySet: ToAssign,
-{
-    type O = Self;
-
-    fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self::O {
-        Self {
-            consistency_level: Some(consistency_level),
-            ..self
+            p_body: PhantomData {},
         }
     }
 }
@@ -141,9 +102,9 @@ impl<'a, 'b> CreateStoredProcedureBuilder<'a, 'b, Yes> {
             .prepare_request(http::Method::POST);
 
         // add trait headers
-        let req = UserAgentOption::add_header(self, req);
-        let req = ActivityIdOption::add_header(self, req);
-        let req = ConsistencyLevelOption::add_header(self, req);
+        let req = crate::headers::add_header(self.user_agent(), req);
+        let req = crate::headers::add_header(self.activity_id(), req);
+        let req = crate::headers::add_header(self.consistency_level(), req);
 
         let req = req.header(http::header::CONTENT_TYPE, "application/json");
 

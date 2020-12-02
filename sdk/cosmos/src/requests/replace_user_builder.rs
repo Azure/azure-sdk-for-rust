@@ -1,6 +1,5 @@
 use crate::prelude::*;
 use crate::responses::CreateUserResponse;
-use azure_core::prelude::*;
 use azure_core::{No, ToAssign, Yes};
 use http::StatusCode;
 use std::convert::TryInto;
@@ -14,8 +13,8 @@ where
     user_client: &'a UserClient,
     p_user_name: PhantomData<UserNameSet>,
     user_name: Option<&'a str>,
-    user_agent: Option<&'b str>,
-    activity_id: Option<&'b str>,
+    user_agent: Option<azure_core::UserAgent<'b>>,
+    activity_id: Option<azure_core::ActivityId<'b>>,
     consistency_level: Option<ConsistencyLevel>,
 }
 
@@ -39,91 +38,33 @@ where
     pub fn user_client(&self) -> &'a UserClient {
         self.user_client
     }
-}
 
-impl<'a, 'b> UserNameRequired<'a> for ReplaceUserBuilder<'a, 'b, Yes> {
-    fn user_name(&self) -> &'a str {
-        self.user_name.unwrap()
-    }
-}
-
-impl<'a, 'b, UserNameSet> UserAgentOption<'b> for ReplaceUserBuilder<'a, 'b, UserNameSet>
-where
-    UserNameSet: ToAssign,
-{
-    fn user_agent(&self) -> Option<&'b str> {
+    fn user_agent(&self) -> Option<azure_core::UserAgent<'b>> {
         self.user_agent
     }
-}
 
-impl<'a, 'b, UserNameSet> ActivityIdOption<'b> for ReplaceUserBuilder<'a, 'b, UserNameSet>
-where
-    UserNameSet: ToAssign,
-{
-    fn activity_id(&self) -> Option<&'b str> {
+    fn activity_id(&self) -> Option<azure_core::ActivityId<'b>> {
         self.activity_id
     }
-}
-
-impl<'a, 'b, UserNameSet> ConsistencyLevelOption<'b> for ReplaceUserBuilder<'a, 'b, UserNameSet>
-where
-    UserNameSet: ToAssign,
-{
     fn consistency_level(&self) -> Option<ConsistencyLevel> {
         self.consistency_level.clone()
     }
-}
 
-impl<'a, 'b> UserNameSupport<'a> for ReplaceUserBuilder<'a, 'b, No> {
-    type O = ReplaceUserBuilder<'a, 'b, Yes>;
-
-    fn with_user_name(self, user_name: &'a str) -> Self::O {
-        ReplaceUserBuilder {
-            user_client: self.user_client,
-            p_user_name: PhantomData {},
-            user_name: Some(user_name),
-            user_agent: self.user_agent,
-            activity_id: self.activity_id,
-            consistency_level: self.consistency_level,
-        }
-    }
-}
-
-impl<'a, 'b, UserNameSet> UserAgentSupport<'b> for ReplaceUserBuilder<'a, 'b, UserNameSet>
-where
-    UserNameSet: ToAssign,
-{
-    type O = Self;
-
-    fn with_user_agent(self, user_agent: &'b str) -> Self::O {
+    pub fn with_user_agent(self, user_agent: &'b str) -> Self {
         Self {
-            user_agent: Some(user_agent),
+            user_agent: Some(azure_core::UserAgent::new(user_agent)),
             ..self
         }
     }
-}
 
-impl<'a, 'b, UserNameSet> ActivityIdSupport<'b> for ReplaceUserBuilder<'a, 'b, UserNameSet>
-where
-    UserNameSet: ToAssign,
-{
-    type O = Self;
-
-    fn with_activity_id(self, activity_id: &'b str) -> Self::O {
+    pub fn with_activity_id(self, activity_id: &'b str) -> Self {
         Self {
-            activity_id: Some(activity_id),
+            activity_id: Some(azure_core::ActivityId::new(activity_id)),
             ..self
         }
     }
-}
 
-impl<'a, 'b, UserNameSet> ConsistencyLevelSupport<'b> for ReplaceUserBuilder<'a, 'b, UserNameSet>
-where
-    UserNameSet: ToAssign,
-{
-    type O = Self;
-
-    fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self::O {
+    pub fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self {
         Self {
             consistency_level: Some(consistency_level),
             ..self
@@ -131,7 +72,6 @@ where
     }
 }
 
-// methods callable only when every mandatory field has been filled
 impl<'a, 'b> ReplaceUserBuilder<'a, 'b, Yes> {
     pub async fn execute(&self) -> Result<Option<CreateUserResponse>, CosmosError> {
         trace!("ReplaceUserBuilder::execute called");
@@ -140,9 +80,9 @@ impl<'a, 'b> ReplaceUserBuilder<'a, 'b, Yes> {
             .user_client
             .prepare_request_with_user_name(http::Method::PUT);
 
-        let req = UserAgentOption::add_header(self, req);
-        let req = ActivityIdOption::add_header(self, req);
-        let req = ConsistencyLevelOption::add_header(self, req);
+        let req = crate::headers::add_header(self.user_agent(), req);
+        let req = crate::headers::add_header(self.activity_id(), req);
+        let req = crate::headers::add_header(self.consistency_level(), req);
 
         #[derive(Serialize, Deserialize)]
         struct RequestBody<'x> {
@@ -166,6 +106,25 @@ impl<'a, 'b> ReplaceUserBuilder<'a, 'b, Yes> {
             StatusCode::NOT_FOUND => Ok(None),
             StatusCode::OK => Ok(Some(response.try_into()?)),
             _ => unreachable!(),
+        }
+    }
+}
+
+impl<'a, 'b> ReplaceUserBuilder<'a, 'b, Yes> {
+    fn user_name(&self) -> &'a str {
+        self.user_name.unwrap()
+    }
+}
+
+impl<'a, 'b> ReplaceUserBuilder<'a, 'b, No> {
+    pub fn with_user_name(self, user_name: &'a str) -> ReplaceUserBuilder<'a, 'b, Yes> {
+        ReplaceUserBuilder {
+            user_name: Some(user_name),
+            user_client: self.user_client,
+            user_agent: self.user_agent,
+            activity_id: self.activity_id,
+            consistency_level: self.consistency_level,
+            p_user_name: PhantomData {},
         }
     }
 }

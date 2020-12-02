@@ -1,7 +1,6 @@
 use crate::prelude::*;
 use crate::resources::ResourceType;
 use crate::responses::CreateDatabaseResponse;
-use azure_core::prelude::*;
 use azure_core::{No, ToAssign, Yes};
 use http::StatusCode;
 use std::convert::TryInto;
@@ -13,22 +12,22 @@ where
     DatabaseNameSet: ToAssign,
 {
     cosmos_client: &'a CosmosClient,
-    p_database_name: PhantomData<DatabaseNameSet>,
     database_name: Option<&'a str>,
-    user_agent: Option<&'a str>,
-    activity_id: Option<&'a str>,
+    user_agent: Option<azure_core::UserAgent<'a>>,
+    activity_id: Option<azure_core::ActivityId<'a>>,
     consistency_level: Option<ConsistencyLevel>,
+    p_database_name: PhantomData<DatabaseNameSet>,
 }
 
 impl<'a> CreateDatabaseBuilder<'a, No> {
     pub(crate) fn new(cosmos_client: &'a CosmosClient) -> Self {
         Self {
             cosmos_client,
-            p_database_name: PhantomData,
             database_name: None,
             user_agent: None,
             activity_id: None,
             consistency_level: None,
+            p_database_name: PhantomData,
         }
     }
 }
@@ -40,111 +39,58 @@ where
     pub fn cosmos_client(&self) -> &'a CosmosClient {
         self.cosmos_client
     }
+
+    fn user_agent(&self) -> Option<azure_core::UserAgent<'a>> {
+        self.user_agent
+    }
+
+    fn activity_id(&self) -> Option<azure_core::ActivityId<'a>> {
+        self.activity_id
+    }
+
+    fn consistency_level(&self) -> Option<ConsistencyLevel> {
+        self.consistency_level.clone()
+    }
+
+    pub fn with_user_agent(self, user_agent: &'a str) -> Self {
+        Self {
+            user_agent: Some(azure_core::UserAgent::new(user_agent)),
+            ..self
+        }
+    }
+    pub fn with_activity_id(self, activity_id: &'a str) -> Self {
+        Self {
+            activity_id: Some(azure_core::ActivityId::new(activity_id)),
+            ..self
+        }
+    }
+    pub fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self {
+        Self {
+            consistency_level: Some(consistency_level),
+            ..self
+        }
+    }
 }
 
-impl<'a> DatabaseNameRequired<'a> for CreateDatabaseBuilder<'a, Yes> {
+impl<'a> CreateDatabaseBuilder<'a, Yes> {
     fn database_name(&self) -> &'a str {
         self.database_name.unwrap()
     }
 }
 
-impl<'a, DatabaseNameSet> UserAgentOption<'a> for CreateDatabaseBuilder<'a, DatabaseNameSet>
-where
-    DatabaseNameSet: ToAssign,
-{
-    fn user_agent(&self) -> Option<&'a str> {
-        self.user_agent
-    }
-}
-
-impl<'a, DatabaseNameSet> ActivityIdOption<'a> for CreateDatabaseBuilder<'a, DatabaseNameSet>
-where
-    DatabaseNameSet: ToAssign,
-{
-    fn activity_id(&self) -> Option<&'a str> {
-        self.activity_id
-    }
-}
-
-impl<'a, DatabaseNameSet> ConsistencyLevelOption<'a> for CreateDatabaseBuilder<'a, DatabaseNameSet>
-where
-    DatabaseNameSet: ToAssign,
-{
-    fn consistency_level(&self) -> Option<ConsistencyLevel> {
-        self.consistency_level.clone()
-    }
-}
-
-impl<'a> DatabaseNameSupport<'a> for CreateDatabaseBuilder<'a, No> {
-    type O = CreateDatabaseBuilder<'a, Yes>;
-
-    fn with_database_name(self, database_name: &'a str) -> Self::O {
+impl<'a> CreateDatabaseBuilder<'a, No> {
+    pub fn with_database_name(self, database_name: &'a str) -> CreateDatabaseBuilder<'a, Yes> {
         CreateDatabaseBuilder {
-            cosmos_client: self.cosmos_client,
-            p_database_name: PhantomData {},
             database_name: Some(database_name),
+            cosmos_client: self.cosmos_client,
             user_agent: self.user_agent,
             activity_id: self.activity_id,
             consistency_level: self.consistency_level,
-        }
-    }
-}
-
-impl<'a, DatabaseNameSet> UserAgentSupport<'a> for CreateDatabaseBuilder<'a, DatabaseNameSet>
-where
-    DatabaseNameSet: ToAssign,
-{
-    type O = CreateDatabaseBuilder<'a, DatabaseNameSet>;
-
-    fn with_user_agent(self, user_agent: &'a str) -> Self::O {
-        CreateDatabaseBuilder {
-            cosmos_client: self.cosmos_client,
             p_database_name: PhantomData {},
-            database_name: self.database_name,
-            user_agent: Some(user_agent),
-            activity_id: self.activity_id,
-            consistency_level: self.consistency_level,
         }
     }
 }
 
-impl<'a, DatabaseNameSet> ActivityIdSupport<'a> for CreateDatabaseBuilder<'a, DatabaseNameSet>
-where
-    DatabaseNameSet: ToAssign,
-{
-    type O = CreateDatabaseBuilder<'a, DatabaseNameSet>;
-
-    fn with_activity_id(self, activity_id: &'a str) -> Self::O {
-        CreateDatabaseBuilder {
-            cosmos_client: self.cosmos_client,
-            p_database_name: PhantomData {},
-            database_name: self.database_name,
-            user_agent: self.user_agent,
-            activity_id: Some(activity_id),
-            consistency_level: self.consistency_level,
-        }
-    }
-}
-
-impl<'a, DatabaseNameSet> ConsistencyLevelSupport<'a> for CreateDatabaseBuilder<'a, DatabaseNameSet>
-where
-    DatabaseNameSet: ToAssign,
-{
-    type O = CreateDatabaseBuilder<'a, DatabaseNameSet>;
-
-    fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self::O {
-        CreateDatabaseBuilder {
-            cosmos_client: self.cosmos_client,
-            p_database_name: PhantomData {},
-            database_name: self.database_name,
-            user_agent: self.user_agent,
-            activity_id: self.activity_id,
-            consistency_level: Some(consistency_level),
-        }
-    }
-}
-
-// methods callable only when every mandatory field has been filled
 impl<'a> CreateDatabaseBuilder<'a, Yes> {
     pub async fn execute(&self) -> Result<CreateDatabaseResponse, CosmosError> {
         trace!("CreateDatabaseBuilder::execute called");
@@ -164,9 +110,9 @@ impl<'a> CreateDatabaseBuilder<'a, Yes> {
             ResourceType::Databases,
         );
 
-        let request = UserAgentOption::add_header(self, request);
-        let request = ActivityIdOption::add_header(self, request);
-        let request = ConsistencyLevelOption::add_header(self, request);
+        let request = crate::headers::add_header(self.user_agent(), request);
+        let request = crate::headers::add_header(self.activity_id(), request);
+        let request = crate::headers::add_header(self.consistency_level(), request);
 
         let request = request.body(req.as_bytes())?; // todo: set content-length here and elsewhere without builders
 

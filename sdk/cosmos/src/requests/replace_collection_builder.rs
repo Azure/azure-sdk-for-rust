@@ -1,7 +1,6 @@
 use crate::prelude::*;
 use crate::resources::collection::{IndexingPolicy, PartitionKey};
 use crate::responses::CreateCollectionResponse;
-use azure_core::prelude::*;
 use azure_core::{No, ToAssign, Yes};
 use http::StatusCode;
 use std::convert::TryInto;
@@ -18,8 +17,8 @@ where
     p_indexing_policy: PhantomData<IndexingPolicySet>,
     partition_key: Option<&'a PartitionKey>,
     indexing_policy: Option<&'a IndexingPolicy>,
-    user_agent: Option<&'b str>,
-    activity_id: Option<&'b str>,
+    user_agent: Option<azure_core::UserAgent<'b>>,
+    activity_id: Option<azure_core::ActivityId<'b>>,
     consistency_level: Option<ConsistencyLevel>,
 }
 
@@ -47,144 +46,34 @@ where
     pub fn collection_client(&self) -> &'a CollectionClient {
         self.collection_client
     }
-}
 
-impl<'a, 'b, IndexingPolicySet> PartitionKeyRequired<'a>
-    for ReplaceCollectionBuilder<'a, 'b, Yes, IndexingPolicySet>
-where
-    IndexingPolicySet: ToAssign,
-{
-    fn partition_key(&self) -> &'a PartitionKey {
-        self.partition_key.unwrap()
-    }
-}
-
-impl<'a, 'b, PartitionKeysSet> IndexingPolicyRequired<'a>
-    for ReplaceCollectionBuilder<'a, 'b, PartitionKeysSet, Yes>
-where
-    PartitionKeysSet: ToAssign,
-{
-    fn indexing_policy(&self) -> &'a IndexingPolicy {
-        self.indexing_policy.unwrap()
-    }
-}
-
-impl<'a, 'b, PartitionKeysSet, IndexingPolicySet> UserAgentOption<'b>
-    for ReplaceCollectionBuilder<'a, 'b, PartitionKeysSet, IndexingPolicySet>
-where
-    PartitionKeysSet: ToAssign,
-    IndexingPolicySet: ToAssign,
-{
-    fn user_agent(&self) -> Option<&'b str> {
+    fn user_agent(&self) -> Option<azure_core::UserAgent<'b>> {
         self.user_agent
     }
-}
 
-impl<'a, 'b, PartitionKeysSet, IndexingPolicySet> ActivityIdOption<'b>
-    for ReplaceCollectionBuilder<'a, 'b, PartitionKeysSet, IndexingPolicySet>
-where
-    PartitionKeysSet: ToAssign,
-    IndexingPolicySet: ToAssign,
-{
-    fn activity_id(&self) -> Option<&'b str> {
+    fn activity_id(&self) -> Option<azure_core::ActivityId<'b>> {
         self.activity_id
     }
-}
 
-impl<'a, 'b, PartitionKeysSet, IndexingPolicySet> ConsistencyLevelOption<'b>
-    for ReplaceCollectionBuilder<'a, 'b, PartitionKeysSet, IndexingPolicySet>
-where
-    PartitionKeysSet: ToAssign,
-    IndexingPolicySet: ToAssign,
-{
     fn consistency_level(&self) -> Option<ConsistencyLevel> {
         self.consistency_level.clone()
     }
-}
 
-impl<'a, 'b, IndexingPolicySet> PartitionKeySupport<'a>
-    for ReplaceCollectionBuilder<'a, 'b, No, IndexingPolicySet>
-where
-    IndexingPolicySet: ToAssign,
-{
-    type O = ReplaceCollectionBuilder<'a, 'b, Yes, IndexingPolicySet>;
-
-    fn with_partition_key(self, partition_key: &'a PartitionKey) -> Self::O {
-        ReplaceCollectionBuilder {
-            collection_client: self.collection_client,
-            p_partition_key: PhantomData {},
-            p_indexing_policy: PhantomData {},
-            partition_key: Some(partition_key),
-            indexing_policy: self.indexing_policy,
-            user_agent: self.user_agent,
-            activity_id: self.activity_id,
-            consistency_level: self.consistency_level,
-        }
-    }
-}
-
-impl<'a, 'b, PartitionKeysSet> IndexingPolicySupport<'a>
-    for ReplaceCollectionBuilder<'a, 'b, PartitionKeysSet, No>
-where
-    PartitionKeysSet: ToAssign,
-{
-    type O = ReplaceCollectionBuilder<'a, 'b, PartitionKeysSet, Yes>;
-
-    fn with_indexing_policy(self, indexing_policy: &'a IndexingPolicy) -> Self::O {
-        ReplaceCollectionBuilder {
-            collection_client: self.collection_client,
-            p_partition_key: PhantomData {},
-            p_indexing_policy: PhantomData {},
-            partition_key: self.partition_key,
-            indexing_policy: Some(indexing_policy),
-            user_agent: self.user_agent,
-            activity_id: self.activity_id,
-            consistency_level: self.consistency_level,
-        }
-    }
-}
-
-impl<'a, 'b, PartitionKeysSet, IndexingPolicySet> UserAgentSupport<'b>
-    for ReplaceCollectionBuilder<'a, 'b, PartitionKeysSet, IndexingPolicySet>
-where
-    PartitionKeysSet: ToAssign,
-    IndexingPolicySet: ToAssign,
-{
-    type O = Self;
-
-    fn with_user_agent(self, user_agent: &'b str) -> Self::O {
+    pub fn with_user_agent(self, user_agent: &'b str) -> Self {
         Self {
-            user_agent: Some(user_agent),
+            user_agent: Some(azure_core::UserAgent::new(user_agent)),
             ..self
         }
     }
-}
 
-impl<'a, 'b, PartitionKeysSet, IndexingPolicySet> ActivityIdSupport<'b>
-    for ReplaceCollectionBuilder<'a, 'b, PartitionKeysSet, IndexingPolicySet>
-where
-    PartitionKeysSet: ToAssign,
-    IndexingPolicySet: ToAssign,
-{
-    type O = Self;
-
-    fn with_activity_id(self, activity_id: &'b str) -> Self::O {
+    pub fn with_activity_id(self, activity_id: &'b str) -> Self {
         Self {
-            activity_id: Some(activity_id),
+            activity_id: Some(azure_core::ActivityId::new(activity_id)),
             ..self
         }
     }
-}
 
-impl<'a, 'b, PartitionKeysSet, IndexingPolicySet> ConsistencyLevelSupport<'b>
-    for ReplaceCollectionBuilder<'a, 'b, PartitionKeysSet, IndexingPolicySet>
-where
-    PartitionKeysSet: ToAssign,
-    IndexingPolicySet: ToAssign,
-{
-    type O = Self;
-
-    fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self::O {
+    pub fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self {
         Self {
             consistency_level: Some(consistency_level),
             ..self
@@ -201,9 +90,9 @@ impl<'a, 'b> ReplaceCollectionBuilder<'a, 'b, Yes, Yes> {
             .collection_client
             .prepare_request_with_collection_name(http::Method::PUT);
 
-        let req = UserAgentOption::add_header(self, req);
-        let req = ActivityIdOption::add_header(self, req);
-        let req = ConsistencyLevelOption::add_header(self, req);
+        let req = crate::headers::add_header(self.user_agent(), req);
+        let req = crate::headers::add_header(self.activity_id(), req);
+        let req = crate::headers::add_header(self.consistency_level(), req);
 
         let req = req.header(http::header::CONTENT_TYPE, "application/json");
 
@@ -238,5 +127,65 @@ impl<'a, 'b> ReplaceCollectionBuilder<'a, 'b, Yes, Yes> {
             .execute_request_check_status(req, StatusCode::OK)
             .await?
             .try_into()?)
+    }
+}
+
+impl<'a, 'b, IndexingPolicySet> ReplaceCollectionBuilder<'a, 'b, Yes, IndexingPolicySet>
+where
+    IndexingPolicySet: ToAssign,
+{
+    fn partition_key(&self) -> &'a PartitionKey {
+        self.partition_key.unwrap()
+    }
+}
+
+impl<'a, 'b, PartitionKeysSet> ReplaceCollectionBuilder<'a, 'b, PartitionKeysSet, Yes>
+where
+    PartitionKeysSet: ToAssign,
+{
+    fn indexing_policy(&self) -> &'a IndexingPolicy {
+        self.indexing_policy.unwrap()
+    }
+}
+
+impl<'a, 'b, IndexingPolicySet> ReplaceCollectionBuilder<'a, 'b, No, IndexingPolicySet>
+where
+    IndexingPolicySet: ToAssign,
+{
+    pub fn with_partition_key(
+        self,
+        partition_key: &'a PartitionKey,
+    ) -> ReplaceCollectionBuilder<'a, 'b, Yes, IndexingPolicySet> {
+        ReplaceCollectionBuilder {
+            collection_client: self.collection_client,
+            p_partition_key: PhantomData {},
+            p_indexing_policy: PhantomData {},
+            partition_key: Some(partition_key),
+            indexing_policy: self.indexing_policy,
+            user_agent: self.user_agent,
+            activity_id: self.activity_id,
+            consistency_level: self.consistency_level,
+        }
+    }
+}
+
+impl<'a, 'b, PartitionKeysSet> ReplaceCollectionBuilder<'a, 'b, PartitionKeysSet, No>
+where
+    PartitionKeysSet: ToAssign,
+{
+    pub fn with_indexing_policy(
+        self,
+        indexing_policy: &'a IndexingPolicy,
+    ) -> ReplaceCollectionBuilder<'a, 'b, PartitionKeysSet, Yes> {
+        ReplaceCollectionBuilder {
+            collection_client: self.collection_client,
+            p_partition_key: PhantomData {},
+            p_indexing_policy: PhantomData {},
+            partition_key: self.partition_key,
+            indexing_policy: Some(indexing_policy),
+            user_agent: self.user_agent,
+            activity_id: self.activity_id,
+            consistency_level: self.consistency_level,
+        }
     }
 }

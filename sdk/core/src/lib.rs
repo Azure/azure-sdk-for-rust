@@ -282,6 +282,25 @@ pub trait ContentTypeOption<'a> {
     }
 }
 
+#[derive(Debug, Clone, Copy)]
+pub struct ContentType<'a>(&'a str);
+
+impl<'a> ContentType<'a> {
+    pub fn new(ct: &'a str) -> Self {
+        Self(ct)
+    }
+
+    pub fn as_str(&self) -> &str {
+        self.0
+    }
+}
+
+impl AddAsHeader for ContentType<'_> {
+    fn add_as_header(&self, builder: Builder) -> Builder {
+        builder.header(CONTENT_TYPE, self.0)
+    }
+}
+
 pub trait ContentTypeRequired<'a> {
     fn content_type(&self) -> &'a str;
 
@@ -302,6 +321,21 @@ pub trait SourceUrlRequired<'a> {
     #[must_use]
     fn add_header(&self, builder: Builder) -> Builder {
         builder.header(COPY_SOURCE, self.source_url())
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct IfModifiedSince(DateTime<Utc>);
+
+impl IfModifiedSince {
+    pub fn new(time: DateTime<Utc>) -> Self {
+        Self(time)
+    }
+}
+
+impl AddAsHeader for IfModifiedSince {
+    fn add_as_header(&self, builder: Builder) -> Builder {
+        builder.header(IF_MODIFIED_SINCE, self.0.to_rfc2822())
     }
 }
 
@@ -327,15 +361,18 @@ pub trait UserAgentSupport<'a> {
     fn with_user_agent(self, user_agent: &'a str) -> Self::O;
 }
 
-pub trait UserAgentOption<'a> {
-    fn user_agent(&self) -> Option<&'a str>;
+#[derive(Debug, Clone, Copy)]
+pub struct UserAgent<'a>(&'a str);
 
-    #[must_use]
-    fn add_header(&self, mut builder: Builder) -> Builder {
-        if let Some(user_agent) = self.user_agent() {
-            builder = builder.header(USER_AGENT, user_agent);
-        }
-        builder
+impl<'a> UserAgent<'a> {
+    pub fn new(agent: &'a str) -> Self {
+        Self(agent)
+    }
+}
+
+impl<'a> AddAsHeader for UserAgent<'a> {
+    fn add_as_header(&self, builder: Builder) -> Builder {
+        builder.header(USER_AGENT, self.0)
     }
 }
 
@@ -344,15 +381,18 @@ pub trait ActivityIdSupport<'a> {
     fn with_activity_id(self, activity_id: &'a str) -> Self::O;
 }
 
-pub trait ActivityIdOption<'a> {
-    fn activity_id(&self) -> Option<&'a str>;
+#[derive(Debug, Clone, Copy)]
+pub struct ActivityId<'a>(&'a str);
 
-    #[must_use]
-    fn add_header(&self, mut builder: Builder) -> Builder {
-        if let Some(activity_id) = self.activity_id() {
-            builder = builder.header(ACTIVITY_ID, activity_id);
-        }
-        builder
+impl<'a> ActivityId<'a> {
+    pub fn new(id: &'a str) -> Self {
+        Self(id)
+    }
+}
+
+impl<'a> AddAsHeader for ActivityId<'a> {
+    fn add_as_header(&self, builder: Builder) -> Builder {
+        builder.header(ACTIVITY_ID, self.0)
     }
 }
 
@@ -1029,6 +1069,20 @@ pub trait ContinuationSupport<'a> {
     fn with_continuation(self, continuation: &'a str) -> Self::O;
 }
 
+#[derive(Debug, Clone, Copy)]
+pub struct Continuation<'a>(&'a str);
+impl<'a> Continuation<'a> {
+    pub fn new(c: &'a str) -> Self {
+        Self(c)
+    }
+}
+
+impl AddAsHeader for Continuation<'_> {
+    fn add_as_header(&self, builder: Builder) -> Builder {
+        builder.header(CONTINUATION, self.0)
+    }
+}
+
 pub trait ContinuationOption<'a> {
     fn continuation(&self) -> Option<&'a str>;
 
@@ -1058,4 +1112,8 @@ pub trait BlobNameSupport<'a> {
 
 pub trait BlobNameRequired<'a> {
     fn blob_name(&self) -> &'a str;
+}
+
+pub trait AddAsHeader {
+    fn add_as_header(&self, builder: Builder) -> Builder;
 }

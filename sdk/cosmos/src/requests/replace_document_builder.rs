@@ -22,11 +22,11 @@ where
     document_id: Option<&'b str>,
     indexing_directive: IndexingDirective,
     if_match_condition: Option<IfMatchCondition<'b>>,
-    if_modified_since: Option<&'b DateTime<Utc>>,
-    user_agent: Option<&'b str>,
-    activity_id: Option<&'b str>,
+    if_modified_since: Option<IfModifiedSince>,
+    user_agent: Option<azure_core::UserAgent<'b>>,
+    activity_id: Option<azure_core::ActivityId<'b>>,
     consistency_level: Option<ConsistencyLevel>,
-    allow_tentative_writes: bool,
+    allow_tentative_writes: TenativeWritesAllowance,
 }
 
 impl<'a, 'b> ReplaceDocumentBuilder<'a, 'b, No, No> {
@@ -43,8 +43,12 @@ impl<'a, 'b> ReplaceDocumentBuilder<'a, 'b, No, No> {
             user_agent: None,
             activity_id: None,
             consistency_level: None,
-            allow_tentative_writes: false,
+            allow_tentative_writes: TenativeWritesAllowance::Deny,
         }
+    }
+
+    pub fn collection_client(&self) -> &'a CollectionClient {
+        self.collection_client
     }
 }
 
@@ -54,264 +58,76 @@ where
     PartitionKeysSet: ToAssign,
     DocumentIdSet: ToAssign,
 {
-    #[inline]
-    pub fn collection_client(&self) -> &'a CollectionClient {
-        self.collection_client
-    }
-}
-
-impl<'a, 'b, DocumentIdSet> PartitionKeysRequired<'b>
-    for ReplaceDocumentBuilder<'a, 'b, Yes, DocumentIdSet>
-where
-    DocumentIdSet: ToAssign,
-{
-    fn partition_keys(&self) -> &'b PartitionKeys {
-        self.partition_keys.unwrap()
-    }
-}
-
-impl<'a, 'b, PartitionKeysSet> DocumentIdRequired<'b>
-    for ReplaceDocumentBuilder<'a, 'b, PartitionKeysSet, Yes>
-where
-    PartitionKeysSet: ToAssign,
-{
-    fn document_id(&self) -> &'b str {
-        self.document_id.unwrap()
-    }
-}
-
-impl<'a, 'b, PartitionKeysSet, DocumentIdSet> IndexingDirectiveOption
-    for ReplaceDocumentBuilder<'a, 'b, PartitionKeysSet, DocumentIdSet>
-where
-    PartitionKeysSet: ToAssign,
-    DocumentIdSet: ToAssign,
-{
     fn indexing_directive(&self) -> IndexingDirective {
         self.indexing_directive
     }
-}
 
-impl<'a, 'b, PartitionKeysSet, DocumentIdSet> IfMatchConditionOption<'b>
-    for ReplaceDocumentBuilder<'a, 'b, PartitionKeysSet, DocumentIdSet>
-where
-    PartitionKeysSet: ToAssign,
-    DocumentIdSet: ToAssign,
-{
     fn if_match_condition(&self) -> Option<IfMatchCondition<'b>> {
         self.if_match_condition
     }
-}
 
-impl<'a, 'b, PartitionKeysSet, DocumentIdSet> IfModifiedSinceOption<'b>
-    for ReplaceDocumentBuilder<'a, 'b, PartitionKeysSet, DocumentIdSet>
-where
-    PartitionKeysSet: ToAssign,
-    DocumentIdSet: ToAssign,
-{
-    fn if_modified_since(&self) -> Option<&'b DateTime<Utc>> {
-        self.if_modified_since
-    }
-}
-
-impl<'a, 'b, PartitionKeysSet, DocumentIdSet> UserAgentOption<'b>
-    for ReplaceDocumentBuilder<'a, 'b, PartitionKeysSet, DocumentIdSet>
-where
-    PartitionKeysSet: ToAssign,
-    DocumentIdSet: ToAssign,
-{
-    fn user_agent(&self) -> Option<&'b str> {
+    fn user_agent(&self) -> Option<azure_core::UserAgent<'b>> {
         self.user_agent
     }
-}
 
-impl<'a, 'b, PartitionKeysSet, DocumentIdSet> ActivityIdOption<'b>
-    for ReplaceDocumentBuilder<'a, 'b, PartitionKeysSet, DocumentIdSet>
-where
-    PartitionKeysSet: ToAssign,
-    DocumentIdSet: ToAssign,
-{
-    fn activity_id(&self) -> Option<&'b str> {
+    fn activity_id(&self) -> Option<azure_core::ActivityId<'b>> {
         self.activity_id
     }
-}
 
-impl<'a, 'b, PartitionKeysSet, DocumentIdSet> ConsistencyLevelOption<'b>
-    for ReplaceDocumentBuilder<'a, 'b, PartitionKeysSet, DocumentIdSet>
-where
-    PartitionKeysSet: ToAssign,
-    DocumentIdSet: ToAssign,
-{
     fn consistency_level(&self) -> Option<ConsistencyLevel> {
         self.consistency_level.clone()
     }
-}
 
-impl<'a, 'b, PartitionKeysSet, DocumentIdSet> AllowTentativeWritesOption
-    for ReplaceDocumentBuilder<'a, 'b, PartitionKeysSet, DocumentIdSet>
-where
-    PartitionKeysSet: ToAssign,
-    DocumentIdSet: ToAssign,
-{
-    fn allow_tentative_writes(&self) -> bool {
+    fn allow_tentative_writes(&self) -> TenativeWritesAllowance {
         self.allow_tentative_writes
     }
-}
 
-impl<'a, 'b, DocumentIdSet> PartitionKeysSupport<'b>
-    for ReplaceDocumentBuilder<'a, 'b, No, DocumentIdSet>
-where
-    DocumentIdSet: ToAssign,
-{
-    type O = ReplaceDocumentBuilder<'a, 'b, Yes, DocumentIdSet>;
-
-    fn with_partition_keys(self, partition_keys: &'b PartitionKeys) -> Self::O {
-        ReplaceDocumentBuilder {
-            collection_client: self.collection_client,
-            p_partition_keys: PhantomData {},
-            p_document_id: PhantomData {},
-            partition_keys: Some(partition_keys),
-            document_id: self.document_id,
-            indexing_directive: self.indexing_directive,
-            if_match_condition: self.if_match_condition,
-            if_modified_since: self.if_modified_since,
-            user_agent: self.user_agent,
-            activity_id: self.activity_id,
-            consistency_level: self.consistency_level,
-            allow_tentative_writes: self.allow_tentative_writes,
-        }
-    }
-}
-
-impl<'a, 'b, PartitionKeysSet> DocumentIdSupport<'b>
-    for ReplaceDocumentBuilder<'a, 'b, PartitionKeysSet, No>
-where
-    PartitionKeysSet: ToAssign,
-{
-    type O = ReplaceDocumentBuilder<'a, 'b, PartitionKeysSet, Yes>;
-
-    fn with_document_id(self, document_id: &'b str) -> Self::O {
-        ReplaceDocumentBuilder {
-            collection_client: self.collection_client,
-            p_partition_keys: PhantomData {},
-            p_document_id: PhantomData {},
-            partition_keys: self.partition_keys,
-            document_id: Some(document_id),
-            indexing_directive: self.indexing_directive,
-            if_match_condition: self.if_match_condition,
-            if_modified_since: self.if_modified_since,
-            user_agent: self.user_agent,
-            activity_id: self.activity_id,
-            consistency_level: self.consistency_level,
-            allow_tentative_writes: self.allow_tentative_writes,
-        }
-    }
-}
-
-impl<'a, 'b, PartitionKeysSet, DocumentIdSet> IndexingDirectiveSupport
-    for ReplaceDocumentBuilder<'a, 'b, PartitionKeysSet, DocumentIdSet>
-where
-    PartitionKeysSet: ToAssign,
-    DocumentIdSet: ToAssign,
-{
-    type O = Self;
-
-    fn with_indexing_directive(self, indexing_directive: IndexingDirective) -> Self::O {
+    pub fn with_indexing_directive(self, indexing_directive: IndexingDirective) -> Self {
         Self {
             indexing_directive,
             ..self
         }
     }
-}
 
-impl<'a, 'b, PartitionKeysSet, DocumentIdSet> IfMatchConditionSupport<'b>
-    for ReplaceDocumentBuilder<'a, 'b, PartitionKeysSet, DocumentIdSet>
-where
-    PartitionKeysSet: ToAssign,
-    DocumentIdSet: ToAssign,
-{
-    type O = Self;
-
-    fn with_if_match_condition(self, if_match_condition: IfMatchCondition<'b>) -> Self::O {
+    pub fn with_if_match_condition(self, if_match_condition: IfMatchCondition<'b>) -> Self {
         Self {
             if_match_condition: Some(if_match_condition),
             ..self
         }
     }
-}
 
-impl<'a, 'b, PartitionKeysSet, DocumentIdSet> IfModifiedSinceSupport<'b>
-    for ReplaceDocumentBuilder<'a, 'b, PartitionKeysSet, DocumentIdSet>
-where
-    PartitionKeysSet: ToAssign,
-    DocumentIdSet: ToAssign,
-{
-    type O = Self;
-
-    fn with_if_modified_since(self, if_modified_since: &'b DateTime<Utc>) -> Self::O {
+    pub fn with_if_modified_since(self, if_modified_since: &'b DateTime<Utc>) -> Self {
         Self {
-            if_modified_since: Some(if_modified_since),
+            if_modified_since: Some(IfModifiedSince::new(if_modified_since.clone())),
             ..self
         }
     }
-}
 
-impl<'a, 'b, PartitionKeysSet, DocumentIdSet> UserAgentSupport<'b>
-    for ReplaceDocumentBuilder<'a, 'b, PartitionKeysSet, DocumentIdSet>
-where
-    PartitionKeysSet: ToAssign,
-    DocumentIdSet: ToAssign,
-{
-    type O = Self;
-
-    fn with_user_agent(self, user_agent: &'b str) -> Self::O {
+    pub fn with_user_agent(self, user_agent: &'b str) -> Self {
         Self {
-            user_agent: Some(user_agent),
+            user_agent: Some(azure_core::UserAgent::new(user_agent)),
             ..self
         }
     }
-}
 
-impl<'a, 'b, PartitionKeysSet, DocumentIdSet> ActivityIdSupport<'b>
-    for ReplaceDocumentBuilder<'a, 'b, PartitionKeysSet, DocumentIdSet>
-where
-    PartitionKeysSet: ToAssign,
-    DocumentIdSet: ToAssign,
-{
-    type O = Self;
-
-    fn with_activity_id(self, activity_id: &'b str) -> Self::O {
+    pub fn with_activity_id(self, activity_id: &'b str) -> Self {
         Self {
-            activity_id: Some(activity_id),
+            activity_id: Some(azure_core::ActivityId::new(activity_id)),
             ..self
         }
     }
-}
 
-impl<'a, 'b, PartitionKeysSet, DocumentIdSet> ConsistencyLevelSupport<'b>
-    for ReplaceDocumentBuilder<'a, 'b, PartitionKeysSet, DocumentIdSet>
-where
-    PartitionKeysSet: ToAssign,
-    DocumentIdSet: ToAssign,
-{
-    type O = Self;
-
-    fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self::O {
+    pub fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self {
         Self {
             consistency_level: Some(consistency_level),
             ..self
         }
     }
-}
 
-impl<'a, 'b, PartitionKeysSet, DocumentIdSet> AllowTentativeWritesSupport
-    for ReplaceDocumentBuilder<'a, 'b, PartitionKeysSet, DocumentIdSet>
-where
-    PartitionKeysSet: ToAssign,
-    DocumentIdSet: ToAssign,
-{
-    type O = Self;
-
-    fn with_allow_tentative_writes(self, allow_tentative_writes: bool) -> Self::O {
+    pub fn with_allow_tentative_writes(
+        self,
+        allow_tentative_writes: TenativeWritesAllowance,
+    ) -> Self {
         Self {
             allow_tentative_writes,
             ..self
@@ -319,7 +135,6 @@ where
     }
 }
 
-// methods callable only when every mandatory field has been filled
 impl<'a, 'b> ReplaceDocumentBuilder<'a, 'b, Yes, Yes> {
     pub async fn execute_with_document<T>(
         &self,
@@ -342,14 +157,14 @@ impl<'a, 'b> ReplaceDocumentBuilder<'a, 'b, Yes, Yes> {
         );
 
         // add trait headers
-        let req = IndexingDirectiveOption::add_header(self, req);
-        let req = IfMatchConditionOption::add_header(self, req);
-        let req = IfModifiedSinceOption::add_header(self, req);
-        let req = UserAgentOption::add_header(self, req);
-        let req = ActivityIdOption::add_header(self, req);
-        let req = ConsistencyLevelOption::add_header(self, req);
-        let req = PartitionKeysRequired::add_header(self, req);
-        let req = AllowTentativeWritesOption::add_header(self, req);
+        let req = crate::headers::add_header(Some(self.indexing_directive()), req);
+        let req = crate::headers::add_header(self.if_match_condition(), req);
+        let req = crate::headers::add_header(self.if_modified_since(), req);
+        let req = crate::headers::add_header(self.user_agent(), req);
+        let req = crate::headers::add_header(self.activity_id(), req);
+        let req = crate::headers::add_header(self.consistency_level(), req);
+        let req = crate::headers::add_header(Some(self.partition_keys()), req);
+        let req = crate::headers::add_header(Some(self.allow_tentative_writes()), req);
 
         let serialized = serde_json::to_string(document)?;
 
@@ -362,5 +177,84 @@ impl<'a, 'b> ReplaceDocumentBuilder<'a, 'b, Yes, Yes> {
             .execute_request_check_status(req, StatusCode::OK)
             .await?
             .try_into()?)
+    }
+}
+
+impl<'a, 'b, PartitionKeysSet, DocumentIdSet>
+    ReplaceDocumentBuilder<'a, 'b, PartitionKeysSet, DocumentIdSet>
+where
+    PartitionKeysSet: ToAssign,
+    DocumentIdSet: ToAssign,
+{
+    fn if_modified_since(&self) -> Option<IfModifiedSince> {
+        self.if_modified_since.clone()
+    }
+}
+
+impl<'a, 'b, DocumentIdSet> ReplaceDocumentBuilder<'a, 'b, Yes, DocumentIdSet>
+where
+    DocumentIdSet: ToAssign,
+{
+    fn partition_keys(&self) -> &'b PartitionKeys {
+        self.partition_keys.unwrap()
+    }
+}
+
+impl<'a, 'b, PartitionKeysSet> ReplaceDocumentBuilder<'a, 'b, PartitionKeysSet, Yes>
+where
+    PartitionKeysSet: ToAssign,
+{
+    fn document_id(&self) -> &'b str {
+        self.document_id.unwrap()
+    }
+}
+
+impl<'a, 'b, DocumentIdSet> ReplaceDocumentBuilder<'a, 'b, No, DocumentIdSet>
+where
+    DocumentIdSet: ToAssign,
+{
+    pub fn with_partition_keys(
+        self,
+        partition_keys: &'b PartitionKeys,
+    ) -> ReplaceDocumentBuilder<'a, 'b, Yes, DocumentIdSet> {
+        ReplaceDocumentBuilder {
+            partition_keys: Some(partition_keys),
+            collection_client: self.collection_client,
+            document_id: self.document_id,
+            indexing_directive: self.indexing_directive,
+            if_match_condition: self.if_match_condition,
+            if_modified_since: self.if_modified_since,
+            user_agent: self.user_agent,
+            activity_id: self.activity_id,
+            consistency_level: self.consistency_level,
+            allow_tentative_writes: self.allow_tentative_writes,
+            p_partition_keys: PhantomData {},
+            p_document_id: PhantomData {},
+        }
+    }
+}
+
+impl<'a, 'b, PartitionKeysSet> ReplaceDocumentBuilder<'a, 'b, PartitionKeysSet, No>
+where
+    PartitionKeysSet: ToAssign,
+{
+    pub fn with_document_id(
+        self,
+        document_id: &'b str,
+    ) -> ReplaceDocumentBuilder<'a, 'b, PartitionKeysSet, Yes> {
+        ReplaceDocumentBuilder {
+            collection_client: self.collection_client,
+            p_partition_keys: PhantomData {},
+            p_document_id: PhantomData {},
+            partition_keys: self.partition_keys,
+            document_id: Some(document_id),
+            indexing_directive: self.indexing_directive,
+            if_match_condition: self.if_match_condition,
+            if_modified_since: self.if_modified_since,
+            user_agent: self.user_agent,
+            activity_id: self.activity_id,
+            consistency_level: self.consistency_level,
+            allow_tentative_writes: self.allow_tentative_writes,
+        }
     }
 }

@@ -11,7 +11,7 @@ use serde::de::DeserializeOwned;
 use std::convert::TryInto;
 use std::marker::PhantomData;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct QueryDocumentsBuilder<'a, 'b, QuerySet>
 where
     QuerySet: ToAssign,
@@ -20,38 +20,15 @@ where
     p_query: PhantomData<QuerySet>,
     query: Option<&'b Query<'b>>,
     if_match_condition: Option<IfMatchCondition<'b>>,
-    if_modified_since: Option<&'b DateTime<Utc>>,
-    user_agent: Option<&'b str>,
-    activity_id: Option<&'b str>,
+    if_modified_since: Option<IfModifiedSince>,
+    user_agent: Option<azure_core::UserAgent<'b>>,
+    activity_id: Option<azure_core::ActivityId<'b>>,
     consistency_level: Option<ConsistencyLevel>,
-    continuation: Option<&'b str>,
-    max_item_count: i32,
+    continuation: Option<Continuation<'b>>,
+    max_item_count: MaxItemCount,
     partition_keys: Option<&'b PartitionKeys>,
-    query_cross_partition: bool,
-    parallelize_cross_partition_query: bool,
-}
-
-impl<'a, 'b, QuerySet> Clone for QueryDocumentsBuilder<'a, 'b, QuerySet>
-where
-    QuerySet: ToAssign,
-{
-    fn clone(&self) -> Self {
-        Self {
-            collection_client: self.collection_client,
-            p_query: PhantomData {},
-            query: self.query,
-            if_match_condition: self.if_match_condition,
-            if_modified_since: self.if_modified_since,
-            user_agent: self.user_agent,
-            activity_id: self.activity_id,
-            consistency_level: self.consistency_level.clone(),
-            continuation: self.continuation,
-            max_item_count: self.max_item_count,
-            partition_keys: self.partition_keys,
-            query_cross_partition: self.query_cross_partition,
-            parallelize_cross_partition_query: self.parallelize_cross_partition_query,
-        }
-    }
+    query_cross_partition: QueryCrossPartition,
+    parallelize_cross_partition_query: ParallelizeCrossPartition,
 }
 
 impl<'a, 'b> QueryDocumentsBuilder<'a, 'b, No> {
@@ -66,10 +43,10 @@ impl<'a, 'b> QueryDocumentsBuilder<'a, 'b, No> {
             activity_id: None,
             consistency_level: None,
             continuation: None,
-            max_item_count: -1,
+            max_item_count: MaxItemCount::new(-1),
             partition_keys: None,
-            query_cross_partition: false,
-            parallelize_cross_partition_query: false,
+            query_cross_partition: QueryCrossPartition::No,
+            parallelize_cross_partition_query: ParallelizeCrossPartition::No,
         }
     }
 }
@@ -81,272 +58,123 @@ where
     pub fn collection_client(&self) -> &'a CollectionClient {
         self.collection_client
     }
-}
 
-impl<'a, 'b> QueryRequired<'b> for QueryDocumentsBuilder<'a, 'b, Yes> {
-    fn query(&self) -> &'b Query<'b> {
-        self.query.unwrap()
-    }
-}
-
-impl<'a, 'b, QuerySet> IfMatchConditionOption<'b> for QueryDocumentsBuilder<'a, 'b, QuerySet>
-where
-    QuerySet: ToAssign,
-{
     fn if_match_condition(&self) -> Option<IfMatchCondition<'b>> {
         self.if_match_condition
     }
-}
 
-impl<'a, 'b, QuerySet> IfModifiedSinceOption<'b> for QueryDocumentsBuilder<'a, 'b, QuerySet>
-where
-    QuerySet: ToAssign,
-{
-    fn if_modified_since(&self) -> Option<&'b DateTime<Utc>> {
-        self.if_modified_since
-    }
-}
-
-impl<'a, 'b, QuerySet> UserAgentOption<'b> for QueryDocumentsBuilder<'a, 'b, QuerySet>
-where
-    QuerySet: ToAssign,
-{
-    fn user_agent(&self) -> Option<&'b str> {
+    fn user_agent(&self) -> Option<azure_core::UserAgent<'b>> {
         self.user_agent
     }
-}
 
-impl<'a, 'b, QuerySet> ActivityIdOption<'b> for QueryDocumentsBuilder<'a, 'b, QuerySet>
-where
-    QuerySet: ToAssign,
-{
-    fn activity_id(&self) -> Option<&'b str> {
+    fn activity_id(&self) -> Option<azure_core::ActivityId<'b>> {
         self.activity_id
     }
-}
 
-impl<'a, 'b, QuerySet> ConsistencyLevelOption<'b> for QueryDocumentsBuilder<'a, 'b, QuerySet>
-where
-    QuerySet: ToAssign,
-{
     fn consistency_level(&self) -> Option<ConsistencyLevel> {
         self.consistency_level.clone()
     }
-}
 
-impl<'a, 'b, QuerySet> ContinuationOption<'b> for QueryDocumentsBuilder<'a, 'b, QuerySet>
-where
-    QuerySet: ToAssign,
-{
-    fn continuation(&self) -> Option<&'b str> {
-        self.continuation
-    }
-}
-
-impl<'a, 'b, QuerySet> MaxItemCountOption for QueryDocumentsBuilder<'a, 'b, QuerySet>
-where
-    QuerySet: ToAssign,
-{
-    fn max_item_count(&self) -> i32 {
+    fn max_item_count(&self) -> MaxItemCount {
         self.max_item_count
     }
-}
 
-impl<'a, 'b, QuerySet> PartitionKeysOption<'b> for QueryDocumentsBuilder<'a, 'b, QuerySet>
-where
-    QuerySet: ToAssign,
-{
     fn partition_keys(&self) -> Option<&'b PartitionKeys> {
         self.partition_keys
     }
-}
 
-impl<'a, 'b, QuerySet> QueryCrossPartitionOption for QueryDocumentsBuilder<'a, 'b, QuerySet>
-where
-    QuerySet: ToAssign,
-{
-    fn query_cross_partition(&self) -> bool {
+    fn query_cross_partition(&self) -> QueryCrossPartition {
         self.query_cross_partition
     }
-}
 
-impl<'a, 'b, QuerySet> ParallelizeCrossPartitionQueryOption
-    for QueryDocumentsBuilder<'a, 'b, QuerySet>
-where
-    QuerySet: ToAssign,
-{
-    fn parallelize_cross_partition_query(&self) -> bool {
+    // TODO: Use this in request
+    #[allow(unused)]
+    fn parallelize_cross_partition_query(&self) -> ParallelizeCrossPartition {
         self.parallelize_cross_partition_query
     }
-}
 
-impl<'a, 'b> QuerySupport<'b> for QueryDocumentsBuilder<'a, 'b, No> {
-    type O = QueryDocumentsBuilder<'a, 'b, Yes>;
-
-    fn with_query(self, query: &'b Query<'b>) -> Self::O {
-        QueryDocumentsBuilder {
-            collection_client: self.collection_client,
-            p_query: PhantomData {},
-            query: Some(query),
-            if_match_condition: self.if_match_condition,
-            if_modified_since: self.if_modified_since,
-            user_agent: self.user_agent,
-            activity_id: self.activity_id,
-            consistency_level: self.consistency_level,
-            continuation: self.continuation,
-            max_item_count: self.max_item_count,
-            partition_keys: self.partition_keys,
-            query_cross_partition: self.query_cross_partition,
-            parallelize_cross_partition_query: self.parallelize_cross_partition_query,
-        }
-    }
-}
-
-impl<'a, 'b, QuerySet> IfMatchConditionSupport<'b> for QueryDocumentsBuilder<'a, 'b, QuerySet>
-where
-    QuerySet: ToAssign,
-{
-    type O = Self;
-
-    fn with_if_match_condition(self, if_match_condition: IfMatchCondition<'b>) -> Self::O {
+    pub fn with_if_match_condition(self, if_match_condition: IfMatchCondition<'b>) -> Self {
         Self {
             if_match_condition: Some(if_match_condition),
             ..self
         }
     }
-}
 
-impl<'a, 'b, QuerySet> IfModifiedSinceSupport<'b> for QueryDocumentsBuilder<'a, 'b, QuerySet>
-where
-    QuerySet: ToAssign,
-{
-    type O = Self;
-
-    fn with_if_modified_since(self, if_modified_since: &'b DateTime<Utc>) -> Self::O {
+    pub fn with_if_modified_since(self, if_modified_since: &'b DateTime<Utc>) -> Self {
         Self {
-            if_modified_since: Some(if_modified_since),
+            if_modified_since: Some(IfModifiedSince::new(if_modified_since.clone())),
             ..self
         }
     }
-}
 
-impl<'a, 'b, QuerySet> UserAgentSupport<'b> for QueryDocumentsBuilder<'a, 'b, QuerySet>
-where
-    QuerySet: ToAssign,
-{
-    type O = Self;
-
-    fn with_user_agent(self, user_agent: &'b str) -> Self::O {
+    pub fn with_user_agent(self, user_agent: &'b str) -> Self {
         Self {
-            user_agent: Some(user_agent),
+            user_agent: Some(azure_core::UserAgent::new(user_agent)),
             ..self
         }
     }
-}
 
-impl<'a, 'b, QuerySet> ActivityIdSupport<'b> for QueryDocumentsBuilder<'a, 'b, QuerySet>
-where
-    QuerySet: ToAssign,
-{
-    type O = Self;
-
-    fn with_activity_id(self, activity_id: &'b str) -> Self::O {
+    pub fn with_activity_id(self, activity_id: &'b str) -> Self {
         Self {
-            activity_id: Some(activity_id),
+            activity_id: Some(azure_core::ActivityId::new(activity_id)),
             ..self
         }
     }
-}
 
-impl<'a, 'b, QuerySet> ConsistencyLevelSupport<'b> for QueryDocumentsBuilder<'a, 'b, QuerySet>
-where
-    QuerySet: ToAssign,
-{
-    type O = Self;
-
-    fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self::O {
+    pub fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self {
         Self {
             consistency_level: Some(consistency_level),
             ..self
         }
     }
-}
 
-impl<'a, 'b, QuerySet> ContinuationSupport<'b> for QueryDocumentsBuilder<'a, 'b, QuerySet>
-where
-    QuerySet: ToAssign,
-{
-    type O = Self;
-
-    fn with_continuation(self, continuation: &'b str) -> Self::O {
+    pub fn with_continuation(self, continuation: &'b str) -> Self {
         Self {
-            continuation: Some(continuation),
+            continuation: Some(Continuation::new(continuation)),
             ..self
         }
     }
-}
 
-impl<'a, 'b, QuerySet> MaxItemCountSupport for QueryDocumentsBuilder<'a, 'b, QuerySet>
-where
-    QuerySet: ToAssign,
-{
-    type O = Self;
-
-    fn with_max_item_count(self, max_item_count: i32) -> Self::O {
+    pub fn with_max_item_count(self, max_item_count: i32) -> Self {
         Self {
-            max_item_count,
+            max_item_count: MaxItemCount::new(max_item_count),
             ..self
         }
     }
-}
 
-impl<'a, 'b, QuerySet> PartitionKeysSupport<'b> for QueryDocumentsBuilder<'a, 'b, QuerySet>
-where
-    QuerySet: ToAssign,
-{
-    type O = Self;
-
-    fn with_partition_keys(self, partition_keys: &'b PartitionKeys) -> Self::O {
+    pub fn with_partition_keys(self, partition_keys: &'b PartitionKeys) -> Self {
         Self {
             partition_keys: Some(partition_keys),
             ..self
         }
     }
-}
 
-impl<'a, 'b, QuerySet> QueryCrossPartitionSupport for QueryDocumentsBuilder<'a, 'b, QuerySet>
-where
-    QuerySet: ToAssign,
-{
-    type O = Self;
-
-    fn with_query_cross_partition(self, query_cross_partition: bool) -> Self::O {
+    pub fn with_query_cross_partition(self, query_cross_partition: bool) -> Self {
         Self {
-            query_cross_partition,
+            query_cross_partition: if query_cross_partition {
+                QueryCrossPartition::Yes
+            } else {
+                QueryCrossPartition::No
+            },
             ..self
         }
     }
-}
 
-impl<'a, 'b, QuerySet> ParallelizeCrossPartitionQuerySupport
-    for QueryDocumentsBuilder<'a, 'b, QuerySet>
-where
-    QuerySet: ToAssign,
-{
-    type O = Self;
-
-    fn with_parallelize_cross_partition_query(
+    pub fn with_parallelize_cross_partition_query(
         self,
         parallelize_cross_partition_query: bool,
-    ) -> Self::O {
+    ) -> Self {
         Self {
-            parallelize_cross_partition_query,
+            parallelize_cross_partition_query: if parallelize_cross_partition_query {
+                ParallelizeCrossPartition::Yes
+            } else {
+                ParallelizeCrossPartition::No
+            },
             ..self
         }
     }
 }
 
-// methods callable only when every mandatory field has been filled
 impl<'a, 'b> QueryDocumentsBuilder<'a, 'b, Yes> {
     pub async fn execute<T>(&self) -> Result<QueryDocumentsResponse<T>, CosmosError>
     where
@@ -369,15 +197,15 @@ impl<'a, 'b> QueryDocumentsBuilder<'a, 'b, Yes> {
         let req = req.header(http::header::CONTENT_TYPE, "application/query+json");
 
         // add trait headers
-        let req = IfMatchConditionOption::add_header(self, req);
-        let req = IfModifiedSinceOption::add_header(self, req);
-        let req = UserAgentOption::add_header(self, req);
-        let req = ActivityIdOption::add_header(self, req);
-        let req = ConsistencyLevelOption::add_header(self, req);
-        let req = ContinuationOption::add_header(self, req);
-        let req = MaxItemCountOption::add_header(self, req);
-        let req = PartitionKeysOption::add_header(self, req);
-        let req = QueryCrossPartitionOption::add_header(self, req);
+        let req = crate::headers::add_header(self.if_match_condition(), req);
+        let req = crate::headers::add_header(self.if_modified_since(), req);
+        let req = crate::headers::add_header(self.user_agent(), req);
+        let req = crate::headers::add_header(self.activity_id(), req);
+        let req = crate::headers::add_header(self.consistency_level(), req);
+        let req = crate::headers::add_header(self.continuation(), req);
+        let req = crate::headers::add_header(Some(self.max_item_count()), req);
+        let req = crate::headers::add_header(self.partition_keys(), req);
+        let req = crate::headers::add_header(Some(self.query_cross_partition()), req);
 
         let body = serde_json::to_string(self.query())?;
         debug!("body == {}", body);
@@ -433,5 +261,48 @@ impl<'a, 'b> QueryDocumentsBuilder<'a, 'b, Yes> {
                 Some((Ok(response), continuation_token))
             },
         )
+    }
+}
+
+impl<'a, 'b, QuerySet> QueryDocumentsBuilder<'a, 'b, QuerySet>
+where
+    QuerySet: ToAssign,
+{
+    fn continuation(&self) -> Option<Continuation<'b>> {
+        self.continuation
+    }
+}
+
+impl<'a, 'b, QuerySet> QueryDocumentsBuilder<'a, 'b, QuerySet>
+where
+    QuerySet: ToAssign,
+{
+    fn if_modified_since(&self) -> Option<IfModifiedSince> {
+        self.if_modified_since.clone()
+    }
+}
+
+impl<'a, 'b> QueryDocumentsBuilder<'a, 'b, Yes> {
+    fn query(&self) -> &'b Query<'b> {
+        self.query.unwrap()
+    }
+}
+impl<'a, 'b> QueryDocumentsBuilder<'a, 'b, No> {
+    pub fn with_query(self, query: &'b Query<'b>) -> QueryDocumentsBuilder<'a, 'b, Yes> {
+        QueryDocumentsBuilder {
+            query: Some(query),
+            collection_client: self.collection_client,
+            if_match_condition: self.if_match_condition,
+            if_modified_since: self.if_modified_since,
+            user_agent: self.user_agent,
+            activity_id: self.activity_id,
+            consistency_level: self.consistency_level,
+            continuation: self.continuation,
+            max_item_count: self.max_item_count,
+            partition_keys: self.partition_keys,
+            query_cross_partition: self.query_cross_partition,
+            parallelize_cross_partition_query: self.parallelize_cross_partition_query,
+            p_query: PhantomData {},
+        }
     }
 }

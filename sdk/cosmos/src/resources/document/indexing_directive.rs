@@ -1,4 +1,6 @@
+use crate::headers;
 use azure_core::enumerations::ParsingError;
+use http::request::Builder;
 use std::fmt;
 
 /// Whether the resource should be included in the index.
@@ -38,5 +40,19 @@ impl std::str::FromStr for IndexingDirective {
 impl fmt::Display for IndexingDirective {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{:?}", self)
+    }
+}
+
+impl azure_core::AddAsHeader for IndexingDirective {
+    fn add_as_header(&self, builder: Builder) -> Builder {
+        match self {
+            IndexingDirective::Default => builder,
+            IndexingDirective::Exclude => {
+                builder.header(headers::HEADER_INDEXING_DIRECTIVE, "Exclude")
+            }
+            IndexingDirective::Include => {
+                builder.header(headers::HEADER_INDEXING_DIRECTIVE, "Include")
+            }
+        }
     }
 }

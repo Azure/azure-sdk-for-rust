@@ -9,11 +9,11 @@ use std::convert::TryInto;
 #[derive(Debug, Clone)]
 pub struct ListUsersBuilder<'a, 'b> {
     database_client: &'a DatabaseClient,
-    user_agent: Option<&'b str>,
-    activity_id: Option<&'b str>,
+    user_agent: Option<azure_core::UserAgent<'b>>,
+    activity_id: Option<azure_core::ActivityId<'b>>,
     consistency_level: Option<ConsistencyLevel>,
-    continuation: Option<&'b str>,
-    max_item_count: i32,
+    continuation: Option<Continuation<'b>>,
+    max_item_count: MaxItemCount,
 }
 
 impl<'a, 'b> ListUsersBuilder<'a, 'b> {
@@ -24,107 +24,55 @@ impl<'a, 'b> ListUsersBuilder<'a, 'b> {
             activity_id: None,
             consistency_level: None,
             continuation: None,
-            max_item_count: -1,
+            max_item_count: MaxItemCount::new(-1),
         }
     }
-}
 
-impl<'a, 'b> ListUsersBuilder<'a, 'b> {
     pub fn database_client(&self) -> &'a DatabaseClient {
         self.database_client
     }
-}
 
-impl<'a, 'b> UserAgentOption<'b> for ListUsersBuilder<'a, 'b> {
-    fn user_agent(&self) -> Option<&'b str> {
-        self.user_agent
-    }
-}
-
-impl<'a, 'b> ActivityIdOption<'b> for ListUsersBuilder<'a, 'b> {
-    fn activity_id(&self) -> Option<&'b str> {
-        self.activity_id
-    }
-}
-
-impl<'a, 'b> ConsistencyLevelOption<'b> for ListUsersBuilder<'a, 'b> {
-    fn consistency_level(&self) -> Option<ConsistencyLevel> {
-        self.consistency_level.clone()
-    }
-}
-
-impl<'a, 'b> ContinuationOption<'b> for ListUsersBuilder<'a, 'b> {
-    fn continuation(&self) -> Option<&'b str> {
-        self.continuation
-    }
-}
-
-impl<'a, 'b> MaxItemCountOption for ListUsersBuilder<'a, 'b> {
-    fn max_item_count(&self) -> i32 {
+    // TODO: Use this in request
+    #[allow(unused)]
+    fn max_item_count(&self) -> MaxItemCount {
         self.max_item_count
     }
-}
 
-impl<'a, 'b> UserAgentSupport<'b> for ListUsersBuilder<'a, 'b> {
-    type O = Self;
-
-    fn with_user_agent(self, user_agent: &'b str) -> Self::O {
+    pub fn with_user_agent(self, user_agent: &'b str) -> Self {
         Self {
-            user_agent: Some(user_agent),
+            user_agent: Some(azure_core::UserAgent::new(user_agent)),
             ..self
         }
     }
-}
 
-impl<'a, 'b> ActivityIdSupport<'b> for ListUsersBuilder<'a, 'b> {
-    type O = Self;
-
-    fn with_activity_id(self, activity_id: &'b str) -> Self::O {
+    pub fn with_activity_id(self, activity_id: &'b str) -> Self {
         Self {
-            activity_id: Some(activity_id),
+            activity_id: Some(azure_core::ActivityId::new(activity_id)),
             ..self
         }
     }
-}
 
-impl<'a, 'b> ConsistencyLevelSupport<'b> for ListUsersBuilder<'a, 'b> {
-    type O = Self;
-
-    fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self::O {
+    pub fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self {
         Self {
             consistency_level: Some(consistency_level),
             ..self
         }
     }
-}
 
-impl<'a, 'b> ContinuationSupport<'b> for ListUsersBuilder<'a, 'b> {
-    type O = Self;
-
-    fn with_continuation(self, continuation: &'b str) -> Self::O {
+    pub fn with_continuation(self, continuation: &'b str) -> Self {
         Self {
-            continuation: Some(continuation),
+            continuation: Some(Continuation::new(continuation)),
             ..self
         }
     }
-}
 
-impl<'a, 'b> MaxItemCountSupport for ListUsersBuilder<'a, 'b> {
-    type O = Self;
-
-    fn with_max_item_count(self, max_item_count: i32) -> Self::O {
+    pub fn with_max_item_count(self, max_item_count: i32) -> Self {
         Self {
-            max_item_count,
+            max_item_count: MaxItemCount::new(max_item_count),
             ..self
         }
     }
-}
 
-// methods callable regardless
-impl<'a, 'b> ListUsersBuilder<'a, 'b> {}
-
-// methods callable only when every mandatory field has been filled
-impl<'a, 'b> ListUsersBuilder<'a, 'b> {
     pub async fn execute(&self) -> Result<ListUsersResponse, CosmosError> {
         trace!("ListUsersBuilder::execute called");
 
@@ -184,5 +132,13 @@ impl<'a, 'b> ListUsersBuilder<'a, 'b> {
                 }
             },
         )
+    }
+}
+
+impl<'a, 'b> ListUsersBuilder<'a, 'b> {
+    // TODO: use this in request
+    #[allow(unused)]
+    fn continuation(&self) -> Option<Continuation<'b>> {
+        self.continuation
     }
 }

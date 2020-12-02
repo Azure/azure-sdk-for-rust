@@ -10,8 +10,8 @@ should also be possible with this crate.
 ```no_run
 // Using the prelude module of the Cosmos crate makes easier to use the Rust Azure SDK for Cosmos DB.
 use azure_cosmos::prelude::*;
+use azure_core::HttpClient;
 
-use azure_core::prelude::*;
 use serde::{Deserialize, Serialize};
 
 use std::error::Error;
@@ -108,12 +108,13 @@ pub mod responses;
 mod consistency_level;
 mod errors;
 mod headers;
+mod max_item_count;
 mod partition_keys;
 mod resource_quota;
 mod to_json_vector;
-mod traits;
 
 pub use consistency_level::ConsistencyLevel;
+pub use max_item_count::MaxItemCount;
 pub use partition_keys::PartitionKeys;
 pub use resource_quota::ResourceQuota;
 

@@ -1,7 +1,6 @@
 use crate::prelude::*;
 use crate::resources::trigger::*;
 use crate::responses::CreateTriggerResponse;
-use azure_core::prelude::*;
 use azure_core::{No, ToAssign, Yes};
 use http::StatusCode;
 use std::convert::TryInto;
@@ -22,8 +21,8 @@ where
     trigger_operation: TriggerOperation,
     trigger_type: TriggerType,
     body: Option<&'a str>,
-    user_agent: Option<&'a str>,
-    activity_id: Option<&'a str>,
+    user_agent: Option<azure_core::UserAgent<'a>>,
+    activity_id: Option<azure_core::ActivityId<'a>>,
     consistency_level: Option<ConsistencyLevel>,
 }
 
@@ -52,14 +51,48 @@ where
     TriggerTypeSet: ToAssign,
     BodySet: ToAssign,
 {
+    pub fn with_user_agent(self, user_agent: &'a str) -> Self {
+        Self {
+            user_agent: Some(azure_core::UserAgent::new(user_agent)),
+            ..self
+        }
+    }
+
+    pub fn with_activity_id(self, activity_id: &'a str) -> Self {
+        Self {
+            activity_id: Some(azure_core::ActivityId::new(activity_id)),
+            ..self
+        }
+    }
+
+    pub fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self {
+        Self {
+            consistency_level: Some(consistency_level),
+            ..self
+        }
+    }
+
+    fn is_create(&self) -> bool {
+        self.is_create
+    }
     fn trigger_client(&self) -> &'a TriggerClient {
         self.trigger_client
     }
+
+    fn consistency_level(&self) -> Option<ConsistencyLevel> {
+        self.consistency_level.clone()
+    }
+
+    fn user_agent(&self) -> Option<azure_core::UserAgent<'a>> {
+        self.user_agent
+    }
+
+    fn activity_id(&self) -> Option<azure_core::ActivityId<'a>> {
+        self.activity_id
+    }
 }
 
-//set mandatory no traits methods
-impl<'a, TriggerTypeSet, BodySet> TriggerOperationRequired
-    for CreateOrReplaceTriggerBuilder<'a, Yes, TriggerTypeSet, BodySet>
+impl<'a, TriggerTypeSet, BodySet> CreateOrReplaceTriggerBuilder<'a, Yes, TriggerTypeSet, BodySet>
 where
     TriggerTypeSet: ToAssign,
     BodySet: ToAssign,
@@ -69,8 +102,8 @@ where
     }
 }
 
-impl<'a, TriggerOperationSet, BodySet> TriggerTypeRequired
-    for CreateOrReplaceTriggerBuilder<'a, TriggerOperationSet, Yes, BodySet>
+impl<'a, TriggerOperationSet, BodySet>
+    CreateOrReplaceTriggerBuilder<'a, TriggerOperationSet, Yes, BodySet>
 where
     TriggerOperationSet: ToAssign,
     BodySet: ToAssign,
@@ -80,8 +113,8 @@ where
     }
 }
 
-impl<'a, TriggerOperationSet, TriggerTypeSet> TriggerBodyRequired<'a>
-    for CreateOrReplaceTriggerBuilder<'a, TriggerOperationSet, TriggerTypeSet, Yes>
+impl<'a, TriggerOperationSet, TriggerTypeSet>
+    CreateOrReplaceTriggerBuilder<'a, TriggerOperationSet, TriggerTypeSet, Yes>
 where
     TriggerOperationSet: ToAssign,
     TriggerTypeSet: ToAssign,
@@ -91,182 +124,83 @@ where
     }
 }
 
-impl<'a, TriggerOperationSet, TriggerTypeSet, BodySet> UserAgentOption<'a>
-    for CreateOrReplaceTriggerBuilder<'a, TriggerOperationSet, TriggerTypeSet, BodySet>
-where
-    TriggerOperationSet: ToAssign,
-    TriggerTypeSet: ToAssign,
-    BodySet: ToAssign,
-{
-    fn user_agent(&self) -> Option<&'a str> {
-        self.user_agent
-    }
-}
-
-impl<'a, TriggerOperationSet, TriggerTypeSet, BodySet> ActivityIdOption<'a>
-    for CreateOrReplaceTriggerBuilder<'a, TriggerOperationSet, TriggerTypeSet, BodySet>
-where
-    TriggerOperationSet: ToAssign,
-    TriggerTypeSet: ToAssign,
-    BodySet: ToAssign,
-{
-    fn activity_id(&self) -> Option<&'a str> {
-        self.activity_id
-    }
-}
-
-impl<'a, TriggerOperationSet, TriggerTypeSet, BodySet> ConsistencyLevelOption<'a>
-    for CreateOrReplaceTriggerBuilder<'a, TriggerOperationSet, TriggerTypeSet, BodySet>
-where
-    TriggerOperationSet: ToAssign,
-    TriggerTypeSet: ToAssign,
-    BodySet: ToAssign,
-{
-    fn consistency_level(&self) -> Option<ConsistencyLevel> {
-        self.consistency_level.clone()
-    }
-}
-
-impl<'a, TriggerTypeSet, BodySet> TriggerOperationSupport
-    for CreateOrReplaceTriggerBuilder<'a, No, TriggerTypeSet, BodySet>
+impl<'a, TriggerTypeSet, BodySet> CreateOrReplaceTriggerBuilder<'a, No, TriggerTypeSet, BodySet>
 where
     TriggerTypeSet: ToAssign,
     BodySet: ToAssign,
 {
-    type O = CreateOrReplaceTriggerBuilder<'a, Yes, TriggerTypeSet, BodySet>;
-
-    fn with_trigger_operation(self, trigger_operation: TriggerOperation) -> Self::O {
+    pub fn with_trigger_operation(
+        self,
+        trigger_operation: TriggerOperation,
+    ) -> CreateOrReplaceTriggerBuilder<'a, Yes, TriggerTypeSet, BodySet> {
         CreateOrReplaceTriggerBuilder {
-            trigger_client: self.trigger_client,
-            is_create: self.is_create,
-            p_trigger_operation: PhantomData {},
-            p_trigger_type: PhantomData {},
-            p_body: PhantomData {},
             trigger_operation,
+            trigger_client: self.trigger_client,
+            is_create: self.is_create,
             trigger_type: self.trigger_type,
             body: self.body,
             user_agent: self.user_agent,
             activity_id: self.activity_id,
             consistency_level: self.consistency_level,
+            p_trigger_operation: PhantomData {},
+            p_trigger_type: PhantomData {},
+            p_body: PhantomData {},
         }
     }
 }
 
-impl<'a, TriggerOperationSet, BodySet> TriggerTypeSupport
-    for CreateOrReplaceTriggerBuilder<'a, TriggerOperationSet, No, BodySet>
+impl<'a, TriggerOperationSet, BodySet>
+    CreateOrReplaceTriggerBuilder<'a, TriggerOperationSet, No, BodySet>
 where
     TriggerOperationSet: ToAssign,
     BodySet: ToAssign,
 {
-    type O = CreateOrReplaceTriggerBuilder<'a, TriggerOperationSet, Yes, BodySet>;
-
-    fn with_trigger_type(self, trigger_type: TriggerType) -> Self::O {
+    pub fn with_trigger_type(
+        self,
+        trigger_type: TriggerType,
+    ) -> CreateOrReplaceTriggerBuilder<'a, TriggerOperationSet, Yes, BodySet> {
         CreateOrReplaceTriggerBuilder {
-            trigger_client: self.trigger_client,
-            is_create: self.is_create,
-            p_trigger_operation: PhantomData {},
-            p_trigger_type: PhantomData {},
-            p_body: PhantomData {},
-            trigger_operation: self.trigger_operation,
             trigger_type,
+            trigger_client: self.trigger_client,
+            is_create: self.is_create,
+            trigger_operation: self.trigger_operation,
             body: self.body,
             user_agent: self.user_agent,
             activity_id: self.activity_id,
             consistency_level: self.consistency_level,
-        }
-    }
-}
-
-impl<'a, TriggerOperationSet, TriggerTypeSet> TriggerBodySupport<'a>
-    for CreateOrReplaceTriggerBuilder<'a, TriggerOperationSet, TriggerTypeSet, No>
-where
-    TriggerOperationSet: ToAssign,
-    TriggerTypeSet: ToAssign,
-{
-    type O = CreateOrReplaceTriggerBuilder<'a, TriggerOperationSet, TriggerTypeSet, Yes>;
-
-    fn with_body(self, body: &'a str) -> Self::O {
-        CreateOrReplaceTriggerBuilder {
-            trigger_client: self.trigger_client,
-            is_create: self.is_create,
             p_trigger_operation: PhantomData {},
             p_trigger_type: PhantomData {},
             p_body: PhantomData {},
+        }
+    }
+}
+
+impl<'a, TriggerOperationSet, TriggerTypeSet>
+    CreateOrReplaceTriggerBuilder<'a, TriggerOperationSet, TriggerTypeSet, No>
+where
+    TriggerOperationSet: ToAssign,
+    TriggerTypeSet: ToAssign,
+{
+    pub fn with_body(
+        self,
+        body: &'a str,
+    ) -> CreateOrReplaceTriggerBuilder<'a, TriggerOperationSet, TriggerTypeSet, Yes> {
+        CreateOrReplaceTriggerBuilder {
+            body: Some(body),
+            trigger_client: self.trigger_client,
+            is_create: self.is_create,
             trigger_operation: self.trigger_operation,
             trigger_type: self.trigger_type,
-            body: Some(body),
             user_agent: self.user_agent,
             activity_id: self.activity_id,
             consistency_level: self.consistency_level,
+            p_trigger_operation: PhantomData {},
+            p_trigger_type: PhantomData {},
+            p_body: PhantomData {},
         }
     }
 }
 
-impl<'a, TriggerOperationSet, TriggerTypeSet, BodySet> UserAgentSupport<'a>
-    for CreateOrReplaceTriggerBuilder<'a, TriggerOperationSet, TriggerTypeSet, BodySet>
-where
-    TriggerOperationSet: ToAssign,
-    TriggerTypeSet: ToAssign,
-    BodySet: ToAssign,
-{
-    type O = CreateOrReplaceTriggerBuilder<'a, TriggerOperationSet, TriggerTypeSet, BodySet>;
-
-    fn with_user_agent(self, user_agent: &'a str) -> Self::O {
-        Self {
-            user_agent: Some(user_agent),
-            ..self
-        }
-    }
-}
-
-impl<'a, TriggerOperationSet, TriggerTypeSet, BodySet> ActivityIdSupport<'a>
-    for CreateOrReplaceTriggerBuilder<'a, TriggerOperationSet, TriggerTypeSet, BodySet>
-where
-    TriggerOperationSet: ToAssign,
-    TriggerTypeSet: ToAssign,
-    BodySet: ToAssign,
-{
-    type O = Self;
-
-    fn with_activity_id(self, activity_id: &'a str) -> Self::O {
-        Self {
-            activity_id: Some(activity_id),
-            ..self
-        }
-    }
-}
-
-impl<'a, TriggerOperationSet, TriggerTypeSet, BodySet> ConsistencyLevelSupport<'a>
-    for CreateOrReplaceTriggerBuilder<'a, TriggerOperationSet, TriggerTypeSet, BodySet>
-where
-    TriggerOperationSet: ToAssign,
-    TriggerTypeSet: ToAssign,
-    BodySet: ToAssign,
-{
-    type O = Self;
-
-    fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self::O {
-        Self {
-            consistency_level: Some(consistency_level),
-            ..self
-        }
-    }
-}
-
-// methods callable regardless
-impl<'a, TriggerOperationSet, TriggerTypeSet, BodySet>
-    CreateOrReplaceTriggerBuilder<'a, TriggerOperationSet, TriggerTypeSet, BodySet>
-where
-    TriggerOperationSet: ToAssign,
-    TriggerTypeSet: ToAssign,
-    BodySet: ToAssign,
-{
-    fn is_create(&self) -> bool {
-        self.is_create
-    }
-}
-
-// methods callable only when every mandatory field has been filled
 impl<'a> CreateOrReplaceTriggerBuilder<'a, Yes, Yes, Yes> {
     pub async fn execute(&self) -> Result<CreateTriggerResponse, CosmosError> {
         trace!("CreateOrReplaceTriggerBuilder::execute called");
@@ -279,9 +213,9 @@ impl<'a> CreateOrReplaceTriggerBuilder<'a, Yes, Yes, Yes> {
         };
 
         // add trait headers
-        let req = UserAgentOption::add_header(self, req);
-        let req = ActivityIdOption::add_header(self, req);
-        let req = ConsistencyLevelOption::add_header(self, req);
+        let req = crate::headers::add_header(self.user_agent(), req);
+        let req = crate::headers::add_header(self.activity_id(), req);
+        let req = crate::headers::add_header(self.consistency_level(), req);
 
         let req = req.header(http::header::CONTENT_TYPE, "application/json");
 

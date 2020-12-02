@@ -7,8 +7,8 @@ use std::convert::TryInto;
 pub struct DeleteAttachmentBuilder<'a, 'b> {
     attachment_client: &'a AttachmentClient,
     if_match_condition: Option<IfMatchCondition<'b>>,
-    user_agent: Option<&'b str>,
-    activity_id: Option<&'b str>,
+    user_agent: Option<azure_core::UserAgent<'b>>,
+    activity_id: Option<azure_core::ActivityId<'b>>,
     consistency_level: Option<ConsistencyLevel>,
 }
 
@@ -22,94 +22,49 @@ impl<'a, 'b> DeleteAttachmentBuilder<'a, 'b> {
             consistency_level: None,
         }
     }
-}
 
-impl<'a, 'b> DeleteAttachmentBuilder<'a, 'b> {
     pub fn attachment_client(&self) -> &'a AttachmentClient {
         self.attachment_client
     }
-}
 
-impl<'a, 'b> IfMatchConditionOption<'b> for DeleteAttachmentBuilder<'a, 'b> {
-    fn if_match_condition(&self) -> Option<IfMatchCondition<'b>> {
-        self.if_match_condition
-    }
-}
-
-impl<'a, 'b> UserAgentOption<'b> for DeleteAttachmentBuilder<'a, 'b> {
-    fn user_agent(&self) -> Option<&'b str> {
-        self.user_agent
-    }
-}
-
-impl<'a, 'b> ActivityIdOption<'b> for DeleteAttachmentBuilder<'a, 'b> {
-    fn activity_id(&self) -> Option<&'b str> {
-        self.activity_id
-    }
-}
-
-impl<'a, 'b> ConsistencyLevelOption<'b> for DeleteAttachmentBuilder<'a, 'b> {
-    fn consistency_level(&self) -> Option<ConsistencyLevel> {
-        self.consistency_level.clone()
-    }
-}
-
-impl<'a, 'b> IfMatchConditionSupport<'b> for DeleteAttachmentBuilder<'a, 'b> {
-    type O = Self;
-
-    fn with_if_match_condition(self, if_match_condition: IfMatchCondition<'b>) -> Self::O {
+    pub fn with_if_match_condition(self, if_match_condition: IfMatchCondition<'b>) -> Self {
         Self {
             if_match_condition: Some(if_match_condition),
             ..self
         }
     }
-}
 
-impl<'a, 'b> UserAgentSupport<'b> for DeleteAttachmentBuilder<'a, 'b> {
-    type O = Self;
-
-    fn with_user_agent(self, user_agent: &'b str) -> Self::O {
+    pub fn with_user_agent(self, user_agent: &'b str) -> Self {
         Self {
-            user_agent: Some(user_agent),
+            user_agent: Some(azure_core::UserAgent::new(user_agent)),
             ..self
         }
     }
-}
 
-impl<'a, 'b> ActivityIdSupport<'b> for DeleteAttachmentBuilder<'a, 'b> {
-    type O = Self;
-
-    fn with_activity_id(self, activity_id: &'b str) -> Self::O {
+    pub fn with_activity_id(self, activity_id: &'b str) -> Self {
         Self {
-            activity_id: Some(activity_id),
+            activity_id: Some(azure_core::ActivityId::new(activity_id)),
             ..self
         }
     }
-}
 
-impl<'a, 'b> ConsistencyLevelSupport<'b> for DeleteAttachmentBuilder<'a, 'b> {
-    type O = Self;
-
-    fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self::O {
+    pub fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self {
         Self {
             consistency_level: Some(consistency_level),
             ..self
         }
     }
-}
 
-// methods callable only when every mandatory field has been filled
-impl<'a, 'b> DeleteAttachmentBuilder<'a, 'b> {
     pub async fn execute(&self) -> Result<crate::responses::DeleteAttachmentResponse, CosmosError> {
         let mut req = self
             .attachment_client
             .prepare_request_with_attachment_name(http::Method::DELETE);
 
         // add trait headers
-        req = IfMatchConditionOption::add_header(self, req);
-        req = UserAgentOption::add_header(self, req);
-        req = ActivityIdOption::add_header(self, req);
-        req = ConsistencyLevelOption::add_header(self, req);
+        req = crate::headers::add_header(self.if_match_condition(), req);
+        req = crate::headers::add_header(self.user_agent(), req);
+        req = crate::headers::add_header(self.activity_id(), req);
+        req = crate::headers::add_header(self.consistency_level(), req);
 
         req = crate::headers::add_partition_keys_header(
             self.attachment_client.document_client().partition_keys(),
@@ -126,5 +81,21 @@ impl<'a, 'b> DeleteAttachmentBuilder<'a, 'b> {
             .execute_request_check_status(req, StatusCode::NO_CONTENT)
             .await?
             .try_into()?)
+    }
+
+    fn if_match_condition(&self) -> Option<IfMatchCondition<'b>> {
+        self.if_match_condition
+    }
+
+    fn user_agent(&self) -> Option<azure_core::UserAgent<'b>> {
+        self.user_agent
+    }
+
+    fn activity_id(&self) -> Option<azure_core::ActivityId<'b>> {
+        self.activity_id
+    }
+
+    fn consistency_level(&self) -> Option<ConsistencyLevel> {
+        self.consistency_level.clone()
     }
 }

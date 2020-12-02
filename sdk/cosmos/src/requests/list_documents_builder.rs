@@ -11,13 +11,13 @@ use std::convert::TryInto;
 pub struct ListDocumentsBuilder<'a, 'b> {
     collection_client: &'a CollectionClient,
     if_match_condition: Option<IfMatchCondition<'b>>,
-    user_agent: Option<&'b str>,
-    activity_id: Option<&'b str>,
+    user_agent: Option<azure_core::UserAgent<'b>>,
+    activity_id: Option<azure_core::ActivityId<'b>>,
     consistency_level: Option<ConsistencyLevel>,
-    continuation: Option<&'b str>,
-    max_item_count: i32,
-    a_im: bool,
-    partition_range_id: Option<&'b str>,
+    continuation: Option<Continuation<'b>>,
+    max_item_count: MaxItemCount,
+    a_im: ChangeFeed,
+    partition_range_id: Option<PartitionRangeId<'b>>,
 }
 
 impl<'a, 'b> ListDocumentsBuilder<'a, 'b> {
@@ -29,162 +29,97 @@ impl<'a, 'b> ListDocumentsBuilder<'a, 'b> {
             activity_id: None,
             consistency_level: None,
             continuation: None,
-            max_item_count: -1,
-            a_im: false,
+            max_item_count: MaxItemCount::new(-1),
+            a_im: ChangeFeed::None,
             partition_range_id: None,
         }
     }
-}
 
-impl<'a, 'b> ListDocumentsBuilder<'a, 'b> {
     pub fn collection_client(&self) -> &'a CollectionClient {
         self.collection_client
     }
-}
 
-impl<'a, 'b> IfMatchConditionOption<'b> for ListDocumentsBuilder<'a, 'b> {
     fn if_match_condition(&self) -> Option<IfMatchCondition<'b>> {
         self.if_match_condition
     }
-}
 
-impl<'a, 'b> UserAgentOption<'b> for ListDocumentsBuilder<'a, 'b> {
-    fn user_agent(&self) -> Option<&'b str> {
+    fn user_agent(&self) -> Option<azure_core::UserAgent<'b>> {
         self.user_agent
     }
-}
 
-impl<'a, 'b> ActivityIdOption<'b> for ListDocumentsBuilder<'a, 'b> {
-    fn activity_id(&self) -> Option<&'b str> {
+    fn activity_id(&self) -> Option<azure_core::ActivityId<'b>> {
         self.activity_id
     }
-}
 
-impl<'a, 'b> ConsistencyLevelOption<'b> for ListDocumentsBuilder<'a, 'b> {
     fn consistency_level(&self) -> Option<ConsistencyLevel> {
         self.consistency_level.clone()
     }
-}
 
-impl<'a, 'b> ContinuationOption<'b> for ListDocumentsBuilder<'a, 'b> {
-    fn continuation(&self) -> Option<&'b str> {
-        self.continuation
-    }
-}
-
-impl<'a, 'b> MaxItemCountOption for ListDocumentsBuilder<'a, 'b> {
-    fn max_item_count(&self) -> i32 {
+    fn max_item_count(&self) -> MaxItemCount {
         self.max_item_count
     }
-}
 
-impl<'a, 'b> AIMOption for ListDocumentsBuilder<'a, 'b> {
-    fn a_im(&self) -> bool {
+    fn a_im(&self) -> ChangeFeed {
         self.a_im
     }
-}
 
-impl<'a, 'b> PartitionRangeIdOption<'b> for ListDocumentsBuilder<'a, 'b> {
-    fn partition_range_id(&self) -> Option<&'b str> {
+    fn partition_range_id(&self) -> Option<PartitionRangeId<'b>> {
         self.partition_range_id
     }
-}
 
-impl<'a, 'b> IfMatchConditionSupport<'b> for ListDocumentsBuilder<'a, 'b> {
-    type O = Self;
-
-    #[inline]
-    fn with_if_match_condition(self, if_match_condition: IfMatchCondition<'b>) -> Self::O {
-        ListDocumentsBuilder {
-            collection_client: self.collection_client,
+    pub fn with_if_match_condition(self, if_match_condition: IfMatchCondition<'b>) -> Self {
+        Self {
             if_match_condition: Some(if_match_condition),
-            user_agent: self.user_agent,
-            activity_id: self.activity_id,
-            consistency_level: self.consistency_level,
-            continuation: self.continuation,
-            max_item_count: self.max_item_count,
-            a_im: self.a_im,
-            partition_range_id: self.partition_range_id,
-        }
-    }
-}
-
-impl<'a, 'b> UserAgentSupport<'b> for ListDocumentsBuilder<'a, 'b> {
-    type O = Self;
-
-    fn with_user_agent(self, user_agent: &'b str) -> Self::O {
-        Self {
-            user_agent: Some(user_agent),
             ..self
         }
     }
-}
 
-impl<'a, 'b> ActivityIdSupport<'b> for ListDocumentsBuilder<'a, 'b> {
-    type O = Self;
-
-    fn with_activity_id(self, activity_id: &'b str) -> Self::O {
+    pub fn with_user_agent(self, user_agent: &'b str) -> Self {
         Self {
-            activity_id: Some(activity_id),
+            user_agent: Some(azure_core::UserAgent::new(user_agent)),
             ..self
         }
     }
-}
 
-impl<'a, 'b> ConsistencyLevelSupport<'b> for ListDocumentsBuilder<'a, 'b> {
-    type O = Self;
+    pub fn with_activity_id(self, activity_id: &'b str) -> Self {
+        Self {
+            activity_id: Some(azure_core::ActivityId::new(activity_id)),
+            ..self
+        }
+    }
 
-    fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self::O {
+    pub fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self {
         Self {
             consistency_level: Some(consistency_level),
             ..self
         }
     }
-}
 
-impl<'a, 'b> ContinuationSupport<'b> for ListDocumentsBuilder<'a, 'b> {
-    type O = Self;
-
-    fn with_continuation(self, continuation: &'b str) -> Self::O {
+    pub fn with_continuation(self, continuation: &'b str) -> Self {
         Self {
-            continuation: Some(continuation),
+            continuation: Some(Continuation::new(continuation)),
             ..self
         }
     }
-}
 
-impl<'a, 'b> MaxItemCountSupport for ListDocumentsBuilder<'a, 'b> {
-    type O = Self;
-
-    fn with_max_item_count(self, max_item_count: i32) -> Self::O {
+    pub fn with_max_item_count(self, max_item_count: i32) -> Self {
         Self {
-            max_item_count,
+            max_item_count: MaxItemCount::new(max_item_count),
             ..self
         }
     }
-}
 
-impl<'a, 'b> AIMSupport for ListDocumentsBuilder<'a, 'b> {
-    type O = Self;
-
-    fn with_a_im(self, a_im: bool) -> Self::O {
+    pub fn with_a_im(self, a_im: ChangeFeed) -> Self {
         Self { a_im, ..self }
     }
-}
 
-impl<'a, 'b> PartitionRangeIdSupport<'b> for ListDocumentsBuilder<'a, 'b> {
-    type O = Self;
-
-    fn with_partition_range_id(self, partition_range_id: &'b str) -> Self::O {
+    pub fn with_partition_range_id(self, partition_range_id: &'b str) -> Self {
         Self {
-            partition_range_id: Some(partition_range_id),
+            partition_range_id: Some(PartitionRangeId::new(partition_range_id)),
             ..self
         }
     }
-}
 
-// methods callable only when every mandatory field has been filled
-impl<'a, 'b> ListDocumentsBuilder<'a, 'b> {
     pub async fn execute<T>(&self) -> Result<ListDocumentsResponse<T>, CosmosError>
     where
         T: DeserializeOwned,
@@ -200,14 +135,14 @@ impl<'a, 'b> ListDocumentsBuilder<'a, 'b> {
         );
 
         // add trait headers
-        let req = IfMatchConditionOption::add_header(self, req);
-        let req = UserAgentOption::add_header(self, req);
-        let req = ActivityIdOption::add_header(self, req);
-        let req = ConsistencyLevelOption::add_header(self, req);
-        let req = ContinuationOption::add_header(self, req);
-        let req = MaxItemCountOption::add_header(self, req);
-        let req = AIMOption::add_header(self, req);
-        let req = PartitionRangeIdOption::add_header(self, req);
+        let req = crate::headers::add_header(self.if_match_condition(), req);
+        let req = crate::headers::add_header(self.user_agent(), req);
+        let req = crate::headers::add_header(self.activity_id(), req);
+        let req = crate::headers::add_header(self.consistency_level(), req);
+        let req = crate::headers::add_header(self.continuation(), req);
+        let req = crate::headers::add_header(Some(self.max_item_count()), req);
+        let req = crate::headers::add_header(Some(self.a_im()), req);
+        let req = crate::headers::add_header(self.partition_range_id(), req);
 
         let req = req.body(EMPTY_BODY.as_ref())?;
 
@@ -263,5 +198,11 @@ impl<'a, 'b> ListDocumentsBuilder<'a, 'b> {
                 }
             },
         )
+    }
+}
+
+impl<'a, 'b> ListDocumentsBuilder<'a, 'b> {
+    fn continuation(&self) -> Option<Continuation<'b>> {
+        self.continuation
     }
 }

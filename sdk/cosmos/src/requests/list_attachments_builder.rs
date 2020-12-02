@@ -10,12 +10,12 @@ use std::convert::TryInto;
 pub struct ListAttachmentsBuilder<'a, 'b> {
     document_client: &'a DocumentClient,
     if_match_condition: Option<IfMatchCondition<'b>>,
-    user_agent: Option<&'b str>,
-    activity_id: Option<&'b str>,
+    user_agent: Option<azure_core::UserAgent<'b>>,
+    activity_id: Option<azure_core::ActivityId<'b>>,
     consistency_level: Option<ConsistencyLevel>,
-    continuation: Option<&'b str>,
-    max_item_count: i32,
-    a_im: bool,
+    continuation: Option<Continuation<'b>>,
+    max_item_count: MaxItemCount,
+    a_im: ChangeFeed,
 }
 
 impl<'a, 'b> ListAttachmentsBuilder<'a, 'b> {
@@ -27,137 +27,85 @@ impl<'a, 'b> ListAttachmentsBuilder<'a, 'b> {
             activity_id: None,
             consistency_level: None,
             continuation: None,
-            max_item_count: -1,
-            a_im: false,
+            max_item_count: MaxItemCount::new(-1),
+            a_im: ChangeFeed::None,
         }
     }
-}
 
-impl<'a, 'b> ListAttachmentsBuilder<'a, 'b> {
-    #[inline]
     pub fn document_client(&self) -> &'a DocumentClient {
         self.document_client
     }
-}
 
-impl<'a, 'b> IfMatchConditionOption<'b> for ListAttachmentsBuilder<'a, 'b> {
     fn if_match_condition(&self) -> Option<IfMatchCondition<'b>> {
         self.if_match_condition
     }
-}
 
-impl<'a, 'b> UserAgentOption<'b> for ListAttachmentsBuilder<'a, 'b> {
-    fn user_agent(&self) -> Option<&'b str> {
+    fn user_agent(&self) -> Option<azure_core::UserAgent<'b>> {
         self.user_agent
     }
-}
 
-impl<'a, 'b> ActivityIdOption<'b> for ListAttachmentsBuilder<'a, 'b> {
-    fn activity_id(&self) -> Option<&'b str> {
+    fn activity_id(&self) -> Option<azure_core::ActivityId<'b>> {
         self.activity_id
     }
-}
 
-impl<'a, 'b> ConsistencyLevelOption<'b> for ListAttachmentsBuilder<'a, 'b> {
     fn consistency_level(&self) -> Option<ConsistencyLevel> {
         self.consistency_level.clone()
     }
-}
 
-impl<'a, 'b> ContinuationOption<'b> for ListAttachmentsBuilder<'a, 'b> {
-    fn continuation(&self) -> Option<&'b str> {
-        self.continuation
-    }
-}
-
-impl<'a, 'b> MaxItemCountOption for ListAttachmentsBuilder<'a, 'b> {
-    fn max_item_count(&self) -> i32 {
+    fn max_item_count(&self) -> MaxItemCount {
         self.max_item_count
     }
-}
 
-impl<'a, 'b> AIMOption for ListAttachmentsBuilder<'a, 'b> {
-    fn a_im(&self) -> bool {
+    fn a_im(&self) -> ChangeFeed {
         self.a_im
     }
-}
 
-impl<'a, 'b> IfMatchConditionSupport<'b> for ListAttachmentsBuilder<'a, 'b> {
-    type O = Self;
-
-    fn with_if_match_condition(self, if_match_condition: IfMatchCondition<'b>) -> Self::O {
+    pub fn with_if_match_condition(self, if_match_condition: IfMatchCondition<'b>) -> Self {
         Self {
             if_match_condition: Some(if_match_condition),
             ..self
         }
     }
-}
 
-impl<'a, 'b> UserAgentSupport<'b> for ListAttachmentsBuilder<'a, 'b> {
-    type O = Self;
-
-    fn with_user_agent(self, user_agent: &'b str) -> Self::O {
+    pub fn with_user_agent(self, user_agent: &'b str) -> Self {
         Self {
-            user_agent: Some(user_agent),
+            user_agent: Some(azure_core::UserAgent::new(user_agent)),
             ..self
         }
     }
-}
 
-impl<'a, 'b> ActivityIdSupport<'b> for ListAttachmentsBuilder<'a, 'b> {
-    type O = Self;
-
-    fn with_activity_id(self, activity_id: &'b str) -> Self::O {
+    pub fn with_activity_id(self, activity_id: &'b str) -> Self {
         Self {
-            activity_id: Some(activity_id),
+            activity_id: Some(azure_core::ActivityId::new(activity_id)),
             ..self
         }
     }
-}
 
-impl<'a, 'b> ConsistencyLevelSupport<'b> for ListAttachmentsBuilder<'a, 'b> {
-    type O = Self;
-
-    fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self::O {
+    pub fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self {
         Self {
             consistency_level: Some(consistency_level),
             ..self
         }
     }
-}
 
-impl<'a, 'b> ContinuationSupport<'b> for ListAttachmentsBuilder<'a, 'b> {
-    type O = Self;
-
-    fn with_continuation(self, continuation: &'b str) -> Self::O {
+    pub fn with_continuation(self, continuation: &'b str) -> Self {
         Self {
-            continuation: Some(continuation),
+            continuation: Some(Continuation::new(continuation)),
             ..self
         }
     }
-}
 
-impl<'a, 'b> MaxItemCountSupport for ListAttachmentsBuilder<'a, 'b> {
-    type O = Self;
-
-    fn with_max_item_count(self, max_item_count: i32) -> Self::O {
+    pub fn with_max_item_count(self, max_item_count: i32) -> Self {
         Self {
-            max_item_count,
+            max_item_count: MaxItemCount::new(max_item_count),
             ..self
         }
     }
-}
 
-impl<'a, 'b> AIMSupport for ListAttachmentsBuilder<'a, 'b> {
-    type O = Self;
-
-    fn with_a_im(self, a_im: bool) -> Self::O {
+    pub fn with_a_im(self, a_im: ChangeFeed) -> Self {
         Self { a_im, ..self }
     }
-}
 
-// methods callable only when every mandatory field has been filled
-impl<'a, 'b> ListAttachmentsBuilder<'a, 'b> {
     pub async fn execute(&self) -> Result<ListAttachmentsResponse, CosmosError> {
         let mut req = self.document_client.cosmos_client().prepare_request(
             &format!(
@@ -171,13 +119,13 @@ impl<'a, 'b> ListAttachmentsBuilder<'a, 'b> {
         );
 
         // add trait headers
-        req = IfMatchConditionOption::add_header(self, req);
-        req = UserAgentOption::add_header(self, req);
-        req = ActivityIdOption::add_header(self, req);
-        req = ConsistencyLevelOption::add_header(self, req);
-        req = ContinuationOption::add_header(self, req);
-        req = MaxItemCountOption::add_header(self, req);
-        req = AIMOption::add_header(self, req);
+        req = crate::headers::add_header(self.if_match_condition(), req);
+        req = crate::headers::add_header(self.user_agent(), req);
+        req = crate::headers::add_header(self.activity_id(), req);
+        req = crate::headers::add_header(self.consistency_level(), req);
+        req = crate::headers::add_header(self.continuation(), req);
+        req = crate::headers::add_header(Some(self.max_item_count()), req);
+        req = crate::headers::add_header(Some(self.a_im()), req);
 
         req = crate::headers::add_partition_keys_header(self.document_client.partition_keys(), req);
 
@@ -230,5 +178,11 @@ impl<'a, 'b> ListAttachmentsBuilder<'a, 'b> {
                 }
             },
         )
+    }
+}
+
+impl<'a, 'b> ListAttachmentsBuilder<'a, 'b> {
+    fn continuation(&self) -> Option<Continuation<'b>> {
+        self.continuation
     }
 }

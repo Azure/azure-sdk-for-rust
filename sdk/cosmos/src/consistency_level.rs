@@ -1,4 +1,7 @@
+use crate::headers;
 use crate::responses::*;
+use azure_core::AddAsHeader;
+use http::request;
 use serde::de::DeserializeOwned;
 
 /// The consistency guarantee provided by Cosmos.
@@ -101,5 +104,22 @@ where
 {
     fn from(execute_stored_procedure_response: &ExecuteStoredProcedureResponse<T>) -> Self {
         ConsistencyLevel::Session(execute_stored_procedure_response.session_token.clone())
+    }
+}
+
+impl AddAsHeader for ConsistencyLevel {
+    fn add_as_header(&self, builder: request::Builder) -> request::Builder {
+        let builder = builder.header(
+            headers::HEADER_CONSISTENCY_LEVEL,
+            self.to_consistency_level_header(),
+        );
+
+        // if we have a Session consistency level we make sure to pass
+        // the x-ms-session-token header too.
+        if let ConsistencyLevel::Session(session_token) = self {
+            builder.header(headers::HEADER_SESSION_TOKEN, session_token)
+        } else {
+            builder
+        }
     }
 }

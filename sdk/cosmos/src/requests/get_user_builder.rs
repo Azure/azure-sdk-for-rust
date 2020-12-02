@@ -7,8 +7,8 @@ use std::convert::TryInto;
 #[derive(Debug, Clone)]
 pub struct GetUserBuilder<'a, 'b> {
     user_client: &'a UserClient,
-    user_agent: Option<&'b str>,
-    activity_id: Option<&'b str>,
+    user_agent: Option<azure_core::UserAgent<'b>>,
+    activity_id: Option<azure_core::ActivityId<'b>>,
     consistency_level: Option<ConsistencyLevel>,
 }
 
@@ -21,67 +21,44 @@ impl<'a, 'b> GetUserBuilder<'a, 'b> {
             consistency_level: None,
         }
     }
-}
 
-impl<'a, 'b> GetUserBuilder<'a, 'b> {
     pub fn user_client(&self) -> &'a UserClient {
         self.user_client
     }
-}
 
-impl<'a, 'b> UserAgentOption<'b> for GetUserBuilder<'a, 'b> {
-    fn user_agent(&self) -> Option<&'b str> {
+    fn user_agent(&self) -> Option<azure_core::UserAgent<'b>> {
         self.user_agent
     }
-}
 
-impl<'a, 'b> ActivityIdOption<'b> for GetUserBuilder<'a, 'b> {
-    fn activity_id(&self) -> Option<&'b str> {
+    fn activity_id(&self) -> Option<azure_core::ActivityId<'b>> {
         self.activity_id
     }
-}
 
-impl<'a, 'b> ConsistencyLevelOption<'b> for GetUserBuilder<'a, 'b> {
     fn consistency_level(&self) -> Option<ConsistencyLevel> {
         self.consistency_level.clone()
     }
-}
 
-impl<'a, 'b> UserAgentSupport<'b> for GetUserBuilder<'a, 'b> {
-    type O = Self;
-
-    fn with_user_agent(self, user_agent: &'b str) -> Self::O {
+    pub fn with_user_agent(self, user_agent: &'b str) -> Self {
         Self {
-            user_agent: Some(user_agent),
+            user_agent: Some(azure_core::UserAgent::new(user_agent)),
             ..self
         }
     }
-}
 
-impl<'a, 'b> ActivityIdSupport<'b> for GetUserBuilder<'a, 'b> {
-    type O = Self;
-
-    fn with_activity_id(self, activity_id: &'b str) -> Self::O {
+    pub fn with_activity_id(self, activity_id: &'b str) -> Self {
         Self {
-            activity_id: Some(activity_id),
+            activity_id: Some(azure_core::ActivityId::new(activity_id)),
             ..self
         }
     }
-}
 
-impl<'a, 'b> ConsistencyLevelSupport<'b> for GetUserBuilder<'a, 'b> {
-    type O = Self;
-
-    fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self::O {
+    pub fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self {
         Self {
             consistency_level: Some(consistency_level),
             ..self
         }
     }
-}
 
-// methods callable only when every mandatory field has been filled
-impl<'a, 'b> GetUserBuilder<'a, 'b> {
     pub async fn execute(&self) -> Result<Option<CreateUserResponse>, CosmosError> {
         trace!("GetUserBuilder::execute called");
 
@@ -89,9 +66,9 @@ impl<'a, 'b> GetUserBuilder<'a, 'b> {
             .user_client
             .prepare_request_with_user_name(http::Method::GET);
 
-        let req = UserAgentOption::add_header(self, req);
-        let req = ActivityIdOption::add_header(self, req);
-        let req = ConsistencyLevelOption::add_header(self, req);
+        let req = crate::headers::add_header(self.user_agent(), req);
+        let req = crate::headers::add_header(self.activity_id(), req);
+        let req = crate::headers::add_header(self.consistency_level(), req);
 
         let req = req.body(EMPTY_BODY.as_ref())?;
         debug!("\nreq == {:?}", req);

@@ -7,8 +7,8 @@ use std::convert::TryInto;
 #[derive(Debug, Clone)]
 pub struct DeleteTriggerBuilder<'a, 'b> {
     trigger_client: &'a TriggerClient,
-    user_agent: Option<&'b str>,
-    activity_id: Option<&'b str>,
+    user_agent: Option<azure_core::UserAgent<'b>>,
+    activity_id: Option<azure_core::ActivityId<'b>>,
     consistency_level: Option<ConsistencyLevel>,
 }
 
@@ -21,67 +21,28 @@ impl<'a, 'b> DeleteTriggerBuilder<'a, 'b> {
             consistency_level: None,
         }
     }
-}
 
-impl<'a, 'b> DeleteTriggerBuilder<'a, 'b> {
-    fn trigger_client(&self) -> &'a TriggerClient {
-        self.trigger_client
-    }
-}
-
-impl<'a, 'b> UserAgentOption<'b> for DeleteTriggerBuilder<'a, 'b> {
-    fn user_agent(&self) -> Option<&'b str> {
-        self.user_agent
-    }
-}
-
-impl<'a, 'b> ActivityIdOption<'b> for DeleteTriggerBuilder<'a, 'b> {
-    fn activity_id(&self) -> Option<&'b str> {
-        self.activity_id
-    }
-}
-
-impl<'a, 'b> ConsistencyLevelOption<'b> for DeleteTriggerBuilder<'a, 'b> {
-    fn consistency_level(&self) -> Option<ConsistencyLevel> {
-        self.consistency_level.clone()
-    }
-}
-
-impl<'a, 'b> UserAgentSupport<'b> for DeleteTriggerBuilder<'a, 'b> {
-    type O = Self;
-
-    fn with_user_agent(self, user_agent: &'b str) -> Self::O {
+    pub fn with_user_agent(self, user_agent: &'b str) -> Self {
         Self {
-            user_agent: Some(user_agent),
+            user_agent: Some(azure_core::UserAgent::new(user_agent)),
             ..self
         }
     }
-}
 
-impl<'a, 'b> ActivityIdSupport<'b> for DeleteTriggerBuilder<'a, 'b> {
-    type O = Self;
-
-    fn with_activity_id(self, activity_id: &'b str) -> Self::O {
+    pub fn with_activity_id(self, activity_id: &'b str) -> Self {
         Self {
-            activity_id: Some(activity_id),
+            activity_id: Some(azure_core::ActivityId::new(activity_id)),
             ..self
         }
     }
-}
 
-impl<'a, 'b> ConsistencyLevelSupport<'b> for DeleteTriggerBuilder<'a, 'b> {
-    type O = Self;
-
-    fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self::O {
+    pub fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self {
         Self {
             consistency_level: Some(consistency_level),
             ..self
         }
     }
-}
 
-// methods callable only when every mandatory field has been filled
-impl<'a, 'b> DeleteTriggerBuilder<'a, 'b> {
     pub async fn execute(&self) -> Result<DeleteTriggerResponse, CosmosError> {
         trace!("DeleteTriggerBuilder::execute called");
 
@@ -90,9 +51,9 @@ impl<'a, 'b> DeleteTriggerBuilder<'a, 'b> {
             .prepare_request_with_trigger_name(http::Method::DELETE);
 
         // add trait headers
-        let req = UserAgentOption::add_header(self, req);
-        let req = ActivityIdOption::add_header(self, req);
-        let req = ConsistencyLevelOption::add_header(self, req);
+        let req = crate::headers::add_header(self.user_agent(), req);
+        let req = crate::headers::add_header(self.activity_id(), req);
+        let req = crate::headers::add_header(self.consistency_level(), req);
 
         let request = req.body(EMPTY_BODY.as_ref())?;
 
@@ -102,5 +63,21 @@ impl<'a, 'b> DeleteTriggerBuilder<'a, 'b> {
             .execute_request_check_status(request, StatusCode::NO_CONTENT)
             .await?
             .try_into()?)
+    }
+
+    fn trigger_client(&self) -> &'a TriggerClient {
+        self.trigger_client
+    }
+
+    fn user_agent(&self) -> Option<azure_core::UserAgent<'b>> {
+        self.user_agent
+    }
+
+    fn activity_id(&self) -> Option<azure_core::ActivityId<'b>> {
+        self.activity_id
+    }
+
+    fn consistency_level(&self) -> Option<ConsistencyLevel> {
+        self.consistency_level.clone()
     }
 }

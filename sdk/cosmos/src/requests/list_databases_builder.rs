@@ -9,11 +9,11 @@ use std::convert::TryInto;
 #[derive(Debug, Clone)]
 pub struct ListDatabasesBuilder<'a> {
     cosmos_client: &'a CosmosClient,
-    user_agent: Option<&'a str>,
-    activity_id: Option<&'a str>,
+    user_agent: Option<azure_core::UserAgent<'a>>,
+    activity_id: Option<azure_core::ActivityId<'a>>,
     consistency_level: Option<ConsistencyLevel>,
-    continuation: Option<&'a str>,
-    max_item_count: i32,
+    continuation: Option<Continuation<'a>>,
+    max_item_count: MaxItemCount,
 }
 
 impl<'a> ListDatabasesBuilder<'a> {
@@ -24,104 +24,65 @@ impl<'a> ListDatabasesBuilder<'a> {
             activity_id: None,
             consistency_level: None,
             continuation: None,
-            max_item_count: -1,
+            max_item_count: MaxItemCount::new(-1),
         }
     }
-}
 
-impl<'a> ListDatabasesBuilder<'a> {
     pub fn cosmos_client(&self) -> &'a CosmosClient {
         self.cosmos_client
     }
-}
 
-impl<'a> UserAgentOption<'a> for ListDatabasesBuilder<'a> {
-    fn user_agent(&self) -> Option<&'a str> {
+    fn user_agent(&self) -> Option<azure_core::UserAgent<'a>> {
         self.user_agent
     }
-}
 
-impl<'a> ActivityIdOption<'a> for ListDatabasesBuilder<'a> {
-    fn activity_id(&self) -> Option<&'a str> {
+    fn activity_id(&self) -> Option<azure_core::ActivityId<'a>> {
         self.activity_id
     }
-}
 
-impl<'a> ConsistencyLevelOption<'a> for ListDatabasesBuilder<'a> {
     fn consistency_level(&self) -> Option<ConsistencyLevel> {
         self.consistency_level.clone()
     }
-}
 
-impl<'a> ContinuationOption<'a> for ListDatabasesBuilder<'a> {
-    fn continuation(&self) -> Option<&'a str> {
-        self.continuation
-    }
-}
-
-impl<'a> MaxItemCountOption for ListDatabasesBuilder<'a> {
-    fn max_item_count(&self) -> i32 {
+    fn max_item_count(&self) -> MaxItemCount {
         self.max_item_count
     }
-}
 
-impl<'a> UserAgentSupport<'a> for ListDatabasesBuilder<'a> {
-    type O = Self;
-
-    fn with_user_agent(self, user_agent: &'a str) -> Self::O {
+    pub fn with_user_agent(self, user_agent: &'a str) -> Self {
         Self {
-            user_agent: Some(user_agent),
+            user_agent: Some(azure_core::UserAgent::new(user_agent)),
             ..self
         }
     }
-}
 
-impl<'a> ActivityIdSupport<'a> for ListDatabasesBuilder<'a> {
-    type O = Self;
-
-    fn with_activity_id(self, activity_id: &'a str) -> Self::O {
+    pub fn with_activity_id(self, activity_id: &'a str) -> Self {
         Self {
-            activity_id: Some(activity_id),
+            activity_id: Some(azure_core::ActivityId::new(activity_id)),
             ..self
         }
     }
-}
 
-impl<'a> ConsistencyLevelSupport<'a> for ListDatabasesBuilder<'a> {
-    type O = Self;
-
-    fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self::O {
+    pub fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self {
         Self {
             consistency_level: Some(consistency_level),
             ..self
         }
     }
-}
 
-impl<'a> ContinuationSupport<'a> for ListDatabasesBuilder<'a> {
-    type O = Self;
-
-    fn with_continuation(self, continuation: &'a str) -> Self::O {
+    pub fn with_continuation(self, continuation: &'a str) -> Self {
         Self {
-            continuation: Some(continuation),
+            continuation: Some(Continuation::new(continuation)),
             ..self
         }
     }
-}
 
-impl<'a> MaxItemCountSupport for ListDatabasesBuilder<'a> {
-    type O = Self;
-
-    fn with_max_item_count(self, max_item_count: i32) -> Self::O {
+    pub fn with_max_item_count(self, max_item_count: i32) -> Self {
         Self {
-            max_item_count,
+            max_item_count: MaxItemCount::new(max_item_count),
             ..self
         }
     }
-}
 
-// methods callable only when every mandatory field has been filled
-impl<'a> ListDatabasesBuilder<'a> {
     pub async fn execute(&self) -> Result<ListDatabasesResponse, CosmosError> {
         trace!("ListDatabasesBuilder::execute called");
 
@@ -129,11 +90,11 @@ impl<'a> ListDatabasesBuilder<'a> {
             self.cosmos_client
                 .prepare_request("dbs", http::Method::GET, ResourceType::Databases);
 
-        let request = UserAgentOption::add_header(self, request);
-        let request = ActivityIdOption::add_header(self, request);
-        let request = ConsistencyLevelOption::add_header(self, request);
-        let request = ContinuationOption::add_header(self, request);
-        let request = MaxItemCountOption::add_header(self, request);
+        let request = crate::headers::add_header(self.user_agent(), request);
+        let request = crate::headers::add_header(self.activity_id(), request);
+        let request = crate::headers::add_header(self.consistency_level(), request);
+        let request = crate::headers::add_header(self.continuation(), request);
+        let request = crate::headers::add_header(Some(self.max_item_count()), request);
 
         let request = request.body(EMPTY_BODY.as_ref())?;
 
@@ -184,5 +145,11 @@ impl<'a> ListDatabasesBuilder<'a> {
                 }
             },
         )
+    }
+}
+
+impl<'a> ListDatabasesBuilder<'a> {
+    fn continuation(&self) -> Option<Continuation<'a>> {
+        self.continuation
     }
 }

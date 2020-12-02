@@ -9,11 +9,11 @@ use std::convert::TryInto;
 #[derive(Debug, Clone)]
 pub struct ListPermissionsBuilder<'a, 'b> {
     user_client: &'a UserClient,
-    user_agent: Option<&'b str>,
-    activity_id: Option<&'b str>,
+    user_agent: Option<azure_core::UserAgent<'b>>,
+    activity_id: Option<azure_core::ActivityId<'b>>,
     consistency_level: Option<ConsistencyLevel>,
-    continuation: Option<&'b str>,
-    max_item_count: i32,
+    continuation: Option<Continuation<'b>>,
+    max_item_count: MaxItemCount,
 }
 
 impl<'a, 'b> ListPermissionsBuilder<'a, 'b> {
@@ -24,104 +24,65 @@ impl<'a, 'b> ListPermissionsBuilder<'a, 'b> {
             activity_id: None,
             consistency_level: None,
             continuation: None,
-            max_item_count: -1,
+            max_item_count: MaxItemCount::new(-1),
         }
     }
-}
 
-impl<'a, 'b> ListPermissionsBuilder<'a, 'b> {
     pub fn user_client(&self) -> &'a UserClient {
         self.user_client
     }
-}
 
-impl<'a, 'b> UserAgentOption<'b> for ListPermissionsBuilder<'a, 'b> {
-    fn user_agent(&self) -> Option<&'b str> {
+    fn user_agent(&self) -> Option<azure_core::UserAgent<'b>> {
         self.user_agent
     }
-}
 
-impl<'a, 'b> ActivityIdOption<'b> for ListPermissionsBuilder<'a, 'b> {
-    fn activity_id(&self) -> Option<&'b str> {
+    fn activity_id(&self) -> Option<azure_core::ActivityId<'b>> {
         self.activity_id
     }
-}
 
-impl<'a, 'b> ConsistencyLevelOption<'b> for ListPermissionsBuilder<'a, 'b> {
     fn consistency_level(&self) -> Option<ConsistencyLevel> {
         self.consistency_level.clone()
     }
-}
 
-impl<'a, 'b> ContinuationOption<'b> for ListPermissionsBuilder<'a, 'b> {
-    fn continuation(&self) -> Option<&'b str> {
-        self.continuation
-    }
-}
-
-impl<'a, 'b> MaxItemCountOption for ListPermissionsBuilder<'a, 'b> {
-    fn max_item_count(&self) -> i32 {
+    fn max_item_count(&self) -> MaxItemCount {
         self.max_item_count
     }
-}
 
-impl<'a, 'b> UserAgentSupport<'b> for ListPermissionsBuilder<'a, 'b> {
-    type O = Self;
-
-    fn with_user_agent(self, user_agent: &'b str) -> Self::O {
+    pub fn with_user_agent(self, user_agent: &'b str) -> Self {
         Self {
-            user_agent: Some(user_agent),
+            user_agent: Some(azure_core::UserAgent::new(user_agent)),
             ..self
         }
     }
-}
 
-impl<'a, 'b> ActivityIdSupport<'b> for ListPermissionsBuilder<'a, 'b> {
-    type O = Self;
-
-    fn with_activity_id(self, activity_id: &'b str) -> Self::O {
+    pub fn with_activity_id(self, activity_id: &'b str) -> Self {
         Self {
-            activity_id: Some(activity_id),
+            activity_id: Some(azure_core::ActivityId::new(activity_id)),
             ..self
         }
     }
-}
 
-impl<'a, 'b> ConsistencyLevelSupport<'b> for ListPermissionsBuilder<'a, 'b> {
-    type O = Self;
-
-    fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self::O {
+    pub fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self {
         Self {
             consistency_level: Some(consistency_level),
             ..self
         }
     }
-}
 
-impl<'a, 'b> ContinuationSupport<'b> for ListPermissionsBuilder<'a, 'b> {
-    type O = Self;
-
-    fn with_continuation(self, continuation: &'b str) -> Self::O {
+    pub fn with_continuation(self, continuation: &'b str) -> Self {
         Self {
-            continuation: Some(continuation),
+            continuation: Some(Continuation::new(continuation)),
             ..self
         }
     }
-}
 
-impl<'a, 'b> MaxItemCountSupport for ListPermissionsBuilder<'a, 'b> {
-    type O = Self;
-
-    fn with_max_item_count(self, max_item_count: i32) -> Self::O {
+    pub fn with_max_item_count(self, max_item_count: i32) -> Self {
         Self {
-            max_item_count,
+            max_item_count: MaxItemCount::new(max_item_count),
             ..self
         }
     }
-}
 
-// methods callable only when every mandatory field has been filled
-impl<'a, 'b> ListPermissionsBuilder<'a, 'b> {
     pub async fn execute(&self) -> Result<ListPermissionsResponse<'a>, CosmosError> {
         trace!("ListPermissionsBuilder::execute called");
 
@@ -135,11 +96,11 @@ impl<'a, 'b> ListPermissionsBuilder<'a, 'b> {
             ResourceType::Permissions,
         );
 
-        let request = UserAgentOption::add_header(self, request);
-        let request = ActivityIdOption::add_header(self, request);
-        let request = ConsistencyLevelOption::add_header(self, request);
-        let request = ContinuationOption::add_header(self, request);
-        let request = MaxItemCountOption::add_header(self, request);
+        let request = crate::headers::add_header(self.user_agent(), request);
+        let request = crate::headers::add_header(self.activity_id(), request);
+        let request = crate::headers::add_header(self.consistency_level(), request);
+        let request = crate::headers::add_header(self.continuation(), request);
+        let request = crate::headers::add_header(Some(self.max_item_count()), request);
 
         let request = request.body(EMPTY_BODY.as_ref())?;
         debug!("\nrequest == {:#?}", request);
@@ -193,5 +154,11 @@ impl<'a, 'b> ListPermissionsBuilder<'a, 'b> {
                 }
             },
         )
+    }
+}
+
+impl<'a, 'b> ListPermissionsBuilder<'a, 'b> {
+    fn continuation(&self) -> Option<Continuation<'b>> {
+        self.continuation
     }
 }
