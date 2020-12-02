@@ -28,9 +28,7 @@ impl<'a, 'b> ExecuteStoredProcedureBuilder<'a, 'b> {
             partition_keys: None,
         }
     }
-}
 
-impl<'a, 'b> ExecuteStoredProcedureBuilder<'a, 'b> {
     fn stored_procedure_client(&self) -> &'a StoredProcedureClient {
         self.stored_procedure_client
     }
@@ -54,51 +52,39 @@ impl<'a, 'b> ExecuteStoredProcedureBuilder<'a, 'b> {
     fn consistency_level(&self) -> Option<ConsistencyLevel> {
         self.consistency_level.clone()
     }
-}
 
-impl<'a, 'b> ExecuteStoredProcedureBuilder<'a, 'b> {
     fn allow_tentative_writes(&self) -> TenativeWritesAllowance {
         self.allow_tentative_writes
     }
-}
 
-impl<'a, 'b> ExecuteStoredProcedureBuilder<'a, 'b> {
     pub fn with_parameters(self, parameters: &'b Parameters) -> Self {
         Self {
             parameters: Some(parameters),
             ..self
         }
     }
-}
 
-impl<'a, 'b> ExecuteStoredProcedureBuilder<'a, 'b> {
     pub fn with_user_agent(self, user_agent: &'b str) -> Self {
         Self {
             user_agent: Some(azure_core::UserAgent::new(user_agent)),
             ..self
         }
     }
-}
 
-impl<'a, 'b> ExecuteStoredProcedureBuilder<'a, 'b> {
     pub fn with_activity_id(self, activity_id: &'b str) -> Self {
         ExecuteStoredProcedureBuilder {
             activity_id: Some(azure_core::ActivityId::new(activity_id)),
             ..self
         }
     }
-}
 
-impl<'a, 'b> ExecuteStoredProcedureBuilder<'a, 'b> {
     pub fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self {
         Self {
             consistency_level: Some(consistency_level),
             ..self
         }
     }
-}
 
-impl<'a, 'b> ExecuteStoredProcedureBuilder<'a, 'b> {
     pub fn with_allow_tentative_writes(
         self,
         allow_tentative_writes: TenativeWritesAllowance,
@@ -108,19 +94,14 @@ impl<'a, 'b> ExecuteStoredProcedureBuilder<'a, 'b> {
             ..self
         }
     }
-}
 
-impl<'a, 'b> ExecuteStoredProcedureBuilder<'a, 'b> {
     pub fn with_partition_keys(self, partition_keys: &'b PartitionKeys) -> Self {
         Self {
             partition_keys: Some(partition_keys),
             ..self
         }
     }
-}
 
-// methods callable only when every mandatory field has been filled
-impl<'a, 'b> ExecuteStoredProcedureBuilder<'a, 'b> {
     pub async fn execute<T>(&self) -> Result<ExecuteStoredProcedureResponse<T>, CosmosError>
     where
         T: DeserializeOwned,

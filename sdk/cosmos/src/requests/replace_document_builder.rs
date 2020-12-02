@@ -233,15 +233,13 @@ where
     }
 }
 
-impl<'a, 'b, PartitionKeysSet, DocumentIdSet> IfModifiedSinceSupport<'b>
-    for ReplaceDocumentBuilder<'a, 'b, PartitionKeysSet, DocumentIdSet>
+impl<'a, 'b, PartitionKeysSet, DocumentIdSet>
+    ReplaceDocumentBuilder<'a, 'b, PartitionKeysSet, DocumentIdSet>
 where
     PartitionKeysSet: ToAssign,
     DocumentIdSet: ToAssign,
 {
-    type O = Self;
-
-    fn with_if_modified_since(self, if_modified_since: &'b DateTime<Utc>) -> Self::O {
+    pub fn with_if_modified_since(self, if_modified_since: &'b DateTime<Utc>) -> Self {
         Self {
             if_modified_since: Some(if_modified_since),
             ..self

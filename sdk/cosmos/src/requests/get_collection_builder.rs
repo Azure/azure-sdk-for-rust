@@ -21,61 +21,44 @@ impl<'a> GetCollectionBuilder<'a> {
             consistency_level: None,
         }
     }
-}
 
-impl<'a> GetCollectionBuilder<'a> {
     pub fn collection_client(&self) -> &'a CollectionClient {
         self.collection_client
     }
-}
 
-impl<'a> GetCollectionBuilder<'a> {
     fn user_agent(&self) -> Option<azure_core::UserAgent<'a>> {
         self.user_agent
     }
-}
 
-impl<'a> GetCollectionBuilder<'a> {
     fn activity_id(&self) -> Option<azure_core::ActivityId<'a>> {
         self.activity_id
     }
-}
 
-impl<'a> GetCollectionBuilder<'a> {
     fn consistency_level(&self) -> Option<ConsistencyLevel> {
         self.consistency_level.clone()
     }
-}
 
-impl<'a> GetCollectionBuilder<'a> {
     pub fn with_user_agent(self, user_agent: &'a str) -> Self {
         Self {
             user_agent: Some(azure_core::UserAgent::new(user_agent)),
             ..self
         }
     }
-}
 
-impl<'a> GetCollectionBuilder<'a> {
     pub fn with_activity_id(self, activity_id: &'a str) -> Self {
         Self {
             activity_id: Some(azure_core::ActivityId::new(activity_id)),
             ..self
         }
     }
-}
 
-impl<'a> GetCollectionBuilder<'a> {
     pub fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self {
         Self {
             consistency_level: Some(consistency_level),
             ..self
         }
     }
-}
 
-// methods callable only when every mandatory field has been filled
-impl<'a> GetCollectionBuilder<'a> {
     pub async fn execute(&self) -> Result<GetCollectionResponse, CosmosError> {
         trace!("GetCollectionResponse::execute called");
 

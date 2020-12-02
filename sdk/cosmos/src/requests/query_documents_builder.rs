@@ -196,13 +196,11 @@ where
     }
 }
 
-impl<'a, 'b, QuerySet> IfModifiedSinceSupport<'b> for QueryDocumentsBuilder<'a, 'b, QuerySet>
+impl<'a, 'b, QuerySet> QueryDocumentsBuilder<'a, 'b, QuerySet>
 where
     QuerySet: ToAssign,
 {
-    type O = Self;
-
-    fn with_if_modified_since(self, if_modified_since: &'b DateTime<Utc>) -> Self::O {
+    pub fn with_if_modified_since(self, if_modified_since: &'b DateTime<Utc>) -> Self {
         Self {
             if_modified_since: Some(if_modified_since),
             ..self

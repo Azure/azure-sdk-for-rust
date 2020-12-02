@@ -13,28 +13,28 @@ where
     ContentTypeSet: ToAssign,
 {
     attachment_client: &'a AttachmentClient,
-    p_body: PhantomData<BodySet>,
-    p_content_type: PhantomData<ContentTypeSet>,
     body: Option<&'b [u8]>,
     content_type: Option<&'b str>,
     if_match_condition: Option<IfMatchCondition<'b>>,
     user_agent: Option<azure_core::UserAgent<'b>>,
     activity_id: Option<azure_core::ActivityId<'b>>,
     consistency_level: Option<ConsistencyLevel>,
+    p_body: PhantomData<BodySet>,
+    p_content_type: PhantomData<ContentTypeSet>,
 }
 
 impl<'a, 'b> CreateSlugAttachmentBuilder<'a, 'b, No, No> {
     pub(crate) fn new(attachment_client: &'a AttachmentClient) -> Self {
         Self {
             attachment_client,
-            p_body: PhantomData {},
             body: None,
-            p_content_type: PhantomData {},
             content_type: None,
             if_match_condition: None,
             user_agent: None,
             activity_id: None,
             consistency_level: None,
+            p_content_type: PhantomData {},
+            p_body: PhantomData {},
         }
     }
 }
@@ -47,6 +47,50 @@ where
     pub fn attachment_client(&self) -> &'a AttachmentClient {
         self.attachment_client
     }
+
+    pub fn with_if_match_condition(self, if_match_condition: IfMatchCondition<'b>) -> Self {
+        Self {
+            if_match_condition: Some(if_match_condition),
+            ..self
+        }
+    }
+
+    pub fn with_user_agent(self, user_agent: &'b str) -> Self {
+        Self {
+            user_agent: Some(azure_core::UserAgent::new(user_agent)),
+            ..self
+        }
+    }
+
+    pub fn with_activity_id(self, activity_id: &'b str) -> Self {
+        Self {
+            activity_id: Some(azure_core::ActivityId::new(activity_id)),
+            ..self
+        }
+    }
+
+    pub fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self {
+        Self {
+            consistency_level: Some(consistency_level),
+            ..self
+        }
+    }
+
+    fn if_match_condition(&self) -> Option<IfMatchCondition<'b>> {
+        self.if_match_condition
+    }
+
+    fn user_agent(&self) -> Option<azure_core::UserAgent<'b>> {
+        self.user_agent
+    }
+
+    fn activity_id(&self) -> Option<azure_core::ActivityId<'b>> {
+        self.activity_id
+    }
+
+    fn consistency_level(&self) -> Option<ConsistencyLevel> {
+        self.consistency_level.clone()
+    }
 }
 
 impl<'a, 'b, ContentTypeSet> BodyRequired<'b>
@@ -56,55 +100,6 @@ where
 {
     fn body(&self) -> &'b [u8] {
         self.body.unwrap()
-    }
-}
-
-impl<'a, 'b, BodySet> ContentTypeRequired<'b> for CreateSlugAttachmentBuilder<'a, 'b, BodySet, Yes>
-where
-    BodySet: ToAssign,
-{
-    fn content_type(&self) -> &'b str {
-        self.content_type.unwrap()
-    }
-}
-
-impl<'a, 'b, BodySet, ContentTypeSet> CreateSlugAttachmentBuilder<'a, 'b, BodySet, ContentTypeSet>
-where
-    BodySet: ToAssign,
-    ContentTypeSet: ToAssign,
-{
-    fn if_match_condition(&self) -> Option<IfMatchCondition<'b>> {
-        self.if_match_condition
-    }
-}
-
-impl<'a, 'b, BodySet, ContentTypeSet> CreateSlugAttachmentBuilder<'a, 'b, BodySet, ContentTypeSet>
-where
-    BodySet: ToAssign,
-    ContentTypeSet: ToAssign,
-{
-    fn user_agent(&self) -> Option<azure_core::UserAgent<'b>> {
-        self.user_agent
-    }
-}
-
-impl<'a, 'b, BodySet, ContentTypeSet> CreateSlugAttachmentBuilder<'a, 'b, BodySet, ContentTypeSet>
-where
-    BodySet: ToAssign,
-    ContentTypeSet: ToAssign,
-{
-    fn activity_id(&self) -> Option<azure_core::ActivityId<'b>> {
-        self.activity_id
-    }
-}
-
-impl<'a, 'b, BodySet, ContentTypeSet> CreateSlugAttachmentBuilder<'a, 'b, BodySet, ContentTypeSet>
-where
-    BodySet: ToAssign,
-    ContentTypeSet: ToAssign,
-{
-    fn consistency_level(&self) -> Option<ConsistencyLevel> {
-        self.consistency_level.clone()
     }
 }
 
@@ -151,55 +146,12 @@ where
     }
 }
 
-impl<'a, 'b, BodySet, ContentTypeSet> CreateSlugAttachmentBuilder<'a, 'b, BodySet, ContentTypeSet>
+impl<'a, 'b, BodySet> ContentTypeRequired<'b> for CreateSlugAttachmentBuilder<'a, 'b, BodySet, Yes>
 where
     BodySet: ToAssign,
-    ContentTypeSet: ToAssign,
 {
-    pub fn with_if_match_condition(self, if_match_condition: IfMatchCondition<'b>) -> Self {
-        Self {
-            if_match_condition: Some(if_match_condition),
-            ..self
-        }
-    }
-}
-
-impl<'a, 'b, BodySet, ContentTypeSet> CreateSlugAttachmentBuilder<'a, 'b, BodySet, ContentTypeSet>
-where
-    BodySet: ToAssign,
-    ContentTypeSet: ToAssign,
-{
-    pub fn with_user_agent(self, user_agent: &'b str) -> Self {
-        Self {
-            user_agent: Some(azure_core::UserAgent::new(user_agent)),
-            ..self
-        }
-    }
-}
-
-impl<'a, 'b, BodySet, ContentTypeSet> CreateSlugAttachmentBuilder<'a, 'b, BodySet, ContentTypeSet>
-where
-    BodySet: ToAssign,
-    ContentTypeSet: ToAssign,
-{
-    pub fn with_activity_id(self, activity_id: &'b str) -> Self {
-        Self {
-            activity_id: Some(azure_core::ActivityId::new(activity_id)),
-            ..self
-        }
-    }
-}
-
-impl<'a, 'b, BodySet, ContentTypeSet> CreateSlugAttachmentBuilder<'a, 'b, BodySet, ContentTypeSet>
-where
-    BodySet: ToAssign,
-    ContentTypeSet: ToAssign,
-{
-    pub fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self {
-        Self {
-            consistency_level: Some(consistency_level),
-            ..self
-        }
+    fn content_type(&self) -> &'b str {
+        self.content_type.unwrap()
     }
 }
 

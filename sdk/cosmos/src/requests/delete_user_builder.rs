@@ -21,61 +21,32 @@ impl<'a, 'b> DeleteUserBuilder<'a, 'b> {
             consistency_level: None,
         }
     }
-}
 
-impl<'a, 'b> DeleteUserBuilder<'a, 'b> {
     pub fn user_client(&self) -> &'a UserClient {
         self.user_client
     }
-}
 
-impl<'a, 'b> DeleteUserBuilder<'a, 'b> {
-    fn user_agent(&self) -> Option<azure_core::UserAgent<'b>> {
-        self.user_agent
-    }
-}
-
-impl<'a, 'b> DeleteUserBuilder<'a, 'b> {
-    fn activity_id(&self) -> Option<azure_core::ActivityId<'b>> {
-        self.activity_id
-    }
-}
-
-impl<'a, 'b> DeleteUserBuilder<'a, 'b> {
-    fn consistency_level(&self) -> Option<ConsistencyLevel> {
-        self.consistency_level.clone()
-    }
-}
-
-impl<'a, 'b> DeleteUserBuilder<'a, 'b> {
     pub fn with_user_agent(self, user_agent: &'b str) -> Self {
         Self {
             user_agent: Some(azure_core::UserAgent::new(user_agent)),
             ..self
         }
     }
-}
 
-impl<'a, 'b> DeleteUserBuilder<'a, 'b> {
     pub fn with_activity_id(self, activity_id: &'b str) -> Self {
         Self {
             activity_id: Some(azure_core::ActivityId::new(activity_id)),
             ..self
         }
     }
-}
 
-impl<'a, 'b> DeleteUserBuilder<'a, 'b> {
     pub fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self {
         Self {
             consistency_level: Some(consistency_level),
             ..self
         }
     }
-}
 
-// methods callable only when every mandatory field has been filled
-impl<'a, 'b> DeleteUserBuilder<'a, 'b> {
     pub async fn execute(&self) -> Result<DeleteUserResponse, CosmosError> {
         trace!("DeleteUserBuilder::execute called");
 
@@ -96,5 +67,17 @@ impl<'a, 'b> DeleteUserBuilder<'a, 'b> {
             .execute_request_check_status(req, StatusCode::NO_CONTENT)
             .await?
             .try_into()?)
+    }
+
+    fn user_agent(&self) -> Option<azure_core::UserAgent<'b>> {
+        self.user_agent
+    }
+
+    fn activity_id(&self) -> Option<azure_core::ActivityId<'b>> {
+        self.activity_id
+    }
+
+    fn consistency_level(&self) -> Option<ConsistencyLevel> {
+        self.consistency_level.clone()
     }
 }

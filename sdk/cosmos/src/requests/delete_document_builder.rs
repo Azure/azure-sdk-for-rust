@@ -2,7 +2,6 @@ use crate::prelude::*;
 use crate::responses::DeleteDocumentResponse;
 use azure_core::modify_conditions::IfMatchCondition;
 use azure_core::prelude::*;
-use azure_core::IfMatchConditionSupport;
 use chrono::{DateTime, Utc};
 use http::StatusCode;
 use std::convert::TryInto;
@@ -30,98 +29,39 @@ impl<'a> DeleteDocumentBuilder<'a> {
             allow_tentative_writes: TenativeWritesAllowance::Deny,
         }
     }
-}
 
-impl<'a> DeleteDocumentBuilder<'a> {
     pub fn document_client(&self) -> &'a DocumentClient {
         self.document_client
     }
-}
 
-impl<'a> DeleteDocumentBuilder<'a> {
-    fn if_match_condition(&self) -> Option<IfMatchCondition<'a>> {
-        self.if_match_condition
-    }
-}
-
-impl<'a> IfModifiedSinceOption<'a> for DeleteDocumentBuilder<'a> {
-    fn if_modified_since(&self) -> Option<&'a DateTime<Utc>> {
-        self.if_modified_since
-    }
-}
-
-impl<'a> DeleteDocumentBuilder<'a> {
-    fn user_agent(&self) -> Option<azure_core::UserAgent<'a>> {
-        self.user_agent
-    }
-}
-
-impl<'a> DeleteDocumentBuilder<'a> {
-    fn activity_id(&self) -> Option<azure_core::ActivityId<'a>> {
-        self.activity_id
-    }
-}
-
-impl<'a> DeleteDocumentBuilder<'a> {
-    fn consistency_level(&self) -> Option<ConsistencyLevel> {
-        self.consistency_level.clone()
-    }
-}
-
-impl<'a> DeleteDocumentBuilder<'a> {
-    fn allow_tentative_writes(&self) -> TenativeWritesAllowance {
-        self.allow_tentative_writes
-    }
-}
-
-impl<'a> DeleteDocumentBuilder<'a> {
     pub fn with_if_match_condition(self, if_match_condition: IfMatchCondition<'a>) -> Self {
         Self {
             if_match_condition: Some(if_match_condition),
             ..self
         }
     }
-}
 
-impl<'a> IfModifiedSinceSupport<'a> for DeleteDocumentBuilder<'a> {
-    type O = Self;
-
-    fn with_if_modified_since(self, if_modified_since: &'a DateTime<Utc>) -> Self::O {
-        Self {
-            if_modified_since: Some(if_modified_since),
-            ..self
-        }
-    }
-}
-
-impl<'a> DeleteDocumentBuilder<'a> {
     pub fn with_user_agent(self, user_agent: &'a str) -> Self {
         Self {
             user_agent: Some(azure_core::UserAgent::new(user_agent)),
             ..self
         }
     }
-}
 
-impl<'a> DeleteDocumentBuilder<'a> {
     pub fn with_activity_id(self, activity_id: &'a str) -> Self {
         Self {
             activity_id: Some(azure_core::ActivityId::new(activity_id)),
             ..self
         }
     }
-}
 
-impl<'a> DeleteDocumentBuilder<'a> {
     pub fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self {
         Self {
             consistency_level: Some(consistency_level),
             ..self
         }
     }
-}
 
-impl<'a> DeleteDocumentBuilder<'a> {
     pub fn with_allow_tentative_writes(
         self,
         allow_tentative_writes: TenativeWritesAllowance,
@@ -131,10 +71,14 @@ impl<'a> DeleteDocumentBuilder<'a> {
             ..self
         }
     }
-}
 
-// methods callable only when every mandatory field has been filled
-impl<'a> DeleteDocumentBuilder<'a> {
+    pub fn with_if_modified_since(self, if_modified_since: &'a DateTime<Utc>) -> Self {
+        Self {
+            if_modified_since: Some(if_modified_since),
+            ..self
+        }
+    }
+
     pub async fn execute(&self) -> Result<DeleteDocumentResponse, CosmosError> {
         trace!("DeleteDocumentBuilder::execute called");
 
@@ -161,5 +105,31 @@ impl<'a> DeleteDocumentBuilder<'a> {
             .execute_request_check_status(req, StatusCode::NO_CONTENT)
             .await?
             .try_into()?)
+    }
+
+    fn if_match_condition(&self) -> Option<IfMatchCondition<'a>> {
+        self.if_match_condition
+    }
+
+    fn user_agent(&self) -> Option<azure_core::UserAgent<'a>> {
+        self.user_agent
+    }
+
+    fn activity_id(&self) -> Option<azure_core::ActivityId<'a>> {
+        self.activity_id
+    }
+
+    fn consistency_level(&self) -> Option<ConsistencyLevel> {
+        self.consistency_level.clone()
+    }
+
+    fn allow_tentative_writes(&self) -> TenativeWritesAllowance {
+        self.allow_tentative_writes
+    }
+}
+
+impl<'a> IfModifiedSinceOption<'a> for DeleteDocumentBuilder<'a> {
+    fn if_modified_since(&self) -> Option<&'a DateTime<Utc>> {
+        self.if_modified_since
     }
 }
