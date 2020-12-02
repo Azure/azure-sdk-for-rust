@@ -4,39 +4,50 @@ use azure_core::AddAsHeader;
 use document::IndexingDirective;
 use http::request::Builder;
 
-pub trait QueryCrossPartitionSupport {
-    type O;
-    fn with_query_cross_partition(self, query_cross_partition: bool) -> Self::O;
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum QueryCrossPartition {
+    Yes,
+    No,
 }
 
-pub trait QueryCrossPartitionOption {
-    fn query_cross_partition(&self) -> bool;
+impl QueryCrossPartition {
+    fn as_bool_str(&self) -> &str {
+        match self {
+            Self::Yes => "true",
+            Self::No => "false",
+        }
+    }
+}
 
-    #[must_use]
-    fn add_header(&self, builder: Builder) -> Builder {
+impl AddAsHeader for QueryCrossPartition {
+    fn add_as_header(&self, builder: Builder) -> Builder {
         builder.header(
             headers::HEADER_DOCUMENTDB_QUERY_ENABLECROSSPARTITION,
-            self.query_cross_partition().to_string(),
+            self.as_bool_str(),
         )
     }
 }
 
-pub trait ParallelizeCrossPartitionQuerySupport {
-    type O;
-    fn with_parallelize_cross_partition_query(
-        self,
-        parallelize_cross_partition_query: bool,
-    ) -> Self::O;
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum ParallelizeCrossPartition {
+    Yes,
+    No,
 }
 
-pub trait ParallelizeCrossPartitionQueryOption {
-    fn parallelize_cross_partition_query(&self) -> bool;
+impl ParallelizeCrossPartition {
+    fn as_bool_str(&self) -> &str {
+        match self {
+            Self::Yes => "true",
+            Self::No => "false",
+        }
+    }
+}
 
-    #[must_use]
-    fn add_header(&self, builder: Builder) -> Builder {
+impl AddAsHeader for ParallelizeCrossPartition {
+    fn add_as_header(&self, builder: Builder) -> Builder {
         builder.header(
             headers::HEADER_DOCUMENTDB_QUERY_PARALLELIZECROSSPARTITIONQUERY,
-            self.parallelize_cross_partition_query().to_string(),
+            self.as_bool_str(),
         )
     }
 }

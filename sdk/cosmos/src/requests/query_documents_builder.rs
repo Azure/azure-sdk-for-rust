@@ -27,8 +27,8 @@ where
     continuation: Option<&'b str>,
     max_item_count: MaxItemCount,
     partition_keys: Option<&'b PartitionKeys>,
-    query_cross_partition: bool,
-    parallelize_cross_partition_query: bool,
+    query_cross_partition: QueryCrossPartition,
+    parallelize_cross_partition_query: ParallelizeCrossPartition,
 }
 
 impl<'a, 'b, QuerySet> Clone for QueryDocumentsBuilder<'a, 'b, QuerySet>
@@ -68,8 +68,8 @@ impl<'a, 'b> QueryDocumentsBuilder<'a, 'b, No> {
             continuation: None,
             max_item_count: MaxItemCount::new(-1),
             partition_keys: None,
-            query_cross_partition: false,
-            parallelize_cross_partition_query: false,
+            query_cross_partition: QueryCrossPartition::No,
+            parallelize_cross_partition_query: ParallelizeCrossPartition::No,
         }
     }
 }
@@ -146,21 +146,20 @@ where
     }
 }
 
-impl<'a, 'b, QuerySet> QueryCrossPartitionOption for QueryDocumentsBuilder<'a, 'b, QuerySet>
+impl<'a, 'b, QuerySet> QueryDocumentsBuilder<'a, 'b, QuerySet>
 where
     QuerySet: ToAssign,
 {
-    fn query_cross_partition(&self) -> bool {
+    fn query_cross_partition(&self) -> QueryCrossPartition {
         self.query_cross_partition
     }
 }
 
-impl<'a, 'b, QuerySet> ParallelizeCrossPartitionQueryOption
-    for QueryDocumentsBuilder<'a, 'b, QuerySet>
+impl<'a, 'b, QuerySet> QueryDocumentsBuilder<'a, 'b, QuerySet>
 where
     QuerySet: ToAssign,
 {
-    fn parallelize_cross_partition_query(&self) -> bool {
+    fn parallelize_cross_partition_query(&self) -> ParallelizeCrossPartition {
         self.parallelize_cross_partition_query
     }
 }
@@ -287,33 +286,36 @@ where
     }
 }
 
-impl<'a, 'b, QuerySet> QueryCrossPartitionSupport for QueryDocumentsBuilder<'a, 'b, QuerySet>
+impl<'a, 'b, QuerySet> QueryDocumentsBuilder<'a, 'b, QuerySet>
 where
     QuerySet: ToAssign,
 {
-    type O = Self;
-
-    fn with_query_cross_partition(self, query_cross_partition: bool) -> Self::O {
+    pub fn with_query_cross_partition(self, query_cross_partition: bool) -> Self {
         Self {
-            query_cross_partition,
+            query_cross_partition: if query_cross_partition {
+                QueryCrossPartition::Yes
+            } else {
+                QueryCrossPartition::No
+            },
             ..self
         }
     }
 }
 
-impl<'a, 'b, QuerySet> ParallelizeCrossPartitionQuerySupport
-    for QueryDocumentsBuilder<'a, 'b, QuerySet>
+impl<'a, 'b, QuerySet> QueryDocumentsBuilder<'a, 'b, QuerySet>
 where
     QuerySet: ToAssign,
 {
-    type O = Self;
-
-    fn with_parallelize_cross_partition_query(
+    pub fn with_parallelize_cross_partition_query(
         self,
         parallelize_cross_partition_query: bool,
-    ) -> Self::O {
+    ) -> Self {
         Self {
-            parallelize_cross_partition_query,
+            parallelize_cross_partition_query: if parallelize_cross_partition_query {
+                ParallelizeCrossPartition::Yes
+            } else {
+                ParallelizeCrossPartition::No
+            },
             ..self
         }
     }
@@ -350,7 +352,7 @@ impl<'a, 'b> QueryDocumentsBuilder<'a, 'b, Yes> {
         let req = ContinuationOption::add_header(self, req);
         let req = crate::headers::add_header(Some(self.max_item_count()), req);
         let req = crate::headers::add_header(self.partition_keys(), req);
-        let req = QueryCrossPartitionOption::add_header(self, req);
+        let req = crate::headers::add_header(Some(self.query_cross_partition()), req);
 
         let body = serde_json::to_string(self.query())?;
         debug!("body == {}", body);
