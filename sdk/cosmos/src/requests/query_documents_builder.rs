@@ -20,11 +20,11 @@ where
     p_query: PhantomData<QuerySet>,
     query: Option<&'b Query<'b>>,
     if_match_condition: Option<IfMatchCondition<'b>>,
-    if_modified_since: Option<&'b DateTime<Utc>>,
+    if_modified_since: Option<IfModifiedSince>,
     user_agent: Option<azure_core::UserAgent<'b>>,
     activity_id: Option<azure_core::ActivityId<'b>>,
     consistency_level: Option<ConsistencyLevel>,
-    continuation: Option<&'b str>,
+    continuation: Option<Continuation<'b>>,
     max_item_count: MaxItemCount,
     partition_keys: Option<&'b PartitionKeys>,
     query_cross_partition: QueryCrossPartition,
@@ -102,7 +102,7 @@ where
 
     pub fn with_if_modified_since(self, if_modified_since: &'b DateTime<Utc>) -> Self {
         Self {
-            if_modified_since: Some(if_modified_since),
+            if_modified_since: Some(IfModifiedSince::new(if_modified_since.clone())),
             ..self
         }
     }
@@ -130,7 +130,7 @@ where
 
     pub fn with_continuation(self, continuation: &'b str) -> Self {
         Self {
-            continuation: Some(continuation),
+            continuation: Some(Continuation::new(continuation)),
             ..self
         }
     }
@@ -198,11 +198,11 @@ impl<'a, 'b> QueryDocumentsBuilder<'a, 'b, Yes> {
 
         // add trait headers
         let req = crate::headers::add_header(self.if_match_condition(), req);
-        let req = IfModifiedSinceOption::add_header(self, req);
+        let req = crate::headers::add_header(self.if_modified_since(), req);
         let req = crate::headers::add_header(self.user_agent(), req);
         let req = crate::headers::add_header(self.activity_id(), req);
         let req = crate::headers::add_header(self.consistency_level(), req);
-        let req = ContinuationOption::add_header(self, req);
+        let req = crate::headers::add_header(self.continuation(), req);
         let req = crate::headers::add_header(Some(self.max_item_count()), req);
         let req = crate::headers::add_header(self.partition_keys(), req);
         let req = crate::headers::add_header(Some(self.query_cross_partition()), req);
@@ -264,21 +264,21 @@ impl<'a, 'b> QueryDocumentsBuilder<'a, 'b, Yes> {
     }
 }
 
-impl<'a, 'b, QuerySet> ContinuationOption<'b> for QueryDocumentsBuilder<'a, 'b, QuerySet>
+impl<'a, 'b, QuerySet> QueryDocumentsBuilder<'a, 'b, QuerySet>
 where
     QuerySet: ToAssign,
 {
-    fn continuation(&self) -> Option<&'b str> {
+    fn continuation(&self) -> Option<Continuation<'b>> {
         self.continuation
     }
 }
 
-impl<'a, 'b, QuerySet> IfModifiedSinceOption<'b> for QueryDocumentsBuilder<'a, 'b, QuerySet>
+impl<'a, 'b, QuerySet> QueryDocumentsBuilder<'a, 'b, QuerySet>
 where
     QuerySet: ToAssign,
 {
-    fn if_modified_since(&self) -> Option<&'b DateTime<Utc>> {
-        self.if_modified_since
+    fn if_modified_since(&self) -> Option<IfModifiedSince> {
+        self.if_modified_since.clone()
     }
 }
 

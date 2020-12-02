@@ -14,7 +14,7 @@ where
 {
     attachment_client: &'a AttachmentClient,
     body: Option<&'b [u8]>,
-    content_type: Option<&'b str>,
+    content_type: Option<ContentType<'b>>,
     if_match_condition: Option<IfMatchCondition<'b>>,
     user_agent: Option<azure_core::UserAgent<'b>>,
     activity_id: Option<azure_core::ActivityId<'b>>,
@@ -93,8 +93,7 @@ where
     }
 }
 
-impl<'a, 'b, ContentTypeSet> BodyRequired<'b>
-    for CreateSlugAttachmentBuilder<'a, 'b, Yes, ContentTypeSet>
+impl<'a, 'b, ContentTypeSet> CreateSlugAttachmentBuilder<'a, 'b, Yes, ContentTypeSet>
 where
     ContentTypeSet: ToAssign,
 {
@@ -103,14 +102,14 @@ where
     }
 }
 
-impl<'a, 'b, ContentTypeSet> BodySupport<'b>
-    for CreateSlugAttachmentBuilder<'a, 'b, No, ContentTypeSet>
+impl<'a, 'b, ContentTypeSet> CreateSlugAttachmentBuilder<'a, 'b, No, ContentTypeSet>
 where
     ContentTypeSet: ToAssign,
 {
-    type O = CreateSlugAttachmentBuilder<'a, 'b, Yes, ContentTypeSet>;
-
-    fn with_body(self, body: &'b [u8]) -> Self::O {
+    pub fn with_body(
+        self,
+        body: &'b [u8],
+    ) -> CreateSlugAttachmentBuilder<'a, 'b, Yes, ContentTypeSet> {
         CreateSlugAttachmentBuilder {
             attachment_client: self.attachment_client,
             p_body: PhantomData {},
@@ -125,19 +124,20 @@ where
     }
 }
 
-impl<'a, 'b, BodySet> ContentTypeSupport<'b> for CreateSlugAttachmentBuilder<'a, 'b, BodySet, No>
+impl<'a, 'b, BodySet> CreateSlugAttachmentBuilder<'a, 'b, BodySet, No>
 where
     BodySet: ToAssign,
 {
-    type O = CreateSlugAttachmentBuilder<'a, 'b, BodySet, Yes>;
-
-    fn with_content_type(self, content_type: &'b str) -> Self::O {
+    pub fn with_content_type(
+        self,
+        content_type: &'b str,
+    ) -> CreateSlugAttachmentBuilder<'a, 'b, BodySet, Yes> {
         CreateSlugAttachmentBuilder {
             attachment_client: self.attachment_client,
             p_body: PhantomData {},
             p_content_type: PhantomData {},
             body: self.body,
-            content_type: Some(content_type),
+            content_type: Some(ContentType::new(content_type)),
             if_match_condition: self.if_match_condition,
             user_agent: self.user_agent,
             activity_id: self.activity_id,
@@ -146,11 +146,11 @@ where
     }
 }
 
-impl<'a, 'b, BodySet> ContentTypeRequired<'b> for CreateSlugAttachmentBuilder<'a, 'b, BodySet, Yes>
+impl<'a, 'b, BodySet> CreateSlugAttachmentBuilder<'a, 'b, BodySet, Yes>
 where
     BodySet: ToAssign,
 {
-    fn content_type(&self) -> &'b str {
+    fn content_type(&self) -> ContentType<'b> {
         self.content_type.unwrap()
     }
 }
@@ -171,7 +171,7 @@ impl<'a, 'b> CreateSlugAttachmentBuilder<'a, 'b, Yes, Yes> {
             req,
         );
 
-        req = ContentTypeRequired::add_header(self, req);
+        req = crate::headers::add_header(Some(self.content_type()), req);
 
         req = req.header("Slug", self.attachment_client.attachment_name());
         req = req.header(http::header::CONTENT_LENGTH, self.body().len());

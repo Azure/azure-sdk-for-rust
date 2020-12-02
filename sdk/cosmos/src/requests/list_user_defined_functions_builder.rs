@@ -13,7 +13,7 @@ pub struct ListUserDefinedFunctionsBuilder<'a, 'b> {
     user_agent: Option<azure_core::UserAgent<'b>>,
     activity_id: Option<azure_core::ActivityId<'b>>,
     consistency_level: Option<ConsistencyLevel>,
-    continuation: Option<&'b str>,
+    continuation: Option<Continuation<'b>>,
     max_item_count: MaxItemCount,
 }
 
@@ -84,7 +84,7 @@ impl<'a, 'b> ListUserDefinedFunctionsBuilder<'a, 'b> {
 
     pub fn with_continuation(self, continuation: &'b str) -> Self {
         Self {
-            continuation: Some(continuation),
+            continuation: Some(Continuation::new(continuation)),
             ..self
         }
     }
@@ -114,7 +114,7 @@ impl<'a, 'b> ListUserDefinedFunctionsBuilder<'a, 'b> {
         let request = crate::headers::add_header(self.user_agent(), request);
         let request = crate::headers::add_header(self.activity_id(), request);
         let request = crate::headers::add_header(self.consistency_level(), request);
-        let request = ContinuationOption::add_header(self, request);
+        let request = crate::headers::add_header(self.continuation(), request);
         let request = crate::headers::add_header(Some(self.max_item_count()), request);
 
         let request = request.body(EMPTY_BODY.as_ref())?;
@@ -171,8 +171,8 @@ impl<'a, 'b> ListUserDefinedFunctionsBuilder<'a, 'b> {
     }
 }
 
-impl<'a, 'b> ContinuationOption<'b> for ListUserDefinedFunctionsBuilder<'a, 'b> {
-    fn continuation(&self) -> Option<&'b str> {
+impl<'a, 'b> ListUserDefinedFunctionsBuilder<'a, 'b> {
+    fn continuation(&self) -> Option<Continuation<'b>> {
         self.continuation
     }
 }

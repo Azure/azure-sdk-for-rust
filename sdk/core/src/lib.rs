@@ -275,6 +275,25 @@ pub trait ContentTypeOption<'a> {
     }
 }
 
+#[derive(Debug, Clone, Copy)]
+pub struct ContentType<'a>(&'a str);
+
+impl<'a> ContentType<'a> {
+    pub fn new(ct: &'a str) -> Self {
+        Self(ct)
+    }
+
+    pub fn as_str(&self) -> &str {
+        self.0
+    }
+}
+
+impl AddAsHeader for ContentType<'_> {
+    fn add_as_header(&self, builder: Builder) -> Builder {
+        builder.header(CONTENT_TYPE, self.0)
+    }
+}
+
 pub trait ContentTypeRequired<'a> {
     fn content_type(&self) -> &'a str;
 
@@ -295,6 +314,21 @@ pub trait SourceUrlRequired<'a> {
     #[must_use]
     fn add_header(&self, builder: Builder) -> Builder {
         builder.header(COPY_SOURCE, self.source_url())
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct IfModifiedSince(DateTime<Utc>);
+
+impl IfModifiedSince {
+    pub fn new(time: DateTime<Utc>) -> Self {
+        Self(time)
+    }
+}
+
+impl AddAsHeader for IfModifiedSince {
+    fn add_as_header(&self, builder: Builder) -> Builder {
+        builder.header(IF_MODIFIED_SINCE, self.0.to_rfc2822())
     }
 }
 
@@ -1001,6 +1035,20 @@ pub trait LeaseBreakPeriodOption {
 pub trait ContinuationSupport<'a> {
     type O;
     fn with_continuation(self, continuation: &'a str) -> Self::O;
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct Continuation<'a>(&'a str);
+impl<'a> Continuation<'a> {
+    pub fn new(c: &'a str) -> Self {
+        Self(c)
+    }
+}
+
+impl AddAsHeader for Continuation<'_> {
+    fn add_as_header(&self, builder: Builder) -> Builder {
+        builder.header(CONTINUATION, self.0)
+    }
 }
 
 pub trait ContinuationOption<'a> {

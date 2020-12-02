@@ -12,7 +12,7 @@ pub struct ListDatabasesBuilder<'a> {
     user_agent: Option<azure_core::UserAgent<'a>>,
     activity_id: Option<azure_core::ActivityId<'a>>,
     consistency_level: Option<ConsistencyLevel>,
-    continuation: Option<&'a str>,
+    continuation: Option<Continuation<'a>>,
     max_item_count: MaxItemCount,
 }
 
@@ -71,7 +71,7 @@ impl<'a> ListDatabasesBuilder<'a> {
 
     pub fn with_continuation(self, continuation: &'a str) -> Self {
         Self {
-            continuation: Some(continuation),
+            continuation: Some(Continuation::new(continuation)),
             ..self
         }
     }
@@ -93,7 +93,7 @@ impl<'a> ListDatabasesBuilder<'a> {
         let request = crate::headers::add_header(self.user_agent(), request);
         let request = crate::headers::add_header(self.activity_id(), request);
         let request = crate::headers::add_header(self.consistency_level(), request);
-        let request = ContinuationOption::add_header(self, request);
+        let request = crate::headers::add_header(self.continuation(), request);
         let request = crate::headers::add_header(Some(self.max_item_count()), request);
 
         let request = request.body(EMPTY_BODY.as_ref())?;
@@ -148,8 +148,8 @@ impl<'a> ListDatabasesBuilder<'a> {
     }
 }
 
-impl<'a> ContinuationOption<'a> for ListDatabasesBuilder<'a> {
-    fn continuation(&self) -> Option<&'a str> {
+impl<'a> ListDatabasesBuilder<'a> {
+    fn continuation(&self) -> Option<Continuation<'a>> {
         self.continuation
     }
 }

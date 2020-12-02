@@ -14,7 +14,7 @@ where
     attachment_client: &'a AttachmentClient,
     p_content_type: PhantomData<ContentTypeSet>,
     p_media: PhantomData<MediaSet>,
-    content_type: Option<&'b str>,
+    content_type: Option<ContentType<'b>>,
     if_match_condition: Option<IfMatchCondition<'b>>,
     media: Option<&'b str>,
     user_agent: Option<azure_core::UserAgent<'b>>,
@@ -124,7 +124,7 @@ impl<'a, 'b> ReplaceReferenceAttachmentBuilder<'a, 'b, Yes, Yes> {
 
         let request = serde_json::to_string(&_Request {
             id: self.attachment_client.attachment_name(),
-            content_type: ContentTypeRequired::content_type(self),
+            content_type: self.content_type().as_str(),
             media: self.media(),
         })?;
 
@@ -142,12 +142,11 @@ impl<'a, 'b> ReplaceReferenceAttachmentBuilder<'a, 'b, Yes, Yes> {
     }
 }
 
-impl<'a, 'b, MediaSet> ContentTypeRequired<'b>
-    for ReplaceReferenceAttachmentBuilder<'a, 'b, Yes, MediaSet>
+impl<'a, 'b, MediaSet> ReplaceReferenceAttachmentBuilder<'a, 'b, Yes, MediaSet>
 where
     MediaSet: ToAssign,
 {
-    fn content_type(&self) -> &'b str {
+    fn content_type(&self) -> ContentType<'b> {
         self.content_type.unwrap()
     }
 }
@@ -173,7 +172,7 @@ where
             attachment_client: self.attachment_client,
             p_content_type: PhantomData {},
             p_media: PhantomData {},
-            content_type: Some(content_type),
+            content_type: Some(ContentType::new(content_type)),
             if_match_condition: self.if_match_condition,
             media: self.media,
             user_agent: self.user_agent,

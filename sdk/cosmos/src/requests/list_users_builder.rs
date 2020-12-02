@@ -12,7 +12,7 @@ pub struct ListUsersBuilder<'a, 'b> {
     user_agent: Option<azure_core::UserAgent<'b>>,
     activity_id: Option<azure_core::ActivityId<'b>>,
     consistency_level: Option<ConsistencyLevel>,
-    continuation: Option<&'b str>,
+    continuation: Option<Continuation<'b>>,
     max_item_count: MaxItemCount,
 }
 
@@ -61,7 +61,7 @@ impl<'a, 'b> ListUsersBuilder<'a, 'b> {
 
     pub fn with_continuation(self, continuation: &'b str) -> Self {
         Self {
-            continuation: Some(continuation),
+            continuation: Some(Continuation::new(continuation)),
             ..self
         }
     }
@@ -135,8 +135,10 @@ impl<'a, 'b> ListUsersBuilder<'a, 'b> {
     }
 }
 
-impl<'a, 'b> ContinuationOption<'b> for ListUsersBuilder<'a, 'b> {
-    fn continuation(&self) -> Option<&'b str> {
+impl<'a, 'b> ListUsersBuilder<'a, 'b> {
+    // TODO: use this in request
+    #[allow(unused)]
+    fn continuation(&self) -> Option<Continuation<'b>> {
         self.continuation
     }
 }

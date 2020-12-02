@@ -16,7 +16,7 @@ where
     p_body: PhantomData<BodySet>,
     p_content_type: PhantomData<ContentTypeSet>,
     body: Option<&'b [u8]>,
-    content_type: Option<&'b str>,
+    content_type: Option<ContentType<'b>>,
     if_match_condition: Option<IfMatchCondition<'b>>,
     user_agent: Option<azure_core::UserAgent<'b>>,
     activity_id: Option<azure_core::ActivityId<'b>>,
@@ -109,7 +109,7 @@ impl<'a, 'b> ReplaceSlugAttachmentBuilder<'a, 'b, Yes, Yes> {
             req,
         );
 
-        req = ContentTypeRequired::add_header(self, req);
+        req = crate::headers::add_header(Some(self.content_type()), req);
 
         req = req.header("Slug", self.attachment_client.attachment_name());
         req = req.header(http::header::CONTENT_LENGTH, self.body().len());
@@ -136,11 +136,11 @@ where
     }
 }
 
-impl<'a, 'b, BodySet> ContentTypeRequired<'b> for ReplaceSlugAttachmentBuilder<'a, 'b, BodySet, Yes>
+impl<'a, 'b, BodySet> ReplaceSlugAttachmentBuilder<'a, 'b, BodySet, Yes>
 where
     BodySet: ToAssign,
 {
-    fn content_type(&self) -> &'b str {
+    fn content_type(&self) -> ContentType<'b> {
         self.content_type.unwrap()
     }
 }
@@ -181,7 +181,7 @@ where
             p_content_type: PhantomData {},
             body: self.body,
 
-            content_type: Some(content_type),
+            content_type: Some(ContentType::new(content_type)),
             if_match_condition: self.if_match_condition,
             user_agent: self.user_agent,
             activity_id: self.activity_id,

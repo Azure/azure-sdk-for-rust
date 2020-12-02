@@ -10,7 +10,7 @@ use std::convert::TryInto;
 pub struct DeleteDocumentBuilder<'a> {
     document_client: &'a DocumentClient,
     if_match_condition: Option<IfMatchCondition<'a>>,
-    if_modified_since: Option<&'a DateTime<Utc>>,
+    if_modified_since: Option<IfModifiedSince>,
     user_agent: Option<azure_core::UserAgent<'a>>,
     activity_id: Option<azure_core::ActivityId<'a>>,
     consistency_level: Option<ConsistencyLevel>,
@@ -74,7 +74,7 @@ impl<'a> DeleteDocumentBuilder<'a> {
 
     pub fn with_if_modified_since(self, if_modified_since: &'a DateTime<Utc>) -> Self {
         Self {
-            if_modified_since: Some(if_modified_since),
+            if_modified_since: Some(IfModifiedSince::new(if_modified_since.clone())),
             ..self
         }
     }
@@ -88,7 +88,7 @@ impl<'a> DeleteDocumentBuilder<'a> {
 
         // add trait headers
         req = crate::headers::add_header(self.if_match_condition(), req);
-        req = IfModifiedSinceOption::add_header(self, req);
+        req = crate::headers::add_header(self.if_modified_since(), req);
         req = crate::headers::add_header(self.user_agent(), req);
         req = crate::headers::add_header(self.activity_id(), req);
         req = crate::headers::add_header(self.consistency_level(), req);
@@ -128,8 +128,8 @@ impl<'a> DeleteDocumentBuilder<'a> {
     }
 }
 
-impl<'a> IfModifiedSinceOption<'a> for DeleteDocumentBuilder<'a> {
-    fn if_modified_since(&self) -> Option<&'a DateTime<Utc>> {
-        self.if_modified_since
+impl<'a> DeleteDocumentBuilder<'a> {
+    fn if_modified_since(&self) -> Option<IfModifiedSince> {
+        self.if_modified_since.clone()
     }
 }

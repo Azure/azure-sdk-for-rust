@@ -13,7 +13,7 @@ pub struct ListAttachmentsBuilder<'a, 'b> {
     user_agent: Option<azure_core::UserAgent<'b>>,
     activity_id: Option<azure_core::ActivityId<'b>>,
     consistency_level: Option<ConsistencyLevel>,
-    continuation: Option<&'b str>,
+    continuation: Option<Continuation<'b>>,
     max_item_count: MaxItemCount,
     a_im: ChangeFeed,
 }
@@ -90,7 +90,7 @@ impl<'a, 'b> ListAttachmentsBuilder<'a, 'b> {
 
     pub fn with_continuation(self, continuation: &'b str) -> Self {
         Self {
-            continuation: Some(continuation),
+            continuation: Some(Continuation::new(continuation)),
             ..self
         }
     }
@@ -123,7 +123,7 @@ impl<'a, 'b> ListAttachmentsBuilder<'a, 'b> {
         req = crate::headers::add_header(self.user_agent(), req);
         req = crate::headers::add_header(self.activity_id(), req);
         req = crate::headers::add_header(self.consistency_level(), req);
-        req = ContinuationOption::add_header(self, req);
+        req = crate::headers::add_header(self.continuation(), req);
         req = crate::headers::add_header(Some(self.max_item_count()), req);
         req = crate::headers::add_header(Some(self.a_im()), req);
 
@@ -181,8 +181,8 @@ impl<'a, 'b> ListAttachmentsBuilder<'a, 'b> {
     }
 }
 
-impl<'a, 'b> ContinuationOption<'b> for ListAttachmentsBuilder<'a, 'b> {
-    fn continuation(&self) -> Option<&'b str> {
+impl<'a, 'b> ListAttachmentsBuilder<'a, 'b> {
+    fn continuation(&self) -> Option<Continuation<'b>> {
         self.continuation
     }
 }

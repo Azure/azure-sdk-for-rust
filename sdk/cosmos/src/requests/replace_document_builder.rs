@@ -22,7 +22,7 @@ where
     document_id: Option<&'b str>,
     indexing_directive: IndexingDirective,
     if_match_condition: Option<IfMatchCondition<'b>>,
-    if_modified_since: Option<&'b DateTime<Utc>>,
+    if_modified_since: Option<IfModifiedSince>,
     user_agent: Option<azure_core::UserAgent<'b>>,
     activity_id: Option<azure_core::ActivityId<'b>>,
     consistency_level: Option<ConsistencyLevel>,
@@ -98,7 +98,7 @@ where
 
     pub fn with_if_modified_since(self, if_modified_since: &'b DateTime<Utc>) -> Self {
         Self {
-            if_modified_since: Some(if_modified_since),
+            if_modified_since: Some(IfModifiedSince::new(if_modified_since.clone())),
             ..self
         }
     }
@@ -159,7 +159,7 @@ impl<'a, 'b> ReplaceDocumentBuilder<'a, 'b, Yes, Yes> {
         // add trait headers
         let req = crate::headers::add_header(Some(self.indexing_directive()), req);
         let req = crate::headers::add_header(self.if_match_condition(), req);
-        let req = IfModifiedSinceOption::add_header(self, req);
+        let req = crate::headers::add_header(self.if_modified_since(), req);
         let req = crate::headers::add_header(self.user_agent(), req);
         let req = crate::headers::add_header(self.activity_id(), req);
         let req = crate::headers::add_header(self.consistency_level(), req);
@@ -180,14 +180,14 @@ impl<'a, 'b> ReplaceDocumentBuilder<'a, 'b, Yes, Yes> {
     }
 }
 
-impl<'a, 'b, PartitionKeysSet, DocumentIdSet> IfModifiedSinceOption<'b>
-    for ReplaceDocumentBuilder<'a, 'b, PartitionKeysSet, DocumentIdSet>
+impl<'a, 'b, PartitionKeysSet, DocumentIdSet>
+    ReplaceDocumentBuilder<'a, 'b, PartitionKeysSet, DocumentIdSet>
 where
     PartitionKeysSet: ToAssign,
     DocumentIdSet: ToAssign,
 {
-    fn if_modified_since(&self) -> Option<&'b DateTime<Utc>> {
-        self.if_modified_since
+    fn if_modified_since(&self) -> Option<IfModifiedSince> {
+        self.if_modified_since.clone()
     }
 }
 

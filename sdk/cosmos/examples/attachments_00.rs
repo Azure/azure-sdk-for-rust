@@ -1,4 +1,3 @@
-use azure_core::prelude::*;
 use azure_core::HttpClient;
 use azure_cosmos::prelude::*;
 use serde::{Deserialize, Serialize};

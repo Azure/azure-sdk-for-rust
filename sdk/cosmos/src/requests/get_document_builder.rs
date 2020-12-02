@@ -11,7 +11,7 @@ use std::convert::TryInto;
 pub struct GetDocumentBuilder<'a, 'b> {
     document_client: &'a DocumentClient,
     if_match_condition: Option<IfMatchCondition<'b>>,
-    if_modified_since: Option<&'b DateTime<Utc>>,
+    if_modified_since: Option<IfModifiedSince>,
     user_agent: Option<azure_core::UserAgent<'b>>,
     activity_id: Option<azure_core::ActivityId<'b>>,
     consistency_level: Option<ConsistencyLevel>,
@@ -58,7 +58,7 @@ impl<'a, 'b> GetDocumentBuilder<'a, 'b> {
 
     pub fn with_if_modified_since(self, if_modified_since: &'b DateTime<Utc>) -> Self {
         Self {
-            if_modified_since: Some(if_modified_since),
+            if_modified_since: Some(IfModifiedSince::new(if_modified_since.clone())),
             ..self
         }
     }
@@ -94,7 +94,7 @@ impl<'a, 'b> GetDocumentBuilder<'a, 'b> {
 
         // add trait headers
         req = crate::headers::add_header(self.if_match_condition(), req);
-        req = IfModifiedSinceOption::add_header(self, req);
+        req = crate::headers::add_header(self.if_modified_since(), req);
         req = crate::headers::add_header(self.user_agent(), req);
         req = crate::headers::add_header(self.activity_id(), req);
         req = crate::headers::add_header(self.consistency_level(), req);
@@ -119,8 +119,8 @@ impl<'a, 'b> GetDocumentBuilder<'a, 'b> {
     }
 }
 
-impl<'a, 'b> IfModifiedSinceOption<'b> for GetDocumentBuilder<'a, 'b> {
-    fn if_modified_since(&self) -> Option<&'b DateTime<Utc>> {
-        self.if_modified_since
+impl<'a, 'b> GetDocumentBuilder<'a, 'b> {
+    fn if_modified_since(&self) -> Option<IfModifiedSince> {
+        self.if_modified_since.clone()
     }
 }

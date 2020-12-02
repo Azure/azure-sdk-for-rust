@@ -10,7 +10,7 @@ use std::convert::TryInto;
 pub struct GetPartitionKeyRangesBuilder<'a, 'b> {
     collection_client: &'a CollectionClient,
     if_match_condition: Option<IfMatchCondition<'b>>,
-    if_modified_since: Option<&'b DateTime<Utc>>,
+    if_modified_since: Option<IfModifiedSince>,
     user_agent: Option<azure_core::UserAgent<'b>>,
     activity_id: Option<azure_core::ActivityId<'b>>,
     consistency_level: Option<ConsistencyLevel>,
@@ -57,7 +57,7 @@ impl<'a, 'b> GetPartitionKeyRangesBuilder<'a, 'b> {
 
     pub fn with_if_modified_since(self, if_modified_since: &'b DateTime<Utc>) -> Self {
         Self {
-            if_modified_since: Some(if_modified_since),
+            if_modified_since: Some(IfModifiedSince::new(if_modified_since.clone())),
             ..self
         }
     }
@@ -101,7 +101,7 @@ impl<'a, 'b> GetPartitionKeyRangesBuilder<'a, 'b> {
 
         let request = request.header(http::header::CONTENT_LENGTH, "0");
         let request = crate::headers::add_header(self.if_match_condition(), request);
-        let request = IfModifiedSinceOption::add_header(self, request);
+        let request = crate::headers::add_header(self.if_modified_since(), request);
         let request = crate::headers::add_header(self.user_agent(), request);
         let request = crate::headers::add_header(self.activity_id(), request);
         let request = crate::headers::add_header(self.consistency_level(), request);
@@ -117,8 +117,8 @@ impl<'a, 'b> GetPartitionKeyRangesBuilder<'a, 'b> {
     }
 }
 
-impl<'a, 'b> IfModifiedSinceOption<'b> for GetPartitionKeyRangesBuilder<'a, 'b> {
-    fn if_modified_since(&self) -> Option<&'b DateTime<Utc>> {
-        self.if_modified_since
+impl<'a, 'b> GetPartitionKeyRangesBuilder<'a, 'b> {
+    fn if_modified_since(&self) -> Option<IfModifiedSince> {
+        self.if_modified_since.clone()
     }
 }

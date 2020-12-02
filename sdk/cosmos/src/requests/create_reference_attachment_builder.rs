@@ -14,7 +14,7 @@ where
     attachment_client: &'a AttachmentClient,
     p_content_type: PhantomData<ContentTypeSet>,
     p_media: PhantomData<MediaSet>,
-    content_type: Option<&'b str>,
+    content_type: Option<ContentType<'b>>,
     media: Option<&'b str>,
     user_agent: Option<azure_core::UserAgent<'b>>,
     activity_id: Option<azure_core::ActivityId<'b>>,
@@ -80,12 +80,11 @@ where
     }
 }
 
-impl<'a, 'b, MediaSet> ContentTypeRequired<'b>
-    for CreateReferenceAttachmentBuilder<'a, 'b, Yes, MediaSet>
+impl<'a, 'b, MediaSet> CreateReferenceAttachmentBuilder<'a, 'b, Yes, MediaSet>
 where
     MediaSet: ToAssign,
 {
-    fn content_type(&self) -> &'b str {
+    fn content_type(&self) -> ContentType<'b> {
         self.content_type.unwrap()
     }
 }
@@ -98,19 +97,19 @@ where
         self.media.unwrap()
     }
 }
-impl<'a, 'b, MediaSet> ContentTypeSupport<'b>
-    for CreateReferenceAttachmentBuilder<'a, 'b, No, MediaSet>
+impl<'a, 'b, MediaSet> CreateReferenceAttachmentBuilder<'a, 'b, No, MediaSet>
 where
     MediaSet: ToAssign,
 {
-    type O = CreateReferenceAttachmentBuilder<'a, 'b, Yes, MediaSet>;
-
-    fn with_content_type(self, content_type: &'b str) -> Self::O {
+    pub fn with_content_type(
+        self,
+        content_type: &'b str,
+    ) -> CreateReferenceAttachmentBuilder<'a, 'b, Yes, MediaSet> {
         CreateReferenceAttachmentBuilder {
             attachment_client: self.attachment_client,
             p_content_type: PhantomData {},
             p_media: PhantomData {},
-            content_type: Some(content_type),
+            content_type: Some(ContentType::new(content_type)),
             media: self.media,
             user_agent: self.user_agent,
             activity_id: self.activity_id,
@@ -167,7 +166,7 @@ impl<'a, 'b> CreateReferenceAttachmentBuilder<'a, 'b, Yes, Yes> {
 
         let request = serde_json::to_string(&_Request {
             id: self.attachment_client.attachment_name(),
-            content_type: ContentTypeRequired::content_type(self),
+            content_type: self.content_type().as_str(),
             media: self.media(),
         })?;
 
