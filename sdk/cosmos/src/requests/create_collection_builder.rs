@@ -62,24 +62,10 @@ where
     IndexingPolicySet: ToAssign,
     PartitionKeySet: ToAssign,
 {
-    pub fn with_user_agent(self, user_agent: &'a str) -> Self {
-        Self {
-            user_agent: Some(UserAgent::new(user_agent)),
-            ..self
-        }
-    }
-    pub fn with_activity_id(self, activity_id: &'a str) -> Self {
-        Self {
-            activity_id: Some(ActivityId::new(activity_id)),
-            ..self
-        }
-    }
-
-    pub fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self {
-        CreateCollectionBuilder {
-            consistency_level: Some(consistency_level),
-            ..self
-        }
+    setters! {
+        user_agent: &'a str => UserAgent::new,
+        activity_id: &'a str => ActivityId::new,
+        consistency_level: ConsistencyLevel
     }
 }
 
