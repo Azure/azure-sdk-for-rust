@@ -3,7 +3,6 @@ use crate::prelude::*;
 use crate::resources::collection::{Collection, IndexingPolicy, PartitionKey};
 use crate::resources::ResourceType;
 use crate::responses::CreateCollectionResponse;
-use azure_core::prelude::*;
 use azure_core::{ActivityId, No, ToAssign, UserAgent, Yes};
 use http::StatusCode;
 use std::convert::TryInto;
@@ -256,23 +255,15 @@ where
     }
 }
 
-impl<'a, OfferSet, CollectionNameSet, IndexingPolicySet, PartitionKeySet> ActivityIdSupport<'a>
-    for CreateCollectionBuilder<'a, OfferSet, CollectionNameSet, IndexingPolicySet, PartitionKeySet>
+impl<'a, OfferSet, CollectionNameSet, IndexingPolicySet, PartitionKeySet>
+    CreateCollectionBuilder<'a, OfferSet, CollectionNameSet, IndexingPolicySet, PartitionKeySet>
 where
     OfferSet: ToAssign,
     CollectionNameSet: ToAssign,
     IndexingPolicySet: ToAssign,
     PartitionKeySet: ToAssign,
 {
-    type O = CreateCollectionBuilder<
-        'a,
-        OfferSet,
-        CollectionNameSet,
-        IndexingPolicySet,
-        PartitionKeySet,
-    >;
-
-    fn with_activity_id(self, activity_id: &'a str) -> Self::O {
+    pub fn with_activity_id(self, activity_id: &'a str) -> Self {
         Self {
             activity_id: Some(ActivityId::new(activity_id)),
             ..self
@@ -281,37 +272,17 @@ where
 }
 
 impl<'a, OfferSet, CollectionNameSet, IndexingPolicySet, PartitionKeySet>
-    ConsistencyLevelSupport<'a>
-    for CreateCollectionBuilder<'a, OfferSet, CollectionNameSet, IndexingPolicySet, PartitionKeySet>
+    CreateCollectionBuilder<'a, OfferSet, CollectionNameSet, IndexingPolicySet, PartitionKeySet>
 where
     OfferSet: ToAssign,
     CollectionNameSet: ToAssign,
     IndexingPolicySet: ToAssign,
     PartitionKeySet: ToAssign,
 {
-    type O = CreateCollectionBuilder<
-        'a,
-        OfferSet,
-        CollectionNameSet,
-        IndexingPolicySet,
-        PartitionKeySet,
-    >;
-
-    #[inline]
-    fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self::O {
+    pub fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self {
         CreateCollectionBuilder {
-            database_client: self.database_client,
-            p_offer: PhantomData {},
-            p_collection_name: PhantomData {},
-            p_indexing_policy: PhantomData {},
-            p_partition_key: PhantomData {},
-            offer: self.offer,
-            collection_name: self.collection_name,
-            indexing_policy: self.indexing_policy,
-            partition_key: self.partition_key,
-            user_agent: self.user_agent,
-            activity_id: self.activity_id,
             consistency_level: Some(consistency_level),
+            ..self
         }
     }
 }

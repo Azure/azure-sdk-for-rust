@@ -1,7 +1,6 @@
 use crate::prelude::*;
 use crate::resources::stored_procedure::Parameters;
 use crate::responses::ExecuteStoredProcedureResponse;
-use azure_core::prelude::*;
 use http::StatusCode;
 use serde::de::DeserializeOwned;
 use std::convert::TryInto;
@@ -35,21 +34,15 @@ impl<'a, 'b> ExecuteStoredProcedureBuilder<'a, 'b> {
     fn stored_procedure_client(&self) -> &'a StoredProcedureClient {
         self.stored_procedure_client
     }
-}
 
-impl<'a, 'b> ExecuteStoredProcedureBuilder<'a, 'b> {
     fn parameters(&self) -> Option<&'b Parameters> {
         self.parameters
     }
-}
 
-impl<'a, 'b> ExecuteStoredProcedureBuilder<'a, 'b> {
     fn user_agent(&self) -> Option<azure_core::UserAgent<'b>> {
         self.user_agent
     }
-}
 
-impl<'a, 'b> ExecuteStoredProcedureBuilder<'a, 'b> {
     fn activity_id(&self) -> Option<azure_core::ActivityId<'b>> {
         self.activity_id
     }
@@ -57,9 +50,7 @@ impl<'a, 'b> ExecuteStoredProcedureBuilder<'a, 'b> {
     fn partition_keys(&self) -> Option<&'b PartitionKeys> {
         self.partition_keys
     }
-}
 
-impl<'a, 'b> ExecuteStoredProcedureBuilder<'a, 'b> {
     fn consistency_level(&self) -> Option<ConsistencyLevel> {
         self.consistency_level.clone()
     }
@@ -91,10 +82,8 @@ impl<'a, 'b> ExecuteStoredProcedureBuilder<'a, 'b> {
     }
 }
 
-impl<'a, 'b> ActivityIdSupport<'b> for ExecuteStoredProcedureBuilder<'a, 'b> {
-    type O = Self;
-
-    fn with_activity_id(self, activity_id: &'b str) -> Self::O {
+impl<'a, 'b> ExecuteStoredProcedureBuilder<'a, 'b> {
+    pub fn with_activity_id(self, activity_id: &'b str) -> Self {
         ExecuteStoredProcedureBuilder {
             activity_id: Some(azure_core::ActivityId::new(activity_id)),
             ..self
@@ -102,10 +91,8 @@ impl<'a, 'b> ActivityIdSupport<'b> for ExecuteStoredProcedureBuilder<'a, 'b> {
     }
 }
 
-impl<'a, 'b> ConsistencyLevelSupport<'b> for ExecuteStoredProcedureBuilder<'a, 'b> {
-    type O = Self;
-
-    fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self::O {
+impl<'a, 'b>  ExecuteStoredProcedureBuilder<'a, 'b> {
+    pub fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self {
         Self {
             consistency_level: Some(consistency_level),
             ..self

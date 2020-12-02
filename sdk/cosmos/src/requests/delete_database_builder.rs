@@ -56,10 +56,8 @@ impl<'a> DeleteDatabaseBuilder<'a> {
     }
 }
 
-impl<'a> ActivityIdSupport<'a> for DeleteDatabaseBuilder<'a> {
-    type O = Self;
-
-    fn with_activity_id(self, activity_id: &'a str) -> Self::O {
+impl<'a> DeleteDatabaseBuilder<'a> {
+    pub fn with_activity_id(self, activity_id: &'a str) -> Self {
         Self {
             activity_id: Some(azure_core::ActivityId::new(activity_id)),
             ..self
@@ -67,10 +65,8 @@ impl<'a> ActivityIdSupport<'a> for DeleteDatabaseBuilder<'a> {
     }
 }
 
-impl<'a> ConsistencyLevelSupport<'a> for DeleteDatabaseBuilder<'a> {
-    type O = Self;
-
-    fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self::O {
+impl<'a> DeleteDatabaseBuilder<'a> {
+    pub fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self {
         DeleteDatabaseBuilder {
             consistency_level: Some(consistency_level),
             ..self

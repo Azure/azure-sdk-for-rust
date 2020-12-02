@@ -1,6 +1,5 @@
 use crate::prelude::*;
 use crate::responses::CreateUserResponse;
-use azure_core::prelude::*;
 use azure_core::{No, ToAssign, Yes};
 use http::StatusCode;
 use std::convert::TryInto;
@@ -85,13 +84,11 @@ where
     }
 }
 
-impl<'a, 'b, UserNameSet> ActivityIdSupport<'b> for ReplaceUserBuilder<'a, 'b, UserNameSet>
+impl<'a, 'b, UserNameSet> ReplaceUserBuilder<'a, 'b, UserNameSet>
 where
     UserNameSet: ToAssign,
 {
-    type O = Self;
-
-    fn with_activity_id(self, activity_id: &'b str) -> Self::O {
+    pub fn with_activity_id(self, activity_id: &'b str) -> Self {
         Self {
             activity_id: Some(azure_core::ActivityId::new(activity_id)),
             ..self
@@ -99,13 +96,11 @@ where
     }
 }
 
-impl<'a, 'b, UserNameSet> ConsistencyLevelSupport<'b> for ReplaceUserBuilder<'a, 'b, UserNameSet>
+impl<'a, 'b, UserNameSet>  ReplaceUserBuilder<'a, 'b, UserNameSet>
 where
     UserNameSet: ToAssign,
 {
-    type O = Self;
-
-    fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self::O {
+    pub fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self {
         Self {
             consistency_level: Some(consistency_level),
             ..self

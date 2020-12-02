@@ -1,7 +1,6 @@
 use crate::prelude::*;
 use crate::resources::ResourceType;
 use crate::responses::CreateDatabaseResponse;
-use azure_core::prelude::*;
 use azure_core::{No, ToAssign, Yes};
 use http::StatusCode;
 use std::convert::TryInto;
@@ -87,38 +86,26 @@ where
     }
 }
 
-impl<'a, DatabaseNameSet> ActivityIdSupport<'a> for CreateDatabaseBuilder<'a, DatabaseNameSet>
+impl<'a, DatabaseNameSet> CreateDatabaseBuilder<'a, DatabaseNameSet>
 where
     DatabaseNameSet: ToAssign,
 {
-    type O = CreateDatabaseBuilder<'a, DatabaseNameSet>;
-
-    fn with_activity_id(self, activity_id: &'a str) -> Self::O {
-        CreateDatabaseBuilder {
-            cosmos_client: self.cosmos_client,
-            p_database_name: PhantomData {},
-            database_name: self.database_name,
-            user_agent: self.user_agent,
+    pub fn with_activity_id(self, activity_id: &'a str) -> Self {
+        Self {
             activity_id: Some(azure_core::ActivityId::new(activity_id)),
-            consistency_level: self.consistency_level,
+            ..self
         }
     }
 }
 
-impl<'a, DatabaseNameSet> ConsistencyLevelSupport<'a> for CreateDatabaseBuilder<'a, DatabaseNameSet>
+impl<'a, DatabaseNameSet> CreateDatabaseBuilder<'a, DatabaseNameSet>
 where
     DatabaseNameSet: ToAssign,
 {
-    type O = CreateDatabaseBuilder<'a, DatabaseNameSet>;
-
-    fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self::O {
-        CreateDatabaseBuilder {
-            cosmos_client: self.cosmos_client,
-            p_database_name: PhantomData {},
-            database_name: self.database_name,
-            user_agent: self.user_agent,
-            activity_id: self.activity_id,
+    pub fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self {
+        Self {
             consistency_level: Some(consistency_level),
+            ..self
         }
     }
 }

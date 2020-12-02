@@ -1,6 +1,5 @@
 use crate::prelude::*;
 use crate::responses::ReplaceStoredProcedureResponse;
-use azure_core::prelude::*;
 use azure_core::{No, ToAssign, Yes};
 use http::StatusCode;
 use std::convert::TryInto;
@@ -101,13 +100,11 @@ where
     }
 }
 
-impl<'a, 'b, BodySet> ActivityIdSupport<'b> for ReplaceStoredProcedureBuilder<'a, 'b, BodySet>
+impl<'a, 'b, BodySet> ReplaceStoredProcedureBuilder<'a, 'b, BodySet>
 where
     BodySet: ToAssign,
 {
-    type O = Self;
-
-    fn with_activity_id(self, activity_id: &'b str) -> Self::O {
+    pub fn with_activity_id(self, activity_id: &'b str) -> Self {
         Self {
             activity_id: Some(azure_core::ActivityId::new(activity_id)),
             ..self
@@ -115,13 +112,11 @@ where
     }
 }
 
-impl<'a, 'b, BodySet> ConsistencyLevelSupport<'b> for ReplaceStoredProcedureBuilder<'a, 'b, BodySet>
+impl<'a, 'b, BodySet>  ReplaceStoredProcedureBuilder<'a, 'b, BodySet>
 where
     BodySet: ToAssign,
 {
-    type O = Self;
-
-    fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self::O {
+    pub fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self {
         Self {
             consistency_level: Some(consistency_level),
             ..self

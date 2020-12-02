@@ -227,13 +227,11 @@ where
     }
 }
 
-impl<'a, 'b, QuerySet> ActivityIdSupport<'b> for QueryDocumentsBuilder<'a, 'b, QuerySet>
+impl<'a, 'b, QuerySet> QueryDocumentsBuilder<'a, 'b, QuerySet>
 where
     QuerySet: ToAssign,
 {
-    type O = Self;
-
-    fn with_activity_id(self, activity_id: &'b str) -> Self::O {
+    pub fn with_activity_id(self, activity_id: &'b str) -> Self {
         Self {
             activity_id: Some(azure_core::ActivityId::new(activity_id)),
             ..self
@@ -241,13 +239,11 @@ where
     }
 }
 
-impl<'a, 'b, QuerySet> ConsistencyLevelSupport<'b> for QueryDocumentsBuilder<'a, 'b, QuerySet>
+impl<'a, 'b, QuerySet> QueryDocumentsBuilder<'a, 'b, QuerySet>
 where
     QuerySet: ToAssign,
 {
-    type O = Self;
-
-    fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self::O {
+    pub fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self {
         Self {
             consistency_level: Some(consistency_level),
             ..self

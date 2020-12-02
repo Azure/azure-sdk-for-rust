@@ -1,7 +1,6 @@
 use crate::prelude::*;
 use crate::resources::trigger::*;
 use crate::responses::CreateTriggerResponse;
-use azure_core::prelude::*;
 use azure_core::{No, ToAssign, Yes};
 use http::StatusCode;
 use std::convert::TryInto;
@@ -191,16 +190,14 @@ where
     }
 }
 
-impl<'a, TriggerOperationSet, TriggerTypeSet, BodySet> ActivityIdSupport<'a>
-    for CreateOrReplaceTriggerBuilder<'a, TriggerOperationSet, TriggerTypeSet, BodySet>
+impl<'a, TriggerOperationSet, TriggerTypeSet, BodySet>
+    CreateOrReplaceTriggerBuilder<'a, TriggerOperationSet, TriggerTypeSet, BodySet>
 where
     TriggerOperationSet: ToAssign,
     TriggerTypeSet: ToAssign,
     BodySet: ToAssign,
 {
-    type O = Self;
-
-    fn with_activity_id(self, activity_id: &'a str) -> Self::O {
+    pub fn with_activity_id(self, activity_id: &'a str) -> Self {
         Self {
             activity_id: Some(azure_core::ActivityId::new(activity_id)),
             ..self
@@ -208,16 +205,14 @@ where
     }
 }
 
-impl<'a, TriggerOperationSet, TriggerTypeSet, BodySet> ConsistencyLevelSupport<'a>
-    for CreateOrReplaceTriggerBuilder<'a, TriggerOperationSet, TriggerTypeSet, BodySet>
+impl<'a, TriggerOperationSet, TriggerTypeSet, BodySet>
+    CreateOrReplaceTriggerBuilder<'a, TriggerOperationSet, TriggerTypeSet, BodySet>
 where
     TriggerOperationSet: ToAssign,
     TriggerTypeSet: ToAssign,
     BodySet: ToAssign,
 {
-    type O = Self;
-
-    fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self::O {
+    pub fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self {
         Self {
             consistency_level: Some(consistency_level),
             ..self

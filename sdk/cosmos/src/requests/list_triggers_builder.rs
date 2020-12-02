@@ -93,10 +93,8 @@ impl<'a, 'b> ListTriggersBuilder<'a, 'b> {
     }
 }
 
-impl<'a, 'b> ActivityIdSupport<'b> for ListTriggersBuilder<'a, 'b> {
-    type O = Self;
-
-    fn with_activity_id(self, activity_id: &'b str) -> Self::O {
+impl<'a, 'b> ListTriggersBuilder<'a, 'b> {
+    pub fn with_activity_id(self, activity_id: &'b str) -> Self {
         Self {
             activity_id: Some(azure_core::ActivityId::new(activity_id)),
             ..self
@@ -104,10 +102,8 @@ impl<'a, 'b> ActivityIdSupport<'b> for ListTriggersBuilder<'a, 'b> {
     }
 }
 
-impl<'a, 'b> ConsistencyLevelSupport<'b> for ListTriggersBuilder<'a, 'b> {
-    type O = Self;
-
-    fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self::O {
+impl<'a, 'b> ListTriggersBuilder<'a, 'b> {
+    pub fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self {
         Self {
             consistency_level: Some(consistency_level),
             ..self

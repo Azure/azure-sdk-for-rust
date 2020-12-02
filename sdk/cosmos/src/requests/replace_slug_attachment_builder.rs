@@ -180,15 +180,12 @@ where
     }
 }
 
-impl<'a, 'b, BodySet, ContentTypeSet> ActivityIdSupport<'b>
-    for ReplaceSlugAttachmentBuilder<'a, 'b, BodySet, ContentTypeSet>
+impl<'a, 'b, BodySet, ContentTypeSet> ReplaceSlugAttachmentBuilder<'a, 'b, BodySet, ContentTypeSet>
 where
     BodySet: ToAssign,
     ContentTypeSet: ToAssign,
 {
-    type O = Self;
-
-    fn with_activity_id(self, activity_id: &'b str) -> Self::O {
+    pub fn with_activity_id(self, activity_id: &'b str) -> Self {
         Self {
             activity_id: Some(azure_core::ActivityId::new(activity_id)),
             ..self
@@ -196,15 +193,12 @@ where
     }
 }
 
-impl<'a, 'b, BodySet, ContentTypeSet> ConsistencyLevelSupport<'b>
-    for ReplaceSlugAttachmentBuilder<'a, 'b, BodySet, ContentTypeSet>
+impl<'a, 'b, BodySet, ContentTypeSet> ReplaceSlugAttachmentBuilder<'a, 'b, BodySet, ContentTypeSet>
 where
     BodySet: ToAssign,
     ContentTypeSet: ToAssign,
 {
-    type O = Self;
-
-    fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self::O {
+    pub fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self {
         Self {
             consistency_level: Some(consistency_level),
             ..self

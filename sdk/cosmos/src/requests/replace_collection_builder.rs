@@ -1,7 +1,6 @@
 use crate::prelude::*;
 use crate::resources::collection::{IndexingPolicy, PartitionKey};
 use crate::responses::CreateCollectionResponse;
-use azure_core::prelude::*;
 use azure_core::{No, ToAssign, Yes};
 use http::StatusCode;
 use std::convert::TryInto;
@@ -156,15 +155,13 @@ where
     }
 }
 
-impl<'a, 'b, PartitionKeysSet, IndexingPolicySet> ActivityIdSupport<'b>
-    for ReplaceCollectionBuilder<'a, 'b, PartitionKeysSet, IndexingPolicySet>
+impl<'a, 'b, PartitionKeysSet, IndexingPolicySet>
+    ReplaceCollectionBuilder<'a, 'b, PartitionKeysSet, IndexingPolicySet>
 where
     PartitionKeysSet: ToAssign,
     IndexingPolicySet: ToAssign,
 {
-    type O = Self;
-
-    fn with_activity_id(self, activity_id: &'b str) -> Self::O {
+    pub fn with_activity_id(self, activity_id: &'b str) -> Self {
         Self {
             activity_id: Some(azure_core::ActivityId::new(activity_id)),
             ..self
@@ -172,15 +169,13 @@ where
     }
 }
 
-impl<'a, 'b, PartitionKeysSet, IndexingPolicySet> ConsistencyLevelSupport<'b>
-    for ReplaceCollectionBuilder<'a, 'b, PartitionKeysSet, IndexingPolicySet>
+impl<'a, 'b, PartitionKeysSet, IndexingPolicySet>
+    ReplaceCollectionBuilder<'a, 'b, PartitionKeysSet, IndexingPolicySet>
 where
     PartitionKeysSet: ToAssign,
     IndexingPolicySet: ToAssign,
 {
-    type O = Self;
-
-    fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self::O {
+    pub fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self {
         Self {
             consistency_level: Some(consistency_level),
             ..self

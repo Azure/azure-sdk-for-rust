@@ -223,14 +223,11 @@ where
     }
 }
 
-impl<'a, 'b, PartitionKeysSet> ActivityIdSupport<'b>
-    for CreateDocumentBuilder<'a, 'b, PartitionKeysSet>
+impl<'a, 'b, PartitionKeysSet> CreateDocumentBuilder<'a, 'b, PartitionKeysSet>
 where
     PartitionKeysSet: ToAssign,
 {
-    type O = Self;
-
-    fn with_activity_id(self, activity_id: &'b str) -> Self::O {
+    pub fn with_activity_id(self, activity_id: &'b str) -> Self {
         Self {
             activity_id: Some(azure_core::ActivityId::new(activity_id)),
             ..self
@@ -238,14 +235,11 @@ where
     }
 }
 
-impl<'a, 'b, PartitionKeysSet> ConsistencyLevelSupport<'b>
-    for CreateDocumentBuilder<'a, 'b, PartitionKeysSet>
+impl<'a, 'b, PartitionKeysSet> CreateDocumentBuilder<'a, 'b, PartitionKeysSet>
 where
     PartitionKeysSet: ToAssign,
 {
-    type O = Self;
-
-    fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self::O {
+    pub fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self {
         CreateDocumentBuilder {
             consistency_level: Some(consistency_level),
             ..self

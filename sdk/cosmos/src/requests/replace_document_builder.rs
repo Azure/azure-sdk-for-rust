@@ -267,15 +267,13 @@ where
     }
 }
 
-impl<'a, 'b, PartitionKeysSet, DocumentIdSet> ActivityIdSupport<'b>
-    for ReplaceDocumentBuilder<'a, 'b, PartitionKeysSet, DocumentIdSet>
+impl<'a, 'b, PartitionKeysSet, DocumentIdSet>
+    ReplaceDocumentBuilder<'a, 'b, PartitionKeysSet, DocumentIdSet>
 where
     PartitionKeysSet: ToAssign,
     DocumentIdSet: ToAssign,
 {
-    type O = Self;
-
-    fn with_activity_id(self, activity_id: &'b str) -> Self::O {
+    pub fn with_activity_id(self, activity_id: &'b str) -> Self {
         Self {
             activity_id: Some(azure_core::ActivityId::new(activity_id)),
             ..self
@@ -283,15 +281,13 @@ where
     }
 }
 
-impl<'a, 'b, PartitionKeysSet, DocumentIdSet> ConsistencyLevelSupport<'b>
-    for ReplaceDocumentBuilder<'a, 'b, PartitionKeysSet, DocumentIdSet>
+impl<'a, 'b, PartitionKeysSet, DocumentIdSet>
+    ReplaceDocumentBuilder<'a, 'b, PartitionKeysSet, DocumentIdSet>
 where
     PartitionKeysSet: ToAssign,
     DocumentIdSet: ToAssign,
 {
-    type O = Self;
-
-    fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self::O {
+    pub fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self {
         Self {
             consistency_level: Some(consistency_level),
             ..self

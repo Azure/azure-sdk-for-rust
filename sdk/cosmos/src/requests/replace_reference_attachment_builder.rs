@@ -187,15 +187,13 @@ where
     }
 }
 
-impl<'a, 'b, ContentTypeSet, MediaSet> ActivityIdSupport<'b>
-    for ReplaceReferenceAttachmentBuilder<'a, 'b, ContentTypeSet, MediaSet>
+impl<'a, 'b, ContentTypeSet, MediaSet>
+    ReplaceReferenceAttachmentBuilder<'a, 'b, ContentTypeSet, MediaSet>
 where
     ContentTypeSet: ToAssign,
     MediaSet: ToAssign,
 {
-    type O = Self;
-
-    fn with_activity_id(self, activity_id: &'b str) -> Self::O {
+    pub fn with_activity_id(self, activity_id: &'b str) -> Self {
         Self {
             activity_id: Some(azure_core::ActivityId::new(activity_id)),
             ..self
@@ -203,15 +201,13 @@ where
     }
 }
 
-impl<'a, 'b, ContentTypeSet, MediaSet> ConsistencyLevelSupport<'b>
-    for ReplaceReferenceAttachmentBuilder<'a, 'b, ContentTypeSet, MediaSet>
+impl<'a, 'b, ContentTypeSet, MediaSet>
+    ReplaceReferenceAttachmentBuilder<'a, 'b, ContentTypeSet, MediaSet>
 where
     ContentTypeSet: ToAssign,
     MediaSet: ToAssign,
 {
-    type O = Self;
-
-    fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self::O {
+    pub fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self {
         Self {
             consistency_level: Some(consistency_level),
             ..self

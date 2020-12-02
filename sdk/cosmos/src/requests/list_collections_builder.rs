@@ -74,10 +74,8 @@ impl<'a> ListCollectionsBuilder<'a> {
     }
 }
 
-impl<'a> ActivityIdSupport<'a> for ListCollectionsBuilder<'a> {
-    type O = Self;
-
-    fn with_activity_id(self, activity_id: &'a str) -> Self::O {
+impl<'a> ListCollectionsBuilder<'a> {
+    pub fn with_activity_id(self, activity_id: &'a str) -> Self {
         Self {
             activity_id: Some(azure_core::ActivityId::new(activity_id)),
             ..self
@@ -85,10 +83,8 @@ impl<'a> ActivityIdSupport<'a> for ListCollectionsBuilder<'a> {
     }
 }
 
-impl<'a> ConsistencyLevelSupport<'a> for ListCollectionsBuilder<'a> {
-    type O = Self;
-
-    fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self::O {
+impl<'a> ListCollectionsBuilder<'a> {
+    pub fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self {
         Self {
             consistency_level: Some(consistency_level),
             ..self
