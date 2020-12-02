@@ -13,7 +13,7 @@ pub struct ListPermissionsBuilder<'a, 'b> {
     activity_id: Option<azure_core::ActivityId<'b>>,
     consistency_level: Option<ConsistencyLevel>,
     continuation: Option<&'b str>,
-    max_item_count: i32,
+    max_item_count: MaxItemCount,
 }
 
 impl<'a, 'b> ListPermissionsBuilder<'a, 'b> {
@@ -24,7 +24,7 @@ impl<'a, 'b> ListPermissionsBuilder<'a, 'b> {
             activity_id: None,
             consistency_level: None,
             continuation: None,
-            max_item_count: -1,
+            max_item_count: MaxItemCount::new(-1),
         }
     }
 }
@@ -59,8 +59,8 @@ impl<'a, 'b> ContinuationOption<'b> for ListPermissionsBuilder<'a, 'b> {
     }
 }
 
-impl<'a, 'b> MaxItemCountOption for ListPermissionsBuilder<'a, 'b> {
-    fn max_item_count(&self) -> i32 {
+impl<'a, 'b> ListPermissionsBuilder<'a, 'b> {
+    fn max_item_count(&self) -> MaxItemCount {
         self.max_item_count
     }
 }
@@ -103,12 +103,10 @@ impl<'a, 'b> ContinuationSupport<'b> for ListPermissionsBuilder<'a, 'b> {
     }
 }
 
-impl<'a, 'b> MaxItemCountSupport for ListPermissionsBuilder<'a, 'b> {
-    type O = Self;
-
-    fn with_max_item_count(self, max_item_count: i32) -> Self::O {
+impl<'a, 'b> ListPermissionsBuilder<'a, 'b> {
+    pub fn with_max_item_count(self, max_item_count: i32) -> Self {
         Self {
-            max_item_count,
+            max_item_count: MaxItemCount::new(max_item_count),
             ..self
         }
     }
@@ -133,7 +131,7 @@ impl<'a, 'b> ListPermissionsBuilder<'a, 'b> {
         let request = crate::headers::add_header(self.activity_id(), request);
         let request = crate::headers::add_header(self.consistency_level(), request);
         let request = ContinuationOption::add_header(self, request);
-        let request = MaxItemCountOption::add_header(self, request);
+        let request = crate::headers::add_header(Some(self.max_item_count()), request);
 
         let request = request.body(EMPTY_BODY.as_ref())?;
         debug!("\nrequest == {:#?}", request);

@@ -57,8 +57,7 @@ where
     }
 }
 
-impl<'a, 'b, ContentTypeSet> MediaRequired<'b>
-    for CreateReferenceAttachmentBuilder<'a, 'b, ContentTypeSet, Yes>
+impl<'a, 'b, ContentTypeSet> CreateReferenceAttachmentBuilder<'a, 'b, ContentTypeSet, Yes>
 where
     ContentTypeSet: ToAssign,
 {
@@ -121,23 +120,23 @@ where
     }
 }
 
-impl<'a, 'b, ContentTypeSet> MediaSupport<'b>
-    for CreateReferenceAttachmentBuilder<'a, 'b, ContentTypeSet, No>
+impl<'a, 'b, ContentTypeSet> CreateReferenceAttachmentBuilder<'a, 'b, ContentTypeSet, No>
 where
     ContentTypeSet: ToAssign,
 {
-    type O = CreateReferenceAttachmentBuilder<'a, 'b, ContentTypeSet, Yes>;
-
-    fn with_media(self, media: &'b str) -> Self::O {
+    pub fn with_media(
+        self,
+        media: &'b str,
+    ) -> CreateReferenceAttachmentBuilder<'a, 'b, ContentTypeSet, Yes> {
         CreateReferenceAttachmentBuilder {
-            attachment_client: self.attachment_client,
-            p_content_type: PhantomData {},
-            p_media: PhantomData {},
-            content_type: self.content_type,
             media: Some(media),
+            attachment_client: self.attachment_client,
+            content_type: self.content_type,
             user_agent: self.user_agent,
             activity_id: self.activity_id,
             consistency_level: self.consistency_level,
+            p_content_type: PhantomData {},
+            p_media: PhantomData {},
         }
     }
 }
@@ -170,7 +169,8 @@ where
     }
 }
 
-impl<'a, 'b, ContentTypeSet, MediaSet>  CreateReferenceAttachmentBuilder<'a, 'b, ContentTypeSet, MediaSet>
+impl<'a, 'b, ContentTypeSet, MediaSet>
+    CreateReferenceAttachmentBuilder<'a, 'b, ContentTypeSet, MediaSet>
 where
     ContentTypeSet: ToAssign,
     MediaSet: ToAssign,

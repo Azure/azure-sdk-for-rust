@@ -13,7 +13,7 @@ pub struct ListUsersBuilder<'a, 'b> {
     activity_id: Option<azure_core::ActivityId<'b>>,
     consistency_level: Option<ConsistencyLevel>,
     continuation: Option<&'b str>,
-    max_item_count: i32,
+    max_item_count: MaxItemCount,
 }
 
 impl<'a, 'b> ListUsersBuilder<'a, 'b> {
@@ -24,7 +24,7 @@ impl<'a, 'b> ListUsersBuilder<'a, 'b> {
             activity_id: None,
             consistency_level: None,
             continuation: None,
-            max_item_count: -1,
+            max_item_count: MaxItemCount::new(-1),
         }
     }
 }
@@ -41,8 +41,8 @@ impl<'a, 'b> ContinuationOption<'b> for ListUsersBuilder<'a, 'b> {
     }
 }
 
-impl<'a, 'b> MaxItemCountOption for ListUsersBuilder<'a, 'b> {
-    fn max_item_count(&self) -> i32 {
+impl<'a, 'b> ListUsersBuilder<'a, 'b> {
+    fn max_item_count(&self) -> MaxItemCount {
         self.max_item_count
     }
 }
@@ -85,12 +85,10 @@ impl<'a, 'b> ContinuationSupport<'b> for ListUsersBuilder<'a, 'b> {
     }
 }
 
-impl<'a, 'b> MaxItemCountSupport for ListUsersBuilder<'a, 'b> {
-    type O = Self;
-
-    fn with_max_item_count(self, max_item_count: i32) -> Self::O {
+impl<'a, 'b> ListUsersBuilder<'a, 'b> {
+    pub fn with_max_item_count(self, max_item_count: i32) -> Self {
         Self {
-            max_item_count,
+            max_item_count: MaxItemCount::new(max_item_count),
             ..self
         }
     }

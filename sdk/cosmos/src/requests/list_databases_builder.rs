@@ -13,7 +13,7 @@ pub struct ListDatabasesBuilder<'a> {
     activity_id: Option<azure_core::ActivityId<'a>>,
     consistency_level: Option<ConsistencyLevel>,
     continuation: Option<&'a str>,
-    max_item_count: i32,
+    max_item_count: MaxItemCount,
 }
 
 impl<'a> ListDatabasesBuilder<'a> {
@@ -24,7 +24,7 @@ impl<'a> ListDatabasesBuilder<'a> {
             activity_id: None,
             consistency_level: None,
             continuation: None,
-            max_item_count: -1,
+            max_item_count: MaxItemCount::new(-1),
         }
     }
 }
@@ -59,8 +59,8 @@ impl<'a> ContinuationOption<'a> for ListDatabasesBuilder<'a> {
     }
 }
 
-impl<'a> MaxItemCountOption for ListDatabasesBuilder<'a> {
-    fn max_item_count(&self) -> i32 {
+impl<'a> ListDatabasesBuilder<'a> {
+    fn max_item_count(&self) -> MaxItemCount {
         self.max_item_count
     }
 }
@@ -103,12 +103,10 @@ impl<'a> ContinuationSupport<'a> for ListDatabasesBuilder<'a> {
     }
 }
 
-impl<'a> MaxItemCountSupport for ListDatabasesBuilder<'a> {
-    type O = Self;
-
-    fn with_max_item_count(self, max_item_count: i32) -> Self::O {
+impl<'a> ListDatabasesBuilder<'a> {
+    pub fn with_max_item_count(self, max_item_count: i32) -> Self {
         Self {
-            max_item_count,
+            max_item_count: MaxItemCount::new(max_item_count),
             ..self
         }
     }
@@ -127,7 +125,7 @@ impl<'a> ListDatabasesBuilder<'a> {
         let request = crate::headers::add_header(self.activity_id(), request);
         let request = crate::headers::add_header(self.consistency_level(), request);
         let request = ContinuationOption::add_header(self, request);
-        let request = MaxItemCountOption::add_header(self, request);
+        let request = crate::headers::add_header(Some(self.max_item_count()), request);
 
         let request = request.body(EMPTY_BODY.as_ref())?;
 

@@ -1,5 +1,6 @@
 use crate::resources::*;
 use crate::{headers, PartitionKeys};
+use azure_core::AddAsHeader;
 use document::IndexingDirective;
 use http::request::Builder;
 
@@ -127,52 +128,42 @@ impl azure_core::AddAsHeader for IndexingDirective {
     }
 }
 
-pub trait MaxItemCountSupport {
-    type O;
-    fn with_max_item_count(self, max_item_count: i32) -> Self::O;
+#[derive(Debug, Clone, Copy)]
+pub struct MaxItemCount(i32);
+
+impl MaxItemCount {
+    pub fn new(count: i32) -> Self {
+        Self(count)
+    }
 }
 
-pub trait MaxItemCountOption {
-    fn max_item_count(&self) -> i32;
-
-    #[must_use]
-    fn add_header(&self, builder: Builder) -> Builder {
-        if self.max_item_count() <= 0 {
+impl AddAsHeader for MaxItemCount {
+    fn add_as_header(&self, builder: Builder) -> Builder {
+        if self.0 <= 0 {
             builder.header(headers::HEADER_MAX_ITEM_COUNT, -1)
         } else {
-            builder.header(headers::HEADER_MAX_ITEM_COUNT, self.max_item_count())
+            builder.header(headers::HEADER_MAX_ITEM_COUNT, self.0)
         }
     }
 }
 
-impl azure_core::AddAsHeader for &'_ PartitionKeys {
+impl AddAsHeader for &'_ PartitionKeys {
     fn add_as_header(&self, builder: Builder) -> Builder {
         headers::add_partition_keys_header(self, builder)
     }
 }
 
-pub trait MediaRequired<'a> {
-    fn media(&self) -> &'a str;
-}
+#[derive(Debug, Clone, Copy)]
+pub struct ExpirySeconds(u64);
 
-pub trait MediaSupport<'a> {
-    type O;
-    fn with_media(self, media: &'a str) -> Self::O;
-}
-
-pub trait ExpirySecondsOption {
-    fn expiry_seconds(&self) -> u64;
-
-    #[must_use]
-    fn add_header(&self, builder: Builder) -> Builder {
-        builder.header(
-            headers::HEADER_DOCUMENTDB_EXPIRY_SECONDS,
-            self.expiry_seconds(),
-        )
+impl ExpirySeconds {
+    pub fn new(secs: u64) -> Self {
+        Self(secs)
     }
 }
 
-pub trait ExpirySecondsSupport {
-    type O;
-    fn with_expiry_seconds(self, expiry_seconds: u64) -> Self::O;
+impl AddAsHeader for ExpirySeconds {
+    fn add_as_header(&self, builder: Builder) -> Builder {
+        builder.header(headers::HEADER_DOCUMENTDB_EXPIRY_SECONDS, self.0)
+    }
 }

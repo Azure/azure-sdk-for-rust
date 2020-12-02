@@ -14,7 +14,7 @@ pub struct ListAttachmentsBuilder<'a, 'b> {
     activity_id: Option<azure_core::ActivityId<'b>>,
     consistency_level: Option<ConsistencyLevel>,
     continuation: Option<&'b str>,
-    max_item_count: i32,
+    max_item_count: MaxItemCount,
     a_im: bool,
 }
 
@@ -27,7 +27,7 @@ impl<'a, 'b> ListAttachmentsBuilder<'a, 'b> {
             activity_id: None,
             consistency_level: None,
             continuation: None,
-            max_item_count: -1,
+            max_item_count: MaxItemCount::new(-1),
             a_im: false,
         }
     }
@@ -70,8 +70,8 @@ impl<'a, 'b> ContinuationOption<'b> for ListAttachmentsBuilder<'a, 'b> {
     }
 }
 
-impl<'a, 'b> MaxItemCountOption for ListAttachmentsBuilder<'a, 'b> {
-    fn max_item_count(&self) -> i32 {
+impl<'a, 'b> ListAttachmentsBuilder<'a, 'b> {
+    fn max_item_count(&self) -> MaxItemCount {
         self.max_item_count
     }
 }
@@ -131,12 +131,10 @@ impl<'a, 'b> ContinuationSupport<'b> for ListAttachmentsBuilder<'a, 'b> {
     }
 }
 
-impl<'a, 'b> MaxItemCountSupport for ListAttachmentsBuilder<'a, 'b> {
-    type O = Self;
-
-    fn with_max_item_count(self, max_item_count: i32) -> Self::O {
+impl<'a, 'b> ListAttachmentsBuilder<'a, 'b> {
+    pub fn with_max_item_count(self, max_item_count: i32) -> Self {
         Self {
-            max_item_count,
+            max_item_count: MaxItemCount::new(max_item_count),
             ..self
         }
     }
@@ -170,7 +168,7 @@ impl<'a, 'b> ListAttachmentsBuilder<'a, 'b> {
         req = crate::headers::add_header(self.activity_id(), req);
         req = crate::headers::add_header(self.consistency_level(), req);
         req = ContinuationOption::add_header(self, req);
-        req = MaxItemCountOption::add_header(self, req);
+        req = crate::headers::add_header(Some(self.max_item_count()), req);
         req = AIMOption::add_header(self, req);
 
         req = crate::headers::add_partition_keys_header(self.document_client.partition_keys(), req);

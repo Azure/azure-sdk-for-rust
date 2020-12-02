@@ -15,7 +15,7 @@ pub struct ListDocumentsBuilder<'a, 'b> {
     activity_id: Option<azure_core::ActivityId<'b>>,
     consistency_level: Option<ConsistencyLevel>,
     continuation: Option<&'b str>,
-    max_item_count: i32,
+    max_item_count: MaxItemCount,
     a_im: bool,
     partition_range_id: Option<&'b str>,
 }
@@ -29,7 +29,7 @@ impl<'a, 'b> ListDocumentsBuilder<'a, 'b> {
             activity_id: None,
             consistency_level: None,
             continuation: None,
-            max_item_count: -1,
+            max_item_count: MaxItemCount::new(-1),
             a_im: false,
             partition_range_id: None,
         }
@@ -72,8 +72,8 @@ impl<'a, 'b> ContinuationOption<'b> for ListDocumentsBuilder<'a, 'b> {
     }
 }
 
-impl<'a, 'b> MaxItemCountOption for ListDocumentsBuilder<'a, 'b> {
-    fn max_item_count(&self) -> i32 {
+impl<'a, 'b> ListDocumentsBuilder<'a, 'b> {
+    fn max_item_count(&self) -> MaxItemCount {
         self.max_item_count
     }
 }
@@ -147,12 +147,10 @@ impl<'a, 'b> ContinuationSupport<'b> for ListDocumentsBuilder<'a, 'b> {
     }
 }
 
-impl<'a, 'b> MaxItemCountSupport for ListDocumentsBuilder<'a, 'b> {
-    type O = Self;
-
-    fn with_max_item_count(self, max_item_count: i32) -> Self::O {
+impl<'a, 'b> ListDocumentsBuilder<'a, 'b> {
+    pub fn with_max_item_count(self, max_item_count: i32) -> Self {
         Self {
-            max_item_count,
+            max_item_count: MaxItemCount::new(max_item_count),
             ..self
         }
     }
@@ -199,7 +197,7 @@ impl<'a, 'b> ListDocumentsBuilder<'a, 'b> {
         let req = crate::headers::add_header(self.activity_id(), req);
         let req = crate::headers::add_header(self.consistency_level(), req);
         let req = ContinuationOption::add_header(self, req);
-        let req = MaxItemCountOption::add_header(self, req);
+        let req = crate::headers::add_header(Some(self.max_item_count()), req);
         let req = AIMOption::add_header(self, req);
         let req = PartitionRangeIdOption::add_header(self, req);
 

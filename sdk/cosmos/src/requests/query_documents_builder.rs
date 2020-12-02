@@ -25,7 +25,7 @@ where
     activity_id: Option<azure_core::ActivityId<'b>>,
     consistency_level: Option<ConsistencyLevel>,
     continuation: Option<&'b str>,
-    max_item_count: i32,
+    max_item_count: MaxItemCount,
     partition_keys: Option<&'b PartitionKeys>,
     query_cross_partition: bool,
     parallelize_cross_partition_query: bool,
@@ -66,7 +66,7 @@ impl<'a, 'b> QueryDocumentsBuilder<'a, 'b, No> {
             activity_id: None,
             consistency_level: None,
             continuation: None,
-            max_item_count: -1,
+            max_item_count: MaxItemCount::new(-1),
             partition_keys: None,
             query_cross_partition: false,
             parallelize_cross_partition_query: false,
@@ -128,11 +128,11 @@ where
     }
 }
 
-impl<'a, 'b, QuerySet> MaxItemCountOption for QueryDocumentsBuilder<'a, 'b, QuerySet>
+impl<'a, 'b, QuerySet> QueryDocumentsBuilder<'a, 'b, QuerySet>
 where
     QuerySet: ToAssign,
 {
-    fn max_item_count(&self) -> i32 {
+    fn max_item_count(&self) -> MaxItemCount {
         self.max_item_count
     }
 }
@@ -263,15 +263,13 @@ where
     }
 }
 
-impl<'a, 'b, QuerySet> MaxItemCountSupport for QueryDocumentsBuilder<'a, 'b, QuerySet>
+impl<'a, 'b, QuerySet> QueryDocumentsBuilder<'a, 'b, QuerySet>
 where
     QuerySet: ToAssign,
 {
-    type O = Self;
-
-    fn with_max_item_count(self, max_item_count: i32) -> Self::O {
+    pub fn with_max_item_count(self, max_item_count: i32) -> Self {
         Self {
-            max_item_count,
+            max_item_count: MaxItemCount::new(max_item_count),
             ..self
         }
     }
@@ -350,7 +348,7 @@ impl<'a, 'b> QueryDocumentsBuilder<'a, 'b, Yes> {
         let req = crate::headers::add_header(self.activity_id(), req);
         let req = crate::headers::add_header(self.consistency_level(), req);
         let req = ContinuationOption::add_header(self, req);
-        let req = MaxItemCountOption::add_header(self, req);
+        let req = crate::headers::add_header(Some(self.max_item_count()), req);
         let req = crate::headers::add_header(self.partition_keys(), req);
         let req = QueryCrossPartitionOption::add_header(self, req);
 

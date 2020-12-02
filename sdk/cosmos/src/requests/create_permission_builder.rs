@@ -8,7 +8,7 @@ use std::convert::TryInto;
 #[derive(Debug, Clone)]
 pub struct CreatePermissionBuilder<'a, 'b> {
     permission_client: &'a PermissionClient,
-    expiry_seconds: u64,
+    expiry_seconds: ExpirySeconds,
     user_agent: Option<azure_core::UserAgent<'b>>,
     activity_id: Option<azure_core::ActivityId<'b>>,
     consistency_level: Option<ConsistencyLevel>,
@@ -18,7 +18,7 @@ impl<'a, 'b> CreatePermissionBuilder<'a, 'b> {
     pub(crate) fn new(permission_client: &'a PermissionClient) -> Self {
         Self {
             permission_client,
-            expiry_seconds: 3600,
+            expiry_seconds: ExpirySeconds::new(3600),
             user_agent: None,
             activity_id: None,
             consistency_level: None,
@@ -58,18 +58,16 @@ impl<'a, 'b> CreatePermissionBuilder<'a, 'b> {
     }
 }
 
-impl<'a, 'b> ExpirySecondsOption for CreatePermissionBuilder<'a, 'b> {
-    fn expiry_seconds(&self) -> u64 {
+impl<'a, 'b> CreatePermissionBuilder<'a, 'b> {
+    fn expiry_seconds(&self) -> ExpirySeconds {
         self.expiry_seconds
     }
 }
 
-impl<'a, 'b> ExpirySecondsSupport for CreatePermissionBuilder<'a, 'b> {
-    type O = Self;
-
-    fn with_expiry_seconds(self, expiry_seconds: u64) -> Self::O {
+impl<'a, 'b> CreatePermissionBuilder<'a, 'b> {
+    pub fn with_expiry_seconds(self, expiry_seconds: u64) -> Self {
         Self {
-            expiry_seconds,
+            expiry_seconds: ExpirySeconds::new(expiry_seconds),
             ..self
         }
     }
