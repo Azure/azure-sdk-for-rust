@@ -67,10 +67,8 @@ impl<'a, 'b> ExpirySecondsSupport for ReplacePermissionBuilder<'a, 'b> {
     }
 }
 
-impl<'a, 'b> UserAgentSupport<'b> for ReplacePermissionBuilder<'a, 'b> {
-    type O = Self;
-
-    fn with_user_agent(self, user_agent: &'b str) -> Self::O {
+impl<'a, 'b> ReplacePermissionBuilder<'a, 'b> {
+    pub fn with_user_agent(self, user_agent: &'b str) -> Self {
         Self {
             user_agent: Some(azure_core::UserAgent::new(user_agent)),
             ..self

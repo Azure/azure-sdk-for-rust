@@ -65,10 +65,8 @@ impl<'a, 'b> IfMatchConditionSupport<'b> for DeleteAttachmentBuilder<'a, 'b> {
     }
 }
 
-impl<'a, 'b> UserAgentSupport<'b> for DeleteAttachmentBuilder<'a, 'b> {
-    type O = Self;
-
-    fn with_user_agent(self, user_agent: &'b str) -> Self::O {
+impl<'a, 'b> DeleteAttachmentBuilder<'a, 'b> {
+    pub fn with_user_agent(self, user_agent: &'b str) -> Self {
         Self {
             user_agent: Some(azure_core::UserAgent::new(user_agent)),
             ..self

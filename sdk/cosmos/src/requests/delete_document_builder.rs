@@ -96,10 +96,8 @@ impl<'a> IfModifiedSinceSupport<'a> for DeleteDocumentBuilder<'a> {
     }
 }
 
-impl<'a> UserAgentSupport<'a> for DeleteDocumentBuilder<'a> {
-    type O = Self;
-
-    fn with_user_agent(self, user_agent: &'a str) -> Self::O {
+impl<'a> DeleteDocumentBuilder<'a> {
+    pub fn with_user_agent(self, user_agent: &'a str) -> Self {
         Self {
             user_agent: Some(azure_core::UserAgent::new(user_agent)),
             ..self

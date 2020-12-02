@@ -75,20 +75,14 @@ impl<'a> DatabaseNameSupport<'a> for CreateDatabaseBuilder<'a, No> {
     }
 }
 
-impl<'a, DatabaseNameSet> UserAgentSupport<'a> for CreateDatabaseBuilder<'a, DatabaseNameSet>
+impl<'a, DatabaseNameSet> CreateDatabaseBuilder<'a, DatabaseNameSet>
 where
     DatabaseNameSet: ToAssign,
 {
-    type O = CreateDatabaseBuilder<'a, DatabaseNameSet>;
-
-    fn with_user_agent(self, user_agent: &'a str) -> Self::O {
-        CreateDatabaseBuilder {
-            cosmos_client: self.cosmos_client,
-            p_database_name: PhantomData {},
-            database_name: self.database_name,
+    pub fn with_user_agent(self, user_agent: &'a str) -> Self {
+        Self {
             user_agent: Some(azure_core::UserAgent::new(user_agent)),
-            activity_id: self.activity_id,
-            consistency_level: self.consistency_level,
+            ..self
         }
     }
 }

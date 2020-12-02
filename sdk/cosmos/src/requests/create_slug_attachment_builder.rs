@@ -167,15 +167,12 @@ where
     }
 }
 
-impl<'a, 'b, BodySet, ContentTypeSet> UserAgentSupport<'b>
-    for CreateSlugAttachmentBuilder<'a, 'b, BodySet, ContentTypeSet>
+impl<'a, 'b, BodySet, ContentTypeSet> CreateSlugAttachmentBuilder<'a, 'b, BodySet, ContentTypeSet>
 where
     BodySet: ToAssign,
     ContentTypeSet: ToAssign,
 {
-    type O = Self;
-
-    fn with_user_agent(self, user_agent: &'b str) -> Self::O {
+    pub fn with_user_agent(self, user_agent: &'b str) -> Self {
         Self {
             user_agent: Some(azure_core::UserAgent::new(user_agent)),
             ..self

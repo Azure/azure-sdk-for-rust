@@ -89,13 +89,11 @@ impl<'a, 'b> StoredProcedureBodySupport<'a> for CreateStoredProcedureBuilder<'a,
     }
 }
 
-impl<'a, 'b, BodySet> UserAgentSupport<'b> for CreateStoredProcedureBuilder<'a, 'b, BodySet>
+impl<'a, 'b, BodySet> CreateStoredProcedureBuilder<'a, 'b, BodySet>
 where
     BodySet: ToAssign,
 {
-    type O = Self;
-
-    fn with_user_agent(self, user_agent: &'b str) -> Self::O {
+    pub fn with_user_agent(self, user_agent: &'b str) -> Self {
         Self {
             user_agent: Some(azure_core::UserAgent::new(user_agent)),
             ..self

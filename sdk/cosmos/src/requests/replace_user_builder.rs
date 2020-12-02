@@ -73,13 +73,11 @@ impl<'a, 'b> UserNameSupport<'a> for ReplaceUserBuilder<'a, 'b, No> {
     }
 }
 
-impl<'a, 'b, UserNameSet> UserAgentSupport<'b> for ReplaceUserBuilder<'a, 'b, UserNameSet>
+impl<'a, 'b, UserNameSet> ReplaceUserBuilder<'a, 'b, UserNameSet>
 where
     UserNameSet: ToAssign,
 {
-    type O = Self;
-
-    fn with_user_agent(self, user_agent: &'b str) -> Self::O {
+    pub fn with_user_agent(self, user_agent: &'b str) -> Self {
         Self {
             user_agent: Some(azure_core::UserAgent::new(user_agent)),
             ..self

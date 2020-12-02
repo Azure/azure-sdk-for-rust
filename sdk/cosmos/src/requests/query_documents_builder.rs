@@ -215,13 +215,11 @@ where
     }
 }
 
-impl<'a, 'b, QuerySet> UserAgentSupport<'b> for QueryDocumentsBuilder<'a, 'b, QuerySet>
+impl<'a, 'b, QuerySet> QueryDocumentsBuilder<'a, 'b, QuerySet>
 where
     QuerySet: ToAssign,
 {
-    type O = Self;
-
-    fn with_user_agent(self, user_agent: &'b str) -> Self::O {
+    pub fn with_user_agent(self, user_agent: &'b str) -> Self {
         Self {
             user_agent: Some(azure_core::UserAgent::new(user_agent)),
             ..self

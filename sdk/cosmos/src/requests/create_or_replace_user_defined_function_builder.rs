@@ -97,14 +97,11 @@ impl<'a, 'b> UserDefinedFunctionBodySupport<'b>
     }
 }
 
-impl<'a, 'b, BodySet> UserAgentSupport<'b>
-    for CreateOrReplaceUserDefinedFunctionBuilder<'a, 'b, BodySet>
+impl<'a, 'b, BodySet> CreateOrReplaceUserDefinedFunctionBuilder<'a, 'b, BodySet>
 where
     BodySet: ToAssign,
 {
-    type O = Self;
-
-    fn with_user_agent(self, user_agent: &'b str) -> Self::O {
+    pub fn with_user_agent(self, user_agent: &'b str) -> Self {
         Self {
             user_agent: Some(UserAgent::new(user_agent)),
             ..self

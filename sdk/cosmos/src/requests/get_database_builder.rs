@@ -46,10 +46,8 @@ impl<'a, 'b> GetDatabaseBuilder<'a, 'b> {
     }
 }
 
-impl<'a, 'b> UserAgentSupport<'b> for GetDatabaseBuilder<'a, 'b> {
-    type O = Self;
-
-    fn with_user_agent(self, user_agent: &'b str) -> Self::O {
+impl<'a, 'b> GetDatabaseBuilder<'a, 'b> {
+    pub fn with_user_agent(self, user_agent: &'b str) -> Self {
         Self {
             user_agent: Some(azure_core::UserAgent::new(user_agent)),
             ..self

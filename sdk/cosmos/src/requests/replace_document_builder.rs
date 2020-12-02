@@ -253,15 +253,13 @@ where
     }
 }
 
-impl<'a, 'b, PartitionKeysSet, DocumentIdSet> UserAgentSupport<'b>
-    for ReplaceDocumentBuilder<'a, 'b, PartitionKeysSet, DocumentIdSet>
+impl<'a, 'b, PartitionKeysSet, DocumentIdSet>
+    ReplaceDocumentBuilder<'a, 'b, PartitionKeysSet, DocumentIdSet>
 where
     PartitionKeysSet: ToAssign,
     DocumentIdSet: ToAssign,
 {
-    type O = Self;
-
-    fn with_user_agent(self, user_agent: &'b str) -> Self::O {
+    pub fn with_user_agent(self, user_agent: &'b str) -> Self {
         Self {
             user_agent: Some(azure_core::UserAgent::new(user_agent)),
             ..self

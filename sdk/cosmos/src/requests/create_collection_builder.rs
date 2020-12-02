@@ -67,10 +67,6 @@ where
         self.database_client
     }
 
-    fn collection_name(&self) -> &'a str {
-        self.collection_name.unwrap()
-    }
-
     fn user_agent(&self) -> Option<UserAgent<'a>> {
         self.user_agent
     }
@@ -93,6 +89,18 @@ where
 {
     fn offer(&self) -> Offer {
         self.offer.unwrap()
+    }
+}
+
+impl<'a, OfferSet, IndexingPolicySet, PartitionKeySet>
+    CreateCollectionBuilder<'a, OfferSet, Yes, IndexingPolicySet, PartitionKeySet>
+where
+    OfferSet: ToAssign,
+    IndexingPolicySet: ToAssign,
+    PartitionKeySet: ToAssign,
+{
+    fn collection_name(&self) -> &'a str {
+        self.collection_name.unwrap()
     }
 }
 
@@ -120,30 +128,31 @@ where
     }
 }
 
-impl<'a, CollectionNameSet, IndexingPolicySet, PartitionKeySet> OfferSupport
-    for CreateCollectionBuilder<'a, No, CollectionNameSet, IndexingPolicySet, PartitionKeySet>
+impl<'a, CollectionNameSet, IndexingPolicySet, PartitionKeySet>
+    CreateCollectionBuilder<'a, No, CollectionNameSet, IndexingPolicySet, PartitionKeySet>
 where
     CollectionNameSet: ToAssign,
     IndexingPolicySet: ToAssign,
     PartitionKeySet: ToAssign,
 {
-    type O =
-        CreateCollectionBuilder<'a, Yes, CollectionNameSet, IndexingPolicySet, PartitionKeySet>;
-
-    fn with_offer(self, offer: Offer) -> Self::O {
+    pub fn with_offer(
+        self,
+        offer: Offer,
+    ) -> CreateCollectionBuilder<'a, Yes, CollectionNameSet, IndexingPolicySet, PartitionKeySet>
+    {
         CreateCollectionBuilder {
-            database_client: self.database_client,
-            p_offer: PhantomData {},
-            p_collection_name: PhantomData {},
-            p_indexing_policy: PhantomData {},
-            p_partition_key: PhantomData {},
             offer: Some(offer),
+            database_client: self.database_client,
             collection_name: self.collection_name,
             indexing_policy: self.indexing_policy,
             partition_key: self.partition_key,
             user_agent: self.user_agent,
             activity_id: self.activity_id,
             consistency_level: self.consistency_level,
+            p_offer: PhantomData {},
+            p_collection_name: PhantomData {},
+            p_indexing_policy: PhantomData {},
+            p_partition_key: PhantomData {},
         }
     }
 }
@@ -175,16 +184,17 @@ where
     }
 }
 
-impl<'a, OfferSet, CollectionNameSet, PartitionKeySet> IndexingPolicySupport<'a>
-    for CreateCollectionBuilder<'a, OfferSet, CollectionNameSet, No, PartitionKeySet>
+impl<'a, OfferSet, CollectionNameSet, PartitionKeySet>
+    CreateCollectionBuilder<'a, OfferSet, CollectionNameSet, No, PartitionKeySet>
 where
     OfferSet: ToAssign,
     CollectionNameSet: ToAssign,
     PartitionKeySet: ToAssign,
 {
-    type O = CreateCollectionBuilder<'a, OfferSet, CollectionNameSet, Yes, PartitionKeySet>;
-
-    fn with_indexing_policy(self, indexing_policy: &'a IndexingPolicy) -> Self::O {
+    pub fn with_indexing_policy(
+        self,
+        indexing_policy: &'a IndexingPolicy,
+    ) -> CreateCollectionBuilder<'a, OfferSet, CollectionNameSet, Yes, PartitionKeySet> {
         CreateCollectionBuilder {
             database_client: self.database_client,
             p_offer: PhantomData {},
@@ -202,50 +212,43 @@ where
     }
 }
 
-impl<'a, OfferSet, CollectionNameSet, IndexingPolicySet> PartitionKeySupport<'a>
-    for CreateCollectionBuilder<'a, OfferSet, CollectionNameSet, IndexingPolicySet, No>
+impl<'a, OfferSet, CollectionNameSet, IndexingPolicySet>
+    CreateCollectionBuilder<'a, OfferSet, CollectionNameSet, IndexingPolicySet, No>
 where
     OfferSet: ToAssign,
     CollectionNameSet: ToAssign,
     IndexingPolicySet: ToAssign,
 {
-    type O = CreateCollectionBuilder<'a, OfferSet, CollectionNameSet, IndexingPolicySet, Yes>;
-
-    fn with_partition_key(self, partition_key: &'a PartitionKey) -> Self::O {
+    pub fn with_partition_key(
+        self,
+        partition_key: &'a PartitionKey,
+    ) -> CreateCollectionBuilder<'a, OfferSet, CollectionNameSet, IndexingPolicySet, Yes> {
         CreateCollectionBuilder {
+            partition_key: Some(partition_key),
             database_client: self.database_client,
+            offer: self.offer,
+            collection_name: self.collection_name,
+            indexing_policy: self.indexing_policy,
+            user_agent: self.user_agent,
+            activity_id: self.activity_id,
+            consistency_level: self.consistency_level,
             p_offer: PhantomData {},
             p_collection_name: PhantomData {},
             p_indexing_policy: PhantomData {},
             p_partition_key: PhantomData {},
-            offer: self.offer,
-            collection_name: self.collection_name,
-            indexing_policy: self.indexing_policy,
-            partition_key: Some(partition_key),
-            user_agent: self.user_agent,
-            activity_id: self.activity_id,
-            consistency_level: self.consistency_level,
         }
     }
 }
 
-impl<'a, OfferSet, CollectionNameSet, IndexingPolicySet, PartitionKeySet> UserAgentSupport<'a>
-    for CreateCollectionBuilder<'a, OfferSet, CollectionNameSet, IndexingPolicySet, PartitionKeySet>
+impl<'a, OfferSet, CollectionNameSet, IndexingPolicySet, PartitionKeySet>
+    CreateCollectionBuilder<'a, OfferSet, CollectionNameSet, IndexingPolicySet, PartitionKeySet>
 where
     OfferSet: ToAssign,
     CollectionNameSet: ToAssign,
     IndexingPolicySet: ToAssign,
     PartitionKeySet: ToAssign,
 {
-    type O = CreateCollectionBuilder<
-        'a,
-        OfferSet,
-        CollectionNameSet,
-        IndexingPolicySet,
-        PartitionKeySet,
-    >;
-
-    fn with_user_agent(self, user_agent: &'a str) -> Self::O {
+    pub fn with_user_agent(self, user_agent: &'a str) -> Self {
         Self {
             user_agent: Some(UserAgent::new(user_agent)),
             ..self

@@ -84,10 +84,8 @@ impl<'a, 'b> IfMatchConditionSupport<'b> for ListUserDefinedFunctionsBuilder<'a,
     }
 }
 
-impl<'a, 'b> UserAgentSupport<'b> for ListUserDefinedFunctionsBuilder<'a, 'b> {
-    type O = Self;
-
-    fn with_user_agent(self, user_agent: &'b str) -> Self::O {
+impl<'a, 'b> ListUserDefinedFunctionsBuilder<'a, 'b> {
+    pub fn with_user_agent(self, user_agent: &'b str) -> Self {
         Self {
             user_agent: Some(azure_core::UserAgent::new(user_agent)),
             ..self

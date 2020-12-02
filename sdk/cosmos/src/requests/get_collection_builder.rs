@@ -47,10 +47,8 @@ impl<'a> GetCollectionBuilder<'a> {
     }
 }
 
-impl<'a> UserAgentSupport<'a> for GetCollectionBuilder<'a> {
-    type O = Self;
-
-    fn with_user_agent(self, user_agent: &'a str) -> Self::O {
+impl<'a> GetCollectionBuilder<'a> {
+    pub fn with_user_agent(self, user_agent: &'a str) -> Self {
         Self {
             user_agent: Some(azure_core::UserAgent::new(user_agent)),
             ..self

@@ -121,14 +121,14 @@ where
     }
 }
 
-impl<'a, 'b, PartitionKeysSet> IndexingPolicySupport<'a>
-    for ReplaceCollectionBuilder<'a, 'b, PartitionKeysSet, No>
+impl<'a, 'b, PartitionKeysSet> ReplaceCollectionBuilder<'a, 'b, PartitionKeysSet, No>
 where
     PartitionKeysSet: ToAssign,
 {
-    type O = ReplaceCollectionBuilder<'a, 'b, PartitionKeysSet, Yes>;
-
-    fn with_indexing_policy(self, indexing_policy: &'a IndexingPolicy) -> Self::O {
+    pub fn with_indexing_policy(
+        self,
+        indexing_policy: &'a IndexingPolicy,
+    ) -> ReplaceCollectionBuilder<'a, 'b, PartitionKeysSet, Yes> {
         ReplaceCollectionBuilder {
             collection_client: self.collection_client,
             p_partition_key: PhantomData {},
@@ -142,15 +142,13 @@ where
     }
 }
 
-impl<'a, 'b, PartitionKeysSet, IndexingPolicySet> UserAgentSupport<'b>
-    for ReplaceCollectionBuilder<'a, 'b, PartitionKeysSet, IndexingPolicySet>
+impl<'a, 'b, PartitionKeysSet, IndexingPolicySet>
+    ReplaceCollectionBuilder<'a, 'b, PartitionKeysSet, IndexingPolicySet>
 where
     PartitionKeysSet: ToAssign,
     IndexingPolicySet: ToAssign,
 {
-    type O = Self;
-
-    fn with_user_agent(self, user_agent: &'b str) -> Self::O {
+    pub fn with_user_agent(self, user_agent: &'b str) -> Self {
         Self {
             user_agent: Some(azure_core::UserAgent::new(user_agent)),
             ..self

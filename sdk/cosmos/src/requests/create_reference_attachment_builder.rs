@@ -142,15 +142,13 @@ where
     }
 }
 
-impl<'a, 'b, ContentTypeSet, MediaSet> UserAgentSupport<'b>
-    for CreateReferenceAttachmentBuilder<'a, 'b, ContentTypeSet, MediaSet>
+impl<'a, 'b, ContentTypeSet, MediaSet>
+    CreateReferenceAttachmentBuilder<'a, 'b, ContentTypeSet, MediaSet>
 where
     ContentTypeSet: ToAssign,
     MediaSet: ToAssign,
 {
-    type O = Self;
-
-    fn with_user_agent(self, user_agent: &'b str) -> Self::O {
+    pub fn with_user_agent(self, user_agent: &'b str) -> Self {
         Self {
             user_agent: Some(azure_core::UserAgent::new(user_agent)),
             ..self

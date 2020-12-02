@@ -176,16 +176,14 @@ where
     }
 }
 
-impl<'a, TriggerOperationSet, TriggerTypeSet, BodySet> UserAgentSupport<'a>
-    for CreateOrReplaceTriggerBuilder<'a, TriggerOperationSet, TriggerTypeSet, BodySet>
+impl<'a, TriggerOperationSet, TriggerTypeSet, BodySet>
+    CreateOrReplaceTriggerBuilder<'a, TriggerOperationSet, TriggerTypeSet, BodySet>
 where
     TriggerOperationSet: ToAssign,
     TriggerTypeSet: ToAssign,
     BodySet: ToAssign,
 {
-    type O = CreateOrReplaceTriggerBuilder<'a, TriggerOperationSet, TriggerTypeSet, BodySet>;
-
-    fn with_user_agent(self, user_agent: &'a str) -> Self::O {
+    pub fn with_user_agent(self, user_agent: &'a str) -> Self {
         Self {
             user_agent: Some(azure_core::UserAgent::new(user_agent)),
             ..self
