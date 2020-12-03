@@ -51,39 +51,14 @@ where
     PartitionKeysSet: ToAssign,
 {
     setters! {
-        user_agent:? &'b str => UserAgent::new,
-        activity_id:? &'b str => ActivityId::new,
-        consistency_level:? ConsistencyLevel,
-        if_match_condition:? IfMatchCondition<'b>,
-        if_modified_since:? &'b DateTime<Utc> => IfModifiedSince::new
-    }
-
-    pub fn with_allow_tentative_writes(
-        self,
+        user_agent: &'b str => |s| Some(UserAgent::new(s)),
+        activity_id: &'b str => |s| Some(ActivityId::new(s)),
+        consistency_level: ConsistencyLevel => Some,
+        if_match_condition: IfMatchCondition<'b> => Some,
+        if_modified_since: &'b DateTime<Utc> => |s| Some(IfModifiedSince::new(s)),
         allow_tentative_writes: TenativeWritesAllowance,
-    ) -> Self {
-        Self {
-            allow_tentative_writes,
-            ..self
-        }
-    }
-
-    pub fn with_is_upsert(self, is_upsert: bool) -> Self {
-        Self {
-            is_upsert: if is_upsert {
-                IsUpsert::Yes
-            } else {
-                IsUpsert::No
-            },
-            ..self
-        }
-    }
-
-    pub fn with_indexing_directive(self, indexing_directive: IndexingDirective) -> Self {
-        Self {
-            indexing_directive,
-            ..self
-        }
+        is_upsert: bool => |s| if s { IsUpsert::Yes } else { IsUpsert::No },
+        indexing_directive: IndexingDirective,
     }
 }
 
