@@ -17,7 +17,7 @@
 /// ```
 macro_rules! setters {
     // The terminal condition
-    (@single $name:ident : $typ:ty => $transform:path $(,)* ) => {
+    (@single $name:ident :? $typ:ty => $transform:path $(,)* ) => {
         paste::paste! {
             pub fn [<with_ $name>](self, $name: $typ) -> Self {
                 Self  {
@@ -28,25 +28,25 @@ macro_rules! setters {
         }
     };
     // Check for last setter in list (and add identity transform)
-    (@single $name:ident : $typ:ty  $(,)* ) => {
-        setters! { @single $name : $typ  => ::std::convert::identity }
+    (@single $name:ident :? $typ:ty  $(,)* ) => {
+        setters! { @single $name :? $typ => ::std::convert::identity }
     };
     // Final setter in list (without transform)
-    (@recurse $name:ident : $typ:ty  $(,)* ) => {
-        setters! { @single $name : $typ }
+    (@recurse $name:ident :? $typ:ty  $(,)* ) => {
+        setters! { @single $name :? $typ }
     };
     // Final setter in list (with transform)
-    (@recurse $name:ident : $typ:ty => $transform:path $(,)* ) => {
-        setters! { @single $name : $typ => $transform }
+    (@recurse $name:ident :? $typ:ty => $transform:path $(,)* ) => {
+        setters! { @single $name :? $typ => $transform }
     };
     // Recurse without transform
-    (@recurse $name:ident : $typ:ty, $($tokens:tt)*) => {
-        setters! { @single $name : $typ => std::convert::identity}
+    (@recurse $name:ident :? $typ:ty, $($tokens:tt)*) => {
+        setters! { @single $name :? $typ => std::convert::identity }
         setters! { @recurse $($tokens)* }
     };
     // Recurse with transform
-    (@recurse $name:ident : $typ:ty => $transform:path, $($tokens:tt)*) => {
-        setters! { @single $name : $typ => $transform }
+    (@recurse $name:ident :? $typ:ty => $transform:path, $($tokens:tt)*) => {
+        setters! { @single $name :? $typ => $transform }
         setters! { @recurse $($tokens)* }
     };
     ($($tokens:tt)*) => {

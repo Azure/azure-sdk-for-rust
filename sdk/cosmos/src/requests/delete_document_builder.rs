@@ -10,7 +10,7 @@ use std::convert::TryInto;
 pub struct DeleteDocumentBuilder<'a> {
     document_client: &'a DocumentClient,
     if_match_condition: Option<IfMatchCondition<'a>>,
-    if_modified_since: Option<IfModifiedSince>,
+    if_modified_since: Option<IfModifiedSince<'a>>,
     user_agent: Option<azure_core::UserAgent<'a>>,
     activity_id: Option<azure_core::ActivityId<'a>>,
     consistency_level: Option<ConsistencyLevel>,
@@ -74,7 +74,7 @@ impl<'a> DeleteDocumentBuilder<'a> {
 
     pub fn with_if_modified_since(self, if_modified_since: &'a DateTime<Utc>) -> Self {
         Self {
-            if_modified_since: Some(IfModifiedSince::new(if_modified_since.clone())),
+            if_modified_since: Some(IfModifiedSince::new(if_modified_since)),
             ..self
         }
     }

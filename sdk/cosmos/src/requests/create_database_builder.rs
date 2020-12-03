@@ -1,7 +1,7 @@
 use crate::prelude::*;
 use crate::resources::ResourceType;
 use crate::responses::CreateDatabaseResponse;
-use azure_core::{No, ToAssign, Yes};
+use azure_core::{ActivityId, No, ToAssign, UserAgent, Yes};
 use http::StatusCode;
 use std::convert::TryInto;
 use std::marker::PhantomData;
@@ -36,45 +36,10 @@ impl<'a, DatabaseNameSet> CreateDatabaseBuilder<'a, DatabaseNameSet>
 where
     DatabaseNameSet: ToAssign,
 {
-    pub fn cosmos_client(&self) -> &'a CosmosClient {
-        self.cosmos_client
-    }
-
-    fn user_agent(&self) -> Option<azure_core::UserAgent<'a>> {
-        self.user_agent
-    }
-
-    fn activity_id(&self) -> Option<azure_core::ActivityId<'a>> {
-        self.activity_id
-    }
-
-    fn consistency_level(&self) -> Option<ConsistencyLevel> {
-        self.consistency_level.clone()
-    }
-
-    pub fn with_user_agent(self, user_agent: &'a str) -> Self {
-        Self {
-            user_agent: Some(azure_core::UserAgent::new(user_agent)),
-            ..self
-        }
-    }
-    pub fn with_activity_id(self, activity_id: &'a str) -> Self {
-        Self {
-            activity_id: Some(azure_core::ActivityId::new(activity_id)),
-            ..self
-        }
-    }
-    pub fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self {
-        Self {
-            consistency_level: Some(consistency_level),
-            ..self
-        }
-    }
-}
-
-impl<'a> CreateDatabaseBuilder<'a, Yes> {
-    fn database_name(&self) -> &'a str {
-        self.database_name.unwrap()
+    setters! {
+        user_agent:? &'a str => UserAgent::new,
+        activity_id:? &'a str => ActivityId::new,
+        consistency_level:? ConsistencyLevel,
     }
 }
 
@@ -101,25 +66,23 @@ impl<'a> CreateDatabaseBuilder<'a, Yes> {
         }
 
         let req = serde_json::to_string(&CreateDatabaseRequest {
-            id: self.database_name(),
+            id: self.database_name.unwrap(),
         })?;
 
-        let request = self.cosmos_client().prepare_request(
-            "dbs",
-            http::Method::POST,
-            ResourceType::Databases,
-        );
+        let request =
+            self.cosmos_client
+                .prepare_request("dbs", http::Method::POST, ResourceType::Databases);
 
-        let request = crate::headers::add_header(self.user_agent(), request);
-        let request = crate::headers::add_header(self.activity_id(), request);
-        let request = crate::headers::add_header(self.consistency_level(), request);
+        let request = crate::headers::add_header(self.user_agent, request);
+        let request = crate::headers::add_header(self.activity_id, request);
+        let request = crate::headers::add_header(self.consistency_level.clone(), request);
 
         let request = request.body(req.as_bytes())?; // todo: set content-length here and elsewhere without builders
 
         debug!("create database request prepared == {:?}", request);
 
         Ok(self
-            .cosmos_client()
+            .cosmos_client
             .http_client()
             .execute_request_check_status(request, StatusCode::CREATED)
             .await?

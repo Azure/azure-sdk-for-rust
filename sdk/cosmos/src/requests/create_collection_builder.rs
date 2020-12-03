@@ -63,9 +63,9 @@ where
     PartitionKeySet: ToAssign,
 {
     setters! {
-        user_agent: &'a str => UserAgent::new,
-        activity_id: &'a str => ActivityId::new,
-        consistency_level: ConsistencyLevel
+        user_agent:? &'a str => UserAgent::new,
+        activity_id:? &'a str => ActivityId::new,
+        consistency_level:? ConsistencyLevel,
     }
 }
 

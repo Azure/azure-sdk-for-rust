@@ -22,7 +22,7 @@ where
     document_id: Option<&'b str>,
     indexing_directive: IndexingDirective,
     if_match_condition: Option<IfMatchCondition<'b>>,
-    if_modified_since: Option<IfModifiedSince>,
+    if_modified_since: Option<IfModifiedSince<'b>>,
     user_agent: Option<azure_core::UserAgent<'b>>,
     activity_id: Option<azure_core::ActivityId<'b>>,
     consistency_level: Option<ConsistencyLevel>,
@@ -98,7 +98,7 @@ where
 
     pub fn with_if_modified_since(self, if_modified_since: &'b DateTime<Utc>) -> Self {
         Self {
-            if_modified_since: Some(IfModifiedSince::new(if_modified_since.clone())),
+            if_modified_since: Some(IfModifiedSince::new(if_modified_since)),
             ..self
         }
     }
