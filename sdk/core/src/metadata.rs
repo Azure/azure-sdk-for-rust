@@ -5,7 +5,7 @@ use std::collections::HashMap;
 #[derive(Debug, Clone)]
 pub struct Metadata(HashMap<String, String>);
 
-impl<'a> Metadata {
+impl Metadata {
     pub fn new() -> Self {
         Self(HashMap::new())
     }
@@ -15,13 +15,13 @@ impl<'a> Metadata {
     }
 }
 
-impl<'a> From<HashMap<String, String>> for Metadata {
+impl From<HashMap<String, String>> for Metadata {
     fn from(metadata: HashMap<String, String>) -> Self {
         Self(metadata)
     }
 }
 
-impl<'a> AddAsHeader for Metadata {
+impl AddAsHeader for &Metadata {
     fn add_as_header(&self, builder: Builder) -> Builder {
         let mut builder = builder;
 
@@ -30,15 +30,5 @@ impl<'a> AddAsHeader for Metadata {
         }
 
         builder
-    }
-}
-
-impl<'a> AddAsHeader for Option<Metadata> {
-    fn add_as_header(&self, builder: Builder) -> Builder {
-        if let Some(item) = self {
-            AddAsHeader::add_as_header(item, builder)
-        } else {
-            builder
-        }
     }
 }

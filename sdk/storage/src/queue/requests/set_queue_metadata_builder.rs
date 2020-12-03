@@ -87,7 +87,7 @@ where
             &http::Method::PUT,
             &|mut request| {
                 request = AddAsHeader::add_as_header(self.client_request_id(), request);
-                request = AddAsHeader::add_as_header(self.metadata(), request);
+                request = AddAsHeader::add_as_header(&self.metadata(), request);
                 request
             },
             Some(&[]),

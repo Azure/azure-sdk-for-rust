@@ -3,7 +3,6 @@ extern crate log;
 use azure_core::prelude::*;
 use azure_storage::core::prelude::*;
 use azure_storage::queue::prelude::*;
-use std::collections::HashMap;
 use std::error::Error;
 
 #[tokio::main]
@@ -25,17 +24,19 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     // this step is optional but here we show
     // how to add metadata to a new queue.
-    let mut hm = HashMap::new();
-    hm.insert("source", "azure-sdk-for-rust");
+    let mut metadata = Metadata::new();
+    metadata
+        .as_mut()
+        .insert("source".to_owned(), "azure-sdk-for-rust".to_owned());
 
     let response = queue_client
         .create_queue()
-        .with_metadata(&hm)
+        .with_metadata(&metadata)
         .execute()
         .await?;
     println!("response == {:#?}", response);
 
-    let mut metadata = Metadata::new();
+    // let's add some more metadata
     metadata
         .as_mut()
         .insert("version".to_owned(), "TBD".to_owned());
