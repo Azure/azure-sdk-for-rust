@@ -35,6 +35,17 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .await?;
     println!("response == {:#?}", response);
 
+    let mut metadata = Metadata::new();
+    metadata
+        .as_mut()
+        .insert("version".to_owned(), "TBD".to_owned());
+    metadata
+        .as_mut()
+        .insert("date".to_owned(), "Stardate".to_owned());
+
+    let response = queue_client.set_queue_metadata(&metadata).execute().await?;
+    println!("response == {:#?}", response);
+
     // now let's delete it
     let response = queue_client
         .delete_queue()
