@@ -82,9 +82,9 @@ impl<'a, 'b> ReplaceStoredProcedureBuilder<'a, 'b, Yes> {
             .prepare_request_with_stored_procedure_name(http::Method::PUT);
 
         // add trait headers
-        let req = crate::headers::add_optional_header(self.user_agent(), req);
-        let req = crate::headers::add_optional_header(self.activity_id(), req);
-        let req = crate::headers::add_optional_header(self.consistency_level(), req);
+        let req = azure_core::headers::add_optional_header(&self.user_agent(), req);
+        let req = azure_core::headers::add_optional_header(&self.activity_id(), req);
+        let req = azure_core::headers::add_optional_header(&self.consistency_level(), req);
 
         let req = req.header(http::header::CONTENT_TYPE, "application/json");
 

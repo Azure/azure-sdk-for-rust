@@ -201,15 +201,15 @@ impl<'a, 'b> CreateDocumentBuilder<'a, 'b, Yes> {
         );
 
         // add trait headers
-        req = crate::headers::add_optional_header(self.if_match_condition(), req);
-        req = crate::headers::add_optional_header(self.if_modified_since(), req);
-        req = crate::headers::add_optional_header(self.user_agent(), req);
-        req = crate::headers::add_optional_header(self.activity_id(), req);
-        req = crate::headers::add_optional_header(self.consistency_level(), req);
-        req = crate::headers::add_optional_header(Some(self.partition_keys()), req);
-        req = crate::headers::add_optional_header(Some(self.is_upsert()), req);
-        req = crate::headers::add_optional_header(Some(self.indexing_directive()), req);
-        req = crate::headers::add_optional_header(Some(self.allow_tentative_writes()), req);
+        req = azure_core::headers::add_optional_header(&self.if_match_condition(), req);
+        req = azure_core::headers::add_optional_header(&self.if_modified_since(), req);
+        req = azure_core::headers::add_optional_header(&self.user_agent(), req);
+        req = azure_core::headers::add_optional_header(&self.activity_id(), req);
+        req = azure_core::headers::add_optional_header(&self.consistency_level(), req);
+        req = azure_core::headers::add_mandatory_header(&self.partition_keys(), req);
+        req = azure_core::headers::add_mandatory_header(&self.is_upsert(), req);
+        req = azure_core::headers::add_mandatory_header(&self.indexing_directive(), req);
+        req = azure_core::headers::add_mandatory_header(&self.allow_tentative_writes(), req);
 
         let serialized = serde_json::to_string(document)?;
         let req = req.body(serialized.as_bytes())?;

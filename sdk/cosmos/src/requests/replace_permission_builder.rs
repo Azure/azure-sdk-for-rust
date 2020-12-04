@@ -84,9 +84,9 @@ impl<'a, 'b> ReplacePermissionBuilder<'a, 'b> {
             .permission_client
             .prepare_request_with_permission_name(http::Method::PUT);
 
-        let request = crate::headers::add_optional_header(self.user_agent(), request);
-        let request = crate::headers::add_optional_header(self.activity_id(), request);
-        let request = crate::headers::add_optional_header(self.consistency_level(), request);
+        let request = azure_core::headers::add_optional_header(&self.user_agent(), request);
+        let request = azure_core::headers::add_optional_header(&self.activity_id(), request);
+        let request = azure_core::headers::add_optional_header(&self.consistency_level(), request);
 
         let request = request.header(http::header::CONTENT_TYPE, "application/json");
 

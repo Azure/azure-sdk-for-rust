@@ -66,9 +66,9 @@ impl<'a> GetCollectionBuilder<'a> {
             .collection_client()
             .prepare_request_with_collection_name(http::Method::GET);
 
-        let request = crate::headers::add_optional_header(self.user_agent(), request);
-        let request = crate::headers::add_optional_header(self.activity_id(), request);
-        let request = crate::headers::add_optional_header(self.consistency_level(), request);
+        let request = azure_core::headers::add_optional_header(&self.user_agent(), request);
+        let request = azure_core::headers::add_optional_header(&self.activity_id(), request);
+        let request = azure_core::headers::add_optional_header(&self.consistency_level(), request);
 
         let request = request.body(EMPTY_BODY.as_ref())?;
 

@@ -197,15 +197,15 @@ impl<'a, 'b> QueryDocumentsBuilder<'a, 'b, Yes> {
         let req = req.header(http::header::CONTENT_TYPE, "application/query+json");
 
         // add trait headers
-        let req = crate::headers::add_optional_header(self.if_match_condition(), req);
-        let req = crate::headers::add_optional_header(self.if_modified_since(), req);
-        let req = crate::headers::add_optional_header(self.user_agent(), req);
-        let req = crate::headers::add_optional_header(self.activity_id(), req);
-        let req = crate::headers::add_optional_header(self.consistency_level(), req);
-        let req = crate::headers::add_optional_header(self.continuation(), req);
-        let req = crate::headers::add_optional_header(Some(self.max_item_count()), req);
-        let req = crate::headers::add_optional_header(self.partition_keys(), req);
-        let req = crate::headers::add_optional_header(Some(self.query_cross_partition()), req);
+        let req = azure_core::headers::add_optional_header(&self.if_match_condition(), req);
+        let req = azure_core::headers::add_optional_header(&self.if_modified_since(), req);
+        let req = azure_core::headers::add_optional_header(&self.user_agent(), req);
+        let req = azure_core::headers::add_optional_header(&self.activity_id(), req);
+        let req = azure_core::headers::add_optional_header(&self.consistency_level(), req);
+        let req = azure_core::headers::add_optional_header(&self.continuation(), req);
+        let req = azure_core::headers::add_mandatory_header(&self.max_item_count(), req);
+        let req = azure_core::headers::add_optional_header(&self.partition_keys(), req);
+        let req = azure_core::headers::add_mandatory_header(&self.query_cross_partition(), req);
 
         let body = serde_json::to_string(self.query())?;
         debug!("body == {}", body);

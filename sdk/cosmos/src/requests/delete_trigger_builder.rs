@@ -51,9 +51,9 @@ impl<'a, 'b> DeleteTriggerBuilder<'a, 'b> {
             .prepare_request_with_trigger_name(http::Method::DELETE);
 
         // add trait headers
-        let req = crate::headers::add_optional_header(self.user_agent(), req);
-        let req = crate::headers::add_optional_header(self.activity_id(), req);
-        let req = crate::headers::add_optional_header(self.consistency_level(), req);
+        let req = azure_core::headers::add_optional_header(&self.user_agent(), req);
+        let req = azure_core::headers::add_optional_header(&self.activity_id(), req);
+        let req = azure_core::headers::add_optional_header(&self.consistency_level(), req);
 
         let request = req.body(EMPTY_BODY.as_ref())?;
 

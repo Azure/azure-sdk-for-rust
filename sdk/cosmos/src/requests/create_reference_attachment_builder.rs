@@ -146,9 +146,9 @@ impl<'a, 'b> CreateReferenceAttachmentBuilder<'a, 'b, Yes, Yes> {
         let mut req = self.attachment_client.prepare_request(http::Method::POST);
 
         // add trait headers
-        req = crate::headers::add_optional_header(self.user_agent(), req);
-        req = crate::headers::add_optional_header(self.activity_id(), req);
-        req = crate::headers::add_optional_header(self.consistency_level(), req);
+        req = azure_core::headers::add_optional_header(&self.user_agent(), req);
+        req = azure_core::headers::add_optional_header(&self.activity_id(), req);
+        req = azure_core::headers::add_optional_header(&self.consistency_level(), req);
 
         req = crate::headers::add_partition_keys_header(
             self.attachment_client.document_client().partition_keys(),

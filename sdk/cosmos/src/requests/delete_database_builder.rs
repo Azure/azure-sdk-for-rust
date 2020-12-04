@@ -57,9 +57,9 @@ impl<'a> DeleteDatabaseBuilder<'a> {
             .database_client()
             .prepare_request_with_database_name(http::Method::DELETE);
 
-        let request = crate::headers::add_optional_header(self.user_agent(), request);
-        let request = crate::headers::add_optional_header(self.activity_id(), request);
-        let request = crate::headers::add_optional_header(self.consistency_level(), request);
+        let request = azure_core::headers::add_optional_header(&self.user_agent(), request);
+        let request = azure_core::headers::add_optional_header(&self.activity_id(), request);
+        let request = azure_core::headers::add_optional_header(&self.consistency_level(), request);
 
         let request = request.body(EMPTY_BODY.as_ref())?;
 
