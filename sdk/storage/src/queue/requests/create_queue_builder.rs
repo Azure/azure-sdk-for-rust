@@ -15,7 +15,7 @@ where
 {
     queue_client: &'a QueueClient<C>,
     timeout: Option<Timeout>,
-    metadata: Option<&'a Metadata>,
+    metadata: Option<&'a Metadata<'a>>,
     client_request_id: Option<ClientRequestId<'a>>,
 }
 

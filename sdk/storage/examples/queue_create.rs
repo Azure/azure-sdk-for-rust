@@ -27,7 +27,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let mut metadata = Metadata::new();
     metadata
         .as_mut()
-        .insert("source".to_owned(), "azure-sdk-for-rust".to_owned());
+        .insert("source".into(), "azure-sdk-for-rust".into());
+    metadata
+        .as_mut()
+        .insert("created".into(), format!("{:?}", chrono::Utc::now()).into());
 
     let response = queue_client
         .create_queue()
@@ -37,12 +40,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
     println!("response == {:#?}", response);
 
     // let's add some more metadata
+    metadata.as_mut().insert("version".into(), "TBD".into());
     metadata
         .as_mut()
-        .insert("version".to_owned(), "TBD".to_owned());
-    metadata
-        .as_mut()
-        .insert("date".to_owned(), "Stardate".to_owned());
+        .insert("updated".into(), format!("{:?}", chrono::Utc::now()).into());
+
+    println!("metadata == {:#?}", metadata);
 
     let response = queue_client.set_queue_metadata(&metadata).execute().await?;
     println!("response == {:#?}", response);
