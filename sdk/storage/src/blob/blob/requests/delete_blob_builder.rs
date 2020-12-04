@@ -331,7 +331,7 @@ where
                 &uri,
                 &Method::DELETE,
                 &|mut request| {
-                    request = DeleteSnapshotsMethodRequired::add_optional_header(&self, request);
+                    request = DeleteSnapshotsMethodRequired::add_mandatory_header(&self, request);
                     request = LeaseIdOption::add_optional_header(&self, request);
                     request = ClientRequestIdOption::add_optional_header(&self, request);
                     request

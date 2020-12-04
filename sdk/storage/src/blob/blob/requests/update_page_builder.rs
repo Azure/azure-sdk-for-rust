@@ -646,7 +646,7 @@ where
                 &uri,
                 &Method::PUT,
                 &|mut request| {
-                    request = BA512RangeRequired::add_optional_header(&self, request);
+                    request = BA512RangeRequired::add_mandatory_header(&self, request);
                     request = ContentMD5Option::add_optional_header(&self, request);
                     request = request.header(PAGE_WRITE, "update");
                     request = LeaseIdOption::add_optional_header(&self, request);

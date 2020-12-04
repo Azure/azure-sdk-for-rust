@@ -282,7 +282,7 @@ where
                 &uri,
                 &Method::PUT,
                 &|mut request| {
-                    request = LeaseIdRequired::add_optional_header(&self, request);
+                    request = LeaseIdRequired::add_mandatory_header(&self, request);
                     request = request.header(LEASE_ACTION, "renew");
                     request = ClientRequestIdOption::add_optional_header(&self, request);
                     request

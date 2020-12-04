@@ -786,7 +786,7 @@ where
                 &uri,
                 &Method::PUT,
                 &|mut request| {
-                    request = PageBlobLengthRequired::add_optional_header(&self, request);
+                    request = PageBlobLengthRequired::add_mandatory_header(&self, request);
                     request = SequenceNumberOption::add_optional_header(&self, request);
                     request = AccessTierOption::add_optional_header(&self, request);
                     request = ContentTypeOption::add_optional_header(&self, request);

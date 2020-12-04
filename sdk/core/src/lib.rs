@@ -311,7 +311,7 @@ pub trait ContentTypeRequired<'a> {
     fn content_type(&self) -> &'a str;
 
     #[must_use]
-    fn add_optional_header(&self, builder: Builder) -> Builder {
+    fn add_mandatory_header(&self, builder: Builder) -> Builder {
         builder.header(CONTENT_TYPE, self.content_type())
     }
 }
@@ -325,7 +325,7 @@ pub trait SourceUrlRequired<'a> {
     fn source_url(&self) -> &'a str;
 
     #[must_use]
-    fn add_optional_header(&self, builder: Builder) -> Builder {
+    fn add_mandatory_header(&self, builder: Builder) -> Builder {
         builder.header(COPY_SOURCE, self.source_url())
     }
 }
@@ -448,7 +448,7 @@ pub trait DeleteSnapshotsMethodRequired {
     fn delete_snapshots_method(&self) -> DeleteSnapshotsMethod;
 
     #[must_use]
-    fn add_optional_header(&self, builder: Builder) -> Builder {
+    fn add_mandatory_header(&self, builder: Builder) -> Builder {
         let s: &'static str = self.delete_snapshots_method().into();
         builder.header(DELETE_SNAPSHOTS, s)
     }
@@ -808,7 +808,7 @@ pub trait PageBlobLengthRequired {
     fn content_length(&self) -> u64;
 
     #[must_use]
-    fn add_optional_header(&self, builder: Builder) -> Builder {
+    fn add_mandatory_header(&self, builder: Builder) -> Builder {
         builder.header(
             BLOB_CONTENT_LENGTH,
             &self.content_length().to_string() as &str,
@@ -837,7 +837,7 @@ pub trait ContentLengthRequired {
     fn content_length(&self) -> u64;
 
     #[must_use]
-    fn add_optional_header(&self, builder: Builder) -> Builder {
+    fn add_mandatory_header(&self, builder: Builder) -> Builder {
         builder.header(CONTENT_LENGTH, &self.content_length().to_string() as &str)
     }
 }
@@ -880,7 +880,7 @@ pub trait LeaseIdRequired<'a> {
     fn lease_id(&self) -> &'a LeaseId;
 
     #[must_use]
-    fn add_optional_header(&self, builder: Builder) -> Builder {
+    fn add_mandatory_header(&self, builder: Builder) -> Builder {
         builder.header(LEASE_ID, &self.lease_id().to_string() as &str)
     }
 }
@@ -967,7 +967,7 @@ pub trait RangeRequired<'a> {
     fn range(&self) -> &'a range::Range;
 
     #[must_use]
-    fn add_optional_header(&self, builder: Builder) -> Builder {
+    fn add_mandatory_header(&self, builder: Builder) -> Builder {
         builder.header(RANGE, &self.range().to_string() as &str)
     }
 }
@@ -993,7 +993,7 @@ pub trait BA512RangeRequired<'a> {
     fn ba512_range(&self) -> &'a ba512_range::BA512Range;
 
     #[must_use]
-    fn add_optional_header(&self, builder: Builder) -> Builder {
+    fn add_mandatory_header(&self, builder: Builder) -> Builder {
         builder.header(RANGE, &self.ba512_range().to_string() as &str)
     }
 }
@@ -1007,7 +1007,7 @@ pub trait LeaseDurationRequired {
     fn lease_duration(&self) -> i8;
 
     #[must_use]
-    fn add_optional_header(&self, builder: Builder) -> Builder {
+    fn add_mandatory_header(&self, builder: Builder) -> Builder {
         builder.header(LEASE_DURATION, &self.lease_duration().to_string() as &str)
     }
 }
@@ -1033,7 +1033,7 @@ pub trait ProposedLeaseIdRequired<'a> {
     fn proposed_lease_id(&self) -> &'a LeaseId;
 
     #[must_use]
-    fn add_optional_header(&self, builder: Builder) -> Builder {
+    fn add_mandatory_header(&self, builder: Builder) -> Builder {
         builder.header(
             PROPOSED_LEASE_ID,
             &self.proposed_lease_id().to_string() as &str,
@@ -1050,7 +1050,7 @@ pub trait LeaseBreakPeriodRequired {
     fn lease_break_period(&self) -> u8;
 
     #[must_use]
-    fn add_optional_header(&self, builder: Builder) -> Builder {
+    fn add_mandatory_header(&self, builder: Builder) -> Builder {
         builder.header(
             LEASE_BREAK_PERIOD,
             &self.lease_break_period().to_string() as &str,

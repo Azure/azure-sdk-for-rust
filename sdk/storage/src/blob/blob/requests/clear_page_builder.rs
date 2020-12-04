@@ -492,7 +492,7 @@ where
                 &uri,
                 &Method::PUT,
                 &|mut request| {
-                    request = BA512RangeRequired::add_optional_header(&self, request);
+                    request = BA512RangeRequired::add_mandatory_header(&self, request);
                     request = request.header(PAGE_WRITE, "clear");
                     request = LeaseIdOption::add_optional_header(&self, request);
                     request = SequenceNumberConditionOption::add_optional_header(&self, request);

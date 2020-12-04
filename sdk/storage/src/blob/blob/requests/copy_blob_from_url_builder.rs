@@ -919,7 +919,7 @@ where
                 &uri,
                 &Method::PUT,
                 &|mut request| {
-                    request = SourceUrlRequired::add_optional_header(&self, request);
+                    request = SourceUrlRequired::add_mandatory_header(&self, request);
                     request = IsSynchronousOption::add_optional_header(&self, request);
                     request = SourceContentMD5Option::add_optional_header(&self, request);
                     request = ContentTypeOption::add_optional_header(&self, request);

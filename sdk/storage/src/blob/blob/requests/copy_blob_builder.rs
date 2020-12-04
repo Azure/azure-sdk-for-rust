@@ -793,7 +793,7 @@ where
                 &uri,
                 &Method::PUT,
                 &|mut request| {
-                    request = SourceUrlRequired::add_optional_header(&self, request);
+                    request = SourceUrlRequired::add_mandatory_header(&self, request);
                     request = MetadataOption::add_optional_header(&self, request);
                     request = IfSinceConditionOption::add_optional_header(&self, request);
                     request = IfSourceSinceConditionOption::add_optional_header(&self, request);

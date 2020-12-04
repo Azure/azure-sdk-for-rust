@@ -217,7 +217,7 @@ where
             &Method::PUT,
             &|mut request| {
                 request = ClientRequestIdOption::add_optional_header(&self, request);
-                request = LeaseIdRequired::add_optional_header(&self, request);
+                request = LeaseIdRequired::add_mandatory_header(&self, request);
                 request = request.header(LEASE_ACTION, "release");
                 request
             },
