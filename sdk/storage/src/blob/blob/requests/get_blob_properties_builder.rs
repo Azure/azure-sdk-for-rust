@@ -311,18 +311,17 @@ where
 
         trace!("uri == {:?}", uri);
 
-        let (headers, _) = self
-            .client()
-            .perform_request(
-                &uri,
-                &Method::HEAD,
-                &|mut request| {
-                    request = ClientRequestIdOption::add_header(&self, request);
-                    request = LeaseIdOption::add_header(&self, request);
-                    request
-                },
-                None,
-            )?
+        let perform_request_response = self.client().perform_request(
+            &uri,
+            &Method::HEAD,
+            &|mut request| {
+                request = ClientRequestIdOption::add_header(&self, request);
+                request = LeaseIdOption::add_header(&self, request);
+                request
+            },
+            None,
+        )?;
+        let (headers, _) = perform_request_response
             .check_status_extract_headers_and_body(StatusCode::OK)
             .await?;
         let blob = Blob::from_headers(&blob_name, &container_name, snapshot_time, &headers)?;
