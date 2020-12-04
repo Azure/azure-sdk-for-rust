@@ -398,6 +398,13 @@ async fn copy_blob() {
         .unwrap();
 }
 
+async fn requires_send_future<F, O>(fut: F) -> O
+where
+    F: std::future::Future<Output = O> + Send,
+{
+    fut.await
+}
+
 #[tokio::test]
 async fn put_block_blob_and_get_properties() {
     let client = initialize();
@@ -450,6 +457,14 @@ async fn put_block_blob_and_get_properties() {
         .unwrap();
 
     assert_eq!(blob_properties.blob.content_length, 6);
+
+    let _ = requires_send_future(
+        client
+            .get_blob_properties()
+            .with_container_name(&container_name)
+            .with_blob_name(&blob_name)
+            .finalize(),
+    );
 }
 
 fn initialize() -> Box<dyn Client> {
