@@ -3,7 +3,7 @@ use crate::queue::clients::QueueClient;
 use crate::queue::responses::*;
 use crate::queue::HasStorageClient;
 use azure_core::errors::AzureError;
-use azure_core::headers::add_header;
+use azure_core::headers::{add_mandatory_header, add_optional_header};
 use azure_core::prelude::*;
 use hyper::StatusCode;
 use std::convert::TryInto;
@@ -14,8 +14,8 @@ where
     C: Client + Clone,
 {
     queue_client: &'a QueueClient<C>,
-    timeout: Option<Timeout>,
     metadata: &'a Metadata<'a>,
+    timeout: Option<Timeout>,
     client_request_id: Option<ClientRequestId<'a>>,
 }
 
@@ -87,8 +87,8 @@ where
             url.as_str(),
             &http::Method::PUT,
             &|mut request| {
-                request = add_header(self.client_request_id(), request);
-                request = AddAsHeader::add_as_header(&self.metadata(), request);
+                request = add_mandatory_header(&self.metadata(), request);
+                request = add_optional_header(self.client_request_id(), request);
                 request
             },
             Some(&[]),

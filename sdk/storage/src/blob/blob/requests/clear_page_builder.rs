@@ -492,13 +492,13 @@ where
                 &uri,
                 &Method::PUT,
                 &|mut request| {
-                    request = BA512RangeRequired::add_header(&self, request);
+                    request = BA512RangeRequired::add_optional_header(&self, request);
                     request = request.header(PAGE_WRITE, "clear");
-                    request = LeaseIdOption::add_header(&self, request);
-                    request = SequenceNumberConditionOption::add_header(&self, request);
-                    request = IfSinceConditionOption::add_header(&self, request);
-                    request = IfMatchConditionOption::add_header(&self, request);
-                    request = ClientRequestIdOption::add_header(&self, request);
+                    request = LeaseIdOption::add_optional_header(&self, request);
+                    request = SequenceNumberConditionOption::add_optional_header(&self, request);
+                    request = IfSinceConditionOption::add_optional_header(&self, request);
+                    request = IfMatchConditionOption::add_optional_header(&self, request);
+                    request = ClientRequestIdOption::add_optional_header(&self, request);
                     request
                 },
                 None,

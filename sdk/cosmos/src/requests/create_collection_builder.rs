@@ -273,10 +273,10 @@ impl<'a> CreateCollectionBuilder<'a, Yes, Yes, Yes, Yes> {
         req = req.header(http::header::CONTENT_TYPE, "application/json");
 
         // add trait headers
-        let req = headers::add_header(Some(self.offer()), req);
-        let req = headers::add_header(self.user_agent(), req);
-        let req = headers::add_header(self.activity_id(), req);
-        let req = headers::add_header(self.consistency_level(), req);
+        let req = headers::add_optional_header(Some(self.offer()), req);
+        let req = headers::add_optional_header(self.user_agent(), req);
+        let req = headers::add_optional_header(self.activity_id(), req);
+        let req = headers::add_optional_header(self.consistency_level(), req);
 
         let mut collection =
             Collection::new(self.collection_name(), self.indexing_policy().to_owned());

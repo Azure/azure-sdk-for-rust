@@ -4,6 +4,7 @@ use crate::queue::prelude::*;
 use crate::queue::HasStorageClient;
 use crate::responses::*;
 use azure_core::errors::AzureError;
+use azure_core::headers::add_optional_header;
 use azure_core::prelude::*;
 use hyper::StatusCode;
 use std::convert::TryInto;
@@ -15,8 +16,8 @@ where
 {
     queue_client: &'a QueueClient<C>,
     pop_receipt: Box<dyn PopReceipt>,
-    timeout: Option<u64>,
-    client_request_id: Option<&'a str>,
+    timeout: Option<Timeout>,
+    client_request_id: Option<ClientRequestId<'a>>,
 }
 
 impl<'a, C> DeleteMessageBuilder<'a, C>
@@ -43,57 +44,7 @@ where
     }
 }
 
-impl<'a, C> TimeoutOption for DeleteMessageBuilder<'a, C>
-where
-    C: Client + Clone,
-{
-    fn timeout(&self) -> Option<u64> {
-        self.timeout
-    }
-}
-
-impl<'a, C> ClientRequestIdOption<'a> for DeleteMessageBuilder<'a, C>
-where
-    C: Client + Clone,
-{
-    fn client_request_id(&self) -> Option<&'a str> {
-        self.client_request_id
-    }
-}
-
-impl<'a, C> TimeoutSupport for DeleteMessageBuilder<'a, C>
-where
-    C: Client + Clone,
-{
-    type O = Self;
-
-    fn with_timeout(self, timeout: u64) -> Self::O {
-        DeleteMessageBuilder {
-            queue_client: self.queue_client,
-            pop_receipt: self.pop_receipt,
-            timeout: Some(timeout),
-            client_request_id: self.client_request_id,
-        }
-    }
-}
-
-impl<'a, C> ClientRequestIdSupport<'a> for DeleteMessageBuilder<'a, C>
-where
-    C: Client + Clone,
-{
-    type O = Self;
-
-    fn with_client_request_id(self, client_request_id: &'a str) -> Self::O {
-        DeleteMessageBuilder {
-            queue_client: self.queue_client,
-            pop_receipt: self.pop_receipt,
-            timeout: self.timeout,
-            client_request_id: Some(client_request_id),
-        }
-    }
-}
-
-// methods callable regardless
+// methods callable only when every mandatory field has been filled
 impl<'a, C> DeleteMessageBuilder<'a, C>
 where
     C: Client + Clone,
@@ -101,13 +52,33 @@ where
     pub fn queue_client(&self) -> &'a QueueClient<C> {
         self.queue_client
     }
-}
 
-// methods callable only when every mandatory field has been filled
-impl<'a, C> DeleteMessageBuilder<'a, C>
-where
-    C: Client + Clone,
-{
+    pub fn timeout(&self) -> &Option<Timeout> {
+        &self.timeout
+    }
+
+    pub fn with_timeout(self, timeout: Timeout) -> Self {
+        Self {
+            queue_client: self.queue_client,
+            pop_receipt: self.pop_receipt,
+            timeout: Some(timeout),
+            client_request_id: self.client_request_id,
+        }
+    }
+
+    pub fn client_request_id(&self) -> &Option<ClientRequestId<'a>> {
+        &self.client_request_id
+    }
+
+    pub fn with_client_request_id(self, client_request_id: ClientRequestId<'a>) -> Self {
+        Self {
+            queue_client: self.queue_client,
+            pop_receipt: self.pop_receipt,
+            timeout: self.timeout,
+            client_request_id: Some(client_request_id),
+        }
+    }
+
     pub async fn execute(self) -> Result<DeleteMessageResponse, AzureError> {
         let pop_receipt = self.pop_receipt();
 
@@ -120,8 +91,7 @@ where
 
         url.query_pairs_mut()
             .append_pair("popreceipt", pop_receipt.pop_receipt());
-
-        TimeoutOption::append_to_url(&self, &mut url);
+        AppendToUrlQuery::append_to_url_query(self.timeout(), &mut url);
 
         debug!("url == {}", url);
 
@@ -129,7 +99,7 @@ where
             url.as_str(),
             &http::Method::DELETE,
             &|mut request| {
-                request = ClientRequestIdOption::add_header(&self, request);
+                request = add_optional_header(self.client_request_id(), request);
                 request
             },
             Some(&[]),

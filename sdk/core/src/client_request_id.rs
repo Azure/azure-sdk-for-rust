@@ -17,3 +17,12 @@ impl<'a> AddAsHeader for ClientRequestId<'a> {
         builder.header(CLIENT_REQUEST_ID, self.0.as_ref())
     }
 }
+
+impl<'a, T> From<T> for ClientRequestId<'a>
+where
+    T: Into<Cow<'a, str>>,
+{
+    fn from(t: T) -> Self {
+        Self::new(t)
+    }
+}

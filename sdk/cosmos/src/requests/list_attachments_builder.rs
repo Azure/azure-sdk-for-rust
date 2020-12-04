@@ -119,13 +119,13 @@ impl<'a, 'b> ListAttachmentsBuilder<'a, 'b> {
         );
 
         // add trait headers
-        req = crate::headers::add_header(self.if_match_condition(), req);
-        req = crate::headers::add_header(self.user_agent(), req);
-        req = crate::headers::add_header(self.activity_id(), req);
-        req = crate::headers::add_header(self.consistency_level(), req);
-        req = crate::headers::add_header(self.continuation(), req);
-        req = crate::headers::add_header(Some(self.max_item_count()), req);
-        req = crate::headers::add_header(Some(self.a_im()), req);
+        req = crate::headers::add_optional_header(self.if_match_condition(), req);
+        req = crate::headers::add_optional_header(self.user_agent(), req);
+        req = crate::headers::add_optional_header(self.activity_id(), req);
+        req = crate::headers::add_optional_header(self.consistency_level(), req);
+        req = crate::headers::add_optional_header(self.continuation(), req);
+        req = crate::headers::add_optional_header(Some(self.max_item_count()), req);
+        req = crate::headers::add_optional_header(Some(self.a_im()), req);
 
         req = crate::headers::add_partition_keys_header(self.document_client.partition_keys(), req);
 

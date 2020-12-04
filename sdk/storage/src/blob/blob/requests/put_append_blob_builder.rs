@@ -621,16 +621,16 @@ where
                 &uri,
                 &Method::PUT,
                 &|mut request| {
-                    request = ContentTypeOption::add_header(&self, request);
-                    request = ContentEncodingOption::add_header(&self, request);
-                    request = ContentLanguageOption::add_header(&self, request);
-                    request = CacheControlOption::add_header(&self, request);
-                    request = ContentDispositionOption::add_header(&self, request);
-                    request = MetadataOption::add_header(&self, request);
+                    request = ContentTypeOption::add_optional_header(&self, request);
+                    request = ContentEncodingOption::add_optional_header(&self, request);
+                    request = ContentLanguageOption::add_optional_header(&self, request);
+                    request = CacheControlOption::add_optional_header(&self, request);
+                    request = ContentDispositionOption::add_optional_header(&self, request);
+                    request = MetadataOption::add_optional_header(&self, request);
                     request = request.header(BLOB_TYPE, "AppendBlob");
-                    request = LeaseIdOption::add_header(&self, request);
-                    request = IfMatchConditionOption::add_header(&self, request);
-                    request = ClientRequestIdOption::add_header(&self, request);
+                    request = LeaseIdOption::add_optional_header(&self, request);
+                    request = IfMatchConditionOption::add_optional_header(&self, request);
+                    request = ClientRequestIdOption::add_optional_header(&self, request);
                     request
                 },
                 None,

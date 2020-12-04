@@ -162,7 +162,7 @@ pub trait ClientRequestIdOption<'a> {
     fn client_request_id(&self) -> Option<&'a str>;
 
     #[must_use]
-    fn add_header(&self, mut builder: Builder) -> Builder {
+    fn add_optional_header(&self, mut builder: Builder) -> Builder {
         if let Some(client_request_id) = self.client_request_id() {
             builder = builder.header(CLIENT_REQUEST_ID, client_request_id);
         }
@@ -179,7 +179,7 @@ pub trait AppendPositionOption {
     fn append_position(&self) -> Option<u32>;
 
     #[must_use]
-    fn add_header(&self, mut builder: Builder) -> Builder {
+    fn add_optional_header(&self, mut builder: Builder) -> Builder {
         if let Some(append_position) = self.append_position() {
             builder = builder.header(APPEND_POSITION, append_position);
         }
@@ -196,7 +196,7 @@ pub trait ContentDispositionOption<'a> {
     fn content_disposition(&self) -> Option<&'a str>;
 
     #[must_use]
-    fn add_header(&self, mut builder: Builder) -> Builder {
+    fn add_optional_header(&self, mut builder: Builder) -> Builder {
         if let Some(content_disposition) = self.content_disposition() {
             builder = builder.header(CONTENT_DISPOSITION, content_disposition);
         }
@@ -213,7 +213,7 @@ pub trait MetadataOption<'a> {
     fn metadata(&self) -> Option<&'a HashMap<&'a str, &'a str>>;
 
     #[must_use]
-    fn add_header(&self, mut builder: Builder) -> Builder {
+    fn add_optional_header(&self, mut builder: Builder) -> Builder {
         if let Some(metadata) = self.metadata() {
             for (key, val) in metadata.iter() {
                 builder = builder.header(&format!("x-ms-meta-{}", key) as &str, val as &str);
@@ -232,7 +232,7 @@ pub trait CacheControlOption<'a> {
     fn cache_control(&self) -> Option<&'a str>;
 
     #[must_use]
-    fn add_header(&self, mut builder: Builder) -> Builder {
+    fn add_optional_header(&self, mut builder: Builder) -> Builder {
         if let Some(cache_control) = self.cache_control() {
             builder = builder.header(CACHE_CONTROL, cache_control);
         }
@@ -249,7 +249,7 @@ pub trait IsSynchronousOption {
     fn is_synchronous(&self) -> bool;
 
     #[must_use]
-    fn add_header(&self, builder: Builder) -> Builder {
+    fn add_optional_header(&self, builder: Builder) -> Builder {
         builder.header(REQUIRES_SYNC, format!("{}", self.is_synchronous()))
     }
 }
@@ -263,7 +263,7 @@ pub trait ContentEncodingOption<'a> {
     fn content_encoding(&self) -> Option<&'a str>;
 
     #[must_use]
-    fn add_header(&self, mut builder: Builder) -> Builder {
+    fn add_optional_header(&self, mut builder: Builder) -> Builder {
         if let Some(content_encoding) = self.content_encoding() {
             builder = builder.header(CONTENT_ENCODING, content_encoding);
         }
@@ -280,7 +280,7 @@ pub trait ContentTypeOption<'a> {
     fn content_type(&self) -> Option<&'a str>;
 
     #[must_use]
-    fn add_header(&self, mut builder: Builder) -> Builder {
+    fn add_optional_header(&self, mut builder: Builder) -> Builder {
         if let Some(content_type) = self.content_type() {
             builder = builder.header(CONTENT_TYPE, content_type);
         }
@@ -311,7 +311,7 @@ pub trait ContentTypeRequired<'a> {
     fn content_type(&self) -> &'a str;
 
     #[must_use]
-    fn add_header(&self, builder: Builder) -> Builder {
+    fn add_optional_header(&self, builder: Builder) -> Builder {
         builder.header(CONTENT_TYPE, self.content_type())
     }
 }
@@ -325,7 +325,7 @@ pub trait SourceUrlRequired<'a> {
     fn source_url(&self) -> &'a str;
 
     #[must_use]
-    fn add_header(&self, builder: Builder) -> Builder {
+    fn add_optional_header(&self, builder: Builder) -> Builder {
         builder.header(COPY_SOURCE, self.source_url())
     }
 }
@@ -354,7 +354,7 @@ pub trait IfModifiedSinceOption<'a> {
     fn if_modified_since(&self) -> Option<&'a DateTime<Utc>>;
 
     #[must_use]
-    fn add_header(&self, mut builder: Builder) -> Builder {
+    fn add_optional_header(&self, mut builder: Builder) -> Builder {
         if let Some(if_modified_since) = self.if_modified_since() {
             builder = builder.header(IF_MODIFIED_SINCE, if_modified_since.to_rfc2822());
         }
@@ -411,7 +411,7 @@ pub trait ContentLanguageOption<'a> {
     fn content_language(&self) -> Option<&'a str>;
 
     #[must_use]
-    fn add_header(&self, mut builder: Builder) -> Builder {
+    fn add_optional_header(&self, mut builder: Builder) -> Builder {
         if let Some(content_language) = self.content_language() {
             builder = builder.header(CONTENT_LANGUAGE, content_language);
         }
@@ -428,7 +428,7 @@ pub trait AccessTierOption {
     fn access_tier(&self) -> Option<AccessTier>;
 
     #[must_use]
-    fn add_header(&self, mut builder: Builder) -> Builder {
+    fn add_optional_header(&self, mut builder: Builder) -> Builder {
         if let Some(access_tier) = self.access_tier() {
             builder = builder.header(BLOB_ACCESS_TIER, access_tier.as_ref());
         }
@@ -448,7 +448,7 @@ pub trait DeleteSnapshotsMethodRequired {
     fn delete_snapshots_method(&self) -> DeleteSnapshotsMethod;
 
     #[must_use]
-    fn add_header(&self, builder: Builder) -> Builder {
+    fn add_optional_header(&self, builder: Builder) -> Builder {
         let s: &'static str = self.delete_snapshots_method().into();
         builder.header(DELETE_SNAPSHOTS, s)
     }
@@ -702,7 +702,7 @@ pub trait SequenceNumberOption {
     fn sequence_number(&self) -> u64;
 
     #[must_use]
-    fn add_header(&self, builder: Builder) -> Builder {
+    fn add_optional_header(&self, builder: Builder) -> Builder {
         builder.header(
             BLOB_SEQUENCE_NUMBER,
             &self.sequence_number().to_string() as &str,
@@ -722,9 +722,9 @@ pub trait SequenceNumberConditionOption {
     fn sequence_number_condition(&self) -> Option<SequenceNumberCondition>;
 
     #[must_use]
-    fn add_header(&self, mut builder: Builder) -> Builder {
+    fn add_optional_header(&self, mut builder: Builder) -> Builder {
         if let Some(sequence_number_condition) = self.sequence_number_condition() {
-            builder = sequence_number_condition.add_header(builder);
+            builder = sequence_number_condition.add_optional_header(builder);
         }
         builder
     }
@@ -739,9 +739,9 @@ pub trait IfSinceConditionOption {
     fn if_since_condition(&self) -> Option<IfSinceCondition>;
 
     #[must_use]
-    fn add_header(&self, mut builder: Builder) -> Builder {
+    fn add_optional_header(&self, mut builder: Builder) -> Builder {
         if let Some(if_since_condition) = self.if_since_condition() {
-            builder = if_since_condition.add_header(builder);
+            builder = if_since_condition.add_optional_header(builder);
         }
         builder
     }
@@ -757,7 +757,7 @@ pub trait IfSourceSinceConditionOption {
     fn if_source_since_condition(&self) -> Option<IfSinceCondition>;
 
     #[must_use]
-    fn add_header(&self, mut builder: Builder) -> Builder {
+    fn add_optional_header(&self, mut builder: Builder) -> Builder {
         if let Some(if_source_since_condition) = self.if_source_since_condition() {
             builder = if_source_since_condition.add_source_header(builder);
         }
@@ -774,9 +774,9 @@ pub trait IfMatchConditionOption<'a> {
     fn if_match_condition(&self) -> Option<IfMatchCondition<'a>>;
 
     #[must_use]
-    fn add_header(&self, mut builder: Builder) -> Builder {
+    fn add_optional_header(&self, mut builder: Builder) -> Builder {
         if let Some(if_match_condition) = self.if_match_condition() {
-            builder = if_match_condition.add_header(builder);
+            builder = if_match_condition.add_optional_header(builder);
         }
         builder
     }
@@ -791,7 +791,7 @@ pub trait IfSourceMatchConditionOption<'a> {
     fn if_source_match_condition(&self) -> Option<IfMatchCondition<'a>>;
 
     #[must_use]
-    fn add_header(&self, mut builder: Builder) -> Builder {
+    fn add_optional_header(&self, mut builder: Builder) -> Builder {
         if let Some(if_match_condition) = self.if_source_match_condition() {
             builder = if_match_condition.add_source_header(builder);
         }
@@ -808,7 +808,7 @@ pub trait PageBlobLengthRequired {
     fn content_length(&self) -> u64;
 
     #[must_use]
-    fn add_header(&self, builder: Builder) -> Builder {
+    fn add_optional_header(&self, builder: Builder) -> Builder {
         builder.header(
             BLOB_CONTENT_LENGTH,
             &self.content_length().to_string() as &str,
@@ -825,7 +825,7 @@ pub trait ContentLengthOption {
     fn content_length(&self) -> Option<u64>;
 
     #[must_use]
-    fn add_header(&self, mut builder: Builder) -> Builder {
+    fn add_optional_header(&self, mut builder: Builder) -> Builder {
         if let Some(content_length) = self.content_length() {
             builder = builder.header(CONTENT_LENGTH, &content_length.to_string() as &str);
         }
@@ -837,7 +837,7 @@ pub trait ContentLengthRequired {
     fn content_length(&self) -> u64;
 
     #[must_use]
-    fn add_header(&self, builder: Builder) -> Builder {
+    fn add_optional_header(&self, builder: Builder) -> Builder {
         builder.header(CONTENT_LENGTH, &self.content_length().to_string() as &str)
     }
 }
@@ -851,7 +851,7 @@ pub trait LeaseIdOption<'a> {
     fn lease_id(&self) -> Option<&'a LeaseId>;
 
     #[must_use]
-    fn add_header(&self, mut builder: Builder) -> Builder {
+    fn add_optional_header(&self, mut builder: Builder) -> Builder {
         if let Some(lease_id) = self.lease_id() {
             builder = builder.header(LEASE_ID, &lease_id.to_string() as &str);
         }
@@ -868,7 +868,7 @@ pub trait SourceLeaseIdOption<'a> {
     fn source_lease_id(&self) -> Option<&'a LeaseId>;
 
     #[must_use]
-    fn add_header(&self, mut builder: Builder) -> Builder {
+    fn add_optional_header(&self, mut builder: Builder) -> Builder {
         if let Some(lease_id) = self.source_lease_id() {
             builder = builder.header(SOURCE_LEASE_ID, &lease_id.to_string() as &str);
         }
@@ -880,7 +880,7 @@ pub trait LeaseIdRequired<'a> {
     fn lease_id(&self) -> &'a LeaseId;
 
     #[must_use]
-    fn add_header(&self, builder: Builder) -> Builder {
+    fn add_optional_header(&self, builder: Builder) -> Builder {
         builder.header(LEASE_ID, &self.lease_id().to_string() as &str)
     }
 }
@@ -903,7 +903,7 @@ pub trait ContentMD5Option<'a> {
     fn content_md5(&self) -> Option<&'a [u8]>;
 
     #[must_use]
-    fn add_header(&self, mut builder: Builder) -> Builder {
+    fn add_optional_header(&self, mut builder: Builder) -> Builder {
         if let Some(content_md5) = self.content_md5() {
             builder = add_content_md5_header(content_md5, builder);
         }
@@ -920,7 +920,7 @@ pub trait SourceContentMD5Option<'a> {
     fn source_content_md5(&self) -> Option<&'a [u8]>;
 
     #[must_use]
-    fn add_header(&self, builder: Builder) -> Builder {
+    fn add_optional_header(&self, builder: Builder) -> Builder {
         if let Some(source_content_md5) = self.source_content_md5() {
             let s = encode(source_content_md5);
             builder.header(SOURCE_CONTENT_MD5, &s as &str)
@@ -955,7 +955,7 @@ pub trait RangeOption<'a> {
     fn range(&self) -> Option<&'a range::Range>;
 
     #[must_use]
-    fn add_header(&self, mut builder: Builder) -> Builder {
+    fn add_optional_header(&self, mut builder: Builder) -> Builder {
         if let Some(range) = self.range() {
             builder = builder.header(RANGE, &range.to_string() as &str);
         }
@@ -967,7 +967,7 @@ pub trait RangeRequired<'a> {
     fn range(&self) -> &'a range::Range;
 
     #[must_use]
-    fn add_header(&self, builder: Builder) -> Builder {
+    fn add_optional_header(&self, builder: Builder) -> Builder {
         builder.header(RANGE, &self.range().to_string() as &str)
     }
 }
@@ -981,7 +981,7 @@ pub trait BA512RangeOption<'a> {
     fn ba512_range(&self) -> Option<&'a ba512_range::BA512Range>;
 
     #[must_use]
-    fn add_header(&self, mut builder: Builder) -> Builder {
+    fn add_optional_header(&self, mut builder: Builder) -> Builder {
         if let Some(ba512_range) = self.ba512_range() {
             builder = builder.header(RANGE, &ba512_range.to_string() as &str);
         }
@@ -993,7 +993,7 @@ pub trait BA512RangeRequired<'a> {
     fn ba512_range(&self) -> &'a ba512_range::BA512Range;
 
     #[must_use]
-    fn add_header(&self, builder: Builder) -> Builder {
+    fn add_optional_header(&self, builder: Builder) -> Builder {
         builder.header(RANGE, &self.ba512_range().to_string() as &str)
     }
 }
@@ -1007,7 +1007,7 @@ pub trait LeaseDurationRequired {
     fn lease_duration(&self) -> i8;
 
     #[must_use]
-    fn add_header(&self, builder: Builder) -> Builder {
+    fn add_optional_header(&self, builder: Builder) -> Builder {
         builder.header(LEASE_DURATION, &self.lease_duration().to_string() as &str)
     }
 }
@@ -1021,7 +1021,7 @@ pub trait ProposedLeaseIdOption<'a> {
     fn proposed_lease_id(&self) -> Option<&'a LeaseId>;
 
     #[must_use]
-    fn add_header(&self, mut builder: Builder) -> Builder {
+    fn add_optional_header(&self, mut builder: Builder) -> Builder {
         if let Some(pld) = self.proposed_lease_id() {
             builder = builder.header(PROPOSED_LEASE_ID, &pld.to_string() as &str);
         }
@@ -1033,7 +1033,7 @@ pub trait ProposedLeaseIdRequired<'a> {
     fn proposed_lease_id(&self) -> &'a LeaseId;
 
     #[must_use]
-    fn add_header(&self, builder: Builder) -> Builder {
+    fn add_optional_header(&self, builder: Builder) -> Builder {
         builder.header(
             PROPOSED_LEASE_ID,
             &self.proposed_lease_id().to_string() as &str,
@@ -1050,7 +1050,7 @@ pub trait LeaseBreakPeriodRequired {
     fn lease_break_period(&self) -> u8;
 
     #[must_use]
-    fn add_header(&self, builder: Builder) -> Builder {
+    fn add_optional_header(&self, builder: Builder) -> Builder {
         builder.header(
             LEASE_BREAK_PERIOD,
             &self.lease_break_period().to_string() as &str,
@@ -1062,7 +1062,7 @@ pub trait LeaseBreakPeriodOption {
     fn lease_break_period(&self) -> Option<u8>;
 
     #[must_use]
-    fn add_header(&self, mut builder: Builder) -> Builder {
+    fn add_optional_header(&self, mut builder: Builder) -> Builder {
         if let Some(lease_break_period) = self.lease_break_period() {
             builder = builder.header(LEASE_BREAK_PERIOD, &lease_break_period.to_string() as &str);
         }
@@ -1093,7 +1093,7 @@ pub trait ContinuationOption<'a> {
     fn continuation(&self) -> Option<&'a str>;
 
     #[must_use]
-    fn add_header(&self, builder: Builder) -> Builder {
+    fn add_optional_header(&self, builder: Builder) -> Builder {
         if let Some(continuation) = self.continuation() {
             builder.header(CONTINUATION, continuation)
         } else {

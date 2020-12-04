@@ -280,9 +280,9 @@ where
             &uri,
             &Method::PUT,
             &|mut request| {
-                request = LeaseIdRequired::add_header(&self, request);
+                request = LeaseIdRequired::add_optional_header(&self, request);
                 request = request.header(LEASE_ACTION, "release");
-                request = ClientRequestIdOption::add_header(&self, request);
+                request = ClientRequestIdOption::add_optional_header(&self, request);
                 request
             },
             None,

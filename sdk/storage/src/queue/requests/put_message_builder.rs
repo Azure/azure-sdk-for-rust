@@ -1,6 +1,7 @@
 use crate::queue::*;
 use crate::responses::*;
 use azure_core::errors::AzureError;
+use azure_core::headers::add_optional_header;
 use azure_core::prelude::*;
 use hyper::StatusCode;
 use std::borrow::Cow;
@@ -16,8 +17,8 @@ where
     message_body: Cow<'a, str>,
     visibility_timeout: Option<Duration>,
     message_ttl_seconds: u64,
-    timeout: Option<u64>,
-    client_request_id: Option<&'a str>,
+    timeout: Option<Timeout>,
+    client_request_id: Option<ClientRequestId<'a>>,
 }
 
 impl<'a, C> PutMessageBuilder<'a, C>
@@ -67,24 +68,6 @@ where
     }
 }
 
-impl<'a, C> TimeoutOption for PutMessageBuilder<'a, C>
-where
-    C: Client + Clone,
-{
-    fn timeout(&self) -> Option<u64> {
-        self.timeout
-    }
-}
-
-impl<'a, C> ClientRequestIdOption<'a> for PutMessageBuilder<'a, C>
-where
-    C: Client + Clone,
-{
-    fn client_request_id(&self) -> Option<&'a str> {
-        self.client_request_id
-    }
-}
-
 impl<'a, C> VisibilityTimeoutSupport for PutMessageBuilder<'a, C>
 where
     C: Client + Clone,
@@ -121,14 +104,21 @@ where
     }
 }
 
-impl<'a, C> TimeoutSupport for PutMessageBuilder<'a, C>
+// methods callable regardless
+impl<'a, C> PutMessageBuilder<'a, C>
 where
     C: Client + Clone,
 {
-    type O = Self;
+    pub fn queue_client(&self) -> &'a QueueClient<C> {
+        self.queue_client
+    }
 
-    fn with_timeout(self, timeout: u64) -> Self::O {
-        PutMessageBuilder {
+    pub fn timeout(&self) -> &Option<Timeout> {
+        &self.timeout
+    }
+
+    pub fn with_timeout(self, timeout: Timeout) -> Self {
+        Self {
             queue_client: self.queue_client,
             message_body: self.message_body,
             visibility_timeout: self.visibility_timeout,
@@ -137,16 +127,13 @@ where
             client_request_id: self.client_request_id,
         }
     }
-}
 
-impl<'a, C> ClientRequestIdSupport<'a> for PutMessageBuilder<'a, C>
-where
-    C: Client + Clone,
-{
-    type O = Self;
+    pub fn client_request_id(&self) -> &Option<ClientRequestId<'a>> {
+        &self.client_request_id
+    }
 
-    fn with_client_request_id(self, client_request_id: &'a str) -> Self::O {
-        PutMessageBuilder {
+    pub fn with_client_request_id(self, client_request_id: ClientRequestId<'a>) -> Self {
+        Self {
             queue_client: self.queue_client,
             message_body: self.message_body,
             visibility_timeout: self.visibility_timeout,
@@ -154,16 +141,6 @@ where
             timeout: self.timeout,
             client_request_id: Some(client_request_id),
         }
-    }
-}
-
-// methods callable regardless
-impl<'a, C> PutMessageBuilder<'a, C>
-where
-    C: Client + Clone,
-{
-    pub fn queue_client(&self) -> &'a QueueClient<C> {
-        self.queue_client
     }
 
     pub async fn execute(self) -> Result<PutMessageResponse, AzureError> {
@@ -175,7 +152,7 @@ where
 
         MessageTTLRequired::append_to_url(&self, &mut url);
         VisibilityTimeoutOption::append_to_url(&self, &mut url);
-        TimeoutOption::append_to_url(&self, &mut url);
+        AppendToUrlQuery::append_to_url_query(self.timeout(), &mut url);
 
         debug!("url == {:?}", url);
 
@@ -193,7 +170,7 @@ where
             url.as_str(),
             &http::Method::POST,
             &|mut request| {
-                request = ClientRequestIdOption::add_header(&self, request);
+                request = add_optional_header(self.client_request_id(), request);
                 request
             },
             Some(message.as_bytes()),

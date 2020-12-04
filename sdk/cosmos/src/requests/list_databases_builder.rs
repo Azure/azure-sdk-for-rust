@@ -90,11 +90,11 @@ impl<'a> ListDatabasesBuilder<'a> {
             self.cosmos_client
                 .prepare_request("dbs", http::Method::GET, ResourceType::Databases);
 
-        let request = crate::headers::add_header(self.user_agent(), request);
-        let request = crate::headers::add_header(self.activity_id(), request);
-        let request = crate::headers::add_header(self.consistency_level(), request);
-        let request = crate::headers::add_header(self.continuation(), request);
-        let request = crate::headers::add_header(Some(self.max_item_count()), request);
+        let request = crate::headers::add_optional_header(self.user_agent(), request);
+        let request = crate::headers::add_optional_header(self.activity_id(), request);
+        let request = crate::headers::add_optional_header(self.consistency_level(), request);
+        let request = crate::headers::add_optional_header(self.continuation(), request);
+        let request = crate::headers::add_optional_header(Some(self.max_item_count()), request);
 
         let request = request.body(EMPTY_BODY.as_ref())?;
 

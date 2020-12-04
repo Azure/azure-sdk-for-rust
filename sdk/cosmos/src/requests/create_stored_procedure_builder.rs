@@ -102,9 +102,9 @@ impl<'a, 'b> CreateStoredProcedureBuilder<'a, 'b, Yes> {
             .prepare_request(http::Method::POST);
 
         // add trait headers
-        let req = crate::headers::add_header(self.user_agent(), req);
-        let req = crate::headers::add_header(self.activity_id(), req);
-        let req = crate::headers::add_header(self.consistency_level(), req);
+        let req = crate::headers::add_optional_header(self.user_agent(), req);
+        let req = crate::headers::add_optional_header(self.activity_id(), req);
+        let req = crate::headers::add_optional_header(self.consistency_level(), req);
 
         let req = req.header(http::header::CONTENT_TYPE, "application/json");
 

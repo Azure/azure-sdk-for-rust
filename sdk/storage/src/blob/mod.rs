@@ -19,7 +19,7 @@ pub trait RehydratePriorityOption {
     fn rehydrate_priority(&self) -> Option<RehydratePriority>;
 
     #[must_use]
-    fn add_header(&self, mut builder: Builder) -> Builder {
+    fn add_optional_header(&self, mut builder: Builder) -> Builder {
         if let Some(rehydrate_priority) = self.rehydrate_priority() {
             builder = builder.header(headers::REHYDRATE_PRIORITY, rehydrate_priority.as_ref());
         }

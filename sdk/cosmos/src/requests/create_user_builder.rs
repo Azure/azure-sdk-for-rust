@@ -51,9 +51,9 @@ impl<'a, 'b> CreateUserBuilder<'a, 'b> {
 
         let req = self.user_client.prepare_request(http::Method::POST);
 
-        let req = crate::headers::add_header(self.user_agent(), req);
-        let req = crate::headers::add_header(self.activity_id(), req);
-        let req = crate::headers::add_header(self.consistency_level(), req);
+        let req = crate::headers::add_optional_header(self.user_agent(), req);
+        let req = crate::headers::add_optional_header(self.activity_id(), req);
+        let req = crate::headers::add_optional_header(self.consistency_level(), req);
 
         let req = req.header(http::header::CONTENT_TYPE, "application/json");
 

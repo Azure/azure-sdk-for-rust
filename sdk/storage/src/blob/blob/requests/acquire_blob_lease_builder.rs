@@ -330,9 +330,9 @@ where
                 &Method::PUT,
                 &|mut request| {
                     request = request.header(LEASE_ACTION, "acquire");
-                    request = LeaseDurationRequired::add_header(&self, request);
-                    request = ProposedLeaseIdOption::add_header(&self, request);
-                    request = ClientRequestIdOption::add_header(&self, request);
+                    request = LeaseDurationRequired::add_optional_header(&self, request);
+                    request = ProposedLeaseIdOption::add_optional_header(&self, request);
+                    request = ClientRequestIdOption::add_optional_header(&self, request);
                     request
                 },
                 None,

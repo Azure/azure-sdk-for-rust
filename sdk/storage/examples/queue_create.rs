@@ -53,7 +53,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // now let's delete it
     let response = queue_client
         .delete_queue()
-        .with_client_request_id("myclientid")
+        .with_client_request_id("myclientid".into())
         .execute()
         .await?;
     println!("response == {:#?}", response);

@@ -93,11 +93,11 @@ impl<'a, 'b> GetDocumentBuilder<'a, 'b> {
             .prepare_request_with_document_name(http::Method::GET);
 
         // add trait headers
-        req = crate::headers::add_header(self.if_match_condition(), req);
-        req = crate::headers::add_header(self.if_modified_since(), req);
-        req = crate::headers::add_header(self.user_agent(), req);
-        req = crate::headers::add_header(self.activity_id(), req);
-        req = crate::headers::add_header(self.consistency_level(), req);
+        req = crate::headers::add_optional_header(self.if_match_condition(), req);
+        req = crate::headers::add_optional_header(self.if_modified_since(), req);
+        req = crate::headers::add_optional_header(self.user_agent(), req);
+        req = crate::headers::add_optional_header(self.activity_id(), req);
+        req = crate::headers::add_optional_header(self.consistency_level(), req);
 
         req = crate::headers::add_partition_keys_header(self.document_client.partition_keys(), req);
 

@@ -135,14 +135,14 @@ impl<'a, 'b> ListDocumentsBuilder<'a, 'b> {
         );
 
         // add trait headers
-        let req = crate::headers::add_header(self.if_match_condition(), req);
-        let req = crate::headers::add_header(self.user_agent(), req);
-        let req = crate::headers::add_header(self.activity_id(), req);
-        let req = crate::headers::add_header(self.consistency_level(), req);
-        let req = crate::headers::add_header(self.continuation(), req);
-        let req = crate::headers::add_header(Some(self.max_item_count()), req);
-        let req = crate::headers::add_header(Some(self.a_im()), req);
-        let req = crate::headers::add_header(self.partition_range_id(), req);
+        let req = crate::headers::add_optional_header(self.if_match_condition(), req);
+        let req = crate::headers::add_optional_header(self.user_agent(), req);
+        let req = crate::headers::add_optional_header(self.activity_id(), req);
+        let req = crate::headers::add_optional_header(self.consistency_level(), req);
+        let req = crate::headers::add_optional_header(self.continuation(), req);
+        let req = crate::headers::add_optional_header(Some(self.max_item_count()), req);
+        let req = crate::headers::add_optional_header(Some(self.a_im()), req);
+        let req = crate::headers::add_optional_header(self.partition_range_id(), req);
 
         let req = req.body(EMPTY_BODY.as_ref())?;
 

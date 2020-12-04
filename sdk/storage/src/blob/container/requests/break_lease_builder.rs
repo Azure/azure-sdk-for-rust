@@ -237,10 +237,10 @@ where
                 &uri,
                 &Method::PUT,
                 &|mut request| {
-                    request = ClientRequestIdOption::add_header(&self, request);
-                    request = LeaseIdOption::add_header(&self, request);
+                    request = ClientRequestIdOption::add_optional_header(&self, request);
+                    request = LeaseIdOption::add_optional_header(&self, request);
                     request = request.header(LEASE_ACTION, "break");
-                    request = LeaseBreakPeriodOption::add_header(&self, request);
+                    request = LeaseBreakPeriodOption::add_optional_header(&self, request);
                     request
                 },
                 Some(&[]),

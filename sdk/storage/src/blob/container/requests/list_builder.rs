@@ -261,7 +261,7 @@ where
         let perform_request_response = self.client().perform_request(
             &uri,
             &Method::GET,
-            &|request| ClientRequestIdOption::add_header(&self, request),
+            &|request| ClientRequestIdOption::add_optional_header(&self, request),
             None,
         )?;
 

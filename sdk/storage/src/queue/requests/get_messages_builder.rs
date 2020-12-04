@@ -4,6 +4,7 @@ use crate::queue::prelude::*;
 use crate::queue::HasStorageClient;
 use crate::responses::*;
 use azure_core::errors::AzureError;
+use azure_core::headers::add_optional_header;
 use azure_core::prelude::*;
 use hyper::StatusCode;
 use std::convert::TryInto;
@@ -17,8 +18,8 @@ where
     queue_client: &'a QueueClient<C>,
     number_of_messages: Option<u32>,
     visibility_timeout: Option<Duration>,
-    timeout: Option<u64>,
-    client_request_id: Option<&'a str>,
+    timeout: Option<Timeout>,
+    client_request_id: Option<ClientRequestId<'a>>,
 }
 
 impl<'a, C> GetMessagesBuilder<'a, C>
@@ -52,24 +53,6 @@ where
 {
     fn visibility_timeout(&self) -> Option<Duration> {
         self.visibility_timeout
-    }
-}
-
-impl<'a, C> TimeoutOption for GetMessagesBuilder<'a, C>
-where
-    C: Client + Clone,
-{
-    fn timeout(&self) -> Option<u64> {
-        self.timeout
-    }
-}
-
-impl<'a, C> ClientRequestIdOption<'a> for GetMessagesBuilder<'a, C>
-where
-    C: Client + Clone,
-{
-    fn client_request_id(&self) -> Option<&'a str> {
-        self.client_request_id
     }
 }
 
@@ -107,41 +90,7 @@ where
     }
 }
 
-impl<'a, C> TimeoutSupport for GetMessagesBuilder<'a, C>
-where
-    C: Client + Clone,
-{
-    type O = Self;
-
-    fn with_timeout(self, timeout: u64) -> Self::O {
-        GetMessagesBuilder {
-            queue_client: self.queue_client,
-            number_of_messages: self.number_of_messages,
-            visibility_timeout: self.visibility_timeout,
-            timeout: Some(timeout),
-            client_request_id: self.client_request_id,
-        }
-    }
-}
-
-impl<'a, C> ClientRequestIdSupport<'a> for GetMessagesBuilder<'a, C>
-where
-    C: Client + Clone,
-{
-    type O = Self;
-
-    fn with_client_request_id(self, client_request_id: &'a str) -> Self::O {
-        GetMessagesBuilder {
-            queue_client: self.queue_client,
-            number_of_messages: self.number_of_messages,
-            visibility_timeout: self.visibility_timeout,
-            timeout: self.timeout,
-            client_request_id: Some(client_request_id),
-        }
-    }
-}
-
-// methods callable regardless
+// methods callable only when every mandatory field has been filled
 impl<'a, C> GetMessagesBuilder<'a, C>
 where
     C: Client + Clone,
@@ -149,13 +98,35 @@ where
     pub fn queue_client(&self) -> &'a QueueClient<C> {
         self.queue_client
     }
-}
 
-// methods callable only when every mandatory field has been filled
-impl<'a, C> GetMessagesBuilder<'a, C>
-where
-    C: Client + Clone,
-{
+    pub fn timeout(&self) -> &Option<Timeout> {
+        &self.timeout
+    }
+
+    pub fn with_timeout(self, timeout: Timeout) -> Self {
+        Self {
+            queue_client: self.queue_client,
+            number_of_messages: self.number_of_messages,
+            visibility_timeout: self.visibility_timeout,
+            timeout: Some(timeout),
+            client_request_id: self.client_request_id,
+        }
+    }
+
+    pub fn client_request_id(&self) -> &Option<ClientRequestId<'a>> {
+        &self.client_request_id
+    }
+
+    pub fn with_client_request_id(self, client_request_id: ClientRequestId<'a>) -> Self {
+        Self {
+            queue_client: self.queue_client,
+            number_of_messages: self.number_of_messages,
+            visibility_timeout: self.visibility_timeout,
+            timeout: self.timeout,
+            client_request_id: Some(client_request_id),
+        }
+    }
+
     pub async fn execute(self) -> Result<GetMessagesResponse, AzureError> {
         let mut url = url::Url::parse(&format!(
             "{}/{}/messages",
@@ -164,8 +135,9 @@ where
         ))?;
 
         VisibilityTimeoutOption::append_to_url(&self, &mut url);
-        TimeoutOption::append_to_url(&self, &mut url);
         NumberOfMessagesOption::append_to_url(&self, &mut url);
+
+        AppendToUrlQuery::append_to_url_query(self.timeout(), &mut url);
 
         debug!("url == {}", url);
 
@@ -173,7 +145,7 @@ where
             url.as_str(),
             &http::Method::GET,
             &|mut request| {
-                request = ClientRequestIdOption::add_header(&self, request);
+                request = add_optional_header(self.client_request_id(), request);
                 request
             },
             Some(&[]),

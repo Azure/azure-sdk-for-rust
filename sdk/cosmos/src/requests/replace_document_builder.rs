@@ -157,14 +157,14 @@ impl<'a, 'b> ReplaceDocumentBuilder<'a, 'b, Yes, Yes> {
         );
 
         // add trait headers
-        let req = crate::headers::add_header(Some(self.indexing_directive()), req);
-        let req = crate::headers::add_header(self.if_match_condition(), req);
-        let req = crate::headers::add_header(self.if_modified_since(), req);
-        let req = crate::headers::add_header(self.user_agent(), req);
-        let req = crate::headers::add_header(self.activity_id(), req);
-        let req = crate::headers::add_header(self.consistency_level(), req);
-        let req = crate::headers::add_header(Some(self.partition_keys()), req);
-        let req = crate::headers::add_header(Some(self.allow_tentative_writes()), req);
+        let req = crate::headers::add_optional_header(Some(self.indexing_directive()), req);
+        let req = crate::headers::add_optional_header(self.if_match_condition(), req);
+        let req = crate::headers::add_optional_header(self.if_modified_since(), req);
+        let req = crate::headers::add_optional_header(self.user_agent(), req);
+        let req = crate::headers::add_optional_header(self.activity_id(), req);
+        let req = crate::headers::add_optional_header(self.consistency_level(), req);
+        let req = crate::headers::add_optional_header(Some(self.partition_keys()), req);
+        let req = crate::headers::add_optional_header(Some(self.allow_tentative_writes()), req);
 
         let serialized = serde_json::to_string(document)?;
 

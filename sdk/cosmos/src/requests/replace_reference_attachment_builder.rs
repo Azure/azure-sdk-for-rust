@@ -103,10 +103,10 @@ impl<'a, 'b> ReplaceReferenceAttachmentBuilder<'a, 'b, Yes, Yes> {
             .prepare_request_with_attachment_name(http::Method::PUT);
 
         // add trait headers
-        req = crate::headers::add_header(self.if_match_condition(), req);
-        req = crate::headers::add_header(self.user_agent(), req);
-        req = crate::headers::add_header(self.activity_id(), req);
-        req = crate::headers::add_header(self.consistency_level(), req);
+        req = crate::headers::add_optional_header(self.if_match_condition(), req);
+        req = crate::headers::add_optional_header(self.user_agent(), req);
+        req = crate::headers::add_optional_header(self.activity_id(), req);
+        req = crate::headers::add_optional_header(self.consistency_level(), req);
 
         req = crate::headers::add_partition_keys_header(
             self.attachment_client.document_client().partition_keys(),

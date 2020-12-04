@@ -21,7 +21,7 @@ pub trait PropertiesOption<'a> {
     fn properties(&self) -> Option<&'a str>;
 
     #[must_use]
-    fn add_header(&self, mut builder: Builder) -> Builder {
+    fn add_optional_header(&self, mut builder: Builder) -> Builder {
         if let Some(properties) = self.properties() {
             builder = builder.header(PROPERTIES, properties);
         }

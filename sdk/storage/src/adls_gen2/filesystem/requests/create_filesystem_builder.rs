@@ -200,8 +200,8 @@ where
             &uri,
             &Method::PUT,
             &|mut request| {
-                request = ClientRequestIdOption::add_header(&self, request);
-                request = PropertiesOption::add_header(&self, request);
+                request = ClientRequestIdOption::add_optional_header(&self, request);
+                request = PropertiesOption::add_optional_header(&self, request);
                 request
             },
             Some(&[]),

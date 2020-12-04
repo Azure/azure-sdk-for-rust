@@ -54,9 +54,9 @@ impl<'a, 'b> DeletePermissionsBuilder<'a, 'b> {
             .permission_client
             .prepare_request_with_permission_name(http::Method::DELETE);
 
-        let request = crate::headers::add_header(self.user_agent(), request);
-        let request = crate::headers::add_header(self.activity_id(), request);
-        let request = crate::headers::add_header(self.consistency_level(), request);
+        let request = crate::headers::add_optional_header(self.user_agent(), request);
+        let request = crate::headers::add_optional_header(self.activity_id(), request);
+        let request = crate::headers::add_optional_header(self.consistency_level(), request);
 
         let request = request.body(EMPTY_BODY.as_ref())?;
         debug!("\nrequest == {:#?}", request);

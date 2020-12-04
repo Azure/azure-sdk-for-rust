@@ -13,7 +13,7 @@ pub enum IfSinceCondition {
 }
 
 impl IfSinceCondition {
-    pub(crate) fn add_header(&self, builder: Builder) -> Builder {
+    pub(crate) fn add_optional_header(&self, builder: Builder) -> Builder {
         match self {
             IfSinceCondition::Modified(date) => {
                 builder.header(IF_MODIFIED_SINCE, &date.to_rfc2822() as &str)
@@ -43,7 +43,7 @@ pub enum IfMatchCondition<'a> {
 }
 
 impl<'a> IfMatchCondition<'a> {
-    pub(crate) fn add_header(&self, builder: Builder) -> Builder {
+    pub(crate) fn add_optional_header(&self, builder: Builder) -> Builder {
         <Self as crate::AddAsHeader>::add_as_header(self, builder)
     }
     pub(crate) fn add_source_header(&self, builder: Builder) -> Builder {
@@ -70,7 +70,7 @@ pub enum SequenceNumberCondition {
 }
 
 impl SequenceNumberCondition {
-    pub(crate) fn add_header(&self, builder: Builder) -> Builder {
+    pub(crate) fn add_optional_header(&self, builder: Builder) -> Builder {
         match self {
             SequenceNumberCondition::Equal(val) => {
                 builder.header(IF_SEQUENCE_NUMBER_EQ, &val.to_string() as &str)
