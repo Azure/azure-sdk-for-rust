@@ -13,6 +13,14 @@ impl Metadata {
     pub fn as_mut(&mut self) -> &mut HashMap<String, String> {
         &mut self.0
     }
+
+    pub fn insert<K, V>(&mut self, k: K, v: V) -> Option<String>
+    where
+        K: Into<String>,
+        V: Into<String>,
+    {
+        self.0.insert(k.into(), v.into())
+    }
 }
 
 impl From<HashMap<String, String>> for Metadata {

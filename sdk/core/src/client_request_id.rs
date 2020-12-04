@@ -17,13 +17,3 @@ impl<'a> AddAsHeader for ClientRequestId<'a> {
         builder.header(CLIENT_REQUEST_ID, self.0.as_ref())
     }
 }
-
-impl<'a> AddAsHeader for Option<ClientRequestId<'a>> {
-    fn add_as_header(&self, builder: Builder) -> Builder {
-        if let Some(client_request_id) = self {
-            AddAsHeader::add_as_header(client_request_id, builder)
-        } else {
-            builder
-        }
-    }
-}

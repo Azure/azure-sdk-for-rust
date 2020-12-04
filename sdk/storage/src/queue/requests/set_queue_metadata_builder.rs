@@ -3,6 +3,7 @@ use crate::queue::clients::QueueClient;
 use crate::queue::responses::*;
 use crate::queue::HasStorageClient;
 use azure_core::errors::AzureError;
+use azure_core::headers::add_header;
 use azure_core::prelude::*;
 use hyper::StatusCode;
 use std::convert::TryInto;
@@ -86,7 +87,7 @@ where
             url.as_str(),
             &http::Method::PUT,
             &|mut request| {
-                request = AddAsHeader::add_as_header(self.client_request_id(), request);
+                request = add_header(self.client_request_id(), request);
                 request = AddAsHeader::add_as_header(&self.metadata(), request);
                 request
             },
