@@ -260,6 +260,7 @@ where
 }
 
 impl<'a> CreateCollectionBuilder<'a, Yes, Yes, Yes, Yes> {
+    // call this function to complete the builder
     pub async fn execute(&self) -> Result<CreateCollectionResponse, CosmosError> {
         trace!("CreateCollectionBuilder::execute called");
 
