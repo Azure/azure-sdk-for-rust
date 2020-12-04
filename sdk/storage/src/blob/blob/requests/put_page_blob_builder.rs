@@ -780,28 +780,28 @@ where
 
         trace!("uri == {:?}", uri);
 
-        let (headers, _) = self
-            .client()
-            .perform_request(
-                &uri,
-                &Method::PUT,
-                &|mut request| {
-                    request = PageBlobLengthRequired::add_header(&self, request);
-                    request = SequenceNumberOption::add_header(&self, request);
-                    request = AccessTierOption::add_header(&self, request);
-                    request = ContentTypeOption::add_header(&self, request);
-                    request = ContentEncodingOption::add_header(&self, request);
-                    request = ContentLanguageOption::add_header(&self, request);
-                    request = CacheControlOption::add_header(&self, request);
-                    request = ContentDispositionOption::add_header(&self, request);
-                    request = MetadataOption::add_header(&self, request);
-                    request = request.header(BLOB_TYPE, "PageBlob");
-                    request = LeaseIdOption::add_header(&self, request);
-                    request = ClientRequestIdOption::add_header(&self, request);
-                    request
-                },
-                None,
-            )?
+        let perform_request_response = self.client().perform_request(
+            &uri,
+            &Method::PUT,
+            &|mut request| {
+                request = PageBlobLengthRequired::add_header(&self, request);
+                request = SequenceNumberOption::add_header(&self, request);
+                request = AccessTierOption::add_header(&self, request);
+                request = ContentTypeOption::add_header(&self, request);
+                request = ContentEncodingOption::add_header(&self, request);
+                request = ContentLanguageOption::add_header(&self, request);
+                request = CacheControlOption::add_header(&self, request);
+                request = ContentDispositionOption::add_header(&self, request);
+                request = MetadataOption::add_header(&self, request);
+                request = request.header(BLOB_TYPE, "PageBlob");
+                request = LeaseIdOption::add_header(&self, request);
+                request = ClientRequestIdOption::add_header(&self, request);
+                request
+            },
+            None,
+        )?;
+
+        let (headers, _body) = perform_request_response
             .check_status_extract_headers_and_body(StatusCode::CREATED)
             .await?;
         PutBlobResponse::from_headers(&headers)
