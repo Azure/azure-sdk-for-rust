@@ -1,12 +1,13 @@
-use crate::clients::BlobStorageAccountClient;
+use crate::clients::StorageClient;
 use crate::container::incomplete_vector_from_container_response;
 use crate::container::responses::ListContainersResponse;
 use azure_core::headers::request_id_from_headers;
-use hyper::{Method, StatusCode};
+use http::method::Method;
+use http::status::StatusCode;
 
 #[derive(Debug, Clone)]
 pub struct ListBuilder2<'a> {
-    blob_storage_account_client: &'a BlobStorageAccountClient,
+    storage_client: &'a StorageClient,
     prefix: Option<&'a str>,
     next_marker: Option<&'a str>,
     include_metadata: bool,
@@ -16,9 +17,9 @@ pub struct ListBuilder2<'a> {
 }
 
 impl<'a> ListBuilder2<'a> {
-    pub(crate) fn new(blob_storage_account_client: &'a BlobStorageAccountClient) -> Self {
+    pub(crate) fn new(storage_client: &'a StorageClient) -> Self {
         Self {
-            blob_storage_account_client,
+            storage_client,
             prefix: None,
             next_marker: None,
             include_metadata: false,
@@ -43,7 +44,7 @@ impl<'a> ListBuilder2<'a> {
     ) -> Result<ListContainersResponse, Box<dyn std::error::Error + Sync + Send>> {
         let mut uri = format!(
             "{}?comp=list",
-            self.blob_storage_account_client
+            self.storage_client
                 .storage_account_client()
                 .blob_storage_uri()
         );
@@ -55,15 +56,12 @@ impl<'a> ListBuilder2<'a> {
 
         debug!("generated uri = {}", uri);
 
-        let request = self.blob_storage_account_client.prepare_request(
-            &uri,
-            &Method::GET,
-            &|request| request,
-            None,
-        )?;
+        let request =
+            self.storage_client
+                .prepare_request(&uri, &Method::GET, &|request| request, None)?;
 
         let response = self
-            .blob_storage_account_client
+            .storage_client
             .storage_account_client()
             .http_client()
             .execute_request_check_status(request.0, StatusCode::OK)
