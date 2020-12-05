@@ -20,7 +20,7 @@ use crate::core::Client;
 use azure_core::headers::{
     BLOB_SEQUENCE_NUMBER, BLOB_TYPE, CONTENT_MD5, COPY_COMPLETION_TIME, COPY_ID, COPY_PROGRESS,
     COPY_SOURCE, COPY_STATUS, COPY_STATUS_DESCRIPTION, CREATION_TIME, LEASE_DURATION, LEASE_STATE,
-    LEASE_STATUS, SERVER_ENCRYPTED,
+    LEASE_STATUS, META_PREFIX, SERVER_ENCRYPTED,
 };
 use azure_core::{
     errors::{AzureError, TraversingError},
@@ -385,6 +385,16 @@ impl Blob {
             .ok_or_else(|| AzureError::HeaderNotFound(SERVER_ENCRYPTED.to_owned()))?
             .parse::<bool>()?;
 
+        let mut metadata = HashMap::new();
+        for (name, value) in h.iter() {
+            let name = name.as_str();
+            if let Some(name) = name.strip_prefix(META_PREFIX) {
+                if let Ok(value) = value.to_str() {
+                    metadata.insert(name.to_string(), value.to_string());
+                }
+            }
+        }
+
         Ok(Blob {
             name: blob_name.to_owned(),
             container_name: container_name.to_owned(),
@@ -417,7 +427,7 @@ impl Blob {
             access_tier_change_time: None,  // TODO: Not present
             deleted_time: None,             // TODO
             remaining_retention_days: None, // TODO: Not present or documentation bug?
-            metadata: HashMap::new(),       // TODO: Not present or documentation bug?
+            metadata,
         })
     }
 }
