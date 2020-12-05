@@ -2,6 +2,8 @@ mod utilities;
 
 pub use utilities::*;
 
+pub const MS_DATE: &str = "x-ms-date"; //=> [String] }
+
 pub const SERVER: &str = "server"; // -> [String]
 pub const SOURCE_IF_MODIFIED_SINCE: &str = "x-ms-source-if-modified-since";
 pub const SOURCE_IF_UNMODIFIED_SINCE: &str = "x-ms-source-if-unmodified-since";

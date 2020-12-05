@@ -43,6 +43,7 @@ tokio = { version = "0.2", features = ["macros"] }
 env_logger = "0.7"
 azure_identity = { path = "../identity" }
 url = "2.1"
+reqwest = "*"
 
 [features]
 default = ["account", "blob", "queue", "table"]

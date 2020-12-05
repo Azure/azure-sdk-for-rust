@@ -22,6 +22,8 @@ pub mod queue;
 #[cfg(feature = "table")]
 pub mod table;
 
+pub mod clients;
+
 pub use crate::core::*;
 #[cfg(feature = "account")]
 pub use account::*;
