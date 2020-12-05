@@ -12,7 +12,7 @@ use url::Url;
 pub(crate) const HEADER_VERSION: &str = "x-ms-version"; //=> [String] }
 
 pub(crate) const AZURE_VERSION: &str = "2019-07-07";
-pub(crate) const SAS_VERSION: &str = "2019-02-02";
+//pub(crate) const SAS_VERSION: &str = "2019-02-02";
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum StorageCredentials {
@@ -52,35 +52,39 @@ fn get_sas_token_parms(sas_token: &str) -> Vec<(String, String)> {
 }
 
 impl StorageAccountClient {
-    pub fn new_access_key<A, K>(http_client: Arc<Box<dyn HttpClient>>, account: A, key: K) -> Self
+    pub fn new_access_key<A, K>(
+        http_client: Arc<Box<dyn HttpClient>>,
+        account: A,
+        key: K,
+    ) -> Arc<Box<Self>>
     where
         A: Into<String>,
         K: Into<String>,
     {
         let account = account.into();
 
-        Self {
+        Arc::new(Box::new(Self {
             blob_storage_uri: format!("https://{}.blob.core.windows.net", &account),
             table_storage_uri: format!("https://{}.table.core.windows.net", &account),
             queue_storage_uri: format!("https://{}.queue.core.windows.net", &account),
             filesystem_uri: format!("https://{}.dfs.core.windows.net", &account),
-            storage_credentials: StorageCredentials::Key(account.into(), key.into()),
+            storage_credentials: StorageCredentials::Key(account, key.into()),
             http_client,
-        }
+        }))
     }
 
     pub fn new_sas_token<A, S>(
         http_client: Arc<Box<dyn HttpClient>>,
         account: A,
         sas_token: S,
-    ) -> Self
+    ) -> Arc<Box<Self>>
     where
         A: Into<String>,
         S: AsRef<str>,
     {
         let account = account.into();
 
-        Self {
+        Arc::new(Box::new(Self {
             blob_storage_uri: format!("https://{}.blob.core.windows.net", &account),
             table_storage_uri: format!("https://{}.table.core.windows.net", &account),
             queue_storage_uri: format!("https://{}.queue.core.windows.net", &account),
@@ -89,7 +93,7 @@ impl StorageAccountClient {
                 sas_token.as_ref(),
             )),
             http_client,
-        }
+        }))
     }
 
     pub fn http_client(&self) -> &dyn HttpClient {
@@ -111,11 +115,7 @@ impl StorageAccountClient {
         &self.filesystem_uri
     }
 
-    pub fn list_containers(&self) -> crate::container::requests::ListBuilder2 {
-        crate::container::requests::ListBuilder2::new(self)
-    }
-
-    pub fn prepare_request<'a>(
+    pub(crate) fn prepare_request<'a>(
         &self,
         url: &str,
         method: &Method,
@@ -187,7 +187,7 @@ impl StorageAccountClient {
             request.body(&EMPTY_BODY as &[u8])
         }?;
 
-        println!("using request == {:#?}", request);
+        debug!("using request == {:#?}", request);
 
         Ok((request, url))
     }

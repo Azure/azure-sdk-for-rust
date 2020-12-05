@@ -1,66 +1,84 @@
-use crate::clients::{ServiceType, StorageAccountClient};
+use crate::clients::BlobStorageAccountClient;
 use crate::container::incomplete_vector_from_container_response;
 use crate::container::responses::ListContainersResponse;
-use crate::core::prelude::*;
-use azure_core::errors::AzureError;
 use azure_core::headers::request_id_from_headers;
-use azure_core::prelude::*;
 use hyper::{Method, StatusCode};
 
 #[derive(Debug, Clone)]
 pub struct ListBuilder2<'a> {
-    storage_account_client: &'a StorageAccountClient,
+    blob_storage_account_client: &'a BlobStorageAccountClient,
+    prefix: Option<&'a str>,
+    next_marker: Option<&'a str>,
+    include_metadata: bool,
+    max_results: Option<u32>,
+    client_request_id: Option<&'a str>,
+    timeout: Option<u64>,
 }
 
 impl<'a> ListBuilder2<'a> {
-    pub(crate) fn new(storage_account_client: &'a StorageAccountClient) -> Self {
+    pub(crate) fn new(blob_storage_account_client: &'a BlobStorageAccountClient) -> Self {
         Self {
-            storage_account_client,
+            blob_storage_account_client,
+            prefix: None,
+            next_marker: None,
+            include_metadata: false,
+            max_results: None,
+            client_request_id: None,
+            timeout: None,
         }
     }
-}
 
-// methods callable only when every mandatory field has been filled
-impl<'a> ListBuilder2<'a> {
-    pub async fn execute(&self) -> Result<(), Box<dyn std::error::Error + Sync + Send>> {
-        let uri = format!(
+    pub fn with_prefix(self, prefix: &'a str) -> Self {
+        Self {
+            prefix: Some(prefix),
+            ..self
+        }
+    }
+
+    //next_marker: Option<&'a str>,
+    // include_metadata: bool,
+
+    pub async fn execute(
+        &self,
+    ) -> Result<ListContainersResponse, Box<dyn std::error::Error + Sync + Send>> {
+        let mut uri = format!(
             "{}?comp=list",
-            self.storage_account_client.blob_storage_uri()
+            self.blob_storage_account_client
+                .storage_account_client()
+                .blob_storage_uri()
         );
+
+        // TODO: this will be better once PR #110 is accepted
+        if let Some(prefix) = &self.prefix {
+            uri = format!("{}&prefix={}", uri, prefix);
+        }
 
         debug!("generated uri = {}", uri);
 
-        let request = self.storage_account_client.prepare_request(
+        let request = self.blob_storage_account_client.prepare_request(
             &uri,
             &Method::GET,
             &|request| request,
-            ServiceType::Blob,
             None,
         )?;
 
         let response = self
-            .storage_account_client
+            .blob_storage_account_client
+            .storage_account_client()
             .http_client()
             .execute_request_check_status(request.0, StatusCode::OK)
             .await?;
 
-        println!("response == {:?}", response);
+        debug!("response == {:?}", response);
 
         let body = std::str::from_utf8(response.body())?;
+        debug!("body == {}", body);
 
-        println!("body == {}", body);
-
-        Ok(())
-
-        //let (headers, body) = perform_request_response
-        //    .check_status_extract_headers_and_body(StatusCode::OK)
-        //    .await?;
-        //let body = std::str::from_utf8(&body)?;
-        //let incomplete_vector = incomplete_vector_from_container_response(&body)?;
-        //let request_id = request_id_from_headers(&headers)?;
-        //Ok(ListContainersResponse {
-        //    incomplete_vector,
-        //    request_id,
-        //})
+        let incomplete_vector = incomplete_vector_from_container_response(&body)?;
+        let request_id = request_id_from_headers(response.headers())?;
+        Ok(ListContainersResponse {
+            incomplete_vector,
+            request_id,
+        })
     }
 }

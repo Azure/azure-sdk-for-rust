@@ -6,6 +6,8 @@ pub use crate::core::{Client, ClientRequired, KeyClientRequired};
 
 pub use crate::core::SharedAccessSignatureSupport;
 
+pub use crate::clients::AsBlobStorageAccountClient;
+
 pub use crate::core::shared_access_signature::{
     ClientSharedAccessSignature, SasExpirySupport, SasIpSupport, SasPermissions,
     SasPermissionsSupport, SasProtocol, SasProtocolSupport, SasResource, SasResourceSupport,
