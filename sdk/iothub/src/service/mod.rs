@@ -5,9 +5,11 @@ use hyper::Method;
 use sha2::Sha256;
 
 pub mod directmethod;
+pub mod identity;
 pub mod twin;
 
 use crate::service::directmethod::DirectMethod;
+use crate::service::identity::{get_identity, Device, Module};
 use crate::service::twin::{get_twin, DesiredTwinBuilder, DeviceTwin, ModuleTwin};
 
 pub const API_VERSION: &str = "2020-03-13";
@@ -402,6 +404,45 @@ impl ServiceClient {
         S: Into<String>,
     {
         DesiredTwinBuilder::new(&self, device_id.into(), None, Method::PUT)
+    }
+
+    /// Get the identity of a given device
+    ///
+    /// ```
+    /// use iothub::service::ServiceClient;
+    /// use serde_json;
+    ///
+    /// # let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
+    /// let iothub = ServiceClient::from_connection_string(connection_string, 3600).expect("Failed to create the ServiceClient!");
+    /// let device = iothub.get_device_identity("some-device");
+    /// ```
+    pub async fn get_device_identity<S>(&self, device_id: S) -> Result<Device, AzureError>
+    where
+        S: Into<String>,
+    {
+        get_identity(&self, device_id.into(), None).await
+    }
+
+    /// Get the identity of a given module 
+    ///
+    /// ```
+    /// use iothub::service::ServiceClient;
+    /// use serde_json;
+    ///
+    /// # let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
+    /// let iothub = ServiceClient::from_connection_string(connection_string, 3600).expect("Failed to create the ServiceClient!");
+    /// let device = iothub.get_module_identity("some-device", "some-module");
+    /// ```
+    pub async fn get_module_identity<S, T>(
+        &self,
+        device_id: S,
+        module_id: T,
+    ) -> Result<Module, AzureError>
+    where
+        S: Into<String>,
+        T: Into<String>,
+    {
+        get_identity(&self, device_id.into(), Some(module_id.into())).await
     }
 }
 
