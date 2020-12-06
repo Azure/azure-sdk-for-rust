@@ -6,7 +6,7 @@ pub use crate::core::{Client, ClientRequired, KeyClientRequired};
 
 pub use crate::core::SharedAccessSignatureSupport;
 
-pub use crate::clients::{AsContainerClient, AsStorageClient};
+pub use crate::clients::{AsContainerClient, AsStorageClient, AsTableClient};
 
 pub use crate::core::shared_access_signature::{
     ClientSharedAccessSignature, SasExpirySupport, SasIpSupport, SasPermissions,

@@ -4,3 +4,7 @@ mod storage_client;
 pub use storage_client::{AsStorageClient, StorageClient};
 mod container_client;
 pub use container_client::{AsContainerClient, ContainerClient};
+mod table_service_client;
+pub use table_service_client::{AsTableServiceClient, TableServiceClient};
+mod table_client;
+pub use table_client::{AsTableClient, TableClient};
