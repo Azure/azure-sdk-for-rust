@@ -280,8 +280,8 @@ where
             &Method::PUT,
             &|mut request| {
                 request = request.header(LEASE_ACTION, "break");
-                request = LeaseBreakPeriodRequired::add_header(&self, request);
-                request = ClientRequestIdOption::add_header(&self, request);
+                request = LeaseBreakPeriodRequired::add_mandatory_header(&self, request);
+                request = ClientRequestIdOption::add_optional_header(&self, request);
                 request
             },
             None,

@@ -328,8 +328,8 @@ where
             &uri,
             &Method::DELETE,
             &|mut request| {
-                request = LeaseIdOption::add_header(&self, request);
-                request = ClientRequestIdOption::add_header(&self, request);
+                request = LeaseIdOption::add_optional_header(&self, request);
+                request = ClientRequestIdOption::add_optional_header(&self, request);
                 request
             },
             None,
