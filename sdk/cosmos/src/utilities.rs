@@ -5,7 +5,7 @@
 ///
 /// In other words. The following macro call:
 /// ```
-/// setters! { foo: &str => Some }
+/// setters! { foo: &str => Some, }
 /// ```
 /// Roughly expands to:
 /// ```
@@ -17,8 +17,7 @@
 /// }
 /// ```
 macro_rules! setters {
-    // The terminal condition
-    (@single $name:ident : $typ:ty => $transform:expr $(,)* ) => {
+    (@single $name:ident : $typ:ty => $transform:expr) => {
         paste::paste! {
             pub fn [<with_ $name>](self, $name: $typ) -> Self {
                 Self  {
@@ -28,22 +27,11 @@ macro_rules! setters {
             }
         }
     };
-    // Check for last setter in list (and add identity transform)
-    (@single $name:ident : $typ:ty  $(,)* ) => {
-        setters! { @single $name : $typ => ::std::convert::identity }
-    };
-    // Final setter in list (without transform)
-    (@recurse $name:ident : $typ:ty  $(,)* ) => {
-        setters! { @single $name : $typ }
-    };
-    // Final setter in list (with transform)
-    (@recurse $name:ident : $typ:ty => $transform:expr $(,)* ) => {
-        setters! { @single $name : $typ => $transform }
-    };
+    // Terminal condition
+    (@recurse) => {};
     // Recurse without transform
     (@recurse $name:ident : $typ:ty, $($tokens:tt)*) => {
-        setters! { @single $name : $typ => std::convert::identity }
-        setters! { @recurse $($tokens)* }
+        setters! { @recurse $name: $typ => std::convert::identity, $($tokens)* }
     };
     // Recurse with transform
     (@recurse $name:ident : $typ:ty => $transform:expr, $($tokens:tt)*) => {

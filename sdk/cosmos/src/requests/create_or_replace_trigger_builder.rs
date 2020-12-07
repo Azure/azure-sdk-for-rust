@@ -1,7 +1,7 @@
 use crate::prelude::*;
 use crate::resources::trigger::*;
 use crate::responses::CreateTriggerResponse;
-use azure_core::{No, ToAssign, Yes};
+use azure_core::{ActivityId, No, ToAssign, UserAgent, Yes};
 use http::StatusCode;
 use std::convert::TryInto;
 use std::marker::PhantomData;
@@ -51,44 +51,10 @@ where
     TriggerTypeSet: ToAssign,
     BodySet: ToAssign,
 {
-    pub fn with_user_agent(self, user_agent: &'a str) -> Self {
-        Self {
-            user_agent: Some(azure_core::UserAgent::new(user_agent)),
-            ..self
-        }
-    }
-
-    pub fn with_activity_id(self, activity_id: &'a str) -> Self {
-        Self {
-            activity_id: Some(azure_core::ActivityId::new(activity_id)),
-            ..self
-        }
-    }
-
-    pub fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self {
-        Self {
-            consistency_level: Some(consistency_level),
-            ..self
-        }
-    }
-
-    fn is_create(&self) -> bool {
-        self.is_create
-    }
-    fn trigger_client(&self) -> &'a TriggerClient {
-        self.trigger_client
-    }
-
-    fn consistency_level(&self) -> Option<ConsistencyLevel> {
-        self.consistency_level.clone()
-    }
-
-    fn user_agent(&self) -> Option<azure_core::UserAgent<'a>> {
-        self.user_agent
-    }
-
-    fn activity_id(&self) -> Option<azure_core::ActivityId<'a>> {
-        self.activity_id
+    setters! {
+        user_agent: &'a str => |s| Some(UserAgent::new(s)),
+        activity_id: &'a str => |s| Some(ActivityId::new(s)),
+        consistency_level: ConsistencyLevel => Some,
     }
 }
 
@@ -206,16 +172,16 @@ impl<'a> CreateOrReplaceTriggerBuilder<'a, Yes, Yes, Yes> {
         trace!("CreateOrReplaceTriggerBuilder::execute called");
 
         let req = self.trigger_client;
-        let req = if self.is_create() {
+        let req = if self.is_create {
             req.prepare_request(http::Method::POST)
         } else {
             req.prepare_request_with_trigger_name(http::Method::PUT)
         };
 
         // add trait headers
-        let req = crate::headers::add_header(self.user_agent(), req);
-        let req = crate::headers::add_header(self.activity_id(), req);
-        let req = crate::headers::add_header(self.consistency_level(), req);
+        let req = crate::headers::add_header(self.user_agent, req);
+        let req = crate::headers::add_header(self.activity_id, req);
+        let req = crate::headers::add_header(self.consistency_level.clone(), req);
 
         let req = req.header(http::header::CONTENT_TYPE, "application/json");
 
@@ -239,14 +205,14 @@ impl<'a> CreateOrReplaceTriggerBuilder<'a, Yes, Yes, Yes> {
         let request = serde_json::to_string(&request)?;
         let request = req.body(request.as_bytes())?;
 
-        let expected_status = if self.is_create() {
+        let expected_status = if self.is_create {
             StatusCode::CREATED
         } else {
             StatusCode::OK
         };
 
         Ok(self
-            .trigger_client()
+            .trigger_client
             .http_client()
             .execute_request_check_status(request, expected_status)
             .await?
