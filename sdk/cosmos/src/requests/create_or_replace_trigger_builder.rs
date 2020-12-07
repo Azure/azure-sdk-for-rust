@@ -52,9 +52,9 @@ where
     BodySet: ToAssign,
 {
     setters! {
-        user_agent: &'a str => |s| Some(UserAgent::new(s)),
-        activity_id: &'a str => |s| Some(ActivityId::new(s)),
-        consistency_level: ConsistencyLevel => Some,
+        user_agent: &'a str => Some(UserAgent::new(user_agent)),
+        activity_id: &'a str => Some(ActivityId::new(activity_id)),
+        consistency_level: ConsistencyLevel => Some(consistency_level),
     }
 }
 

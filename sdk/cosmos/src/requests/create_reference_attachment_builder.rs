@@ -43,9 +43,9 @@ where
     MediaSet: ToAssign,
 {
     setters! {
-        user_agent: &'b str => |s| Some(UserAgent::new(s)),
-        activity_id: &'b str => |s| Some(ActivityId::new(s)),
-        consistency_level: ConsistencyLevel => Some,
+        user_agent: &'b str => Some(UserAgent::new(user_agent)),
+        activity_id: &'b str => Some(ActivityId::new(activity_id)),
+        consistency_level: ConsistencyLevel => Some(consistency_level),
     }
 }
 

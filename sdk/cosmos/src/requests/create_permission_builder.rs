@@ -30,10 +30,10 @@ impl<'a, 'b> CreatePermissionBuilder<'a, 'b> {
 
 impl<'a, 'b> CreatePermissionBuilder<'a, 'b> {
     setters! {
-        user_agent: &'b str => |s| Some(UserAgent::new(s)),
-        activity_id: &'b str => |s| Some(ActivityId::new(s)),
-        consistency_level: ConsistencyLevel => Some,
-        expiry_seconds: u64 => ExpirySeconds::new,
+        user_agent: &'b str => Some(UserAgent::new(user_agent)),
+        activity_id: &'b str => Some(ActivityId::new(activity_id)),
+        consistency_level: ConsistencyLevel => Some(consistency_level),
+        expiry_seconds: u64 => ExpirySeconds::new(expiry_seconds),
     }
 }
 

@@ -21,7 +21,7 @@ macro_rules! setters {
         paste::paste! {
             pub fn [<with_ $name>](self, $name: $typ) -> Self {
                 Self  {
-                    $name: ($transform)($name),
+                    $name: $transform,
                     ..self
                 }
             }
@@ -31,7 +31,7 @@ macro_rules! setters {
     (@recurse) => {};
     // Recurse without transform
     (@recurse $name:ident : $typ:ty, $($tokens:tt)*) => {
-        setters! { @recurse $name: $typ => std::convert::identity, $($tokens)* }
+        setters! { @recurse $name: $typ => $name, $($tokens)* }
     };
     // Recurse with transform
     (@recurse $name:ident : $typ:ty => $transform:expr, $($tokens:tt)*) => {
