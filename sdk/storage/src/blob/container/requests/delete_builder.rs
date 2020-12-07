@@ -189,17 +189,18 @@ where
             uri = format!("{}&{}", uri, nm);
         }
 
-        self.client()
-            .perform_request(
-                &uri,
-                &Method::DELETE,
-                &|mut request| {
-                    request = ClientRequestIdOption::add_optional_header(&self, request);
-                    request = LeaseIdOption::add_optional_header(&self, request);
-                    request
-                },
-                Some(&[]),
-            )?
+        let perform_request_response = self.client().perform_request(
+            &uri,
+            &Method::DELETE,
+            &|mut request| {
+                request = ClientRequestIdOption::add_header(&self, request);
+                request = LeaseIdOption::add_header(&self, request);
+                request
+            },
+            Some(&[]),
+        )?;
+
+        perform_request_response
             .check_status_extract_headers_and_body(StatusCode::ACCEPTED)
             .await?;
         Ok(())

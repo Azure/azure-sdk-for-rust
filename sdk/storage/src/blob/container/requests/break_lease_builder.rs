@@ -231,20 +231,20 @@ where
             uri = format!("{}&{}", uri, nm);
         }
 
-        let (headers, _) = self
-            .client()
-            .perform_request(
-                &uri,
-                &Method::PUT,
-                &|mut request| {
-                    request = ClientRequestIdOption::add_optional_header(&self, request);
-                    request = LeaseIdOption::add_optional_header(&self, request);
-                    request = request.header(LEASE_ACTION, "break");
-                    request = LeaseBreakPeriodOption::add_optional_header(&self, request);
-                    request
-                },
-                Some(&[]),
-            )?
+        let perform_request_response = self.client().perform_request(
+            &uri,
+            &Method::PUT,
+            &|mut request| {
+                request = ClientRequestIdOption::add_header(&self, request);
+                request = LeaseIdOption::add_header(&self, request);
+                request = request.header(LEASE_ACTION, "break");
+                request = LeaseBreakPeriodOption::add_header(&self, request);
+                request
+            },
+            Some(&[]),
+        )?;
+
+        let (headers, _body) = perform_request_response
             .check_status_extract_headers_and_body(StatusCode::ACCEPTED)
             .await?;
         BreakLeaseResponse::from_headers(&headers)

@@ -325,19 +325,19 @@ where
 
         trace!("delete_blob uri == {:?}", uri);
 
-        let (headers, _) = self
-            .client()
-            .perform_request(
-                &uri,
-                &Method::DELETE,
-                &|mut request| {
-                    request = DeleteSnapshotsMethodRequired::add_mandatory_header(&self, request);
-                    request = LeaseIdOption::add_optional_header(&self, request);
-                    request = ClientRequestIdOption::add_optional_header(&self, request);
-                    request
-                },
-                None,
-            )?
+        let perform_request_response = self.client().perform_request(
+            &uri,
+            &Method::DELETE,
+            &|mut request| {
+                request = DeleteSnapshotsMethodRequired::add_header(&self, request);
+                request = LeaseIdOption::add_header(&self, request);
+                request = ClientRequestIdOption::add_header(&self, request);
+                request
+            },
+            None,
+        )?;
+
+        let (headers, _body) = perform_request_response
             .check_status_extract_headers_and_body(StatusCode::ACCEPTED)
             .await?;
         DeleteBlobResponse::from_headers(&headers)

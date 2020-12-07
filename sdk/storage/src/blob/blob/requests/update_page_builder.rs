@@ -640,24 +640,24 @@ where
         trace!("upper == {}", upper);
         let b = &self.body()[0..upper];
 
-        let (headers, _) = self
-            .client()
-            .perform_request(
-                &uri,
-                &Method::PUT,
-                &|mut request| {
-                    request = BA512RangeRequired::add_mandatory_header(&self, request);
-                    request = ContentMD5Option::add_optional_header(&self, request);
-                    request = request.header(PAGE_WRITE, "update");
-                    request = LeaseIdOption::add_optional_header(&self, request);
-                    request = SequenceNumberConditionOption::add_optional_header(&self, request);
-                    request = IfSinceConditionOption::add_optional_header(&self, request);
-                    request = IfMatchConditionOption::add_optional_header(&self, request);
-                    request = ClientRequestIdOption::add_optional_header(&self, request);
-                    request
-                },
-                Some(b),
-            )?
+        let perform_request_response = self.client().perform_request(
+            &uri,
+            &Method::PUT,
+            &|mut request| {
+                request = BA512RangeRequired::add_header(&self, request);
+                request = ContentMD5Option::add_header(&self, request);
+                request = request.header(PAGE_WRITE, "update");
+                request = LeaseIdOption::add_header(&self, request);
+                request = SequenceNumberConditionOption::add_header(&self, request);
+                request = IfSinceConditionOption::add_header(&self, request);
+                request = IfMatchConditionOption::add_header(&self, request);
+                request = ClientRequestIdOption::add_header(&self, request);
+                request
+            },
+            Some(b),
+        )?;
+
+        let (headers, _body) = perform_request_response
             .check_status_extract_headers_and_body(StatusCode::CREATED)
             .await?;
         UpdatePageResponse::from_headers(&headers)
