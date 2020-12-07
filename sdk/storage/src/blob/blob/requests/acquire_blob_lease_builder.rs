@@ -323,20 +323,20 @@ where
             uri = format!("{}&{}", uri, nm);
         }
 
-        let (headers, _body) = self
-            .client()
-            .perform_request(
-                &uri,
-                &Method::PUT,
-                &|mut request| {
-                    request = request.header(LEASE_ACTION, "acquire");
-                    request = LeaseDurationRequired::add_header(&self, request);
-                    request = ProposedLeaseIdOption::add_header(&self, request);
-                    request = ClientRequestIdOption::add_header(&self, request);
-                    request
-                },
-                None,
-            )?
+        let perform_request_response = self.client().perform_request(
+            &uri,
+            &Method::PUT,
+            &|mut request| {
+                request = request.header(LEASE_ACTION, "acquire");
+                request = LeaseDurationRequired::add_header(&self, request);
+                request = ProposedLeaseIdOption::add_header(&self, request);
+                request = ClientRequestIdOption::add_header(&self, request);
+                request
+            },
+            None,
+        )?;
+
+        let (headers, _body) = perform_request_response
             .check_status_extract_headers_and_body(StatusCode::CREATED)
             .await?;
         AcquireBlobLeaseResponse::from_headers(&headers)

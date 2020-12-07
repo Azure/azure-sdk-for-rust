@@ -467,6 +467,47 @@ async fn put_block_blob_and_get_properties() {
     );
 }
 
+#[allow(dead_code)]
+fn send_check() {
+    let client = initialize();
+
+    let _ = requires_send_future(
+        client
+            .acquire_blob_lease()
+            .with_container_name("a")
+            .with_blob_name("b")
+            .with_lease_duration(10)
+            .finalize(),
+    );
+
+    let _ = requires_send_future(
+        client
+            .break_blob_lease()
+            .with_container_name("a")
+            .with_blob_name("b")
+            .with_lease_break_period(10)
+            .finalize(),
+    );
+
+    let _ = requires_send_future(
+        client
+            .clear_page()
+            .with_container_name("a")
+            .with_blob_name("b")
+            .with_ba512_range(&BA512Range::new(0, 1024).unwrap())
+            .finalize(),
+    );
+
+    let _ = requires_send_future(
+        client
+            .copy_blob()
+            .with_container_name("a")
+            .with_blob_name("b")
+            .with_source_url("c")
+            .finalize(),
+    );
+}
+
 fn initialize() -> Box<dyn Client> {
     let account =
         std::env::var("STORAGE_ACCOUNT").expect("Set env variable STORAGE_ACCOUNT first!");

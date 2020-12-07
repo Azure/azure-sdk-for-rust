@@ -782,27 +782,27 @@ where
 
         trace!("uri == {:?}", uri);
 
-        let (headers, _) = self
-            .client()
-            .perform_request(
-                &uri,
-                &Method::PUT,
-                &|mut request| {
-                    request = ContentTypeOption::add_header(&self, request);
-                    request = ContentEncodingOption::add_header(&self, request);
-                    request = ContentLanguageOption::add_header(&self, request);
-                    request = ContentMD5Option::add_header(&self, request);
-                    request = CacheControlOption::add_header(&self, request);
-                    request = ContentDispositionOption::add_header(&self, request);
-                    request = MetadataOption::add_header(&self, request);
-                    request = request.header(BLOB_TYPE, "BlockBlob");
-                    request = LeaseIdOption::add_header(&self, request);
-                    request = IfMatchConditionOption::add_header(&self, request);
-                    request = ClientRequestIdOption::add_header(&self, request);
-                    request
-                },
-                Some(self.body()),
-            )?
+        let perform_request_response = self.client().perform_request(
+            &uri,
+            &Method::PUT,
+            &|mut request| {
+                request = ContentTypeOption::add_header(&self, request);
+                request = ContentEncodingOption::add_header(&self, request);
+                request = ContentLanguageOption::add_header(&self, request);
+                request = ContentMD5Option::add_header(&self, request);
+                request = CacheControlOption::add_header(&self, request);
+                request = ContentDispositionOption::add_header(&self, request);
+                request = MetadataOption::add_header(&self, request);
+                request = request.header(BLOB_TYPE, "BlockBlob");
+                request = LeaseIdOption::add_header(&self, request);
+                request = IfMatchConditionOption::add_header(&self, request);
+                request = ClientRequestIdOption::add_header(&self, request);
+                request
+            },
+            Some(self.body()),
+        )?;
+
+        let (headers, _body) = perform_request_response
             .check_status_extract_headers_and_body(StatusCode::CREATED)
             .await?;
         PutBlockBlobResponse::from_headers(&headers)

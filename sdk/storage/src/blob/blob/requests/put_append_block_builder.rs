@@ -483,21 +483,21 @@ where
 
         trace!("uri == {:?}", uri);
 
-        let (headers, _) = self
-            .client()
-            .perform_request(
-                &uri,
-                &Method::PUT,
-                &|mut request| {
-                    request = ContentMD5Option::add_header(&self, request);
-                    request = LeaseIdOption::add_header(&self, request);
-                    request = IfMatchConditionOption::add_header(&self, request);
-                    request = ClientRequestIdOption::add_header(&self, request);
-                    request = AppendPositionOption::add_header(&self, request);
-                    request
-                },
-                Some(self.body()),
-            )?
+        let perform_request_response = self.client().perform_request(
+            &uri,
+            &Method::PUT,
+            &|mut request| {
+                request = ContentMD5Option::add_header(&self, request);
+                request = LeaseIdOption::add_header(&self, request);
+                request = IfMatchConditionOption::add_header(&self, request);
+                request = ClientRequestIdOption::add_header(&self, request);
+                request = AppendPositionOption::add_header(&self, request);
+                request
+            },
+            Some(self.body()),
+        )?;
+
+        let (headers, _body) = perform_request_response
             .check_status_extract_headers_and_body(StatusCode::CREATED)
             .await?;
         PutBlockResponse::from_headers(&headers)
