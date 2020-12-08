@@ -18,7 +18,7 @@
 /// ```
 macro_rules! setters {
     (@single $name:ident : $typ:ty => $transform:expr) => {
-        paste::paste! {
+        ::paste::paste! {
             pub fn [<with_ $name>](self, $name: $typ) -> Self {
                 Self  {
                     $name: $transform,

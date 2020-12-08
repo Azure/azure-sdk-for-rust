@@ -14,7 +14,7 @@ where
     is_create: bool,
     body: Option<&'b str>,
     user_agent: Option<UserAgent<'b>>,
-    activity_id: Option<azure_core::ActivityId<'b>>,
+    activity_id: Option<ActivityId<'b>>,
     consistency_level: Option<ConsistencyLevel>,
     p_body: PhantomData<BodySet>,
 }

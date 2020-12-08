@@ -2,7 +2,8 @@ use crate::prelude::*;
 use crate::resources::permission::{ExpirySeconds, PermissionMode};
 use crate::resources::ResourceType;
 use crate::responses::CreatePermissionResponse;
-use azure_core::{ActivityId, UserAgent};
+
+use azure_core::prelude::*;
 use http::StatusCode;
 use std::convert::TryInto;
 
@@ -11,8 +12,8 @@ pub struct CreatePermissionBuilder<'a, 'b> {
     permission_client: &'a PermissionClient,
     // TODO: use this field
     expiry_seconds: ExpirySeconds,
-    user_agent: Option<azure_core::UserAgent<'b>>,
-    activity_id: Option<azure_core::ActivityId<'b>>,
+    user_agent: Option<UserAgent<'b>>,
+    activity_id: Option<ActivityId<'b>>,
     consistency_level: Option<ConsistencyLevel>,
 }
 

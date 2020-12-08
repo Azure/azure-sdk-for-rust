@@ -10,8 +10,8 @@ use std::convert::TryInto;
 pub struct ListTriggersBuilder<'a, 'b> {
     collection_client: &'a CollectionClient,
     if_match_condition: Option<IfMatchCondition<'b>>,
-    user_agent: Option<azure_core::UserAgent<'b>>,
-    activity_id: Option<azure_core::ActivityId<'b>>,
+    user_agent: Option<UserAgent<'b>>,
+    activity_id: Option<ActivityId<'b>>,
     consistency_level: Option<ConsistencyLevel>,
     continuation: Option<Continuation<'b>>,
     max_item_count: MaxItemCount,
@@ -38,11 +38,11 @@ impl<'a, 'b> ListTriggersBuilder<'a, 'b> {
         self.if_match_condition
     }
 
-    fn user_agent(&self) -> Option<azure_core::UserAgent<'b>> {
+    fn user_agent(&self) -> Option<UserAgent<'b>> {
         self.user_agent
     }
 
-    fn activity_id(&self) -> Option<azure_core::ActivityId<'b>> {
+    fn activity_id(&self) -> Option<ActivityId<'b>> {
         self.activity_id
     }
 

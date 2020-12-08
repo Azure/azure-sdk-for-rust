@@ -9,8 +9,8 @@ use std::convert::TryInto;
 #[derive(Debug, Clone)]
 pub struct ListUsersBuilder<'a, 'b> {
     database_client: &'a DatabaseClient,
-    user_agent: Option<azure_core::UserAgent<'b>>,
-    activity_id: Option<azure_core::ActivityId<'b>>,
+    user_agent: Option<UserAgent<'b>>,
+    activity_id: Option<ActivityId<'b>>,
     consistency_level: Option<ConsistencyLevel>,
     continuation: Option<Continuation<'b>>,
     max_item_count: MaxItemCount,

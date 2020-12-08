@@ -21,8 +21,8 @@ where
     trigger_operation: TriggerOperation,
     trigger_type: TriggerType,
     body: Option<&'a str>,
-    user_agent: Option<azure_core::UserAgent<'a>>,
-    activity_id: Option<azure_core::ActivityId<'a>>,
+    user_agent: Option<UserAgent<'a>>,
+    activity_id: Option<ActivityId<'a>>,
     consistency_level: Option<ConsistencyLevel>,
 }
 

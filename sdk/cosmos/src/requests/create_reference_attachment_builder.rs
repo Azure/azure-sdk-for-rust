@@ -16,8 +16,8 @@ where
     p_media: PhantomData<MediaSet>,
     content_type: Option<ContentType<'b>>,
     media: Option<&'b str>,
-    user_agent: Option<azure_core::UserAgent<'b>>,
-    activity_id: Option<azure_core::ActivityId<'b>>,
+    user_agent: Option<UserAgent<'b>>,
+    activity_id: Option<ActivityId<'b>>,
     consistency_level: Option<ConsistencyLevel>,
 }
 

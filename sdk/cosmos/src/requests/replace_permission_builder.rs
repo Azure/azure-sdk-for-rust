@@ -1,6 +1,7 @@
 use crate::prelude::*;
 use crate::resources::permission::{ExpirySeconds, PermissionMode};
 use crate::responses::ReplacePermissionResponse;
+use azure_core::prelude::*;
 use http::StatusCode;
 use std::convert::TryInto;
 
@@ -8,8 +9,8 @@ use std::convert::TryInto;
 pub struct ReplacePermissionBuilder<'a, 'b> {
     permission_client: &'a PermissionClient,
     expiry_seconds: ExpirySeconds,
-    user_agent: Option<azure_core::UserAgent<'b>>,
-    activity_id: Option<azure_core::ActivityId<'b>>,
+    user_agent: Option<UserAgent<'b>>,
+    activity_id: Option<ActivityId<'b>>,
     consistency_level: Option<ConsistencyLevel>,
 }
 
@@ -34,11 +35,11 @@ impl<'a, 'b> ReplacePermissionBuilder<'a, 'b> {
         self.expiry_seconds
     }
 
-    fn user_agent(&self) -> Option<azure_core::UserAgent<'b>> {
+    fn user_agent(&self) -> Option<UserAgent<'b>> {
         self.user_agent
     }
 
-    fn activity_id(&self) -> Option<azure_core::ActivityId<'b>> {
+    fn activity_id(&self) -> Option<ActivityId<'b>> {
         self.activity_id
     }
 

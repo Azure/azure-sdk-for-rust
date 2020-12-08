@@ -7,8 +7,8 @@ use std::convert::TryInto;
 #[derive(Debug, Clone)]
 pub struct GetPermissionBuilder<'a, 'b> {
     permission_client: &'a PermissionClient,
-    user_agent: Option<azure_core::UserAgent<'b>>,
-    activity_id: Option<azure_core::ActivityId<'b>>,
+    user_agent: Option<UserAgent<'b>>,
+    activity_id: Option<ActivityId<'b>>,
     consistency_level: Option<ConsistencyLevel>,
 }
 
@@ -26,11 +26,11 @@ impl<'a, 'b> GetPermissionBuilder<'a, 'b> {
         self.permission_client
     }
 
-    fn user_agent(&self) -> Option<azure_core::UserAgent<'b>> {
+    fn user_agent(&self) -> Option<UserAgent<'b>> {
         self.user_agent
     }
 
-    fn activity_id(&self) -> Option<azure_core::ActivityId<'b>> {
+    fn activity_id(&self) -> Option<ActivityId<'b>> {
         self.activity_id
     }
 

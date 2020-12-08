@@ -9,8 +9,8 @@ use std::convert::TryInto;
 #[derive(Debug, Clone)]
 pub struct ListCollectionsBuilder<'a> {
     database_client: &'a DatabaseClient,
-    user_agent: Option<azure_core::UserAgent<'a>>,
-    activity_id: Option<azure_core::ActivityId<'a>>,
+    user_agent: Option<UserAgent<'a>>,
+    activity_id: Option<ActivityId<'a>>,
     consistency_level: Option<ConsistencyLevel>,
     continuation: Option<Continuation<'a>>,
     max_item_count: MaxItemCount,
@@ -32,11 +32,11 @@ impl<'a> ListCollectionsBuilder<'a> {
         self.database_client
     }
 
-    fn user_agent(&self) -> Option<azure_core::UserAgent<'a>> {
+    fn user_agent(&self) -> Option<UserAgent<'a>> {
         self.user_agent
     }
 
-    fn activity_id(&self) -> Option<azure_core::ActivityId<'a>> {
+    fn activity_id(&self) -> Option<ActivityId<'a>> {
         self.activity_id
     }
 

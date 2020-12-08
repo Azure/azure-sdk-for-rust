@@ -12,8 +12,8 @@ pub struct GetDocumentBuilder<'a, 'b> {
     document_client: &'a DocumentClient,
     if_match_condition: Option<IfMatchCondition<'b>>,
     if_modified_since: Option<IfModifiedSince<'b>>,
-    user_agent: Option<azure_core::UserAgent<'b>>,
-    activity_id: Option<azure_core::ActivityId<'b>>,
+    user_agent: Option<UserAgent<'b>>,
+    activity_id: Option<ActivityId<'b>>,
     consistency_level: Option<ConsistencyLevel>,
 }
 
@@ -37,11 +37,11 @@ impl<'a, 'b> GetDocumentBuilder<'a, 'b> {
         self.if_match_condition
     }
 
-    fn user_agent(&self) -> Option<azure_core::UserAgent<'b>> {
+    fn user_agent(&self) -> Option<UserAgent<'b>> {
         self.user_agent
     }
 
-    fn activity_id(&self) -> Option<azure_core::ActivityId<'b>> {
+    fn activity_id(&self) -> Option<ActivityId<'b>> {
         self.activity_id
     }
 

@@ -13,8 +13,8 @@ where
 {
     cosmos_client: &'a CosmosClient,
     database_name: Option<&'a str>,
-    user_agent: Option<azure_core::UserAgent<'a>>,
-    activity_id: Option<azure_core::ActivityId<'a>>,
+    user_agent: Option<UserAgent<'a>>,
+    activity_id: Option<ActivityId<'a>>,
     consistency_level: Option<ConsistencyLevel>,
     p_database_name: PhantomData<DatabaseNameSet>,
 }
