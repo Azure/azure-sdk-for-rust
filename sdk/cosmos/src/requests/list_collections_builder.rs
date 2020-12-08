@@ -28,59 +28,12 @@ impl<'a> ListCollectionsBuilder<'a> {
         }
     }
 
-    pub fn database_client(&self) -> &'a DatabaseClient {
-        self.database_client
-    }
-
-    fn user_agent(&self) -> Option<UserAgent<'a>> {
-        self.user_agent
-    }
-
-    fn activity_id(&self) -> Option<ActivityId<'a>> {
-        self.activity_id
-    }
-
-    fn consistency_level(&self) -> Option<ConsistencyLevel> {
-        self.consistency_level.clone()
-    }
-
-    fn max_item_count(&self) -> MaxItemCount {
-        self.max_item_count
-    }
-
-    pub fn with_user_agent(self, user_agent: &'a str) -> Self {
-        Self {
-            user_agent: Some(azure_core::UserAgent::new(user_agent)),
-            ..self
-        }
-    }
-
-    pub fn with_activity_id(self, activity_id: &'a str) -> Self {
-        Self {
-            activity_id: Some(azure_core::ActivityId::new(activity_id)),
-            ..self
-        }
-    }
-
-    pub fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self {
-        Self {
-            consistency_level: Some(consistency_level),
-            ..self
-        }
-    }
-
-    pub fn with_continuation(self, continuation: &'a str) -> Self {
-        Self {
-            continuation: Some(Continuation::new(continuation)),
-            ..self
-        }
-    }
-
-    pub fn with_max_item_count(self, max_item_count: i32) -> Self {
-        Self {
-            max_item_count: MaxItemCount::new(max_item_count),
-            ..self
-        }
+    setters! {
+        user_agent: &'a str => Some(UserAgent::new(user_agent)),
+        activity_id: &'a str => Some(ActivityId::new(activity_id)),
+        consistency_level: ConsistencyLevel => Some(consistency_level),
+        continuation: &'a str => Some(Continuation::new(continuation)),
+        max_item_count: i32 => MaxItemCount::new(max_item_count),
     }
 
     pub async fn execute(&self) -> Result<ListCollectionsResponse, CosmosError> {
@@ -91,11 +44,11 @@ impl<'a> ListCollectionsBuilder<'a> {
             ResourceType::Collections,
         );
 
-        let request = crate::headers::add_header(self.user_agent(), request);
-        let request = crate::headers::add_header(self.activity_id(), request);
-        let request = crate::headers::add_header(self.consistency_level(), request);
-        let request = crate::headers::add_header(self.continuation(), request);
-        let request = crate::headers::add_header(Some(self.max_item_count()), request);
+        let request = crate::headers::add_header(self.user_agent, request);
+        let request = crate::headers::add_header(self.activity_id, request);
+        let request = crate::headers::add_header(self.consistency_level.clone(), request);
+        let request = crate::headers::add_header(self.continuation, request);
+        let request = crate::headers::add_header(Some(self.max_item_count), request);
 
         let request = request.body(EMPTY_BODY.as_ref())?;
 
@@ -148,11 +101,5 @@ impl<'a> ListCollectionsBuilder<'a> {
                 }
             },
         )
-    }
-}
-
-impl<'a> ListCollectionsBuilder<'a> {
-    fn continuation(&self) -> Option<Continuation<'a>> {
-        self.continuation
     }
 }

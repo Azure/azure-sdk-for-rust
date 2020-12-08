@@ -22,41 +22,10 @@ impl<'a, 'b> GetPermissionBuilder<'a, 'b> {
         }
     }
 
-    pub fn permission_client(&self) -> &'a PermissionClient {
-        self.permission_client
-    }
-
-    fn user_agent(&self) -> Option<UserAgent<'b>> {
-        self.user_agent
-    }
-
-    fn activity_id(&self) -> Option<ActivityId<'b>> {
-        self.activity_id
-    }
-
-    fn consistency_level(&self) -> Option<ConsistencyLevel> {
-        self.consistency_level.clone()
-    }
-
-    pub fn with_user_agent(self, user_agent: &'b str) -> Self {
-        Self {
-            user_agent: Some(azure_core::UserAgent::new(user_agent)),
-            ..self
-        }
-    }
-
-    pub fn with_activity_id(self, activity_id: &'b str) -> Self {
-        Self {
-            activity_id: Some(azure_core::ActivityId::new(activity_id)),
-            ..self
-        }
-    }
-
-    pub fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self {
-        Self {
-            consistency_level: Some(consistency_level),
-            ..self
-        }
+    setters! {
+        user_agent: &'b str => Some(UserAgent::new(user_agent)),
+        activity_id: &'b str => Some(ActivityId::new(activity_id)),
+        consistency_level: ConsistencyLevel => Some(consistency_level),
     }
 
     pub async fn execute(&self) -> Result<Option<GetPermissionResponse<'a>>, CosmosError> {
@@ -66,9 +35,9 @@ impl<'a, 'b> GetPermissionBuilder<'a, 'b> {
             .permission_client
             .prepare_request_with_permission_name(http::Method::GET);
 
-        let request = crate::headers::add_header(self.user_agent(), request);
-        let request = crate::headers::add_header(self.activity_id(), request);
-        let request = crate::headers::add_header(self.consistency_level(), request);
+        let request = crate::headers::add_header(self.user_agent, request);
+        let request = crate::headers::add_header(self.activity_id, request);
+        let request = crate::headers::add_header(self.consistency_level.clone(), request);
 
         let request = request.body(EMPTY_BODY.as_ref())?;
         debug!("\nrequest == {:#?}", request);

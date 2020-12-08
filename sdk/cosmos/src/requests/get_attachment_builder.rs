@@ -28,7 +28,7 @@ impl<'a, 'b> GetAttachmentBuilder<'a, 'b> {
         user_agent: &'b str => Some(UserAgent::new(user_agent)),
         activity_id: &'b str => Some(ActivityId::new(activity_id)),
         consistency_level: ConsistencyLevel => Some(consistency_level),
-    if_match_condition: IfMatchCondition<'b> => Some(if_match_condition),
+        if_match_condition: IfMatchCondition<'b> => Some(if_match_condition),
     }
 
     pub async fn execute(&self) -> Result<crate::responses::GetAttachmentResponse, CosmosError> {
