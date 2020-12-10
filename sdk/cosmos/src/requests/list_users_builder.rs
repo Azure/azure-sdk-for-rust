@@ -9,10 +9,12 @@ use std::convert::TryInto;
 #[derive(Debug, Clone)]
 pub struct ListUsersBuilder<'a, 'b> {
     database_client: &'a DatabaseClient,
-    user_agent: Option<azure_core::UserAgent<'b>>,
-    activity_id: Option<azure_core::ActivityId<'b>>,
+    user_agent: Option<UserAgent<'b>>,
+    activity_id: Option<ActivityId<'b>>,
     consistency_level: Option<ConsistencyLevel>,
+    // TODO: use in request
     continuation: Option<Continuation<'b>>,
+    // TODO: use in request
     max_item_count: MaxItemCount,
 }
 
@@ -28,49 +30,12 @@ impl<'a, 'b> ListUsersBuilder<'a, 'b> {
         }
     }
 
-    pub fn database_client(&self) -> &'a DatabaseClient {
-        self.database_client
-    }
-
-    // TODO: Use this in request
-    #[allow(unused)]
-    fn max_item_count(&self) -> MaxItemCount {
-        self.max_item_count
-    }
-
-    pub fn with_user_agent(self, user_agent: &'b str) -> Self {
-        Self {
-            user_agent: Some(azure_core::UserAgent::new(user_agent)),
-            ..self
-        }
-    }
-
-    pub fn with_activity_id(self, activity_id: &'b str) -> Self {
-        Self {
-            activity_id: Some(azure_core::ActivityId::new(activity_id)),
-            ..self
-        }
-    }
-
-    pub fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self {
-        Self {
-            consistency_level: Some(consistency_level),
-            ..self
-        }
-    }
-
-    pub fn with_continuation(self, continuation: &'b str) -> Self {
-        Self {
-            continuation: Some(Continuation::new(continuation)),
-            ..self
-        }
-    }
-
-    pub fn with_max_item_count(self, max_item_count: i32) -> Self {
-        Self {
-            max_item_count: MaxItemCount::new(max_item_count),
-            ..self
-        }
+    setters! {
+        user_agent: &'b str => Some(UserAgent::new(user_agent)),
+        activity_id: &'b str => Some(ActivityId::new(activity_id)),
+        consistency_level: ConsistencyLevel => Some(consistency_level),
+        continuation: &'b str => Some(Continuation::new(continuation)),
+        max_item_count: i32 => MaxItemCount::new(max_item_count),
     }
 
     pub async fn execute(&self) -> Result<ListUsersResponse, CosmosError> {
@@ -132,13 +97,5 @@ impl<'a, 'b> ListUsersBuilder<'a, 'b> {
                 }
             },
         )
-    }
-}
-
-impl<'a, 'b> ListUsersBuilder<'a, 'b> {
-    // TODO: use this in request
-    #[allow(unused)]
-    fn continuation(&self) -> Option<Continuation<'b>> {
-        self.continuation
     }
 }

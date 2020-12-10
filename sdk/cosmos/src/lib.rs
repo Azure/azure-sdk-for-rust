@@ -89,7 +89,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 !*/
 
 #![warn(unused_extern_crates)]
-#![recursion_limit = "128"]
+#![recursion_limit = "256"]
 #[macro_use]
 extern crate log;
 #[macro_use]
@@ -98,6 +98,9 @@ extern crate serde;
 extern crate failure;
 #[macro_use]
 extern crate azure_core;
+
+#[macro_use]
+mod utilities;
 
 pub mod clients;
 pub mod prelude;

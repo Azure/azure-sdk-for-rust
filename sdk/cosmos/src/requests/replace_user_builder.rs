@@ -1,5 +1,6 @@
 use crate::prelude::*;
 use crate::responses::CreateUserResponse;
+use azure_core::prelude::*;
 use azure_core::{No, ToAssign, Yes};
 use http::StatusCode;
 use std::convert::TryInto;
@@ -13,8 +14,8 @@ where
     user_client: &'a UserClient,
     p_user_name: PhantomData<UserNameSet>,
     user_name: Option<&'a str>,
-    user_agent: Option<azure_core::UserAgent<'b>>,
-    activity_id: Option<azure_core::ActivityId<'b>>,
+    user_agent: Option<UserAgent<'b>>,
+    activity_id: Option<ActivityId<'b>>,
     consistency_level: Option<ConsistencyLevel>,
 }
 
@@ -22,7 +23,7 @@ impl<'a, 'b> ReplaceUserBuilder<'a, 'b, No> {
     pub(crate) fn new(user_client: &'a UserClient) -> ReplaceUserBuilder<'a, 'b, No> {
         Self {
             user_client,
-            p_user_name: PhantomData {},
+            p_user_name: PhantomData,
             user_name: None,
             user_agent: None,
             activity_id: None,
@@ -35,40 +36,10 @@ impl<'a, 'b, UserNameSet> ReplaceUserBuilder<'a, 'b, UserNameSet>
 where
     UserNameSet: ToAssign,
 {
-    pub fn user_client(&self) -> &'a UserClient {
-        self.user_client
-    }
-
-    fn user_agent(&self) -> Option<azure_core::UserAgent<'b>> {
-        self.user_agent
-    }
-
-    fn activity_id(&self) -> Option<azure_core::ActivityId<'b>> {
-        self.activity_id
-    }
-    fn consistency_level(&self) -> Option<ConsistencyLevel> {
-        self.consistency_level.clone()
-    }
-
-    pub fn with_user_agent(self, user_agent: &'b str) -> Self {
-        Self {
-            user_agent: Some(azure_core::UserAgent::new(user_agent)),
-            ..self
-        }
-    }
-
-    pub fn with_activity_id(self, activity_id: &'b str) -> Self {
-        Self {
-            activity_id: Some(azure_core::ActivityId::new(activity_id)),
-            ..self
-        }
-    }
-
-    pub fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self {
-        Self {
-            consistency_level: Some(consistency_level),
-            ..self
-        }
+    setters! {
+        user_agent: &'b str => Some(UserAgent::new(user_agent)),
+        activity_id: &'b str => Some(ActivityId::new(activity_id)),
+        consistency_level: ConsistencyLevel => Some(consistency_level),
     }
 }
 
@@ -80,16 +51,16 @@ impl<'a, 'b> ReplaceUserBuilder<'a, 'b, Yes> {
             .user_client
             .prepare_request_with_user_name(http::Method::PUT);
 
-        let req = crate::headers::add_header(self.user_agent(), req);
-        let req = crate::headers::add_header(self.activity_id(), req);
-        let req = crate::headers::add_header(self.consistency_level(), req);
+        let req = crate::headers::add_header(self.user_agent, req);
+        let req = crate::headers::add_header(self.activity_id, req);
+        let req = crate::headers::add_header(self.consistency_level.clone(), req);
 
         #[derive(Serialize, Deserialize)]
         struct RequestBody<'x> {
             id: &'x str,
         }
         let request_body = RequestBody {
-            id: self.user_name(),
+            id: self.user_name.unwrap(),
         };
         let request_body = serde_json::to_string(&request_body)?;
 
@@ -110,12 +81,6 @@ impl<'a, 'b> ReplaceUserBuilder<'a, 'b, Yes> {
     }
 }
 
-impl<'a, 'b> ReplaceUserBuilder<'a, 'b, Yes> {
-    fn user_name(&self) -> &'a str {
-        self.user_name.unwrap()
-    }
-}
-
 impl<'a, 'b> ReplaceUserBuilder<'a, 'b, No> {
     pub fn with_user_name(self, user_name: &'a str) -> ReplaceUserBuilder<'a, 'b, Yes> {
         ReplaceUserBuilder {
@@ -124,7 +89,7 @@ impl<'a, 'b> ReplaceUserBuilder<'a, 'b, No> {
             user_agent: self.user_agent,
             activity_id: self.activity_id,
             consistency_level: self.consistency_level,
-            p_user_name: PhantomData {},
+            p_user_name: PhantomData,
         }
     }
 }
