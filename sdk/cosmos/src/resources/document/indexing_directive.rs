@@ -1,5 +1,5 @@
 use crate::headers;
-use azure_core::enumerations::ParsingError;
+use azure_core::errors::ParsingError;
 use http::request::Builder;
 use std::fmt;
 

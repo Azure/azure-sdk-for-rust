@@ -9,18 +9,18 @@ extern crate quick_error;
 extern crate serde_derive;
 
 #[macro_use]
-pub mod errors;
-pub mod parsing;
-#[macro_use]
-pub mod enumerations;
+mod macros;
+
 pub mod ba512_range;
 mod client_request_id;
+pub mod errors;
 pub mod headers;
 mod http_client;
 pub mod incompletevector;
 pub mod lease;
 mod metadata;
 pub mod modify_conditions;
+pub mod parsing;
 pub mod prelude;
 pub mod range;
 mod stored_access_policy;
@@ -1127,3 +1127,7 @@ pub trait AddAsHeader {
 pub trait AppendToUrlQuery {
     fn append_to_url_query(&self, url: &mut url::Url);
 }
+
+#[doc(hidden)]
+/// Reexport paste for use in macros
+pub use paste;

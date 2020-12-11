@@ -99,9 +99,6 @@ extern crate failure;
 #[macro_use]
 extern crate azure_core;
 
-#[macro_use]
-mod utilities;
-
 pub mod clients;
 pub mod prelude;
 pub mod requests;
