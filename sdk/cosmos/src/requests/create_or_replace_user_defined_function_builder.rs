@@ -1,7 +1,6 @@
 use crate::prelude::*;
 use crate::responses::CreateUserDefinedFunctionResponse;
-use azure_core::UserAgent;
-use azure_core::{No, ToAssign, Yes};
+use azure_core::{ActivityId, No, ToAssign, UserAgent, Yes};
 use http::StatusCode;
 use std::convert::TryInto;
 use std::marker::PhantomData;
@@ -15,7 +14,7 @@ where
     is_create: bool,
     body: Option<&'b str>,
     user_agent: Option<UserAgent<'b>>,
-    activity_id: Option<azure_core::ActivityId<'b>>,
+    activity_id: Option<ActivityId<'b>>,
     consistency_level: Option<ConsistencyLevel>,
     p_body: PhantomData<BodySet>,
 }
@@ -32,7 +31,7 @@ impl<'a, 'b> CreateOrReplaceUserDefinedFunctionBuilder<'a, 'b, No> {
             user_agent: None,
             activity_id: None,
             consistency_level: None,
-            p_body: PhantomData {},
+            p_body: PhantomData,
         }
     }
 }
@@ -41,41 +40,10 @@ impl<'a, 'b, BodySet> CreateOrReplaceUserDefinedFunctionBuilder<'a, 'b, BodySet>
 where
     BodySet: ToAssign,
 {
-    pub fn with_user_agent(self, user_agent: &'b str) -> Self {
-        Self {
-            user_agent: Some(UserAgent::new(user_agent)),
-            ..self
-        }
-    }
-
-    pub fn with_activity_id(self, activity_id: &'b str) -> Self {
-        Self {
-            activity_id: Some(azure_core::ActivityId::new(activity_id)),
-            ..self
-        }
-    }
-
-    pub fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self {
-        Self {
-            consistency_level: Some(consistency_level),
-            ..self
-        }
-    }
-
-    fn user_defined_function_client(&self) -> &'a UserDefinedFunctionClient {
-        self.user_defined_function_client
-    }
-
-    fn user_agent(&self) -> Option<UserAgent<'b>> {
-        self.user_agent
-    }
-
-    fn activity_id(&self) -> Option<azure_core::ActivityId<'b>> {
-        self.activity_id
-    }
-
-    fn consistency_level(&self) -> Option<ConsistencyLevel> {
-        self.consistency_level.clone()
+    setters! {
+        user_agent: &'b str => Some(UserAgent::new(user_agent)),
+        activity_id: &'b str => Some(ActivityId::new(activity_id)),
+        consistency_level: ConsistencyLevel => Some(consistency_level),
     }
 }
 
@@ -97,7 +65,7 @@ impl<'a, 'b> CreateOrReplaceUserDefinedFunctionBuilder<'a, 'b, No> {
             user_agent: self.user_agent,
             activity_id: self.activity_id,
             consistency_level: self.consistency_level,
-            p_body: PhantomData {},
+            p_body: PhantomData,
         }
     }
 }
@@ -120,9 +88,9 @@ impl<'a, 'b> CreateOrReplaceUserDefinedFunctionBuilder<'a, 'b, Yes> {
         };
 
         // add trait headers
-        let req = azure_core::headers::add_optional_header(&self.user_agent(), req);
-        let req = azure_core::headers::add_optional_header(&self.activity_id(), req);
-        let req = azure_core::headers::add_optional_header(&self.consistency_level(), req);
+        let req = azure_core::headers::add_optional_header(&self.user_agent, req);
+        let req = azure_core::headers::add_optional_header(&self.activity_id, req);
+        let req = azure_core::headers::add_optional_header(&self.consistency_level, req);
 
         let req = req.header(http::header::CONTENT_TYPE, "application/json");
 
@@ -142,13 +110,13 @@ impl<'a, 'b> CreateOrReplaceUserDefinedFunctionBuilder<'a, 'b, Yes> {
         let request = req.body(request.as_bytes())?;
 
         Ok(if self.is_create {
-            self.user_defined_function_client()
+            self.user_defined_function_client
                 .http_client()
                 .execute_request_check_status(request, StatusCode::CREATED)
                 .await?
                 .try_into()?
         } else {
-            self.user_defined_function_client()
+            self.user_defined_function_client
                 .http_client()
                 .execute_request_check_status(request, StatusCode::OK)
                 .await?

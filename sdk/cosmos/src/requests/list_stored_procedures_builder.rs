@@ -9,8 +9,8 @@ use std::convert::TryInto;
 #[derive(Debug, Clone)]
 pub struct ListStoredProceduresBuilder<'a, 'b> {
     collection_client: &'a CollectionClient,
-    user_agent: Option<azure_core::UserAgent<'b>>,
-    activity_id: Option<azure_core::ActivityId<'b>>,
+    user_agent: Option<UserAgent<'b>>,
+    activity_id: Option<ActivityId<'b>>,
     consistency_level: Option<ConsistencyLevel>,
     continuation: Option<Continuation<'b>>,
     max_item_count: MaxItemCount,
@@ -28,59 +28,12 @@ impl<'a, 'b> ListStoredProceduresBuilder<'a, 'b> {
         }
     }
 
-    pub fn collection_client(&self) -> &'a CollectionClient {
-        self.collection_client
-    }
-
-    fn user_agent(&self) -> Option<azure_core::UserAgent<'b>> {
-        self.user_agent
-    }
-
-    fn activity_id(&self) -> Option<azure_core::ActivityId<'b>> {
-        self.activity_id
-    }
-
-    fn consistency_level(&self) -> Option<ConsistencyLevel> {
-        self.consistency_level.clone()
-    }
-
-    fn max_item_count(&self) -> MaxItemCount {
-        self.max_item_count
-    }
-
-    pub fn with_user_agent(self, user_agent: &'b str) -> Self {
-        Self {
-            user_agent: Some(azure_core::UserAgent::new(user_agent)),
-            ..self
-        }
-    }
-
-    pub fn with_activity_id(self, activity_id: &'b str) -> Self {
-        Self {
-            activity_id: Some(azure_core::ActivityId::new(activity_id)),
-            ..self
-        }
-    }
-
-    pub fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self {
-        Self {
-            consistency_level: Some(consistency_level),
-            ..self
-        }
-    }
-
-    pub fn with_continuation(self, continuation: &'b str) -> Self {
-        Self {
-            continuation: Some(Continuation::new(continuation)),
-            ..self
-        }
-    }
-
-    pub fn with_max_item_count(self, max_item_count: i32) -> Self {
-        Self {
-            max_item_count: MaxItemCount::new(max_item_count),
-            ..self
-        }
+    setters! {
+        user_agent: &'b str => Some(UserAgent::new(user_agent)),
+        activity_id: &'b str => Some(ActivityId::new(activity_id)),
+        consistency_level: ConsistencyLevel => Some(consistency_level),
+        continuation: &'b str => Some(Continuation::new(continuation)),
+        max_item_count: i32 => MaxItemCount::new(max_item_count),
     }
 
     pub async fn execute(&self) -> Result<ListStoredProceduresResponse, CosmosError> {
@@ -97,16 +50,16 @@ impl<'a, 'b> ListStoredProceduresBuilder<'a, 'b> {
         );
 
         // add trait headers
-        let request = azure_core::headers::add_optional_header(&self.user_agent(), request);
-        let request = azure_core::headers::add_optional_header(&self.activity_id(), request);
-        let request = azure_core::headers::add_optional_header(&self.consistency_level(), request);
-        let request = azure_core::headers::add_optional_header(&self.continuation(), request);
-        let request = azure_core::headers::add_mandatory_header(&self.max_item_count(), request);
+        let request = azure_core::headers::add_optional_header(&self.user_agent, request);
+        let request = azure_core::headers::add_optional_header(&self.activity_id, request);
+        let request = azure_core::headers::add_optional_header(&self.consistency_level, request);
+        let request = azure_core::headers::add_optional_header(&self.continuation, request);
+        let request = azure_core::headers::add_mandatory_header(&self.max_item_count, request);
 
         let request = request.body(EMPTY_BODY.as_ref())?;
 
         Ok(self
-            .collection_client()
+            .collection_client
             .http_client()
             .execute_request_check_status(request, StatusCode::OK)
             .await?
@@ -154,11 +107,5 @@ impl<'a, 'b> ListStoredProceduresBuilder<'a, 'b> {
                 }
             },
         )
-    }
-}
-
-impl<'a, 'b> ListStoredProceduresBuilder<'a, 'b> {
-    fn continuation(&self) -> Option<Continuation<'b>> {
-        self.continuation
     }
 }

@@ -2,7 +2,7 @@ pub use crate::ba512_range::BA512Range;
 pub use crate::modify_conditions::{IfMatchCondition, IfSinceCondition, SequenceNumberCondition};
 pub use crate::range::Range;
 pub use crate::{
-    AccessTier, AccessTierOption, AccessTierSupport, ActivityIdSupport, AddAsHeader,
+    AccessTier, AccessTierOption, AccessTierSupport, ActivityId, ActivityIdSupport, AddAsHeader,
     AppendPositionOption, AppendPositionSupport, AppendToUrlQuery, BA512RangeOption,
     BA512RangeRequired, BA512RangeSupport, BlobNameRequired, BlobNameSupport, BlockIdRequired,
     BlockIdSupport, BodyRequired, BodySupport, CacheControlOption, CacheControlSupport,
@@ -30,5 +30,5 @@ pub use crate::{
     SequenceNumberSupport, SnapshotOption, SnapshotRequired, SnapshotSupport,
     SourceContentMD5Option, SourceContentMD5Support, SourceLeaseIdOption, SourceLeaseIdSupport,
     SourceUrlRequired, SourceUrlSupport, StoredAccessPolicy, StoredAccessPolicyList, Timeout,
-    TimeoutOption, TimeoutSupport, UserAgentSupport, EMPTY_BODY,
+    TimeoutOption, TimeoutSupport, UserAgent, UserAgentSupport, EMPTY_BODY,
 };
