@@ -1,4 +1,3 @@
-use crate::headers;
 use crate::prelude::*;
 use crate::resources::collection::{Collection, IndexingPolicy, PartitionKey};
 use crate::resources::ResourceType;
@@ -184,6 +183,7 @@ where
 }
 
 impl<'a> CreateCollectionBuilder<'a, Yes, Yes, Yes, Yes> {
+    // call this function to complete the builder
     pub async fn execute(&self) -> Result<CreateCollectionResponse, CosmosError> {
         trace!("CreateCollectionBuilder::execute called");
 
@@ -196,10 +196,10 @@ impl<'a> CreateCollectionBuilder<'a, Yes, Yes, Yes, Yes> {
         req = req.header(http::header::CONTENT_TYPE, "application/json");
 
         // add trait headers
-        let req = headers::add_header(self.offer, req);
-        let req = headers::add_header(self.user_agent, req);
-        let req = headers::add_header(self.activity_id, req);
-        let req = headers::add_header(self.consistency_level.clone(), req);
+        let req = azure_core::headers::add_mandatory_header(&self.offer.unwrap(), req);
+        let req = azure_core::headers::add_optional_header(&self.user_agent, req);
+        let req = azure_core::headers::add_optional_header(&self.activity_id, req);
+        let req = azure_core::headers::add_optional_header(&self.consistency_level, req);
 
         let mut collection = Collection::new(
             self.collection_name.unwrap(),

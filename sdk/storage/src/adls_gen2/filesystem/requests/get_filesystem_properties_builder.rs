@@ -163,7 +163,7 @@ where
             &uri,
             &Method::HEAD,
             &|mut request| {
-                request = ClientRequestIdOption::add_header(&self, request);
+                request = ClientRequestIdOption::add_optional_header(&self, request);
                 request
             },
             Some(&[]),

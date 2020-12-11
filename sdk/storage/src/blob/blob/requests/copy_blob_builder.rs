@@ -791,17 +791,17 @@ where
             &uri,
             &Method::PUT,
             &|mut request| {
-                request = SourceUrlRequired::add_header(&self, request);
-                request = MetadataOption::add_header(&self, request);
-                request = IfSinceConditionOption::add_header(&self, request);
-                request = IfSourceSinceConditionOption::add_header(&self, request);
-                request = IfMatchConditionOption::add_header(&self, request);
-                request = IfSourceMatchConditionOption::add_header(&self, request);
-                request = LeaseIdOption::add_header(&self, request);
-                request = SourceLeaseIdOption::add_header(&self, request);
-                request = AccessTierOption::add_header(&self, request);
-                request = RehydratePriorityOption::add_header(&self, request);
-                request = ClientRequestIdOption::add_header(&self, request);
+                request = SourceUrlRequired::add_mandatory_header(&self, request);
+                request = MetadataOption::add_optional_header(&self, request);
+                request = IfSinceConditionOption::add_optional_header(&self, request);
+                request = IfSourceSinceConditionOption::add_optional_header(&self, request);
+                request = IfMatchConditionOption::add_optional_header(&self, request);
+                request = IfSourceMatchConditionOption::add_optional_header(&self, request);
+                request = LeaseIdOption::add_optional_header(&self, request);
+                request = SourceLeaseIdOption::add_optional_header(&self, request);
+                request = AccessTierOption::add_optional_header(&self, request);
+                request = RehydratePriorityOption::add_optional_header(&self, request);
+                request = ClientRequestIdOption::add_optional_header(&self, request);
 
                 request
             },

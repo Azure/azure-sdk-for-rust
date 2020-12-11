@@ -73,9 +73,9 @@ impl<'a> CreateDatabaseBuilder<'a, Yes> {
             self.cosmos_client
                 .prepare_request("dbs", http::Method::POST, ResourceType::Databases);
 
-        let request = crate::headers::add_header(self.user_agent, request);
-        let request = crate::headers::add_header(self.activity_id, request);
-        let request = crate::headers::add_header(self.consistency_level.clone(), request);
+        let request = azure_core::headers::add_optional_header(&self.user_agent, request);
+        let request = azure_core::headers::add_optional_header(&self.activity_id, request);
+        let request = azure_core::headers::add_optional_header(&self.consistency_level, request);
 
         let request = request.body(req.as_bytes())?; // todo: set content-length here and elsewhere without builders
 

@@ -101,17 +101,17 @@ impl<'a, 'b> CreateSlugAttachmentBuilder<'a, 'b, Yes, Yes> {
         let mut req = self.attachment_client.prepare_request(http::Method::POST);
 
         // add trait headers
-        req = crate::headers::add_header(self.if_match_condition, req);
-        req = crate::headers::add_header(self.user_agent, req);
-        req = crate::headers::add_header(self.activity_id, req);
-        req = crate::headers::add_header(self.consistency_level.clone(), req);
+        req = azure_core::headers::add_optional_header(&self.if_match_condition, req);
+        req = azure_core::headers::add_optional_header(&self.user_agent, req);
+        req = azure_core::headers::add_optional_header(&self.activity_id, req);
+        req = azure_core::headers::add_optional_header(&self.consistency_level, req);
 
         req = crate::headers::add_partition_keys_header(
             self.attachment_client.document_client().partition_keys(),
             req,
         );
 
-        req = crate::headers::add_header(Some(self.content_type.unwrap()), req);
+        req = azure_core::headers::add_mandatory_header(&self.content_type.unwrap(), req);
 
         req = req.header("Slug", self.attachment_client.attachment_name());
         req = req.header(http::header::CONTENT_LENGTH, self.body.unwrap().len());

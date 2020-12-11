@@ -49,11 +49,11 @@ impl<'a, 'b> ListPermissionsBuilder<'a, 'b> {
             ResourceType::Permissions,
         );
 
-        let request = crate::headers::add_header(self.user_agent, request);
-        let request = crate::headers::add_header(self.activity_id, request);
-        let request = crate::headers::add_header(self.consistency_level.clone(), request);
-        let request = crate::headers::add_header(self.continuation, request);
-        let request = crate::headers::add_header(Some(self.max_item_count), request);
+        let request = azure_core::headers::add_optional_header(&self.user_agent, request);
+        let request = azure_core::headers::add_optional_header(&self.activity_id, request);
+        let request = azure_core::headers::add_optional_header(&self.consistency_level, request);
+        let request = azure_core::headers::add_optional_header(&self.continuation, request);
+        let request = azure_core::headers::add_mandatory_header(&self.max_item_count, request);
 
         let request = request.body(EMPTY_BODY.as_ref())?;
         debug!("\nrequest == {:#?}", request);

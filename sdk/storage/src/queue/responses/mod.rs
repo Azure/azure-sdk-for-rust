@@ -1,3 +1,5 @@
+mod set_queue_metadata_response;
+pub use set_queue_metadata_response::SetQueueMetadataResponse;
 mod list_queues_response;
 pub use list_queues_response::ListQueuesResponse;
 mod put_message_response;

@@ -36,9 +36,9 @@ impl<'a, 'b> DeleteUserBuilder<'a, 'b> {
             .user_client
             .prepare_request_with_user_name(http::Method::DELETE);
 
-        let req = crate::headers::add_header(self.user_agent, req);
-        let req = crate::headers::add_header(self.activity_id, req);
-        let req = crate::headers::add_header(self.consistency_level.clone(), req);
+        let req = azure_core::headers::add_optional_header(&self.user_agent, req);
+        let req = azure_core::headers::add_optional_header(&self.activity_id, req);
+        let req = azure_core::headers::add_optional_header(&self.consistency_level, req);
 
         let req = req.body(EMPTY_BODY.as_ref())?;
         debug!("\nreq == {:?}", req);

@@ -212,7 +212,7 @@ where
             &uri,
             &Method::GET,
             &|mut request| {
-                request = ClientRequestIdOption::add_header(&self, request);
+                request = ClientRequestIdOption::add_optional_header(&self, request);
                 request
             },
             Some(&[]),

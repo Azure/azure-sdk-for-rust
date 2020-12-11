@@ -49,7 +49,7 @@ pub trait PublicAccessRequired {
     fn public_access(&self) -> PublicAccess;
 
     #[must_use]
-    fn add_header(&self, mut builder: Builder) -> Builder {
+    fn add_optional_header(&self, mut builder: Builder) -> Builder {
         if self.public_access() != PublicAccess::None {
             builder = builder.header(BLOB_PUBLIC_ACCESS, self.public_access().as_ref());
         }

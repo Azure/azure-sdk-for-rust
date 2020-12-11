@@ -247,9 +247,9 @@ where
             &uri,
             &Method::PATCH,
             &|mut request| {
-                request = IfSinceConditionOption::add_header(&self, request);
-                request = ClientRequestIdOption::add_header(&self, request);
-                request = PropertiesOption::add_header(&self, request);
+                request = IfSinceConditionOption::add_optional_header(&self, request);
+                request = ClientRequestIdOption::add_optional_header(&self, request);
+                request = PropertiesOption::add_optional_header(&self, request);
                 request
             },
             Some(&[]),

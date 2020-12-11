@@ -50,11 +50,12 @@ impl<'a, 'b> ExecuteStoredProcedureBuilder<'a, 'b> {
             .prepare_request_with_stored_procedure_name(http::Method::POST);
 
         // add trait headers
-        let request = crate::headers::add_header(self.user_agent, request);
-        let request = crate::headers::add_header(self.activity_id, request);
-        let request = crate::headers::add_header(self.consistency_level.clone(), request);
-        let request = crate::headers::add_header(Some(self.allow_tentative_writes), request);
-        let request = crate::headers::add_header(self.partition_keys, request);
+        let request = azure_core::headers::add_optional_header(&self.user_agent, request);
+        let request = azure_core::headers::add_optional_header(&self.activity_id, request);
+        let request = azure_core::headers::add_optional_header(&self.consistency_level, request);
+        let request =
+            azure_core::headers::add_mandatory_header(&self.allow_tentative_writes, request);
+        let request = azure_core::headers::add_optional_header(&self.partition_keys, request);
 
         let request = request.header(http::header::CONTENT_TYPE, "application/json");
 

@@ -58,13 +58,3 @@ pub(crate) fn add_partition_keys_header(
     let serialized = partition_keys.to_json();
     builder.header(HEADER_DOCUMENTDB_PARTITIONKEY, serialized)
 }
-
-pub(crate) fn add_header<T: azure_core::AddAsHeader>(
-    item: Option<T>,
-    mut builder: Builder,
-) -> Builder {
-    if let Some(item) = item {
-        builder = item.add_as_header(builder);
-    }
-    builder
-}

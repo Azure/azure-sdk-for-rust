@@ -3,6 +3,7 @@ use crate::queue::clients::QueueClient;
 use crate::queue::HasStorageClient;
 use crate::responses::*;
 use azure_core::errors::AzureError;
+use azure_core::headers::add_optional_header;
 use azure_core::prelude::*;
 use hyper::StatusCode;
 use std::convert::TryInto;
@@ -14,8 +15,8 @@ where
     C: Client + Clone,
 {
     queue_client: &'a QueueClient<C>,
-    timeout: Option<u64>,
-    client_request_id: Option<&'a str>,
+    timeout: Option<Timeout>,
+    client_request_id: Option<ClientRequestId<'a>>,
 }
 
 impl<'a, C> ClearMessagesBuilder<'a, C>
@@ -31,60 +32,24 @@ where
     }
 }
 
-impl<'a, C> TimeoutOption for ClearMessagesBuilder<'a, C>
+impl<'a, C> ClearMessagesBuilder<'a, C>
 where
     C: Client + Clone,
 {
-    fn timeout(&self) -> Option<u64> {
-        self.timeout
-    }
-}
-
-impl<'a, C> ClientRequestIdOption<'a> for ClearMessagesBuilder<'a, C>
-where
-    C: Client + Clone,
-{
-    fn client_request_id(&self) -> Option<&'a str> {
-        self.client_request_id
-    }
-}
-
-impl<'a, C> TimeoutSupport for ClearMessagesBuilder<'a, C>
-where
-    C: Client + Clone,
-{
-    type O = Self;
-
-    fn with_timeout(self, timeout: u64) -> Self::O {
-        ClearMessagesBuilder {
+    pub fn with_timeout(self, timeout: Timeout) -> Self {
+        Self {
             queue_client: self.queue_client,
             timeout: Some(timeout),
             client_request_id: self.client_request_id,
         }
     }
-}
 
-impl<'a, C> ClientRequestIdSupport<'a> for ClearMessagesBuilder<'a, C>
-where
-    C: Client + Clone,
-{
-    type O = Self;
-
-    fn with_client_request_id(self, client_request_id: &'a str) -> Self::O {
-        ClearMessagesBuilder {
+    pub fn with_client_request_id(self, client_request_id: ClientRequestId<'a>) -> Self {
+        Self {
             queue_client: self.queue_client,
             timeout: self.timeout,
             client_request_id: Some(client_request_id),
         }
-    }
-}
-
-impl<'a, C> ClearMessagesBuilder<'a, C>
-where
-    C: Client + Clone,
-{
-    pub fn queue_client(&self) -> &'a QueueClient<C> {
-        self.queue_client
     }
 
     pub async fn execute(self) -> Result<ClearMessagesResponse, AzureError> {
@@ -94,14 +59,14 @@ where
             self.queue_client.queue_name(),
         ))?;
 
-        TimeoutOption::append_to_url(&self, &mut url);
+        AppendToUrlQuery::append_to_url_query(&self.timeout, &mut url);
         debug!("url == {}", url);
 
         let perform_request_response = self.queue_client.storage_client().perform_request(
             url.as_str(),
             &http::Method::DELETE,
             &|mut request| {
-                request = ClientRequestIdOption::add_header(&self, request);
+                request = add_optional_header(&self.client_request_id, request);
                 request
             },
             Some(&[]),
