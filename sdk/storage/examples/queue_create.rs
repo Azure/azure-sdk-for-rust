@@ -40,10 +40,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
     println!("response == {:#?}", response);
 
     // let's add some more metadata
-    metadata.as_mut().insert("version".into(), "TBD".into());
-    metadata
-        .as_mut()
-        .insert("updated".into(), format!("{:?}", chrono::Utc::now()).into());
+    metadata.insert("version".to_owned(), "TBD".to_owned());
+    metadata.insert("updated".to_owned(), format!("{:?}", chrono::Utc::now()));
 
     println!("metadata == {:#?}", metadata);
 

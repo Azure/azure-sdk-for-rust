@@ -14,7 +14,7 @@ where
     C: Client + Clone,
 {
     queue_client: &'a QueueClient<C>,
-    metadata: &'a Metadata<'a>,
+    metadata: &'a Metadata,
     timeout: Option<Timeout>,
     client_request_id: Option<ClientRequestId<'a>>,
 }
@@ -37,18 +37,6 @@ impl<'a, C> SetQueueMetadataBuilder<'a, C>
 where
     C: Client + Clone,
 {
-    pub fn queue_client(&self) -> &'a QueueClient<C> {
-        self.queue_client
-    }
-
-    pub fn metadata(&self) -> &'a Metadata {
-        self.metadata
-    }
-
-    pub fn timeout(&self) -> &Option<Timeout> {
-        &self.timeout
-    }
-
     pub fn with_timeout(self, timeout: Timeout) -> Self {
         Self {
             queue_client: self.queue_client,
@@ -56,10 +44,6 @@ where
             metadata: self.metadata,
             client_request_id: self.client_request_id,
         }
-    }
-
-    pub fn client_request_id(&self) -> &Option<ClientRequestId<'a>> {
-        &self.client_request_id
     }
 
     pub fn with_client_request_id(self, client_request_id: ClientRequestId<'a>) -> Self {
@@ -79,7 +63,7 @@ where
         ))?;
 
         url.query_pairs_mut().append_pair("comp", "metadata");
-        AppendToUrlQuery::append_to_url_query(self.timeout(), &mut url);
+        AppendToUrlQuery::append_to_url_query(&self.timeout, &mut url);
 
         debug!("url == {}", url);
 
@@ -87,8 +71,8 @@ where
             url.as_str(),
             &http::Method::PUT,
             &|mut request| {
-                request = add_mandatory_header(&self.metadata(), request);
-                request = add_optional_header(self.client_request_id(), request);
+                request = add_mandatory_header(&self.metadata, request);
+                request = add_optional_header(&self.client_request_id, request);
                 request
             },
             Some(&[]),

@@ -36,24 +36,12 @@ impl<'a, C> ClearMessagesBuilder<'a, C>
 where
     C: Client + Clone,
 {
-    pub fn queue_client(&self) -> &'a QueueClient<C> {
-        self.queue_client
-    }
-
-    pub fn timeout(&self) -> &Option<Timeout> {
-        &self.timeout
-    }
-
     pub fn with_timeout(self, timeout: Timeout) -> Self {
         Self {
             queue_client: self.queue_client,
             timeout: Some(timeout),
             client_request_id: self.client_request_id,
         }
-    }
-
-    pub fn client_request_id(&self) -> &Option<ClientRequestId<'a>> {
-        &self.client_request_id
     }
 
     pub fn with_client_request_id(self, client_request_id: ClientRequestId<'a>) -> Self {
@@ -71,14 +59,14 @@ where
             self.queue_client.queue_name(),
         ))?;
 
-        AppendToUrlQuery::append_to_url_query(self.timeout(), &mut url);
+        AppendToUrlQuery::append_to_url_query(&self.timeout, &mut url);
         debug!("url == {}", url);
 
         let perform_request_response = self.queue_client.storage_client().perform_request(
             url.as_str(),
             &http::Method::DELETE,
             &|mut request| {
-                request = add_optional_header(self.client_request_id(), request);
+                request = add_optional_header(&self.client_request_id, request);
                 request
             },
             Some(&[]),

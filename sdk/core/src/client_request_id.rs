@@ -1,28 +1,24 @@
 use crate::headers::*;
 use crate::AddAsHeader;
 use http::request::Builder;
-use std::borrow::Cow;
 
 #[derive(Debug, Clone)]
-pub struct ClientRequestId<'a>(Cow<'a, str>);
+pub struct ClientRequestId<'a>(&'a str);
 
 impl<'a> ClientRequestId<'a> {
-    pub fn new<CRI: Into<Cow<'a, str>>>(client_request_id: CRI) -> Self {
-        Self(client_request_id.into())
+    pub fn new(client_request_id: &'a str) -> Self {
+        Self(client_request_id)
     }
 }
 
 impl<'a> AddAsHeader for ClientRequestId<'a> {
     fn add_as_header(&self, builder: Builder) -> Builder {
-        builder.header(CLIENT_REQUEST_ID, self.0.as_ref())
+        builder.header(CLIENT_REQUEST_ID, self.0)
     }
 }
 
-impl<'a, T> From<T> for ClientRequestId<'a>
-where
-    T: Into<Cow<'a, str>>,
-{
-    fn from(t: T) -> Self {
-        Self::new(t)
+impl<'a> From<&'a str> for ClientRequestId<'a> {
+    fn from(client_request_id: &'a str) -> Self {
+        Self::new(client_request_id)
     }
 }
