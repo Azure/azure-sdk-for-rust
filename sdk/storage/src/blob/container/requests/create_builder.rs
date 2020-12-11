@@ -267,9 +267,9 @@ where
             &uri,
             &Method::PUT,
             &|mut request| {
-                request = PublicAccessRequired::add_header(&self, request);
-                request = ClientRequestIdOption::add_header(&self, request);
-                request = MetadataOption::add_header(&self, request);
+                request = PublicAccessRequired::add_optional_header(&self, request);
+                request = ClientRequestIdOption::add_optional_header(&self, request);
+                request = MetadataOption::add_optional_header(&self, request);
                 request
             },
             Some(&[]),

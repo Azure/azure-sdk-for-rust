@@ -1,4 +1,4 @@
-#![recursion_limit = "128"]
+#![recursion_limit = "256"]
 #![allow(clippy::needless_lifetimes)]
 
 #[macro_use]

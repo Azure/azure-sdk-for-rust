@@ -3,7 +3,7 @@ use crate::resources::ResourceType;
 use crate::responses::CreateDocumentResponse;
 use azure_core::errors::UnexpectedHTTPResult;
 use azure_core::prelude::*;
-use azure_core::{No, ToAssign, Yes};
+use azure_core::{ActivityId, No, ToAssign, UserAgent, Yes};
 use chrono::{DateTime, Utc};
 use http::StatusCode;
 use serde::Serialize;
@@ -20,9 +20,9 @@ where
     is_upsert: IsUpsert,
     indexing_directive: IndexingDirective,
     if_match_condition: Option<IfMatchCondition<'b>>,
-    if_modified_since: Option<IfModifiedSince>,
-    user_agent: Option<azure_core::UserAgent<'b>>,
-    activity_id: Option<azure_core::ActivityId<'b>>,
+    if_modified_since: Option<IfModifiedSince<'b>>,
+    user_agent: Option<UserAgent<'b>>,
+    activity_id: Option<ActivityId<'b>>,
     consistency_level: Option<ConsistencyLevel>,
     allow_tentative_writes: TenativeWritesAllowance,
     p_partition_keys: PhantomData<PartitionKeysSet>,
@@ -41,7 +41,7 @@ impl<'a, 'b> CreateDocumentBuilder<'a, 'b, No> {
             activity_id: None,
             consistency_level: None,
             allow_tentative_writes: TenativeWritesAllowance::Deny,
-            p_partition_keys: PhantomData {},
+            p_partition_keys: PhantomData,
         }
     }
 }
@@ -50,114 +50,15 @@ impl<'a, 'b, PartitionKeysSet> CreateDocumentBuilder<'a, 'b, PartitionKeysSet>
 where
     PartitionKeysSet: ToAssign,
 {
-    pub fn collection_client(&self) -> &'a CollectionClient {
-        self.collection_client
-    }
-
-    pub fn with_user_agent(self, user_agent: &'b str) -> Self {
-        Self {
-            user_agent: Some(azure_core::UserAgent::new(user_agent)),
-            ..self
-        }
-    }
-
-    pub fn with_activity_id(self, activity_id: &'b str) -> Self {
-        Self {
-            activity_id: Some(azure_core::ActivityId::new(activity_id)),
-            ..self
-        }
-    }
-
-    pub fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self {
-        CreateDocumentBuilder {
-            consistency_level: Some(consistency_level),
-            ..self
-        }
-    }
-
-    pub fn with_allow_tentative_writes(
-        self,
+    setters! {
+        user_agent: &'b str => Some(UserAgent::new(user_agent)),
+        activity_id: &'b str => Some(ActivityId::new(activity_id)),
+        consistency_level: ConsistencyLevel => Some(consistency_level),
+        if_match_condition: IfMatchCondition<'b> => Some(if_match_condition),
+        if_modified_since: &'b DateTime<Utc> => Some(IfModifiedSince::new(if_modified_since)),
         allow_tentative_writes: TenativeWritesAllowance,
-    ) -> Self {
-        Self {
-            allow_tentative_writes,
-            ..self
-        }
-    }
-
-    pub fn with_is_upsert(self, is_upsert: bool) -> Self {
-        Self {
-            is_upsert: if is_upsert {
-                IsUpsert::Yes
-            } else {
-                IsUpsert::No
-            },
-            ..self
-        }
-    }
-
-    pub fn with_indexing_directive(self, indexing_directive: IndexingDirective) -> Self {
-        Self {
-            indexing_directive,
-            ..self
-        }
-    }
-
-    pub fn with_if_match_condition(self, if_match_condition: IfMatchCondition<'b>) -> Self {
-        CreateDocumentBuilder {
-            if_match_condition: Some(if_match_condition),
-            ..self
-        }
-    }
-
-    pub fn with_if_modified_since(self, if_modified_since: &'b DateTime<Utc>) -> Self {
-        Self {
-            if_modified_since: Some(IfModifiedSince::new(if_modified_since.clone())),
-            ..self
-        }
-    }
-
-    fn is_upsert(&self) -> IsUpsert {
-        self.is_upsert
-    }
-
-    fn indexing_directive(&self) -> IndexingDirective {
-        self.indexing_directive
-    }
-
-    fn if_match_condition(&self) -> Option<IfMatchCondition<'b>> {
-        self.if_match_condition
-    }
-
-    fn user_agent(&self) -> Option<azure_core::UserAgent<'b>> {
-        self.user_agent
-    }
-
-    fn activity_id(&self) -> Option<azure_core::ActivityId<'b>> {
-        self.activity_id
-    }
-
-    fn consistency_level(&self) -> Option<ConsistencyLevel> {
-        self.consistency_level.clone()
-    }
-
-    fn allow_tentative_writes(&self) -> TenativeWritesAllowance {
-        self.allow_tentative_writes
-    }
-}
-
-impl<'a, 'b> CreateDocumentBuilder<'a, 'b, Yes> {
-    fn partition_keys(&self) -> &'b PartitionKeys {
-        self.partition_keys.unwrap()
-    }
-}
-
-impl<'a, 'b, PartitionKeysSet> CreateDocumentBuilder<'a, 'b, PartitionKeysSet>
-where
-    PartitionKeysSet: ToAssign,
-{
-    fn if_modified_since(&self) -> Option<IfModifiedSince> {
-        self.if_modified_since.clone()
+        is_upsert: bool => if is_upsert { IsUpsert::Yes } else { IsUpsert::No },
+        indexing_directive: IndexingDirective,
     }
 }
 
@@ -177,7 +78,7 @@ impl<'a, 'b> CreateDocumentBuilder<'a, 'b, No> {
             activity_id: self.activity_id,
             consistency_level: self.consistency_level,
             allow_tentative_writes: self.allow_tentative_writes,
-            p_partition_keys: PhantomData {},
+            p_partition_keys: PhantomData,
         }
     }
 }
@@ -201,15 +102,15 @@ impl<'a, 'b> CreateDocumentBuilder<'a, 'b, Yes> {
         );
 
         // add trait headers
-        req = crate::headers::add_header(self.if_match_condition(), req);
-        req = crate::headers::add_header(self.if_modified_since(), req);
-        req = crate::headers::add_header(self.user_agent(), req);
-        req = crate::headers::add_header(self.activity_id(), req);
-        req = crate::headers::add_header(self.consistency_level(), req);
-        req = crate::headers::add_header(Some(self.partition_keys()), req);
-        req = crate::headers::add_header(Some(self.is_upsert()), req);
-        req = crate::headers::add_header(Some(self.indexing_directive()), req);
-        req = crate::headers::add_header(Some(self.allow_tentative_writes()), req);
+        req = azure_core::headers::add_optional_header(&self.if_match_condition, req);
+        req = azure_core::headers::add_optional_header(&self.if_modified_since, req);
+        req = azure_core::headers::add_optional_header(&self.user_agent, req);
+        req = azure_core::headers::add_optional_header(&self.activity_id, req);
+        req = azure_core::headers::add_optional_header(&self.consistency_level, req);
+        req = azure_core::headers::add_mandatory_header(&self.partition_keys.unwrap(), req);
+        req = azure_core::headers::add_mandatory_header(&self.is_upsert, req);
+        req = azure_core::headers::add_mandatory_header(&self.indexing_directive, req);
+        req = azure_core::headers::add_mandatory_header(&self.allow_tentative_writes, req);
 
         let serialized = serde_json::to_string(document)?;
         let req = req.body(serialized.as_bytes())?;
@@ -226,7 +127,7 @@ impl<'a, 'b> CreateDocumentBuilder<'a, 'b, Yes> {
 
         // expect CREATED is IsUpsert is off. Otherwise either
         // CREATED or OK means success.
-        if self.is_upsert() == IsUpsert::No && response.status() != StatusCode::CREATED {
+        if self.is_upsert == IsUpsert::No && response.status() != StatusCode::CREATED {
             return Err(UnexpectedHTTPResult::new(
                 StatusCode::CREATED,
                 response.status(),

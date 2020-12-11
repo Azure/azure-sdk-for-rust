@@ -3,9 +3,9 @@ use crate::queue::clients::QueueClient;
 use crate::queue::responses::*;
 use crate::queue::HasStorageClient;
 use azure_core::errors::AzureError;
+use azure_core::headers::add_optional_header;
 use azure_core::prelude::*;
 use hyper::StatusCode;
-use std::collections::HashMap;
 use std::convert::TryInto;
 
 #[derive(Debug, Clone)]
@@ -14,9 +14,9 @@ where
     C: Client + Clone,
 {
     queue_client: &'a QueueClient<C>,
-    timeout: Option<u64>,
-    metadata: Option<&'a HashMap<&'a str, &'a str>>,
-    client_request_id: Option<&'a str>,
+    timeout: Option<Timeout>,
+    metadata: Option<&'a Metadata>,
+    client_request_id: Option<ClientRequestId<'a>>,
 }
 
 impl<'a, C> CreateQueueBuilder<'a, C>
@@ -33,87 +33,14 @@ where
     }
 }
 
-impl<'a, C> TimeoutOption for CreateQueueBuilder<'a, C>
-where
-    C: Client + Clone,
-{
-    fn timeout(&self) -> Option<u64> {
-        self.timeout
-    }
-}
-
-impl<'a, C> ClientRequestIdOption<'a> for CreateQueueBuilder<'a, C>
-where
-    C: Client + Clone,
-{
-    fn client_request_id(&self) -> Option<&'a str> {
-        self.client_request_id
-    }
-}
-
-impl<'a, C> MetadataOption<'a> for CreateQueueBuilder<'a, C>
-where
-    C: Client + Clone,
-{
-    fn metadata(&self) -> Option<&'a HashMap<&'a str, &'a str>> {
-        self.metadata
-    }
-}
-
-impl<'a, C> TimeoutSupport for CreateQueueBuilder<'a, C>
-where
-    C: Client + Clone,
-{
-    type O = Self;
-
-    fn with_timeout(self, timeout: u64) -> Self::O {
-        CreateQueueBuilder {
-            queue_client: self.queue_client,
-            timeout: Some(timeout),
-            metadata: self.metadata,
-            client_request_id: self.client_request_id,
-        }
-    }
-}
-
-impl<'a, C> ClientRequestIdSupport<'a> for CreateQueueBuilder<'a, C>
-where
-    C: Client + Clone,
-{
-    type O = Self;
-
-    fn with_client_request_id(self, client_request_id: &'a str) -> Self::O {
-        CreateQueueBuilder {
-            queue_client: self.queue_client,
-            timeout: self.timeout,
-            metadata: self.metadata,
-            client_request_id: Some(client_request_id),
-        }
-    }
-}
-
-impl<'a, C> MetadataSupport<'a> for CreateQueueBuilder<'a, C>
-where
-    C: Client + Clone,
-{
-    type O = Self;
-
-    fn with_metadata(self, metadata: &'a HashMap<&'a str, &'a str>) -> Self::O {
-        CreateQueueBuilder {
-            queue_client: self.queue_client,
-            timeout: self.timeout,
-            metadata: Some(metadata),
-            client_request_id: self.client_request_id,
-        }
-    }
-}
-
 impl<'a, C> CreateQueueBuilder<'a, C>
 where
     C: Client + Clone,
 {
-    pub fn queue_client(&self) -> &'a QueueClient<C> {
-        self.queue_client
+    setters! {
+        metadata: &'a Metadata => Some(metadata),
+        timeout: Timeout => Some(timeout),
+        client_request_id: ClientRequestId<'a> => Some(client_request_id),
     }
 
     pub async fn execute(self) -> Result<CreateQueueResponse, AzureError> {
@@ -123,7 +50,7 @@ where
             self.queue_client.queue_name(),
         ))?;
 
-        TimeoutOption::append_to_url(&self, &mut url);
+        AppendToUrlQuery::append_to_url_query(&self.timeout, &mut url);
 
         debug!("uri == {}", url);
 
@@ -131,8 +58,8 @@ where
             url.as_str(),
             &http::Method::PUT,
             &|mut request| {
-                request = ClientRequestIdOption::add_header(&self, request);
-                request = MetadataOption::add_header(&self, request);
+                request = add_optional_header(&self.client_request_id, request);
+                request = add_optional_header(&self.metadata, request);
                 request
             },
             Some(&[]),

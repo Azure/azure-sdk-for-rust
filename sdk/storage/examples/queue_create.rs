@@ -3,7 +3,6 @@ extern crate log;
 use azure_core::prelude::*;
 use azure_storage::core::prelude::*;
 use azure_storage::queue::prelude::*;
-use std::collections::HashMap;
 use std::error::Error;
 
 #[tokio::main]
@@ -25,20 +24,34 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     // this step is optional but here we show
     // how to add metadata to a new queue.
-    let mut hm = HashMap::new();
-    hm.insert("source", "azure-sdk-for-rust");
+    let mut metadata = Metadata::new();
+    metadata
+        .as_mut()
+        .insert("source".into(), "azure-sdk-for-rust".into());
+    metadata
+        .as_mut()
+        .insert("created".into(), format!("{:?}", chrono::Utc::now()).into());
 
     let response = queue_client
         .create_queue()
-        .with_metadata(&hm)
+        .with_metadata(&metadata)
         .execute()
         .await?;
+    println!("response == {:#?}", response);
+
+    // let's add some more metadata
+    metadata.insert("version".to_owned(), "TBD".to_owned());
+    metadata.insert("updated".to_owned(), format!("{:?}", chrono::Utc::now()));
+
+    println!("metadata == {:#?}", metadata);
+
+    let response = queue_client.set_queue_metadata(&metadata).execute().await?;
     println!("response == {:#?}", response);
 
     // now let's delete it
     let response = queue_client
         .delete_queue()
-        .with_client_request_id("myclientid")
+        .with_client_request_id("myclientid".into())
         .execute()
         .await?;
     println!("response == {:#?}", response);

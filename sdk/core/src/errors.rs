@@ -1,4 +1,4 @@
-use crate::{enumerations::ParsingError, range::ParseError};
+use crate::range::ParseError;
 use http::header::ToStrError;
 use hyper::{self, body, Body, StatusCode};
 use std::io::Error as IOError;
@@ -9,6 +9,11 @@ use std::str::ParseBoolError;
 use std::string;
 use url::ParseError as URLParseError;
 use xml::BuilderError as XMLError;
+
+#[derive(Debug)]
+pub enum ParsingError {
+    ElementNotFound(String),
+}
 
 quick_error! {
     #[derive(Debug)]

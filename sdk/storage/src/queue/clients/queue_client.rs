@@ -3,6 +3,7 @@ use crate::queue::clients::QueueAccountClient;
 use crate::queue::requests::*;
 use crate::queue::PopReceipt;
 use crate::HasStorageClient;
+use azure_core::Metadata;
 use std::borrow::Cow;
 use std::fmt::Debug;
 
@@ -74,5 +75,12 @@ where
 
     pub fn clear_messages(&self) -> ClearMessagesBuilder<'_, C> {
         ClearMessagesBuilder::new(self)
+    }
+
+    pub fn set_queue_metadata<'a>(
+        &'a self,
+        metadata: &'a Metadata,
+    ) -> SetQueueMetadataBuilder<'a, C> {
+        SetQueueMetadataBuilder::new(self, metadata)
     }
 }

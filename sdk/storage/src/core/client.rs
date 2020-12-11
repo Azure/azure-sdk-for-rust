@@ -11,7 +11,7 @@ use std::borrow::Cow;
 use url::Url;
 
 pub trait HttpHeaderAdder {
-    fn add_headers(&self, builder: ::http::request::Builder) -> ::http::request::Builder;
+    fn add_optional_headers(&self, builder: ::http::request::Builder) -> ::http::request::Builder;
 }
 
 pub trait Client: std::fmt::Debug + Send + Sync {

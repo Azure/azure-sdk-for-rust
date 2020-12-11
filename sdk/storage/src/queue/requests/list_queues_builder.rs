@@ -3,6 +3,7 @@ use crate::queue::clients::QueueAccountClient;
 use crate::queue::responses::*;
 use crate::queue::HasStorageClient;
 use azure_core::errors::AzureError;
+use azure_core::headers::add_optional_header;
 use azure_core::prelude::*;
 use hyper::StatusCode;
 use std::convert::TryInto;
@@ -12,22 +13,22 @@ pub struct ListQueuesBuilder<'a, C>
 where
     C: Client + Clone,
 {
-    queue_service: &'a QueueAccountClient<C>,
+    queue_account_client: &'a QueueAccountClient<C>,
     prefix: Option<&'a str>,
     next_marker: Option<&'a str>,
     max_results: Option<u32>,
     include_metadata: bool,
-    timeout: Option<u64>,
-    client_request_id: Option<&'a str>,
+    timeout: Option<Timeout>,
+    client_request_id: Option<ClientRequestId<'a>>,
 }
 
 impl<'a, C> ListQueuesBuilder<'a, C>
 where
     C: Client + Clone,
 {
-    pub(crate) fn new(queue_service: &'a QueueAccountClient<C>) -> Self {
+    pub(crate) fn new(queue_account_client: &'a QueueAccountClient<C>) -> Self {
         ListQueuesBuilder {
-            queue_service,
+            queue_account_client,
             prefix: None,
             next_marker: None,
             max_results: None,
@@ -75,24 +76,6 @@ where
     }
 }
 
-impl<'a, C> TimeoutOption for ListQueuesBuilder<'a, C>
-where
-    C: Client + Clone,
-{
-    fn timeout(&self) -> Option<u64> {
-        self.timeout
-    }
-}
-
-impl<'a, C> ClientRequestIdOption<'a> for ListQueuesBuilder<'a, C>
-where
-    C: Client + Clone,
-{
-    fn client_request_id(&self) -> Option<&'a str> {
-        self.client_request_id
-    }
-}
-
 impl<'a, C> PrefixSupport<'a> for ListQueuesBuilder<'a, C>
 where
     C: Client + Clone,
@@ -101,7 +84,7 @@ where
 
     fn with_prefix(self, prefix: &'a str) -> Self::O {
         ListQueuesBuilder {
-            queue_service: self.queue_service,
+            queue_account_client: self.queue_account_client,
             prefix: Some(prefix),
             next_marker: self.next_marker,
             max_results: self.max_results,
@@ -120,7 +103,7 @@ where
 
     fn with_next_marker(self, next_marker: &'a str) -> Self::O {
         ListQueuesBuilder {
-            queue_service: self.queue_service,
+            queue_account_client: self.queue_account_client,
             prefix: self.prefix,
             next_marker: Some(next_marker),
             max_results: self.max_results,
@@ -139,7 +122,7 @@ where
 
     fn with_max_results(self, max_results: u32) -> Self::O {
         ListQueuesBuilder {
-            queue_service: self.queue_service,
+            queue_account_client: self.queue_account_client,
             prefix: self.prefix,
             next_marker: self.next_marker,
             max_results: Some(max_results),
@@ -158,7 +141,7 @@ where
 
     fn with_include_metadata(self) -> Self::O {
         ListQueuesBuilder {
-            queue_service: self.queue_service,
+            queue_account_client: self.queue_account_client,
             prefix: self.prefix,
             next_marker: self.next_marker,
             max_results: self.max_results,
@@ -169,77 +152,35 @@ where
     }
 }
 
-impl<'a, C> TimeoutSupport for ListQueuesBuilder<'a, C>
-where
-    C: Client + Clone,
-{
-    type O = Self;
-
-    fn with_timeout(self, timeout: u64) -> Self::O {
-        ListQueuesBuilder {
-            queue_service: self.queue_service,
-            prefix: self.prefix,
-            next_marker: self.next_marker,
-            max_results: self.max_results,
-            include_metadata: self.include_metadata,
-            timeout: Some(timeout),
-            client_request_id: self.client_request_id,
-        }
-    }
-}
-
-impl<'a, C> ClientRequestIdSupport<'a> for ListQueuesBuilder<'a, C>
-where
-    C: Client + Clone,
-{
-    type O = Self;
-
-    fn with_client_request_id(self, client_request_id: &'a str) -> Self::O {
-        ListQueuesBuilder {
-            queue_service: self.queue_service,
-            prefix: self.prefix,
-            next_marker: self.next_marker,
-            max_results: self.max_results,
-            include_metadata: self.include_metadata,
-            timeout: self.timeout,
-            client_request_id: Some(client_request_id),
-        }
-    }
-}
-
-// methods callable regardless
-impl<'a, C> ListQueuesBuilder<'a, C>
-where
-    C: Client + Clone,
-{
-    pub fn queue_service(&self) -> &'a QueueAccountClient<C> {
-        self.queue_service
-    }
-}
-
 // methods callable only when every mandatory field has been filled
 impl<'a, C> ListQueuesBuilder<'a, C>
 where
     C: Client + Clone,
 {
+    setters! {
+        timeout: Timeout => Some(timeout),
+        client_request_id: ClientRequestId<'a> => Some(client_request_id),
+    }
+
     pub async fn execute(self) -> Result<ListQueuesResponse, AzureError> {
-        let mut url = url::Url::parse(self.queue_service.storage_client().queue_uri())?;
+        let mut url = url::Url::parse(self.queue_account_client.storage_client().queue_uri())?;
 
         url.query_pairs_mut().append_pair("comp", "list");
 
         IncludeMetadataOption::append_to_url(&self, &mut url);
-        TimeoutOption::append_to_url(&self, &mut url);
         MaxResultsOption::append_to_url(&self, &mut url);
         NextMarkerOption::append_to_url(&self, &mut url);
         PrefixOption::append_to_url(&self, &mut url);
 
+        AppendToUrlQuery::append_to_url_query(&self.timeout, &mut url);
+
         debug!("url == {}", url);
 
-        let perform_request_response = self.queue_service.storage_client().perform_request(
+        let perform_request_response = self.queue_account_client.storage_client().perform_request(
             url.as_str(),
             &http::Method::GET,
             &|mut request| {
-                request = ClientRequestIdOption::add_header(&self, request);
+                request = add_optional_header(&self.client_request_id, request);
                 request
             },
             Some(&[]),

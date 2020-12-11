@@ -362,8 +362,8 @@ where
             &Method::GET,
             &|mut request| {
                 if let Some(r) = self.range() {
-                    request = LeaseIdOption::add_header(&self, request);
-                    request = RangeOption::add_header(&self, request);
+                    request = LeaseIdOption::add_optional_header(&self, request);
+                    request = RangeOption::add_optional_header(&self, request);
 
                     if r.len() <= 4 * 1024 * 1024 {
                         request = request.header_static(RANGE_GET_CONTENT_MD5, "true");

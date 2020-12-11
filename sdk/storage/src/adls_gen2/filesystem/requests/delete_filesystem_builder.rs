@@ -202,8 +202,8 @@ where
             &uri,
             &Method::DELETE,
             &|mut request| {
-                request = IfSinceConditionOption::add_header(&self, request);
-                request = ClientRequestIdOption::add_header(&self, request);
+                request = IfSinceConditionOption::add_optional_header(&self, request);
+                request = ClientRequestIdOption::add_optional_header(&self, request);
                 request
             },
             Some(&[]),

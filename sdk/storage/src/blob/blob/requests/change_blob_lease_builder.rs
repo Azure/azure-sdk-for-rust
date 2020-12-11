@@ -365,20 +365,20 @@ where
             uri = format!("{}&{}", uri, nm);
         }
 
-        let (headers, _body) = self
-            .client()
-            .perform_request(
-                &uri,
-                &Method::PUT,
-                &|mut request| {
-                    request = LeaseIdRequired::add_header(&self, request);
-                    request = request.header(LEASE_ACTION, "change");
-                    request = ProposedLeaseIdRequired::add_header(&self, request);
-                    request = ClientRequestIdOption::add_header(&self, request);
-                    request
-                },
-                None,
-            )?
+        let perform_request_response = self.client().perform_request(
+            &uri,
+            &Method::PUT,
+            &|mut request| {
+                request = LeaseIdRequired::add_mandatory_header(&self, request);
+                request = request.header(LEASE_ACTION, "change");
+                request = ProposedLeaseIdRequired::add_mandatory_header(&self, request);
+                request = ClientRequestIdOption::add_optional_header(&self, request);
+                request
+            },
+            None,
+        )?;
+
+        let (headers, _body) = perform_request_response
             .check_status_extract_headers_and_body(StatusCode::OK)
             .await?;
         ChangeBlobLeaseResponse::from_headers(&headers)

@@ -14,3 +14,5 @@ mod create_queue_builder;
 pub use create_queue_builder::CreateQueueBuilder;
 mod delete_queue_builder;
 pub use delete_queue_builder::DeleteQueueBuilder;
+mod set_queue_metadata_builder;
+pub use set_queue_metadata_builder::SetQueueMetadataBuilder;

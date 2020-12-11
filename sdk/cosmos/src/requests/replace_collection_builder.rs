@@ -1,6 +1,7 @@
 use crate::prelude::*;
 use crate::resources::collection::{IndexingPolicy, PartitionKey};
 use crate::responses::CreateCollectionResponse;
+use azure_core::prelude::*;
 use azure_core::{No, ToAssign, Yes};
 use http::StatusCode;
 use std::convert::TryInto;
@@ -13,26 +14,26 @@ where
     IndexingPolicySet: ToAssign,
 {
     collection_client: &'a CollectionClient,
-    p_partition_key: PhantomData<PartitionKeysSet>,
-    p_indexing_policy: PhantomData<IndexingPolicySet>,
     partition_key: Option<&'a PartitionKey>,
     indexing_policy: Option<&'a IndexingPolicy>,
-    user_agent: Option<azure_core::UserAgent<'b>>,
-    activity_id: Option<azure_core::ActivityId<'b>>,
+    user_agent: Option<UserAgent<'b>>,
+    activity_id: Option<ActivityId<'b>>,
     consistency_level: Option<ConsistencyLevel>,
+    p_partition_key: PhantomData<PartitionKeysSet>,
+    p_indexing_policy: PhantomData<IndexingPolicySet>,
 }
 
 impl<'a, 'b> ReplaceCollectionBuilder<'a, 'b, No, No> {
     pub(crate) fn new(collection_client: &'a CollectionClient) -> Self {
         Self {
             collection_client,
-            p_partition_key: PhantomData {},
             partition_key: None,
-            p_indexing_policy: PhantomData {},
             indexing_policy: None,
             user_agent: None,
             activity_id: None,
             consistency_level: None,
+            p_partition_key: PhantomData,
+            p_indexing_policy: PhantomData,
         }
     }
 }
@@ -43,41 +44,10 @@ where
     PartitionKeysSet: ToAssign,
     IndexingPolicySet: ToAssign,
 {
-    pub fn collection_client(&self) -> &'a CollectionClient {
-        self.collection_client
-    }
-
-    fn user_agent(&self) -> Option<azure_core::UserAgent<'b>> {
-        self.user_agent
-    }
-
-    fn activity_id(&self) -> Option<azure_core::ActivityId<'b>> {
-        self.activity_id
-    }
-
-    fn consistency_level(&self) -> Option<ConsistencyLevel> {
-        self.consistency_level.clone()
-    }
-
-    pub fn with_user_agent(self, user_agent: &'b str) -> Self {
-        Self {
-            user_agent: Some(azure_core::UserAgent::new(user_agent)),
-            ..self
-        }
-    }
-
-    pub fn with_activity_id(self, activity_id: &'b str) -> Self {
-        Self {
-            activity_id: Some(azure_core::ActivityId::new(activity_id)),
-            ..self
-        }
-    }
-
-    pub fn with_consistency_level(self, consistency_level: ConsistencyLevel) -> Self {
-        Self {
-            consistency_level: Some(consistency_level),
-            ..self
-        }
+    setters! {
+        user_agent: &'b str => Some(UserAgent::new(user_agent)),
+        activity_id: &'b str => Some(ActivityId::new(activity_id)),
+        consistency_level: ConsistencyLevel => Some(consistency_level),
     }
 }
 
@@ -90,9 +60,9 @@ impl<'a, 'b> ReplaceCollectionBuilder<'a, 'b, Yes, Yes> {
             .collection_client
             .prepare_request_with_collection_name(http::Method::PUT);
 
-        let req = crate::headers::add_header(self.user_agent(), req);
-        let req = crate::headers::add_header(self.activity_id(), req);
-        let req = crate::headers::add_header(self.consistency_level(), req);
+        let req = azure_core::headers::add_optional_header(&self.user_agent, req);
+        let req = azure_core::headers::add_optional_header(&self.activity_id, req);
+        let req = azure_core::headers::add_optional_header(&self.consistency_level, req);
 
         let req = req.header(http::header::CONTENT_TYPE, "application/json");
 
@@ -106,9 +76,9 @@ impl<'a, 'b> ReplaceCollectionBuilder<'a, 'b, Yes, Yes> {
         };
 
         let request = Request {
-            id: self.collection_client().collection_name(),
-            indexing_policy: self.indexing_policy(),
-            partition_key: self.partition_key(),
+            id: self.collection_client.collection_name(),
+            indexing_policy: self.indexing_policy.unwrap(),
+            partition_key: self.partition_key.unwrap(),
         };
 
         let body = serde_json::to_string(&request)?;
@@ -130,24 +100,6 @@ impl<'a, 'b> ReplaceCollectionBuilder<'a, 'b, Yes, Yes> {
     }
 }
 
-impl<'a, 'b, IndexingPolicySet> ReplaceCollectionBuilder<'a, 'b, Yes, IndexingPolicySet>
-where
-    IndexingPolicySet: ToAssign,
-{
-    fn partition_key(&self) -> &'a PartitionKey {
-        self.partition_key.unwrap()
-    }
-}
-
-impl<'a, 'b, PartitionKeysSet> ReplaceCollectionBuilder<'a, 'b, PartitionKeysSet, Yes>
-where
-    PartitionKeysSet: ToAssign,
-{
-    fn indexing_policy(&self) -> &'a IndexingPolicy {
-        self.indexing_policy.unwrap()
-    }
-}
-
 impl<'a, 'b, IndexingPolicySet> ReplaceCollectionBuilder<'a, 'b, No, IndexingPolicySet>
 where
     IndexingPolicySet: ToAssign,
@@ -158,8 +110,8 @@ where
     ) -> ReplaceCollectionBuilder<'a, 'b, Yes, IndexingPolicySet> {
         ReplaceCollectionBuilder {
             collection_client: self.collection_client,
-            p_partition_key: PhantomData {},
-            p_indexing_policy: PhantomData {},
+            p_partition_key: PhantomData,
+            p_indexing_policy: PhantomData,
             partition_key: Some(partition_key),
             indexing_policy: self.indexing_policy,
             user_agent: self.user_agent,
@@ -179,8 +131,8 @@ where
     ) -> ReplaceCollectionBuilder<'a, 'b, PartitionKeysSet, Yes> {
         ReplaceCollectionBuilder {
             collection_client: self.collection_client,
-            p_partition_key: PhantomData {},
-            p_indexing_policy: PhantomData {},
+            p_partition_key: PhantomData,
+            p_indexing_policy: PhantomData,
             partition_key: self.partition_key,
             indexing_policy: Some(indexing_policy),
             user_agent: self.user_agent,

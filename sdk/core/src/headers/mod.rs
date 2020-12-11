@@ -1,8 +1,25 @@
 mod utilities;
 
+use http::request::Builder;
 pub use utilities::*;
 
 pub const MS_DATE: &str = "x-ms-date"; //=> [String] }
+
+#[must_use]
+pub fn add_optional_header<T: crate::AddAsHeader>(
+    item: &Option<T>,
+    mut builder: Builder,
+) -> Builder {
+    if let Some(item) = item {
+        builder = item.add_as_header(builder);
+    }
+    builder
+}
+
+#[must_use]
+pub fn add_mandatory_header<T: crate::AddAsHeader>(item: &T, builder: Builder) -> Builder {
+    item.add_as_header(builder)
+}
 
 pub const SERVER: &str = "server"; // -> [String]
 pub const SOURCE_IF_MODIFIED_SINCE: &str = "x-ms-source-if-modified-since";
