@@ -1,19 +1,22 @@
 use crate::clients::StorageClient;
 use crate::container::incomplete_vector_from_container_response;
 use crate::container::responses::ListContainersResponse;
+use azure_core::headers::add_optional_header;
 use azure_core::headers::request_id_from_headers;
+use azure_core::prelude::*;
 use http::method::Method;
 use http::status::StatusCode;
 
 #[derive(Debug, Clone)]
 pub struct ListBuilder2<'a> {
     storage_client: &'a StorageClient,
-    prefix: Option<&'a str>,
-    next_marker: Option<&'a str>,
+    prefix: Option<Prefix<'a>>,
+    next_marker: Option<NextMarker>,
     include_metadata: bool,
-    max_results: Option<u32>,
-    client_request_id: Option<&'a str>,
-    timeout: Option<u64>,
+    include_deleted: bool,
+    max_results: Option<MaxResults>,
+    client_request_id: Option<ClientRequestId<'a>>,
+    timeout: Option<Timeout>,
 }
 
 impl<'a> ListBuilder2<'a> {
@@ -23,48 +26,64 @@ impl<'a> ListBuilder2<'a> {
             prefix: None,
             next_marker: None,
             include_metadata: false,
+            include_deleted: false,
             max_results: None,
             client_request_id: None,
             timeout: None,
         }
     }
 
-    pub fn with_prefix(self, prefix: &'a str) -> Self {
-        Self {
-            prefix: Some(prefix),
-            ..self
-        }
+    setters! {
+        prefix : Prefix<'a> => Some(prefix),
+        next_marker: NextMarker => Some(next_marker),
+        include_metadata: bool => include_metadata,
+        include_deleted: bool => include_deleted,
+        max_results: MaxResults => Some(max_results),
+        client_request_id: ClientRequestId<'a> => Some(client_request_id),
+        timeout: Timeout => Some(timeout),
     }
-
-    //next_marker: Option<&'a str>,
-    // include_metadata: bool,
 
     pub async fn execute(
         &self,
     ) -> Result<ListContainersResponse, Box<dyn std::error::Error + Sync + Send>> {
-        let mut uri = format!(
-            "{}?comp=list",
+        let mut url = url::Url::parse(
             self.storage_client
                 .storage_account_client()
-                .blob_storage_uri()
-        );
+                .blob_storage_uri(),
+        )?;
 
-        // TODO: this will be better once PR #110 is accepted
-        if let Some(prefix) = &self.prefix {
-            uri = format!("{}&prefix={}", uri, prefix);
+        url.query_pairs_mut().append_pair("comp", "list");
+
+        self.prefix.append_to_url_query(&mut url);
+        self.next_marker.append_to_url_query(&mut url);
+        if let Some(include) = match (self.include_metadata, self.include_deleted) {
+            (true, true) => Some("metadata,deleted"),
+            (true, false) => Some("metadata"),
+            (false, true) => Some("deleted"),
+            (false, false) => None,
+        } {
+            url.query_pairs_mut().append_pair("include", include);
         }
+        self.max_results.append_to_url_query(&mut url);
+        self.timeout.append_to_url_query(&mut url);
 
-        debug!("generated uri = {}", uri);
+        debug!("generated url = {}", url);
 
-        let request =
-            self.storage_client
-                .prepare_request(&uri, &Method::GET, &|request| request, None)?;
+        let (request, _url) = self.storage_client.prepare_request(
+            url.as_str(),
+            &Method::GET,
+            &|mut request| {
+                request = add_optional_header(&self.client_request_id, request);
+                request
+            },
+            None,
+        )?;
 
         let response = self
             .storage_client
             .storage_account_client()
             .http_client()
-            .execute_request_check_status(request.0, StatusCode::OK)
+            .execute_request_check_status(request, StatusCode::OK)
             .await?;
 
         debug!("response == {:?}", response);

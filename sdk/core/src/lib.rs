@@ -18,9 +18,12 @@ pub mod headers;
 mod http_client;
 pub mod incompletevector;
 pub mod lease;
+mod max_results;
 mod metadata;
 pub mod modify_conditions;
+mod next_marker;
 pub mod parsing;
+mod prefix;
 pub mod prelude;
 pub mod range;
 mod stored_access_policy;
@@ -40,9 +43,12 @@ use hyper::header::{
     CONTENT_ENCODING, CONTENT_LANGUAGE, CONTENT_LENGTH, CONTENT_TYPE, IF_MODIFIED_SINCE, RANGE,
     USER_AGENT,
 };
+pub use max_results::MaxResults;
 pub use metadata::Metadata;
 use modify_conditions::{IfMatchCondition, IfSinceCondition, SequenceNumberCondition};
+pub use next_marker::NextMarker;
 use oauth2::AccessToken;
+pub use prefix::Prefix;
 use std::collections::HashMap;
 use std::fmt::Debug;
 pub use timeout::Timeout;
@@ -1126,6 +1132,17 @@ pub trait AddAsHeader {
 
 pub trait AppendToUrlQuery {
     fn append_to_url_query(&self, url: &mut url::Url);
+}
+
+impl<T> AppendToUrlQuery for Option<T>
+where
+    T: AppendToUrlQuery,
+{
+    fn append_to_url_query(&self, url: &mut url::Url) {
+        if let Some(i) = self {
+            i.append_to_url_query(url);
+        }
+    }
 }
 
 #[doc(hidden)]

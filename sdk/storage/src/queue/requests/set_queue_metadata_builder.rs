@@ -50,7 +50,7 @@ where
         ))?;
 
         url.query_pairs_mut().append_pair("comp", "metadata");
-        AppendToUrlQuery::append_to_url_query(&self.timeout, &mut url);
+        self.timeout.append_to_url_query(&mut url);
 
         debug!("url == {}", url);
 

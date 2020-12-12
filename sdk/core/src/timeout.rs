@@ -16,10 +16,3 @@ impl AppendToUrlQuery for Timeout {
             .append_pair("timeout", &format!("{}", self.0.as_secs()));
     }
 }
-
-impl AppendToUrlQuery for Option<Timeout> {
-    fn append_to_url_query(&self, url: &mut url::Url) {
-        self.as_ref()
-            .map(|timeout| AppendToUrlQuery::append_to_url_query(timeout, url));
-    }
-}
