@@ -3,12 +3,12 @@ use crate::errors::{check_status_extract_body_2, AzureError};
 use crate::lease::LeaseId;
 use crate::util::HeaderMapExt;
 use crate::{Consistency, RequestId, SessionToken};
-
 use chrono::{DateTime, Utc};
 use http::status::StatusCode;
 use http::HeaderMap;
 use hyper::header::{HeaderName, DATE, ETAG, LAST_MODIFIED};
 use hyper::{Body, Client, Request};
+use std::str::FromStr;
 use uuid::Uuid;
 
 use std::convert::TryFrom;
@@ -17,7 +17,7 @@ pub fn lease_id_from_headers(headers: &HeaderMap) -> Result<LeaseId, AzureError>
     let lease_id = headers
         .get_as_str(LEASE_ID)
         .ok_or_else(|| AzureError::HeaderNotFound(LEASE_ID.to_owned()))?;
-    Ok(Uuid::parse_str(lease_id)?)
+    Ok(LeaseId::from_str(lease_id)?)
 }
 
 pub fn request_id_from_headers(headers: &HeaderMap) -> Result<RequestId, AzureError> {

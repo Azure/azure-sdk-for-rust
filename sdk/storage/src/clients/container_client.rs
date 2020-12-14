@@ -1,5 +1,9 @@
+use crate::blob::prelude::PublicAccess;
 use crate::clients::StorageClient;
+use crate::container::requests::*;
 use azure_core::errors::AzureError;
+use azure_core::lease::LeaseId;
+use azure_core::prelude::*;
 use http::method::Method;
 use http::request::{Builder, Request};
 use std::sync::Arc;
@@ -39,8 +43,44 @@ impl ContainerClient {
         self.storage_client.as_ref().as_ref()
     }
 
-    pub fn list_blobs(&self) -> crate::container::requests::ListBlobBuilder2 {
-        crate::container::requests::ListBlobBuilder2::new(self)
+    pub fn create(&self) -> CreateBuilder {
+        CreateBuilder::new(self)
+    }
+
+    pub fn delete(&self) -> DeleteBuilder {
+        DeleteBuilder::new(self)
+    }
+
+    pub fn get_acl(&self) -> GetACLBuilder {
+        GetACLBuilder::new(self)
+    }
+
+    pub fn set_acl(&self, public_access: PublicAccess) -> SetACLBuilder {
+        SetACLBuilder::new(self, public_access)
+    }
+
+    pub fn get_properties(&self) -> GetPropertiesBuilder {
+        GetPropertiesBuilder::new(self)
+    }
+
+    pub fn list_blobs(&self) -> ListBlobsBuilder {
+        ListBlobsBuilder::new(self)
+    }
+
+    pub fn acquire_lease(&self, lease_duration: LeaseDuration) -> AcquireLeaseBuilder {
+        AcquireLeaseBuilder::new(self, lease_duration)
+    }
+
+    pub fn break_lease(&self) -> BreakLeaseBuilder {
+        BreakLeaseBuilder::new(self)
+    }
+
+    pub fn release_lease(&self, lease_id: LeaseId) -> ReleaseLeaseBuilder {
+        ReleaseLeaseBuilder::new(self, lease_id)
+    }
+
+    pub fn renew_lease<'a>(&'a self, lease_id: &'a LeaseId) -> RenewLeaseBuilder<'a> {
+        RenewLeaseBuilder::new(self, lease_id)
     }
 
     pub(crate) fn prepare_request<'a>(

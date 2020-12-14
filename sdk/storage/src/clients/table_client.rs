@@ -36,15 +36,23 @@ impl TableClient {
         &self.table_name
     }
 
-    pub fn insert_entity<'a, E>(&'a self, entity: &'a E) -> InsertEntityBuilder<'a, E>
+    pub(crate) fn table_service_client(&self) -> &TableServiceClient {
+        self.table_service_client.as_ref().as_ref()
+    }
+
+    pub fn insert_entity<'a, E>(
+        &'a self,
+        entity: &'a E,
+    ) -> InsertEntityBuilder<
+        'a,
+        E,
+        crate::table::requests::RowKeyMissing,
+        crate::table::requests::PartitionKeyMissing,
+    >
     where
         E: serde::Serialize,
     {
         InsertEntityBuilder::new(self, entity)
-    }
-
-    pub(crate) fn table_service_client(&self) -> &TableServiceClient {
-        self.table_service_client.as_ref().as_ref()
     }
 
     pub(crate) fn prepare_request<'a>(

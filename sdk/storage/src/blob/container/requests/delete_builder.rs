@@ -1,208 +1,64 @@
-use crate::core::prelude::*;
-use azure_core::errors::AzureError;
+use crate::clients::ContainerClient;
+use azure_core::headers::{add_optional_header, add_optional_header_ref};
 use azure_core::lease::LeaseId;
 use azure_core::prelude::*;
-use azure_core::{No, ToAssign, Yes};
-use hyper::{Method, StatusCode};
-use std::marker::PhantomData;
+use http::method::Method;
+use http::status::StatusCode;
 
 #[derive(Debug, Clone)]
-pub struct DeleteBuilder<'a, C, ContainerNameSet>
-where
-    ContainerNameSet: ToAssign,
-    C: Client,
-{
-    client: &'a C,
-    p_container_name: PhantomData<ContainerNameSet>,
-    container_name: Option<&'a str>,
-    client_request_id: Option<&'a str>,
-    timeout: Option<u64>,
+pub struct DeleteBuilder<'a> {
+    container_client: &'a ContainerClient,
     lease_id: Option<&'a LeaseId>,
+    client_request_id: Option<ClientRequestId<'a>>,
+    timeout: Option<Timeout>,
 }
 
-impl<'a, C> DeleteBuilder<'a, C, No>
-where
-    C: Client,
-{
-    #[inline]
-    pub(crate) fn new(client: &'a C) -> DeleteBuilder<'a, C, No> {
+impl<'a> DeleteBuilder<'a> {
+    pub(crate) fn new(container_client: &'a ContainerClient) -> Self {
         DeleteBuilder {
-            client,
-            p_container_name: PhantomData {},
-            container_name: None,
+            container_client,
+            lease_id: None,
             client_request_id: None,
             timeout: None,
-            lease_id: None,
         }
     }
-}
 
-impl<'a, C, ContainerNameSet> ClientRequired<'a, C> for DeleteBuilder<'a, C, ContainerNameSet>
-where
-    ContainerNameSet: ToAssign,
-    C: Client,
-{
-    #[inline]
-    fn client(&self) -> &'a C {
-        self.client
+    setters! {
+        lease_id: &'a LeaseId => Some(lease_id),
+        client_request_id: ClientRequestId<'a> => Some(client_request_id),
+        timeout: Timeout => Some(timeout),
     }
-}
 
-//get mandatory no traits methods
+    pub async fn execute(self) -> Result<(), Box<dyn std::error::Error + Sync + Send>> {
+        let mut url = self
+            .container_client
+            .storage_client()
+            .storage_account_client()
+            .blob_storage_url()
+            .join(self.container_client.container_name())?;
 
-//set mandatory no traits methods
-impl<'a, C> ContainerNameRequired<'a> for DeleteBuilder<'a, C, Yes>
-where
-    C: Client,
-{
-    #[inline]
-    fn container_name(&self) -> &'a str {
-        self.container_name.unwrap()
-    }
-}
+        url.query_pairs_mut().append_pair("restype", "container");
 
-impl<'a, C, ContainerNameSet> ClientRequestIdOption<'a> for DeleteBuilder<'a, C, ContainerNameSet>
-where
-    ContainerNameSet: ToAssign,
-    C: Client,
-{
-    #[inline]
-    fn client_request_id(&self) -> Option<&'a str> {
-        self.client_request_id
-    }
-}
-
-impl<'a, C, ContainerNameSet> TimeoutOption for DeleteBuilder<'a, C, ContainerNameSet>
-where
-    ContainerNameSet: ToAssign,
-    C: Client,
-{
-    #[inline]
-    fn timeout(&self) -> Option<u64> {
-        self.timeout
-    }
-}
-
-impl<'a, C, ContainerNameSet> LeaseIdOption<'a> for DeleteBuilder<'a, C, ContainerNameSet>
-where
-    ContainerNameSet: ToAssign,
-    C: Client,
-{
-    #[inline]
-    fn lease_id(&self) -> Option<&'a LeaseId> {
-        self.lease_id
-    }
-}
-
-impl<'a, C> ContainerNameSupport<'a> for DeleteBuilder<'a, C, No>
-where
-    C: Client,
-{
-    type O = DeleteBuilder<'a, C, Yes>;
-
-    #[inline]
-    fn with_container_name(self, container_name: &'a str) -> Self::O {
-        DeleteBuilder {
-            client: self.client,
-            p_container_name: PhantomData {},
-            container_name: Some(container_name),
-            client_request_id: self.client_request_id,
-            timeout: self.timeout,
-            lease_id: self.lease_id,
-        }
-    }
-}
-
-impl<'a, C, ContainerNameSet> ClientRequestIdSupport<'a> for DeleteBuilder<'a, C, ContainerNameSet>
-where
-    ContainerNameSet: ToAssign,
-    C: Client,
-{
-    type O = DeleteBuilder<'a, C, ContainerNameSet>;
-
-    #[inline]
-    fn with_client_request_id(self, client_request_id: &'a str) -> Self::O {
-        DeleteBuilder {
-            client: self.client,
-            p_container_name: PhantomData {},
-            container_name: self.container_name,
-            client_request_id: Some(client_request_id),
-            timeout: self.timeout,
-            lease_id: self.lease_id,
-        }
-    }
-}
-
-impl<'a, C, ContainerNameSet> TimeoutSupport for DeleteBuilder<'a, C, ContainerNameSet>
-where
-    ContainerNameSet: ToAssign,
-    C: Client,
-{
-    type O = DeleteBuilder<'a, C, ContainerNameSet>;
-
-    #[inline]
-    fn with_timeout(self, timeout: u64) -> Self::O {
-        DeleteBuilder {
-            client: self.client,
-            p_container_name: PhantomData {},
-            container_name: self.container_name,
-            client_request_id: self.client_request_id,
-            timeout: Some(timeout),
-            lease_id: self.lease_id,
-        }
-    }
-}
-
-impl<'a, C, ContainerNameSet> LeaseIdSupport<'a> for DeleteBuilder<'a, C, ContainerNameSet>
-where
-    ContainerNameSet: ToAssign,
-    C: Client,
-{
-    type O = DeleteBuilder<'a, C, ContainerNameSet>;
-
-    #[inline]
-    fn with_lease_id(self, lease_id: &'a LeaseId) -> Self::O {
-        DeleteBuilder {
-            client: self.client,
-            p_container_name: PhantomData {},
-            container_name: self.container_name,
-            client_request_id: self.client_request_id,
-            timeout: self.timeout,
-            lease_id: Some(lease_id),
-        }
-    }
-}
-
-// methods callable only when every mandatory field has been filled
-impl<'a, C> DeleteBuilder<'a, C, Yes>
-where
-    C: Client,
-{
-    pub async fn finalize(self) -> Result<(), AzureError> {
-        let mut uri = format!(
-            "{}/{}?restype=container",
-            self.client().blob_uri(),
-            self.container_name()
-        );
-
-        if let Some(nm) = TimeoutOption::to_uri_parameter(&self) {
-            uri = format!("{}&{}", uri, nm);
-        }
-
-        let perform_request_response = self.client().perform_request(
-            &uri,
+        let request = self.container_client.prepare_request(
+            url.as_str(),
             &Method::DELETE,
             &|mut request| {
-                request = ClientRequestIdOption::add_optional_header(&self, request);
-                request = LeaseIdOption::add_optional_header(&self, request);
+                request = add_optional_header(&self.client_request_id, request);
+                request = add_optional_header_ref(&self.lease_id, request);
                 request
             },
-            Some(&[]),
+            None,
         )?;
 
-        perform_request_response
-            .check_status_extract_headers_and_body(StatusCode::ACCEPTED)
+        let _response = self
+            .container_client
+            .storage_client()
+            .storage_account_client()
+            .http_client()
+            .execute_request_check_status(request.0, StatusCode::ACCEPTED)
             .await?;
+
+        // TODO: Capture and return the response headers
         Ok(())
     }
 }

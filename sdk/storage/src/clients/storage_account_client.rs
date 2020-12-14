@@ -1,3 +1,4 @@
+use crate::core::ConnectionString;
 use azure_core::errors::AzureError;
 use azure_core::headers::*;
 use azure_core::HttpClient;
@@ -33,10 +34,10 @@ pub enum ServiceType {
 pub struct StorageAccountClient {
     storage_credentials: StorageCredentials,
     http_client: Arc<Box<dyn HttpClient>>,
-    blob_storage_uri: String,
-    table_storage_uri: String,
-    queue_storage_uri: String,
-    filesystem_uri: String,
+    blob_storage_url: Url,
+    table_storage_url: Url,
+    queue_storage_url: Url,
+    filesystem_url: Url,
 }
 
 fn get_sas_token_parms(sas_token: &str) -> Vec<(String, String)> {
@@ -64,11 +65,42 @@ impl StorageAccountClient {
         let account = account.into();
 
         Arc::new(Box::new(Self {
-            blob_storage_uri: format!("https://{}.blob.core.windows.net", &account),
-            table_storage_uri: format!("https://{}.table.core.windows.net", &account),
-            queue_storage_uri: format!("https://{}.queue.core.windows.net", &account),
-            filesystem_uri: format!("https://{}.dfs.core.windows.net", &account),
+            blob_storage_url: Url::parse(&format!("https://{}.blob.core.windows.net", &account))
+                .unwrap(),
+            table_storage_url: Url::parse(&format!("https://{}.table.core.windows.net", &account))
+                .unwrap(),
+            queue_storage_url: Url::parse(&format!("https://{}.queue.core.windows.net", &account))
+                .unwrap(),
+            filesystem_url: Url::parse(&format!("https://{}.dfs.core.windows.net", &account))
+                .unwrap(),
             storage_credentials: StorageCredentials::Key(account, key.into()),
+            http_client,
+        }))
+    }
+
+    pub fn new_emulator(
+        http_client: Arc<Box<dyn HttpClient>>,
+        blob_storage_url: &Url,
+        table_storage_url: &Url,
+    ) -> Arc<Box<Self>> {
+        let blob_storage_url =
+            Url::parse(&format!("{}devstoreaccount1", blob_storage_url.as_str())).unwrap();
+        let table_storage_url =
+            Url::parse(&format!("{}devstoreaccount1", table_storage_url.as_str())).unwrap();
+        let queue_storage_url =
+            Url::parse(&format!("{}devstoreaccount1", table_storage_url.as_str())).unwrap();
+        let filesystem_url =
+            Url::parse(&format!("{}devstoreaccount1", blob_storage_url.as_str())).unwrap();
+
+        Arc::new(Box::new(Self {
+            blob_storage_url,
+            table_storage_url,
+            queue_storage_url,
+            filesystem_url,
+            storage_credentials: StorageCredentials::Key(
+        "devstoreaccount1".to_owned(),
+        "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw=="
+            .to_owned()),
             http_client,
         }))
     }
@@ -85,10 +117,14 @@ impl StorageAccountClient {
         let account = account.into();
 
         Arc::new(Box::new(Self {
-            blob_storage_uri: format!("https://{}.blob.core.windows.net", &account),
-            table_storage_uri: format!("https://{}.table.core.windows.net", &account),
-            queue_storage_uri: format!("https://{}.queue.core.windows.net", &account),
-            filesystem_uri: format!("https://{}.dfs.core.windows.net", &account),
+            blob_storage_url: Url::parse(&format!("https://{}.blob.core.windows.net", &account))
+                .unwrap(),
+            table_storage_url: Url::parse(&format!("https://{}.table.core.windows.net", &account))
+                .unwrap(),
+            queue_storage_url: Url::parse(&format!("https://{}.queue.core.windows.net", &account))
+                .unwrap(),
+            filesystem_url: Url::parse(&format!("https://{}.dfs.core.windows.net", &account))
+                .unwrap(),
             storage_credentials: StorageCredentials::SASToken(get_sas_token_parms(
                 sas_token.as_ref(),
             )),
@@ -96,23 +132,91 @@ impl StorageAccountClient {
         }))
     }
 
+    pub fn new_connection_string(
+        http_client: Arc<Box<dyn HttpClient>>,
+        connection_string: &str,
+    ) -> Result<Arc<Box<Self>>, AzureError> {
+        match ConnectionString::new(connection_string)? {
+            ConnectionString {
+                account_name: Some(account),
+                account_key: Some(_),
+                sas: Some(sas_token),
+                blob_endpoint,
+                table_endpoint,
+                queue_endpoint,
+                file_endpoint,
+                ..
+            } => {
+                log::warn!("Both account key and SAS defined in connection string. Using only the provided SAS.");
+                Ok(Arc::new(Box::new(Self {
+                    storage_credentials: StorageCredentials::SASToken(get_sas_token_parms(
+                        sas_token,
+                    )),
+                    blob_storage_url: get_endpoint_uri(blob_endpoint, account, "blob")?,
+                    table_storage_url: get_endpoint_uri(table_endpoint, account, "table")?,
+                    queue_storage_url: get_endpoint_uri(queue_endpoint, account, "queue")?,
+                    filesystem_url: get_endpoint_uri(file_endpoint, account, "dfs")?,
+                    http_client,
+                })))
+            }
+            ConnectionString {
+                account_name: Some(account),
+                sas: Some(sas_token),
+                blob_endpoint,
+                table_endpoint,
+                queue_endpoint,
+                file_endpoint,
+                ..
+            } => Ok(Arc::new(Box::new(Self {
+                storage_credentials: StorageCredentials::SASToken(get_sas_token_parms(sas_token)),
+                blob_storage_url: get_endpoint_uri(blob_endpoint, account, "blob")?,
+                table_storage_url: get_endpoint_uri(table_endpoint, account, "table")?,
+                queue_storage_url: get_endpoint_uri(queue_endpoint, account, "queue")?,
+                filesystem_url: get_endpoint_uri(file_endpoint, account, "dfs")?,
+                http_client,
+            }))),
+            ConnectionString {
+                account_name: Some(account),
+                account_key: Some(key),
+                blob_endpoint,
+                table_endpoint,
+                queue_endpoint,
+                file_endpoint,
+                ..
+            } => Ok(Arc::new(Box::new(Self {
+                storage_credentials: StorageCredentials::Key(account.to_owned(), key.to_owned()),
+                blob_storage_url: get_endpoint_uri(blob_endpoint, account, "blob")?,
+                table_storage_url: get_endpoint_uri(table_endpoint, account, "table")?,
+                queue_storage_url: get_endpoint_uri(queue_endpoint, account, "queue")?,
+                filesystem_url: get_endpoint_uri(file_endpoint, account, "dfs")?,
+                http_client,
+            }))),
+           _ => {
+                Err(AzureError::GenericErrorWithText(
+                    "Could not create a storage client from the provided connection string. Please validate that you have specified the account name and means of authentication (key, SAS, etc.)."
+                        .to_owned(),
+                ))
+            }
+        }
+    }
+
     pub fn http_client(&self) -> &dyn HttpClient {
         self.http_client.as_ref().as_ref()
     }
 
-    pub fn blob_storage_uri(&self) -> &str {
-        &self.blob_storage_uri
+    pub fn blob_storage_url(&self) -> &Url {
+        &self.blob_storage_url
     }
 
-    pub fn table_storage_uri(&self) -> &str {
-        &self.table_storage_uri
+    pub fn table_storage_url(&self) -> &Url {
+        &self.table_storage_url
     }
-    pub fn queue_storage_uri(&self) -> &str {
-        &self.queue_storage_uri
+    pub fn queue_storage_url(&self) -> &Url {
+        &self.queue_storage_url
     }
 
-    pub fn filesystem_uri(&self) -> &str {
-        &self.filesystem_uri
+    pub fn filesystem_url(&self) -> &Url {
+        &self.filesystem_url
     }
 
     pub(crate) fn prepare_request<'a>(
@@ -424,4 +528,18 @@ fn lexy_sort(vec: &url::form_urlencoded::Parse, query_param: &str) -> Vec<String
     v_values.sort();
 
     v_values
+}
+
+fn get_endpoint_uri(
+    url: Option<&str>,
+    account: &str,
+    endpoint_type: &str,
+) -> Result<url::Url, url::ParseError> {
+    Ok(match url {
+        Some(value) => url::Url::parse(value)?,
+        None => url::Url::parse(&format!(
+            "https://{}.{}.core.windows.net",
+            account, endpoint_type
+        ))?,
+    })
 }

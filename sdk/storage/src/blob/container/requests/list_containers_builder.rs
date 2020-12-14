@@ -4,11 +4,12 @@ use crate::container::responses::ListContainersResponse;
 use azure_core::headers::add_optional_header;
 use azure_core::headers::request_id_from_headers;
 use azure_core::prelude::*;
+use futures::stream::{unfold, Stream};
 use http::method::Method;
 use http::status::StatusCode;
 
 #[derive(Debug, Clone)]
-pub struct ListBuilder2<'a> {
+pub struct ListContainersBuilder<'a> {
     storage_client: &'a StorageClient,
     prefix: Option<Prefix<'a>>,
     next_marker: Option<NextMarker>,
@@ -19,7 +20,7 @@ pub struct ListBuilder2<'a> {
     timeout: Option<Timeout>,
 }
 
-impl<'a> ListBuilder2<'a> {
+impl<'a> ListContainersBuilder<'a> {
     pub(crate) fn new(storage_client: &'a StorageClient) -> Self {
         Self {
             storage_client,
@@ -34,7 +35,7 @@ impl<'a> ListBuilder2<'a> {
     }
 
     setters! {
-        prefix : Prefix<'a> => Some(prefix),
+        prefix: Prefix<'a> => Some(prefix),
         next_marker: NextMarker => Some(next_marker),
         include_metadata: bool => include_metadata,
         include_deleted: bool => include_deleted,
@@ -46,11 +47,11 @@ impl<'a> ListBuilder2<'a> {
     pub async fn execute(
         &self,
     ) -> Result<ListContainersResponse, Box<dyn std::error::Error + Sync + Send>> {
-        let mut url = url::Url::parse(
-            self.storage_client
-                .storage_account_client()
-                .blob_storage_uri(),
-        )?;
+        let mut url = self
+            .storage_client
+            .storage_account_client()
+            .blob_storage_url()
+            .clone();
 
         url.query_pairs_mut().append_pair("comp", "list");
 
@@ -96,6 +97,48 @@ impl<'a> ListBuilder2<'a> {
         Ok(ListContainersResponse {
             incomplete_vector,
             request_id,
+        })
+    }
+
+    pub fn stream(
+        self,
+    ) -> impl Stream<Item = Result<ListContainersResponse, Box<dyn std::error::Error + Sync + Send>>> + 'a
+    {
+        #[derive(Debug, Clone, PartialEq)]
+        enum States {
+            Init,
+            NextMarker(NextMarker),
+        };
+
+        unfold(Some(States::Init), move |next_marker: Option<States>| {
+            let req = self.clone();
+            async move {
+                debug!("next_marker == {:?}", &next_marker);
+                let response = match next_marker {
+                    Some(States::Init) => req.execute().await,
+                    Some(States::NextMarker(next_marker)) => {
+                        req.with_next_marker(next_marker).execute().await
+                    }
+                    None => return None,
+                };
+
+                // the ? operator does not work in async move (yet?)
+                // so we have to resort to this boilerplate
+                let response = match response {
+                    Ok(response) => response,
+                    Err(err) => return Some((Err(err), None)),
+                };
+
+                // If we have a next marker, let's wrap it
+                // in a States::NextMarker and pass it to the next execution.
+                // If not, we'll obtain None that will end the loop.
+                let next_marker = response
+                    .incomplete_vector
+                    .next_marker()
+                    .map(|next_marker| States::NextMarker(next_marker.clone()));
+
+                Some((Ok(response), next_marker))
+            }
         })
     }
 }

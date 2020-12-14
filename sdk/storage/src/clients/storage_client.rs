@@ -30,8 +30,8 @@ impl StorageClient {
         self.storage_account_client.as_ref().as_ref()
     }
 
-    pub fn list_containers(&self) -> crate::container::requests::ListBuilder2 {
-        crate::container::requests::ListBuilder2::new(self)
+    pub fn list_containers(&self) -> crate::container::requests::ListContainersBuilder {
+        crate::container::requests::ListContainersBuilder::new(self)
     }
 
     pub(crate) fn prepare_request<'a>(

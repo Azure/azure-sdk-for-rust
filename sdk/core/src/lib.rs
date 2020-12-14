@@ -13,11 +13,14 @@ mod macros;
 
 pub mod ba512_range;
 mod client_request_id;
+mod delimiter;
 pub mod errors;
 pub mod headers;
 mod http_client;
 pub mod incompletevector;
 pub mod lease;
+mod lease_break_period;
+mod lease_duration;
 mod max_results;
 mod metadata;
 pub mod modify_conditions;
@@ -25,6 +28,7 @@ mod next_marker;
 pub mod parsing;
 mod prefix;
 pub mod prelude;
+mod proposed_lease_id;
 pub mod range;
 mod stored_access_policy;
 mod timeout;
@@ -36,6 +40,7 @@ use crate::lease::LeaseId;
 use base64::encode;
 use chrono::{DateTime, Utc};
 pub use client_request_id::ClientRequestId;
+pub use delimiter::Delimiter;
 use headers::*;
 use http::request::Builder;
 pub use http_client::*;
@@ -43,12 +48,15 @@ use hyper::header::{
     CONTENT_ENCODING, CONTENT_LANGUAGE, CONTENT_LENGTH, CONTENT_TYPE, IF_MODIFIED_SINCE, RANGE,
     USER_AGENT,
 };
+pub use lease_break_period::LeaseBreakPeriod;
+pub use lease_duration::LeaseDuration;
 pub use max_results::MaxResults;
 pub use metadata::Metadata;
 use modify_conditions::{IfMatchCondition, IfSinceCondition, SequenceNumberCondition};
 pub use next_marker::NextMarker;
 use oauth2::AccessToken;
 pub use prefix::Prefix;
+pub use proposed_lease_id::ProposedLeaseId;
 use std::collections::HashMap;
 use std::fmt::Debug;
 pub use timeout::Timeout;

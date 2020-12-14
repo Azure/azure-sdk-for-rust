@@ -7,5 +7,4 @@ pub use super::container::{
     StoredAccessPolicyListSupport,
 };
 pub use super::Blob as BlobTrait;
-pub use super::Container as ContainerTrait;
 pub use crate::{RehydratePriority, RehydratePriorityOption, RehydratePrioritySupport};

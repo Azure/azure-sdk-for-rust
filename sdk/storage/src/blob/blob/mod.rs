@@ -444,7 +444,7 @@ pub(crate) fn incomplete_vector_from_response(
 
     let next_marker = match cast_optional::<String>(&elem, &["NextMarker"])? {
         Some(ref nm) if nm == "" => None,
-        Some(nm) => Some(nm),
+        Some(nm) => Some(nm.into()),
         None => None,
     };
 

@@ -3,9 +3,12 @@ use azure_storage::blob::prelude::*;
 use azure_storage::core::prelude::*;
 use futures::stream::StreamExt;
 use std::error::Error;
+use std::num::NonZeroU32;
+use std::sync::Arc;
+use std::time::Duration;
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn Error>> {
+async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // First we retrieve the account name and master key from environment variables.
     let account =
         std::env::var("STORAGE_ACCOUNT").expect("Set env variable STORAGE_ACCOUNT first!");
@@ -18,7 +21,13 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let client = client::with_access_key(&account, &master_key);
 
-    let iv = client.list_containers().finalize().await?;
+    let http_client: Arc<Box<dyn HttpClient>> = Arc::new(Box::new(reqwest::Client::new()));
+    let storage_account =
+        StorageAccountClient::new_access_key(http_client.clone(), &account, &master_key)
+            .as_storage_client();
+    let container = storage_account.as_container_client(&container_name);
+
+    let iv = storage_account.list_containers().execute().await?;
 
     if iv
         .incomplete_vector
@@ -30,12 +39,11 @@ async fn main() -> Result<(), Box<dyn Error>> {
     }
 
     // create the container
-    client
-        .create_container()
-        .with_container_name(&container_name)
+    container
+        .create()
         .with_public_access(PublicAccess::None)
-        .with_timeout(100)
-        .finalize()
+        .with_timeout(Duration::from_secs(100).into())
+        .execute()
         .await?;
     println!("Container {} created", container_name);
 
@@ -52,11 +60,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
         println!("\tAdded blob {}", i);
     }
 
-    let iv = client
+    let max_results = NonZeroU32::new(3).unwrap().into();
+
+    let iv = container
         .list_blobs()
-        .with_container_name(&container_name)
-        .with_max_results(3)
-        .finalize()
+        .with_max_results(max_results)
+        .execute()
         .await?;
 
     println!("List blob returned {} blobs.", iv.incomplete_vector.len());
@@ -65,10 +74,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
     }
 
     let mut stream = Box::pin(
-        client
+        container
             .list_blobs()
-            .with_max_results(3)
-            .with_container_name(&container_name)
+            .with_max_results(max_results)
             .stream(),
     );
 
@@ -84,11 +92,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         cnt += 1;
     }
 
-    client
-        .delete_container()
-        .with_container_name(&container_name)
-        .finalize()
-        .await?;
+    container.delete().execute().await?;
     println!("Container {} deleted", container_name);
 
     Ok(())

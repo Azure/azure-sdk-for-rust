@@ -16,3 +16,9 @@ impl AppendToUrlQuery for Timeout {
             .append_pair("timeout", &format!("{}", self.0.as_secs()));
     }
 }
+
+impl From<Duration> for Timeout {
+    fn from(d: Duration) -> Self {
+        Self(d)
+    }
+}

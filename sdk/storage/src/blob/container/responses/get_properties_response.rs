@@ -5,6 +5,7 @@ use azure_core::RequestId;
 use chrono::{DateTime, FixedOffset};
 use http::HeaderMap;
 use hyper::header;
+use std::convert::TryFrom;
 use uuid::Uuid;
 
 #[derive(Debug, Clone)]
@@ -14,9 +15,17 @@ pub struct GetPropertiesResponse {
     pub date: DateTime<FixedOffset>,
 }
 
+impl TryFrom<(&str, &HeaderMap)> for GetPropertiesResponse {
+    type Error = AzureError;
+
+    fn try_from((body, header_map): (&str, &HeaderMap)) -> Result<Self, Self::Error> {
+        GetPropertiesResponse::from_response(body, header_map)
+    }
+}
+
 impl GetPropertiesResponse {
     pub(crate) fn from_response(
-        container_name: String,
+        container_name: &str,
         headers: &HeaderMap,
     ) -> Result<GetPropertiesResponse, AzureError> {
         let request_id = match headers.get(REQUEST_ID) {

@@ -1,6 +1,6 @@
 use crate::AppendToUrlQuery;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct NextMarker(String);
 
 impl NextMarker {

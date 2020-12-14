@@ -15,20 +15,22 @@ impl<'a> QueryTablesBuilder<'a> {
     }
 
     pub async fn execute(&self) -> Result<(), Box<dyn std::error::Error + Sync + Send>> {
-        let uri = format!(
-            "{}/Tables",
-            self.table_service_client
-                .storage_account_client()
-                .table_storage_uri(),
-        );
+        let url = self
+            .table_service_client
+            .storage_account_client()
+            .table_storage_url()
+            .join("Tables")?;
 
-        debug!("generated uri = {}", uri);
+        // TODO: Add OData query parameters
+
+        debug!("generated url = {}", url);
 
         let request = self.table_service_client.prepare_request(
-            &uri,
+            url.as_str(),
             &Method::GET,
             &|mut request| {
-                request = request.header("Accept", "application/json;odata=fullmetadata");
+                request =
+                    request.header(http::header::ACCEPT, "application/json;odata=fullmetadata");
                 request
             },
             None,
