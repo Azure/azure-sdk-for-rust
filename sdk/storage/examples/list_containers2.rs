@@ -5,8 +5,8 @@ use std::error::Error;
 use std::sync::Arc;
 
 #[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "snake_case")]
 struct SampleEntity {
-    #[serde(rename = "Something")]
     pub something: String,
 }
 

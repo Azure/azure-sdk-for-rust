@@ -1,4 +1,5 @@
 use crate::AppendToUrlQuery;
+use std::convert::TryFrom;
 use std::num::NonZeroU32;
 
 // This type forbids zero as value.
@@ -27,5 +28,19 @@ impl AppendToUrlQuery for MaxResults {
 impl From<NonZeroU32> for MaxResults {
     fn from(max_results: NonZeroU32) -> Self {
         Self::new(max_results)
+    }
+}
+
+impl TryFrom<u32> for MaxResults {
+    type Error = String;
+
+    fn try_from(max_results: u32) -> Result<Self, Self::Error> {
+        match NonZeroU32::new(max_results) {
+            Some(max_results) => Ok(max_results.into()),
+            None => Err(format!(
+                "number {} is not a valid NonZeroU32 value",
+                max_results
+            )),
+        }
     }
 }

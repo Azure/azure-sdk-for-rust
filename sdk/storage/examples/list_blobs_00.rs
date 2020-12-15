@@ -2,8 +2,8 @@ use azure_core::prelude::*;
 use azure_storage::blob::prelude::*;
 use azure_storage::core::prelude::*;
 use futures::stream::StreamExt;
+use std::convert::TryInto;
 use std::error::Error;
-use std::num::NonZeroU32;
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -60,11 +60,9 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         println!("\tAdded blob {}", i);
     }
 
-    let max_results = NonZeroU32::new(3).unwrap().into();
-
     let iv = container
         .list_blobs()
-        .with_max_results(max_results)
+        .with_max_results(3u32.try_into()?)
         .execute()
         .await?;
 
@@ -76,7 +74,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let mut stream = Box::pin(
         container
             .list_blobs()
-            .with_max_results(max_results)
+            .with_max_results(3u32.try_into()?)
             .stream(),
     );
 

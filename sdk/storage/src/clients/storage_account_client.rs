@@ -211,6 +211,7 @@ impl StorageAccountClient {
     pub fn table_storage_url(&self) -> &Url {
         &self.table_storage_url
     }
+
     pub fn queue_storage_url(&self) -> &Url {
         &self.queue_storage_url
     }
@@ -243,9 +244,9 @@ impl StorageAccountClient {
         request = request.method(method).uri(url.as_str());
 
         // let's add content length to avoid "chunking" errors.
-        match request_body {
-            Some(ref b) => request = request.header(CONTENT_LENGTH, &b.len().to_string() as &str),
-            None => request = request.header(CONTENT_LENGTH, "0"),
+        request = match request_body {
+            Some(ref b) => request.header(CONTENT_LENGTH, &b.len().to_string() as &str),
+            None => request.header(CONTENT_LENGTH, "0"),
         };
 
         // This will give the caller the ability to add custom headers.
@@ -261,7 +262,7 @@ impl StorageAccountClient {
         // SAS token for example)
         let request = match &self.storage_credentials {
             StorageCredentials::Key(account, key) => {
-                if url.query_pairs().find(|p| p.0 == "sig").is_none() {
+                if url.query_pairs().find(|(k, _)| k == "sig").is_none() {
                     let auth = generate_authorization(
                         request.headers_ref().unwrap(),
                         &url,
@@ -465,18 +466,13 @@ fn canonicalized_resource_table(account: &str, u: &url::Url) -> String {
 fn canonicalized_resource(account: &str, u: &url::Url) -> String {
     let mut can_res: String = String::new();
     can_res += "/";
-    can_res += &account;
+    can_res += account;
 
     let paths = u.path_segments().unwrap();
 
-    {
-        let mut path = String::new();
-        for p in paths {
-            path.push('/');
-            path.push_str(&*p);
-        }
-
-        can_res += &path;
+    for p in paths {
+        can_res.push('/');
+        can_res.push_str(&*p);
     }
     can_res += "\n";
 
@@ -485,12 +481,12 @@ fn canonicalized_resource(account: &str, u: &url::Url) -> String {
     {
         let mut qps = Vec::new();
         {
-            for qp in query_pairs {
-                trace!("adding to qps {:?}", qp);
+            for (q, _p) in query_pairs {
+                trace!("adding to qps {:?}", q);
 
                 // add only once
-                if !(qps.iter().any(|x: &String| x == &qp.0)) {
-                    qps.push(qp.0.into_owned());
+                if !(qps.iter().any(|x: &String| x == q.as_ref())) {
+                    qps.push(q.into_owned());
                 }
             }
         }
@@ -519,11 +515,14 @@ fn canonicalized_resource(account: &str, u: &url::Url) -> String {
     can_res[0..can_res.len() - 1].to_owned()
 }
 
-fn lexy_sort(vec: &url::form_urlencoded::Parse, query_param: &str) -> Vec<String> {
-    let mut v_values: Vec<String> = Vec::new();
+fn lexy_sort<'a>(
+    vec: &'a url::form_urlencoded::Parse,
+    query_param: &str,
+) -> Vec<std::borrow::Cow<'a, str>> {
+    let mut v_values = Vec::new();
 
     for item in vec.filter(|x| x.0 == *query_param) {
-        v_values.push(item.1.into_owned())
+        v_values.push(item.1)
     }
     v_values.sort();
 

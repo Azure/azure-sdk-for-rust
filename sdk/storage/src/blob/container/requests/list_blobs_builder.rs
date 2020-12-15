@@ -26,7 +26,7 @@ pub struct ListBlobsBuilder<'a> {
 
 impl<'a> ListBlobsBuilder<'a> {
     pub(crate) fn new(container_client: &'a ContainerClient) -> Self {
-        ListBlobsBuilder {
+        Self {
             container_client,
             prefix: None,
             delimiter: None,
