@@ -6,29 +6,29 @@ use http::request::{Builder, Request};
 use std::sync::Arc;
 
 pub trait AsTableServiceClient {
-    fn as_table_service_client(&self) -> Arc<Box<TableServiceClient>>;
+    fn as_table_service_client(&self) -> Arc<TableServiceClient>;
 }
 
-impl AsTableServiceClient for Arc<Box<StorageAccountClient>> {
-    fn as_table_service_client(&self) -> Arc<Box<TableServiceClient>> {
+impl AsTableServiceClient for Arc<StorageAccountClient> {
+    fn as_table_service_client(&self) -> Arc<TableServiceClient> {
         TableServiceClient::new(self.clone())
     }
 }
 
 #[derive(Debug, Clone)]
 pub struct TableServiceClient {
-    storage_account_client: Arc<Box<StorageAccountClient>>,
+    storage_account_client: Arc<StorageAccountClient>,
 }
 
 impl TableServiceClient {
-    pub(crate) fn new(storage_account_client: Arc<Box<StorageAccountClient>>) -> Arc<Box<Self>> {
-        Arc::new(Box::new(Self {
+    pub(crate) fn new(storage_account_client: Arc<StorageAccountClient>) -> Arc<Self> {
+        Arc::new(Self {
             storage_account_client,
-        }))
+        })
     }
 
     pub(crate) fn storage_account_client(&self) -> &StorageAccountClient {
-        self.storage_account_client.as_ref().as_ref()
+        self.storage_account_client.as_ref()
     }
 
     pub fn query_tables(&self) -> QueryTablesBuilder {

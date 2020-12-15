@@ -9,30 +9,27 @@ use http::request::{Builder, Request};
 use std::sync::Arc;
 
 pub trait AsContainerClient<CN: Into<String>> {
-    fn as_container_client(&self, container_name: CN) -> Arc<Box<ContainerClient>>;
+    fn as_container_client(&self, container_name: CN) -> Arc<ContainerClient>;
 }
 
-impl<CN: Into<String>> AsContainerClient<CN> for Arc<Box<StorageClient>> {
-    fn as_container_client(&self, container_name: CN) -> Arc<Box<ContainerClient>> {
+impl<CN: Into<String>> AsContainerClient<CN> for Arc<StorageClient> {
+    fn as_container_client(&self, container_name: CN) -> Arc<ContainerClient> {
         ContainerClient::new(self.clone(), container_name.into())
     }
 }
 
 #[derive(Debug, Clone)]
 pub struct ContainerClient {
-    storage_client: Arc<Box<StorageClient>>,
+    storage_client: Arc<StorageClient>,
     container_name: String,
 }
 
 impl ContainerClient {
-    pub(crate) fn new(
-        storage_client: Arc<Box<StorageClient>>,
-        container_name: String,
-    ) -> Arc<Box<Self>> {
-        Arc::new(Box::new(Self {
+    pub(crate) fn new(storage_client: Arc<StorageClient>, container_name: String) -> Arc<Self> {
+        Arc::new(Self {
             storage_client,
             container_name,
-        }))
+        })
     }
 
     pub fn container_name(&self) -> &str {
@@ -40,7 +37,7 @@ impl ContainerClient {
     }
 
     pub(crate) fn storage_client(&self) -> &StorageClient {
-        self.storage_client.as_ref().as_ref()
+        self.storage_client.as_ref()
     }
 
     pub fn create(&self) -> CreateBuilder {

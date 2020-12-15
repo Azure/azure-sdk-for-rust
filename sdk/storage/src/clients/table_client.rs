@@ -6,30 +6,30 @@ use http::request::{Builder, Request};
 use std::sync::Arc;
 
 pub trait AsTableClient<TN: Into<String>> {
-    fn as_table_client(&self, table_name: TN) -> Arc<Box<TableClient>>;
+    fn as_table_client(&self, table_name: TN) -> Arc<TableClient>;
 }
 
-impl<TN: Into<String>> AsTableClient<TN> for Arc<Box<TableServiceClient>> {
-    fn as_table_client(&self, table_name: TN) -> Arc<Box<TableClient>> {
+impl<TN: Into<String>> AsTableClient<TN> for Arc<TableServiceClient> {
+    fn as_table_client(&self, table_name: TN) -> Arc<TableClient> {
         TableClient::new(self.clone(), table_name.into())
     }
 }
 
 #[derive(Debug, Clone)]
 pub struct TableClient {
-    table_service_client: Arc<Box<TableServiceClient>>,
+    table_service_client: Arc<TableServiceClient>,
     table_name: String,
 }
 
 impl TableClient {
     pub(crate) fn new(
-        table_service_client: Arc<Box<TableServiceClient>>,
+        table_service_client: Arc<TableServiceClient>,
         table_name: String,
-    ) -> Arc<Box<Self>> {
-        Arc::new(Box::new(Self {
+    ) -> Arc<Self> {
+        Arc::new(Self {
             table_service_client,
             table_name,
-        }))
+        })
     }
 
     pub fn table_name(&self) -> &str {
@@ -37,7 +37,7 @@ impl TableClient {
     }
 
     pub(crate) fn table_service_client(&self) -> &TableServiceClient {
-        self.table_service_client.as_ref().as_ref()
+        self.table_service_client.as_ref()
     }
 
     pub fn insert_entity<'a, E>(
