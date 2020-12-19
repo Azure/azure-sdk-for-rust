@@ -57,14 +57,14 @@ impl StorageAccountClient {
         http_client: Arc<Box<dyn HttpClient>>,
         account: A,
         key: K,
-    ) -> Arc<Box<Self>>
+    ) -> Arc<Self>
     where
         A: Into<String>,
         K: Into<String>,
     {
         let account = account.into();
 
-        Arc::new(Box::new(Self {
+        Arc::new(Self {
             blob_storage_url: Url::parse(&format!("https://{}.blob.core.windows.net", &account))
                 .unwrap(),
             table_storage_url: Url::parse(&format!("https://{}.table.core.windows.net", &account))
@@ -75,14 +75,14 @@ impl StorageAccountClient {
                 .unwrap(),
             storage_credentials: StorageCredentials::Key(account, key.into()),
             http_client,
-        }))
+        })
     }
 
     pub fn new_emulator(
         http_client: Arc<Box<dyn HttpClient>>,
         blob_storage_url: &Url,
         table_storage_url: &Url,
-    ) -> Arc<Box<Self>> {
+    ) -> Arc<Self> {
         let blob_storage_url =
             Url::parse(&format!("{}devstoreaccount1", blob_storage_url.as_str())).unwrap();
         let table_storage_url =
@@ -92,7 +92,7 @@ impl StorageAccountClient {
         let filesystem_url =
             Url::parse(&format!("{}devstoreaccount1", blob_storage_url.as_str())).unwrap();
 
-        Arc::new(Box::new(Self {
+        Arc::new(Self {
             blob_storage_url,
             table_storage_url,
             queue_storage_url,
@@ -102,21 +102,21 @@ impl StorageAccountClient {
         "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw=="
             .to_owned()),
             http_client,
-        }))
+        })
     }
 
     pub fn new_sas_token<A, S>(
         http_client: Arc<Box<dyn HttpClient>>,
         account: A,
         sas_token: S,
-    ) -> Arc<Box<Self>>
+    ) -> Arc<Self>
     where
         A: Into<String>,
         S: AsRef<str>,
     {
         let account = account.into();
 
-        Arc::new(Box::new(Self {
+        Arc::new(Self {
             blob_storage_url: Url::parse(&format!("https://{}.blob.core.windows.net", &account))
                 .unwrap(),
             table_storage_url: Url::parse(&format!("https://{}.table.core.windows.net", &account))
@@ -129,13 +129,13 @@ impl StorageAccountClient {
                 sas_token.as_ref(),
             )),
             http_client,
-        }))
+        })
     }
 
     pub fn new_connection_string(
         http_client: Arc<Box<dyn HttpClient>>,
         connection_string: &str,
-    ) -> Result<Arc<Box<Self>>, AzureError> {
+    ) -> Result<Arc<Self>, AzureError> {
         match ConnectionString::new(connection_string)? {
             ConnectionString {
                 account_name: Some(account),
@@ -148,7 +148,7 @@ impl StorageAccountClient {
                 ..
             } => {
                 log::warn!("Both account key and SAS defined in connection string. Using only the provided SAS.");
-                Ok(Arc::new(Box::new(Self {
+                Ok(Arc::new(Self {
                     storage_credentials: StorageCredentials::SASToken(get_sas_token_parms(
                         sas_token,
                     )),
@@ -157,7 +157,7 @@ impl StorageAccountClient {
                     queue_storage_url: get_endpoint_uri(queue_endpoint, account, "queue")?,
                     filesystem_url: get_endpoint_uri(file_endpoint, account, "dfs")?,
                     http_client,
-                })))
+                }))
             }
             ConnectionString {
                 account_name: Some(account),
@@ -167,14 +167,14 @@ impl StorageAccountClient {
                 queue_endpoint,
                 file_endpoint,
                 ..
-            } => Ok(Arc::new(Box::new(Self {
+            } => Ok(Arc::new(Self {
                 storage_credentials: StorageCredentials::SASToken(get_sas_token_parms(sas_token)),
                 blob_storage_url: get_endpoint_uri(blob_endpoint, account, "blob")?,
                 table_storage_url: get_endpoint_uri(table_endpoint, account, "table")?,
                 queue_storage_url: get_endpoint_uri(queue_endpoint, account, "queue")?,
                 filesystem_url: get_endpoint_uri(file_endpoint, account, "dfs")?,
                 http_client,
-            }))),
+            })),
             ConnectionString {
                 account_name: Some(account),
                 account_key: Some(key),
@@ -183,14 +183,14 @@ impl StorageAccountClient {
                 queue_endpoint,
                 file_endpoint,
                 ..
-            } => Ok(Arc::new(Box::new(Self {
+            } => Ok(Arc::new(Self {
                 storage_credentials: StorageCredentials::Key(account.to_owned(), key.to_owned()),
                 blob_storage_url: get_endpoint_uri(blob_endpoint, account, "blob")?,
                 table_storage_url: get_endpoint_uri(table_endpoint, account, "table")?,
                 queue_storage_url: get_endpoint_uri(queue_endpoint, account, "queue")?,
                 filesystem_url: get_endpoint_uri(file_endpoint, account, "dfs")?,
                 http_client,
-            }))),
+            })),
            _ => {
                 Err(AzureError::GenericErrorWithText(
                     "Could not create a storage client from the provided connection string. Please validate that you have specified the account name and means of authentication (key, SAS, etc.)."

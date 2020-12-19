@@ -1,6 +1,9 @@
 use crate::errors::{Not512ByteAlignedError, Parse512AlignedError};
 use crate::range::Range;
+use crate::AddAsHeader;
+use http::request::Builder;
 use std::convert::Into;
+use std::convert::TryFrom;
 use std::fmt;
 use std::str::FromStr;
 
@@ -18,7 +21,7 @@ impl BA512Range {
         self.end
     }
 
-    pub fn new(start: u64, end: u64) -> Result<BA512Range, Not512ByteAlignedError> {
+    pub fn new(start: u64, end: u64) -> Result<Self, Not512ByteAlignedError> {
         if start % 512 != 0 {
             return Err(Not512ByteAlignedError::StartRange(start));
         }
@@ -26,7 +29,7 @@ impl BA512Range {
             return Err(Not512ByteAlignedError::EndRange(end));
         }
 
-        Ok(BA512Range { start, end })
+        Ok(Self { start, end })
     }
 
     #[inline]
@@ -41,6 +44,28 @@ impl Into<Range> for BA512Range {
             start: self.start(),
             end: self.end(),
         }
+    }
+}
+
+impl TryFrom<Range> for BA512Range {
+    type Error = Not512ByteAlignedError;
+
+    fn try_from(r: Range) -> Result<Self, Self::Error> {
+        BA512Range::new(r.start, r.end)
+    }
+}
+
+impl TryFrom<(u64, u64)> for BA512Range {
+    type Error = Not512ByteAlignedError;
+
+    fn try_from((start, end): (u64, u64)) -> Result<Self, Self::Error> {
+        BA512Range::new(start, end)
+    }
+}
+
+impl AddAsHeader for BA512Range {
+    fn add_as_header(&self, builder: Builder) -> Builder {
+        builder.header(http::header::RANGE, &format!("{}", self))
     }
 }
 

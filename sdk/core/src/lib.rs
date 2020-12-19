@@ -13,23 +13,34 @@ mod macros;
 
 pub mod ba512_range;
 mod client_request_id;
+mod content_disposition;
+mod content_encoding;
+mod content_language;
+mod content_type;
 mod delimiter;
 pub mod errors;
 pub mod headers;
 mod http_client;
+mod if_match_condition;
+mod if_modified_since_condition;
+mod if_source_match_condition;
+mod if_source_modified_since_condition;
 pub mod incompletevector;
 pub mod lease;
 mod lease_break_period;
 mod lease_duration;
 mod max_results;
 mod metadata;
-pub mod modify_conditions;
 mod next_marker;
 pub mod parsing;
 mod prefix;
 pub mod prelude;
 mod proposed_lease_id;
 pub mod range;
+mod sequence_number;
+mod sequence_number_condition;
+mod source_content_md5;
+mod source_lease_id;
 mod stored_access_policy;
 mod timeout;
 pub mod util;
@@ -40,6 +51,10 @@ use crate::lease::LeaseId;
 use base64::encode;
 use chrono::{DateTime, Utc};
 pub use client_request_id::ClientRequestId;
+pub use content_disposition::ContentDisposition;
+pub use content_encoding::ContentEncoding;
+pub use content_language::ContentLanguage;
+pub use content_type::ContentType;
 pub use delimiter::Delimiter;
 use headers::*;
 use http::request::Builder;
@@ -48,15 +63,22 @@ use hyper::header::{
     CONTENT_ENCODING, CONTENT_LANGUAGE, CONTENT_LENGTH, CONTENT_TYPE, IF_MODIFIED_SINCE, RANGE,
     USER_AGENT,
 };
+pub use if_match_condition::IfMatchCondition;
+pub use if_modified_since_condition::IfModifiedSinceCondition;
+pub use if_source_match_condition::IfSourceMatchCondition;
+pub use if_source_modified_since_condition::IfSourceModifiedSinceCondition;
 pub use lease_break_period::LeaseBreakPeriod;
 pub use lease_duration::LeaseDuration;
 pub use max_results::MaxResults;
 pub use metadata::Metadata;
-use modify_conditions::{IfMatchCondition, IfSinceCondition, SequenceNumberCondition};
 pub use next_marker::NextMarker;
 use oauth2::AccessToken;
 pub use prefix::Prefix;
 pub use proposed_lease_id::ProposedLeaseId;
+pub use sequence_number::SequenceNumber;
+pub use sequence_number_condition::SequenceNumberCondition;
+pub use source_content_md5::SourceContentMD5;
+pub use source_lease_id::SourceLeaseId;
 use std::collections::HashMap;
 use std::fmt::Debug;
 pub use timeout::Timeout;
@@ -127,15 +149,6 @@ impl ToAssign for No {}
 
 impl Assigned for Yes {}
 impl NotAssigned for No {}
-
-create_enum!(DeleteSnapshotsMethod, (Include, "include"), (Only, "only"));
-
-create_enum!(
-    AccessTier,
-    (Hot, "Hot"),
-    (Cool, "Cool"),
-    (Archive, "Archive")
-);
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Consistency {
@@ -302,25 +315,6 @@ pub trait ContentTypeOption<'a> {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
-pub struct ContentType<'a>(&'a str);
-
-impl<'a> ContentType<'a> {
-    pub fn new(ct: &'a str) -> Self {
-        Self(ct)
-    }
-
-    pub fn as_str(&self) -> &str {
-        self.0
-    }
-}
-
-impl AddAsHeader for ContentType<'_> {
-    fn add_as_header(&self, builder: Builder) -> Builder {
-        builder.header(CONTENT_TYPE, self.0)
-    }
-}
-
 pub trait ContentTypeRequired<'a> {
     fn content_type(&self) -> &'a str;
 
@@ -430,41 +424,6 @@ pub trait ContentLanguageOption<'a> {
             builder = builder.header(CONTENT_LANGUAGE, content_language);
         }
         builder
-    }
-}
-
-pub trait AccessTierSupport {
-    type O;
-    fn with_access_tier(self, access_tier: AccessTier) -> Self::O;
-}
-
-pub trait AccessTierOption {
-    fn access_tier(&self) -> Option<AccessTier>;
-
-    #[must_use]
-    fn add_optional_header(&self, mut builder: Builder) -> Builder {
-        if let Some(access_tier) = self.access_tier() {
-            builder = builder.header(BLOB_ACCESS_TIER, access_tier.as_ref());
-        }
-        builder
-    }
-}
-
-pub trait DeleteSnapshotsMethodSupport {
-    type O;
-    fn with_delete_snapshots_method(
-        self,
-        delete_snapshots_method: DeleteSnapshotsMethod,
-    ) -> Self::O;
-}
-
-pub trait DeleteSnapshotsMethodRequired {
-    fn delete_snapshots_method(&self) -> DeleteSnapshotsMethod;
-
-    #[must_use]
-    fn add_mandatory_header(&self, builder: Builder) -> Builder {
-        let s: &'static str = self.delete_snapshots_method().into();
-        builder.header(DELETE_SNAPSHOTS, s)
     }
 }
 
@@ -730,87 +689,6 @@ pub trait SequenceNumberConditionSupport {
         self,
         sequence_number_condition: SequenceNumberCondition,
     ) -> Self::O;
-}
-
-pub trait SequenceNumberConditionOption {
-    fn sequence_number_condition(&self) -> Option<SequenceNumberCondition>;
-
-    #[must_use]
-    fn add_optional_header(&self, mut builder: Builder) -> Builder {
-        if let Some(sequence_number_condition) = self.sequence_number_condition() {
-            builder = sequence_number_condition.add_optional_header(builder);
-        }
-        builder
-    }
-}
-
-pub trait IfSinceConditionSupport {
-    type O;
-    fn with_if_since_condition(self, if_since_condition: IfSinceCondition) -> Self::O;
-}
-
-pub trait IfSinceConditionOption {
-    fn if_since_condition(&self) -> Option<IfSinceCondition>;
-
-    #[must_use]
-    fn add_optional_header(&self, mut builder: Builder) -> Builder {
-        if let Some(if_since_condition) = self.if_since_condition() {
-            builder = if_since_condition.add_optional_header(builder);
-        }
-        builder
-    }
-}
-
-pub trait IfSourceSinceConditionSupport {
-    type O;
-    fn with_if_source_since_condition(self, if_source_since_condition: IfSinceCondition)
-        -> Self::O;
-}
-
-pub trait IfSourceSinceConditionOption {
-    fn if_source_since_condition(&self) -> Option<IfSinceCondition>;
-
-    #[must_use]
-    fn add_optional_header(&self, mut builder: Builder) -> Builder {
-        if let Some(if_source_since_condition) = self.if_source_since_condition() {
-            builder = if_source_since_condition.add_source_header(builder);
-        }
-        builder
-    }
-}
-
-pub trait IfMatchConditionSupport<'a> {
-    type O;
-    fn with_if_match_condition(self, if_match_condition: IfMatchCondition<'a>) -> Self::O;
-}
-
-pub trait IfMatchConditionOption<'a> {
-    fn if_match_condition(&self) -> Option<IfMatchCondition<'a>>;
-
-    #[must_use]
-    fn add_optional_header(&self, mut builder: Builder) -> Builder {
-        if let Some(if_match_condition) = self.if_match_condition() {
-            builder = if_match_condition.add_optional_header(builder);
-        }
-        builder
-    }
-}
-
-pub trait IfSourceMatchConditionSupport<'a> {
-    type O;
-    fn with_if_source_match_condition(self, if_match_condition: IfMatchCondition<'a>) -> Self::O;
-}
-
-pub trait IfSourceMatchConditionOption<'a> {
-    fn if_source_match_condition(&self) -> Option<IfMatchCondition<'a>>;
-
-    #[must_use]
-    fn add_optional_header(&self, mut builder: Builder) -> Builder {
-        if let Some(if_match_condition) = self.if_source_match_condition() {
-            builder = if_match_condition.add_source_header(builder);
-        }
-        builder
-    }
 }
 
 pub trait PageBlobLengthSupport {

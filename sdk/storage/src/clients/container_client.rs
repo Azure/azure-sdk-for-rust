@@ -1,8 +1,7 @@
 use crate::blob::prelude::PublicAccess;
-use crate::clients::StorageClient;
+use crate::clients::{StorageAccountClient, StorageClient};
 use crate::container::requests::*;
 use azure_core::errors::AzureError;
-use azure_core::lease::LeaseId;
 use azure_core::prelude::*;
 use http::method::Method;
 use http::request::{Builder, Request};
@@ -40,6 +39,14 @@ impl ContainerClient {
         self.storage_client.as_ref()
     }
 
+    pub(crate) fn http_client(&self) -> &dyn HttpClient {
+        self.storage_client.storage_account_client().http_client()
+    }
+
+    pub(crate) fn storage_account_client(&self) -> &StorageAccountClient {
+        self.storage_client.storage_account_client()
+    }
+
     pub fn create(&self) -> CreateBuilder {
         CreateBuilder::new(self)
     }
@@ -70,14 +77,6 @@ impl ContainerClient {
 
     pub fn break_lease(&self) -> BreakLeaseBuilder {
         BreakLeaseBuilder::new(self)
-    }
-
-    pub fn release_lease(&self, lease_id: LeaseId) -> ReleaseLeaseBuilder {
-        ReleaseLeaseBuilder::new(self, lease_id)
-    }
-
-    pub fn renew_lease<'a>(&'a self, lease_id: &'a LeaseId) -> RenewLeaseBuilder<'a> {
-        RenewLeaseBuilder::new(self, lease_id)
     }
 
     pub(crate) fn prepare_request<'a>(

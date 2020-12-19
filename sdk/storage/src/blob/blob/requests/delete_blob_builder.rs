@@ -1,345 +1,73 @@
-use crate::blob::blob::generate_blob_uri;
 use crate::blob::blob::responses::DeleteBlobResponse;
+use crate::blob::prelude::*;
 use crate::core::prelude::*;
-use azure_core::errors::AzureError;
-use azure_core::lease::LeaseId;
+use azure_core::headers::{add_mandatory_header, add_optional_header, add_optional_header_ref};
 use azure_core::prelude::*;
-use azure_core::{DeleteSnapshotsMethod, No, ToAssign, Yes};
-use azure_core::{DeleteSnapshotsMethodRequired, DeleteSnapshotsMethodSupport};
-use hyper::{Method, StatusCode};
-use std::marker::PhantomData;
 
 #[derive(Debug, Clone)]
-pub struct DeleteBlobBuilder<'a, C, ContainerNameSet, BlobNameSet, DeleteSnapshotMethodSet>
-where
-    ContainerNameSet: ToAssign,
-    BlobNameSet: ToAssign,
-    DeleteSnapshotMethodSet: ToAssign,
-    C: Client,
-{
-    client: &'a C,
-    p_container_name: PhantomData<ContainerNameSet>,
-    p_blob_name: PhantomData<BlobNameSet>,
-    p_delete_snapshots_method: PhantomData<DeleteSnapshotMethodSet>,
-    container_name: Option<&'a str>,
-    blob_name: Option<&'a str>,
+pub struct DeleteBlobBuilder<'a> {
+    blob_client: &'a BlobClient,
     delete_snapshots_method: DeleteSnapshotsMethod,
-    timeout: Option<u64>,
+    timeout: Option<Timeout>,
     lease_id: Option<&'a LeaseId>,
-    client_request_id: Option<&'a str>,
+    client_request_id: Option<ClientRequestId<'a>>,
 }
 
-impl<'a, C> DeleteBlobBuilder<'a, C, No, No, No>
-where
-    C: Client,
-{
-    #[inline]
-    pub(crate) fn new(client: &'a C) -> DeleteBlobBuilder<'a, C, No, No, No> {
-        DeleteBlobBuilder {
-            client,
-            p_container_name: PhantomData {},
-            container_name: None,
-            p_blob_name: PhantomData {},
-            blob_name: None,
-            p_delete_snapshots_method: PhantomData {},
+impl<'a> DeleteBlobBuilder<'a> {
+    pub(crate) fn new(blob_client: &'a BlobClient) -> Self {
+        Self {
+            blob_client,
             delete_snapshots_method: DeleteSnapshotsMethod::Include,
             timeout: None,
             lease_id: None,
             client_request_id: None,
         }
     }
-}
 
-impl<'a, C, ContainerNameSet, BlobNameSet, DeleteSnapshotMethodSet> ClientRequired<'a, C>
-    for DeleteBlobBuilder<'a, C, ContainerNameSet, BlobNameSet, DeleteSnapshotMethodSet>
-where
-    ContainerNameSet: ToAssign,
-    BlobNameSet: ToAssign,
-    DeleteSnapshotMethodSet: ToAssign,
-    C: Client,
-{
-    #[inline]
-    fn client(&self) -> &'a C {
-        self.client
+    setters! {
+        delete_snapshots_method: DeleteSnapshotsMethod => delete_snapshots_method,
+        timeout: Timeout => Some(timeout),
+        lease_id: &'a LeaseId => Some(lease_id),
+        client_request_id: ClientRequestId<'a> => Some(client_request_id),
     }
-}
 
-//get mandatory no traits methods
+    pub async fn execute(
+        &self,
+    ) -> Result<DeleteBlobResponse, Box<dyn std::error::Error + Send + Sync>> {
+        let mut url = self
+            .blob_client
+            .storage_account_client()
+            .blob_storage_url()
+            .to_owned();
+        url.path_segments_mut()
+            .map_err(|_| "Invalid blob URL")?
+            .push(self.blob_client.container_client().container_name())
+            .push(self.blob_client.blob_name());
 
-//set mandatory no traits methods
-impl<'a, C, BlobNameSet, DeleteSnapshotMethodSet> ContainerNameRequired<'a>
-    for DeleteBlobBuilder<'a, C, Yes, BlobNameSet, DeleteSnapshotMethodSet>
-where
-    BlobNameSet: ToAssign,
-    DeleteSnapshotMethodSet: ToAssign,
-    C: Client,
-{
-    #[inline]
-    fn container_name(&self) -> &'a str {
-        self.container_name.unwrap()
-    }
-}
+        self.timeout.append_to_url_query(&mut url);
 
-impl<'a, C, ContainerNameSet, DeleteSnapshotMethodSet> BlobNameRequired<'a>
-    for DeleteBlobBuilder<'a, C, ContainerNameSet, Yes, DeleteSnapshotMethodSet>
-where
-    ContainerNameSet: ToAssign,
-    DeleteSnapshotMethodSet: ToAssign,
-    C: Client,
-{
-    #[inline]
-    fn blob_name(&self) -> &'a str {
-        self.blob_name.unwrap()
-    }
-}
+        trace!("delete_blob url == {:?}", url);
 
-impl<'a, C, ContainerNameSet, BlobNameSet> DeleteSnapshotsMethodRequired
-    for DeleteBlobBuilder<'a, C, ContainerNameSet, BlobNameSet, Yes>
-where
-    ContainerNameSet: ToAssign,
-    BlobNameSet: ToAssign,
-    C: Client,
-{
-    #[inline]
-    fn delete_snapshots_method(&self) -> DeleteSnapshotsMethod {
-        self.delete_snapshots_method
-    }
-}
-
-impl<'a, C, ContainerNameSet, BlobNameSet, DeleteSnapshotMethodSet> TimeoutOption
-    for DeleteBlobBuilder<'a, C, ContainerNameSet, BlobNameSet, DeleteSnapshotMethodSet>
-where
-    ContainerNameSet: ToAssign,
-    BlobNameSet: ToAssign,
-    DeleteSnapshotMethodSet: ToAssign,
-    C: Client,
-{
-    #[inline]
-    fn timeout(&self) -> Option<u64> {
-        self.timeout
-    }
-}
-
-impl<'a, C, ContainerNameSet, BlobNameSet, DeleteSnapshotMethodSet> LeaseIdOption<'a>
-    for DeleteBlobBuilder<'a, C, ContainerNameSet, BlobNameSet, DeleteSnapshotMethodSet>
-where
-    ContainerNameSet: ToAssign,
-    BlobNameSet: ToAssign,
-    DeleteSnapshotMethodSet: ToAssign,
-    C: Client,
-{
-    #[inline]
-    fn lease_id(&self) -> Option<&'a LeaseId> {
-        self.lease_id
-    }
-}
-
-impl<'a, C, ContainerNameSet, BlobNameSet, DeleteSnapshotMethodSet> ClientRequestIdOption<'a>
-    for DeleteBlobBuilder<'a, C, ContainerNameSet, BlobNameSet, DeleteSnapshotMethodSet>
-where
-    ContainerNameSet: ToAssign,
-    BlobNameSet: ToAssign,
-    DeleteSnapshotMethodSet: ToAssign,
-    C: Client,
-{
-    #[inline]
-    fn client_request_id(&self) -> Option<&'a str> {
-        self.client_request_id
-    }
-}
-
-impl<'a, C, BlobNameSet, DeleteSnapshotMethodSet> ContainerNameSupport<'a>
-    for DeleteBlobBuilder<'a, C, No, BlobNameSet, DeleteSnapshotMethodSet>
-where
-    BlobNameSet: ToAssign,
-    DeleteSnapshotMethodSet: ToAssign,
-    C: Client,
-{
-    type O = DeleteBlobBuilder<'a, C, Yes, BlobNameSet, DeleteSnapshotMethodSet>;
-
-    #[inline]
-    fn with_container_name(self, container_name: &'a str) -> Self::O {
-        DeleteBlobBuilder {
-            client: self.client,
-            p_container_name: PhantomData {},
-            p_blob_name: PhantomData {},
-            p_delete_snapshots_method: PhantomData {},
-            container_name: Some(container_name),
-            blob_name: self.blob_name,
-            delete_snapshots_method: self.delete_snapshots_method,
-            timeout: self.timeout,
-            lease_id: self.lease_id,
-            client_request_id: self.client_request_id,
-        }
-    }
-}
-
-impl<'a, C, ContainerNameSet, DeleteSnapshotMethodSet> BlobNameSupport<'a>
-    for DeleteBlobBuilder<'a, C, ContainerNameSet, No, DeleteSnapshotMethodSet>
-where
-    ContainerNameSet: ToAssign,
-    DeleteSnapshotMethodSet: ToAssign,
-    C: Client,
-{
-    type O = DeleteBlobBuilder<'a, C, ContainerNameSet, Yes, DeleteSnapshotMethodSet>;
-
-    #[inline]
-    fn with_blob_name(self, blob_name: &'a str) -> Self::O {
-        DeleteBlobBuilder {
-            client: self.client,
-            p_container_name: PhantomData {},
-            p_blob_name: PhantomData {},
-            p_delete_snapshots_method: PhantomData {},
-            container_name: self.container_name,
-            blob_name: Some(blob_name),
-            delete_snapshots_method: self.delete_snapshots_method,
-            timeout: self.timeout,
-            lease_id: self.lease_id,
-            client_request_id: self.client_request_id,
-        }
-    }
-}
-
-impl<'a, C, ContainerNameSet, BlobNameSet> DeleteSnapshotsMethodSupport
-    for DeleteBlobBuilder<'a, C, ContainerNameSet, BlobNameSet, No>
-where
-    ContainerNameSet: ToAssign,
-    BlobNameSet: ToAssign,
-    C: Client,
-{
-    type O = DeleteBlobBuilder<'a, C, ContainerNameSet, BlobNameSet, Yes>;
-
-    #[inline]
-    fn with_delete_snapshots_method(
-        self,
-        delete_snapshots_method: DeleteSnapshotsMethod,
-    ) -> Self::O {
-        DeleteBlobBuilder {
-            client: self.client,
-            p_container_name: PhantomData {},
-            p_blob_name: PhantomData {},
-            p_delete_snapshots_method: PhantomData {},
-            container_name: self.container_name,
-            blob_name: self.blob_name,
-            delete_snapshots_method,
-            timeout: self.timeout,
-            lease_id: self.lease_id,
-            client_request_id: self.client_request_id,
-        }
-    }
-}
-
-impl<'a, C, ContainerNameSet, BlobNameSet, DeleteSnapshotMethodSet> TimeoutSupport
-    for DeleteBlobBuilder<'a, C, ContainerNameSet, BlobNameSet, DeleteSnapshotMethodSet>
-where
-    ContainerNameSet: ToAssign,
-    BlobNameSet: ToAssign,
-    DeleteSnapshotMethodSet: ToAssign,
-    C: Client,
-{
-    type O = DeleteBlobBuilder<'a, C, ContainerNameSet, BlobNameSet, DeleteSnapshotMethodSet>;
-
-    #[inline]
-    fn with_timeout(self, timeout: u64) -> Self::O {
-        DeleteBlobBuilder {
-            client: self.client,
-            p_container_name: PhantomData {},
-            p_blob_name: PhantomData {},
-            p_delete_snapshots_method: PhantomData {},
-            container_name: self.container_name,
-            blob_name: self.blob_name,
-            delete_snapshots_method: self.delete_snapshots_method,
-            timeout: Some(timeout),
-            lease_id: self.lease_id,
-            client_request_id: self.client_request_id,
-        }
-    }
-}
-
-impl<'a, C, ContainerNameSet, BlobNameSet, DeleteSnapshotMethodSet> LeaseIdSupport<'a>
-    for DeleteBlobBuilder<'a, C, ContainerNameSet, BlobNameSet, DeleteSnapshotMethodSet>
-where
-    ContainerNameSet: ToAssign,
-    BlobNameSet: ToAssign,
-    DeleteSnapshotMethodSet: ToAssign,
-    C: Client,
-{
-    type O = DeleteBlobBuilder<'a, C, ContainerNameSet, BlobNameSet, DeleteSnapshotMethodSet>;
-
-    #[inline]
-    fn with_lease_id(self, lease_id: &'a LeaseId) -> Self::O {
-        DeleteBlobBuilder {
-            client: self.client,
-            p_container_name: PhantomData {},
-            p_blob_name: PhantomData {},
-            p_delete_snapshots_method: PhantomData {},
-            container_name: self.container_name,
-            blob_name: self.blob_name,
-            delete_snapshots_method: self.delete_snapshots_method,
-            timeout: self.timeout,
-            lease_id: Some(lease_id),
-            client_request_id: self.client_request_id,
-        }
-    }
-}
-
-impl<'a, C, ContainerNameSet, BlobNameSet, DeleteSnapshotMethodSet> ClientRequestIdSupport<'a>
-    for DeleteBlobBuilder<'a, C, ContainerNameSet, BlobNameSet, DeleteSnapshotMethodSet>
-where
-    ContainerNameSet: ToAssign,
-    BlobNameSet: ToAssign,
-    DeleteSnapshotMethodSet: ToAssign,
-    C: Client,
-{
-    type O = DeleteBlobBuilder<'a, C, ContainerNameSet, BlobNameSet, DeleteSnapshotMethodSet>;
-
-    #[inline]
-    fn with_client_request_id(self, client_request_id: &'a str) -> Self::O {
-        DeleteBlobBuilder {
-            client: self.client,
-            p_container_name: PhantomData {},
-            p_blob_name: PhantomData {},
-            p_delete_snapshots_method: PhantomData {},
-            container_name: self.container_name,
-            blob_name: self.blob_name,
-            delete_snapshots_method: self.delete_snapshots_method,
-            timeout: self.timeout,
-            lease_id: self.lease_id,
-            client_request_id: Some(client_request_id),
-        }
-    }
-}
-
-// methods callable only when every mandatory field has been filled
-impl<'a, C> DeleteBlobBuilder<'a, C, Yes, Yes, Yes>
-where
-    C: Client,
-{
-    pub async fn finalize(self) -> Result<DeleteBlobResponse, AzureError> {
-        let mut uri =
-            generate_blob_uri(self.client(), self.container_name(), self.blob_name(), None);
-
-        if let Some(nm) = TimeoutOption::to_uri_parameter(&self) {
-            uri = format!("{}?{}", uri, nm);
-        }
-
-        trace!("delete_blob uri == {:?}", uri);
-
-        let perform_request_response = self.client().perform_request(
-            &uri,
-            &Method::DELETE,
+        let (request, _url) = self.blob_client.prepare_request(
+            url.as_str(),
+            &http::Method::DELETE,
             &|mut request| {
-                request = DeleteSnapshotsMethodRequired::add_mandatory_header(&self, request);
-                request = LeaseIdOption::add_optional_header(&self, request);
-                request = ClientRequestIdOption::add_optional_header(&self, request);
+                request = add_optional_header_ref(&self.lease_id, request);
+                request = add_optional_header(&self.client_request_id, request);
+                request = add_mandatory_header(&self.delete_snapshots_method, request);
                 request
             },
             None,
         )?;
 
-        let (headers, _body) = perform_request_response
-            .check_status_extract_headers_and_body(StatusCode::ACCEPTED)
+        let response = self
+            .blob_client
+            .http_client()
+            .execute_request_check_status(request, http::StatusCode::ACCEPTED)
             .await?;
-        DeleteBlobResponse::from_headers(&headers)
+
+        debug!("response.headers() == {:#?}", response.headers());
+
+        Ok(DeleteBlobResponse::from_headers(response.headers())?)
     }
 }

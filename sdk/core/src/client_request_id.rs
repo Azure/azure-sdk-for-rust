@@ -2,7 +2,7 @@ use crate::headers::*;
 use crate::AddAsHeader;
 use http::request::Builder;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub struct ClientRequestId<'a>(&'a str);
 
 impl<'a> ClientRequestId<'a> {

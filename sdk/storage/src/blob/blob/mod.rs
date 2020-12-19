@@ -268,7 +268,6 @@ impl Blob {
     pub(crate) fn from_headers(
         blob_name: &str,
         container_name: &str,
-        snapshot_time: Option<DateTime<Utc>>,
         h: &header::HeaderMap,
     ) -> Result<Blob, AzureError> {
         trace!("\n{:?}", h);
@@ -394,6 +393,10 @@ impl Blob {
                 }
             }
         }
+
+        // TODO: Retrieve the snapshot time from
+        // the headers
+        let snapshot_time = None;
 
         Ok(Blob {
             name: blob_name.to_owned(),

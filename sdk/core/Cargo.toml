@@ -34,6 +34,7 @@ async-trait = "0.1.36"
 oauth2 = { version = "4.0.0-alpha.2" }
 reqwest = "*"
 paste = "1.0"
+md5 = "0.7"
 
 [dev-dependencies]
 tokio = "0.2"

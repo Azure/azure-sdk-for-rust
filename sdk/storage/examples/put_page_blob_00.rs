@@ -1,14 +1,12 @@
 #[macro_use]
 extern crate log;
-
 use azure_core::prelude::*;
-use azure_storage::blob::prelude::*;
-use azure_storage::core::prelude::*;
-use std::collections::HashMap;
+use azure_storage::clients::*;
 use std::error::Error;
+use std::sync::Arc;
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn Error>> {
+async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     env_logger::init();
     trace!("example started");
 
@@ -18,21 +16,26 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let master_key =
         std::env::var("STORAGE_MASTER_KEY").expect("Set env variable STORAGE_MASTER_KEY first!");
 
-    let container = std::env::args()
+    let container_name = std::env::args()
         .nth(1)
-        .expect("please specify container name as command line parameter");
+        .expect("please specify container_name name as command line parameter");
     let blob_name = std::env::args()
         .nth(2)
         .expect("please specify blob name as command line parameter");
 
-    let client = client::with_access_key(&account, &master_key);
+    let http_client: Arc<Box<dyn HttpClient>> = Arc::new(Box::new(reqwest::Client::new()));
+
+    let container =
+        StorageAccountClient::new_access_key(http_client.clone(), &account, &master_key)
+            .as_storage_client()
+            .as_container_client(&container_name);
+    let blob = container.as_blob_client(&blob_name);
 
     let data: [u8; 2000] = [51; 2000];
 
-    let mut metadata = HashMap::new();
-
-    metadata.insert("pollo", "arrosto");
-    metadata.insert("milk", "shake");
+    let mut metadata = Metadata::new();
+    metadata.insert("pollo".into(), "arrosto".into());
+    metadata.insert("milk".into(), "shake".into());
 
     let slice = &data[512..1024];
 
@@ -40,67 +43,48 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // spurious data to be uploaded.
     let digest = md5::compute(slice);
 
-    // The required parameters are container_name, blob_name.
+    // The required parameters are container_name_name, blob_name.
     // The builder supports many more optional
     // parameters (such as LeaseID, or ContentDisposition, etc...)
     // so make sure to check with the documentation.
-    let res = client
-        .put_page_blob()
-        .with_container_name(&container)
-        .with_blob_name(&blob_name)
-        .with_content_length(1024 * 3)
-        .with_content_type("text/plain")
+    let res = blob
+        .put_page_blob(1024 * 3)
+        .with_content_type("text/plain".into())
         .with_metadata(&metadata)
-        .finalize()
+        .with_sequence_number(100.into())
+        .execute()
         .await?;
-    println!("put_blob == {:?}", res);
+    println!("put_page_blob == {:?}", res);
 
     // this will update a page. The slice must be at least
     // the size of tha page or a buffer out
     // of bounds error will be thrown.
-    let res = client
-        .update_page()
-        .with_container_name(&container)
-        .with_blob_name(&blob_name)
-        .with_ba512_range(&BA512Range::new(0, 511)?)
-        .with_content_md5(&digest[..])
-        .with_body(slice)
-        .finalize()
+    let res = blob
+        .update_page(BA512Range::new(0, 511)?, slice)
+        .with_blob_hash(&digest.into())
+        .execute()
         .await?;
     println!("update first page == {:?}", res);
 
     // update a second page with the same data
-    let res = client
-        .update_page()
-        .with_container_name(&container)
-        .with_blob_name(&blob_name)
-        .with_ba512_range(&BA512Range::new(512, 1023)?)
-        .with_content_md5(&digest[..])
-        .with_body(slice)
-        .finalize()
+    let res = blob
+        .update_page(BA512Range::new(512, 1023)?, slice)
+        .with_blob_hash(&digest.into())
+        .execute()
         .await?;
     println!("update second page == {:?}", res);
 
     // update the second page again with checks
-    let res = client
-        .update_page()
-        .with_container_name(&container)
-        .with_blob_name(&blob_name)
-        .with_ba512_range(&BA512Range::new(512, 1023)?)
-        .with_content_md5(&digest[..])
-        .with_body(slice)
-        .with_sequence_number_condition(SequenceNumberCondition::Equal(0))
-        .finalize()
+    let res = blob
+        .update_page(BA512Range::new(512, 1023)?, slice)
+        .with_blob_hash(&digest.into())
+        .with_sequence_number_condition(SequenceNumberCondition::Equal(100))
+        .execute()
         .await?;
-    println!("update failed sequence number condition == {:?}", res);
+    println!("update sequence number condition == {:?}", res);
 
-    let res = client
-        .clear_page()
-        .with_container_name(&container)
-        .with_blob_name(&blob_name)
-        .with_ba512_range(&BA512Range::new(0, 511)?)
-        .finalize()
-        .await?;
+    // let's clear a page
+    let res = blob.clear_page(BA512Range::new(0, 511)?).execute().await?;
     println!("clear first page {:?}", res);
 
     Ok(())

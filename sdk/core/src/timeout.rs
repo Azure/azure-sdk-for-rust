@@ -1,7 +1,7 @@
 use crate::AppendToUrlQuery;
 use std::time::Duration;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub struct Timeout(Duration);
 
 impl Timeout {

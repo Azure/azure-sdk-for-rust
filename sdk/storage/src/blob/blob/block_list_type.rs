@@ -1,3 +1,5 @@
+use azure_core::AppendToUrlQuery;
+
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum BlockListType {
     Committed,
@@ -12,5 +14,12 @@ impl BlockListType {
             BlockListType::Committed => "committed",
             BlockListType::Uncommitted => "uncommitted",
         }
+    }
+}
+
+impl AppendToUrlQuery for BlockListType {
+    fn append_to_url_query(&self, url: &mut url::Url) {
+        url.query_pairs_mut()
+            .append_pair("blocklisttype", self.to_str());
     }
 }
