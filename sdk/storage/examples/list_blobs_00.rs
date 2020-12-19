@@ -19,8 +19,6 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .nth(1)
         .expect("please specify container name as command line parameter");
 
-    let client = client::with_access_key(&account, &master_key);
-
     let http_client: Arc<Box<dyn HttpClient>> = Arc::new(Box::new(reqwest::Client::new()));
     let storage_account =
         StorageAccountClient::new_access_key(http_client.clone(), &account, &master_key)
@@ -49,13 +47,11 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     // create 10 blobs
     for i in 0..10u8 {
-        client
-            .put_block_blob()
-            .with_container_name(&container_name)
-            .with_blob_name(&format!("blob{}.txt", i))
-            .with_content_type("text/plain")
-            .with_body("somedata".as_bytes())
-            .finalize()
+        container
+            .as_blob_client(format!("blob{}.txt", i))
+            .put_block_blob("somedata".as_bytes())
+            .with_content_type("text/plain".into())
+            .execute()
             .await?;
         println!("\tAdded blob {}", i);
     }

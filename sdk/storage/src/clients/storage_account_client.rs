@@ -1,7 +1,9 @@
 use crate::core::ConnectionString;
+use crate::shared_access_signature::SharedAccessSignatureBuilder;
 use azure_core::errors::AzureError;
 use azure_core::headers::*;
 use azure_core::HttpClient;
+use azure_core::No;
 use azure_core::EMPTY_BODY;
 use http::header::*;
 use http::method::Method;
@@ -132,6 +134,32 @@ impl StorageAccountClient {
         })
     }
 
+    pub fn new_bearer_token<A, BT>(
+        http_client: Arc<Box<dyn HttpClient>>,
+        account: A,
+        bearer_token: BT,
+    ) -> Arc<Self>
+    where
+        A: Into<String>,
+        BT: Into<String>,
+    {
+        let account = account.into();
+        let bearer_token = bearer_token.into();
+
+        Arc::new(Self {
+            blob_storage_url: Url::parse(&format!("https://{}.blob.core.windows.net", &account))
+                .unwrap(),
+            table_storage_url: Url::parse(&format!("https://{}.table.core.windows.net", &account))
+                .unwrap(),
+            queue_storage_url: Url::parse(&format!("https://{}.queue.core.windows.net", &account))
+                .unwrap(),
+            filesystem_url: Url::parse(&format!("https://{}.dfs.core.windows.net", &account))
+                .unwrap(),
+            storage_credentials: StorageCredentials::BearerToken(bearer_token),
+            http_client,
+        })
+    }
+
     pub fn new_connection_string(
         http_client: Arc<Box<dyn HttpClient>>,
         connection_string: &str,
@@ -218,6 +246,20 @@ impl StorageAccountClient {
 
     pub fn filesystem_url(&self) -> &Url {
         &self.filesystem_url
+    }
+
+    pub fn shared_access_signature(
+        &self,
+    ) -> Result<SharedAccessSignatureBuilder<No, No, No, No>, AzureError> {
+        match self.storage_credentials {
+            StorageCredentials::Key(ref account, ref key) => {
+                Ok(SharedAccessSignatureBuilder::new(account, key))
+            }
+            _ => Err(AzureError::OperationNotSupported(
+                "Shared access signature generation".to_owned(),
+                "SAS can be generated only from key and account clients".to_owned(),
+            )),
+        }
     }
 
     pub(crate) fn prepare_request<'a>(

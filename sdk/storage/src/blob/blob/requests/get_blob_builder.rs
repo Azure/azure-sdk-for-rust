@@ -136,7 +136,7 @@ impl<'a> GetBlobBuilder<'a> {
                         // We specified u64::MAX as the first range but now
                         // we need to find the correct size to avoid requesting data
                         // outside the valid range.
-                        println!("content-range == {:?}", response.content_range);
+                        debug!("content-range == {:?}", response.content_range);
                         // this unwrap should always be safe since we did not
                         // get the whole blob in the previous call.
                         let content_range = response.content_range.unwrap();

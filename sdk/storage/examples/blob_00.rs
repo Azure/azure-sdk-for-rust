@@ -2,7 +2,6 @@
 extern crate log;
 use azure_core::prelude::*;
 use azure_storage::clients::*;
-use azure_storage::core::prelude::*;
 use futures::stream::StreamExt;
 use std::error::Error;
 use std::sync::Arc;
@@ -39,7 +38,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .execute()
         .await?;
 
-    //println!("{:#?}", response);
+    println!("{:#?}", response);
 
     let mut stream = Box::pin(blob_client.get().stream(128));
     while let Some(value) = stream.next().await {

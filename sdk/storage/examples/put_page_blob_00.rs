@@ -61,7 +61,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // of bounds error will be thrown.
     let res = blob
         .update_page(BA512Range::new(0, 511)?, slice)
-        .with_blob_hash(&digest.into())
+        .with_hash(&digest.into())
         .execute()
         .await?;
     println!("update first page == {:?}", res);
@@ -69,7 +69,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // update a second page with the same data
     let res = blob
         .update_page(BA512Range::new(512, 1023)?, slice)
-        .with_blob_hash(&digest.into())
+        .with_hash(&digest.into())
         .execute()
         .await?;
     println!("update second page == {:?}", res);
@@ -77,7 +77,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // update the second page again with checks
     let res = blob
         .update_page(BA512Range::new(512, 1023)?, slice)
-        .with_blob_hash(&digest.into())
+        .with_hash(&digest.into())
         .with_sequence_number_condition(SequenceNumberCondition::Equal(100))
         .execute()
         .await?;

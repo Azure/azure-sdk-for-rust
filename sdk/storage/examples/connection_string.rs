@@ -25,10 +25,6 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let iv = storage_account.list_containers().execute().await?;
 
-    // this is obsolete and will be removed when the blob
-    // functions have been migrated.
-    let client = client::from_connection_string(&connection_string)?;
-
     if iv
         .incomplete_vector
         .iter()
@@ -49,13 +45,11 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     // create 10 blobs
     for i in 0..10u8 {
-        client
-            .put_block_blob()
-            .with_container_name(&container_name)
-            .with_blob_name(&format!("blob{}.txt", i))
-            .with_content_type("text/plain")
-            .with_body("somedata".as_bytes())
-            .finalize()
+        container
+            .as_blob_client(format!("blob{}.txt", i))
+            .put_block_blob("somedata".as_bytes())
+            .with_content_type("text/plain".into())
+            .execute()
             .await?;
         println!("\tAdded blob {}", i);
     }

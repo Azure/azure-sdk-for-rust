@@ -8,7 +8,7 @@ use std::convert::TryInto;
 pub struct CopyBlobFromUrlBuilder<'a> {
     blob_client: &'a BlobClient,
     source_url: &'a str,
-    is_sync: bool,
+    is_synchronous: bool,
     metadata: Option<&'a Metadata>,
     if_modified_since_condition: Option<IfModifiedSinceCondition>,
     if_match_condition: Option<IfMatchCondition<'a>>,
@@ -25,7 +25,7 @@ impl<'a> CopyBlobFromUrlBuilder<'a> {
         Self {
             blob_client,
             source_url,
-            is_sync: false,
+            is_synchronous: false,
             metadata: None,
             if_modified_since_condition: None,
             if_match_condition: None,
@@ -39,7 +39,7 @@ impl<'a> CopyBlobFromUrlBuilder<'a> {
     }
 
     setters! {
-        is_sync: bool => is_sync,
+        is_synchronous: bool => is_synchronous,
         metadata: &'a Metadata => Some(metadata),
         if_modified_since_condition: IfModifiedSinceCondition => Some(if_modified_since_condition),
         if_match_condition: IfMatchCondition<'a> => Some(if_match_condition),
@@ -73,7 +73,7 @@ impl<'a> CopyBlobFromUrlBuilder<'a> {
             &http::Method::PUT,
             &|mut request| {
                 request = request.header(COPY_SOURCE, self.source_url);
-                request = request.header(REQUIRES_SYNC, format!("{}", self.is_sync));
+                request = request.header(REQUIRES_SYNC, format!("{}", self.is_synchronous));
                 request = add_optional_header(&self.metadata, request);
                 request = add_optional_header(&self.if_modified_since_condition, request);
                 request = add_optional_header(&self.if_match_condition, request);

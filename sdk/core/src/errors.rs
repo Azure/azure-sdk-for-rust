@@ -145,8 +145,11 @@ quick_error! {
         PageNot512ByteAlignedError(start: u64, end: u64) {
             display("{}-{} is not 512 byte aligned", start, end)
         }
-         Not512ByteAlignedError(size: u64) {
+        Not512ByteAlignedError(size: u64) {
             display("{} is not 512 byte aligned", size)
+        }
+        OperationNotSupported(operation: String, reason: String){
+            display("Operation not supported. Operation == {}, reason == {}", operation, reason)
         }
         Base64DecodeError(err: base64::DecodeError) {
             from()

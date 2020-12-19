@@ -15,3 +15,21 @@ impl AppendToUrlQuery for BlockId {
             .append_pair("blockid", &base64::encode(&self.0));
     }
 }
+
+impl From<Vec<u8>> for BlockId {
+    fn from(v: Vec<u8>) -> Self {
+        Self(v)
+    }
+}
+
+impl From<&[u8]> for BlockId {
+    fn from(slice: &[u8]) -> Self {
+        Self(slice.to_owned())
+    }
+}
+
+impl From<&str> for BlockId {
+    fn from(s: &str) -> Self {
+        Self(s.as_bytes().to_owned())
+    }
+}

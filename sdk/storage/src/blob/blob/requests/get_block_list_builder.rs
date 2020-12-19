@@ -26,6 +26,14 @@ impl<'a> GetBlockListBuilder<'a> {
         }
     }
 
+    setters! {
+        block_list_type: BlockListType => block_list_type,
+        blob_versioning: &'a BlobVersioning => Some(blob_versioning),
+        lease_id: &'a LeaseId => Some(lease_id),
+        client_request_id: ClientRequestId<'a> => Some(client_request_id),
+        timeout: Timeout => Some(timeout),
+    }
+
     pub async fn execute(
         &self,
     ) -> Result<GetBlockListResponse, Box<dyn std::error::Error + Send + Sync>> {
@@ -44,11 +52,11 @@ impl<'a> GetBlockListBuilder<'a> {
         self.block_list_type.append_to_url_query(&mut url);
         self.timeout.append_to_url_query(&mut url);
 
-        trace!("url == {:?}", url);
+        println!("url == {:?}", url);
 
         let (request, _url) = self.blob_client.prepare_request(
             url.as_str(),
-            &http::Method::PUT,
+            &http::Method::GET,
             &|mut request| {
                 request = add_optional_header_ref(&self.lease_id, request);
                 request = add_optional_header(&self.client_request_id, request);
@@ -60,7 +68,7 @@ impl<'a> GetBlockListBuilder<'a> {
         let response = self
             .blob_client
             .http_client()
-            .execute_request_check_status(request, http::StatusCode::CREATED)
+            .execute_request_check_status(request, http::StatusCode::OK)
             .await?;
 
         debug!("response.headers() == {:#?}", response.headers());

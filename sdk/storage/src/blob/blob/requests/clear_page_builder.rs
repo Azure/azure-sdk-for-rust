@@ -74,7 +74,7 @@ impl<'a> ClearPageBuilder<'a> {
             None,
         )?;
 
-        println!("request.headers() == {:#?}", request.headers());
+        trace!("request.headers() == {:#?}", request.headers());
 
         let response = self
             .blob_client
@@ -82,7 +82,7 @@ impl<'a> ClearPageBuilder<'a> {
             .execute_request_check_status(request, http::StatusCode::CREATED)
             .await?;
 
-        println!("response.headers() == {:#?}", response.headers());
+        debug!("response.headers() == {:#?}", response.headers());
 
         Ok(ClearPageResponse::from_headers(response.headers())?)
     }

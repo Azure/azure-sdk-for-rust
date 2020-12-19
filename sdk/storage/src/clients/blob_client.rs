@@ -1,6 +1,7 @@
 use crate::blob::blob::requests::*;
 use crate::blob::prelude::*;
 use crate::clients::{ContainerClient, StorageAccountClient};
+use crate::shared_access_signature::SharedAccessSignature;
 use azure_core::errors::AzureError;
 use azure_core::prelude::*;
 use azure_core::HttpClient;
@@ -130,6 +131,18 @@ impl BlobClient {
 
     pub fn break_lease(&self) -> BreakLeaseBuilder {
         BreakLeaseBuilder::new(self)
+    }
+
+    pub fn generate_signed_blob_url(
+        &self,
+        signature: &SharedAccessSignature,
+    ) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
+        let mut url = self.storage_account_client().blob_storage_url().to_owned();
+        url.path_segments_mut()
+            .map_err(|_| "Invalid blob URL")?
+            .push(self.container_client().container_name())
+            .push(self.blob_name());
+        Ok(format!("{}?{}", url.as_str(), signature.token()))
     }
 
     pub(crate) fn prepare_request<'a>(

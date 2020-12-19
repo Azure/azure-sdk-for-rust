@@ -1,11 +1,11 @@
 use azure_core::prelude::*;
-use azure_storage::blob::prelude::*;
 use azure_storage::core::prelude::*;
 use futures::stream::StreamExt;
 use std::error::Error;
+use std::sync::Arc;
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn Error>> {
+async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // First we retrieve the account name and master key from environment variables.
     let account =
         std::env::var("STORAGE_ACCOUNT").expect("Set env variable STORAGE_ACCOUNT first!");
@@ -19,7 +19,14 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .nth(2)
         .expect("please specify blob name as command line parameter");
 
-    let client = client::with_access_key(&account, &master_key);
+    let http_client: Arc<Box<dyn HttpClient>> = Arc::new(Box::new(reqwest::Client::new()));
+
+    let storage_account_client =
+        StorageAccountClient::new_access_key(http_client.clone(), &account, &master_key);
+    let storage_client = storage_account_client.as_storage_client();
+    let blob = storage_client
+        .as_container_client(&container)
+        .as_blob_client(&blob);
 
     // 1024 G, 512 H and 2048 I
     let mut buf: Vec<u8> = Vec::with_capacity(1024 * 4);
@@ -36,69 +43,43 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let content = std::str::from_utf8(&buf)?.to_owned();
     println!("content == {}", content);
 
-    let _response = client
-        .put_block_blob()
-        .with_container_name(&container)
-        .with_blob_name(&blob)
-        .with_body(&buf)
-        .finalize()
-        .await?;
+    let _response = blob.put_block_blob(&buf).execute().await?;
 
-    let whole = client
-        .get_blob()
-        .with_container_name(&container)
-        .with_blob_name(&blob)
-        .finalize()
-        .await?;
+    let whole = blob.get().execute().await?;
 
     assert_eq!(whole.data.len(), buf.len());
 
-    let chunk0 = client
-        .get_blob()
-        .with_container_name(&container)
-        .with_blob_name(&blob)
-        .with_range(&(0..1024).into())
-        .finalize()
+    let chunk0 = blob
+        .get()
+        .with_range(&Range::new(0, 1024).into())
+        .execute()
         .await?;
     assert_eq!(chunk0.data.len(), 1024);
     for i in 0..1024 {
         assert_eq!(chunk0.data[i], 71);
     }
 
-    let chunk1 = client
-        .get_blob()
-        .with_container_name(&container)
-        .with_blob_name(&blob)
+    let chunk1 = blob
+        .get()
         .with_range(&(1024..1536).into())
-        .finalize()
+        .execute()
         .await?;
     assert_eq!(chunk1.data.len(), 512);
     for i in 0..512 {
         assert_eq!(chunk1.data[i], 72);
     }
 
-    let chunk2 = client
-        .get_blob()
-        .with_container_name(&container)
-        .with_blob_name(&blob)
+    let chunk2 = blob
+        .get()
         .with_range(&(1536..3584).into())
-        .finalize()
+        .execute()
         .await?;
     assert_eq!(chunk2.data.len(), 2048);
     for i in 0..2048 {
         assert_eq!(chunk2.data[i], 73);
     }
 
-    let range = (0..3584).into();
-    let mut stream = Box::pin(
-        client
-            .stream_blob()
-            .with_container_name(&container)
-            .with_blob_name(&blob)
-            .with_chunk_size(512)
-            .with_range(&range)
-            .finalize(),
-    );
+    let mut stream = Box::pin(blob.get().stream(512));
 
     println!("\nStreaming");
     let mut chunk = 0;

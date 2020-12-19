@@ -2,6 +2,7 @@ use azure_core::prelude::*;
 use azure_storage::blob::prelude::*;
 use azure_storage::core::prelude::*;
 use futures::stream::StreamExt;
+use std::sync::Arc;
 
 // This example shows how to stream data from a blob. We will create a simple blob first, the we
 // ask it back using streaming features of the future crate. In this simple example we just
@@ -10,7 +11,7 @@ use futures::stream::StreamExt;
 // We do not use leases here but you definitely want to do so otherwise the returned stream
 // is not guaranteed to be consistent.
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let file_name = "azure_sdk_for_rust_stream_test.txt";
 
     // First we retrieve the account name and master key from environment variables.
@@ -23,17 +24,21 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .nth(1)
         .expect("please specify container name as first command line parameter");
 
-    let client = client::with_access_key(&account, &master_key);
+    let http_client: Arc<Box<dyn HttpClient>> = Arc::new(Box::new(reqwest::Client::new()));
+
+    let storage_account_client =
+        StorageAccountClient::new_access_key(http_client.clone(), &account, &master_key);
+    let storage_client = storage_account_client.as_storage_client();
+    let blob = storage_client
+        .as_container_client(&container_name)
+        .as_blob_client(file_name);
 
     let string = "0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF";
 
-    client
-        .put_block_blob()
-        .with_container_name(&container_name)
-        .with_blob_name(file_name)
-        .with_content_type("text/plain")
-        .with_body(string.as_ref())
-        .finalize()
+    let _response = blob
+        .put_block_blob(string.as_bytes())
+        .with_content_type("text/plain".into())
+        .execute()
         .await?;
 
     println!("{}/{} blob created!", container_name, file_name);
@@ -42,17 +47,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // to specify the range requested. Also make sure to specify how big
     // a chunk is going to be. Bigger chunks are of course more efficient as the
     // http overhead will be less but it also means you will have to wait for more
-    // time before receiving anything. In this example we use an awkward value
-    // just to make the test worthwile.
-    let range = Range::new(0, string.len() as u64);
-    let mut stream = Box::pin(
-        client
-            .stream_blob()
-            .with_container_name(&container_name)
-            .with_blob_name(file_name)
-            .with_range(&range)
-            .finalize(),
-    );
+    // time before receiving anything. In this example we use a very small chunk size
+    // just to make sure to loop at least twice.
+    let mut stream = Box::pin(blob.get().stream(128));
 
     let result = std::rc::Rc::new(std::cell::RefCell::new(Vec::new()));
 
@@ -63,15 +60,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             println!("received {:?} bytes", value.len());
             res_closure.append(&mut value);
         }
-
-        //let fut = stream.for_each(move |mut value| {
-        //    println!("received {:?} bytes", value.len());
-        //    res_closure.append(&mut value);
-
-        //    ok(())
-        //});
-
-        //reactor.run(fut)?;
     }
 
     let returned_string = {
@@ -102,12 +90,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         returned_string
     );
 
-    client
-        .delete_blob()
-        .with_container_name(&container_name)
-        .with_blob_name(file_name)
+    blob.delete()
         .with_delete_snapshots_method(DeleteSnapshotsMethod::Include)
-        .finalize()
+        .execute()
         .await?;
 
     Ok(())

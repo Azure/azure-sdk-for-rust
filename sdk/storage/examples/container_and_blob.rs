@@ -17,8 +17,6 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .nth(1)
         .expect("please specify container name as command line parameter");
 
-    let client = client::with_access_key(&account, &master_key);
-
     let http_client: Arc<Box<dyn HttpClient>> = Arc::new(Box::new(reqwest::Client::new()));
     let storage_account =
         StorageAccountClient::new_access_key(http_client.clone(), &account, &master_key)
@@ -37,38 +35,32 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     // this is not mandatory but it helps preventing
     // spurious data to be uploaded.
-    let digest = md5::compute(&data[..]);
+    let hash = md5::compute(&data[..]).into();
 
-    let res = client
-        .put_block_blob()
-        .with_container_name(&container_name)
-        .with_blob_name("blob0.txt")
-        .with_content_type("text/plain")
-        .with_body(&data[..])
-        .with_content_md5(&digest[..])
-        .finalize()
+    let res = container
+        .as_blob_client("blob0.txt")
+        .put_block_blob(data)
+        .with_content_type("text/plain".into())
+        .with_hash(&hash)
+        .execute()
         .await?;
     println!("{:?}", res);
 
-    let res = client
-        .put_block_blob()
-        .with_container_name(&container_name)
-        .with_blob_name("blob1.txt")
-        .with_content_type("text/plain")
-        .with_body(&data[..])
-        .with_content_md5(&digest[..])
-        .finalize()
+    let res = container
+        .as_blob_client("blob1.txt")
+        .put_block_blob(data)
+        .with_content_type("text/plain".into())
+        .with_hash(&hash)
+        .execute()
         .await?;
     println!("{:?}", res);
 
-    let res = client
-        .put_block_blob()
-        .with_container_name(&container_name)
-        .with_blob_name("blob2.txt")
-        .with_content_type("text/plain")
-        .with_body(&data[..])
-        .with_content_md5(&digest[..])
-        .finalize()
+    let res = container
+        .as_blob_client("blob2.txt")
+        .put_block_blob(data)
+        .with_content_type("text/plain".into())
+        .with_hash(&hash)
+        .execute()
         .await?;
     println!("{:?}", res);
 
