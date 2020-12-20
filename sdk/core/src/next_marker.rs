@@ -7,6 +7,10 @@ impl NextMarker {
     pub fn new(next_marker: String) -> Self {
         Self(next_marker)
     }
+
+    pub fn as_str(&self) -> &str {
+        &self.0
+    }
 }
 
 impl AppendToUrlQuery for NextMarker {

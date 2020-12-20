@@ -196,23 +196,25 @@ where
     pub async fn finalize(self) -> Result<ListFilesystemsResponse, AzureError> {
         let mut uri = format!("{}/?resource=account", self.client().filesystem_uri(),);
 
-        if let Some(nm) = TimeoutOption::to_uri_parameter(&self) {
-            uri = format!("{}&{}", uri, nm);
-        }
+        //TODO: Reenable uri parameters
+        //if let Some(nm) = TimeoutOption::to_uri_parameter(&self) {
+        //    uri = format!("{}&{}", uri, nm);
+        //}
 
-        if let Some(nm) = MaxResultsOption::to_uri_parameter(&self) {
-            uri = format!("{}&{}", uri, nm);
-        }
+        //if let Some(nm) = MaxResultsOption::to_uri_parameter(&self) {
+        //    uri = format!("{}&{}", uri, nm);
+        //}
 
-        if let Some(nm) = PrefixOption::to_uri_parameter(&self) {
-            uri = format!("{}&{}", uri, nm);
-        }
+        //if let Some(nm) = PrefixOption::to_uri_parameter(&self) {
+        //    uri = format!("{}&{}", uri, nm);
+        //}
 
-        let perform_request_response = self.client().perform_request(
+        let perform_request_response = self.client.perform_request(
             &uri,
             &Method::GET,
             &|mut request| {
-                request = ClientRequestIdOption::add_optional_header(&self, request);
+                //TODO: Reenable headers
+                //request = ClientRequestIdOption::add_optional_header(&self, request);
                 request
             },
             Some(&[]),
@@ -256,8 +258,8 @@ where
                     Err(err) => return Some((Err(err), None)),
                 };
 
-                let continuation = match response.incomplete_vector.token() {
-                    Some(ct) => Some(States::Continuation(ct.to_owned())),
+                let continuation = match response.incomplete_vector.next_marker() {
+                    Some(ct) => Some(States::Continuation(ct.as_str().to_owned())),
                     None => None,
                 };
 

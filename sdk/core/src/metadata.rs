@@ -14,8 +14,12 @@ impl Metadata {
         &mut self.0
     }
 
-    pub fn insert(&mut self, k: String, v: String) -> Option<String> {
-        self.0.insert(k, v)
+    pub fn insert<K, V>(&mut self, k: K, v: V) -> Option<String>
+    where
+        K: Into<String>,
+        V: Into<String>,
+    {
+        self.0.insert(k.into(), v.into())
     }
 }
 

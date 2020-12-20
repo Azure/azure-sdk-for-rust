@@ -1,100 +1,79 @@
 #![cfg(all(test, feature = "test_e2e"))]
-use azure_core::{
-    ContainerNameSupport, LeaseBreakPeriodSupport, LeaseDurationSupport, LeaseIdSupport,
-};
-use azure_storage::blob::container::{PublicAccess, PublicAccessSupport};
-use azure_storage::blob::prelude::*;
+use azure_core::prelude::*;
+use azure_storage::blob::container::PublicAccess;
 use azure_storage::core::prelude::*;
+use std::sync::Arc;
+use std::time::Duration;
 
 #[tokio::test]
 async fn lease() {
     let container_name: &'static str = "azuresdkrustetoets2";
 
-    let client = initialize();
-    client
-        .create_container()
-        .with_container_name(container_name)
+    let storage = initialize().as_storage_client();
+    let container = storage.as_container_client(container_name);
+
+    container
+        .create()
         .with_public_access(PublicAccess::Container)
-        .finalize()
+        .execute()
         .await
         .unwrap();
 
-    let res = client
-        .acquire_container_lease()
-        .with_container_name(container_name)
-        .with_lease_duration(30)
-        .finalize()
+    let res = container
+        .acquire_lease(Duration::from_secs(30).into())
+        .execute()
         .await
         .unwrap();
     let lease_id = res.lease_id;
+    let lease = container.as_container_lease_client(lease_id);
 
-    let _res = client
-        .renew_container_lease()
-        .with_container_name(container_name)
-        .with_lease_id(&lease_id)
-        .finalize()
-        .await
-        .unwrap();
+    let _res = lease.renew().execute().await.unwrap();
+    let _res = lease.release().execute().await.unwrap();
 
-    client
-        .release_container_lease()
-        .with_container_name(container_name)
-        .with_lease_id(&lease_id)
-        .finalize()
-        .await
-        .unwrap();
-
-    client
-        .delete_container()
-        .with_container_name(container_name)
-        .finalize()
-        .await
-        .unwrap();
+    container.delete().execute().await.unwrap();
 }
 
 #[tokio::test]
 async fn break_lease() {
     let container_name: &'static str = "azuresdkrustetoets3";
 
-    let client = initialize();
-    client
-        .create_container()
-        .with_container_name(container_name)
+    let storage = initialize().as_storage_client();
+    let container = storage.as_container_client(container_name);
+
+    container
+        .create()
         .with_public_access(PublicAccess::Container)
-        .finalize()
+        .execute()
         .await
         .unwrap();
 
-    let _res = client
-        .acquire_container_lease()
-        .with_container_name(container_name)
-        .with_lease_duration(30)
-        .finalize()
+    let res = container
+        .acquire_lease(Duration::from_secs(30).into())
+        .execute()
         .await
         .unwrap();
 
-    let res = client
-        .break_container_lease()
-        .with_container_name(container_name)
-        .with_lease_break_period(0)
-        .finalize()
+    let lease = container.as_container_lease_client(res.lease_id);
+    lease.renew().execute().await.unwrap();
+
+    let res = container
+        .break_lease()
+        .with_lease_break_period(Duration::from_secs(0).into())
+        .execute()
         .await
         .unwrap();
     assert!(res.lease_time == 0);
 
-    client
-        .delete_container()
-        .with_container_name(container_name)
-        .finalize()
-        .await
-        .unwrap();
+    container.delete().execute().await.unwrap();
 }
 
-fn initialize() -> Box<dyn Client> {
+fn initialize() -> Arc<StorageAccountClient> {
     let account =
         std::env::var("STORAGE_ACCOUNT").expect("Set env variable STORAGE_ACCOUNT first!");
     let master_key =
         std::env::var("STORAGE_MASTER_KEY").expect("Set env variable STORAGE_MASTER_KEY first!");
 
-    Box::new(client::with_access_key(&account, &master_key))
+    let http_client: Arc<Box<dyn HttpClient>> = Arc::new(Box::new(reqwest::Client::new()));
+
+    StorageAccountClient::new_access_key(http_client.clone(), &account, &master_key)
 }

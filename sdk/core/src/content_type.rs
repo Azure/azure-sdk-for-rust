@@ -4,6 +4,16 @@ use http::request::Builder;
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ContentType<'a>(&'a str);
 
+impl<'a> ContentType<'a> {
+    pub fn new(s: &'a str) -> Self {
+        Self(s)
+    }
+
+    pub fn as_str(&self) -> &str {
+        self.0
+    }
+}
+
 impl<'a> AddAsHeader for ContentType<'a> {
     fn add_as_header(&self, builder: Builder) -> Builder {
         builder.header(http::header::CONTENT_TYPE, self.0)

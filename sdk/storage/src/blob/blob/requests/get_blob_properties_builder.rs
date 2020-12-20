@@ -63,7 +63,7 @@ impl<'a> GetBlobPropertiesBuilder<'a> {
         let response = self
             .blob_client
             .http_client()
-            .execute_request_check_status(request, http::StatusCode::ACCEPTED)
+            .execute_request_check_status(request, http::StatusCode::OK)
             .await?;
 
         debug!("response.headers() == {:#?}", response.headers());

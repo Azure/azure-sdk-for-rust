@@ -34,8 +34,8 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let data: [u8; 2000] = [51; 2000];
 
     let mut metadata = Metadata::new();
-    metadata.insert("pollo".into(), "arrosto".into());
-    metadata.insert("milk".into(), "shake".into());
+    metadata.insert("pollo", "arrosto");
+    metadata.insert("milk", "shake");
 
     let slice = &data[512..1024];
 

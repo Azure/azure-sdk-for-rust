@@ -1,12 +1,9 @@
 use crate::core::prelude::*;
 use crate::filesystem::responses::DeleteFilesystemResponse;
-use crate::filesystem::{FilesystemRequired, FilesystemSupport};
+use crate::filesystem::FilesystemSupport;
 use azure_core::errors::AzureError;
 use azure_core::prelude::*;
-use azure_core::{
-    ClientRequestIdOption, ClientRequestIdSupport, IfSinceConditionOption, IfSinceConditionSupport,
-    TimeoutOption, TimeoutSupport,
-};
+use azure_core::{ClientRequestIdOption, ClientRequestIdSupport, TimeoutOption, TimeoutSupport};
 use azure_core::{No, ToAssign, Yes};
 use hyper::{Method, StatusCode};
 use std::marker::PhantomData;
@@ -21,7 +18,7 @@ where
     p_filesystem: PhantomData<FilesystemSet>,
     filesystem: Option<&'a str>,
     timeout: Option<u64>,
-    if_since_condition: Option<IfSinceCondition>,
+    if_since_condition: Option<IfModifiedSinceCondition>,
     client_request_id: Option<&'a str>,
 }
 
@@ -38,61 +35,6 @@ where
             if_since_condition: None,
             client_request_id: None,
         }
-    }
-}
-
-impl<'a, C, FilesystemSet> ClientRequired<'a, C> for DeleteFilesystemBuilder<'a, C, FilesystemSet>
-where
-    FilesystemSet: ToAssign,
-    C: Client,
-{
-    #[inline]
-    fn client(&self) -> &'a C {
-        self.client
-    }
-}
-
-impl<'a, C> FilesystemRequired<'a> for DeleteFilesystemBuilder<'a, C, Yes>
-where
-    C: Client,
-{
-    #[inline]
-    fn filesystem(&self) -> &'a str {
-        self.filesystem.unwrap()
-    }
-}
-
-impl<'a, C, FilesystemSet> TimeoutOption for DeleteFilesystemBuilder<'a, C, FilesystemSet>
-where
-    FilesystemSet: ToAssign,
-    C: Client,
-{
-    #[inline]
-    fn timeout(&self) -> Option<u64> {
-        self.timeout
-    }
-}
-
-impl<'a, C, FilesystemSet> IfSinceConditionOption for DeleteFilesystemBuilder<'a, C, FilesystemSet>
-where
-    FilesystemSet: ToAssign,
-    C: Client,
-{
-    #[inline]
-    fn if_since_condition(&self) -> Option<IfSinceCondition> {
-        self.if_since_condition
-    }
-}
-
-impl<'a, C, FilesystemSet> ClientRequestIdOption<'a>
-    for DeleteFilesystemBuilder<'a, C, FilesystemSet>
-where
-    FilesystemSet: ToAssign,
-    C: Client,
-{
-    #[inline]
-    fn client_request_id(&self) -> Option<&'a str> {
-        self.client_request_id
     }
 }
 
@@ -135,26 +77,6 @@ where
     }
 }
 
-impl<'a, C, FilesystemSet> IfSinceConditionSupport for DeleteFilesystemBuilder<'a, C, FilesystemSet>
-where
-    FilesystemSet: ToAssign,
-    C: Client,
-{
-    type O = DeleteFilesystemBuilder<'a, C, FilesystemSet>;
-
-    #[inline]
-    fn with_if_since_condition(self, if_since_condition: IfSinceCondition) -> Self::O {
-        DeleteFilesystemBuilder {
-            client: self.client,
-            p_filesystem: PhantomData {},
-            filesystem: self.filesystem,
-            timeout: self.timeout,
-            if_since_condition: Some(if_since_condition),
-            client_request_id: self.client_request_id,
-        }
-    }
-}
-
 impl<'a, C, FilesystemSet> ClientRequestIdSupport<'a>
     for DeleteFilesystemBuilder<'a, C, FilesystemSet>
 where
@@ -181,6 +103,16 @@ where
     FilesystemSet: ToAssign,
     C: Client,
 {
+    fn with_if_since_condition(self, if_since_condition: IfModifiedSinceCondition) -> Self {
+        DeleteFilesystemBuilder {
+            client: self.client,
+            p_filesystem: PhantomData {},
+            filesystem: self.filesystem,
+            timeout: self.timeout,
+            if_since_condition: Some(if_since_condition),
+            client_request_id: self.client_request_id,
+        }
+    }
 }
 
 impl<'a, C> DeleteFilesystemBuilder<'a, C, Yes>
@@ -190,20 +122,21 @@ where
     pub async fn finalize(self) -> Result<DeleteFilesystemResponse, AzureError> {
         let mut uri = format!(
             "{}/{}?resource=filesystem",
-            self.client().filesystem_uri(),
-            self.filesystem()
+            self.client.filesystem_uri(),
+            self.filesystem.unwrap()
         );
 
-        if let Some(nm) = TimeoutOption::to_uri_parameter(&self) {
-            uri = format!("{}&{}", uri, nm);
-        }
+        //TODO: Reenable uri parameters
+        //if let Some(nm) = TimeoutOption::to_uri_parameter(&self) {
+        //    uri = format!("{}&{}", uri, nm);
+        //}
 
-        let perform_request_response = self.client().perform_request(
+        let perform_request_response = self.client.perform_request(
             &uri,
             &Method::DELETE,
             &|mut request| {
-                request = IfSinceConditionOption::add_optional_header(&self, request);
-                request = ClientRequestIdOption::add_optional_header(&self, request);
+                // TODO: Fix missing headers
+                //request = ClientRequestIdOption::add_optional_header(&self, request);
                 request
             },
             Some(&[]),

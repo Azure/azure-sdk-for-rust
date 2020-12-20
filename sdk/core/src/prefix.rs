@@ -14,3 +14,9 @@ impl<'a> AppendToUrlQuery for Prefix<'a> {
         url.query_pairs_mut().append_pair("prefix", &self.0);
     }
 }
+
+impl<'a> From<&'a str> for Prefix<'a> {
+    fn from(s: &'a str) -> Self {
+        Self(s)
+    }
+}
