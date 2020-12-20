@@ -24,3 +24,9 @@ impl From<String> for NextMarker {
         Self::new(next_marker)
     }
 }
+
+impl From<&str> for NextMarker {
+    fn from(next_marker: &str) -> Self {
+        Self::new(next_marker.to_owned())
+    }
+}

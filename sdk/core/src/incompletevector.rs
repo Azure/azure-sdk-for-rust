@@ -58,7 +58,7 @@ mod test {
     #[test]
     fn test_incomplete_vector_incomplete() {
         let v = vec![0, 1, 2, 3, 4, 5];
-        let ic = IncompleteVector::new(Some("aaa".to_owned()), v);
+        let ic = IncompleteVector::new(Some("aaa".into()), v);
 
         assert_eq!(ic.is_complete(), false);
     }
