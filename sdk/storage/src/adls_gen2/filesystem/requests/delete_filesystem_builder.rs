@@ -3,7 +3,7 @@ use crate::filesystem::responses::DeleteFilesystemResponse;
 use crate::filesystem::FilesystemSupport;
 use azure_core::errors::AzureError;
 use azure_core::prelude::*;
-use azure_core::{ClientRequestIdOption, ClientRequestIdSupport, TimeoutOption, TimeoutSupport};
+use azure_core::{ClientRequestIdSupport, TimeoutSupport};
 use azure_core::{No, ToAssign, Yes};
 use hyper::{Method, StatusCode};
 use std::marker::PhantomData;
@@ -98,29 +98,12 @@ where
     }
 }
 
-impl<'a, C, FilesystemSet> DeleteFilesystemBuilder<'a, C, FilesystemSet>
-where
-    FilesystemSet: ToAssign,
-    C: Client,
-{
-    fn with_if_since_condition(self, if_since_condition: IfModifiedSinceCondition) -> Self {
-        DeleteFilesystemBuilder {
-            client: self.client,
-            p_filesystem: PhantomData {},
-            filesystem: self.filesystem,
-            timeout: self.timeout,
-            if_since_condition: Some(if_since_condition),
-            client_request_id: self.client_request_id,
-        }
-    }
-}
-
 impl<'a, C> DeleteFilesystemBuilder<'a, C, Yes>
 where
     C: Client,
 {
     pub async fn finalize(self) -> Result<DeleteFilesystemResponse, AzureError> {
-        let mut uri = format!(
+        let uri = format!(
             "{}/{}?resource=filesystem",
             self.client.filesystem_uri(),
             self.filesystem.unwrap()
@@ -134,7 +117,7 @@ where
         let perform_request_response = self.client.perform_request(
             &uri,
             &Method::DELETE,
-            &|mut request| {
+            &|request| {
                 // TODO: Fix missing headers
                 //request = ClientRequestIdOption::add_optional_header(&self, request);
                 request

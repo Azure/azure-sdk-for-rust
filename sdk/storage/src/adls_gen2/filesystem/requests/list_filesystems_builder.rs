@@ -194,7 +194,7 @@ where
     C: Client,
 {
     pub async fn finalize(self) -> Result<ListFilesystemsResponse, AzureError> {
-        let mut uri = format!("{}/?resource=account", self.client().filesystem_uri(),);
+        let uri = format!("{}/?resource=account", self.client().filesystem_uri(),);
 
         //TODO: Reenable uri parameters
         //if let Some(nm) = TimeoutOption::to_uri_parameter(&self) {
@@ -212,7 +212,7 @@ where
         let perform_request_response = self.client.perform_request(
             &uri,
             &Method::GET,
-            &|mut request| {
+            &|request| {
                 //TODO: Reenable headers
                 //request = ClientRequestIdOption::add_optional_header(&self, request);
                 request
