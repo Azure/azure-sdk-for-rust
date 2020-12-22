@@ -7,7 +7,10 @@ use uuid::Uuid;
 #[serde(rename_all = "camelCase")]
 /// An Event Grid Event, used to create new events that subscribers will receive.
 /// In compliance with spec: https://docs.microsoft.com/en-us/azure/event-grid/event-schema
-pub struct Event<T> {
+pub struct Event<T>
+where
+    T: Serialize,
+{
     pub topic: Option<String>,
     pub id: String,
     pub event_type: String,
@@ -19,13 +22,19 @@ pub struct Event<T> {
     pub metadata_version: Option<String>,
 }
 
-impl<T> Event<T> {
+impl<T> Event<T>
+where
+    T: Serialize,
+{
     /// Create an Event containing the given data with the event time set to now.
     /// If left unspecified, the id will be set to a random v4 uuid.
     /// If left unspecified, the data version will be set to "0.1".
     /// ```
     /// # use azure_event_grid::Event;
+    /// # use serde::Serialize;
+    /// #[derive(Serialize)]
     /// struct Data { number: i32 }
+    ///
     /// let event = Event::<Data>::new(None, "ACME.Data.DataPointCreated", "/acme/data", Data { number: 42 }, None);
     /// # assert_eq!(event.event_type, "ACME.Data.DataPointCreated");
     /// # assert_eq!(event.subject, "/acme/data");
