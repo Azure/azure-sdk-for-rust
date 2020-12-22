@@ -1,4 +1,3 @@
-use crate::rfc3339_utc_serializer;
 use chrono::{DateTime, Utc};
 use serde::{self, Serialize};
 use uuid::Uuid;
@@ -15,7 +14,6 @@ where
     pub id: String,
     pub event_type: String,
     pub subject: String,
-    #[serde(with = "rfc3339_utc_serializer")]
     pub event_time: DateTime<Utc>,
     pub data: Option<T>,
     pub data_version: String,
@@ -58,5 +56,35 @@ where
             topic: None,
             metadata_version: None,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use chrono::{DateTime, NaiveDate, Utc};
+    use serde::{self, Serialize};
+
+    #[derive(Serialize)]
+    struct Data {
+        pub number: i32,
+    }
+
+    #[test]
+    fn create_and_serialize() {
+        let mut event = Event::<Data>::new(
+            Some(String::from("an id")),
+            "ACME.Data.DataPointCreated",
+            "/acme/data",
+            Data { number: 42 },
+            Some(String::from("1.0")),
+        );
+        event.event_time =
+            DateTime::<Utc>::from_utc(NaiveDate::from_ymd(2020, 12, 21).and_hms(14, 53, 41), Utc);
+
+        assert_eq!(
+            serde_json::to_string(&event).unwrap(),
+            "{\"topic\":null,\"id\":\"an id\",\"eventType\":\"ACME.Data.DataPointCreated\",\"subject\":\"/acme/data\",\"eventTime\":\"2020-12-21T14:53:41Z\",\"data\":{\"number\":42},\"dataVersion\":\"1.0\",\"metadataVersion\":null}"
+        );
     }
 }
