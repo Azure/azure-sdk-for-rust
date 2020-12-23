@@ -13,7 +13,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         env::var("TOPIC_HOST_NAME").expect("Missing TOPIC_HOST_NAME environment variable.");
     let topic_key = env::var("TOPIC_KEY").expect("Missing TOPIC_KEY environment variable.");
 
-    let client = EventGridClient::new(&topic_host_name, &topic_key);
+    let client = EventGridClient::new(topic_host_name, topic_key);
     let event = Event::<Data>::new(
         None,
         "ACME.Data.DataPointCreated",

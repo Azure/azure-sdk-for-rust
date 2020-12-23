@@ -7,22 +7,22 @@ use serde::ser::Serialize;
 use url::Url;
 
 #[derive(Clone)]
-pub struct EventGridClient<'a, 'b> {
+pub struct EventGridClient {
     client: hyper::Client<HttpsConnector<HttpConnector>>,
-    pub topic_host_name: &'a str,
-    pub topic_key: &'b str,
+    pub topic_host_name: String,
+    pub topic_key: String,
 }
 
-impl<'a, 'b> EventGridClient<'a, 'b> {
+impl EventGridClient {
     /// Create an event grid client that can publish events to an event grid topic.
     /// ```
     /// # use azure_event_grid::EventGridClient;
-    /// let client = EventGridClient::new("https://name.location.eventgrid.azure.net", "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=");
+    /// let client = EventGridClient::new(String::from("https://name.location.eventgrid.azure.net"), String::from("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="));
     /// # assert_eq!(client.topic_host_name, "https://name.location.eventgrid.azure.net");
     /// # assert_eq!(client.topic_key, "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=");
     /// ```
-    pub fn new(topic_host_name: &'a str, topic_key: &'b str) -> EventGridClient<'a, 'b> {
-        EventGridClient {
+    pub fn new(topic_host_name: String, topic_key: String) -> Self {
+        Self {
             client: hyper::Client::builder().build(HttpsConnector::new()),
             topic_host_name,
             topic_key,
@@ -37,7 +37,7 @@ impl<'a, 'b> EventGridClient<'a, 'b> {
     {
         let body = serde_json::to_string(&events).unwrap();
         EventGridRequestBuilder::new(Method::POST, &self.events_url()?)
-            .sas_key(self.topic_key)
+            .sas_key(&self.topic_key)
             .body(Some(&body), Some("application/json"))?
             .request(&self.client)
             .expect(StatusCode::OK)
@@ -47,7 +47,7 @@ impl<'a, 'b> EventGridClient<'a, 'b> {
     }
 
     fn events_url(&self) -> Result<String, AzureError> {
-        let mut url = Url::parse(self.topic_host_name)?;
+        let mut url = Url::parse(&self.topic_host_name)?;
         url.set_path("/api/events");
         url.set_query(Some("api-version=2018-01-01"));
         Ok(url.to_string())
