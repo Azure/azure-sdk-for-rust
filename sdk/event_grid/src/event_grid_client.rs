@@ -6,6 +6,7 @@ use hyper_rustls::HttpsConnector;
 use serde::ser::Serialize;
 use url::Url;
 
+#[derive(Clone)]
 pub struct EventGridClient<'a, 'b> {
     client: hyper::Client<HttpsConnector<HttpConnector>>,
     pub topic_host_name: &'a str,
