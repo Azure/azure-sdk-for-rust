@@ -16,7 +16,7 @@ where
     PartitionKeysSet: ToAssign,
 {
     collection_client: &'a CollectionClient,
-    partition_keys: Option<&'b PartitionKeys>,
+    partition_keys: Option<PartitionKeys>,
     is_upsert: IsUpsert,
     indexing_directive: IndexingDirective,
     if_match_condition: Option<IfMatchCondition<'b>>,
@@ -63,12 +63,12 @@ where
 }
 
 impl<'a, 'b> CreateDocumentBuilder<'a, 'b, No> {
-    pub fn with_partition_keys(
+    pub fn with_partition_keys<P: Into<PartitionKeys>>(
         self,
-        partition_keys: &'b PartitionKeys,
+        partition_keys: P,
     ) -> CreateDocumentBuilder<'a, 'b, Yes> {
         CreateDocumentBuilder {
-            partition_keys: Some(partition_keys),
+            partition_keys: Some(partition_keys.into()),
             collection_client: self.collection_client,
             is_upsert: self.is_upsert,
             indexing_directive: self.indexing_directive,
@@ -107,7 +107,8 @@ impl<'a, 'b> CreateDocumentBuilder<'a, 'b, Yes> {
         req = azure_core::headers::add_optional_header(&self.user_agent, req);
         req = azure_core::headers::add_optional_header(&self.activity_id, req);
         req = azure_core::headers::add_optional_header(&self.consistency_level, req);
-        req = azure_core::headers::add_mandatory_header(&self.partition_keys.unwrap(), req);
+        req =
+            azure_core::headers::add_mandatory_header(&self.partition_keys.as_ref().unwrap(), req);
         req = azure_core::headers::add_mandatory_header(&self.is_upsert, req);
         req = azure_core::headers::add_mandatory_header(&self.indexing_directive, req);
         req = azure_core::headers::add_mandatory_header(&self.allow_tentative_writes, req);

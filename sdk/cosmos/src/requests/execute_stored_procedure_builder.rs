@@ -9,7 +9,7 @@ use std::convert::TryInto;
 #[derive(Debug, Clone)]
 pub struct ExecuteStoredProcedureBuilder<'a, 'b> {
     stored_procedure_client: &'a StoredProcedureClient,
-    parameters: Option<&'b Parameters>,
+    parameters: Option<Parameters>,
     user_agent: Option<UserAgent<'b>>,
     activity_id: Option<ActivityId<'b>>,
     consistency_level: Option<ConsistencyLevel>,
@@ -36,7 +36,13 @@ impl<'a, 'b> ExecuteStoredProcedureBuilder<'a, 'b> {
         consistency_level: ConsistencyLevel => Some(consistency_level),
         allow_tentative_writes: TenativeWritesAllowance,
         partition_keys: &'b PartitionKeys => Some(partition_keys),
-        parameters: &'b Parameters => Some(parameters),
+    }
+
+    pub fn with_parameters<P: Into<Parameters>>(self, p: P) -> Self {
+        Self {
+            parameters: Some(p.into()),
+            ..self
+        }
     }
 
     pub async fn execute<T>(&self) -> Result<ExecuteStoredProcedureResponse<T>, CosmosError>
@@ -59,7 +65,7 @@ impl<'a, 'b> ExecuteStoredProcedureBuilder<'a, 'b> {
 
         let request = request.header(http::header::CONTENT_TYPE, "application/json");
 
-        let body = if let Some(parameters) = self.parameters {
+        let body = if let Some(parameters) = self.parameters.as_ref() {
             parameters.to_json()
         } else {
             String::from("[]")

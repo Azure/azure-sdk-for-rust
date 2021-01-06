@@ -25,7 +25,7 @@ pub struct CreateCollectionBuilder<
     offer: Option<Offer>,
     collection_name: Option<&'a str>,
     indexing_policy: Option<&'a IndexingPolicy>,
-    partition_key: Option<&'a PartitionKey>,
+    partition_key: Option<PartitionKey>,
     user_agent: Option<UserAgent<'a>>,
     activity_id: Option<ActivityId<'a>>,
     consistency_level: Option<ConsistencyLevel>,
@@ -161,12 +161,12 @@ where
     CollectionNameSet: ToAssign,
     IndexingPolicySet: ToAssign,
 {
-    pub fn with_partition_key(
+    pub fn with_partition_key<P: Into<PartitionKey>>(
         self,
-        partition_key: &'a PartitionKey,
+        partition_key: P,
     ) -> CreateCollectionBuilder<'a, OfferSet, CollectionNameSet, IndexingPolicySet, Yes> {
         CreateCollectionBuilder {
-            partition_key: Some(partition_key),
+            partition_key: Some(partition_key.into()),
             database_client: self.database_client,
             offer: self.offer,
             collection_name: self.collection_name,
@@ -205,7 +205,7 @@ impl<'a> CreateCollectionBuilder<'a, Yes, Yes, Yes, Yes> {
             self.collection_name.unwrap(),
             self.indexing_policy.unwrap().to_owned(),
         );
-        collection.parition_key = self.partition_key.unwrap().to_owned();
+        collection.parition_key = self.partition_key.as_ref().unwrap().clone();
 
         let body = serde_json::to_string(&collection)?;
         debug!("body == {}", body);
