@@ -59,7 +59,7 @@ async fn attachment() -> Result<(), CosmosError> {
         database_client
             .create_collection()
             .with_collection_name(&COLLECTION_NAME)
-            .with_partition_key(&("/id".into()))
+            .with_partition_key("/id")
             .with_offer(Offer::Throughput(400))
             .with_indexing_policy(&ip)
             .execute()
@@ -83,7 +83,7 @@ async fn attachment() -> Result<(), CosmosError> {
     // let's add an entity.
     let session_token: ConsistencyLevel = collection_client
         .create_document()
-        .with_partition_keys(PartitionKeys::new().push(&doc.document.id)?)
+        .with_partition_keys([&doc.document.id])
         .execute_with_document(&doc)
         .await?
         .into();
