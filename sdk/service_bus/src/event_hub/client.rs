@@ -31,7 +31,7 @@ impl Client {
         K: AsRef<str>,
     {
         let signing_key = Key::new(ring::hmac::HMAC_SHA256, key.as_ref().as_bytes());
-        let http_client = hyper::Client::builder().build(HttpsConnector::new());
+        let http_client = hyper::Client::builder().build(HttpsConnector::with_native_roots());
 
         Ok(Client {
             namespace: namespace.into(),

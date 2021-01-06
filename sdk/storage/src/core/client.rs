@@ -138,7 +138,7 @@ pub fn new(account: &str, key: &str) -> KeyClient {
 }
 
 pub fn with_azure_sas(account: &str, sas_token: &str) -> KeyClient {
-    let client = hyper::Client::builder().build(HttpsConnector::new());
+    let client = hyper::Client::builder().build(HttpsConnector::with_native_roots());
     let params = get_sas_token_parms(sas_token);
 
     KeyClient::new(
@@ -154,7 +154,7 @@ pub fn with_azure_sas(account: &str, sas_token: &str) -> KeyClient {
 }
 
 pub fn with_access_key(account: &str, key: &str) -> KeyClient {
-    let client = hyper::Client::builder().build(HttpsConnector::new());
+    let client = hyper::Client::builder().build(HttpsConnector::with_native_roots());
 
     KeyClient::new(
         account.to_owned(),
@@ -169,7 +169,7 @@ pub fn with_access_key(account: &str, key: &str) -> KeyClient {
 }
 
 pub fn from_connection_string(connection_string: &str) -> Result<KeyClient, AzureError> {
-    let client = hyper::Client::builder().build(HttpsConnector::new());
+    let client = hyper::Client::builder().build(HttpsConnector::with_native_roots());
 
     match ConnectionString::new(connection_string)? {
             ConnectionString {
@@ -244,13 +244,13 @@ where
     A: Into<Cow<'a, str>>,
     BT: Into<Cow<'a, str>>,
 {
-    let client = hyper::Client::builder().build(HttpsConnector::new());
+    let client = hyper::Client::builder().build(HttpsConnector::with_native_roots());
 
     BearerTokenClient::new(account.into(), bearer_token.into(), client)
 }
 
 pub fn with_emulator(blob_storage_url: &Url, table_storage_url: &Url) -> KeyClient {
-    let client = hyper::Client::builder().build(HttpsConnector::new());
+    let client = hyper::Client::builder().build(HttpsConnector::with_native_roots());
 
     let blob_uri = format!("{}devstoreaccount1", blob_storage_url.as_str());
     debug!("blob_uri == {}", blob_uri);
