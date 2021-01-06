@@ -1,42 +1,35 @@
-use crate::CosmosError;
-use serde::ser::Serialize;
-use std::borrow::Cow;
+use serde::Serialize;
+use std::fmt;
 
-#[derive(Debug, Clone, PartialEq, PartialOrd)]
+#[derive(Clone)]
 pub struct ToJsonVector {
-    last_serialized_string: Option<String>,
-    serialized_string: String,
+    inner: String,
 }
 
 impl ToJsonVector {
     pub fn new() -> Self {
         Self {
-            last_serialized_string: None,
-            serialized_string: String::from("["),
+            inner: String::from("["),
         }
     }
 
-    // this hack builds the json by hands, concatenating the single json
-    // serialization of the items. Ideally we should collect the &dyn Serialize
-    // trait objects and serialize in one shot at the end but unfortunately
-    // Serialize cannot be made a trait object so no dynamic dispatch :(
-    pub fn push<T>(&mut self, t: T) -> Result<&mut Self, CosmosError>
+    pub fn push<T>(&mut self, t: T) -> serde_json::Result<()>
     where
         T: Serialize,
     {
-        if self.serialized_string.len() > 1 {
-            self.serialized_string.push_str(", ");
+        let is_first = self.inner == "[";
+        if !is_first {
+            self.inner.push(',');
+            self.inner.push(' ');
         }
-
-        let serialized_string = serde_json::to_string(&t)?;
-        self.serialized_string.push_str(&serialized_string);
-        self.last_serialized_string = Some(serialized_string);
-
-        Ok(self)
+        self.inner.push_str(&serde_json::to_string(&t)?);
+        Ok(())
     }
 
     pub(crate) fn to_json(&self) -> String {
-        format!("{}]", self.serialized_string)
+        let mut result = self.inner.clone();
+        result.push(']');
+        result
     }
 }
 
@@ -46,94 +39,53 @@ impl std::default::Default for ToJsonVector {
     }
 }
 
-impl<T> std::convert::TryFrom<&[T]> for ToJsonVector
+impl fmt::Debug for ToJsonVector {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.to_json())
+    }
+}
+
+impl<T> From<&[T]> for ToJsonVector
 where
     T: Serialize,
 {
-    type Error = CosmosError;
-
-    fn try_from(slice: &[T]) -> Result<Self, Self::Error> {
-        let mut to_json_vector = ToJsonVector::new();
+    fn from(slice: &[T]) -> Self {
+        let mut to_json_vector = Self::new();
         for item in slice {
-            to_json_vector.push(item)?;
+            to_json_vector.push(item).unwrap();
         }
-        Ok(to_json_vector)
+        to_json_vector
     }
 }
 
-impl<T> std::convert::TryFrom<&Vec<T>> for ToJsonVector
-where
-    T: Serialize,
-{
-    type Error = CosmosError;
-
-    fn try_from(v: &Vec<T>) -> Result<Self, Self::Error> {
-        let mut to_json_vector = ToJsonVector::new();
-        for item in v {
-            to_json_vector.push(item)?;
+macro_rules! delegate_from_impl {
+    ($($t:ty),*) => {
+        $(
+            delegate_from_impl!(@imp &$t);
+            delegate_from_impl!(@imp $t);
+        )*
+    };
+    (@imp $t:ty) => {
+        impl<T: Serialize> From<$t> for ToJsonVector {
+            fn from(s: $t) -> Self {
+                let slice: &[T] = &s[..];
+                slice.into()
+            }
         }
-        Ok(to_json_vector)
     }
 }
 
-impl std::convert::From<&str> for ToJsonVector {
-    fn from(t: &str) -> Self {
-        let mut pk = Self::new();
-        let _ = pk.push(t).unwrap();
-        pk
-    }
-}
-
-impl std::convert::From<Cow<'_, str>> for ToJsonVector {
-    fn from(t: Cow<'_, str>) -> Self {
-        let mut pk = Self::new();
-        let _ = pk.push(t).unwrap();
-        pk
-    }
-}
-
-impl std::convert::From<&Cow<'_, str>> for ToJsonVector {
-    fn from(t: &Cow<'_, str>) -> Self {
-        let mut pk = Self::new();
-        let _ = pk.push(t).unwrap();
-        pk
-    }
-}
-
-impl std::convert::From<&String> for ToJsonVector {
-    fn from(t: &String) -> Self {
-        let mut pk = Self::new();
-        let _ = pk.push(t).unwrap();
-        pk
-    }
-}
-
-impl std::convert::From<u64> for ToJsonVector {
-    fn from(t: u64) -> Self {
-        let mut pk = Self::new();
-        let _ = pk.push(t).unwrap();
-        pk
-    }
-}
-
-impl std::convert::From<i64> for ToJsonVector {
-    fn from(t: i64) -> Self {
-        let mut pk = Self::new();
-        let _ = pk.push(t).unwrap();
-        pk
-    }
-}
-
-impl<'a> std::convert::From<ToJsonVector> for Cow<'a, ToJsonVector> {
-    fn from(t: ToJsonVector) -> Self {
-        Cow::Owned(t)
-    }
-}
-
-impl<'a> std::convert::From<&'a ToJsonVector> for Cow<'a, ToJsonVector> {
-    fn from(t: &'a ToJsonVector) -> Self {
-        Cow::Borrowed(t)
-    }
+delegate_from_impl! {
+    Vec<T>,
+    [T; 0],
+    [T; 1],
+    [T; 2],
+    [T; 3],
+    [T; 4],
+    [T; 5],
+    [T; 6],
+    [T; 7],
+    [T; 8]
 }
 
 #[cfg(test)]
@@ -145,15 +97,11 @@ mod tests {
     fn serialize() {
         let owned = "owned".to_owned();
 
-        let serialized = ToJsonVector::new()
-            .push("aaa")
-            .unwrap()
-            .push(&owned)
-            .unwrap()
-            .push(100u64)
-            .unwrap()
-            .to_json();
-        assert_eq!(serialized, "[\"aaa\", \"owned\", 100]");
+        let mut serialized = ToJsonVector::new();
+        serialized.push("aaa").unwrap();
+        serialized.push(&owned).unwrap();
+        serialized.push(&100u64).unwrap();
+        assert_eq!(serialized.to_json(), "[\"aaa\", \"owned\", 100]");
 
         let mut vector = vec!["pollo", "arrosto"];
         let to_json_vector: ToJsonVector = (&vector).try_into().unwrap();

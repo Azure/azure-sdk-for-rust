@@ -53,7 +53,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // let's add an entity.
     match client
         .create_document()
-        .with_partition_keys(PartitionKeys::new().push(&doc.document.id)?)
+        .with_partition_keys([&doc.document.id])
         .execute_with_document(&doc)
         .await
     {

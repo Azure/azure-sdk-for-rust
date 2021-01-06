@@ -7,7 +7,6 @@ use azure_core::HttpClient;
 ///     response.setBody("Hello, " + personToGreet);
 /// }
 use azure_cosmos::prelude::*;
-use azure_cosmos::resources::stored_procedure::Parameters;
 use std::error::Error;
 use std::sync::Arc;
 
@@ -65,7 +64,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let execute_stored_procedure_response = stored_procedure_client
         .execute_stored_procedure()
-        .with_parameters(Parameters::new().push("Robert")?)
+        .with_parameters(["Robert"])
         .execute::<serde_json::Value>()
         .await?;
 

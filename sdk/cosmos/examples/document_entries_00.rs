@@ -57,7 +57,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         response = Some(
             client
                 .create_document()
-                .with_partition_keys(PartitionKeys::new().push(&doc.document.id)?)
+                .with_partition_keys([&doc.document.id])
                 .execute_with_document(&doc)
                 .await?,
         );
@@ -121,7 +121,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     println!("\n\nLooking for a specific item");
     let id = format!("unique_id{}", 3);
-    let partition_keys: PartitionKeys = (&id).into();
+    let partition_keys = PartitionKeys::from([&id]);
 
     let response = client
         .clone()
@@ -146,7 +146,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     println!("\n\nReplacing document");
     let replace_document_response = client
         .replace_document()
-        .with_partition_keys(&partition_keys)
+        .with_partition_keys(partition_keys)
         .with_document_id(&id)
         .with_consistency_level(ConsistencyLevel::from(&response))
         .with_if_match_condition(IfMatchCondition::Match(&doc.etag)) // use optimistic concurrency check
@@ -162,7 +162,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // has_been_found == false
     println!("\n\nLooking for non-existing item");
     let id = format!("unique_id{}", 100);
-    let partition_keys: PartitionKeys = (&id).into();
+    let partition_keys = PartitionKeys::from([&id]);
 
     let response = client
         .clone()
@@ -180,7 +180,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     for i in 0u64..5 {
         let id = format!("unique_id{}", i);
-        let partition_keys: PartitionKeys = (&id).into();
+        let partition_keys = PartitionKeys::from([&id]);
         client
             .clone()
             .into_document_client(id, partition_keys)

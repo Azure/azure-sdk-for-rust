@@ -117,7 +117,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .into_collection_client(collection_name.clone())
         .create_document()
         .with_is_upsert(true)
-        .with_partition_keys(PartitionKeys::new().push("Gianluigi Bombatomica")?)
+        .with_partition_keys(["Gianluigi Bombatomica"])
         .execute_with_document(&document)
         .await
     {
@@ -157,7 +157,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .into_collection_client(collection_name)
         .create_document()
         .with_is_upsert(true)
-        .with_partition_keys(PartitionKeys::new().push("Gianluigi Bombatomica")?)
+        .with_partition_keys(["Gianluigi Bombatomica"])
         .execute_with_document(&document)
         .await?;
     println!(

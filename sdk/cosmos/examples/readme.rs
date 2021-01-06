@@ -70,9 +70,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         session_token = Some(
             collection_client
                 .create_document()
-                .with_partition_keys(
-                    PartitionKeys::new().push(&document_to_insert.document.a_number)?,
-                )
+                .with_partition_keys([&document_to_insert.document.a_number])
                 .with_is_upsert(true) // this option will overwrite a preexisting document (if any)
                 .execute_with_document(&document_to_insert)
                 .await?
@@ -142,7 +140,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
             .clone()
             .into_document_client(
                 document.result.id.clone().into_owned(),
-                document.result.a_number.into(),
+                [document.result.a_number],
             )
             .delete_document()
             .with_consistency_level(session_token.clone())

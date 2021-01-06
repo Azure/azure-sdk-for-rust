@@ -31,7 +31,7 @@ async fn create_and_delete_collection() {
         .create_collection()
         .with_collection_name(&COLLECTION_NAME)
         .with_offer(Offer::S2)
-        .with_partition_key(&("/id".into()))
+        .with_partition_key("/id")
         .with_indexing_policy(&indexing_policy)
         .execute()
         .await
@@ -92,7 +92,7 @@ async fn replace_collection() {
         .create_collection()
         .with_collection_name(&COLLECTION_NAME)
         .with_offer(Offer::S2)
-        .with_partition_key(&("/id".into()))
+        .with_partition_key("/id")
         .with_indexing_policy(&indexing_policy)
         .execute()
         .await
@@ -135,7 +135,7 @@ async fn replace_collection() {
     let _replace_collection_reponse = collection_client
         .replace_collection()
         .with_indexing_policy(&new_ip)
-        .with_partition_key(&("/id".into()))
+        .with_partition_key("/id")
         .execute()
         .await
         .unwrap();

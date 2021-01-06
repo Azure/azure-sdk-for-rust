@@ -43,7 +43,7 @@ async fn create_and_delete_document() {
         .create_collection()
         .with_collection_name(&COLLECTION_NAME)
         .with_offer(Offer::Throughput(400))
-        .with_partition_key(&("/id".into()))
+        .with_partition_key("/id")
         .with_indexing_policy(&indexing_policy)
         .execute()
         .await
@@ -60,7 +60,7 @@ async fn create_and_delete_document() {
     });
     collection_client
         .create_document()
-        .with_partition_keys(&DOCUMENT_NAME.into())
+        .with_partition_keys([&DOCUMENT_NAME])
         .execute_with_document(&document_data)
         .await
         .unwrap();
@@ -74,10 +74,10 @@ async fn create_and_delete_document() {
     assert!(documents.len() == 1);
 
     // try to get the contents of the previously created document
-    let partition_keys = DOCUMENT_NAME.into();
+    let partition_keys = DOCUMENT_NAME;
     let document_client = collection_client
         .clone()
-        .into_document_client(DOCUMENT_NAME, partition_keys);
+        .into_document_client(DOCUMENT_NAME, [partition_keys]);
 
     let document_after_get = document_client
         .get_document()
@@ -133,7 +133,7 @@ async fn query_documents() {
         .create_collection()
         .with_collection_name(&COLLECTION_NAME)
         .with_offer(Offer::S2)
-        .with_partition_key(&("/id".into()))
+        .with_partition_key("/id")
         .with_indexing_policy(&indexing_policy)
         .execute()
         .await
@@ -150,7 +150,7 @@ async fn query_documents() {
     });
     collection_client
         .create_document()
-        .with_partition_keys(&(&document_data.document.id).into())
+        .with_partition_keys([&document_data.document.id])
         .execute_with_document(&document_data)
         .await
         .unwrap();
@@ -210,7 +210,7 @@ async fn replace_document() {
         .create_collection()
         .with_collection_name(&COLLECTION_NAME)
         .with_offer(Offer::S2)
-        .with_partition_key(&("/id".into()))
+        .with_partition_key("/id")
         .with_indexing_policy(&indexing_policy)
         .execute()
         .await
@@ -227,7 +227,7 @@ async fn replace_document() {
     });
     collection_client
         .create_document()
-        .with_partition_keys(&(&document_data.document.id).into())
+        .with_partition_keys([&document_data.document.id])
         .execute_with_document(&document_data)
         .await
         .unwrap();
@@ -244,7 +244,7 @@ async fn replace_document() {
     collection_client
         .replace_document()
         .with_document_id(&document_data.document.id)
-        .with_partition_keys(&(&document_data.document.id).into())
+        .with_partition_keys([&document_data.document.id])
         .with_consistency_level(ConsistencyLevel::from(&documents))
         .with_if_match_condition(IfMatchCondition::Match(
             &documents.documents[0].document_attributes.etag,
@@ -254,8 +254,8 @@ async fn replace_document() {
         .unwrap();
 
     // now get the replaced document
-    let partition_keys = DOCUMENT_NAME.into();
-    let document_client = collection_client.into_document_client(DOCUMENT_NAME, partition_keys);
+    let partition_keys = DOCUMENT_NAME;
+    let document_client = collection_client.into_document_client(DOCUMENT_NAME, [partition_keys]);
     let document_after_get = document_client
         .get_document()
         .execute::<MyDocument>()

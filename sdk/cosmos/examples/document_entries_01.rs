@@ -42,13 +42,11 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         a_timestamp: chrono::Utc::now().timestamp(),
     });
 
-    let mut partition_keys = PartitionKeys::new();
-    partition_keys.push(&doc.document.id)?;
-
+    let partition_keys = PartitionKeys::from([&doc.document.id]);
     // let's add an entity.
     let create_document_response = client
         .create_document()
-        .with_partition_keys(&partition_keys)
+        .with_partition_keys(partition_keys.clone())
         .with_is_upsert(true)
         .execute_with_document(&doc)
         .await?;
@@ -108,7 +106,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .replace_document()
         .with_consistency_level((&query_documents_response).into())
         .with_document_id(&doc.document.id)
-        .with_partition_keys(&partition_keys)
+        .with_partition_keys(partition_keys)
         .execute_with_document(&doc)
         .await?;
     println!(

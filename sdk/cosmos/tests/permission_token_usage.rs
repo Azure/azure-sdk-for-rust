@@ -35,7 +35,7 @@ async fn permission_token_usage() {
         .create_collection()
         .with_collection_name(&COLLECTION_NAME)
         .with_offer(Offer::Throughput(400))
-        .with_partition_key(&("/id".into()))
+        .with_partition_key("/id")
         .with_indexing_policy(&indexing_policy)
         .execute()
         .await
@@ -91,7 +91,7 @@ async fn permission_token_usage() {
     new_collection_client
         .create_document()
         .with_is_upsert(true)
-        .with_partition_keys(PartitionKeys::new().push(&"Gianluigi Bombatomica").unwrap())
+        .with_partition_keys(["Gianluigi Bombatomica"])
         .execute_with_document(&document)
         .await
         .unwrap_err();
@@ -124,7 +124,7 @@ async fn permission_token_usage() {
     let create_document_response = new_collection_client
         .create_document()
         .with_is_upsert(true)
-        .with_partition_keys(PartitionKeys::new().push(&"Gianluigi Bombatomica").unwrap())
+        .with_partition_keys(["Gianluigi Bombatomica"])
         .execute_with_document(&document)
         .await
         .unwrap();

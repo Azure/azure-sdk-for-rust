@@ -120,7 +120,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
                 .with_collection_name(&COLLECTION)
                 .with_offer(Offer::Throughput(400))
                 .with_indexing_policy(&ip)
-                .with_partition_key(&("/id".into()))
+                .with_partition_key("/id")
                 .execute()
                 .await?
                 .collection
@@ -150,7 +150,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // the document attributes.
     let create_document_response = collection_client
         .create_document()
-        .with_partition_keys(&(&doc.document.id).into())
+        .with_partition_keys([&doc.document.id])
         .execute_with_document(&doc)
         .await?;
     println!(
@@ -174,10 +174,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     println!("getting document by id {}", &doc.document.id);
     let get_document_response = collection_client
         .clone()
-        .into_document_client(
-            doc.document.id.clone().into_owned(),
-            (&doc.document.id).into(),
-        )
+        .into_document_client(doc.document.id.clone().into_owned(), [&doc.document.id])
         .get_document()
         .execute::<MySampleStruct>()
         .await?;
@@ -196,7 +193,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         let replace_document_response = collection_client
             .replace_document()
             .with_document_id(&doc.document.id)
-            .with_partition_keys(&(&doc.document.id).into())
+            .with_partition_keys([&doc.document.id])
             .with_if_match_condition(IfMatchCondition::Match(&document.etag))
             .execute_with_document(&doc)
             .await?;
