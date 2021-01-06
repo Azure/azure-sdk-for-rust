@@ -23,7 +23,7 @@ impl EventGridClient {
     /// ```
     pub fn new(topic_host_name: String, topic_key: String) -> Self {
         Self {
-            client: hyper::Client::builder().build(HttpsConnector::new()),
+            client: hyper::Client::builder().build(HttpsConnector::with_native_roots()),
             topic_host_name,
             topic_key,
         }

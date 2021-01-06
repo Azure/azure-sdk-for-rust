@@ -31,7 +31,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let authorization_token = AuthorizationToken::primary_from_base64(&master_key)?;
 
     let http_client: Box<dyn HttpClient> =
-        Box::new(hyper::Client::builder().build(HttpsConnector::new()));
+        Box::new(hyper::Client::builder().build(HttpsConnector::with_native_roots()));
     let http_client = Arc::new(http_client);
 
     let client = CosmosClient::new(http_client, account, authorization_token);
