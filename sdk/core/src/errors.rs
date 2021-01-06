@@ -177,7 +177,7 @@ quick_error! {
             display("json error: {}", err)
             cause(err)
         }
-        HyperError(err: hyper::error::Error){
+        HyperError(err: hyper::Error){
             from()
             display("Hyper error: {}", err)
             cause(err)
