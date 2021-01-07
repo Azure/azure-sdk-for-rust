@@ -2,71 +2,45 @@ use crate::CosmosError;
 use azure_core::prelude::IfMatchCondition;
 use http::response::Response;
 
+/// A document's attributes
 #[derive(Default, Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct DocumentAttributes {
     #[serde(rename = "_rid")]
-    pub rid: String,
+    rid: String,
     #[serde(rename = "_ts")]
-    pub ts: u64,
-    #[serde(rename = "_self")]
-    pub _self: String,
+    ts: u64,
+    _self: String,
     #[serde(rename = "_etag")]
-    pub etag: String,
+    etag: String,
     #[serde(rename = "_attachments")]
-    pub attachments: String,
+    attachments: String,
 }
 
 impl DocumentAttributes {
+    /// a unique identifier that is also hierarchical per the resource
+    /// stack on the resource model.
     pub fn rid(&self) -> &str {
         &self.rid
     }
 
+    /// the last updated timestamp of the resource.
     pub fn ts(&self) -> u64 {
         self.ts
     }
 
+    ///  the unique addressable URI for the resource
     pub fn _self(&self) -> &str {
         &self._self
     }
 
+    /// resource etag required for optimistic concurrency control
     pub fn etag(&self) -> &str {
         &self.etag
     }
 
+    /// the addressable path for the attachments resource
     pub fn attachments(&self) -> &str {
         &self.attachments
-    }
-
-    pub fn set_rid<T>(&mut self, value: T)
-    where
-        T: Into<String>,
-    {
-        self.rid = value.into();
-    }
-
-    pub fn set_ts(&mut self, value: u64) {
-        self.ts = value;
-    }
-
-    pub fn set_self<T>(&mut self, value: T)
-    where
-        T: Into<String>,
-    {
-        self._self = value.into();
-    }
-
-    pub fn set_etag<T>(&mut self, value: T)
-    where
-        T: Into<String>,
-    {
-        self.etag = value.into();
-    }
-
-    pub fn set_attachments<T>(&mut self, value: T)
-    where
-        T: Into<String>,
-    {
-        self.attachments = value.into();
     }
 }
 
@@ -81,23 +55,5 @@ impl std::convert::TryFrom<Response<Vec<u8>>> for DocumentAttributes {
 impl<'a> std::convert::From<&'a DocumentAttributes> for IfMatchCondition<'a> {
     fn from(document_attributes: &'a DocumentAttributes) -> Self {
         IfMatchCondition::Match(&document_attributes.etag)
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn test_mutate() {
-        use super::*;
-
-        let mut a = DocumentAttributes {
-            rid: "rid".to_owned(),
-            ts: 100,
-            _self: "_self".to_owned(),
-            etag: "etag".to_owned(),
-            attachments: "attachments".to_owned(),
-        };
-
-        a.set_attachments("new_attachments".to_owned());
     }
 }

@@ -10,10 +10,12 @@ pub struct Query<'a> {
 }
 
 impl<'a> Query<'a> {
+    /// A new SQL query with no parameters
     pub fn new(query: &'a str) -> Self {
         Self::with_params(query, vec![])
     }
 
+    /// A new SQL query with the supplied parameters
     pub fn with_params<T: Into<Vec<Param<'a>>>>(query: &'a str, params: T) -> Self {
         Self {
             query,
@@ -21,10 +23,12 @@ impl<'a> Query<'a> {
         }
     }
 
+    /// The query as a `&str`
     pub fn query(&self) -> &'a str {
         self.query
     }
 
+    /// The supplied params
     pub fn params(&self) -> &[Param<'a>] {
         &self.parameters
     }
@@ -42,6 +46,7 @@ impl<'a> AsRef<Query<'a>> for Query<'a> {
     }
 }
 
+/// A SQL query parameter
 #[derive(Debug, Serialize, Clone)]
 pub struct Param<'a> {
     name: &'a str,
@@ -49,6 +54,7 @@ pub struct Param<'a> {
 }
 
 impl<'a> Param<'a> {
+    /// Create a new `Param` with the supplied name and the JSON value
     pub fn new<T: Into<Value>>(name: &'a str, value: T) -> Self {
         Self {
             name,
@@ -56,10 +62,12 @@ impl<'a> Param<'a> {
         }
     }
 
+    /// The param name
     pub fn name(&self) -> &'a str {
         self.name
     }
 
+    /// The param value
     pub fn value(&self) -> &Value {
         &self.value
     }
