@@ -247,7 +247,7 @@ async fn replace_document() {
         .with_partition_keys([&document_data.document.id])
         .with_consistency_level(ConsistencyLevel::from(&documents))
         .with_if_match_condition(IfMatchCondition::Match(
-            &documents.documents[0].document_attributes.etag,
+            &documents.documents[0].document_attributes.etag(),
         ))
         .execute_with_document(&document_data)
         .await
