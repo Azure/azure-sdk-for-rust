@@ -19,6 +19,7 @@ pub use crate::clients::*;
 
 // Resources
 pub use crate::resources::collection::Offer;
+#[doc(inline)]
 pub use crate::resources::document::*;
 #[doc(inline)]
 pub use crate::resources::*;
