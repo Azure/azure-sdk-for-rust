@@ -26,12 +26,11 @@
 #[macro_export]
 macro_rules! setters {
     (@single $name:ident : $typ:ty => $transform:expr) => {
-        $crate::paste::paste! {
-            pub fn [<with_ $name>](self, $name: $typ) -> Self {
-                Self  {
-                    $name: $transform,
-                    ..self
-                }
+        pub fn $name<T: ::std::convert::Into<$typ>>(self, $name: T) -> Self {
+            let $name: $typ = $name.into();
+            Self  {
+                $name: $transform,
+                ..self
             }
         }
     };

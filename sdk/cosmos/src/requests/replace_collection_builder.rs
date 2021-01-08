@@ -104,7 +104,7 @@ impl<'a, 'b, IndexingPolicySet> ReplaceCollectionBuilder<'a, 'b, No, IndexingPol
 where
     IndexingPolicySet: ToAssign,
 {
-    pub fn with_partition_key<P: Into<PartitionKey>>(
+    pub fn partition_key<P: Into<PartitionKey>>(
         self,
         partition_key: P,
     ) -> ReplaceCollectionBuilder<'a, 'b, Yes, IndexingPolicySet> {
@@ -125,7 +125,7 @@ impl<'a, 'b, PartitionKeysSet> ReplaceCollectionBuilder<'a, 'b, PartitionKeysSet
 where
     PartitionKeysSet: ToAssign,
 {
-    pub fn with_indexing_policy(
+    pub fn indexing_policy(
         self,
         indexing_policy: &'a IndexingPolicy,
     ) -> ReplaceCollectionBuilder<'a, 'b, PartitionKeysSet, Yes> {

@@ -63,7 +63,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         None => {
             client
                 .create_database()
-                .with_database_name(&DATABASE)
+                .database_name(&DATABASE)
                 .execute()
                 .await?
                 .database
@@ -117,10 +117,10 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
                 .clone()
                 .into_database_client(database.id.clone())
                 .create_collection()
-                .with_collection_name(&COLLECTION)
-                .with_offer(Offer::Throughput(400))
-                .with_indexing_policy(&ip)
-                .with_partition_key("/id")
+                .collection_name(&COLLECTION)
+                .offer(Offer::Throughput(400))
+                .indexing_policy(&ip)
+                .partition_key("/id")
                 .execute()
                 .await?
                 .collection
@@ -150,7 +150,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // the document attributes.
     let create_document_response = collection_client
         .create_document()
-        .with_partition_keys([&doc.document.id])
+        .partition_keys([&doc.document.id])
         .execute_with_document(&doc)
         .await?;
     println!(
@@ -192,9 +192,9 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         // CosmosDB it means something else updated the document before us!
         let replace_document_response = collection_client
             .replace_document()
-            .with_document_id(&doc.document.id)
-            .with_partition_keys([&doc.document.id])
-            .with_if_match_condition(IfMatchCondition::Match(&document.etag))
+            .document_id(&doc.document.id)
+            .partition_keys([&doc.document.id])
+            .if_match_condition(IfMatchCondition::Match(&document.etag))
             .execute_with_document(&doc)
             .await?;
         println!(

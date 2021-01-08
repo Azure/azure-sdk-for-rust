@@ -29,7 +29,7 @@ async fn attachment() -> Result<(), CosmosError> {
     // create a temp database
     let _create_database_response = client
         .create_database()
-        .with_database_name(&DATABASE_NAME)
+        .database_name(&DATABASE_NAME)
         .execute()
         .await
         .unwrap();
@@ -58,10 +58,10 @@ async fn attachment() -> Result<(), CosmosError> {
 
         database_client
             .create_collection()
-            .with_collection_name(&COLLECTION_NAME)
-            .with_partition_key("/id")
-            .with_offer(Offer::Throughput(400))
-            .with_indexing_policy(&ip)
+            .collection_name(&COLLECTION_NAME)
+            .partition_key("/id")
+            .offer(Offer::Throughput(400))
+            .indexing_policy(&ip)
             .execute()
             .await
             .unwrap()
@@ -83,7 +83,7 @@ async fn attachment() -> Result<(), CosmosError> {
     // let's add an entity.
     let session_token: ConsistencyLevel = collection_client
         .create_document()
-        .with_partition_keys([&doc.document.id])
+        .partition_keys([&doc.document.id])
         .execute_with_document(&doc)
         .await?
         .into();
@@ -95,7 +95,7 @@ async fn attachment() -> Result<(), CosmosError> {
     // list attachments, there must be none.
     let ret = document_client
         .list_attachments()
-        .with_consistency_level(session_token.clone())
+        .consistency_level(session_token.clone())
         .execute()
         .await?;
     assert_eq!(0, ret.attachments.len());
@@ -104,18 +104,18 @@ async fn attachment() -> Result<(), CosmosError> {
     let attachment_client = document_client.clone().into_attachment_client("reference");
     let resp = attachment_client
         .create_reference()
-        .with_consistency_level((&ret).into())
-        .with_content_type("image/jpeg")
-        .with_media("https://www.bing.com")
+        .consistency_level(&ret)
+        .content_type("image/jpeg")
+        .media("https://www.bing.com")
         .execute()
         .await?;
 
     // replace reference attachment
     let resp = attachment_client
         .replace_reference()
-        .with_consistency_level((&resp).into())
-        .with_content_type("image/jpeg")
-        .with_media("https://www.microsoft.com")
+        .consistency_level(&resp)
+        .content_type("image/jpeg")
+        .media("https://www.microsoft.com")
         .execute()
         .await?;
 
@@ -123,16 +123,16 @@ async fn attachment() -> Result<(), CosmosError> {
     let attachment_client = document_client.clone().into_attachment_client("slug");
     let resp = attachment_client
         .create_slug()
-        .with_consistency_level((&resp).into())
-        .with_content_type("text/plain")
-        .with_body(b"something cool here")
+        .consistency_level(&resp)
+        .content_type("text/plain")
+        .body(b"something cool here")
         .execute()
         .await?;
 
     // list attachments, there must be two.
     let ret = document_client
         .list_attachments()
-        .with_consistency_level((&resp).into())
+        .consistency_level(&resp)
         .execute()
         .await?;
     assert_eq!(2, ret.attachments.len());
@@ -142,7 +142,7 @@ async fn attachment() -> Result<(), CosmosError> {
         .clone()
         .into_attachment_client("reference")
         .get()
-        .with_consistency_level((&ret).into())
+        .consistency_level(&ret)
         .execute()
         .await?;
     assert_eq!(
@@ -156,7 +156,7 @@ async fn attachment() -> Result<(), CosmosError> {
         .clone()
         .into_attachment_client("slug")
         .get()
-        .with_consistency_level((&reference_attachment).into())
+        .consistency_level(&reference_attachment)
         .execute()
         .await
         .unwrap();
@@ -165,14 +165,14 @@ async fn attachment() -> Result<(), CosmosError> {
     // delete slug attachment
     let resp_delete = attachment_client
         .delete()
-        .with_consistency_level((&slug_attachment).into())
+        .consistency_level(&slug_attachment)
         .execute()
         .await?;
 
     // list attachments, there must be one.
     let ret = document_client
         .list_attachments()
-        .with_consistency_level((&resp_delete).into())
+        .consistency_level(&resp_delete)
         .execute()
         .await?;
     assert_eq!(1, ret.attachments.len());

@@ -81,7 +81,7 @@ impl<'a, 'b> ReplaceStoredProcedureBuilder<'a, 'b, Yes> {
 }
 
 impl<'a, 'b> ReplaceStoredProcedureBuilder<'a, 'b, No> {
-    pub fn with_body(self, body: &'b str) -> ReplaceStoredProcedureBuilder<'a, 'b, Yes> {
+    pub fn body(self, body: &'b str) -> ReplaceStoredProcedureBuilder<'a, 'b, Yes> {
         ReplaceStoredProcedureBuilder {
             stored_procedure_client: self.stored_procedure_client,
             p_body: PhantomData,

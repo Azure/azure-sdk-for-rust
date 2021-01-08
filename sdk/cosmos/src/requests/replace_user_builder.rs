@@ -82,7 +82,7 @@ impl<'a, 'b> ReplaceUserBuilder<'a, 'b, Yes> {
 }
 
 impl<'a, 'b> ReplaceUserBuilder<'a, 'b, No> {
-    pub fn with_user_name(self, user_name: &'a str) -> ReplaceUserBuilder<'a, 'b, Yes> {
+    pub fn user_name(self, user_name: &'a str) -> ReplaceUserBuilder<'a, 'b, Yes> {
         ReplaceUserBuilder {
             user_name: Some(user_name),
             user_client: self.user_client,

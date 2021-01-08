@@ -86,7 +86,7 @@ impl<'a, 'b> ListTriggersBuilder<'a, 'b> {
                         Some(States::Init) => self.execute().await,
                         Some(States::Continuation(continuation_token)) => {
                             self.clone()
-                                .with_continuation(&continuation_token)
+                                .continuation(continuation_token.as_str())
                                 .execute()
                                 .await
                         }

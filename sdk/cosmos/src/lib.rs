@@ -73,8 +73,8 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         // insert it
         collection_client
             .create_document()
-            .with_partition_keys([&document_to_insert.document.a_number])
-            .with_is_upsert(true) // this option will overwrite a preexisting document (if any)
+            .partition_keys([&document_to_insert.document.a_number])
+            .is_upsert(true) // this option will overwrite a preexisting document (if any)
             .execute_with_document(&document_to_insert)
             .await?;
     }

@@ -76,7 +76,7 @@ where
     IndexingPolicySet: ToAssign,
     PartitionKeySet: ToAssign,
 {
-    pub fn with_offer(
+    pub fn offer(
         self,
         offer: Offer,
     ) -> CreateCollectionBuilder<'a, Yes, CollectionNameSet, IndexingPolicySet, PartitionKeySet>
@@ -105,7 +105,7 @@ where
     IndexingPolicySet: ToAssign,
     PartitionKeySet: ToAssign,
 {
-    pub fn with_collection_name(
+    pub fn collection_name(
         self,
         collection_name: &'a str,
     ) -> CreateCollectionBuilder<'a, OfferSet, Yes, IndexingPolicySet, PartitionKeySet> {
@@ -133,7 +133,7 @@ where
     CollectionNameSet: ToAssign,
     PartitionKeySet: ToAssign,
 {
-    pub fn with_indexing_policy(
+    pub fn indexing_policy(
         self,
         indexing_policy: &'a IndexingPolicy,
     ) -> CreateCollectionBuilder<'a, OfferSet, CollectionNameSet, Yes, PartitionKeySet> {
@@ -161,7 +161,7 @@ where
     CollectionNameSet: ToAssign,
     IndexingPolicySet: ToAssign,
 {
-    pub fn with_partition_key<P: Into<PartitionKey>>(
+    pub fn partition_key<P: Into<PartitionKey>>(
         self,
         partition_key: P,
     ) -> CreateCollectionBuilder<'a, OfferSet, CollectionNameSet, IndexingPolicySet, Yes> {

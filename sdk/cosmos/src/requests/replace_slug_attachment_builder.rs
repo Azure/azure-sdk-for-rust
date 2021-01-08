@@ -90,10 +90,7 @@ impl<'a, 'b, ContentTypeSet> ReplaceSlugAttachmentBuilder<'a, 'b, No, ContentTyp
 where
     ContentTypeSet: ToAssign,
 {
-    pub fn with_body(
-        self,
-        body: &'b [u8],
-    ) -> ReplaceSlugAttachmentBuilder<'a, 'b, Yes, ContentTypeSet> {
+    pub fn body(self, body: &'b [u8]) -> ReplaceSlugAttachmentBuilder<'a, 'b, Yes, ContentTypeSet> {
         ReplaceSlugAttachmentBuilder {
             attachment_client: self.attachment_client,
             p_body: PhantomData,
@@ -112,7 +109,7 @@ impl<'a, 'b, BodySet> ReplaceSlugAttachmentBuilder<'a, 'b, BodySet, No>
 where
     BodySet: ToAssign,
 {
-    pub fn with_content_type(
+    pub fn content_type(
         self,
         content_type: &'b str,
     ) -> ReplaceSlugAttachmentBuilder<'a, 'b, BodySet, Yes> {

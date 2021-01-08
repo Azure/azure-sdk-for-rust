@@ -33,7 +33,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .into_collection_client(collection)
         .into_stored_procedure_client("test_proc")
         .execute_stored_procedure()
-        .with_parameters(["Robert"])
+        .parameters(["Robert"])
         .execute::<serde_json::Value>()
         .await?;
 

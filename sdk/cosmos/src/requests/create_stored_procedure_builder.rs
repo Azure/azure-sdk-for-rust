@@ -50,7 +50,7 @@ impl<'a, 'b> CreateStoredProcedureBuilder<'a, 'b, Yes> {
 }
 
 impl<'a, 'b> CreateStoredProcedureBuilder<'a, 'b, No> {
-    pub fn with_body(self, body: &'a str) -> CreateStoredProcedureBuilder<'a, 'b, Yes> {
+    pub fn body(self, body: &'a str) -> CreateStoredProcedureBuilder<'a, 'b, Yes> {
         CreateStoredProcedureBuilder {
             body: Some(body),
             stored_procedure_client: self.stored_procedure_client,

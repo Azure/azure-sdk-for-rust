@@ -54,7 +54,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let create_stored_procedure_response = stored_procedure_client
         .create_stored_procedure()
-        .with_body(&function_body)
+        .body(&function_body)
         .execute()
         .await?;
     println!(
@@ -64,7 +64,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let execute_stored_procedure_response = stored_procedure_client
         .execute_stored_procedure()
-        .with_parameters(["Robert"])
+        .parameters(["Robert"])
         .execute::<serde_json::Value>()
         .await?;
 

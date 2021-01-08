@@ -55,7 +55,6 @@ pub enum QueryResult<T> {
 pub struct QueryDocumentsResponse<T> {
     pub query_response_meta: QueryResponseMeta,
     pub results: Vec<QueryResult<T>>,
-
     pub last_state_change: DateTime<Utc>,
     pub resource_quota: Vec<ResourceQuota>,
     pub resource_usage: Vec<ResourceQuota>,
