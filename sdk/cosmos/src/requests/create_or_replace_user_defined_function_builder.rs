@@ -54,10 +54,7 @@ impl<'a, 'b> CreateOrReplaceUserDefinedFunctionBuilder<'a, 'b, Yes> {
 }
 
 impl<'a, 'b> CreateOrReplaceUserDefinedFunctionBuilder<'a, 'b, No> {
-    pub fn with_body(
-        self,
-        body: &'b str,
-    ) -> CreateOrReplaceUserDefinedFunctionBuilder<'a, 'b, Yes> {
+    pub fn body(self, body: &'b str) -> CreateOrReplaceUserDefinedFunctionBuilder<'a, 'b, Yes> {
         CreateOrReplaceUserDefinedFunctionBuilder {
             body: Some(body),
             user_defined_function_client: self.user_defined_function_client,

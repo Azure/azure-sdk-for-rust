@@ -42,15 +42,15 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let ret = user_defined_function_client
         .create_user_defined_function()
-        .with_body("body")
+        .body("body")
         .execute()
         .await?;
     println!("Creeate response object:\n{:#?}", ret);
 
     let stream = collection_client
         .list_user_defined_functions()
-        .with_max_item_count(3)
-        .with_consistency_level((&ret).into());
+        .max_item_count(3)
+        .consistency_level(&ret);
     let mut stream = Box::pin(stream.stream());
     while let Some(ret) = stream.next().await {
         let ret = ret.unwrap();
@@ -62,17 +62,17 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let ret = user_defined_function_client
         .replace_user_defined_function()
-        .with_consistency_level((&ret).into())
-        .with_body(FN_BODY)
+        .consistency_level(&ret)
+        .body(FN_BODY)
         .execute()
         .await?;
     println!("Replace response object:\n{:#?}", ret);
 
     let ret = collection_client
         .query_documents()
-        .with_query(&"SELECT udf.test15(100)".into())
-        .with_consistency_level((&ret).into())
-        .with_max_item_count(2)
+        .query(&"SELECT udf.test15(100)".into())
+        .consistency_level(&ret)
+        .max_item_count(2)
         .execute::<serde_json::Value>()
         .await?
         .into_raw();
@@ -94,7 +94,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let ret = user_defined_function_client
         .delete_user_defined_function()
-        .with_consistency_level((&ret).into())
+        .consistency_level(&ret)
         .execute()
         .await?;
 

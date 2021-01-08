@@ -38,7 +38,7 @@ impl<'a, 'b> ExecuteStoredProcedureBuilder<'a, 'b> {
         partition_keys: &'b PartitionKeys => Some(partition_keys),
     }
 
-    pub fn with_parameters<P: Into<Parameters>>(self, p: P) -> Self {
+    pub fn parameters<P: Into<Parameters>>(self, p: P) -> Self {
         Self {
             parameters: Some(p.into()),
             ..self

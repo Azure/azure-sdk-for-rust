@@ -53,7 +53,7 @@ impl<'a, 'b, MediaSet> CreateReferenceAttachmentBuilder<'a, 'b, No, MediaSet>
 where
     MediaSet: ToAssign,
 {
-    pub fn with_content_type(
+    pub fn content_type(
         self,
         content_type: &'b str,
     ) -> CreateReferenceAttachmentBuilder<'a, 'b, Yes, MediaSet> {
@@ -74,7 +74,7 @@ impl<'a, 'b, ContentTypeSet> CreateReferenceAttachmentBuilder<'a, 'b, ContentTyp
 where
     ContentTypeSet: ToAssign,
 {
-    pub fn with_media(
+    pub fn media(
         self,
         media: &'b str,
     ) -> CreateReferenceAttachmentBuilder<'a, 'b, ContentTypeSet, Yes> {

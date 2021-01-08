@@ -39,7 +39,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let replace_user_response = user_client
         .replace_user()
-        .with_user_name(&new_user)
+        .user_name(&new_user)
         .execute()
         .await?;
     println!("replace_user_response == {:#?}", replace_user_response);

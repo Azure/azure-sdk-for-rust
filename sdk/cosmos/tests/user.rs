@@ -13,7 +13,7 @@ async fn users() {
     // create a temp database
     let _create_database_response = client
         .create_database()
-        .with_database_name(&DATABASE_NAME)
+        .database_name(&DATABASE_NAME)
         .execute()
         .await
         .unwrap();
@@ -33,7 +33,7 @@ async fn users() {
 
     let _replace_user_response = user_client
         .replace_user()
-        .with_user_name(&USER_NAME_REPLACED)
+        .user_name(&USER_NAME_REPLACED)
         .execute()
         .await
         .unwrap();

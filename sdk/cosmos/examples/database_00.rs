@@ -56,8 +56,8 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
                 let document = Document::new(v);
                 let resp = collection_client
                     .create_document()
-                    .with_partition_keys([43u32])
-                    .with_is_upsert(true)
+                    .partition_keys([43u32])
+                    .is_upsert(true)
                     .execute_with_document(&document)
                     .await?;
 
@@ -72,8 +72,8 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
                 println!("\nReplacing collection");
                 let replace_collection_response = collection_client
                     .replace_collection()
-                    .with_partition_key("/age")
-                    .with_indexing_policy(&indexing_policy_new)
+                    .partition_key("/age")
+                    .indexing_policy(&indexing_policy_new)
                     .execute()
                     .await?;
                 println!(

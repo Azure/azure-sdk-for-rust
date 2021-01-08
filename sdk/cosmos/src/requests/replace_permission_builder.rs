@@ -33,11 +33,6 @@ impl<'a, 'b> ReplacePermissionBuilder<'a, 'b> {
         expiry_seconds: u64 => ExpirySeconds::new(expiry_seconds),
     }
 
-    #[allow(unused)]
-    fn expiry_seconds(&self) -> ExpirySeconds {
-        self.expiry_seconds
-    }
-
     pub async fn execute_with_permission(
         &self,
         permission_mode: &PermissionMode<'a>,

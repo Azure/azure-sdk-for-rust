@@ -63,7 +63,7 @@ where
 }
 
 impl<'a, 'b> CreateDocumentBuilder<'a, 'b, No> {
-    pub fn with_partition_keys<P: Into<PartitionKeys>>(
+    pub fn partition_keys<P: Into<PartitionKeys>>(
         self,
         partition_keys: P,
     ) -> CreateDocumentBuilder<'a, 'b, Yes> {

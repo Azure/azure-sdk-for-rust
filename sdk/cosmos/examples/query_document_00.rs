@@ -49,19 +49,19 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let respo: QueryDocumentsResponse<serde_json::Value> = client
         .query_documents()
-        .with_query(&query_obj)
-        .with_query_cross_partition(true)
-        .with_max_item_count(3)
+        .query(&query_obj)
+        .query_cross_partition(true)
+        .max_item_count(3)
         .execute()
         .await?;
     println!("as json == {:?}", respo);
 
     let respo: QueryDocumentsResponse<MySecondSampleStructOwned> = client
         .query_documents()
-        .with_query(&query_obj)
-        .with_query_cross_partition(true)
-        .with_parallelize_cross_partition_query(true)
-        .with_max_item_count(2)
+        .query(&query_obj)
+        .query_cross_partition(true)
+        .parallelize_cross_partition_query(true)
+        .max_item_count(2)
         .execute()
         .await?;
     println!("as items == {:?}", respo);

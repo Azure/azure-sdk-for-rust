@@ -13,7 +13,7 @@ async fn create_and_delete_collection() {
 
     client
         .create_database()
-        .with_database_name(&DATABASE_NAME)
+        .database_name(&DATABASE_NAME)
         .execute()
         .await
         .unwrap();
@@ -29,10 +29,10 @@ async fn create_and_delete_collection() {
     };
     let collection = database_client
         .create_collection()
-        .with_collection_name(&COLLECTION_NAME)
-        .with_offer(Offer::S2)
-        .with_partition_key("/id")
-        .with_indexing_policy(&indexing_policy)
+        .collection_name(&COLLECTION_NAME)
+        .offer(Offer::S2)
+        .partition_key("/id")
+        .indexing_policy(&indexing_policy)
         .execute()
         .await
         .unwrap();
@@ -74,7 +74,7 @@ async fn replace_collection() {
 
     client
         .create_database()
-        .with_database_name(&DATABASE_NAME)
+        .database_name(&DATABASE_NAME)
         .execute()
         .await
         .unwrap();
@@ -90,10 +90,10 @@ async fn replace_collection() {
     };
     let collection = database_client
         .create_collection()
-        .with_collection_name(&COLLECTION_NAME)
-        .with_offer(Offer::S2)
-        .with_partition_key("/id")
-        .with_indexing_policy(&indexing_policy)
+        .collection_name(&COLLECTION_NAME)
+        .offer(Offer::S2)
+        .partition_key("/id")
+        .indexing_policy(&indexing_policy)
         .execute()
         .await
         .unwrap();
@@ -134,8 +134,8 @@ async fn replace_collection() {
 
     let _replace_collection_reponse = collection_client
         .replace_collection()
-        .with_indexing_policy(&new_ip)
-        .with_partition_key("/id")
+        .indexing_policy(&new_ip)
+        .partition_key("/id")
         .execute()
         .await
         .unwrap();

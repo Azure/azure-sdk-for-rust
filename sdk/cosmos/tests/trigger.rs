@@ -45,7 +45,7 @@ async fn trigger() -> Result<(), CosmosError> {
     // create a temp database
     let _create_database_response = client
         .create_database()
-        .with_database_name(&DATABASE_NAME)
+        .database_name(&DATABASE_NAME)
         .execute()
         .await
         .unwrap();
@@ -74,10 +74,10 @@ async fn trigger() -> Result<(), CosmosError> {
 
         database_client
             .create_collection()
-            .with_collection_name(&COLLECTION_NAME)
-            .with_partition_key("/id")
-            .with_offer(Offer::Throughput(400))
-            .with_indexing_policy(&ip)
+            .collection_name(&COLLECTION_NAME)
+            .partition_key("/id")
+            .offer(Offer::Throughput(400))
+            .indexing_policy(&ip)
             .execute()
             .await
             .unwrap()
@@ -90,18 +90,18 @@ async fn trigger() -> Result<(), CosmosError> {
 
     let ret = trigger_client
         .create_trigger()
-        .with_trigger_type(trigger::TriggerType::Post)
-        .with_trigger_operation(trigger::TriggerOperation::All)
-        .with_body(&"something")
+        .trigger_type(trigger::TriggerType::Post)
+        .trigger_operation(trigger::TriggerOperation::All)
+        .body(&"something")
         .execute()
         .await?;
 
     let ret = trigger_client
         .replace_trigger()
-        .with_consistency_level(ret.into())
-        .with_trigger_type(trigger::TriggerType::Post)
-        .with_trigger_operation(trigger::TriggerOperation::All)
-        .with_body(&TRIGGER_BODY)
+        .consistency_level(ret)
+        .trigger_type(trigger::TriggerType::Post)
+        .trigger_operation(trigger::TriggerOperation::All)
+        .body(&TRIGGER_BODY)
         .execute()
         .await?;
 
@@ -109,8 +109,8 @@ async fn trigger() -> Result<(), CosmosError> {
 
     let stream = collection_client
         .list_triggers()
-        .with_max_item_count(3)
-        .with_consistency_level((&ret).into());
+        .max_item_count(3)
+        .consistency_level(&ret);
     let mut stream = Box::pin(stream.stream());
     while let Some(ret) = stream.next().await {
         let ret = ret.unwrap();
@@ -119,7 +119,7 @@ async fn trigger() -> Result<(), CosmosError> {
 
     let _ret = trigger_client
         .delete_trigger()
-        .with_consistency_level(last_session_token.unwrap())
+        .consistency_level(last_session_token.unwrap())
         .execute()
         .await?;
 

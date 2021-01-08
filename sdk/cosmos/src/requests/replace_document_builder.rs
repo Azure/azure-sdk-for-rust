@@ -115,7 +115,7 @@ impl<'a, 'b, DocumentIdSet> ReplaceDocumentBuilder<'a, 'b, No, DocumentIdSet>
 where
     DocumentIdSet: ToAssign,
 {
-    pub fn with_partition_keys<P: Into<PartitionKeys>>(
+    pub fn partition_keys<P: Into<PartitionKeys>>(
         self,
         partition_keys: P,
     ) -> ReplaceDocumentBuilder<'a, 'b, Yes, DocumentIdSet> {
@@ -140,7 +140,7 @@ impl<'a, 'b, PartitionKeysSet> ReplaceDocumentBuilder<'a, 'b, PartitionKeysSet, 
 where
     PartitionKeysSet: ToAssign,
 {
-    pub fn with_document_id(
+    pub fn document_id(
         self,
         document_id: &'b str,
     ) -> ReplaceDocumentBuilder<'a, 'b, PartitionKeysSet, Yes> {

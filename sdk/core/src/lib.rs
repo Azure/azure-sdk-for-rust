@@ -1127,7 +1127,3 @@ pub trait AddAsHeader {
 pub trait AppendToUrlQuery {
     fn append_to_url_query(&self, url: &mut url::Url);
 }
-
-#[doc(hidden)]
-/// Reexport paste for use in macros
-pub use paste;

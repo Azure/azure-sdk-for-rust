@@ -56,10 +56,7 @@ impl<'a, 'b, ContentTypeSet> CreateSlugAttachmentBuilder<'a, 'b, No, ContentType
 where
     ContentTypeSet: ToAssign,
 {
-    pub fn with_body(
-        self,
-        body: &'b [u8],
-    ) -> CreateSlugAttachmentBuilder<'a, 'b, Yes, ContentTypeSet> {
+    pub fn body(self, body: &'b [u8]) -> CreateSlugAttachmentBuilder<'a, 'b, Yes, ContentTypeSet> {
         CreateSlugAttachmentBuilder {
             body: Some(body),
             attachment_client: self.attachment_client,
@@ -78,7 +75,7 @@ impl<'a, 'b, BodySet> CreateSlugAttachmentBuilder<'a, 'b, BodySet, No>
 where
     BodySet: ToAssign,
 {
-    pub fn with_content_type(
+    pub fn content_type(
         self,
         content_type: &'b str,
     ) -> CreateSlugAttachmentBuilder<'a, 'b, BodySet, Yes> {
