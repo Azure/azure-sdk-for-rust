@@ -10,7 +10,7 @@ use futures::stream::Stream;
 #[derive(Debug, Clone, Copy)]
 pub struct GetBlobBuilder<'a> {
     blob_client: &'a BlobClient,
-    range: Option<&'a Range>,
+    range: Option<Range>,
     blob_versioning: Option<&'a BlobVersioning>,
     client_request_id: Option<ClientRequestId<'a>>,
     timeout: Option<Timeout>,
@@ -30,7 +30,7 @@ impl<'a> GetBlobBuilder<'a> {
     }
 
     setters! {
-        range: &'a Range => Some(range),
+        range: Range => Some(range),
         blob_versioning: &'a BlobVersioning => Some(blob_versioning),
         client_request_id: ClientRequestId<'a> => Some(client_request_id),
         timeout: Timeout => Some(timeout),
@@ -59,7 +59,7 @@ impl<'a> GetBlobBuilder<'a> {
             url.as_str(),
             &http::Method::GET,
             &|mut request| {
-                request = add_optional_header_ref(&self.range, request);
+                request = add_optional_header(&self.range, request);
                 request = add_optional_header(&self.client_request_id, request);
                 request = add_optional_header_ref(&self.lease_id, request);
                 request
@@ -107,8 +107,8 @@ impl<'a> GetBlobBuilder<'a> {
 
         futures::stream::unfold(States::Init, move |state| async move {
             let remaining = match state {
-                States::Init => self.range.unwrap_or(&complete_range),
-                States::Progress(ref range) => range,
+                States::Init => self.range.unwrap_or(complete_range),
+                States::Progress(range) => range,
                 States::End => return None,
             };
 
@@ -118,7 +118,7 @@ impl<'a> GetBlobBuilder<'a> {
                 Range::new(remaining.start, remaining.start + chunk_size)
             };
 
-            let req = self.with_range(&range);
+            let req = self.with_range(range);
 
             let response = match req.execute().await {
                 Ok(response) => response,
